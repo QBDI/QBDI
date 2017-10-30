@@ -1,0 +1,12 @@
+diff -Naur llvm-5.0.0.src/lib/Fuzzer/CMakeLists.txt llvm-5.0.0.src/lib/Fuzzer/CMakeLists.txt
+--- llvm-5.0.0.src/lib/Fuzzer/CMakeLists.txt	2017-07-14 02:06:27.000000000 +0200
++++ llvm-5.0.0.src/lib/Fuzzer/CMakeLists.txt	2017-10-06 17:43:42.769716423 +0200
+@@ -28,7 +28,7 @@
+ 
+ # Compile libFuzzer if the compilation is specifically requested, OR
+ # if the platform is known to be working.
+-if ( LLVM_USE_SANITIZE_COVERAGE OR CMAKE_SYSTEM_NAME MATCHES "Darwin|Linux" )
++if ( LLVM_USE_SANITIZE_COVERAGE )
+   add_library(LLVMFuzzerNoMainObjects OBJECT
+       FuzzerCrossOver.cpp
+       FuzzerDriver.cpp

@@ -1,0 +1,2 @@
+#!/bin/sh
+cp @RESOURCES_PREFIX@/qbdi_preload_template/* .

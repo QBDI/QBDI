@@ -1,0 +1,10 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: qbdi
+Description: qbdi
+Version: @QBDI_VERSION_MAJOR@.@QBDI_VERSION_MINOR@
+Libs: -L${libdir} @LLVM_LIBS_STR@ -lQBDI
+Cflags: -I${includedir}
