@@ -282,7 +282,7 @@ QBDI_EXPORT int __libc_start_main(int (*main) (int, char**, char**), int argc, c
 
     o_libc_start_main = (start_main_fn) dlsym(RTLD_NEXT, "__libc_start_main");
 
-    int status = qbdipreload_on_start(main);
+    int status = qbdipreload_on_start(main, argc, ubp_av);
     if (status == QBDIPRELOAD_NOT_HANDLED) {
         status = qbdipreload_hook_main(main);
     }

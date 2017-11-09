@@ -97,7 +97,7 @@ int QBDI::qbdipreload_on_exit(int status) {
     return QBDIPRELOAD_NO_ERROR;
 }
 
-int QBDI::qbdipreload_on_start(void *main) {
+int QBDI::qbdipreload_on_start(void *main, int argc, char **argv) {
     pid_t debugged, instrumented;
     LinuxProcess* debuggedProcess = nullptr;
 
