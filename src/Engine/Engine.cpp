@@ -162,12 +162,12 @@ FPRState* Engine::getFPRState() const {
 
 void Engine::setGPRState(GPRState* gprState) {
     RequireAction("Engine::setGPRState", gprState, return);
-    *(this->gprState) = *gprState;
+    *(this->curGPRState) = *gprState;
 }
 
 void Engine::setFPRState(FPRState* fprState) {
     RequireAction("Engine::setFPRState", fprState, return);
-    *(this->fprState) = *fprState;
+    *(this->curFPRState) = *fprState;
 }
 
 bool Engine::isPreInst() const {
