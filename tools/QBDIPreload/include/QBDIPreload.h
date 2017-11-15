@@ -88,9 +88,11 @@ QBDI_EXPORT int qbdipreload_hook_main(void *main);
  * It provides the main function address, that can be used
  * to place a hook using the `qbdipreload_hook_main` API.
  * @param[in]   main    Address of the main function
+ * @param[in]   argc    Number of arguments of the main function
+ * @param[in]   argv    Arguments of the main function
  * @return      int     QBDIPreload state
  */
-extern int qbdipreload_on_start(void *main);
+extern int qbdipreload_on_start(void *main, int argc, char **argv);
 
 /*! Function called when preload hook on main function is triggered.
  * It provides original (and platforms dependent) GPR and FPR contexts.
