@@ -4,7 +4,7 @@ build*/*
 
 include/QBDI/Version.h
 
-deps/*
+deps/**
 !deps/CMakeLists.txt
 !deps/*
 !deps/*/*
