@@ -27,7 +27,7 @@ int qbdipreload_on_premain(void *gprCtx, void *fpuCtx) {
 }
 
 
-int qbdipreload_on_main() {
+int qbdipreload_on_main(int argc, char** argv) {
     return QBDIPRELOAD_NOT_HANDLED;
 }
 

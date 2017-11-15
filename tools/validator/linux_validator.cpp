@@ -41,7 +41,7 @@ static bool INSTRUMENTED = false;
 QBDIPRELOAD_INIT;
 
 
-int QBDI::qbdipreload_on_main() {
+int QBDI::qbdipreload_on_main(int argc, char** argv) {
     QBDI::LOGSYS.addFilter("*", QBDI::LogPriority::DEBUG);
 
     QBDI::VM* vm = new QBDI::VM();
