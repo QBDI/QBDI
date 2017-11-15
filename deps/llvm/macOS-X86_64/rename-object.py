@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import subprocess
 import sys
 import tempfile
@@ -12,13 +13,13 @@ if os.path.exists(IOS_LIPO):
 
 
 def exitFailure(msg):
-    print "Error: " + msg
+    print("Error: " + msg)
     exit(1)
 
 
 def listArchs(archive):
     try:
-        out = subprocess.check_output([LIPO, "-info", archive])
+        out = subprocess.check_output([LIPO, "-info", archive]).decode("utf-8")
     except:
         out = "" 
 
@@ -77,7 +78,7 @@ def mergeArch(archives, outpath):
 
 
 if len(sys.argv) < 3:
-    print "Usage: %s archive objectname" % os.path.basename(sys.argv[0])
+    print("Usage: {} archive objectname".format(os.path.basename(sys.argv[0])))
     exit(1)
 
 archive = sys.argv[1]
@@ -106,7 +107,7 @@ for arch in archs:
     if isFat:
         thinar = extractArch(archive, arch, tdir)
         if not thinar:
-            print "Cannot extract arch " + arch
+            print("Cannot extract arch " + arch)
             continue
     # Create tmp dir for extracted objects
     arname = os.path.basename(thinar)
@@ -114,7 +115,7 @@ for arch in archs:
     os.mkdir(xdir)
     # Extract objects
     if not extractObjs(thinar, xdir):
-        print "Cannot extract objects for " + arch
+        print("Cannot extract objects for " + arch)
         continue
     ofpath = os.path.join(xdir, ofname)
     if remove:
@@ -127,7 +128,7 @@ for arch in archs:
             ofpath = os.path.join(xdir, altofname)
             nfpath = os.path.join(xdir, altnfname)
             if not os.path.exists(ofpath):
-                print "Cannot find object %s for arch %s" % (ofname, arch)
+                print("Cannot find object {} for arch {}".format(ofname, arch))
                 continue
         os.rename(ofpath, nfpath)
     # Archive objects
