@@ -31,11 +31,12 @@
 */
 
 #include <Python.h>
-#include <longintrepr.h>
-#include <iostream>
 #include <cstdlib>
 #include <cstring>
+#include <exception>
+#include <iostream>
 #include <list>
+#include <longintrepr.h>
 
 #if defined(__unix__) || defined(__APPLE__)
   #include <dlfcn.h>
@@ -137,6 +138,37 @@ namespace QBDI {
 
       /*! Returns the QBDI::MemoryAccess. */
       #define PyMemoryAccess_AsMemoryAccess(v) (((QBDI::Bindings::Python::MemoryAccess_Object*)(v))->memoryAccess)
+
+
+      /* Returns a QBDI::rword from a PyLong object */
+      QBDI::rword PyLong_AsRword(PyObject* vv) {
+        PyLongObject* v;
+        QBDI::rword x, prev;
+        Py_ssize_t i;
+
+        if (vv == NULL || !PyLong_Check(vv)) {
+          if (vv != NULL && PyInt_Check(vv)) {
+              QBDI::rword val = PyInt_AsLong(vv);
+              return val;
+          }
+          throw std::runtime_error("QBDI::Bindings::Python::PyLong_AsRword(): Bad internal call.");
+        }
+
+        v = reinterpret_cast<PyLongObject*>(vv);
+        i = Py_SIZE(v);
+        x = 0;
+        if (i < 0)
+          throw std::runtime_error("QBDI::Bindings::Python::PyLong_AsRword():  Cannot convert negative value to unsigned long.");
+
+        while (--i >= 0) {
+            prev = x;
+            x = (x << PyLong_SHIFT) | v->ob_digit[i];
+            if ((x >> PyLong_SHIFT) != prev)
+                throw std::runtime_error("QBDI::Bindings::Python::PyLong_AsRword():  long int too large to convert.");
+        }
+
+        return x;
+      }
 
 
       /* PyInstAnalysis destructor */
@@ -416,58 +448,58 @@ namespace QBDI {
         try {
           #if defined(QBDI_ARCH_X86_64)
             if (std::string(PyString_AsString(name)) == "rax")
-              PyGPRState_AsGPRState(self)->rax = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->rax = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "rbx")
-              PyGPRState_AsGPRState(self)->rbx = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->rbx = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "rcx")
-              PyGPRState_AsGPRState(self)->rcx = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->rcx = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "rdx")
-              PyGPRState_AsGPRState(self)->rdx = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->rdx = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "rsi")
-              PyGPRState_AsGPRState(self)->rsi = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->rsi = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "rdi")
-              PyGPRState_AsGPRState(self)->rdi = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->rdi = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "r8")
-              PyGPRState_AsGPRState(self)->r8 = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->r8 = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "r9")
-              PyGPRState_AsGPRState(self)->r9 = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->r9 = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "r10")
-              PyGPRState_AsGPRState(self)->r10 = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->r10 = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "r11")
-              PyGPRState_AsGPRState(self)->r11 = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->r11 = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "r12")
-              PyGPRState_AsGPRState(self)->r12 = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->r12 = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "r13")
-              PyGPRState_AsGPRState(self)->r13 = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->r13 = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "r14")
-              PyGPRState_AsGPRState(self)->r14 = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->r14 = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "r15")
-              PyGPRState_AsGPRState(self)->r15 = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->r15 = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "rbp")
-              PyGPRState_AsGPRState(self)->rbp = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->rbp = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "rsp")
-              PyGPRState_AsGPRState(self)->rsp = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->rsp = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "rip")
-              PyGPRState_AsGPRState(self)->rip = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->rip = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "eflags")
-              PyGPRState_AsGPRState(self)->eflags = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->eflags = PyLong_AsRword(item);
 
             else
               return PyObject_GenericSetAttr(self, name, item);
@@ -475,55 +507,55 @@ namespace QBDI {
 
           #if defined(QBDI_ARCH_ARM)
             if (std::string(PyString_AsString(name)) == "r0")
-              PyGPRState_AsGPRState(self)->r0 = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->r0 = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "r1")
-              PyGPRState_AsGPRState(self)->r1 = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->r1 = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "r2")
-              PyGPRState_AsGPRState(self)->r2 = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->r2 = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "r3")
-              PyGPRState_AsGPRState(self)->r3 = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->r3 = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "r4")
-              PyGPRState_AsGPRState(self)->r4 = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->r4 = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "r5")
-              PyGPRState_AsGPRState(self)->r5 = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->r5 = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "r6")
-              PyGPRState_AsGPRState(self)->r6 = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->r6 = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "r7")
-              PyGPRState_AsGPRState(self)->r7 = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->r7 = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "r8")
-              PyGPRState_AsGPRState(self)->r8 = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->r8 = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "r9")
-              PyGPRState_AsGPRState(self)->r9 = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->r9 = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "r10")
-              PyGPRState_AsGPRState(self)->r10 = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->r10 = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "r12")
-              PyGPRState_AsGPRState(self)->r12 = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->r12 = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "fp")
-              PyGPRState_AsGPRState(self)->fp = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->fp = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "sp")
-              PyGPRState_AsGPRState(self)->sp = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->sp = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "lr")
-              PyGPRState_AsGPRState(self)->lr = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->lr = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "pc")
-              PyGPRState_AsGPRState(self)->pc = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->pc = PyLong_AsRword(item);
 
             else if (std::string(PyString_AsString(name)) == "cpsr")
-              PyGPRState_AsGPRState(self)->cpsr = PyLong_AsLong(item);
+              PyGPRState_AsGPRState(self)->cpsr = PyLong_AsRword(item);
 
             else
               return PyObject_GenericSetAttr(self, name, item);
@@ -932,28 +964,28 @@ namespace QBDI {
         try {
           #if defined(QBDI_ARCH_X86_64)
             if (std::string(PyString_AsString(name)) == "ftw")
-              PyFPRState_AsFPRState(self)->ftw = PyLong_AsLong(item);
+              PyFPRState_AsFPRState(self)->ftw = PyLong_AsRword(item) & 0xff;
 
             else if (std::string(PyString_AsString(name)) == "fop")
-              PyFPRState_AsFPRState(self)->fop = PyLong_AsLong(item);
+              PyFPRState_AsFPRState(self)->fop = PyLong_AsRword(item) & 0xffff;
 
             else if (std::string(PyString_AsString(name)) == "ip")
-              PyFPRState_AsFPRState(self)->ip = PyLong_AsLong(item);
+              PyFPRState_AsFPRState(self)->ip = PyLong_AsRword(item) & 0xffffffff;
 
             else if (std::string(PyString_AsString(name)) == "cs")
-              PyFPRState_AsFPRState(self)->cs = PyLong_AsLong(item);
+              PyFPRState_AsFPRState(self)->cs = PyLong_AsRword(item) & 0xffff;
 
             else if (std::string(PyString_AsString(name)) == "dp")
-              PyFPRState_AsFPRState(self)->dp = PyLong_AsLong(item);
+              PyFPRState_AsFPRState(self)->dp = PyLong_AsRword(item) & 0xffffffff;
 
             else if (std::string(PyString_AsString(name)) == "ds")
-              PyFPRState_AsFPRState(self)->ds = PyLong_AsLong(item);
+              PyFPRState_AsFPRState(self)->ds = PyLong_AsRword(item) & 0xffff;
 
             else if (std::string(PyString_AsString(name)) == "mxcsr")
-              PyFPRState_AsFPRState(self)->mxcsr = PyLong_AsLong(item);
+              PyFPRState_AsFPRState(self)->mxcsr = PyLong_AsRword(item) & 0xffffffff;
 
             else if (std::string(PyString_AsString(name)) == "mxcsrmask")
-              PyFPRState_AsFPRState(self)->mxcsrmask = PyLong_AsLong(item);
+              PyFPRState_AsFPRState(self)->mxcsrmask = PyLong_AsRword(item) & 0xffffffff;
 
             else if (std::string(PyString_AsString(name)) == "stmm0")
               std::memcpy(PyFPRState_AsFPRState(self)->stmm0.reg, bytes, sizeof(PyFPRState_AsFPRState(self)->stmm0.reg));
@@ -1497,7 +1529,7 @@ namespace QBDI {
           return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::addCodeAddrCB(): Expects a function as third argument.");
 
         try {
-          retValue = QBDI::Bindings::Python::vm->addCodeAddrCB(PyLong_AsLong(addr),
+          retValue = QBDI::Bindings::Python::vm->addCodeAddrCB(PyLong_AsRword(addr),
                                                                static_cast<QBDI::InstPosition>(PyInt_AsLong(pos)),
                                                                QBDI::Bindings::Python::trampoline,
                                                                function);
@@ -1578,8 +1610,8 @@ namespace QBDI {
           return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::addCodeRangeCB(): Expects a function as fourth argument.");
 
         try {
-          retValue = QBDI::Bindings::Python::vm->addCodeRangeCB(PyLong_AsLong(start),
-                                                                PyLong_AsLong(end),
+          retValue = QBDI::Bindings::Python::vm->addCodeRangeCB(PyLong_AsRword(start),
+                                                                PyLong_AsRword(end),
                                                                 static_cast<QBDI::InstPosition>(PyInt_AsLong(pos)),
                                                                 QBDI::Bindings::Python::trampoline,
                                                                 function);
@@ -1625,7 +1657,7 @@ namespace QBDI {
           return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::addInstrumentedModuleFromAddr(): Expects an integer as first argument.");
 
         try {
-          if (QBDI::Bindings::Python::vm->addInstrumentedModuleFromAddr(PyLong_AsLong(addr)) == true)
+          if (QBDI::Bindings::Python::vm->addInstrumentedModuleFromAddr(PyLong_AsRword(addr)) == true)
             return PyBool_FromLong(true);
           return PyBool_FromLong(false);
         }
@@ -1654,7 +1686,7 @@ namespace QBDI {
           return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::addInstrumentedRange(): Expects an integer as second argument.");
 
         try {
-          QBDI::Bindings::Python::vm->addInstrumentedRange(PyLong_AsLong(start), PyLong_AsLong(end));
+          QBDI::Bindings::Python::vm->addInstrumentedRange(PyLong_AsRword(start), PyLong_AsRword(end));
         }
         catch (const std::exception& e) {
           return PyErr_Format(PyExc_TypeError, "%s", e.what());
@@ -1729,7 +1761,7 @@ namespace QBDI {
           return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::addMemAddrCB(): Expects a function as third argument.");
 
         try {
-          retValue = QBDI::Bindings::Python::vm->addMemAddrCB(PyLong_AsLong(addr),
+          retValue = QBDI::Bindings::Python::vm->addMemAddrCB(PyLong_AsRword(addr),
                                                                static_cast<QBDI::MemoryAccessType>(PyInt_AsLong(type)),
                                                                QBDI::Bindings::Python::trampoline,
                                                                function);
@@ -1777,8 +1809,8 @@ namespace QBDI {
           return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::addMemRangeCB(): Expects a function as fourth argument.");
 
         try {
-          retValue = QBDI::Bindings::Python::vm->addMemRangeCB(PyLong_AsLong(start),
-                                                               PyLong_AsLong(end),
+          retValue = QBDI::Bindings::Python::vm->addMemRangeCB(PyLong_AsRword(start),
+                                                               PyLong_AsRword(end),
                                                                static_cast<QBDI::MemoryAccessType>(PyInt_AsLong(type)),
                                                                QBDI::Bindings::Python::trampoline,
                                                                function);
@@ -1962,7 +1994,7 @@ namespace QBDI {
           return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::clearCache(): Expects an integer as second argument.");
 
         try {
-          QBDI::Bindings::Python::vm->clearCache(PyLong_AsLong(start), PyLong_AsLong(end));
+          QBDI::Bindings::Python::vm->clearCache(PyLong_AsRword(start), PyLong_AsRword(end));
         }
         catch (const std::exception& e) {
           return PyErr_Format(PyExc_TypeError, "%s", e.what());
@@ -1997,7 +2029,7 @@ namespace QBDI {
           return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::deleteInstrumentation(): Expects an integer as first argument.");
 
         try {
-          if (QBDI::Bindings::Python::vm->deleteInstrumentation(PyLong_AsLong(id)) == true)
+          if (QBDI::Bindings::Python::vm->deleteInstrumentation(PyLong_AsRword(id) & 0xffffffff) == true)
             return PyBool_FromLong(true);
           return PyBool_FromLong(false);
         }
@@ -2143,7 +2175,7 @@ namespace QBDI {
           return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::precacheBasicBlock(): Expects an integer as first argument.");
 
         try {
-          if (QBDI::Bindings::Python::vm->precacheBasicBlock(PyLong_AsLong(pc)) == true)
+          if (QBDI::Bindings::Python::vm->precacheBasicBlock(PyLong_AsRword(pc)) == true)
             return PyBool_FromLong(true);
           return PyBool_FromLong(false);
         }
@@ -2175,7 +2207,7 @@ namespace QBDI {
           return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::readMemory(): Expects an integer as second argument.");
 
         try {
-          ret = PyBytes_FromStringAndSize(reinterpret_cast<const char*>(PyLong_AsLong(address)), PyLong_AsLong(size));
+          ret = PyBytes_FromStringAndSize(reinterpret_cast<const char*>(PyLong_AsRword(address)), PyLong_AsLong(size));
         }
         catch (const std::exception& e) {
           return PyErr_Format(PyExc_TypeError, "%s", e.what());
@@ -2256,7 +2288,7 @@ namespace QBDI {
           return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::removeInstrumentedModuleFromAddr(): Expects an integer as first argument.");
 
         try {
-          if (QBDI::Bindings::Python::vm->removeInstrumentedModuleFromAddr(PyLong_AsLong(addr)) == true)
+          if (QBDI::Bindings::Python::vm->removeInstrumentedModuleFromAddr(PyLong_AsRword(addr)) == true)
             return PyBool_FromLong(true);
           return PyBool_FromLong(false);
         }
@@ -2287,7 +2319,7 @@ namespace QBDI {
           return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::removeInstrumentedRange(): Expects an integer as second argument.");
 
         try {
-          QBDI::Bindings::Python::vm->removeInstrumentedRange(PyLong_AsLong(start), PyLong_AsLong(end));
+          QBDI::Bindings::Python::vm->removeInstrumentedRange(PyLong_AsRword(start), PyLong_AsRword(end));
         }
         catch (const std::exception& e) {
           return PyErr_Format(PyExc_TypeError, "%s", e.what());
@@ -2317,7 +2349,7 @@ namespace QBDI {
           return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::run(): Expects an integer as second argument.");
 
         try {
-          if (QBDI::Bindings::Python::vm->run(PyLong_AsLong(start), PyLong_AsLong(end)) == true)
+          if (QBDI::Bindings::Python::vm->run(PyLong_AsRword(start), PyLong_AsRword(end)) == true)
             return PyBool_FromLong(true);
           return PyBool_FromLong(false);
         }

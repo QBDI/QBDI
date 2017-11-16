@@ -16,7 +16,7 @@ endif()
 include_directories(${PYTHON_INCLUDE_DIRS})
 add_definitions("-DPYTHON_LIBRARIES=\"${PYTHON_LIBRARIES}\"")
 
-if((${OS} STREQUAL "linux") OR (${OS} STREQUAL "android") OR (${OS} STREQUAL "osx"))
+if(HAS_QBDIPRELOAD)
     add_library(pyqbdi SHARED ${SOURCES})
     # Add build directory as include path for the mach_exc.h header
     include_directories(pyqbdi PRIVATE
