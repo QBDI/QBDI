@@ -1893,11 +1893,14 @@ namespace QBDI {
 
         std::vector<QBDI::rword> cfargs;
         for (Py_ssize_t i = 0; i < PyDict_Size(fargs); i++) {
-          PyObject* index = PyInt_FromLong(0);
+          PyObject* index = PyInt_FromLong(i);
           PyObject* item  = PyDict_GetItem(fargs, index);
 
           if (item == nullptr)
-            return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::call(): Expects integers as keys of dictionary.");
+            return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::call(): key %ld not found", i);
+
+          if (!PyLong_Check(item) && !PyInt_Check(item))
+            return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::call(): Expects integers as dictionary contents.");
 
           cfargs.push_back(reinterpret_cast<QBDI::rword>(PyLong_AsUnsignedLong(item)));
 
