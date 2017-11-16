@@ -3,10 +3,11 @@
 
 import pyqbdi
 
-def mycb(inst, gpr, fpr):
+def mycb(vm, gpr, fpr):
+    inst = vm.getInstAnalysis(pyqbdi.ANALYSIS_INSTRUCTION | pyqbdi.ANALYSIS_DISASSEMBLY)
     print "0x%x: %s" %(inst.address, inst.disassembly)
     return pyqbdi.CONTINUE
 
-if __name__ == '__main__':
-    pyqbdi.addCodeCB(pyqbdi.PREINST, mycb)
-    pyqbdi.run(pyqbdi.start, pyqbdi.stop)
+def pyqbdipreload_on_run(vm, start, stop):
+    vm.addCodeCB(pyqbdi.PREINST, mycb)
+    vm.run(start, stop)
