@@ -2038,14 +2038,14 @@ namespace QBDI {
           if (!PyLong_Check(item) && !PyInt_Check(item))
             return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::call(): Expects integers as dictionary contents.");
 
-          cfargs.push_back(reinterpret_cast<QBDI::rword>(PyLong_AsUnsignedLong(item)));
+          cfargs.push_back(PyLong_AsRword(item));
 
           Py_DECREF(index);
         }
 
         try {
           retCall = PyVMInstance_AsVMInstance(self)->callA(&retVal,
-                                                           reinterpret_cast<QBDI::rword>(PyLong_AsUnsignedLong(function)),
+                                                           PyLong_AsRword(function),
                                                            cfargs.size(),
                                                            cfargs.data());
         }
