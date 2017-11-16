@@ -155,6 +155,15 @@ namespace QBDI {
       /*! Returns the QBDI::VMInstance. */
       #define PyVMInstance_AsVMInstance(v) (((QBDI::Bindings::Python::VMInstance_Object*)(v))->vm)
 
+      /* Prototypes */
+      static PyObject* PyFPRState(const QBDI::FPRState*);
+      static PyObject* PyFPRState(void);
+      static PyObject* PyGPRState(const QBDI::GPRState*);
+      static PyObject* PyGPRState(void);
+      static PyObject* PyInstAnalysis(const QBDI::InstAnalysis*);
+      static PyObject* PyMemoryAccess(const QBDI::MemoryAccess&);
+      static PyObject* PyMemoryAccess(const QBDI::MemoryAccess*);
+      static PyObject* PyOperandAnalysis(const QBDI::OperandAnalysis*);
       static PyObject* PyVMInstance(QBDI::VMInstanceRef vm);
 
 
@@ -1559,7 +1568,7 @@ namespace QBDI {
 
 
       /* Trampoline for python callbacks */
-      static QBDI::VMAction trampoline(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBDI::FPRState *fprState, void *function) {
+      static QBDI::VMAction trampoline(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* function) {
         /* Create function arguments */
         PyObject* args = PyTuple_New(3);
         PyTuple_SetItem(args, 0, QBDI::Bindings::Python::PyVMInstance(vm));
@@ -1584,7 +1593,7 @@ namespace QBDI {
 
 
       /* Trampoline2 for python callbacks */
-      static QBDI::VMAction trampoline(QBDI::VMInstanceRef vm, const QBDI::VMState* vmState, QBDI::GPRState *gprState, QBDI::FPRState *fprState, void *function) {
+      static QBDI::VMAction trampoline(QBDI::VMInstanceRef vm, const QBDI::VMState* vmState, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* function) {
         return trampoline(vm, gprState, fprState, function);
       }
 
@@ -2733,6 +2742,12 @@ namespace QBDI {
         PyObject* main = PyImport_ImportModule("__main__");
         PyObject* dict = PyModule_GetDict(main);
         PyObject* pyqbdipreload_on_run = PyDict_GetItemString(dict, "pyqbdipreload_on_run");
+
+        /* Free unused resources */
+        Py_DECREF(main);
+        Py_DECREF(dict);
+
+        /* Execute the pyqbdipreload_on_run function if exists */
         if (pyqbdipreload_on_run != nullptr) {
           if (PyCallable_Check(pyqbdipreload_on_run)) {
             /* Create function arguments */
