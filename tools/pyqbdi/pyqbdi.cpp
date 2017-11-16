@@ -115,6 +115,12 @@ namespace QBDI {
         QBDI::MemoryAccess* memoryAccess;
       } MemoryAccess_Object;
 
+      //! pyOperandAnalysis object.
+      typedef struct {
+        PyObject_HEAD
+        QBDI::OperandAnalysis* operand;
+      } OperandAnalysis_Object;
+
       /*! Checks if the pyObject is a QBDI::InstAnalysis. */
       #define PyInstAnalysis_Check(v) ((v)->ob_type == &QBDI::Bindings::Python::InstAnalysis_Type)
 
@@ -138,6 +144,12 @@ namespace QBDI {
 
       /*! Returns the QBDI::MemoryAccess. */
       #define PyMemoryAccess_AsMemoryAccess(v) (((QBDI::Bindings::Python::MemoryAccess_Object*)(v))->memoryAccess)
+
+      /*! Checks if the pyObject is a QBDI::OperandAnalysis. */
+      #define PyOperandAnalysis_Check(v) ((v)->ob_type == &QBDI::Bindings::Python::OperandAnalysis_Type)
+
+      /*! Returns the QBDI::OperandAnalysis. */
+      #define PyOperandAnalysis_AsOperandAnalysis(v) (((QBDI::Bindings::Python::OperandAnalysis_Object*)(v))->operand)
 
 
       /* Returns a QBDI::rword from a PyLong object */
@@ -168,6 +180,119 @@ namespace QBDI {
         }
 
         return x;
+      }
+
+
+      /* PyOperandAnalysis destructor */
+      static void OperandAnalysis_dealloc(PyObject* self) {
+        std::cout << std::flush;
+        free(PyOperandAnalysis_AsOperandAnalysis(self));
+        Py_DECREF(self);
+      }
+
+
+      /* OperandAnalysis attributes */
+      static PyObject* OperandAnalysis_getattro(PyObject* self, PyObject* name) {
+        try {
+          if (std::string(PyString_AsString(name)) == "type")
+            return PyLong_FromLong(PyOperandAnalysis_AsOperandAnalysis(self)->type);
+
+          else if (std::string(PyString_AsString(name)) == "value")
+            return PyLong_FromLong(PyOperandAnalysis_AsOperandAnalysis(self)->value);
+
+          else if (std::string(PyString_AsString(name)) == "size")
+            return PyLong_FromLong(PyOperandAnalysis_AsOperandAnalysis(self)->size);
+
+          else if (std::string(PyString_AsString(name)) == "regOff")
+            return PyLong_FromLong(PyOperandAnalysis_AsOperandAnalysis(self)->regOff);
+
+          else if (std::string(PyString_AsString(name)) == "regCtxIdx")
+            return PyLong_FromLong(PyOperandAnalysis_AsOperandAnalysis(self)->regCtxIdx);
+
+          else if (std::string(PyString_AsString(name)) == "regName") {
+            const OperandAnalysis* operand = PyOperandAnalysis_AsOperandAnalysis(self);
+
+            if (operand->regName)
+              return PyString_FromString(operand->regName);
+
+            Py_RETURN_NONE;
+          }
+
+          else if (std::string(PyString_AsString(name)) == "regAccess")
+            return PyLong_FromLong(PyOperandAnalysis_AsOperandAnalysis(self)->regAccess);
+        }
+        catch (const std::exception& e) {
+          return PyErr_Format(PyExc_TypeError, "%s", e.what());
+        }
+
+        return PyObject_GenericGetAttr((PyObject *)self, name);
+      }
+
+
+      /* Description of the python representation of an OperandAnalysis */
+      PyTypeObject OperandAnalysis_Type = {
+        PyObject_HEAD_INIT(&PyType_Type)
+        0,                                          /* ob_size */
+        "OperandAnalysis",                          /* tp_name */
+        sizeof(OperandAnalysis_Object),             /* tp_basicsize */
+        0,                                          /* tp_itemsize */
+        OperandAnalysis_dealloc,                    /* tp_dealloc */
+        0,                                          /* tp_print */
+        0,                                          /* tp_getattr */
+        0,                                          /* tp_setattr */
+        0,                                          /* tp_compare */
+        0,                                          /* tp_repr */
+        0,                                          /* tp_as_number */
+        0,                                          /* tp_as_sequence */
+        0,                                          /* tp_as_mapping */
+        0,                                          /* tp_hash */
+        0,                                          /* tp_call */
+        0,                                          /* tp_str */
+        (getattrofunc)OperandAnalysis_getattro,     /* tp_getattro */
+        0,                                          /* tp_setattro */
+        0,                                          /* tp_as_buffer */
+        Py_TPFLAGS_DEFAULT,                         /* tp_flags */
+        "OperandtAnalysis objects",                 /* tp_doc */
+        0,                                          /* tp_traverse */
+        0,                                          /* tp_clear */
+        0,                                          /* tp_richcompare */
+        0,                                          /* tp_weaklistoffset */
+        0,                                          /* tp_iter */
+        0,                                          /* tp_iternext */
+        0,                                          /* tp_methods */
+        0,                                          /* tp_members */
+        0,                                          /* tp_getset */
+        0,                                          /* tp_base */
+        0,                                          /* tp_dict */
+        0,                                          /* tp_descr_get */
+        0,                                          /* tp_descr_set */
+        0,                                          /* tp_dictoffset */
+        0,                                          /* tp_init */
+        0,                                          /* tp_alloc */
+        0,                                          /* tp_new */
+        0,                                          /* tp_free */
+        0,                                          /* tp_is_gc */
+        0,                                          /* tp_bases */
+        0,                                          /* tp_mro */
+        0,                                          /* tp_cache */
+        0,                                          /* tp_subclasses */
+        0,                                          /* tp_weaklist */
+        0,                                          /* tp_del */
+        0                                           /* tp_version_tag */
+      };
+
+
+      static PyObject* PyOperandAnalysis(const QBDI::OperandAnalysis* operandAnalysis) {
+        OperandAnalysis_Object* object;
+
+        PyType_Ready(&OperandAnalysis_Type);
+        object = PyObject_NEW(OperandAnalysis_Object, &OperandAnalysis_Type);
+        if (object != NULL) {
+          object->operand = static_cast<QBDI::OperandAnalysis*>(malloc(sizeof(*operandAnalysis)));
+          std::memcpy(object->operand, operandAnalysis, sizeof(*operandAnalysis));
+        }
+
+        return (PyObject*)object;
       }
 
 
@@ -221,8 +346,25 @@ namespace QBDI {
           else if (std::string(PyString_AsString(name)) == "numOperands")
             return PyLong_FromLong(PyInstAnalysis_AsInstAnalysis(self)->numOperands);
 
-          else if (std::string(PyString_AsString(name)) == "symbol")
-            return PyString_FromString(PyInstAnalysis_AsInstAnalysis(self)->symbol);
+          else if (std::string(PyString_AsString(name)) == "operands") {
+            const InstAnalysis* inst = PyInstAnalysis_AsInstAnalysis(self);
+            PyObject* ret = PyList_New(inst->numOperands);
+
+            for (uint8_t i = 0; i < inst->numOperands; i++) {
+              PyList_SetItem(ret, i, PyOperandAnalysis(&(inst->operands[i])));
+            }
+
+            return ret;
+          }
+
+          else if (std::string(PyString_AsString(name)) == "symbol") {
+            const InstAnalysis* inst = PyInstAnalysis_AsInstAnalysis(self);
+
+            if (inst->symbol)
+              return PyString_FromString(inst->symbol);
+
+            Py_RETURN_NONE;
+          }
 
           else if (std::string(PyString_AsString(name)) == "symbolOffset")
             return PyLong_FromLong(PyInstAnalysis_AsInstAnalysis(self)->symbolOffset);
@@ -1414,7 +1556,7 @@ namespace QBDI {
 
       /* Trampoline for python callbacks */
       static QBDI::VMAction trampoline(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBDI::FPRState *fprState, void *function) {
-        const QBDI::InstAnalysis* instAnalysis = vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION | QBDI::ANALYSIS_DISASSEMBLY | QBDI::ANALYSIS_SYMBOL);
+        const QBDI::InstAnalysis* instAnalysis = vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION | QBDI::ANALYSIS_DISASSEMBLY | QBDI::ANALYSIS_SYMBOL | QBDI::ANALYSIS_OPERANDS);
 
         /* Create function arguments */
         PyObject* args = PyTuple_New(3);
