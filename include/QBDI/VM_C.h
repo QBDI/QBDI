@@ -164,6 +164,18 @@ QBDI_EXPORT bool qbdi_call(VMInstanceRef instance, rword* retval, rword function
  */
 QBDI_EXPORT bool qbdi_callV(VMInstanceRef instance, rword* retval, rword function, uint32_t argNum, va_list ap);
 
+/*! Call a function using the DBI (and its current state).
+ *
+ * @param[in] instance   VM instance.
+ * @param[in] [retval]   Pointer to the returned value (optional).
+ * @param[in] function   Address of the function start instruction.
+ * @param[in] argNum     The number of arguments in the variadic list.
+ * @param[in] ap         An stdarg va_list object.
+ *
+ * @return  True if at least one block has been executed.
+ */
+QBDI_EXPORT bool qbdi_callA(VMInstanceRef instance, rword* retval, rword function, uint32_t argNum, const rword* args);
+
 /*! Obtain the current general purpose register state.
  *
  * @param[in] instance  VM instance.

@@ -48,7 +48,7 @@ int main(int argc, char ** argv)
     // Add our binary to the instrumented range
     vm->addInstrumentedModuleFromAddr((QBDI::rword) &HW);
     // Call the hello world function
-    QBDI::simulateCall(state, 0x0, 0);
+    QBDI::simulateCall(state, 0x0);
     vm->run((QBDI::rword) HW, (QBDI::rword) 0x0);
 
     delete vm;

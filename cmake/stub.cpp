@@ -35,6 +35,7 @@ FORCE_EXPORT_C(removeAllInstrumentedRanges)
 FORCE_EXPORT_C(run)
 FORCE_EXPORT_C(call)
 FORCE_EXPORT_C(callV)
+FORCE_EXPORT_C(callA)
 FORCE_EXPORT_C(getGPRState)
 FORCE_EXPORT_C(getFPRState)
 FORCE_EXPORT_C(setGPRState)
@@ -58,17 +59,18 @@ FORCE_EXPORT_C(clearCache)
 FORCE_EXPORT_C(clearAllCache)
 
 // Logs
-FORCE_EXPORT(setLogOutput)
-FORCE_EXPORT(addLogFilter)
+FORCE_EXPORT_C(setLogOutput)
+FORCE_EXPORT_C(addLogFilter)
 
 // Memory
 FORCE_EXPORT(getCurrentProcessMaps)
 FORCE_EXPORT(getRemoteProcessMaps)
-FORCE_EXPORT(alignedAlloc)
-FORCE_EXPORT(alignedFree)
-FORCE_EXPORT(allocateVirtualStack)
-FORCE_EXPORT(simulateCall)
-FORCE_EXPORT(simulateCallV)
+FORCE_EXPORT_C(alignedAlloc)
+FORCE_EXPORT_C(alignedFree)
+FORCE_EXPORT_C(allocateVirtualStack)
+FORCE_EXPORT_C(simulateCall)
+FORCE_EXPORT_C(simulateCallV)
+FORCE_EXPORT_C(simulateCallA)
 static const void* dummy__getModuleNames1 _QBDI_FORCE_USE = (const void*) (std::vector<std::string> (*)())&(QBDI::getModuleNames);
 static const void* dummy__getModuleNames2 _QBDI_FORCE_USE = (const void*) (char** (*)(size_t*))&(QBDI::getModuleNames);
 

@@ -152,8 +152,7 @@ class QBDI_EXPORT VM {
      *
      * @param[in] [retval]   Pointer to the returned value (optional).
      * @param[in] function   Address of the function start instruction.
-     * @param[in] argNum     The number of arguments in the variadic list.
-     * @param[in] ...        A variadic list of arguments.
+     * @param[in] args       A list of arguments.
      *
      * @return  True if at least one block has been executed.
      *
@@ -166,10 +165,21 @@ class QBDI_EXPORT VM {
      *     QBDI::allocateVirtualStack(state, 0x1000000, &fakestack);
      *     vm->addInstrumentedModuleFromAddr(funcPtr);
      *     rword retVal;
-     *     vm->call(&retVal, funcPtr, 1, 42);
+     *     vm->call(&retVal, funcPtr, {42});
      *
      */
-    bool        call(rword* retval, rword function, uint32_t argNum, ...);
+    bool        call(rword* retval, rword function, const std::vector<rword>& args = {});
+
+    /*! Call a function using the DBI (and its current state).
+     *
+     * @param[in] [retval]   Pointer to the returned value (optional).
+     * @param[in] function   Address of the function start instruction.
+     * @param[in] argNum     The number of arguments in the array of arguments.
+     * @param[in] args       An array of arguments.
+     *
+     * @return  True if at least one block has been executed.
+     */
+    bool        callA(rword* retval, rword function, uint32_t argNum, const rword* args);
 
     /*! Call a function using the DBI (and its current state).
      *

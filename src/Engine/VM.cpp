@@ -154,18 +154,18 @@ bool VM::run(rword start, rword stop) {
 
 #define FAKE_RET_ADDR 42
 
-bool VM::callV(rword* retval, rword function, uint32_t argNum, va_list ap) {
+bool VM::callA(rword* retval, rword function, uint32_t argNum, const rword* args) {
     GPRState* state = nullptr;
 
     state = getGPRState();
-    RequireAction("VM::callV", state != nullptr, abort());
+    RequireAction("VM::callA", state != nullptr, abort());
 
     // a stack pointer must be set in state
     if (QBDI_GPR_GET(state, REG_SP) == 0) {
         return false;
     }
     // push arguments in current context
-    simulateCallV(state, FAKE_RET_ADDR, argNum, ap);
+    qbdi_simulateCallA(state, FAKE_RET_ADDR, argNum, args);
     // call function
     bool res = run(function, (rword) FAKE_RET_ADDR);
     // get return value from current state
@@ -175,11 +175,19 @@ bool VM::callV(rword* retval, rword function, uint32_t argNum, va_list ap) {
     return res;
 }
 
-bool VM::call(rword* retval, rword function, uint32_t argNum, ...) {
-    va_list ap;
-    va_start(ap, argNum);
-    bool res = callV(retval, function, argNum, ap);
-    va_end(ap);
+bool VM::call(rword* retval, rword function, const std::vector<rword>& args) {
+    return this->callA(retval, function, args.size(), args.data()); 
+}
+
+bool VM::callV(rword* retval, rword function, uint32_t argNum, va_list ap) {
+    rword* args = new rword[argNum];
+    for(uint32_t i = 0; i < argNum; i++) {
+        args[i] = va_arg(ap, rword);
+    }
+    
+    bool res = this->callA(retval, function, argNum, args);
+
+    delete[] args;
     return res;
 }
 

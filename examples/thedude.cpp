@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
     state = vm->getGPRState();
     // Setup initial GPR state, this fakestack will produce a ret NULL at the end of the execution
     QBDI::allocateVirtualStack(state, STACK_SIZE, &fakestack);
-    QBDI::simulateCall(state, FAKE_RET_ADDR, 0);
+    QBDI::simulateCall(state, FAKE_RET_ADDR);
 
     std::cout << "Running thedude() with trace level " << traceLevel << "..." << std::endl;
     // Select which part to instrument
