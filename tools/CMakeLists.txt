@@ -4,4 +4,7 @@ if(HAS_QBDIPRELOAD)
 
     # Add validator
     add_subdirectory(validator)
+
+    # Add pyqbdi
+    add_subdirectory(pyqbdi)
 endif()
