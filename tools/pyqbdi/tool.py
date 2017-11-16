@@ -10,4 +10,3 @@ def mycb(inst, gpr, fpr):
 if __name__ == '__main__':
     pyqbdi.addCodeCB(pyqbdi.PREINST, mycb)
     pyqbdi.run(pyqbdi.start, pyqbdi.stop)
-
