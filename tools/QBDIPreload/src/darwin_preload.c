@@ -41,7 +41,9 @@
     __attribute__((used)) static struct{ const void* replacment; const void* replacee; } _interpose_##_replacee \
     __attribute__ ((section ("__DATA,__interpose"))) = { (const void*)(unsigned long)&_replacment, (const void*)(unsigned long)&_replacee };
 
+#if defined(QBDI_ARCH_X86_64)
 static const uint8_t BRK_INS = 0xCC;
+#endif
 static const size_t STACK_SIZE = 8388608;
 
 static bool DEFAULT_HANDLER = false;
@@ -205,17 +207,23 @@ rword getEntrypointAddress() {
     return segaddr + slide + entryoff;
 }
 
-void catchEntrypoint() {
+void catchEntrypoint(int argc, char **argv) {
     int status = QBDIPRELOAD_NOT_HANDLED;
 
     unsetEntryBreakpoint();
     stopExceptionHandler(MAIN_EXCEPTION_HANDLER);
-   
-    if (!DEFAULT_HANDLER) {
-        status = qbdipreload_on_main();
-    }
 
-    if (status == QBDIPRELOAD_NOT_HANDLED) {
+#if defined(QBDI_ARCH_X86_64)
+    // detect legacy UNIXTHREAD start (push 0)
+    uint16_t *insn = (uint16_t*) ENTRY_GPR.rip;
+    if (*insn == 0x6a) {
+        argc = *(int*) ENTRY_GPR.rsp;
+        argv = (char**) ((rword) ENTRY_GPR.rsp + sizeof(rword));
+    }
+#endif
+    status = qbdipreload_on_main(argc, argv);
+
+    if (DEFAULT_HANDLER && (status == QBDIPRELOAD_NOT_HANDLED)) {
 #if defined(_QBDI_DEBUG)
         qbdi_addLogFilter("*", QBDI_DEBUG);
 #endif
@@ -252,12 +260,12 @@ void catchEntrypoint() {
 }
 
 kern_return_t redirectExec(
-	mach_port_t exception_port,
-	mach_port_t thread,
-	mach_port_t task,
-	exception_type_t exception,
-	mach_exception_data_t code,
-	mach_msg_type_number_t codeCnt
+    mach_port_t exception_port,
+    mach_port_t thread,
+    mach_port_t task,
+    exception_type_t exception,
+    mach_exception_data_t code,
+    mach_msg_type_number_t codeCnt
 ) {
     kern_return_t kr;
     x86_thread_state64_t threadState;
@@ -283,6 +291,10 @@ kern_return_t redirectExec(
 
     int status = qbdipreload_on_premain((void*) &threadState, (void*) &floatState);
 
+    // Copying the initial thread state
+    qbdipreload_threadCtxToGPRState(&threadState, &ENTRY_GPR);
+    qbdipreload_floatCtxToFPRState(&floatState, &ENTRY_FPR);
+
     // if not handled, use default handler
     if (status == QBDIPRELOAD_NOT_HANDLED) {
         DEFAULT_HANDLER = true;
@@ -295,10 +307,6 @@ kern_return_t redirectExec(
             fprintf(stderr, "Failed to allocate fake stack: %s\n", mach_error_string(kr));
             exit(QBDIPRELOAD_ERR_STARTUP_FAILED);
         }
-
-        // Copying the initial thread state
-        qbdipreload_threadCtxToGPRState(&threadState, &ENTRY_GPR);
-        qbdipreload_floatCtxToFPRState(&floatState, &ENTRY_FPR);
 
         // Swapping to fake stack
         threadState.__rbp = (uint64_t) newStack + STACK_SIZE - 8;

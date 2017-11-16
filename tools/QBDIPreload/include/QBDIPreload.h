@@ -105,9 +105,11 @@ extern int qbdipreload_on_premain(void *gprCtx, void *fpuCtx);
 /*! Function called when preload has successfully hijacked
  * the main thread and we are in place of the original main
  * function (with the same thread state).
+ * @param[in]   argc    Original argc
+ * @param[in]   argv    Original argv
  * @return      int     QBDIPreload state
  */
-extern int qbdipreload_on_main();
+extern int qbdipreload_on_main(int argc, char** argv);
 
 /*! Function called when preload is done and we have a valid
  * QBDI VM object on which we can call run (after some last initializations).

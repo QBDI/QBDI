@@ -153,16 +153,14 @@ void unsetEntryBreakpoint() {
     mprotect((void*) base, pageSize, PROT_READ | PROT_EXEC);
 }
 
-void catchEntrypoint() {
+void catchEntrypoint(int argc, char** argv) {
     int status = QBDIPRELOAD_NOT_HANDLED;
 
     unsetEntryBreakpoint();
 
-    if (!DEFAULT_HANDLER) {
-        status = qbdipreload_on_main();
-    }
+    status = qbdipreload_on_main(argc, argv);
 
-    if (status == QBDIPRELOAD_NOT_HANDLED) {
+    if (DEFAULT_HANDLER && (status == QBDIPRELOAD_NOT_HANDLED)) {
 #if defined(_QBDI_DEBUG)
         qbdi_addLogFilter("*", QBDI_DEBUG);
 #endif
@@ -213,13 +211,14 @@ void redirectExec(int signum, siginfo_t *info, void* data) {
 
     int status = qbdipreload_on_premain((void*) uap, (void*) uap);
 
+    // Copying the initial thread state
+    qbdipreload_threadCtxToGPRState(uap, &ENTRY_GPR);
+    qbdipreload_floatCtxToFPRState(uap, &ENTRY_FPR);
+
     // if not handled, use default handler
     if (status == QBDIPRELOAD_NOT_HANDLED) {
         DEFAULT_HANDLER = true;
         void* newStack = mmap(NULL, STACK_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
-
-        qbdipreload_threadCtxToGPRState(uap, &ENTRY_GPR);
-        qbdipreload_floatCtxToFPRState(uap, &ENTRY_FPR);
 
 #if defined(QBDI_ARCH_X86_64)
         uap->uc_mcontext.gregs[REG_RSP] = (uint64_t) newStack + STACK_SIZE - 8;
