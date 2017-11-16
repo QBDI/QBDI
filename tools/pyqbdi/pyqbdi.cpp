@@ -2460,6 +2460,10 @@ namespace QBDI {
         }
 
         /* Initialize enums */
+        PyModule_AddObject(QBDI::Bindings::Python::module, "ANALYSIS_DISASSEMBLY",  PyInt_FromLong(QBDI::ANALYSIS_DISASSEMBLY));
+        PyModule_AddObject(QBDI::Bindings::Python::module, "ANALYSIS_INSTRUCTION",  PyInt_FromLong(QBDI::ANALYSIS_INSTRUCTION));
+        PyModule_AddObject(QBDI::Bindings::Python::module, "ANALYSIS_OPERANDS",     PyInt_FromLong(QBDI::ANALYSIS_OPERANDS));
+        PyModule_AddObject(QBDI::Bindings::Python::module, "ANALYSIS_SYMBOL",       PyInt_FromLong(QBDI::ANALYSIS_SYMBOL));
         PyModule_AddObject(QBDI::Bindings::Python::module, "BASIC_BLOCK_ENTRY",     PyInt_FromLong(QBDI::BASIC_BLOCK_ENTRY));
         PyModule_AddObject(QBDI::Bindings::Python::module, "BASIC_BLOCK_EXIT",      PyInt_FromLong(QBDI::BASIC_BLOCK_EXIT));
         PyModule_AddObject(QBDI::Bindings::Python::module, "BASIC_BLOCK_NEW",       PyInt_FromLong(QBDI::BASIC_BLOCK_NEW));
