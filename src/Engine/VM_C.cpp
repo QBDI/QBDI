@@ -108,6 +108,11 @@ bool qbdi_callV(VMInstanceRef instance, rword* retval, rword function, uint32_t 
     return ((VM*) instance)->callV(retval, function, argNum, ap);
 }
 
+bool qbdi_callA(VMInstanceRef instance, rword* retval, rword function, uint32_t argNum, const rword* args) {
+    RequireAction("VM_C::callA", instance, return false);
+    return ((VM*) instance)->callA(retval, function, argNum, args);
+}
+
 GPRState* qbdi_getGPRState(VMInstanceRef instance) {
     RequireAction("VM_C::getGPRState", instance, return nullptr);
     return ((VM*) instance)->getGPRState();

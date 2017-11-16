@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
     if(n < 1) {
         n = 1;
     }
-    QBDI::simulateCall(state, FAKE_RET_ADDR, 1, (QBDI::rword) n);
+    QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) n});
 
     std::cout << "Running fibonacci(" << n << ") ..." << std::endl;
     // Instrument everything

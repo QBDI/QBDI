@@ -413,7 +413,8 @@ bool qbdi_allocateVirtualStack(GPRState *ctx, uint32_t stackSize, uint8_t **stac
     return true;
 }
 
-void qbdi_simulateCallV(GPRState *ctx, rword returnAddress, uint32_t argNum, va_list ap) {
+void qbdi_simulateCallA(GPRState *ctx, rword returnAddress, uint32_t argNum, const rword* args) {
+    uint32_t i = 0;
     uint32_t argsoff = 0;
     uint32_t limit = FRAME_LENGTH;
 
@@ -429,7 +430,7 @@ void qbdi_simulateCallV(GPRState *ctx, rword returnAddress, uint32_t argNum, va_
     ctx->lr = returnAddress;
 #endif
 
-#define UNSTACK_ARG(REG) if (argNum > 0) { ctx->REG = va_arg(ap, rword); argNum--; }
+#define UNSTACK_ARG(REG) if (i < argNum) { ctx->REG = args[i++]; }
 #if defined(QBDI_ARCH_X86_64)
  #if defined(QBDI_OS_WIN)
     // Shadow space
@@ -459,9 +460,18 @@ void qbdi_simulateCallV(GPRState *ctx, rword returnAddress, uint32_t argNum, va_
 
     // Push remaining args on the stack
     rword* frame = (rword*) QBDI_GPR_GET(ctx, REG_SP);
-    for (uint32_t i = 0; i < argNum && i < limit; i++) {
-        frame[argsoff + i] = va_arg(ap, rword);
+    for (uint32_t j = 0; (i + j) < argNum && j < limit; j++) {
+        frame[argsoff + j] = args[i + j];
     }
+}
+
+void qbdi_simulateCallV(GPRState *ctx, rword returnAddress, uint32_t argNum, va_list ap) {
+    rword* args = new rword[argNum];
+    for(uint32_t i = 0; i < argNum; i++) {
+        args[i] = va_arg(ap, rword);
+    }
+    qbdi_simulateCallA(ctx, returnAddress, argNum, args);
+    delete[] args;
 }
 
 void qbdi_simulateCall(GPRState *ctx, rword returnAddress, uint32_t argNum, ...) {

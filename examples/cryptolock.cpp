@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
     // Setup initial GPR state, this fakestack will produce a ret FAKE_RET_ADDR at the end of the execution
     // Also setup one argument on the stack which is the password string
     QBDI::allocateVirtualStack(state, STACK_SIZE, &fakestack);
-    QBDI::simulateCall(state, FAKE_RET_ADDR, 1, argv[1]);
+    QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) argv[1]});
 
     std::cout << "Running cryptolock(\"" << argv[1] <<"\")" << std::endl;
     vm->run((QBDI::rword) cryptolock, (QBDI::rword) FAKE_RET_ADDR);

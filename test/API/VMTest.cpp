@@ -123,7 +123,7 @@ void VMTest::TearDown() {
 
 
 TEST_F(VMTest, Call0) {
-    QBDI::simulateCall(state, FAKE_RET_ADDR, 0);
+    QBDI::simulateCall(state, FAKE_RET_ADDR);
 
     vm->run((QBDI::rword) dummyFun0, (QBDI::rword) FAKE_RET_ADDR);
     QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -134,7 +134,7 @@ TEST_F(VMTest, Call0) {
 
 
 TEST_F(VMTest, Call1) {
-    QBDI::simulateCall(state, FAKE_RET_ADDR, 1, 42);
+    QBDI::simulateCall(state, FAKE_RET_ADDR, {42});
 
     vm->run((QBDI::rword) dummyFun1, (QBDI::rword) FAKE_RET_ADDR);
     QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -145,7 +145,7 @@ TEST_F(VMTest, Call1) {
 
 
 TEST_F(VMTest, Call4) {
-    QBDI::simulateCall(state, FAKE_RET_ADDR, 4, 1, 2, 3, 5);
+    QBDI::simulateCall(state, FAKE_RET_ADDR, {1, 2, 3, 5});
 
     vm->run((QBDI::rword) dummyFun4, (QBDI::rword) FAKE_RET_ADDR);
     QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -156,7 +156,7 @@ TEST_F(VMTest, Call4) {
 
 
 TEST_F(VMTest, Call5) {
-    QBDI::simulateCall(state, FAKE_RET_ADDR, 5, 1, 2, 3, 5, 8);
+    QBDI::simulateCall(state, FAKE_RET_ADDR, {1, 2, 3, 5, 8});
 
     vm->run((QBDI::rword) dummyFun5, (QBDI::rword) FAKE_RET_ADDR);
     QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -166,7 +166,7 @@ TEST_F(VMTest, Call5) {
 }
 
 TEST_F(VMTest, Call8) {
-    QBDI::simulateCall(state, FAKE_RET_ADDR, 8, 1, 2, 3, 5, 8, 13, 21, 34);
+    QBDI::simulateCall(state, FAKE_RET_ADDR, {1, 2, 3, 5, 8, 13, 21, 34});
 
     vm->run((QBDI::rword) dummyFun8, (QBDI::rword) FAKE_RET_ADDR);
     QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -177,7 +177,7 @@ TEST_F(VMTest, Call8) {
 
 
 TEST_F(VMTest, ExternalCall) {
-    QBDI::simulateCall(state, FAKE_RET_ADDR, 1, 42);
+    QBDI::simulateCall(state, FAKE_RET_ADDR, {42});
 
     vm->run((QBDI::rword) dummyFunCall, (QBDI::rword) FAKE_RET_ADDR);
     QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -210,7 +210,7 @@ QBDI::VMAction evilCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBDI::F
 
 TEST_F(VMTest, InstCallback) {
     QBDI::rword info[2] = {42, 0};
-    QBDI::simulateCall(state, FAKE_RET_ADDR, 1, info[0]);
+    QBDI::simulateCall(state, FAKE_RET_ADDR, {info[0]});
 
     QBDI::rword rstart = (QBDI::rword) &satanicFun;
     QBDI::rword rend = (QBDI::rword) (((uint8_t*) &satanicFun) + 100);
@@ -315,7 +315,7 @@ TEST_F(VMTest, MnemCallback) {
                                          QBDI::InstPosition::PREINST,
                                          evilMnemCbk, &info);
 
-    bool ran = vm->call(&retval, (QBDI::rword) satanicFun, 1, info[0]);
+    bool ran = vm->call(&retval, (QBDI::rword) satanicFun, {info[0]});
     ASSERT_TRUE(ran);
 
     EXPECT_EQ(retval, (QBDI::rword) satanicFun(info[0]));
@@ -369,7 +369,7 @@ QBDI::VMAction checkTransfer(QBDI::VMInstanceRef vm, const QBDI::VMState *state,
 
 TEST_F(VMTest, VMEvent_ExecTransfer) {
     int s = 0;
-    QBDI::simulateCall(state, FAKE_RET_ADDR, 1, 42);
+    QBDI::simulateCall(state, FAKE_RET_ADDR, {42});
     bool instrumented = vm->addInstrumentedModuleFromAddr((QBDI::rword)&dummyFunCall);
     ASSERT_TRUE(instrumented);
     uint32_t id = vm->addVMEventCB(QBDI::VMEvent::EXEC_TRANSFER_CALL, checkTransfer, (void*) &s);
@@ -399,7 +399,7 @@ TEST_F(VMTest, CacheInvalidation) {
 
     count1 = 0;
     count2 = 0;
-    QBDI::simulateCall(state, FAKE_RET_ADDR, 4, 1, 2, 3, 4);
+    QBDI::simulateCall(state, FAKE_RET_ADDR, {1, 2, 3, 4});
     bool ran = vm->run((QBDI::rword) dummyFun4, (QBDI::rword) FAKE_RET_ADDR);
     ASSERT_TRUE(ran);
     QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -412,7 +412,7 @@ TEST_F(VMTest, CacheInvalidation) {
 
     count1 = 0;
     count2 = 0;
-    QBDI::simulateCall(state, FAKE_RET_ADDR, 5, 1, 2, 3, 4, 5);
+    QBDI::simulateCall(state, FAKE_RET_ADDR, {1, 2, 3, 4, 5});
     ran = vm->run((QBDI::rword) dummyFun5, (QBDI::rword) FAKE_RET_ADDR);
     ASSERT_TRUE(ran);
     ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -424,7 +424,7 @@ TEST_F(VMTest, CacheInvalidation) {
 
     count1 = 0;
     count2 = 0;
-    QBDI::simulateCall(state, FAKE_RET_ADDR, 4, 1, 2, 3, 4);
+    QBDI::simulateCall(state, FAKE_RET_ADDR, {1, 2, 3, 4});
     ran = vm->run((QBDI::rword) dummyFun4, (QBDI::rword) FAKE_RET_ADDR);
     ASSERT_TRUE(ran);
     ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -434,7 +434,7 @@ TEST_F(VMTest, CacheInvalidation) {
 
     count1 = 0;
     count2 = 0;
-    QBDI::simulateCall(state, FAKE_RET_ADDR, 5, 1, 2, 3, 4, 5);
+    QBDI::simulateCall(state, FAKE_RET_ADDR, {1, 2, 3, 4, 5});
     ran = vm->run((QBDI::rword) dummyFun5, (QBDI::rword) FAKE_RET_ADDR);
     ASSERT_TRUE(ran);
     ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -446,7 +446,7 @@ TEST_F(VMTest, CacheInvalidation) {
     
     count1 = 0;
     count2 = 0;
-    QBDI::simulateCall(state, FAKE_RET_ADDR, 5, 1, 2, 3, 4, 5);
+    QBDI::simulateCall(state, FAKE_RET_ADDR, {1, 2, 3, 4, 5});
     ran = vm->run((QBDI::rword) dummyFun5, (QBDI::rword) FAKE_RET_ADDR);
     ASSERT_TRUE(ran);
     ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -458,7 +458,7 @@ TEST_F(VMTest, CacheInvalidation) {
 
     count1 = 0;
     count2 = 0;
-    QBDI::simulateCall(state, FAKE_RET_ADDR, 4, 1, 2, 3, 4);
+    QBDI::simulateCall(state, FAKE_RET_ADDR, {1, 2, 3, 4});
     ran = vm->run((QBDI::rword) dummyFun4, (QBDI::rword) FAKE_RET_ADDR);
     ASSERT_TRUE(ran);
     ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -468,7 +468,7 @@ TEST_F(VMTest, CacheInvalidation) {
 
     count1 = 0;
     count2 = 0;
-    QBDI::simulateCall(state, FAKE_RET_ADDR, 5, 1, 2, 3, 4, 5);
+    QBDI::simulateCall(state, FAKE_RET_ADDR, {1, 2, 3, 4, 5});
     ran = vm->run((QBDI::rword) dummyFun5, (QBDI::rword) FAKE_RET_ADDR);
     ASSERT_TRUE(ran);
     ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -521,7 +521,7 @@ TEST_F(VMTest, DelayedCacheFlush) {
     info.instID = vm->addCodeRangeCB((QBDI::rword) dummyFun4, ((QBDI::rword) dummyFun4) + 10, 
                                     QBDI::InstPosition::POSTINST, funkyCountInstruction, &info);
 
-    QBDI::simulateCall(state, FAKE_RET_ADDR, 4, 1, 2, 3, 4);
+    QBDI::simulateCall(state, FAKE_RET_ADDR, {1, 2, 3, 4});
     bool ran = vm->run((QBDI::rword) dummyFun4, (QBDI::rword) FAKE_RET_ADDR);
     ASSERT_TRUE(ran);
     QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);

@@ -143,10 +143,20 @@ QBDI_EXPORT void qbdi_simulateCall(GPRState *ctx, rword returnAddress, uint32_t 
  *  @param[in] ctx           GPRState where the simulated call will be setup. The state needs to 
  *                           point to a valid stack for example setup with allocateVirtualStack().
  *  @param[in] returnAddress Return address of the call to simulate.
- *  @param[in] argNum        The number of arguments in the variadic list.
+ *  @param[in] argNum        The number of arguments in the va_list object.
  *  @param[in] ap            An stdarg va_list object.
  */
 QBDI_EXPORT void qbdi_simulateCallV(GPRState *ctx, rword returnAddress, uint32_t argNum, va_list ap);
+
+/*! Simulate a call by modifying the stack and registers accordingly (C array version).
+ *
+ *  @param[in] ctx           GPRState where the simulated call will be setup. The state needs to 
+ *                           point to a valid stack for example setup with allocateVirtualStack().
+ *  @param[in] returnAddress Return address of the call to simulate.
+ *  @param[in] argNum        The number of arguments in the array args.
+ *  @param[in] args          An array or arguments.
+ */
+QBDI_EXPORT void qbdi_simulateCallA(GPRState *ctx, rword returnAddress, uint32_t argNum, const rword* args);
 
 #ifdef __cplusplus
 /*
@@ -201,20 +211,15 @@ inline bool allocateVirtualStack(GPRState *ctx, uint32_t stackSize, uint8_t **st
     return qbdi_allocateVirtualStack(ctx, stackSize, stack);
 }
 
-/*! Simulate a call by modifying the stack and registers accordingly.
+/*! Simulate a call by modifying the stack and registers accordingly (std::vector version).
  *
  *  @param[in] ctx           GPRState where the simulated call will be setup. The state needs to 
  *                           point to a valid stack for example setup with allocateVirtualStack().
  *  @param[in] returnAddress Return address of the call to simulate.
- *  @param[in] argNum        The number of arguments in the variadic list.
- *  @param[in] ...           A variadic list of arguments.
+ *  @param[in] args          A list of arguments.
  */
-inline void simulateCall(GPRState *ctx, rword returnAddress, uint32_t argNum, ...) {
-    va_list  ap;
-    // Handle the arguments
-    va_start(ap, argNum);
-    qbdi_simulateCallV(ctx, returnAddress, argNum, ap);
-    va_end(ap);
+inline void simulateCall(GPRState *ctx, rword returnAddress, const std::vector<rword>& args = {}) {
+    qbdi_simulateCallA(ctx, returnAddress, args.size(), args.data());
 }
 
 /*! Simulate a call by modifying the stack and registers accordingly (stdarg version).
@@ -222,12 +227,25 @@ inline void simulateCall(GPRState *ctx, rword returnAddress, uint32_t argNum, ..
  *  @param[in] ctx           GPRState where the simulated call will be setup. The state needs to 
  *                           point to a valid stack for example setup with allocateVirtualStack().
  *  @param[in] returnAddress Return address of the call to simulate.
- *  @param[in] argNum        The number of arguments in the variadic list.
+ *  @param[in] argNum        The number of arguments in the va_list object.
  *  @param[in] ap            An stdarg va_list object.
  */
 inline void simulateCallV(GPRState *ctx, rword returnAddress, uint32_t argNum, va_list ap) {
-    return qbdi_simulateCallV(ctx, returnAddress, argNum, ap);
+    qbdi_simulateCallV(ctx, returnAddress, argNum, ap);
 }
+
+/*! Simulate a call by modifying the stack and registers accordingly (C array version).
+ *
+ *  @param[in] ctx           GPRState where the simulated call will be setup. The state needs to 
+ *                           point to a valid stack for example setup with allocateVirtualStack().
+ *  @param[in] returnAddress Return address of the call to simulate.
+ *  @param[in] argNum        The number of arguments in the array args.
+ *  @param[in] args          An array or arguments.
+ */
+inline void simulateCallA(GPRState *ctx, rword returnAddress, uint32_t argNum, const rword* args) {
+    qbdi_simulateCallA(ctx, returnAddress, argNum, args);
+}
+
 
 }
 }
