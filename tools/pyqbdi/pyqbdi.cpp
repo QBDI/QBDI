@@ -14,7 +14,7 @@
 **
 ** Syntax:
 **
-**   $ LD_PRELOAD=./libpyqbdi.so PYQBDI_TOOL=./tool.py /usr/bin/id
+**   $ LD_PRELOAD=./build/tools/pyqbdi/libpyqbdi.so PYQBDI_TOOL=./examples/pyqbdi/trace_inst.py /usr/bin/id
 **
 **
 ** Exemple of tool:
