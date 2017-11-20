@@ -322,8 +322,14 @@ namespace QBDI {
       /* InstAnalysis attributes */
       static PyObject* InstAnalysis_getattro(PyObject* self, PyObject* name) {
         try {
-          if (std::string(PyString_AsString(name)) == "mnemonic")
-            return PyString_FromString(PyInstAnalysis_AsInstAnalysis(self)->mnemonic);
+          if (std::string(PyString_AsString(name)) == "mnemonic") {
+            const InstAnalysis* inst = PyInstAnalysis_AsInstAnalysis(self);
+
+            if (inst->mnemonic)
+              return PyString_FromString(inst->mnemonic);
+
+            Py_RETURN_NONE;
+          }
 
           else if (std::string(PyString_AsString(name)) == "address")
             return PyLong_FromLong(PyInstAnalysis_AsInstAnalysis(self)->address);
@@ -355,8 +361,14 @@ namespace QBDI {
           else if (std::string(PyString_AsString(name)) == "mayStore")
             return PyBool_FromLong(PyInstAnalysis_AsInstAnalysis(self)->mayStore);
 
-          else if (std::string(PyString_AsString(name)) == "disassembly")
-            return PyString_FromString(PyInstAnalysis_AsInstAnalysis(self)->disassembly);
+          else if (std::string(PyString_AsString(name)) == "disassembly") {
+            const InstAnalysis* inst = PyInstAnalysis_AsInstAnalysis(self);
+
+            if (inst->disassembly)
+              return PyString_FromString(PyInstAnalysis_AsInstAnalysis(self)->disassembly);
+
+            Py_RETURN_NONE;
+          }
 
           else if (std::string(PyString_AsString(name)) == "numOperands")
             return PyLong_FromLong(PyInstAnalysis_AsInstAnalysis(self)->numOperands);
@@ -383,9 +395,6 @@ namespace QBDI {
 
           else if (std::string(PyString_AsString(name)) == "symbolOffset")
             return PyLong_FromLong(PyInstAnalysis_AsInstAnalysis(self)->symbolOffset);
-
-          else if (std::string(PyString_AsString(name)) == "analysisType")
-            return PyLong_FromLong(PyInstAnalysis_AsInstAnalysis(self)->analysisType);
         }
         catch (const std::exception& e) {
           return PyErr_Format(PyExc_TypeError, "%s", e.what());
@@ -2209,12 +2218,21 @@ namespace QBDI {
       *
       * @return A InstAnalysis structure containing the analysis result.
       */
-      static PyObject* vm_getInstAnalysis(PyObject* self, PyObject* type) {
-        if (!PyLong_Check(type) && !PyInt_Check(type))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::getInstAnalysis(): Expects an AnalysisType as first argument.");
+      static PyObject* vm_getInstAnalysis(PyObject* self, PyObject* args) {
+        PyObject* type = nullptr;
+
+        /* Extract arguments */
+        PyArg_ParseTuple(args, "|O", &type);
 
         try {
-          return PyInstAnalysis(PyVMInstance_AsVMInstance(self)->getInstAnalysis(static_cast<QBDI::AnalysisType>(PyLong_AsLong(type))));
+          if (type == nullptr)
+            return PyInstAnalysis(PyVMInstance_AsVMInstance(self)->getInstAnalysis());
+
+          else if (PyLong_Check(type) || PyInt_Check(type))
+            return PyInstAnalysis(PyVMInstance_AsVMInstance(self)->getInstAnalysis(static_cast<QBDI::AnalysisType>(PyLong_AsLong(type))));
+
+          else
+            return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::getInstAnalysis(): Expects an AnalysisType as first argument or no argument.");
         }
         catch (const std::exception& e) {
           return PyErr_Format(PyExc_TypeError, "%s", e.what());
@@ -2526,7 +2544,7 @@ namespace QBDI {
         {"getBBMemoryAccess",                 (PyCFunction)vm_getBBMemoryAccess,                  METH_NOARGS,   "Obtain the memory accesses made by the last executed basic block."},
         {"getFPRState",                       (PyCFunction)vm_getFPRState,                        METH_NOARGS,   "Obtain the current floating point register state."},
         {"getGPRState",                       (PyCFunction)vm_getGPRState,                        METH_NOARGS,   "Obtain the current general purpose register state."},
-        {"getInstAnalysis",                   (PyCFunction)vm_getInstAnalysis,                    METH_O,        "Obtain the analysis of an instruction metadata."},
+        {"getInstAnalysis",                   (PyCFunction)vm_getInstAnalysis,                    METH_VARARGS,  "Obtain the analysis of an instruction metadata."},
         {"getInstMemoryAccess",               (PyCFunction)vm_getInstMemoryAccess,                METH_NOARGS,   "Obtain the memory accesses made by the last executed instruction."},
         {"instrumentAllExecutableMaps",       (PyCFunction)vm_instrumentAllExecutableMaps,        METH_NOARGS,   "Adds all the executable memory maps to the instrumented range set."},
         {"precacheBasicBlock",                (PyCFunction)vm_precacheBasicBlock,                 METH_O,        "Pre-cache a known basic block"},
@@ -2804,9 +2822,21 @@ int QBDI::qbdipreload_on_main(int argc, char** argv) {
 
 
 int QBDI::qbdipreload_on_run(QBDI::VMInstanceRef vm, QBDI::rword start, QBDI::rword stop) {
-  QBDI::Bindings::Python::init();
-  if(const char* fileTool = std::getenv("PYQBDI_TOOL"))
+  const char* fileTool = std::getenv("PYQBDI_TOOL");
+
+  if (fileTool == nullptr) {
+    std::cerr << "QBDI::qbdipreload_on_run(): PYQBDI_TOOL not found !" << std::endl;
+    exit(1);
+  }
+
+  try {
+    QBDI::Bindings::Python::init();
     QBDI::Bindings::Python::execScript(fileTool, vm, start, stop);
+  }
+  catch (const std::exception& e) {
+    std::cerr << e.what() << std::endl;
+    exit(1);
+  }
 
   return QBDIPRELOAD_NO_ERROR;
 }
