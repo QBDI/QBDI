@@ -445,7 +445,7 @@ std::vector<ShadowInfo> ExecBlock::queryShadowBySeq(uint16_t seqID, uint16_t tag
     std::vector<ShadowInfo> result;
 
     for(const auto& reg: shadowRegistry) {
-        if((seqID  == ANY || reg.seqID  == seqID)  &&
+        if((seqID == ANY || reg.seqID  == seqID)  &&
            (tag   == ANY || reg.tag   == tag)) {
             result.push_back(reg);
         }

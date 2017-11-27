@@ -75,7 +75,7 @@ _QBDI_ENABLE_BITMASK_OPERATORS(AnalysisType)
  */
 typedef struct {
     // ANALYSIS_INSTRUCTION
-    const char* mnemonic;           /*!< LLVM mnemonic */
+    const char* mnemonic;           /*!< LLVM mnemonic (warning: NULL if !ANALYSIS_INSTRUCTION) */
     rword       address;            /*!< Instruction address */
     uint32_t    instSize;           /*!< Instruction size (in bytes) */
     bool        affectControlFlow;  /*!< true if instruction affects control flow */
@@ -87,13 +87,15 @@ typedef struct {
     bool        mayLoad;            /*!< true if instruction 'may' load data from memory */
     bool        mayStore;           /*!< true if instruction 'may' store data to memory */
     // ANALISYS_DISASSEMBLY
-    char*       disassembly;        /*!< Instruction disassembly */
+    char*       disassembly;        /*!< Instruction disassembly (warning: NULL if !ANALISYS_DISASSEMBLY) */
     // ANALYSIS_OPERANDS
     uint8_t     numOperands;        /*!< Number of operands used by the instruction */
-    OperandAnalysis* operands;      /*!< Structure containing analysis results of an operand provided by the VM. */
+    OperandAnalysis* operands;      /*!< Structure containing analysis results of an operand provided by the VM.
+                                         (warning: NULL if !ANALYSIS_OPERANDS) */
     // ANALYSIS_SYMBOL
-    const char* symbol;             /*!< Instruction symbol */
+    const char* symbol;             /*!< Instruction symbol (warning: NULL if !ANALYSIS_SYMBOL or not found) */
     uint32_t    symbolOffset;       /*!< Instruction symbol offset */
+    const char* module;             /*!< Instruction module name (warning: NULL if !ANALYSIS_SYMBOL or not found) */
     // INTERNAL
     uint32_t    analysisType;       /*!< INTERNAL: Instruction analysis type (this should NOT be used) */
 } InstAnalysis;

@@ -127,7 +127,7 @@ struct StructDesc OperandAnalysisDesc {
 
 struct StructDesc InstAnalysisDesc {
     sizeof(InstAnalysis),
-    16,
+    17,
     {
         offsetof(InstAnalysis, mnemonic),
         offsetof(InstAnalysis, disassembly),
@@ -145,6 +145,7 @@ struct StructDesc InstAnalysisDesc {
         offsetof(InstAnalysis, operands),
         offsetof(InstAnalysis, symbol),
         offsetof(InstAnalysis, symbolOffset),
+        offsetof(InstAnalysis, module),
     }
 };
 

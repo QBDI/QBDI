@@ -554,11 +554,20 @@ const InstAnalysis* ExecBlockManager::analyzeInstMetadata(const InstMetadata* in
         // find nearest symbol (if any)
 #ifndef QBDI_OS_WIN
         Dl_info info;
+        const char* ptr;
 
         int ret = dladdr((void*) instAnalysis->address, &info);
-        if (ret != 0 && info.dli_sname) {
-            instAnalysis->symbol = info.dli_sname;
-            instAnalysis->symbolOffset = instAnalysis->address - (rword) info.dli_saddr;
+        if (ret != 0) {
+            if (info.dli_sname) {
+                instAnalysis->symbol = info.dli_sname;
+                instAnalysis->symbolOffset = instAnalysis->address - (rword) info.dli_saddr;
+            }
+            if (info.dli_fname) {
+                // dirty basename, but thead safe
+                if((ptr = strrchr(info.dli_fname, '/')) != nullptr) {
+                    instAnalysis->module = ptr + 1;
+                }
+            }
         }
 #endif
     }

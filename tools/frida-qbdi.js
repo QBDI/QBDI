@@ -1259,6 +1259,13 @@ function QBDI() {
         }
         p = ptr.add(instAnalysisStructDesc.offsets[15]);
         analysis.symbolOffset = Memory.readU32(p);
+        p = ptr.add(instAnalysisStructDesc.offsets[16]);
+        var modulePtr = Memory.readPointer(p);
+        if (!modulePtr.isNull()) {
+            analysis.module = Memory.readCString(modulePtr);
+        } else {
+            analysis.module = "";
+        }
         Object.freeze(analysis);
         return analysis;
     }
