@@ -2771,6 +2771,10 @@ namespace QBDI {
         PyModule_AddObject(QBDI::Bindings::Python::module, "STOP",                  PyInt_FromLong(QBDI::STOP));
         PyModule_AddObject(QBDI::Bindings::Python::module, "SYSCALL_ENTRY",         PyInt_FromLong(QBDI::SYSCALL_ENTRY));
         PyModule_AddObject(QBDI::Bindings::Python::module, "SYSCALL_EXIT",          PyInt_FromLong(QBDI::SYSCALL_EXIT));
+        PyModule_AddObject(QBDI::Bindings::Python::module, "VERSION_MAJOR",         PyInt_FromLong(QBDI_VERSION_MAJOR));
+        PyModule_AddObject(QBDI::Bindings::Python::module, "VERSION_MINOR",         PyInt_FromLong(QBDI_VERSION_MINOR));
+        PyModule_AddObject(QBDI::Bindings::Python::module, "VERSION_PATCH",         PyInt_FromLong(QBDI_VERSION_PATCH));
+        PyModule_AddObject(QBDI::Bindings::Python::module, "VERSION_STRING",        PyString_FromString(QBDI_VERSION_STRING));
       }
 
 
