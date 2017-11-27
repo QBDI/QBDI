@@ -84,6 +84,10 @@ VMAction memWriteGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, 
     return action;
 }
 
+VMAction stopCallback(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
+    return VMAction::STOP;
+}
+
 VM::VM(const std::string& cpu, const std::vector<std::string>& mattrs) :
     memoryLoggingLevel(0), memCBID(0), memReadGateCBID(VMError::INVALID_EVENTID), memWriteGateCBID(VMError::INVALID_EVENTID) {
     engine = new Engine(cpu, mattrs, this);
@@ -149,7 +153,10 @@ bool VM::removeInstrumentedModuleFromAddr(rword addr) {
 }
 
 bool VM::run(rword start, rword stop) {
-    return engine->run(start, stop);
+    uint32_t stopCB = addCodeAddrCB(stop, InstPosition::PREINST, stopCallback, nullptr);
+    bool ret = engine->run(start, stop);
+    deleteInstrumentation(stopCB);
+    return ret;
 }
 
 #define FAKE_RET_ADDR 42
