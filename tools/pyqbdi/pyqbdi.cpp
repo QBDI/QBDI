@@ -2307,38 +2307,6 @@ namespace QBDI {
       }
 
 
-      /*! Read a memory content from a base address.
-       *
-       * @param[in] address   Base address.
-       * @param[in] size      Read size.
-       *
-       * @return Bytes of content.
-       */
-      static PyObject* vm_readMemory(PyObject* self, PyObject* args) {
-        PyObject* address = nullptr;
-        PyObject* size    = nullptr;
-        PyObject* ret     = nullptr;
-
-        /* Extract arguments */
-        PyArg_ParseTuple(args, "|OO", &address, &size);
-
-        if (address == nullptr || (!PyLong_Check(address) && !PyInt_Check(address)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::readMemory(): Expects an integer as first argument.");
-
-        if (size == nullptr || (!PyLong_Check(size) && !PyInt_Check(size)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::readMemory(): Expects an integer as second argument.");
-
-        try {
-          ret = PyBytes_FromStringAndSize(reinterpret_cast<const char*>(PyLong_AsRword(address)), PyLong_AsLong(size));
-        }
-        catch (const std::exception& e) {
-          return PyErr_Format(PyExc_TypeError, "%s", e.what());
-        }
-
-        return ret;
-      }
-
-
       /*! Add instrumentation rules to log memory access using inline instrumentation and
        *  instruction shadows.
        *
@@ -2548,7 +2516,6 @@ namespace QBDI {
         {"getInstMemoryAccess",               (PyCFunction)vm_getInstMemoryAccess,                METH_NOARGS,   "Obtain the memory accesses made by the last executed instruction."},
         {"instrumentAllExecutableMaps",       (PyCFunction)vm_instrumentAllExecutableMaps,        METH_NOARGS,   "Adds all the executable memory maps to the instrumented range set."},
         {"precacheBasicBlock",                (PyCFunction)vm_precacheBasicBlock,                 METH_O,        "Pre-cache a known basic block"},
-        {"readMemory",                        (PyCFunction)vm_readMemory,                         METH_VARARGS,  "Read a memory content from a base address."},
         {"recordMemoryAccess",                (PyCFunction)vm_recordMemoryAccess,                 METH_O,        "Add instrumentation rules to log memory access using inline instrumentation and instruction shadows."},
         {"removeAllInstrumentedRanges",       (PyCFunction)vm_removeAllInstrumentedRanges,        METH_NOARGS,   "Remove all instrumented ranges."},
         {"removeInstrumentedModule",          (PyCFunction)vm_removeInstrumentedModule,           METH_O,        "Remove the executable address ranges of a module from the set of instrumented address ranges."},
@@ -2682,11 +2649,78 @@ namespace QBDI {
       }
 
 
+      /*! Read a memory content from a base address.
+       *
+       * @param[in] address   Base address.
+       * @param[in] size      Read size.
+       *
+       * @return Bytes of content.
+       */
+      static PyObject* pyqbdi_readMemory(PyObject* self, PyObject* args) {
+        PyObject* address = nullptr;
+        PyObject* size    = nullptr;
+        PyObject* ret     = nullptr;
+
+        /* Extract arguments */
+        PyArg_ParseTuple(args, "|OO", &address, &size);
+
+        if (address == nullptr || (!PyLong_Check(address) && !PyInt_Check(address)))
+          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::readMemory(): Expects an integer as first argument.");
+
+        if (size == nullptr || (!PyLong_Check(size) && !PyInt_Check(size)))
+          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::readMemory(): Expects an integer as second argument.");
+
+        try {
+          // FIXME: Should we check if the memory address is mapped? (segfault otherwise)
+          ret = PyBytes_FromStringAndSize(reinterpret_cast<const char*>(PyLong_AsRword(address)), PyLong_AsLong(size));
+        }
+        catch (const std::exception& e) {
+          return PyErr_Format(PyExc_TypeError, "%s", e.what());
+        }
+
+        return ret;
+      }
+
+
+      /*! Write a memory content to a base address.
+       *
+       * @param[in] address   Base address.
+       * @param[in] bytes     Memory content.
+       *
+       * @return None
+       */
+      static PyObject* pyqbdi_writeMemory(PyObject* self, PyObject* args) {
+        PyObject* address = nullptr;
+        PyObject* bytes   = nullptr;
+
+        /* Extract arguments */
+        PyArg_ParseTuple(args, "|OO", &address, &bytes);
+
+        if (address == nullptr || (!PyLong_Check(address) && !PyInt_Check(address)))
+          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::writeMemory(): Expects an integer as first argument.");
+
+        if (bytes == nullptr || !PyBytes_Check(bytes))
+          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::writeMemory(): Expects an integer as second argument.");
+
+        try {
+          // FIXME: Should we check if the memory address is mapped? (segfault otherwise)
+          std::memcpy(reinterpret_cast<void*>(PyLong_AsLong(address)), PyBytes_AsString(bytes), PyBytes_Size(bytes));
+        }
+        catch (const std::exception& e) {
+          return PyErr_Format(PyExc_TypeError, "%s", e.what());
+        }
+
+        Py_RETURN_NONE;
+      }
+
+
       /* The pyqbdi callbacks */
       PyMethodDef pyqbdiCallbacks[] = {
-        {"FPRState",  (PyCFunction)pyqbdi_FPRState,  METH_VARARGS,  "FPRState constructor."},
-        {"GPRState",  (PyCFunction)pyqbdi_GPRState,  METH_VARARGS,  "GPRState constructor."},
-        {nullptr,     nullptr,                       0,             nullptr}
+        {"FPRState",      (PyCFunction)pyqbdi_FPRState,     METH_VARARGS,  "FPRState constructor."},
+        {"GPRState",      (PyCFunction)pyqbdi_GPRState,     METH_VARARGS,  "GPRState constructor."},
+        {"readMemory",    (PyCFunction)pyqbdi_readMemory,   METH_VARARGS,  "Read a memory content from a base address."},
+        {"writeMemory",   (PyCFunction)pyqbdi_writeMemory,  METH_VARARGS,  "Write a memory content to a base address."},
+        {nullptr,         nullptr,                          0,             nullptr}
       };
 
 
