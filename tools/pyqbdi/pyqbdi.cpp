@@ -194,12 +194,18 @@ namespace QBDI {
           };
 
           void del(T1 id) {
+            if (std::is_same<T2, PyObject**>::value) {
+              Py_DECREF(this->refs[id]);
+            }
             std::free(this->refs[id]);
             this->refs.erase(id);
           };
 
           void clear(void) {
             for (auto& kv : this->refs) {
+              if (std::is_same<T2, PyObject**>::value) {
+                Py_DECREF(kv.second);
+              }
               std::free(kv.second);
             }
             this->refs.clear();
