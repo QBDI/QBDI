@@ -119,6 +119,12 @@ namespace QBDI {
         QBDI::VMInstanceRef vm;
       } VMInstance_Object;
 
+      //! pyVMState object.
+      typedef struct {
+        PyObject_HEAD
+        QBDI::VMState* state;
+      } VMState_Object;
+
       /*! Checks if the pyObject is a QBDI::InstAnalysis. */
       #define PyInstAnalysis_Check(v) ((v)->ob_type == &QBDI::Bindings::Python::InstAnalysis_Type)
 
@@ -155,6 +161,12 @@ namespace QBDI {
       /*! Returns the QBDI::VMInstance. */
       #define PyVMInstance_AsVMInstance(v) (((QBDI::Bindings::Python::VMInstance_Object*)(v))->vm)
 
+      /*! Checks if the pyObject is a QBDI::VMState. */
+      #define PyVMState_Check(v) ((v)->ob_type == &QBDI::Bindings::Python::VMState_Type)
+
+      /*! Returns the QBDI::VMState. */
+      #define PyVMState_AsVMState(v) (((QBDI::Bindings::Python::VMState_Object*)(v))->state)
+
       /* Prototypes */
       static PyObject* PyFPRState(const QBDI::FPRState*);
       static PyObject* PyFPRState(void);
@@ -165,6 +177,7 @@ namespace QBDI {
       static PyObject* PyMemoryAccess(const QBDI::MemoryAccess*);
       static PyObject* PyOperandAnalysis(const QBDI::OperandAnalysis*);
       static PyObject* PyVMInstance(QBDI::VMInstanceRef vm);
+      static PyObject* PyVMState(const QBDI::VMState* state);
 
 
       /* Returns a QBDI::rword from a PyLong object */
@@ -1576,7 +1589,7 @@ namespace QBDI {
       }
 
 
-      /* Trampoline for python callbacks */
+      /* Trampoline for python callbacks (InstCallback) */
       static QBDI::VMAction trampoline(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* function) {
         /* Create function arguments */
         PyObject* args = PyTuple_New(3);
@@ -1601,9 +1614,29 @@ namespace QBDI {
       }
 
 
-      /* Trampoline2 for python callbacks */
+      /* Trampoline for python callbacks (VMCallback) */
       static QBDI::VMAction trampoline(QBDI::VMInstanceRef vm, const QBDI::VMState* vmState, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* function) {
-        return trampoline(vm, gprState, fprState, function);
+        /* Create function arguments */
+        PyObject* args = PyTuple_New(4);
+        PyTuple_SetItem(args, 0, QBDI::Bindings::Python::PyVMInstance(vm));
+        PyTuple_SetItem(args, 1, QBDI::Bindings::Python::PyVMState(vmState));
+        PyTuple_SetItem(args, 2, QBDI::Bindings::Python::PyGPRState(gprState));
+        PyTuple_SetItem(args, 3, QBDI::Bindings::Python::PyFPRState(fprState));
+
+        /* Call the function and check the return value */
+        PyObject* ret = PyObject_CallObject((PyObject*)function, args);
+        Py_DECREF(args);
+        if (ret == nullptr) {
+          PyErr_Print();
+          exit(1);
+        }
+
+        /* Default: We continue the instrumentation */
+        if (!PyLong_Check(ret) && !PyInt_Check(ret))
+          return QBDI::CONTINUE;
+
+        /* Otherwise, return the user's value */
+        return static_cast<QBDI::VMAction>(PyLong_AsLong(ret));
       }
 
 
@@ -2588,6 +2621,110 @@ namespace QBDI {
         object = PyObject_NEW(VMInstance_Object, &VMInstance_Type);
         if (object != NULL)
           object->vm = vm;
+
+        return (PyObject*)object;
+      }
+
+
+      /* PyVMState destructor */
+      static void VMState_dealloc(PyObject* self) {
+        std::cout << std::flush;
+        free(PyVMState_AsVMState(self));
+        Py_DECREF(self);
+      }
+
+
+      /* VMState attributes */
+      static PyObject* VMState_getattro(PyObject* self, PyObject* name) {
+        try {
+          if (std::string(PyString_AsString(name)) == "event")
+            return PyLong_FromLong(PyVMState_AsVMState(self)->event);
+
+          else if (std::string(PyString_AsString(name)) == "sequenceStart")
+            return PyLong_FromLong(PyVMState_AsVMState(self)->sequenceStart);
+
+          else if (std::string(PyString_AsString(name)) == "sequenceEnd")
+            return PyLong_FromLong(PyVMState_AsVMState(self)->sequenceEnd);
+
+          else if (std::string(PyString_AsString(name)) == "basicBlockStart")
+            return PyLong_FromLong(PyVMState_AsVMState(self)->basicBlockStart);
+
+          else if (std::string(PyString_AsString(name)) == "basicBlockEnd")
+            return PyLong_FromLong(PyVMState_AsVMState(self)->basicBlockEnd);
+
+          else if (std::string(PyString_AsString(name)) == "lastSignal")
+            return PyLong_FromLong(PyVMState_AsVMState(self)->lastSignal);
+        }
+        catch (const std::exception& e) {
+          return PyErr_Format(PyExc_TypeError, "%s", e.what());
+        }
+
+        return PyObject_GenericGetAttr((PyObject *)self, name);
+      }
+
+
+      /* Description of the python representation of a VMState */
+      PyTypeObject VMState_Type = {
+        PyObject_HEAD_INIT(&PyType_Type)
+        0,                                          /* ob_size */
+        "VMState",                                  /* tp_name */
+        sizeof(VMState_Object),                     /* tp_basicsize */
+        0,                                          /* tp_itemsize */
+        VMState_dealloc,                            /* tp_dealloc */
+        0,                                          /* tp_print */
+        0,                                          /* tp_getattr */
+        0,                                          /* tp_setattr */
+        0,                                          /* tp_compare */
+        0,                                          /* tp_repr */
+        0,                                          /* tp_as_number */
+        0,                                          /* tp_as_sequence */
+        0,                                          /* tp_as_mapping */
+        0,                                          /* tp_hash */
+        0,                                          /* tp_call */
+        0,                                          /* tp_str */
+        (getattrofunc)VMState_getattro,             /* tp_getattro */
+        0,                                          /* tp_setattro */
+        0,                                          /* tp_as_buffer */
+        Py_TPFLAGS_DEFAULT,                         /* tp_flags */
+        "VMState objects",                          /* tp_doc */
+        0,                                          /* tp_traverse */
+        0,                                          /* tp_clear */
+        0,                                          /* tp_richcompare */
+        0,                                          /* tp_weaklistoffset */
+        0,                                          /* tp_iter */
+        0,                                          /* tp_iternext */
+        0,                                          /* tp_methods */
+        0,                                          /* tp_members */
+        0,                                          /* tp_getset */
+        0,                                          /* tp_base */
+        0,                                          /* tp_dict */
+        0,                                          /* tp_descr_get */
+        0,                                          /* tp_descr_set */
+        0,                                          /* tp_dictoffset */
+        0,                                          /* tp_init */
+        0,                                          /* tp_alloc */
+        0,                                          /* tp_new */
+        0,                                          /* tp_free */
+        0,                                          /* tp_is_gc */
+        0,                                          /* tp_bases */
+        0,                                          /* tp_mro */
+        0,                                          /* tp_cache */
+        0,                                          /* tp_subclasses */
+        0,                                          /* tp_weaklist */
+        0,                                          /* tp_del */
+        0                                           /* tp_version_tag */
+      };
+
+
+      static PyObject* PyVMState(const QBDI::VMState* state) {
+        VMState_Object* object;
+
+        PyType_Ready(&VMState_Type);
+        object = PyObject_NEW(VMState_Object, &VMState_Type);
+        if (object != NULL) {
+          object->state = static_cast<QBDI::VMState*>(malloc(sizeof(*state)));
+          std::memcpy(object->state, state, sizeof(*state));
+        }
 
         return (PyObject*)object;
       }
