@@ -408,6 +408,15 @@ namespace QBDI {
 
           else if (std::string(PyString_AsString(name)) == "symbolOffset")
             return PyLong_FromLong(PyInstAnalysis_AsInstAnalysis(self)->symbolOffset);
+
+          else if (std::string(PyString_AsString(name)) == "module") {
+            const InstAnalysis* inst = PyInstAnalysis_AsInstAnalysis(self);
+
+            if (inst->module)
+              return PyString_FromString(inst->module);
+
+            Py_RETURN_NONE;
+          }
         }
         catch (const std::exception& e) {
           return PyErr_Format(PyExc_TypeError, "%s", e.what());
@@ -3151,6 +3160,12 @@ namespace QBDI {
       #undef PyInstAnalysis_Check
       #undef PyMemoryAccess_AsMemoryAccess
       #undef PyMemoryAccess_Check
+      #undef PyOperandAnalysis_AsOperandAnalysis
+      #undef PyOperandAnalysis_Check
+      #undef PyVMInstance_AsVMInstance
+      #undef PyVMInstance_Check
+      #undef PyVMState_AsVMState
+      #undef PyVMState_Check
 
     }; // Python
   }; // Bindings
