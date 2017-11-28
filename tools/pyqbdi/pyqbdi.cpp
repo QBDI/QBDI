@@ -2906,6 +2906,7 @@ namespace QBDI {
               PyList_SetItem(ret, i, PyString_FromString(modules[i]));
               free(modules[i]);
             }
+            free(modules);
           }
         }
         catch (const std::exception& e) {
