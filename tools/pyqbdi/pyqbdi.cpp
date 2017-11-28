@@ -125,43 +125,43 @@ namespace QBDI {
         QBDI::VMState* state;
       } VMState_Object;
 
-      /*! Checks if the pyObject is a QBDI::InstAnalysis. */
+      /*! Checks if the pyObject is a pyqbdi.InstAnalysis. */
       #define PyInstAnalysis_Check(v) ((v)->ob_type == &QBDI::Bindings::Python::InstAnalysis_Type)
 
       /*! Returns the QBDI::InstAnalysis. */
       #define PyInstAnalysis_AsInstAnalysis(v) (((QBDI::Bindings::Python::InstAnalysis_Object*)(v))->inst)
 
-      /*! Checks if the pyObject is a QBDI::GPRState. */
+      /*! Checks if the pyObject is a pyqbdi.GPRState. */
       #define PyGPRState_Check(v) ((v)->ob_type == &QBDI::Bindings::Python::GPRState_Type)
 
       /*! Returns the QBDI::GPRState. */
       #define PyGPRState_AsGPRState(v) (((QBDI::Bindings::Python::GPRState_Object*)(v))->gpr)
 
-      /*! Checks if the pyObject is a QBDI::FPRState. */
+      /*! Checks if the pyObject is a pyqbdi.FPRState. */
       #define PyFPRState_Check(v) ((v)->ob_type == &QBDI::Bindings::Python::FPRState_Type)
 
       /*! Returns the QBDI::FPRState. */
       #define PyFPRState_AsFPRState(v) (((QBDI::Bindings::Python::FPRState_Object*)(v))->fpr)
 
-      /*! Checks if the pyObject is a QBDI::MemoryAccess. */
+      /*! Checks if the pyObject is a pyqbdi.MemoryAccess. */
       #define PyMemoryAccess_Check(v) ((v)->ob_type == &QBDI::Bindings::Python::MemoryAccess_Type)
 
       /*! Returns the QBDI::MemoryAccess. */
       #define PyMemoryAccess_AsMemoryAccess(v) (((QBDI::Bindings::Python::MemoryAccess_Object*)(v))->memoryAccess)
 
-      /*! Checks if the pyObject is a QBDI::OperandAnalysis. */
+      /*! Checks if the pyObject is a pyqbdi.OperandAnalysis. */
       #define PyOperandAnalysis_Check(v) ((v)->ob_type == &QBDI::Bindings::Python::OperandAnalysis_Type)
 
       /*! Returns the QBDI::OperandAnalysis. */
       #define PyOperandAnalysis_AsOperandAnalysis(v) (((QBDI::Bindings::Python::OperandAnalysis_Object*)(v))->operand)
 
-      /*! Checks if the pyObject is a QBDI::VMInstance. */
+      /*! Checks if the pyObject is a pyqbdi.VMInstance. */
       #define PyVMInstance_Check(v) ((v)->ob_type == &QBDI::Bindings::Python::VMInstance_Type)
 
       /*! Returns the QBDI::VMInstance. */
       #define PyVMInstance_AsVMInstance(v) (((QBDI::Bindings::Python::VMInstance_Object*)(v))->vm)
 
-      /*! Checks if the pyObject is a QBDI::VMState. */
+      /*! Checks if the pyObject is a pyqbdi.VMState. */
       #define PyVMState_Check(v) ((v)->ob_type == &QBDI::Bindings::Python::VMState_Type)
 
       /*! Returns the QBDI::VMState. */
@@ -1659,10 +1659,10 @@ namespace QBDI {
       /*! Register a callback for when a specific address is executed.
        *
        * @param[in] address   Code address which will trigger the callback.
-       * @param[in] pos       Relative position of the callback (QBDI_PREINST / QBDI_POSTINST).
+       * @param[in] pos       Relative position of the callback (pyqbdi.PREINST / pyqbdi.POSTINST).
        * @param[in] cbk       A function pointer to the callback.
        *
-       * @return The id of the registered instrumentation (or QBDI::INVALID_EVENTID
+       * @return The id of the registered instrumentation (or pyqbdi.INVALID_EVENTID
        * in case of failure).
        */
       static PyObject* vm_addCodeAddrCB(PyObject* self, PyObject* args) {
@@ -1699,10 +1699,10 @@ namespace QBDI {
 
       /*! Register a callback event for a specific instruction event.
        *
-       * @param[in] pos       Relative position of the event callback (QBDI_PREINST / QBDI_POSTINST).
+       * @param[in] pos       Relative position of the event callback (pyqbdi.PREINST / pyqbdi.POSTINST).
        * @param[in] cbk       A function pointer to the callback.
        *
-       * @return The id of the registered instrumentation (or QBDI::INVALID_EVENTID
+       * @return The id of the registered instrumentation (or pyqbdi.INVALID_EVENTID
        * in case of failure).
        */
       static PyObject* vm_addCodeCB(PyObject* self, PyObject* args) {
@@ -1736,10 +1736,10 @@ namespace QBDI {
        *
        * @param[in] start     Start of the address range which will trigger the callback.
        * @param[in] end       End of the address range which will trigger the callback.
-       * @param[in] pos       Relative position of the callback (QBDI_PREINST / QBDI_POSTINST).
+       * @param[in] pos       Relative position of the callback (pyqbdi.PREINST / pyqbdi.POSTINST).
        * @param[in] cbk       A function pointer to the callback.
        *
-       * @return The id of the registered instrumentation (or QBDI::INVALID_EVENTID
+       * @return The id of the registered instrumentation (or pyqbdi.INVALID_EVENTID
        * in case of failure).
        */
       static PyObject* vm_addCodeRangeCB(PyObject* self, PyObject* args) {
@@ -1853,10 +1853,10 @@ namespace QBDI {
       /*! Register a callback event for every memory access matching the type bitfield made by an
        *  instruction.
        *
-       * @param[in] type       A mode bitfield: either QBDI_MEMORY_READ, QBDI_MEMORY_WRITE or both (QBDI_MEMORY_READ_WRITE).
+       * @param[in] type       A mode bitfield: either pyqbdi.MEMORY_READ, pyqbdi.MEMORY_WRITE or both (pyqbdi.MEMORY_READ_WRITE).
        * @param[in] cbk        A function pointer to the callback.
        *
-       * @return The id of the registered instrumentation (or QBDI::INVALID_EVENTID
+       * @return The id of the registered instrumentation (or pyqbdi.INVALID_EVENTID
        * in case of failure).
        */
       static PyObject* vm_addMemAccessCB(PyObject* self, PyObject* args) {
@@ -1891,10 +1891,10 @@ namespace QBDI {
        *  gate callback triggered on every memory access. This incurs a high performance cost.
        *
        * @param[in] address  Code address which will trigger the callback.
-       * @param[in] type     A mode bitfield: either QBDI_MEMORY_READ, QBDI_MEMORY_WRITE or both (QBDI_MEMORY_READ_WRITE).
+       * @param[in] type     A mode bitfield: either pyqbdi.MEMORY_READ, pyqbdi.MEMORY_WRITE or both (pyqbdi.MEMORY_READ_WRITE).
        * @param[in] cbk      A function pointer to the callback.
        *
-       * @return The id of the registered instrumentation (or QBDI::INVALID_EVENTID
+       * @return The id of the registered instrumentation (or pyqbdi.INVALID_EVENTID
        * in case of failure).
        */
       static PyObject* vm_addMemAddrCB(PyObject* self, PyObject* args) {
@@ -1935,10 +1935,10 @@ namespace QBDI {
        *
        * @param[in] start    Start of the address range which will trigger the callback.
        * @param[in] end      End of the address range which will trigger the callback.
-       * @param[in] type     A mode bitfield: either QBDI_MEMORY_READ, QBDI_MEMORY_WRITE or both (QBDI_MEMORY_READ_WRITE).
+       * @param[in] type     A mode bitfield: either pyqbdi.MEMORY_READ, pyqbdi.MEMORY_WRITE or both (pyqbdi.MEMORY_READ_WRITE).
        * @param[in] cbk      A function pointer to the callback.
        *
-       * @return The id of the registered instrumentation (or QBDI::INVALID_EVENTID
+       * @return The id of the registered instrumentation (or pyqbdi.INVALID_EVENTID
        * in case of failure).
        */
       static PyObject* vm_addMemRangeCB(PyObject* self, PyObject* args) {
@@ -1981,10 +1981,10 @@ namespace QBDI {
       /*! Register a callback event if the instruction matches the mnemonic.
        *
        * @param[in] mnemonic   Mnemonic to match.
-       * @param[in] pos        Relative position of the event callback (QBDI_PREINST / QBDI_POSTINST).
+       * @param[in] pos        Relative position of the event callback (pyqbdi.PREINST / pyqbdi.POSTINST).
        * @param[in] cbk        A function pointer to the callback.
        *
-       * @return The id of the registered instrumentation (or QBDI::INVALID_EVENTID
+       * @return The id of the registered instrumentation (or pyqbdi.INVALID_EVENTID
        * in case of failure).
        */
       static PyObject* vm_addMnemonicCB(PyObject* self, PyObject* args) {
@@ -2024,7 +2024,7 @@ namespace QBDI {
        * @param[in] mask      A mask of VM event type which will trigger the callback.
        * @param[in] cbk       A function pointer to the callback.
        *
-       * @return The id of the registered instrumentation (or QBDI::INVALID_EVENTID
+       * @return The id of the registered instrumentation (or pyqbdi.INVALID_EVENTID
        * in case of failure).
        */
       static PyObject* vm_addVMEventCB(PyObject* self, PyObject* args) {
@@ -2352,8 +2352,8 @@ namespace QBDI {
       /*! Add instrumentation rules to log memory access using inline instrumentation and
        *  instruction shadows.
        *
-       * @param[in] type      Memory mode bitfield to activate the logging for: either QBDI_MEMORY_READ,
-       *                      QBDI_MEMORY_WRITE or both (QBDI_MEMORY_READ_WRITE).
+       * @param[in] type      Memory mode bitfield to activate the logging for: either pyqbdi.MEMORY_READ,
+       *                      pyqbdi.MEMORY_WRITE or both (pyqbdi.MEMORY_READ_WRITE).
        *
        * @return True if inline memory logging is supported, False if not or in case of error.
        */
