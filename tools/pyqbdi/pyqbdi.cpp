@@ -2189,23 +2189,19 @@ namespace QBDI {
         if (function == nullptr || (!PyLong_Check(function) && !PyInt_Check(function)))
           return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::call(): Expects an integer (function address) as first argument.");
 
-        if (fargs == nullptr || !PyDict_Check(fargs))
-          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::call(): Expects a dictionary as second argument.");
+        if (fargs != nullptr && !PyList_Check(fargs))
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::call(): Expects a list as second argument.");
 
         std::vector<QBDI::rword> cfargs;
-        for (Py_ssize_t i = 0; i < PyDict_Size(fargs); i++) {
-          PyObject* index = PyInt_FromLong(i);
-          PyObject* item  = PyDict_GetItem(fargs, index);
+        if (fargs != nullptr && PyList_Check(fargs)) {
+          for (Py_ssize_t i = 0; i < PyList_Size(fargs); i++) {
+            PyObject* item = PyList_GetItem(fargs, i);
 
-          if (item == nullptr)
-            return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::call(): key %ld not found", i);
+            if (!PyLong_Check(item) && !PyInt_Check(item))
+              return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::call(): Expects integers as list contents.");
 
-          if (!PyLong_Check(item) && !PyInt_Check(item))
-            return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::call(): Expects integers as dictionary contents.");
-
-          cfargs.push_back(PyLong_AsRword(item));
-
-          Py_DECREF(index);
+            cfargs.push_back(PyLong_AsRword(item));
+          }
         }
 
         try {
@@ -3090,27 +3086,23 @@ namespace QBDI {
         if (returnAddr == nullptr || (!PyLong_Check(returnAddr) && !PyInt_Check(returnAddr)))
           return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::simulateCall(): Expects an integer as second argument.");
 
-        if (param == nullptr || !PyDict_Check(param))
-          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::simulateCall(): Expects a dictionary as third argument.");
+        if (param != nullptr && !PyList_Check(param))
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::simulateCall(): Expects a list as third argument.");
 
-        std::vector<QBDI::rword> cargs;
-        for (Py_ssize_t i = 0; i < PyDict_Size(param); i++) {
-          PyObject* index = PyInt_FromLong(i);
-          PyObject* item  = PyDict_GetItem(param, index);
+        std::vector<QBDI::rword> cfargs;
+        if (param != nullptr && PyList_Check(param)) {
+          for (Py_ssize_t i = 0; i < PyList_Size(param); i++) {
+            PyObject* item = PyList_GetItem(param, i);
 
-          if (item == nullptr)
-            return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::simulateCall(): key %ld not found", i);
+            if (!PyLong_Check(item) && !PyInt_Check(item))
+              return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::simulateCall(): Expects integers as list contents.");
 
-          if (!PyLong_Check(item) && !PyInt_Check(item))
-            return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::simulateCall(): Expects integers as dictionary contents.");
-
-          cargs.push_back(PyLong_AsRword(item));
-
-          Py_DECREF(index);
+            cfargs.push_back(PyLong_AsRword(item));
+          }
         }
 
         try {
-          QBDI::simulateCall(PyGPRState_AsGPRState(ctx), PyLong_AsRword(returnAddr), cargs);
+          QBDI::simulateCall(PyGPRState_AsGPRState(ctx), PyLong_AsRword(returnAddr), cfargs);
         }
         catch (const std::exception& e) {
           return PyErr_Format(PyExc_TypeError, "%s", e.what());
