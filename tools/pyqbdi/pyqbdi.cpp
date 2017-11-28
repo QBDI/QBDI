@@ -21,13 +21,13 @@
 **
 **   import pyqbdi
 **
-**   def mycb(vm, gpr, fpr):
+**   def mycb(vm, gpr, fpr, data):
 **       inst = vm.getInstAnalysis()
 **       print "0x%x: %s" % (inst.address, inst.disassembly)
 **       return pyqbdi.CONTINUE
 **
 **   def pyqbdipreload_on_run(vm, start, stop):
-**       vm.addCodeCB(pyqbdi.PREINST, mycb)
+**       vm.addCodeCB(pyqbdi.PREINST, mycb, None)
 **       vm.run(start, stop)
 */
 
@@ -38,6 +38,7 @@
 #include <iostream>
 #include <list>
 #include <longintrepr.h>
+#include <map>
 
 #if defined(__unix__) || defined(__APPLE__)
   #include <dlfcn.h>
@@ -178,6 +179,35 @@ namespace QBDI {
       static PyObject* PyOperandAnalysis(const QBDI::OperandAnalysis*);
       static PyObject* PyVMInstance(QBDI::VMInstanceRef vm);
       static PyObject* PyVMState(const QBDI::VMState* state);
+
+      /* A small GC class */
+      template <class T1, class T2>
+      class GarbageCollector {
+        private:
+          std::map<T1, T2> refs;
+
+        public:
+          GarbageCollector(){};
+
+          void add(T1 id, T2 obj) {
+            this->refs[id] = obj;
+          };
+
+          void del(T1 id) {
+            std::free(this->refs[id]);
+            this->refs.erase(id);
+          };
+
+          void clear(void) {
+            for (auto& kv : this->refs) {
+              std::free(kv.second);
+            }
+            this->refs.clear();
+          };
+      };
+
+      /* Garbage Collector for callback's data */
+      GarbageCollector<uint32_t, PyObject**> GCData;
 
 
       /* Returns a QBDI::rword from a PyLong object */
@@ -624,12 +654,12 @@ namespace QBDI {
       /* PyGPRState set attributes */
       static int GPRState_setattro(PyObject* self, PyObject* name, PyObject* item) {
         if (item == nullptr) {
-          PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::GPRState::setattro(): Cannot delete the '%s' attribute", PyString_AsString(name));
+          PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::GPRState::setattro(): Cannot delete the '%s' attribute", PyString_AsString(name));
           return -1;
         }
 
         if (!PyLong_Check(item) && !PyInt_Check(item)) {
-          PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::GPRState::setattro(): Assignment must be an integer, not '%.200s'", item->ob_type->tp_name);
+          PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::GPRState::setattro(): Assignment must be an integer, not '%.200s'", item->ob_type->tp_name);
           return -1;
         }
 
@@ -750,7 +780,7 @@ namespace QBDI {
           #endif
         }
         catch (const std::exception& e) {
-          PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::GPRState::setattro(): %s", e.what());
+          PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::GPRState::setattro(): %s", e.what());
           return -1;
         }
 
@@ -1127,13 +1157,13 @@ namespace QBDI {
         #endif
 
         if (item == nullptr) {
-          PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::FPRState::setattro(): Cannot delete the '%s' attribute", PyString_AsString(name));
+          PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::FPRState::setattro(): Cannot delete the '%s' attribute", PyString_AsString(name));
           return -1;
         }
 
         #if defined(QBDI_ARCH_X86_64)
         if (!PyLong_Check(item) && !PyInt_Check(item)) {
-          PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::FPRState::setattro(): Assignment must be an integer, not '%.200s'", item->ob_type->tp_name);
+          PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::FPRState::setattro(): Assignment must be an integer, not '%.200s'", item->ob_type->tp_name);
           return -1;
         }
 
@@ -1143,7 +1173,7 @@ namespace QBDI {
 
         #if defined(QBDI_ARCH_ARM)
         if (!PyFloat_Check(item)) {
-          PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::FPRState::setattro(): Assignment must be a float, not '%.200s'", item->ob_type->tp_name);
+          PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::FPRState::setattro(): Assignment must be a float, not '%.200s'", item->ob_type->tp_name);
           return -1;
         }
         #endif
@@ -1403,7 +1433,7 @@ namespace QBDI {
           #endif
         }
         catch (const std::exception& e) {
-          PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::FPRState::setattro(): %s", e.what());
+          PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::FPRState::setattro(): %s", e.what());
           return -1;
         }
 
@@ -1599,15 +1629,18 @@ namespace QBDI {
 
 
       /* Trampoline for python callbacks (InstCallback) */
-      static QBDI::VMAction trampoline(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* function) {
+      static QBDI::VMAction trampoline(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* multipleData) {
+        Py_INCREF(reinterpret_cast<PyObject**>(multipleData)[1]);
+
         /* Create function arguments */
-        PyObject* args = PyTuple_New(3);
+        PyObject* args = PyTuple_New(4);
         PyTuple_SetItem(args, 0, QBDI::Bindings::Python::PyVMInstance(vm));
         PyTuple_SetItem(args, 1, QBDI::Bindings::Python::PyGPRState(gprState));
         PyTuple_SetItem(args, 2, QBDI::Bindings::Python::PyFPRState(fprState));
+        PyTuple_SetItem(args, 3, reinterpret_cast<PyObject**>(multipleData)[1]);
 
         /* Call the function and check the return value */
-        PyObject* ret = PyObject_CallObject((PyObject*)function, args);
+        PyObject* ret = PyObject_CallObject(reinterpret_cast<PyObject**>(multipleData)[0], args);
         Py_DECREF(args);
         if (ret == nullptr) {
           PyErr_Print();
@@ -1624,16 +1657,19 @@ namespace QBDI {
 
 
       /* Trampoline for python callbacks (VMCallback) */
-      static QBDI::VMAction trampoline(QBDI::VMInstanceRef vm, const QBDI::VMState* vmState, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* function) {
+      static QBDI::VMAction trampoline(QBDI::VMInstanceRef vm, const QBDI::VMState* vmState, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* multipleData) {
+        Py_INCREF(reinterpret_cast<PyObject**>(multipleData)[1]);
+
         /* Create function arguments */
-        PyObject* args = PyTuple_New(4);
+        PyObject* args = PyTuple_New(5);
         PyTuple_SetItem(args, 0, QBDI::Bindings::Python::PyVMInstance(vm));
         PyTuple_SetItem(args, 1, QBDI::Bindings::Python::PyVMState(vmState));
         PyTuple_SetItem(args, 2, QBDI::Bindings::Python::PyGPRState(gprState));
         PyTuple_SetItem(args, 3, QBDI::Bindings::Python::PyFPRState(fprState));
+        PyTuple_SetItem(args, 4, reinterpret_cast<PyObject**>(multipleData)[1]);
 
         /* Call the function and check the return value */
-        PyObject* ret = PyObject_CallObject((PyObject*)function, args);
+        PyObject* ret = PyObject_CallObject(reinterpret_cast<PyObject**>(multipleData)[0], args);
         Py_DECREF(args);
         if (ret == nullptr) {
           PyErr_Print();
@@ -1661,6 +1697,7 @@ namespace QBDI {
        * @param[in] address   Code address which will trigger the callback.
        * @param[in] pos       Relative position of the callback (pyqbdi.PREINST / pyqbdi.POSTINST).
        * @param[in] cbk       A function pointer to the callback.
+       * @param[in] data      User defined data passed to the callback.
        *
        * @return The id of the registered instrumentation (or pyqbdi.INVALID_EVENTID
        * in case of failure).
@@ -1669,25 +1706,33 @@ namespace QBDI {
         PyObject* addr     = nullptr;
         PyObject* pos      = nullptr;
         PyObject* function = nullptr;
+        PyObject* data     = nullptr;
         uint32_t retValue  = QBDI::INVALID_EVENTID;
 
         /* Extract arguments */
-        PyArg_ParseTuple(args, "|OOO", &addr, &pos, &function);
+        PyArg_ParseTuple(args, "|OOOO", &addr, &pos, &function, &data);
 
         if (addr == nullptr || (!PyLong_Check(addr) && !PyInt_Check(addr)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addCodeAddrCB(): Expects an integer as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addCodeAddrCB(): Expects an integer as first argument.");
 
         if (pos == nullptr || (!PyLong_Check(pos) && !PyInt_Check(pos)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addCodeAddrCB(): Expects an InstPosition as second argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addCodeAddrCB(): Expects an InstPosition as second argument.");
 
         if (function == nullptr || !PyCallable_Check(function))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addCodeAddrCB(): Expects a function as third argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addCodeAddrCB(): Expects a function as third argument.");
+
+        if (data == nullptr)
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addCodeAddrCB(): Expects a PyObject as fourth argument.");
 
         try {
+          PyObject** multipleData = (PyObject**)std::malloc(sizeof(PyObject*) * 2);
+          multipleData[0] = function;
+          multipleData[1] = data;
           retValue = PyVMInstance_AsVMInstance(self)->addCodeAddrCB(PyLong_AsRword(addr),
                                                                     static_cast<QBDI::InstPosition>(PyInt_AsLong(pos)),
                                                                     QBDI::Bindings::Python::trampoline,
-                                                                    function);
+                                                                    multipleData);
+          QBDI::Bindings::Python::GCData.add(retValue, multipleData);
         }
         catch (const std::exception& e) {
           return PyErr_Format(PyExc_TypeError, "%s", e.what());
@@ -1701,6 +1746,7 @@ namespace QBDI {
        *
        * @param[in] pos       Relative position of the event callback (pyqbdi.PREINST / pyqbdi.POSTINST).
        * @param[in] cbk       A function pointer to the callback.
+       * @param[in] data      User defined data passed to the callback.
        *
        * @return The id of the registered instrumentation (or pyqbdi.INVALID_EVENTID
        * in case of failure).
@@ -1708,21 +1754,29 @@ namespace QBDI {
       static PyObject* vm_addCodeCB(PyObject* self, PyObject* args) {
         PyObject* pos      = nullptr;
         PyObject* function = nullptr;
+        PyObject* data     = nullptr;
         uint32_t retValue  = QBDI::INVALID_EVENTID;
 
         /* Extract arguments */
-        PyArg_ParseTuple(args, "|OO", &pos, &function);
+        PyArg_ParseTuple(args, "|OOO", &pos, &function, &data);
 
         if (pos == nullptr || (!PyLong_Check(pos) && !PyInt_Check(pos)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addCodeCB(): Expects an InstPosition as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addCodeCB(): Expects an InstPosition as first argument.");
 
         if (function == nullptr || !PyCallable_Check(function))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addCodeCB(): Expects a function as second argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addCodeCB(): Expects a function as second argument.");
+
+        if (data == nullptr)
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addCodeCB(): Expects a PyObject as third argument.");
 
         try {
+          PyObject** multipleData = (PyObject**)std::malloc(sizeof(PyObject*) * 2);
+          multipleData[0] = function;
+          multipleData[1] = data;
           retValue = PyVMInstance_AsVMInstance(self)->addCodeCB(static_cast<QBDI::InstPosition>(PyInt_AsLong(pos)),
                                                                 QBDI::Bindings::Python::trampoline,
-                                                                function);
+                                                                multipleData);
+          QBDI::Bindings::Python::GCData.add(retValue, multipleData);
         }
         catch (const std::exception& e) {
           return PyErr_Format(PyExc_TypeError, "%s", e.what());
@@ -1738,6 +1792,7 @@ namespace QBDI {
        * @param[in] end       End of the address range which will trigger the callback.
        * @param[in] pos       Relative position of the callback (pyqbdi.PREINST / pyqbdi.POSTINST).
        * @param[in] cbk       A function pointer to the callback.
+       * @param[in] data      User defined data passed to the callback.
        *
        * @return The id of the registered instrumentation (or pyqbdi.INVALID_EVENTID
        * in case of failure).
@@ -1747,29 +1802,37 @@ namespace QBDI {
         PyObject* end      = nullptr;
         PyObject* pos      = nullptr;
         PyObject* function = nullptr;
+        PyObject* data     = nullptr;
         uint32_t retValue  = QBDI::INVALID_EVENTID;
 
         /* Extract arguments */
-        PyArg_ParseTuple(args, "|OOOO", &start, &end, &pos, &function);
+        PyArg_ParseTuple(args, "|OOOOO", &start, &end, &pos, &function, &data);
 
         if (start == nullptr || (!PyLong_Check(start) && !PyInt_Check(start)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addCodeRangeCB(): Expects an integer as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addCodeRangeCB(): Expects an integer as first argument.");
 
         if (end == nullptr || (!PyLong_Check(end) && !PyInt_Check(end)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addCodeRangeCB(): Expects an integer as second argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addCodeRangeCB(): Expects an integer as second argument.");
 
         if (pos == nullptr || (!PyLong_Check(pos) && !PyInt_Check(pos)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addCodeRangeCB(): Expects an InstPosition as thrid argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addCodeRangeCB(): Expects an InstPosition as thrid argument.");
 
         if (function == nullptr || !PyCallable_Check(function))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addCodeRangeCB(): Expects a function as fourth argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addCodeRangeCB(): Expects a function as fourth argument.");
+
+        if (data == nullptr)
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addCodeRangeCB(): Expects a PyObject as fifth argument.");
 
         try {
+          PyObject** multipleData = (PyObject**)std::malloc(sizeof(PyObject*) * 2);
+          multipleData[0] = function;
+          multipleData[1] = data;
           retValue = PyVMInstance_AsVMInstance(self)->addCodeRangeCB(PyLong_AsRword(start),
                                                                      PyLong_AsRword(end),
                                                                      static_cast<QBDI::InstPosition>(PyInt_AsLong(pos)),
                                                                      QBDI::Bindings::Python::trampoline,
-                                                                     function);
+                                                                     multipleData);
+          QBDI::Bindings::Python::GCData.add(retValue, multipleData);
         }
         catch (const std::exception& e) {
           return PyErr_Format(PyExc_TypeError, "%s", e.what());
@@ -1809,7 +1872,7 @@ namespace QBDI {
        */
       static PyObject* vm_addInstrumentedModuleFromAddr(PyObject* self, PyObject* addr) {
         if (!PyLong_Check(addr) && !PyInt_Check(addr))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addInstrumentedModuleFromAddr(): Expects an integer as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addInstrumentedModuleFromAddr(): Expects an integer as first argument.");
 
         try {
           if (PyVMInstance_AsVMInstance(self)->addInstrumentedModuleFromAddr(PyLong_AsRword(addr)) == true)
@@ -1835,10 +1898,10 @@ namespace QBDI {
         PyArg_ParseTuple(args, "|OO", &start, &end);
 
         if (start == nullptr || (!PyLong_Check(start) && !PyInt_Check(start)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addInstrumentedRange(): Expects an integer as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addInstrumentedRange(): Expects an integer as first argument.");
 
         if (end == nullptr || (!PyLong_Check(end) && !PyInt_Check(end)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addInstrumentedRange(): Expects an integer as second argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addInstrumentedRange(): Expects an integer as second argument.");
 
         try {
           PyVMInstance_AsVMInstance(self)->addInstrumentedRange(PyLong_AsRword(start), PyLong_AsRword(end));
@@ -1855,6 +1918,7 @@ namespace QBDI {
        *
        * @param[in] type       A mode bitfield: either pyqbdi.MEMORY_READ, pyqbdi.MEMORY_WRITE or both (pyqbdi.MEMORY_READ_WRITE).
        * @param[in] cbk        A function pointer to the callback.
+       * @param[in] data       User defined data passed to the callback.
        *
        * @return The id of the registered instrumentation (or pyqbdi.INVALID_EVENTID
        * in case of failure).
@@ -1862,21 +1926,29 @@ namespace QBDI {
       static PyObject* vm_addMemAccessCB(PyObject* self, PyObject* args) {
         PyObject* type     = nullptr;
         PyObject* function = nullptr;
+        PyObject* data     = nullptr;
         uint32_t retValue  = QBDI::INVALID_EVENTID;
 
         /* Extract arguments */
-        PyArg_ParseTuple(args, "|OO", &type, &function);
+        PyArg_ParseTuple(args, "|OOO", &type, &function, &data);
 
         if (type == nullptr || (!PyLong_Check(type) && !PyInt_Check(type)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addMemAccessCB(): Expects a MemoryAccessType as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addMemAccessCB(): Expects a MemoryAccessType as first argument.");
 
         if (function == nullptr || !PyCallable_Check(function))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addMemAccessCB(): Expects a function as second argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addMemAccessCB(): Expects a function as second argument.");
+
+        if (data == nullptr)
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addMemAccessCB(): Expects a PyObject as third argument.");
 
         try {
+          PyObject** multipleData = (PyObject**)std::malloc(sizeof(PyObject*) * 2);
+          multipleData[0] = function;
+          multipleData[1] = data;
           retValue = PyVMInstance_AsVMInstance(self)->addMemAccessCB(static_cast<QBDI::MemoryAccessType>(PyInt_AsLong(type)),
                                                                      QBDI::Bindings::Python::trampoline,
-                                                                     function);
+                                                                     multipleData);
+          QBDI::Bindings::Python::GCData.add(retValue, multipleData);
         }
         catch (const std::exception& e) {
           return PyErr_Format(PyExc_TypeError, "%s", e.what());
@@ -1893,6 +1965,7 @@ namespace QBDI {
        * @param[in] address  Code address which will trigger the callback.
        * @param[in] type     A mode bitfield: either pyqbdi.MEMORY_READ, pyqbdi.MEMORY_WRITE or both (pyqbdi.MEMORY_READ_WRITE).
        * @param[in] cbk      A function pointer to the callback.
+       * @param[in] data       User defined data passed to the callback.
        *
        * @return The id of the registered instrumentation (or pyqbdi.INVALID_EVENTID
        * in case of failure).
@@ -1901,25 +1974,33 @@ namespace QBDI {
         PyObject* addr     = nullptr;
         PyObject* type     = nullptr;
         PyObject* function = nullptr;
+        PyObject* data     = nullptr;
         uint32_t retValue  = QBDI::INVALID_EVENTID;
 
         /* Extract arguments */
-        PyArg_ParseTuple(args, "|OOO", &addr, &type, &function);
+        PyArg_ParseTuple(args, "|OOOO", &addr, &type, &function, &data);
 
         if (addr == nullptr || (!PyLong_Check(addr) && !PyInt_Check(addr)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addMemAddrCB(): Expects an integer as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addMemAddrCB(): Expects an integer as first argument.");
 
         if (type == nullptr || (!PyLong_Check(type) && !PyInt_Check(type)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addMemAddrCB(): Expects a MemoryAccessType as second argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addMemAddrCB(): Expects a MemoryAccessType as second argument.");
 
         if (function == nullptr || !PyCallable_Check(function))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addMemAddrCB(): Expects a function as third argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addMemAddrCB(): Expects a function as third argument.");
+
+        if (data == nullptr)
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addMemAddrCB(): Expects a PyObject as fourth argument.");
 
         try {
+          PyObject** multipleData = (PyObject**)std::malloc(sizeof(PyObject*) * 2);
+          multipleData[0] = function;
+          multipleData[1] = data;
           retValue = PyVMInstance_AsVMInstance(self)->addMemAddrCB(PyLong_AsRword(addr),
                                                                    static_cast<QBDI::MemoryAccessType>(PyInt_AsLong(type)),
                                                                    QBDI::Bindings::Python::trampoline,
-                                                                   function);
+                                                                   multipleData);
+          QBDI::Bindings::Python::GCData.add(retValue, multipleData);
         }
         catch (const std::exception& e) {
           return PyErr_Format(PyExc_TypeError, "%s", e.what());
@@ -1937,6 +2018,7 @@ namespace QBDI {
        * @param[in] end      End of the address range which will trigger the callback.
        * @param[in] type     A mode bitfield: either pyqbdi.MEMORY_READ, pyqbdi.MEMORY_WRITE or both (pyqbdi.MEMORY_READ_WRITE).
        * @param[in] cbk      A function pointer to the callback.
+       * @param[in] data     User defined data passed to the callback.
        *
        * @return The id of the registered instrumentation (or pyqbdi.INVALID_EVENTID
        * in case of failure).
@@ -1946,29 +2028,37 @@ namespace QBDI {
         PyObject* end      = nullptr;
         PyObject* type     = nullptr;
         PyObject* function = nullptr;
+        PyObject* data     = nullptr;
         uint32_t retValue  = QBDI::INVALID_EVENTID;
 
         /* Extract arguments */
-        PyArg_ParseTuple(args, "|OOOO", &start, &end, &type, &function);
+        PyArg_ParseTuple(args, "|OOOOO", &start, &end, &type, &function, &data);
 
         if (start == nullptr || (!PyLong_Check(start) && !PyInt_Check(start)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addMemRangeCB(): Expects an integer as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addMemRangeCB(): Expects an integer as first argument.");
 
         if (end == nullptr || (!PyLong_Check(end) && !PyInt_Check(end)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addMemRangeCB(): Expects an integer as second argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addMemRangeCB(): Expects an integer as second argument.");
 
         if (type == nullptr || (!PyLong_Check(type) && !PyInt_Check(type)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addMemRangeCB(): Expects a MemoryAccessType as third argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addMemRangeCB(): Expects a MemoryAccessType as third argument.");
 
         if (function == nullptr || !PyCallable_Check(function))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addMemRangeCB(): Expects a function as fourth argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addMemRangeCB(): Expects a function as fourth argument.");
+
+        if (data == nullptr)
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addMemRangeCB(): Expects a PyObject as fifth argument.");
 
         try {
+          PyObject** multipleData = (PyObject**)std::malloc(sizeof(PyObject*) * 2);
+          multipleData[0] = function;
+          multipleData[1] = data;
           retValue = PyVMInstance_AsVMInstance(self)->addMemRangeCB(PyLong_AsRword(start),
                                                                     PyLong_AsRword(end),
                                                                     static_cast<QBDI::MemoryAccessType>(PyInt_AsLong(type)),
                                                                     QBDI::Bindings::Python::trampoline,
-                                                                    function);
+                                                                    multipleData);
+          QBDI::Bindings::Python::GCData.add(retValue, multipleData);
         }
         catch (const std::exception& e) {
           return PyErr_Format(PyExc_TypeError, "%s", e.what());
@@ -1983,6 +2073,7 @@ namespace QBDI {
        * @param[in] mnemonic   Mnemonic to match.
        * @param[in] pos        Relative position of the event callback (pyqbdi.PREINST / pyqbdi.POSTINST).
        * @param[in] cbk        A function pointer to the callback.
+       * @param[in] data       User defined data passed to the callback.
        *
        * @return The id of the registered instrumentation (or pyqbdi.INVALID_EVENTID
        * in case of failure).
@@ -1991,25 +2082,33 @@ namespace QBDI {
         PyObject* mnemonic = nullptr;
         PyObject* pos      = nullptr;
         PyObject* function = nullptr;
+        PyObject* data     = nullptr;
         uint32_t retValue  = QBDI::INVALID_EVENTID;
 
         /* Extract arguments */
-        PyArg_ParseTuple(args, "|OOO", &mnemonic, &pos, &function);
+        PyArg_ParseTuple(args, "|OOOO", &mnemonic, &pos, &function, &data);
 
         if (mnemonic == nullptr || !PyString_Check(mnemonic))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addMnemonicCB(): Expects a string as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addMnemonicCB(): Expects a string as first argument.");
 
         if (pos == nullptr || (!PyLong_Check(pos) && !PyInt_Check(pos)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addMnemonicCB(): Expects an InstPosition as second argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addMnemonicCB(): Expects an InstPosition as second argument.");
 
         if (function == nullptr || !PyCallable_Check(function))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addMnemonicCB(): Expects a function as third argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addMnemonicCB(): Expects a function as third argument.");
+
+        if (data == nullptr)
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addMnemonicCB(): Expects a PyObject as fourth argument.");
 
         try {
+          PyObject** multipleData = (PyObject**)std::malloc(sizeof(PyObject*) * 2);
+          multipleData[0] = function;
+          multipleData[1] = data;
           retValue = PyVMInstance_AsVMInstance(self)->addMnemonicCB(PyString_AsString(mnemonic),
                                                                     static_cast<QBDI::InstPosition>(PyInt_AsLong(pos)),
                                                                     QBDI::Bindings::Python::trampoline,
-                                                                    function);
+                                                                    multipleData);
+          QBDI::Bindings::Python::GCData.add(retValue, multipleData);
         }
         catch (const std::exception& e) {
           return PyErr_Format(PyExc_TypeError, "%s", e.what());
@@ -2023,6 +2122,7 @@ namespace QBDI {
        *
        * @param[in] mask      A mask of VM event type which will trigger the callback.
        * @param[in] cbk       A function pointer to the callback.
+       * @param[in] data      User defined data passed to the callback.
        *
        * @return The id of the registered instrumentation (or pyqbdi.INVALID_EVENTID
        * in case of failure).
@@ -2030,21 +2130,29 @@ namespace QBDI {
       static PyObject* vm_addVMEventCB(PyObject* self, PyObject* args) {
         PyObject* mask     = nullptr;
         PyObject* function = nullptr;
+        PyObject* data     = nullptr;
         uint32_t retValue  = QBDI::INVALID_EVENTID;
 
         /* Extract arguments */
-        PyArg_ParseTuple(args, "|OO", &mask, &function);
+        PyArg_ParseTuple(args, "|OOO", &mask, &function, &data);
 
         if (mask == nullptr || (!PyLong_Check(mask) && !PyInt_Check(mask)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addVMEventCB(): Expects a VMEvent as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addVMEventCB(): Expects a VMEvent as first argument.");
 
         if (function == nullptr || !PyCallable_Check(function))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::addVMEventCB(): Expects a function as second argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addVMEventCB(): Expects a function as second argument.");
+
+        if (data == nullptr)
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::addVMEventCB(): Expects a PyObject as third argument.");
 
         try {
+          PyObject** multipleData = (PyObject**)std::malloc(sizeof(PyObject*) * 2);
+          multipleData[0] = function;
+          multipleData[1] = data;
           retValue = PyVMInstance_AsVMInstance(self)->addVMEventCB(static_cast<QBDI::VMEvent>(PyInt_AsLong(mask)),
                                                                    QBDI::Bindings::Python::trampoline,
-                                                                   function);
+                                                                   multipleData);
+          QBDI::Bindings::Python::GCData.add(retValue, multipleData);
         }
         catch (const std::exception& e) {
           return PyErr_Format(PyExc_TypeError, "%s", e.what());
@@ -2073,10 +2181,10 @@ namespace QBDI {
         PyArg_ParseTuple(args, "|OO", &function, &fargs);
 
         if (function == nullptr || (!PyLong_Check(function) && !PyInt_Check(function)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::call(): Expects an integer (function address) as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::call(): Expects an integer (function address) as first argument.");
 
         if (fargs == nullptr || !PyDict_Check(fargs))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::call(): Expects a dictionary as second argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::call(): Expects a dictionary as second argument.");
 
         std::vector<QBDI::rword> cfargs;
         for (Py_ssize_t i = 0; i < PyDict_Size(fargs); i++) {
@@ -2084,10 +2192,10 @@ namespace QBDI {
           PyObject* item  = PyDict_GetItem(fargs, index);
 
           if (item == nullptr)
-            return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::call(): key %ld not found", i);
+            return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::call(): key %ld not found", i);
 
           if (!PyLong_Check(item) && !PyInt_Check(item))
-            return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::call(): Expects integers as dictionary contents.");
+            return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::call(): Expects integers as dictionary contents.");
 
           cfargs.push_back(PyLong_AsRword(item));
 
@@ -2143,10 +2251,10 @@ namespace QBDI {
         PyArg_ParseTuple(args, "|OO", &start, &end);
 
         if (start == nullptr || (!PyLong_Check(start) && !PyInt_Check(start)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::clearCache(): Expects an integer as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::clearCache(): Expects an integer as first argument.");
 
         if (end == nullptr || (!PyLong_Check(end) && !PyInt_Check(end)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::clearCache(): Expects an integer as second argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::clearCache(): Expects an integer as second argument.");
 
         try {
           PyVMInstance_AsVMInstance(self)->clearCache(PyLong_AsRword(start), PyLong_AsRword(end));
@@ -2165,6 +2273,7 @@ namespace QBDI {
       static PyObject* vm_deleteAllInstrumentations(PyObject* self, PyObject* noarg) {
         try {
           PyVMInstance_AsVMInstance(self)->deleteAllInstrumentations();
+          QBDI::Bindings::Python::GCData.clear();
         }
         catch (const std::exception& e) {
           return PyErr_Format(PyExc_TypeError, "%s", e.what());
@@ -2181,11 +2290,13 @@ namespace QBDI {
        */
       static PyObject* vm_deleteInstrumentation(PyObject* self, PyObject* id) {
         if (!PyLong_Check(id) && !PyInt_Check(id))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::deleteInstrumentation(): Expects an integer as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::deleteInstrumentation(): Expects an integer as first argument.");
 
         try {
-          if (PyVMInstance_AsVMInstance(self)->deleteInstrumentation(PyLong_AsRword(id) & 0xffffffff) == true)
+          if (PyVMInstance_AsVMInstance(self)->deleteInstrumentation(PyLong_AsRword(id) & 0xffffffff) == true) {
+            QBDI::Bindings::Python::GCData.del(PyLong_AsRword(id) & 0xffffffff);
             return PyBool_FromLong(true);
+          }
           return PyBool_FromLong(false);
         }
         catch (const std::exception& e) {
@@ -2274,7 +2385,7 @@ namespace QBDI {
             return PyInstAnalysis(PyVMInstance_AsVMInstance(self)->getInstAnalysis(static_cast<QBDI::AnalysisType>(PyLong_AsLong(type))));
 
           else
-            return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::getInstAnalysis(): Expects an AnalysisType as first argument or no argument.");
+            return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::getInstAnalysis(): Expects an AnalysisType as first argument or no argument.");
         }
         catch (const std::exception& e) {
           return PyErr_Format(PyExc_TypeError, "%s", e.what());
@@ -2336,7 +2447,7 @@ namespace QBDI {
        */
       static PyObject* vm_precacheBasicBlock(PyObject* self, PyObject* pc) {
         if (!PyLong_Check(pc) && !PyInt_Check(pc))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::precacheBasicBlock(): Expects an integer as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::precacheBasicBlock(): Expects an integer as first argument.");
 
         try {
           if (PyVMInstance_AsVMInstance(self)->precacheBasicBlock(PyLong_AsRword(pc)) == true)
@@ -2359,7 +2470,7 @@ namespace QBDI {
        */
       static PyObject* vm_recordMemoryAccess(PyObject* self, PyObject* type) {
         if (!PyLong_Check(type) && !PyInt_Check(type))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::recordMemoryAccess(): Expects a MemoryAccessType as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::recordMemoryAccess(): Expects a MemoryAccessType as first argument.");
 
         try {
           if (PyVMInstance_AsVMInstance(self)->recordMemoryAccess(static_cast<QBDI::MemoryAccessType>(PyLong_AsLong(type))) == true)
@@ -2395,7 +2506,7 @@ namespace QBDI {
        */
       static PyObject* vm_removeInstrumentedModule(PyObject* self, PyObject* module) {
         if (!PyString_Check(module))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::removeInstrumentedModule(): Expects a string as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::removeInstrumentedModule(): Expects a string as first argument.");
 
         try {
           if (PyVMInstance_AsVMInstance(self)->removeInstrumentedModule(PyString_AsString(module)) == true)
@@ -2417,7 +2528,7 @@ namespace QBDI {
        */
       static PyObject* vm_removeInstrumentedModuleFromAddr(PyObject* self, PyObject* addr) {
         if (!PyLong_Check(addr) && !PyInt_Check(addr))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::removeInstrumentedModuleFromAddr(): Expects an integer as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::removeInstrumentedModuleFromAddr(): Expects an integer as first argument.");
 
         try {
           if (PyVMInstance_AsVMInstance(self)->removeInstrumentedModuleFromAddr(PyLong_AsRword(addr)) == true)
@@ -2445,10 +2556,10 @@ namespace QBDI {
         PyArg_ParseTuple(args, "|OO", &start, &end);
 
         if (start == nullptr || (!PyLong_Check(start) && !PyInt_Check(start)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::removeInstrumentedRange(): Expects an integer as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::removeInstrumentedRange(): Expects an integer as first argument.");
 
         if (end == nullptr || (!PyLong_Check(end) && !PyInt_Check(end)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::removeInstrumentedRange(): Expects an integer as second argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::removeInstrumentedRange(): Expects an integer as second argument.");
 
         try {
           PyVMInstance_AsVMInstance(self)->removeInstrumentedRange(PyLong_AsRword(start), PyLong_AsRword(end));
@@ -2475,10 +2586,10 @@ namespace QBDI {
         PyArg_ParseTuple(args, "|OO", &start, &end);
 
         if (start == nullptr || (!PyLong_Check(start) && !PyInt_Check(start)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::run(): Expects an integer as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::run(): Expects an integer as first argument.");
 
         if (end == nullptr || (!PyLong_Check(end) && !PyInt_Check(end)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::run(): Expects an integer as second argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::run(): Expects an integer as second argument.");
 
         try {
           if (PyVMInstance_AsVMInstance(self)->run(PyLong_AsRword(start), PyLong_AsRword(end)) == true)
@@ -2499,7 +2610,7 @@ namespace QBDI {
        */
       static PyObject* vm_setFPRState(PyObject* self, PyObject* arg) {
         if (!PyFPRState_Check(arg))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::setFPRState(): Expects a FPRState as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::setFPRState(): Expects a FPRState as first argument.");
 
         try {
           PyVMInstance_AsVMInstance(self)->setFPRState(PyFPRState_AsFPRState(arg));
@@ -2520,7 +2631,7 @@ namespace QBDI {
        */
       static PyObject* vm_setGPRState(PyObject* self, PyObject* arg) {
         if (!PyGPRState_Check(arg))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::VMInstance::setGPRState(): Expects a GPRState as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::VMInstance::setGPRState(): Expects a GPRState as first argument.");
 
         try {
           PyVMInstance_AsVMInstance(self)->setGPRState(PyGPRState_AsGPRState(arg));
@@ -2759,7 +2870,7 @@ namespace QBDI {
             return QBDI::Bindings::Python::PyFPRState(PyFPRState_AsFPRState(fpr));
 
           else
-            return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::FPRState(): Expects no argument or only one FPRState as first argument.");
+            return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::FPRState(): Expects no argument or only one FPRState as first argument.");
         }
         catch (const std::exception& e) {
           return PyErr_Format(PyExc_TypeError, "%s", e.what());
@@ -2787,7 +2898,7 @@ namespace QBDI {
             return QBDI::Bindings::Python::PyGPRState(PyGPRState_AsGPRState(gpr));
 
           else
-            return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::GPRState(): Expects no argument or only one GPRState as first argument.");
+            return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::GPRState(): Expects no argument or only one GPRState as first argument.");
         }
         catch (const std::exception& e) {
           return PyErr_Format(PyExc_TypeError, "%s", e.what());
@@ -2812,10 +2923,10 @@ namespace QBDI {
         PyArg_ParseTuple(args, "|OO", &size, &align);
 
         if (size == nullptr || (!PyLong_Check(size) && !PyInt_Check(size)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::alignedAlloc(): Expects an integer as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::alignedAlloc(): Expects an integer as first argument.");
 
         if (align == nullptr || (!PyLong_Check(align) && !PyInt_Check(align)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::alignedAlloc(): Expects an integer as second argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::alignedAlloc(): Expects an integer as second argument.");
 
         try {
           ret = QBDI::alignedAlloc(PyLong_AsLong(size), PyLong_AsLong(align));
@@ -2835,7 +2946,7 @@ namespace QBDI {
        */
       static PyObject* pyqbdi_alignedFree(PyObject* self, PyObject* ptr) {
         if (ptr == nullptr || (!PyLong_Check(ptr) && !PyInt_Check(ptr)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::alignedFree(): Expects an integer as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::alignedFree(): Expects an integer as first argument.");
 
         try {
           QBDI::alignedFree(reinterpret_cast<void*>(PyLong_AsLong(ptr)));
@@ -2869,10 +2980,10 @@ namespace QBDI {
         PyArg_ParseTuple(args, "|OO", &ctx, &stackSize);
 
         if (ctx == nullptr || !PyGPRState_Check(ctx))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::allocateVirtualStack(): Expects a GPRState as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::allocateVirtualStack(): Expects a GPRState as first argument.");
 
         if (stackSize == nullptr || (!PyLong_Check(stackSize) && !PyInt_Check(stackSize)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::allocateVirtualStack(): Expects an integer as second argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::allocateVirtualStack(): Expects an integer as second argument.");
 
         try {
           cret = QBDI::allocateVirtualStack(PyGPRState_AsGPRState(ctx), PyLong_AsLong(stackSize), &stack);
@@ -2933,10 +3044,10 @@ namespace QBDI {
         PyArg_ParseTuple(args, "|OO", &address, &size);
 
         if (address == nullptr || (!PyLong_Check(address) && !PyInt_Check(address)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::readMemory(): Expects an integer as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::readMemory(): Expects an integer as first argument.");
 
         if (size == nullptr || (!PyLong_Check(size) && !PyInt_Check(size)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::readMemory(): Expects an integer as second argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::readMemory(): Expects an integer as second argument.");
 
         try {
           // FIXME: Should we check if the memory address is mapped? (segfault otherwise)
@@ -2968,13 +3079,13 @@ namespace QBDI {
         PyArg_ParseTuple(args, "|OOO", &ctx, &returnAddr, &param);
 
         if (ctx == nullptr || !PyGPRState_Check(ctx))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::simulateCall(): Expects a GPRState as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::simulateCall(): Expects a GPRState as first argument.");
 
         if (returnAddr == nullptr || (!PyLong_Check(returnAddr) && !PyInt_Check(returnAddr)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::simulateCall(): Expects an integer as second argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::simulateCall(): Expects an integer as second argument.");
 
         if (param == nullptr || !PyDict_Check(param))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::simulateCall(): Expects a dictionary as third argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::simulateCall(): Expects a dictionary as third argument.");
 
         std::vector<QBDI::rword> cargs;
         for (Py_ssize_t i = 0; i < PyDict_Size(param); i++) {
@@ -2982,10 +3093,10 @@ namespace QBDI {
           PyObject* item  = PyDict_GetItem(param, index);
 
           if (item == nullptr)
-            return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::simulateCall(): key %ld not found", i);
+            return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::simulateCall(): key %ld not found", i);
 
           if (!PyLong_Check(item) && !PyInt_Check(item))
-            return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::simulateCall(): Expects integers as dictionary contents.");
+            return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::simulateCall(): Expects integers as dictionary contents.");
 
           cargs.push_back(PyLong_AsRword(item));
 
@@ -3018,10 +3129,10 @@ namespace QBDI {
         PyArg_ParseTuple(args, "|OO", &address, &bytes);
 
         if (address == nullptr || (!PyLong_Check(address) && !PyInt_Check(address)))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::writeMemory(): Expects an integer as first argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::writeMemory(): Expects an integer as first argument.");
 
         if (bytes == nullptr || !PyBytes_Check(bytes))
-          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::writeMemory(): Expects an integer as second argument.");
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::writeMemory(): Expects an integer as second argument.");
 
         try {
           // FIXME: Should we check if the memory address is mapped? (segfault otherwise)
