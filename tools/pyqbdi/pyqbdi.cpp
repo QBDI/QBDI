@@ -2649,6 +2649,127 @@ namespace QBDI {
       }
 
 
+      /*! Allocate a block of memory of a specified sized with an aligned base address.
+       *
+       * @param[in] size  Allocation size in bytes.
+       * @param[in] align Base address alignement in bytes.
+       *
+       * @return  Pointer to the allocated memory or NULL in case an error was encountered.
+       *
+       */
+      static PyObject* pyqbdi_alignedAlloc(PyObject* self, PyObject* args) {
+        PyObject* size  = nullptr;
+        PyObject* align = nullptr;
+        void* ret       = nullptr;
+
+        /* Extract arguments */
+        PyArg_ParseTuple(args, "|OO", &size, &align);
+
+        if (size == nullptr || (!PyLong_Check(size) && !PyInt_Check(size)))
+          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::alignedAlloc(): Expects an integer as first argument.");
+
+        if (align == nullptr || (!PyLong_Check(align) && !PyInt_Check(align)))
+          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::alignedAlloc(): Expects an integer as second argument.");
+
+        try {
+          ret = QBDI::alignedAlloc(PyLong_AsLong(size), PyLong_AsLong(align));
+        }
+        catch (const std::exception& e) {
+          return PyErr_Format(PyExc_TypeError, "%s", e.what());
+        }
+
+        return PyLong_FromLong(reinterpret_cast<unsigned long>(ret));
+      }
+
+
+      /*! Free a block of aligned memory allocated with alignedAlloc.
+       *
+       * @param[in] ptr  Pointer to the allocated memory.
+       *
+       */
+      static PyObject* pyqbdi_alignedFree(PyObject* self, PyObject* ptr) {
+        if (ptr == nullptr || (!PyLong_Check(ptr) && !PyInt_Check(ptr)))
+          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::alignedFree(): Expects an integer as first argument.");
+
+        try {
+          QBDI::alignedFree(reinterpret_cast<void*>(PyLong_AsLong(ptr)));
+        }
+        catch (const std::exception& e) {
+          return PyErr_Format(PyExc_TypeError, "%s", e.what());
+        }
+
+        Py_RETURN_NONE;
+      }
+
+
+      /*! Allocate a new stack and setup the GPRState accordingly.
+       *  The allocated stack needs to be freed with alignedFree().
+       *
+       *  @param[in]  ctx       GPRState which will be setup to use the new stack.
+       *  @param[in]  stackSize Size of the stack to be allocated.
+       *
+       *  @return               A tuple (bool, stack) where 'bool' is true if stack
+       *                        allocation was successfull. And 'stack' the newly
+       *                        allocated stack pointer.
+       */
+      static PyObject* pyqbdi_allocateVirtualStack(PyObject* self, PyObject* args) {
+        PyObject* ctx       = nullptr;
+        PyObject* pret      = nullptr;  /* Python return */
+        PyObject* stackSize = nullptr;
+        bool      cret      = false;    /* C return */
+        uint8_t*  stack     = nullptr;
+
+        /* Extract arguments */
+        PyArg_ParseTuple(args, "|OO", &ctx, &stackSize);
+
+        if (ctx == nullptr || !PyGPRState_Check(ctx))
+          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::allocateVirtualStack(): Expects a GPRState as first argument.");
+
+        if (stackSize == nullptr || (!PyLong_Check(stackSize) && !PyInt_Check(stackSize)))
+          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::allocateVirtualStack(): Expects an integer as second argument.");
+
+        try {
+          cret = QBDI::allocateVirtualStack(PyGPRState_AsGPRState(ctx), PyLong_AsLong(stackSize), &stack);
+          pret = PyTuple_New(2);
+          PyTuple_SetItem(pret, 0, PyBool_FromLong(cret));
+          PyTuple_SetItem(pret, 1, (cret == true ? PyLong_FromLong(reinterpret_cast<unsigned long>(stack)) : PyLong_FromLong(0)));
+        }
+        catch (const std::exception& e) {
+          return PyErr_Format(PyExc_TypeError, "%s", e.what());
+        }
+
+        return pret;
+      }
+
+
+      /*! Get a list of all the module names loaded in the process memory.
+       *
+       * @return  A list of strings, each one containing the name of a loaded module.
+       */
+      static PyObject* pyqbdi_getModuleNames(PyObject* self, PyObject* noarg) {
+        PyObject* ret  = nullptr;
+        char** modules = nullptr;
+        size_t size    = 0;
+
+        try {
+          modules = QBDI::getModuleNames(&size);
+
+          ret = PyList_New(size);
+          if (size) {
+            for (unsigned int i = 0; i < size; i++) {
+              PyList_SetItem(ret, i, PyString_FromString(modules[i]));
+              free(modules[i]);
+            }
+          }
+        }
+        catch (const std::exception& e) {
+          return PyErr_Format(PyExc_TypeError, "%s", e.what());
+        }
+
+        return ret;
+      }
+
+
       /*! Read a memory content from a base address.
        *
        * @param[in] address   Base address.
@@ -2679,6 +2800,59 @@ namespace QBDI {
         }
 
         return ret;
+      }
+
+
+      /*! Simulate a call by modifying the stack and registers accordingly.
+       *
+       *  @param[in] ctx           GPRState where the simulated call will be setup. The state needs to
+       *                           point to a valid stack for example setup with allocateVirtualStack().
+       *  @param[in] returnAddress Return address of the call to simulate.
+       *  @param[in] args          A list of arguments.
+       *
+       *  @return None
+       */
+      static PyObject* pyqbdi_simulateCall(PyObject* self, PyObject* args) {
+        PyObject* ctx         = nullptr;
+        PyObject* returnAddr  = nullptr;
+        PyObject* param       = nullptr;
+
+        /* Extract arguments */
+        PyArg_ParseTuple(args, "|OOO", &ctx, &returnAddr, &param);
+
+        if (ctx == nullptr || !PyGPRState_Check(ctx))
+          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::simulateCall(): Expects a GPRState as first argument.");
+
+        if (returnAddr == nullptr || (!PyLong_Check(returnAddr) && !PyInt_Check(returnAddr)))
+          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::simulateCall(): Expects an integer as second argument.");
+
+        if (param == nullptr || !PyDict_Check(param))
+          return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::simulateCall(): Expects a dictionary as third argument.");
+
+        std::vector<QBDI::rword> cargs;
+        for (Py_ssize_t i = 0; i < PyDict_Size(param); i++) {
+          PyObject* index = PyInt_FromLong(i);
+          PyObject* item  = PyDict_GetItem(param, index);
+
+          if (item == nullptr)
+            return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::simulateCall(): key %ld not found", i);
+
+          if (!PyLong_Check(item) && !PyInt_Check(item))
+            return PyErr_Format(PyExc_TypeError, "QBDI:Bindings::Python::simulateCall(): Expects integers as dictionary contents.");
+
+          cargs.push_back(PyLong_AsRword(item));
+
+          Py_DECREF(index);
+        }
+
+        try {
+          QBDI::simulateCall(PyGPRState_AsGPRState(ctx), PyLong_AsRword(returnAddr), cargs);
+        }
+        catch (const std::exception& e) {
+          return PyErr_Format(PyExc_TypeError, "%s", e.what());
+        }
+
+        Py_RETURN_NONE;
       }
 
 
@@ -2716,11 +2890,16 @@ namespace QBDI {
 
       /* The pyqbdi callbacks */
       PyMethodDef pyqbdiCallbacks[] = {
-        {"FPRState",      (PyCFunction)pyqbdi_FPRState,     METH_VARARGS,  "FPRState constructor."},
-        {"GPRState",      (PyCFunction)pyqbdi_GPRState,     METH_VARARGS,  "GPRState constructor."},
-        {"readMemory",    (PyCFunction)pyqbdi_readMemory,   METH_VARARGS,  "Read a memory content from a base address."},
-        {"writeMemory",   (PyCFunction)pyqbdi_writeMemory,  METH_VARARGS,  "Write a memory content to a base address."},
-        {nullptr,         nullptr,                          0,             nullptr}
+        {"FPRState",             (PyCFunction)pyqbdi_FPRState,             METH_VARARGS,  "FPRState constructor."},
+        {"GPRState",             (PyCFunction)pyqbdi_GPRState,             METH_VARARGS,  "GPRState constructor."},
+        {"alignedAlloc",         (PyCFunction)pyqbdi_alignedAlloc,         METH_VARARGS,  "Allocate a block of memory of a specified sized with an aligned base address."},
+        {"alignedFree",          (PyCFunction)pyqbdi_alignedFree,          METH_O,        "Free a block of aligned memory allocated with alignedAlloc."},
+        {"allocateVirtualStack", (PyCFunction)pyqbdi_allocateVirtualStack, METH_VARARGS,  "Allocate a new stack and setup the GPRState accordingly."},
+        {"getModuleNames",       (PyCFunction)pyqbdi_getModuleNames,       METH_NOARGS,   "Get a list of all the module names loaded in the process memory."},
+        {"readMemory",           (PyCFunction)pyqbdi_readMemory,           METH_VARARGS,  "Read a memory content from a base address."},
+        {"simulateCall",         (PyCFunction)pyqbdi_simulateCall,         METH_VARARGS,  "Simulate a call by modifying the stack and registers accordingly."},
+        {"writeMemory",          (PyCFunction)pyqbdi_writeMemory,          METH_VARARGS,  "Write a memory content to a base address."},
+        {nullptr,                nullptr,                                  0,             nullptr}
       };
 
 
