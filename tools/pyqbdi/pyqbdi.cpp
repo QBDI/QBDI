@@ -2991,6 +2991,43 @@ namespace QBDI {
       }
 
 
+      /*! Decode a float stored as a long.
+       *
+       * @param[in] ptr  Long value.
+       *
+       */
+      static PyObject* pyqbdi_decodeFloat(PyObject* self, PyObject* ptr) {
+        if (ptr == nullptr || (!PyLong_Check(ptr) && !PyInt_Check(ptr)))
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::decodeFloat(): Expects a long as first argument.");
+
+        int overflow = -1;
+        unsigned long long lv = (unsigned long long)PyLong_AsLongLongAndOverflow(ptr, &overflow);
+
+        if (overflow != 0)
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::decodeFloat(): Long cannot be stored in a float.");
+
+        double fv = *(double*)(&lv);
+
+        return PyFloat_FromDouble(fv);
+      }
+
+
+      /*! Encode a float as a long.
+       *
+       * @param[in] ptr  Float value.
+       *
+       */
+      static PyObject* pyqbdi_encodeFloat(PyObject* self, PyObject* ptr) {
+        if (ptr == nullptr || !PyFloat_Check(ptr))
+          return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::encodeFloat(): Expects a float as first argument.");
+
+        double fv = PyFloat_AsDouble(ptr);
+        unsigned long long lv = *(unsigned long long*)(&fv);
+
+        return PyLong_FromLongLong(lv);
+      }
+
+
       /*! Get a list of all the module names loaded in the process memory.
        *
        * @return  A list of strings, each one containing the name of a loaded module.
@@ -3141,6 +3178,8 @@ namespace QBDI {
         {"alignedAlloc",         (PyCFunction)pyqbdi_alignedAlloc,         METH_VARARGS,  "Allocate a block of memory of a specified sized with an aligned base address."},
         {"alignedFree",          (PyCFunction)pyqbdi_alignedFree,          METH_O,        "Free a block of aligned memory allocated with alignedAlloc."},
         {"allocateVirtualStack", (PyCFunction)pyqbdi_allocateVirtualStack, METH_VARARGS,  "Allocate a new stack and setup the GPRState accordingly."},
+        {"decodeFloat",          (PyCFunction)pyqbdi_decodeFloat,          METH_O,        "Decode a float encoded as a long."},
+        {"encodeFloat",          (PyCFunction)pyqbdi_encodeFloat,          METH_O,        "Encode a float as a long."},
         {"getModuleNames",       (PyCFunction)pyqbdi_getModuleNames,       METH_NOARGS,   "Get a list of all the module names loaded in the process memory."},
         {"readMemory",           (PyCFunction)pyqbdi_readMemory,           METH_VARARGS,  "Read a memory content from a base address."},
         {"simulateCall",         (PyCFunction)pyqbdi_simulateCall,         METH_VARARGS,  "Simulate a call by modifying the stack and registers accordingly."},
