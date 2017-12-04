@@ -2308,7 +2308,6 @@ namespace QBDI {
 
 
       /*! Obtain the memory accesses made by the last executed basic block.
-       *  Return None if the basic block made no memory access.
        *
        * @return An array of memory accesses made by the basic block.
        */
@@ -2318,10 +2317,6 @@ namespace QBDI {
 
         try {
           std::vector<QBDI::MemoryAccess> memoryAccesses = PyVMInstance_AsVMInstance(self)->getBBMemoryAccess();
-
-          /* If there is no memory access, just return None */
-          if (!memoryAccesses.size())
-            Py_RETURN_NONE;
 
           /* Otherwise, return a list of MemoryAccess */
           ret = PyList_New(memoryAccesses.size());
@@ -2396,7 +2391,6 @@ namespace QBDI {
 
 
       /*! Obtain the memory accesses made by the last executed instruction.
-       *  Return Noneif the instruction made no memory access.
        *
        * @return An array of memory accesses made by the instruction.
        */
@@ -2406,10 +2400,6 @@ namespace QBDI {
 
         try {
           std::vector<QBDI::MemoryAccess> memoryAccesses = PyVMInstance_AsVMInstance(self)->getInstMemoryAccess();
-
-          /* If there is no memory access, just return None */
-          if (!memoryAccesses.size())
-            Py_RETURN_NONE;
 
           /* Otherwise, return a list of MemoryAccess */
           ret = PyList_New(memoryAccesses.size());
