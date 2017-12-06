@@ -485,6 +485,22 @@ A VM instance itself must be destroyed using :c:func:`qbdi_terminateVM`.
    :project: QBDI_C
 
 
+Cache management
+----------------
+
+QBDI provides a cache system based on basicBlock, you might want to deal directly with it.
+There are a few function that can help you with that.
+
+.. doxygenfunction:: qbdi_precacheBasicBlock
+   :project: QBDI_C
+
+.. doxygenfunction:: qbdi_clearCache
+   :project: QBDI_C
+   
+.. doxygenfunction:: qbdi_clearAllCache
+   :project: QBDI_C
+
+
 Examples
 --------
 

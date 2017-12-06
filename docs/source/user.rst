@@ -8,5 +8,6 @@ User Documentation
     Installation <installation>
     API <api>
     QBDIPreload <qbdi_preload>
+    PyQBDI <pyQBDI>
     Frida/QBDI <frida>
     Architecture Support <architecture_support>

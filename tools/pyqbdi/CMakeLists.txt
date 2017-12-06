@@ -24,4 +24,6 @@ if(HAS_QBDIPRELOAD)
         ${CMAKE_CURRENT_SOURCE_DIR}/../QBDIPreload/include
         )
     target_link_libraries(pyqbdi QBDIPreload QBDI_lib ${PYTHON_LIBRARIES})
+    install(TARGETS pyqbdi
+    LIBRARY DESTINATION lib)
 endif()

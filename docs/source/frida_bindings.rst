@@ -66,6 +66,13 @@ Analysis
 .. autojs:: ../../tools/frida-qbdi.js
     :members: QBDI.prototype.getInstAnalysis, QBDI.prototype.getInstMemoryAccess, QBDI.prototype.getBBMemoryAccess
     :member-order: alphabetical
+    
+Cache management
+^^^^^^^^^^^^^^^^
+
+.. autojs:: ../../tools/frida-qbdi.js
+    :members: QBDI.prototype.precacheBasicBlock, QBDI.prototype.clearCache, QBDI.prototype.clearAllCache
+    :member-order: alphabetical
 
 VM Events
 ^^^^^^^^^

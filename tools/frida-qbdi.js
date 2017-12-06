@@ -339,6 +339,9 @@ var QBDI_C = Object.freeze({
     getVMStateStructDesc: _qbdibinder.bind('qbdi_getVMStateStructDesc', 'pointer', []),
     getOperandAnalysisStructDesc: _qbdibinder.bind('qbdi_getOperandAnalysisStructDesc', 'pointer', []),
     getInstAnalysisStructDesc: _qbdibinder.bind('qbdi_getInstAnalysisStructDesc', 'pointer', []),
+    precacheBasicBlock: _qbdibinder.bind('qbdi_precacheBasicBlock', 'bool', ['pointer', rword]),
+    clearCache: _qbdibinder.bind('qbdi_clearCache', 'void', ['pointer', rword, rword]),
+    clearAllCache: _qbdibinder.bind('qbdi_clearAllCache', 'void', ['pointer']),
 });
 
 // Init some globals
@@ -963,6 +966,36 @@ function QBDI() {
         FPRState.validOrThrow(state);
         QBDI_C.setFPRState(vm, state.ptr);
     }
+    
+    this.precacheBasicBlock = function(pc) {
+        /**:QBDI.prototype.precacheBasicBlock(state)
+            Pre-cache a known basic block
+
+            :param pc:  Start address of a basic block
+            :returns: True if basic block has been inserted in cache. 
+            :rtype:     bool
+        */
+        console.log(pc)
+        return QBDI_C.precacheBasicBlock(vm, pc)
+    }
+    
+    this.clearCache = function(start, end) {
+        /**:QBDI.prototype.precacheBasicBlock(state)
+            Clear a specific address range from the translation cache.
+
+            :param start:  Start of the address range to clear from the cache. 
+            :param end:    End of the address range to clear from the cache. 
+        */
+        QBDI_C.clearCache(vm, start, end)
+    }
+    
+    this.clearAllCache = function() {
+        /**:QBDI.prototype.precacheBasicBlock(state)
+            Clear the entire translation cache.
+        */
+        QBDI_C.clearAllCache(vm)
+    }
+    
 
     // Retain (~reference) a user data object when an instrumentation is added.
     //
