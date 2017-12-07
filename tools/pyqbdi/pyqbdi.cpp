@@ -2172,7 +2172,6 @@ namespace QBDI {
        *
        * @param[in] function   Address of the function start instruction.
        * @param[in] args       The arguments as dictionary {0:arg0, 1:arg1, 2:arg2, ...}.
-       * @param[in] ap         An stdarg va_list object.
        *
        * @return (True, retValue) if at least one block has been executed.
        */

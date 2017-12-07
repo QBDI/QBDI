@@ -42,7 +42,7 @@ Execution
 .. autojs:: ../../tools/frida-qbdi.js
     :members: QBDI.prototype.run, QBDI.prototype.call, QBDI.prototype.getModuleNames,
               QBDI.prototype.addInstrumentedModule, QBDI.prototype.addInstrumentedRange, QBDI.prototype.addInstrumentedModuleFromAddr, QBDI.prototype.instrumentAllExecutableMaps
-              QBDI.prototype.removeInstrumentedModule, QBDI.prototype.removeInstrumentedRange
+              QBDI.prototype.removeInstrumentedModule, QBDI.prototype.removeInstrumentedRange, removeInstrumentedModuleFromAddr, removeAllInstrumentedRanges
     :member-order: alphabetical
     
 Instrumentation
