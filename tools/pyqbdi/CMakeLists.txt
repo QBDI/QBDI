@@ -1,10 +1,11 @@
 set(SOURCES "pyqbdi.cpp")
 
-# Find Python 2.7
-find_package(PythonInterp 2.7 REQUIRED)
-if(NOT PYTHON_INCLUDE_DIRS)
-    set(PYTHON_INCLUDE_DIRS "$ENV{PYTHON_INCLUDE_DIRS}")
-endif()
+if(HAS_QBDIPRELOAD AND (NOT ${ARCH} STREQUAL "ARM"))
+    # Find Python 2.7
+    find_package(PythonInterp 2.7 REQUIRED)
+    if(NOT PYTHON_INCLUDE_DIRS)
+        set(PYTHON_INCLUDE_DIRS "$ENV{PYTHON_INCLUDE_DIRS}")
+    endif()
     if(NOT PYTHON_LIBRARIES)
         set(PYTHON_LIBRARIES "$ENV{PYTHON_LIBRARIES}")
     endif()
@@ -13,10 +14,9 @@ endif()
     elseif(NOT (PYTHON_INCLUDE_DIRS AND PYTHON_LIBRARIES))
         message(FATAL_ERROR "Inconsistent PYTHON_INCLUDE_DIRS and PYTHON_LIBRARIES")
     endif()
-include_directories(${PYTHON_INCLUDE_DIRS})
-add_definitions("-DPYTHON_LIBRARIES=\"${PYTHON_LIBRARIES}\"")
+    include_directories(${PYTHON_INCLUDE_DIRS})
+    add_definitions("-DPYTHON_LIBRARIES=\"${PYTHON_LIBRARIES}\"")
 
-if(HAS_QBDIPRELOAD)
     add_library(pyqbdi SHARED ${SOURCES})
     # Add build directory as include path for the mach_exc.h header
     include_directories(pyqbdi PRIVATE

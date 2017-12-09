@@ -25,6 +25,7 @@ RUN apt-get update \
     make \
     pkg-config \
     python \
+    python-dev \
     wget \
     zlib1g-dev \
     vim \

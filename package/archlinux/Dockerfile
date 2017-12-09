@@ -17,7 +17,7 @@ RUN pacman -S --noconfirm \
     cmake \
     pkg-config \
     fakeroot \
-    python \
+    python2 \
     wget \
     vim \
     && pacman -Sc --noconfirm

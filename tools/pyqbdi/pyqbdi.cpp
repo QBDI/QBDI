@@ -3005,8 +3005,10 @@ namespace QBDI {
         if (overflow != 0)
           return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::decodeFloat(): Long cannot be stored in a float.");
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
         double fv = *(double*)(&lv);
-
+#pragma GCC diagnostic pop
         return PyFloat_FromDouble(fv);
       }
 
@@ -3021,8 +3023,10 @@ namespace QBDI {
           return PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::encodeFloat(): Expects a float as first argument.");
 
         double fv = PyFloat_AsDouble(ptr);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
         unsigned long long lv = *(unsigned long long*)(&fv);
-
+#pragma GCC diagnostic pop
         return PyLong_FromLongLong(lv);
       }
 
