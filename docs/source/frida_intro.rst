@@ -32,7 +32,8 @@ If you want to get started using QBDI bindings, you can create a new default pro
 
     make NewProject
     cd NewProject
-    frida-template
+    qbdi-frida-template
+    # If you want to build the demo binary
     mkdir build && cd build
     cmake ..
     make

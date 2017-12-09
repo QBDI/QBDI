@@ -445,17 +445,18 @@ example shows how to use those APIs to log the memory writes.
 Cache management
 ----------------
 
-QBDI provides a cache system based on basicBlock, you might want to deal directly with it.
-There are a few function that can help you with that.
+QBDI provides a cache system for basic blocks that you might want to deal directly with it.
+There are a few functions that can help you with that.
 
 .. doxygenfunction:: QBDI::VM::precacheBasicBlock
    :project: QBDI_CPP
-   
+
 .. doxygenfunction:: QBDI::VM::clearCache
    :project: QBDI_CPP
-   
+
 .. doxygenfunction:: QBDI::VM::clearAllCache
    :project: QBDI_CPP
+
 
 Free resources
 --------------

@@ -1,11 +1,19 @@
-PyQBDI
-======
+PyQBDI Bindings
+===============
 
-PyQBDI bindings are quite close to the original C/C++ API. 
-All you need to be able to use the bindings is to : **import pyqbdi**
+PyQBDI bindings are quite close to the original C/C++ API.
+All you need to add to your script be able to use the bindings is:
 
-API bindings
-------------
+.. code-block:: python
+
+    import pyqbdi
+
+    def pyqbdipreload_on_run(vm, start, stop):
+        pass
+
+
+API
+---
 
 State Management
 ^^^^^^^^^^^^^^^^
@@ -17,29 +25,29 @@ State Management
 State Initialization
 ^^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: pyqbdi.pyqbdi
+.. automodule:: pyqbdi
    :members: alignedAlloc, allocateVirtualStack, simulateCall
+   :member-order: bysource
 
-    
+
 Execution
 ^^^^^^^^^
 
 .. autoclass:: pyqbdi.vm
    :members: run, call
 
-    
+
 Instrumentation
 ^^^^^^^^^^^^^^^
 
 .. autoclass:: pyqbdi.vm
-   :members: addCodeCB, addCodeAddrCB, addCodeRangeCB, addMnemonicCB, deleteInstrumentation, deleteAllInstrumentations
+   :members: addCodeCB, addCodeAddrCB, addCodeRangeCB, addMnemonicCB, deleteInstrumentation, deleteAllInstrumentations,
+             addInstrumentedRange, addInstrumentedModule, addInstrumentedModuleFromAddr, removeInstrumentedRange,
+             removeInstrumentedModule, removeInstrumentedModuleFromAddr
 
-.. autoclass:: pyqbdi.vm
-   :members: addInstrumentedRange, addInstrumentedModule, addInstrumentedModuleFromAddr, removeInstrumentedRange, removeInstrumentedModule, removeInstrumentedModuleFromAddr
-
-.. autoclass:: pyqbdi.pyqbdi
+.. automodule:: pyqbdi
    :members: getModuleNames
-   
+
 
 Memory Callback
 ^^^^^^^^^^^^^^^
@@ -47,12 +55,13 @@ Memory Callback
 .. autoclass:: pyqbdi.vm
    :members: addMemAddrCB, addMemRangeCB, addMemAccessCB, recordMemoryAccess
 
-   
+
 Analysis
 ^^^^^^^^
 
 .. autoclass:: pyqbdi.vm
    :members: getInstAnalysis, getInstMemoryAccess, getBBMemoryAccess
+   :member-order: bysource
 
 
 Cache management
@@ -60,6 +69,7 @@ Cache management
 
 .. autoclass:: pyqbdi.vm
    :members: precacheBasicBlock, clearCache, clearAllCache
+   :member-order: bysource
 
 
 VM Events
@@ -72,22 +82,20 @@ VM Events
 Helpers
 ^^^^^^^
 
-.. autoclass:: pyqbdi.pyqbdi
+.. automodule:: pyqbdi
    :members: readMemory, writeMemory, decodeFloat, encodeFloat
-   
+
 Objects
 ^^^^^^^
 
-.. autodata:: pyqbdi.InstAnalysis_Object
+.. autodata:: pyqbdi.InstAnalysis
 
-.. autodata:: pyqbdi.GPRState_Object
+.. autodata:: pyqbdi.GPRState
 
-.. autodata:: pyqbdi.FPRState_Object
+.. autodata:: pyqbdi.FPRState
 
-.. autodata:: pyqbdi.MemoryAccess_Object
+.. autodata:: pyqbdi.MemoryAccess
 
-.. autodata:: pyqbdi.OperandAnalysis_Object
+.. autodata:: pyqbdi.OperandAnalysis
 
-.. autodata:: pyqbdi.VMInstance_Object
-
-.. autodata:: pyqbdi.VMState_Object
+.. autodata:: pyqbdi.VMState

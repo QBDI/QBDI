@@ -66,7 +66,7 @@ Analysis
 .. autojs:: ../../tools/frida-qbdi.js
     :members: QBDI.prototype.getInstAnalysis, QBDI.prototype.getInstMemoryAccess, QBDI.prototype.getBBMemoryAccess
     :member-order: alphabetical
-    
+
 Cache management
 ^^^^^^^^^^^^^^^^
 

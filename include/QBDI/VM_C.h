@@ -170,7 +170,7 @@ QBDI_EXPORT bool qbdi_callV(VMInstanceRef instance, rword* retval, rword functio
  * @param[in] [retval]   Pointer to the returned value (optional).
  * @param[in] function   Address of the function start instruction.
  * @param[in] argNum     The number of arguments in the variadic list.
- * @param[in] ap         An stdarg va_list object.
+ * @param[in] args       Arguments as an array of rword values.
  *
  * @return  True if at least one block has been executed.
  */
