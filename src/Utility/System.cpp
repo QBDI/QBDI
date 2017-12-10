@@ -33,12 +33,17 @@ const std::vector<std::string> getHostCPUFeatures() {
     bool ret = llvm::sys::getHostCPUFeatures(features);
     if (ret) {
         for (const auto& feat: features) {
+            // XXX: #19 Bad AVX support detection in VM environments
             #if defined(_QBDI_FORCE_DISABLE_AVX)
+            char* disable_avx = "1";
+            #else
+            char* disable_avx = getenv("QBDI_FORCE_DISABLE_AVX");
+            #endif
             // fix buggy dynamic detection
-            if(feat.first().equals(llvm::StringRef("avx"))) {
+            if(disable_avx != NULL &&
+                    feat.first().equals(llvm::StringRef("avx"))) {
                 continue;
             }
-            #endif
             if(feat.second) {
                 mattrs.push_back(feat.first());
             }
