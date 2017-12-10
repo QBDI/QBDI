@@ -39,10 +39,10 @@ If you want to get started using QBDI bindings, you can create a new default pro
     make
     # If frida-compile is not installed
     npm install frida-compile babelify
-    ./node_modules/.bin/frida-compile FridaQBDI_sample.js -o RunMe.js
+    ./node_modules/.bin/frida-compile ../FridaQBDI_sample.js -o RunMe.js
     # else
-    frida-compile ../FridaQBDI_sample.js -o ../RunMe.js
-    frida ./demo.bin -l ../RunMe.js
+    frida-compile ../FridaQBDI_sample.js -o RunMe.js
+    frida ./demo.bin -l ./RunMe.js
 
 
 You can find all the information about QBDI bindings in the next section along with a writeup that demonstrates what can be achieved using QBDI with Frida injection.

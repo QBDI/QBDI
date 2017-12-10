@@ -28,12 +28,23 @@ their address and disassembly.
 How to run it?
 --------------
 
-To be able to run pyQBDI you need to preload **libpyqbdi** library (using either **LD_PRELOAD** or **DYLD_INSERT_LIBRARIES**).
+To be able to run pyQBDI you need to preload **libpyqbdi** library (using either ``LD_PRELOAD`` under
+**linux** or ``DYLD_INSERT_LIBRARIES`` under **macOS**).
 You also need to specify the path to your python tool using the environment variable **PYQBDI_TOOL**.
+
+On linux:
 
 .. code-block:: bash
 
     LD_PRELOAD=/usr/local/lib/libpyqbdi.so PYQBDI_TOOL=./example.py /usr/bin/id
+
+
+On macOS:
+
+.. code-block:: bash
+
+    DYLD_INSERT_LIBRARIES=/usr/local/lib/libpyqbdi.dylib PYQBDI_TOOL=./example.py /usr/bin/id
+
 
 .. note:: We will soon provide a loader script, making the use of pyQBDI easier.
 
