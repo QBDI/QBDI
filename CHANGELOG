@@ -1,3 +1,10 @@
+2017-12-10 Cedric TESSIER <ctessier@quarkslab.com>
+
+    * Version 0.5 RC3
+    * Introducing pyqbdi, full featured python bindings based on QBDIPreload library
+    * Revising variadic API to include more friendly prototypes
+    * Various bug, compilation and documentation fixes
+
 2017-10-30 Charles HUBAIN <chubain@quarkslab.com>
 
     * Version 0.5 RC2
