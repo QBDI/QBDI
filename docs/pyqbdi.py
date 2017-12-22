@@ -5,26 +5,26 @@ class vm():
     def getGPRState():
         """Obtain the current general purpose register state.
 
-            :returns: gprState -- A structure containing the GPR state.
+            :returns: GPRState  (a structure containing the GPR state).
         """
         pass
 
     def getFPRState():
         """Obtain the current floating point register state.
 
-            :returns: gprState : A structure containing the FPR state.
+            :returns: FPRState  (a structure containing the FPR state).
         """
         pass
 
     def setGPRState(gprState):
-        """Set the GPR state.
+        """Set the general purpose register state.
 
             :param grpState: A structure containing the GPR state.
         """
         pass
 
     def setFPRState(fprState):
-        """Obtain the current floating point register state.
+        """Set the current floating point register state.
 
             :param fprState: A structure containing the FPR state
         """
@@ -278,8 +278,9 @@ class vm():
         """
         pass
 
+
 # PyQBDI module functions
-def alignedAlloc(size,align):
+def alignedAlloc(size, align):
     """Allocate a block of memory of a specified sized with an aligned base address.
 
         :param size: Allocation size in bytes.
@@ -289,10 +290,12 @@ def alignedAlloc(size,align):
     """
     pass
 
+
 def alignedFree():
     """
     """
     pass
+
 
 def allocateVirtualStack(ctx, stackSize):
     """Allocate a new stack and setup the GPRState accordingly.
@@ -305,6 +308,7 @@ def allocateVirtualStack(ctx, stackSize):
     """
     pass
 
+
 def simulateCall(ctx, returnAddress, args):
     """Simulate a call by modifying the stack and registers accordingly.
 
@@ -314,12 +318,14 @@ def simulateCall(ctx, returnAddress, args):
     """
     pass
 
+
 def getModuleNames():
     """ Get a list of all the module names loaded in the process memory.
 
         :returns: A list of strings, each one containing the name of a loaded module.
     """
     pass
+
 
 def readMemory(address, size):
     """Read a memory content from a base address.
@@ -328,16 +334,26 @@ def readMemory(address, size):
         :param size: Read size
 
         :returns: Bytes of content.
+
+        .. warning::
+
+            This API is hazardous as the whole process memory can be read.
     """
     pass
+
 
 def writeMemory(address, bytes):
     """Write a memory content to a base address.
 
         :param address: Base address
         :param bytes: Memory content
+
+    .. warning::
+
+            This API is hazardous as the whole process memory can be written.
     """
     pass
+
 
 def decodeFloat(val):
     """ Decode a float stored as a long.
@@ -345,6 +361,7 @@ def decodeFloat(val):
         :param val: Long value.
     """
     pass
+
 
 def encodeFloat(val):
     """Encode a float as a long.

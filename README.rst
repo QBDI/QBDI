@@ -7,17 +7,21 @@ DBI framework. It aims to support Linux, macOS, Android, iOS and Windows operati
 x86, x86-64, ARM and AArch64 architectures. Information about what is a DBI framework and how QBDI 
 works can be found in the user documentation introduction (:ref:`user-introduction`).
 
-QBDI modularity means it doesn't contain a preferred injection method, rather QBDI is meant to be 
-used in conjunction with an external injection tool. QBDI examples include a linux and macOS 
-injector for dynamic executables and there are also bindings to use `Frida <https://frida.re>`_ 
-as an injector.
+QBDI modularity means it doesn't contain a preferred injection method and it is designed to be
+used in conjunction with an external injection tool. QBDI includes a tiny (``LD_PRELOAD`` based)
+Linux and macOS injector for dynamic executables (QBDIPreload), which acts as the foundation for our
+Python bindings (pyQBDI).
+QBDI is also fully integrated with `Frida <https://frida.re>`_, a reference dynamic instrumentation toolkit,
+allowing anybody to use their combined powers.
 
-x86-64 support is mature however SIMD memory access are not yet reported. ARM support is in 
-progress but already sufficient to execute simple CLI program like *ls* or *cat*. x86 and AArch64 
-are planned, but currently unsupported.
+x86-64 support is mature (even if SIMD memory access are not yet reported). ARM architecture is
+a work in progress but already sufficient to execute simple CLI program like *ls* or *cat*.
+x86 and AArch64 are planned, but currently unsupported.
 
-A current limitation is that QBDI doesn't handle signals, multi-threading and C++ exception 
-mechanisms.
+A current limitation is that QBDI doesn't handle signals, multithreading (it doesn't deal with new
+threads creation) and C++ exception mechanisms.
+However, those system-dependent features will probably not be part of the core library (KISS),
+and should be integrated as a new layer (to be determined how).
 
 .. role:: green
 .. role:: yellow
@@ -27,10 +31,10 @@ mechanisms.
 =======   =====================   ======================   =================================
 CPU       Operating Systems       Execution                Memory Access Information
 =======   =====================   ======================   =================================
-x86-64    Linux, OS X, Windows    :green:`Supported`       :yellow:`Partial (only non SIMD)`
-ARM       Linux, Android          :yellow:`Partial`        :red:`Unsupported`
+x86-64    Linux, macOS, Windows   :green:`Supported`       :yellow:`Partial (only non SIMD)`
+ARM       Linux, Android, iOS     :yellow:`Partial`        :red:`Unsupported`
 AArch64   Linux, Android          :red:`Unsupported`       :red:`Unsupported`
-x86       Linux, Windows, OS X    :red:`Unsupported`       :red:`Unsupported`
+x86       Linux, macOS, Windows   :red:`Unsupported`       :red:`Unsupported`
 =======   =====================   ======================   =================================
 
 .. intro-end
