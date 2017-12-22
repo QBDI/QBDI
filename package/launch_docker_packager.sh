@@ -1,6 +1,6 @@
 #!/bin/sh
 VERSION=0.5.0
-RELEASE_VERSION=$VERSION-rc3
+RELEASE_VERSION=$VERSION
 
 BASEDIR=$(cd $(dirname "$0") && pwd -P)
 cd "$BASEDIR/.."
