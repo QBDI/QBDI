@@ -326,7 +326,7 @@ class GetReadValue : public PatchGenerator, public AutoAlloc<PatchGenerator, Get
                 else if(size == 2) {
                     readinst = mov32rm16(dst, Reg(REG_SP), 1, 0, 0, 0);
                 }
-                else if(size == 2) {
+                else if(size == 1) {
                     readinst = mov32rm8(dst, Reg(REG_SP), 1, 0, 0, 0);
                 }
                 return {NoReloc(readinst)};
@@ -422,7 +422,7 @@ public:
                 else if(size == 2) {
                     readinst = mov32rm16(dst, Reg(REG_SP), 1, 0, 0, 0);
                 }
-                else if(size == 2) {
+                else if(size == 1) {
                     readinst = mov32rm8(dst, Reg(REG_SP), 1, 0, 0, 0);
                 }
                 return {NoReloc(readinst)};
