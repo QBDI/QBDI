@@ -1,20 +1,20 @@
 #!/bin/sh
 
-ARM_ARCH=armv6
-ARM_C_INCLUDE=/usr/arm-linux-gnueabi/include/
-ARM_CXX_INCLUDE=/usr/arm-linux-gnueabi/include/c++/6/
+SYSROOT=~/sysroot-glibc-linaro/
+ARM_ARCH=armv7
 
-export AS=arm-linux-gnueabi-as
-export CC=arm-linux-gnueabi-gcc
-export CXX=arm-linux-gnueabi-g++
-export STRIP=arm-linux-gnueabi-strip
+LINARO_TOOLCHAIN=~/gcc-linaro/bin
+export AS=${LINARO_TOOLCHAIN}/arm-linux-gnueabihf-as
+export CC=${LINARO_TOOLCHAIN}/arm-linux-gnueabihf-gcc
+export CXX=${LINARO_TOOLCHAIN}/arm-linux-gnueabihf-g++
+export STRIP=${LINARO_TOOLCHAIN}/arm-linux-gnueabihf-strip
 
 cmake .. \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_CROSSCOMPILING=True \
-      -DCMAKE_C_FLAGS="-march=${ARM_ARCH} -I${ARM_C_INCLUDE}" \
-      -DCMAKE_CXX_FLAGS="-march=${ARM_ARCH} -I${ARM_C_INCLUDE} -I${ARM_CXX_INCLUDE}" \
-      -DSTRIP_PATH="${STRIP}" \
+      -DCMAKE_C_FLAGS="-march=${ARM_ARCH} --sysroot=${SYSROOT}" \
+      -DCMAKE_CXX_FLAGS="-march=${ARM_ARCH} --sysroot=${SYSROOT}" \
       -DPLATFORM=linux-ARM \
       -DARM_ARCH=${ARM_ARCH} \
+      -DSTRIP_PATH=${STRIP} \
       -DAS_BINARY=${AS}

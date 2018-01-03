@@ -27,13 +27,7 @@ namespace QBDI {
 
 // Low level layer 2
 
-llvm::MCInst ldri12(unsigned int reg, unsigned int base, rword offset);
-
-llvm::MCInst stri12(unsigned int reg, unsigned int base, rword offset);
-
 llvm::MCInst adr(unsigned int reg, rword offset);
-
-llvm::MCInst mov(unsigned int dst, unsigned int src);
 
 llvm::MCInst add(unsigned int dst, unsigned int src);
 
@@ -41,29 +35,39 @@ llvm::MCInst pop(unsigned int reg, int64_t cond);
 
 llvm::MCInst push(unsigned int reg, int64_t cond);
 
-llvm::MCInst b(rword offset);
-
 // High level layer 2
 
-RelocatableInst::SharedPtr Ldr(Reg reg, Reg base, Offset offset);
+RelocatableInst::SharedPtr Ldr(CPUMode cpuMode, Reg reg, Reg base, Offset offset);
 
-RelocatableInst::SharedPtr Ldr(Reg reg, Offset offset);
+RelocatableInst::SharedPtr Ldr(CPUMode cpuMode, Reg reg, Offset offset);
 
-RelocatableInst::SharedPtr Ldr(Reg reg, Constant constant);
+RelocatableInst::SharedPtr Ldr(CPUMode cpuMode, Reg reg, Constant constant);
 
-RelocatableInst::SharedPtr Str(Reg reg, Reg base, Offset offset);
+RelocatableInst::SharedPtr LdrInstID(CPUMode cpuMode, Reg reg);
 
-RelocatableInst::SharedPtr Str(Reg reg, Offset offset);
+RelocatableInst::SharedPtr Str(CPUMode cpuMode, Reg reg, Reg base, Offset offset);
 
-RelocatableInst::SharedPtr Str(Reg reg, Constant constant);
+RelocatableInst::SharedPtr Str(CPUMode cpuMode, Reg reg, Offset offset);
+
+RelocatableInst::SharedPtr Str(CPUMode cpuMode, Reg reg, Constant constant);
+
+RelocatableInst::SharedPtr Mov(CPUMode cpuMode, Reg dst, Reg src);
+
+RelocatableInst::SharedPtr Mov(CPUMode cpuMode, Reg dst, unsigned int src);
+
+RelocatableInst::SharedPtr Mov(CPUMode cpuMode, Reg dst, Constant constant);
+
+RelocatableInst::SharedPtr BlxEpilogue(CPUMode cpuMode);
+
+RelocatableInst::SharedPtr BlEpilogue(CPUMode cpuMode);
 
 RelocatableInst::SharedPtr Vstrs(unsigned int reg, unsigned int base, rword offset);
 
 RelocatableInst::SharedPtr Vldrs(unsigned int reg, unsigned int base, rword offset);
 
-RelocatableInst::SharedPtr Adr(Reg reg, rword offset);
+RelocatableInst::SharedPtr Adr(CPUMode cpuMode, Reg reg, rword offset);
 
-RelocatableInst::SharedPtr Adr(Reg reg, Offset offset);
+RelocatableInst::SharedPtr Adr(CPUMode cpuMode, Reg reg, Offset offset);
 
 RelocatableInst::SharedPtr Msr(Reg reg);
 

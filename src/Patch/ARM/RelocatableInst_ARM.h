@@ -34,9 +34,18 @@ public:
     llvm::MCInst reloc(ExecBlock *exec_block, CPUMode cpuMode) {
         uint16_t id = exec_block->newShadow();
         exec_block->setShadow(id, value);
-        inst.getOperand(opn).setImm(
-            exec_block->getDataBlockOffset() + exec_block->getShadowOffset(id) - 8
-        );
+        if(cpuMode == CPUMode::ARM) {
+            inst.getOperand(opn).setImm(
+                exec_block->getDataBlockOffset() + exec_block->getShadowOffset(id) - 8
+            );
+        }
+        else if(cpuMode == CPUMode::Thumb) {
+            // Thumb Align(PC,4)
+            rword align = exec_block->getCurrentPC() % 4;
+            inst.getOperand(opn).setImm(
+                exec_block->getDataBlockOffset() + exec_block->getShadowOffset(id) + align - 4
+            );
+        }
         return inst;
     }
 };
@@ -50,7 +59,14 @@ public:
         : RelocatableInst(inst), opn(opn), offset(offset) {};
 
     llvm::MCInst reloc(ExecBlock *exec_block, CPUMode cpuMode) {
-        inst.getOperand(opn).setImm(offset + exec_block->getDataBlockOffset() - 8);
+        if(cpuMode == CPUMode::ARM) {
+            inst.getOperand(opn).setImm(offset + exec_block->getDataBlockOffset() - 8);
+        }
+        else if(cpuMode == CPUMode::Thumb) {
+            // Thumb Align(PC,4)
+            rword align = exec_block->getCurrentPC() % 4;
+            inst.getOperand(opn).setImm(offset + exec_block->getDataBlockOffset() + align - 4);
+        }
         return inst;
     }
 };
@@ -64,7 +80,14 @@ public:
         : RelocatableInst(inst), opn(opn), offset(offset) {};
 
     llvm::MCInst reloc(ExecBlock *exec_block, CPUMode cpuMode) {
-        inst.getOperand(opn).setImm(offset + exec_block->getEpilogueOffset() - 8);
+        if(cpuMode == CPUMode::ARM) {
+            inst.getOperand(opn).setImm(offset + exec_block->getEpilogueOffset() - 8);
+        }
+        else if(cpuMode == CPUMode::Thumb) {
+            // Thumb Align(PC,4)
+            rword align = exec_block->getCurrentPC() % 4;
+            inst.getOperand(opn).setImm(offset + exec_block->getEpilogueOffset() + align - 4);
+        }
         return inst;
     }
 };
@@ -81,9 +104,18 @@ public:
     llvm::MCInst reloc(ExecBlock *exec_block, CPUMode cpuMode) {
         uint16_t id = exec_block->newShadow();
         exec_block->setShadow(id, offset + exec_block->getCurrentPC());
-        inst.getOperand(opn).setImm(
-            exec_block->getDataBlockOffset() + exec_block->getShadowOffset(id) - 8
-        );
+        if(cpuMode == CPUMode::ARM) {
+            inst.getOperand(opn).setImm(
+                exec_block->getDataBlockOffset() + exec_block->getShadowOffset(id) - 8
+            );
+        }
+        else if(cpuMode == CPUMode::Thumb) {
+            // Thumb Align(PC,4)
+            rword align = exec_block->getCurrentPC() % 4;
+            inst.getOperand(opn).setImm(
+                exec_block->getDataBlockOffset() + exec_block->getShadowOffset(id) + align - 4
+            );
+         }
         return inst;
     }
 };
@@ -98,9 +130,37 @@ public:
     llvm::MCInst reloc(ExecBlock *exec_block, CPUMode cpuMode) {
         uint16_t id = exec_block->newShadow();
         exec_block->setShadow(id, exec_block->getNextInstID());
-        inst.getOperand(opn).setImm(
-            exec_block->getDataBlockOffset() + exec_block->getShadowOffset(id) - 8
-        );
+        if(cpuMode == CPUMode::ARM) {
+            inst.getOperand(opn).setImm(
+                exec_block->getDataBlockOffset() + exec_block->getShadowOffset(id) - 8
+            );
+        }
+        else if(cpuMode == CPUMode::Thumb) {
+            // Thumb Align(PC,4)
+            rword align = exec_block->getCurrentPC() % 4;
+            inst.getOperand(opn).setImm(
+                exec_block->getDataBlockOffset() + exec_block->getShadowOffset(id) + align - 4
+            );
+         }
+        return inst;
+    }
+};
+
+class AdjustPCAlign : public RelocatableInst, public AutoAlloc<RelocatableInst, AdjustPCAlign> {
+    unsigned int opn;
+
+public:
+  AdjustPCAlign(llvm::MCInst inst, unsigned int opn)
+        : RelocatableInst(inst), opn(opn) {};
+
+    llvm::MCInst reloc(ExecBlock *exec_block, CPUMode cpuMode) {
+        if(cpuMode == CPUMode::Thumb) {
+            // Thumb Align(PC,4)
+            rword align = exec_block->getCurrentPC() % 4;
+            inst.getOperand(opn).setImm(
+                inst.getOperand(opn).getImm() + align
+            );
+         }
         return inst;
     }
 };

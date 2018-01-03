@@ -31,7 +31,7 @@ RelocatableInst::SharedPtrVec getExecBlockPrologue() {
     append(prologue, SaveReg(Reg(REG_SP), Offset(offsetof(Context, hostState.sp))).generate((CPUMode) 0));
     // Move sp at the beginning of the data block to solve memory addressing range problems
     // This instruction needs to be EXACTLY HERE for relative addressing alignement reasons
-    prologue.push_back(Adr(Reg(REG_SP), 4080));
+    prologue.push_back(Adr((CPUMode) 0, Reg(REG_SP), 4080));
     append(prologue, SaveReg(Reg(REG_BP), Offset(offsetof(Context, hostState.fp))).generate((CPUMode) 0));
     // Restore FPR
     for(unsigned int i = 0; i < QBDI_NUM_FPR; i++)
@@ -39,14 +39,14 @@ RelocatableInst::SharedPtrVec getExecBlockPrologue() {
             Vldrs(llvm::ARM::S0 + i, Reg(REG_SP), offsetof(Context, fprState.s) + i*sizeof(float))
         );
     // Restore CPSR
-    prologue.push_back(Ldr(Reg(0), Reg(REG_SP), offsetof(Context, gprState.cpsr)));
+    prologue.push_back(Ldr(CPUMode::ARM, Reg(0), Reg(REG_SP), offsetof(Context, gprState.cpsr)));
     prologue.push_back(Msr(Reg(0)));
     // Restore GPR
     for(unsigned int i = 0; i < NUM_GPR-1; i++)
         append(prologue, LoadReg(Reg(i), Offset(Reg(i))).generate((CPUMode) 0));
     // Jump selector
     prologue.push_back(
-        Ldr(Reg(REG_PC), Offset(offsetof(Context, hostState.selector)))
+        Ldr(CPUMode::ARM, Reg(REG_PC), Offset(offsetof(Context, hostState.selector)))
     );
 
     return prologue;
@@ -56,10 +56,10 @@ RelocatableInst::SharedPtrVec getExecBlockEpilogue() {
     RelocatableInst::SharedPtrVec epilogue;
 
     // Save guest state
-    for(unsigned int i = 0; i < NUM_GPR-1; i++)
+    for(unsigned int i = 0; i < NUM_GPR-2; i++)
         append(epilogue, SaveReg(Reg(i), Offset(Reg(i))).generate((CPUMode) 0));
     // Move sp at the beginning of the data block to solve memory addressing range problems
-    epilogue.push_back(Adr(Reg(REG_SP), Offset(0)));
+    epilogue.push_back(Adr(CPUMode::ARM, Reg(REG_SP), Offset(0)));
     // Save FPR
     for(unsigned int i = 0; i < QBDI_NUM_FPR; i++)
         epilogue.push_back(
@@ -67,7 +67,7 @@ RelocatableInst::SharedPtrVec getExecBlockEpilogue() {
         );
     // Save CPSR
     epilogue.push_back(Mrs(Reg(0)));
-    epilogue.push_back(Str(Reg(0), Offset(offsetof(Context, gprState.cpsr))));
+    epilogue.push_back(Str(CPUMode::ARM, Reg(0), Offset(offsetof(Context, gprState.cpsr))));
     // Restore host RBP, RSP
     append(epilogue, LoadReg(Reg(REG_BP), Offset(offsetof(Context, hostState.fp))).generate((CPUMode) 0));
     append(epilogue, LoadReg(Reg(REG_SP), Offset(offsetof(Context, hostState.sp))).generate((CPUMode) 0));
@@ -80,6 +80,29 @@ RelocatableInst::SharedPtrVec getExecBlockEpilogue() {
 PatchRule::SharedPtrVec getDefaultPatchRules() {
     PatchRule::SharedPtrVec rules;
 
+    /* Rule #0: Simulating BX PC instructions.
+     * Target:  BX PC 
+     * Patch:   Temp(0) := Operand(0)
+     *          DataOffset[Offset(PC)] := Temp(0)
+    */
+    rules.push_back(
+        PatchRule(
+            And({
+                Or({
+                    OpIs(llvm::ARM::BX),
+                    OpIs(llvm::ARM::BX_pred),
+                    OpIs(llvm::ARM::tBX),
+                }),
+                UseReg(REG_PC)
+            }),
+            {
+                GetPCOffset(Temp(0), Constant(0)),
+                WriteTemp(Temp(0), Offset(Reg(REG_PC))),
+                SimulateExchange(Temp(0))
+            }
+        )
+    );
+
     /* Rule #0: Simulating BX instructions.
      * Target:  BX REG
      * Patch:   Temp(0) := Operand(0)
@@ -89,11 +112,13 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
         PatchRule(
             Or({
                 OpIs(llvm::ARM::BX),
-                OpIs(llvm::ARM::BX_pred)
+                OpIs(llvm::ARM::BX_pred),
+                OpIs(llvm::ARM::tBX),
             }),
             {
                 GetOperand(Temp(0), Operand(0)),
-                WriteTemp(Temp(0), Offset(Reg(REG_PC)))
+                WriteTemp(Temp(0), Offset(Reg(REG_PC))),
+                SimulateExchange(Temp(0))
             }
         )
     );
@@ -113,12 +138,13 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
             {
                 GetOperand(Temp(0), Operand(0)),
                 WriteTemp(Temp(0), Offset(Reg(REG_PC))),
-                SimulateLink(Temp(0))
+                SimulateLink(Temp(0)),
+                SimulateExchange(Temp(0))
             }
         )
     );
 
-    /* Rule #2: Simulating BL and BLX immediate instructions.
+    /* Rule #2: Simulating BL immediate instructions for ARM.
      * Target:  BL(X) IMM
      * Patch:   Temp(0) := PC + Operand(0)
      *          DataOffset[Offset(PC)] := Temp(0)
@@ -129,12 +155,87 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
             Or({
                 OpIs(llvm::ARM::BL),
                 OpIs(llvm::ARM::BL_pred),
-                OpIs(llvm::ARM::BLXi)
             }),
             {
                 GetPCOffset(Temp(0), Operand(0)),
                 WriteTemp(Temp(0), Offset(Reg(REG_PC))),
                 SimulateLink(Temp(0))
+            }
+        )
+    );
+
+    /* Rule #3: Simulating BLX immediate instructions for ARM.
+     * Target:  BL(X) IMM
+     * Patch:   Temp(0) := PC + Operand(0)
+     *          DataOffset[Offset(PC)] := Temp(0)
+     *          SimulateLink(Temp(0))
+    */
+    rules.push_back(
+        PatchRule(
+            OpIs(llvm::ARM::BLXi),
+            {
+                GetPCOffset(Temp(0), Operand(0)),
+                WriteTemp(Temp(0), Offset(Reg(REG_PC))),
+                SimulateLink(Temp(0)),
+                SimulateExchange(Temp(0)),
+            }
+        )
+    );
+
+    /* Rule #4: Simulating BL immediate instructions for Thumb.
+     * Target:  BL(X) IMM
+     * Patch:   Temp(0) := PC + Operand(2)
+     *          DataOffset[Offset(PC)] := Temp(0)
+     *          SimulateLink(Temp(0))
+    */
+    rules.push_back(
+        PatchRule(
+            Or({
+                OpIs(llvm::ARM::tBL),
+            }),
+            {
+                GetPCOffset(Temp(0), Operand(2)),
+                WriteTemp(Temp(0), Offset(Reg(REG_PC))),
+                SimulateLink(Temp(0))
+            }
+        )
+    );
+
+    /* Rule #5: Simulating BL immediate instructions for Thumb.
+     * Target:  BLX IMM
+     * Patch:   Temp(0) := PC + Operand(2)
+     *          DataOffset[Offset(PC)] := Temp(0)
+     *          SimulateLink(Temp(0))
+    */
+    rules.push_back(
+        PatchRule(
+            Or({
+                OpIs(llvm::ARM::tBLXi),
+            }),
+            {
+                GetPCOffset(Temp(0), Operand(2)),
+                WriteTemp(Temp(0), Offset(Reg(REG_PC))),
+                SimulateLink(Temp(0)),
+                SimulateExchange(Temp(0)),
+            }
+        )
+    );
+
+    /* Rule #6: Simulating B immediate instructions for Thumb.
+     * Target:  B IMM
+     * Patch:   Temp(0) := PC + Operand(2)
+     *          DataOffset[Offset(PC)] := Temp(0)
+     *          SimulateLink(Temp(0))
+    */
+    rules.push_back(
+        PatchRule(
+            Or({
+                OpIs(llvm::ARM::tB),
+                OpIs(llvm::ARM::t2B),
+            }),
+            {
+                GetPCOffset(Temp(0), Operand(0)),
+                WriteTemp(Temp(0), Offset(Reg(REG_PC))),
             }
         )
     );
@@ -149,7 +250,7 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
         PatchRule(
             Or({
                 OpIs(llvm::ARM::MOVPCLR),
-                OpIs(llvm::ARM::BX_RET)
+                OpIs(llvm::ARM::BX_RET),
             }),
             {
                 GetPCOffset(Temp(0), Constant(-4)),
@@ -159,12 +260,13 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
                     AddOperand(Operand(1), Reg(REG_LR)),
                     AddOperand(Operand(4), Constant(0)),
                 }),
-                WriteTemp(Temp(0), Offset(Reg(REG_PC)))
+                WriteTemp(Temp(0), Offset(Reg(REG_PC))),
+                SimulateExchange(Temp(0)),
             }
         )
     );
 
-    /* Rule #4: Simulating B with conditional flag.
+    /* Rule #4: Simulating B with conditional flag under ARM.
      * Target:  Bcc IMM
      * Patch:     Temp(0) := PC + Operand(0)
      *         ---Bcc IMM --> Bcc END
@@ -185,6 +287,51 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
         )
     );
 
+    /* Rule #4: Simulating B with conditional flag under thumb.
+     * Target:  Bcc IMM
+     * Patch:     Temp(0) := PC + Operand(0)
+     *         ---Bcc IMM --> Bcc END
+     *         |  Temp(0) := PC + Constant(-4) # next instruction
+     *         -->END: DataOffset[Offset(PC)] := Temp(0)
+    */
+    rules.push_back(
+        PatchRule(
+            OpIs(llvm::ARM::tBcc),
+            {
+                GetPCOffset(Temp(0), Operand(0)),
+                ModifyInstruction({
+                    SetOperand(Operand(0), Constant(2))
+                }),
+                GetPCOffset(Temp(0), Constant(-2)),
+                WriteTemp(Temp(0), Offset(Reg(REG_PC)))
+            }
+        )
+    );
+
+    /* Rule #4: Simulating CBZ with conditional flag.
+     * Target:  Bcc IMM
+     * Patch:     Temp(0) := PC + Operand(1)
+     *         ---CBZ IMM --> Bcc END
+     *         |  Temp(0) := PC + Constant(-4) # next instruction
+     *         -->END: DataOffset[Offset(PC)] := Temp(0)
+    */
+    rules.push_back(
+        PatchRule(
+            Or({
+                OpIs(llvm::ARM::tCBZ),
+                OpIs(llvm::ARM::tCBNZ),
+            }),
+            {
+                GetPCOffset(Temp(0), Operand(1)),
+                ModifyInstruction({
+                    SetOperand(Operand(1), Constant(2))
+                }),
+                GetPCOffset(Temp(0), Constant(-2)),
+                WriteTemp(Temp(0), Offset(Reg(REG_PC)))
+            }
+        )
+    );
+
     /* Rule #5: Simulating LDMIA using pc in the reg list.
      * Target:  LDMIA {REG1, ..., REGN, pc}
      * Patch:   LDMIA {REG1, ..., REGN, pc} --> LDMIA {REG1, ..., REGN}
@@ -200,7 +347,8 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
                 ModifyInstruction({
                     RemoveOperand(Reg(REG_PC))
                 }),
-                SimulatePopPC(Temp(0))
+                SimulatePopPC(Temp(0)),
+                SimulateExchange(Temp(0)),
             }
         )
     );
@@ -222,7 +370,8 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
                     SubstituteWithTemp(Reg(REG_PC), Temp(0)),
                     SetOperand(Operand(0), Temp(1))
                 }),
-                WriteTemp(Temp(1), Offset(Reg(REG_PC)))
+                WriteTemp(Temp(1), Offset(Reg(REG_PC))),
+                SimulateExchange(Temp(0)),
             }
         )
     );
@@ -258,7 +407,7 @@ RelocatableInst::SharedPtrVec getTerminator(rword address, CPUMode cpuMode) {
     RelocatableInst::SharedPtrVec terminator;
     
     append(terminator, SaveReg(Reg(2), Offset(Reg(2))).generate(cpuMode));
-    terminator.push_back(Ldr(Reg(2), Constant(address)));
+    terminator.push_back(Ldr(cpuMode, Reg(2), Constant(address)));
     append(terminator, SaveReg(Reg(2), Offset(Reg(REG_PC))).generate(cpuMode));
     append(terminator, LoadReg(Reg(2), Offset(Reg(2))).generate(cpuMode));
 

@@ -231,7 +231,7 @@ TEST_F(VMTest, InstCallback) {
     QBDI::rword info[2] = {42, 0};
     QBDI::simulateCall(state, FAKE_RET_ADDR, {info[0]});
 
-    QBDI::rword rstart = (QBDI::rword) &satanicFun;
+    QBDI::rword rstart = ((QBDI::rword) &satanicFun) & (~1);
     QBDI::rword rend = (QBDI::rword) (((uint8_t*) &satanicFun) + 100);
 
     bool success = vm->removeInstrumentedModuleFromAddr((QBDI::rword) &dummyFun0);
@@ -532,7 +532,7 @@ TEST_F(VMTest, DelayedCacheFlush) {
     bool instrumented = vm->addInstrumentedModuleFromAddr((QBDI::rword)&dummyFunCall);
     ASSERT_TRUE(instrumented);
     vm->addCodeCB(QBDI::InstPosition::POSTINST, countInstruction, &count);
-    info.instID = vm->addCodeRangeCB((QBDI::rword) dummyFun4, ((QBDI::rword) dummyFun4) + 10, 
+    info.instID = vm->addCodeRangeCB((QBDI::rword) dummyFun4 & (~1), ((QBDI::rword) dummyFun4) + 10, 
                                     QBDI::InstPosition::POSTINST, funkyCountInstruction, &info);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {1, 2, 3, 4});

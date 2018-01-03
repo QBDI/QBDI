@@ -106,6 +106,7 @@ struct HostState {
     rword callback;
     rword data;
     rword origin;
+    rword exchange;
 };
 
 /*! ARM Execution context.

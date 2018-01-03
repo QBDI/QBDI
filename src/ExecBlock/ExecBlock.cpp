@@ -118,6 +118,13 @@ ExecBlock::ExecBlock(Assembly* assembly[CPUMode::COUNT], VMInstanceRef vminstanc
     for(auto &inst: execBlockPrologue) {
         assembly[0]->writeInstruction(inst->reloc(this, (CPUMode) 0), codeStream);
     }
+
+    #if defined(QBDI_ARCH_ARM)
+    // To make sure shadows are addressable from the fist offset under ARM
+    if(codeStream->current_pos() < 0x100) {
+        codeStream->seek(0x100);
+    }
+    #endif
 }
 
 ExecBlock::~ExecBlock() {
@@ -171,6 +178,9 @@ void ExecBlock::selectSeq(uint16_t seqID) {
     currentSeq = seqID;
     currentInst = seqRegistry[currentSeq].startInstID;
     context->hostState.selector = (rword) codeBlock.base() + (rword) instRegistry[seqRegistry[seqID].startInstID].offset;
+    #if defined(QBDI_ARCH_ARM)
+    context->hostState.selector += seqRegistry[seqID].cpuMode & 1;
+    #endif
 }
 
 void ExecBlock::run() {
@@ -187,6 +197,10 @@ VMAction ExecBlock::execute() {
     LogDebug("ExecBlock::execute", "Executing ExecBlock %p programmed with selector at 0x%" PRIRWORD, 
              this, context->hostState.selector);
 
+    #if defined(QBDI_ARCH_ARM)
+    // Reset the exchange request flag before execution
+    context->hostState.exchange = (rword) 0;
+    #endif
     currentInst = seqRegistry[currentSeq].startInstID;
 
     do {

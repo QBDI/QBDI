@@ -28,12 +28,12 @@ RelocatableInst::SharedPtrVec getBreakToHost(Reg temp, CPUMode cpuMode) {
 
     // Use the temporary register to compute PC + 16 which is the address which will follow this 
     // patch and where the execution needs to be resumed
-    breakToHost.push_back(HostPCRel(ldri12(temp, Reg(REG_PC), 0), 2, 16));
+    breakToHost.push_back(Adr(cpuMode, temp, cpuMode == CPUMode::ARM ? 16 : 17));
     // Set the selector to this address so the execution can be resumed when the exec block will be 
     // reexecuted
-    append(breakToHost, SaveReg(temp, Offset(offsetof(Context, hostState.selector))).generate(cpuMode));
+    breakToHost.push_back(Str(cpuMode, temp, Offset(offsetof(Context, hostState.selector))));
     // Restore the temporary register
-    append(breakToHost, LoadReg(temp, Offset(temp)).generate(cpuMode));
+    breakToHost.push_back(Ldr(cpuMode, temp, Offset(temp)));
     // Jump to the epilogue to break to the host
     append(breakToHost, JmpEpilogue().generate(cpuMode));
 

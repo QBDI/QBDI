@@ -52,12 +52,12 @@ public:
         CPUMode cpuMode, TempManager *temp_manager, const Patch *toMerge) {
 
         if(inst->getOperand(op).isImm()) {
-            return {Ldr(temp_manager->getRegForTemp(temp), 
+            return {Ldr(cpuMode, temp_manager->getRegForTemp(temp), 
                        Constant(inst->getOperand(op).getImm()))
             };
         }
         else if(inst->getOperand(op).isReg()) {
-            return {NoReloc(mov(temp_manager->getRegForTemp(temp), inst->getOperand(op).getReg()))};
+            return {Mov(cpuMode, temp_manager->getRegForTemp(temp), inst->getOperand(op).getReg())};
         }
         else {
             LogError("GetOperand::generate", "Invalid operand type for GetOperand()");
@@ -86,8 +86,12 @@ public:
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst, rword address, rword instSize,
         CPUMode cpuMode, TempManager *temp_manager, const Patch *toMerge) {
-
-        return{Ldr(temp_manager->getRegForTemp(temp), Constant(cst))};
+        if(cst < (2<<16)) {
+            return{Mov(cpuMode, temp_manager->getRegForTemp(temp), Constant(cst))};
+        }
+        else {
+            return{Ldr(cpuMode, temp_manager->getRegForTemp(temp), Constant(cst))};
+        }
     }
 };
 
@@ -136,19 +140,22 @@ public:
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst, rword address, rword instSize,
         CPUMode cpuMode, TempManager *temp_manager, const Patch *toMerge) {
 
+        rword pcoffset = cpuMode == CPUMode::ARM ? 8 : 4;
+
         if(type == ConstantType) {
-            return{Ldr(temp_manager->getRegForTemp(temp), Constant(address + 8 + cst))};
+            return{Ldr(cpuMode, temp_manager->getRegForTemp(temp), Constant(address + pcoffset + cst))};
         }
         else if(type == OperandType) {
             if(inst->getOperand(op).isImm()) {
                 return {Ldr(
+                    cpuMode, 
                     temp_manager->getRegForTemp(temp), 
-                    Constant(address + 8 + inst->getOperand(op).getImm()))
+                    Constant(address + pcoffset + inst->getOperand(op).getImm()))
                 };
             }
             else if(inst->getOperand(op).isReg()) {
                 return {
-                    Ldr(temp_manager->getRegForTemp(temp), Constant(address + 8)),
+                    Ldr(cpuMode, temp_manager->getRegForTemp(temp), Constant(address + pcoffset)),
                     NoReloc(add(temp_manager->getRegForTemp(temp), inst->getOperand(op).getReg()))
                 };
             }
@@ -183,7 +190,7 @@ public:
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst, rword address, rword instSize,
         CPUMode cpuMode, TempManager *temp_manager, const Patch *toMerge) {
 
-        return {InstId(ldri12(temp_manager->getRegForTemp(temp), Reg(REG_PC), 0), 2)};
+        return {LdrInstID(cpuMode, temp_manager->getRegForTemp(temp))};
     }
 };
 
@@ -204,10 +211,10 @@ public:
      *
      * MOV REG32 temp, REG32 reg
     */
-    RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst, rword address, rword instSize,
+    RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst, rword address, rword instSize, 
         CPUMode cpuMode, TempManager *temp_manager, const Patch *toMerge) {
 
-        return {NoReloc(mov(temp_manager->getRegForTemp(temp), reg))};
+        return {Mov(cpuMode, temp_manager->getRegForTemp(temp), reg)};
     }
 };
 
@@ -232,7 +239,7 @@ public:
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst, rword address, rword instSize,
         CPUMode cpuMode, TempManager *temp_manager, const Patch *toMerge) {
 
-        return {Str(temp_manager->getRegForTemp(temp), offset)};
+        return {Str(cpuMode, temp_manager->getRegForTemp(temp), offset)};
     }
 
     bool modifyPC() {
@@ -262,7 +269,7 @@ public:
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst, rword address, rword instSize,
         CPUMode cpuMode, TempManager *temp_manager, const Patch *toMerge) {
 
-        return {Str(reg, offset)};
+        return {Str(cpuMode, reg, offset)};
     }
 
     RelocatableInst::SharedPtrVec generate(CPUMode cpuMode) {
@@ -292,7 +299,7 @@ public:
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst, rword address, rword instSize,
         CPUMode cpuMode, TempManager *temp_manager, const Patch *toMerge) {
 
-        return {Ldr(reg, offset)};
+        return {Ldr(cpuMode, reg, offset)};
     }
 
     RelocatableInst::SharedPtrVec generate(CPUMode cpuMode) {
@@ -315,7 +322,15 @@ public:
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst, rword address, rword instSize,
         CPUMode cpuMode, TempManager *temp_manager, const Patch *toMerge) {
 
-        return {EpilogueRel(b(0), 0, -8)};
+        RelocatableInst::SharedPtrVec patch;
+        patch.push_back(Str(cpuMode, Reg(REG_LR), Offset(Reg(REG_LR))));
+        if(cpuMode == CPUMode::ARM) {
+            patch.push_back(BlEpilogue(cpuMode));
+        }
+        else if(cpuMode == CPUMode::Thumb) {
+            patch.push_back(BlxEpilogue(cpuMode));
+        }
+        return patch;
     }
 
     RelocatableInst::SharedPtrVec generate(CPUMode cpuMode) {
@@ -346,8 +361,42 @@ public:
 
         RelocatableInst::SharedPtrVec patch;
 
-        append(patch, GetPCOffset(Temp(0), Constant(-4)).generate(inst, address, instSize, cpuMode, temp_manager, nullptr));
-        patch.push_back(NoReloc(mov(Reg(REG_LR), temp_manager->getRegForTemp(temp))));
+        if(cpuMode == CPUMode::ARM) {
+            append(patch, GetPCOffset(temp, Constant(instSize - 8)).generate(inst, address, instSize, cpuMode, temp_manager, nullptr));
+        }
+        else {
+            append(patch, GetPCOffset(temp, Constant(instSize - 4 + 1)).generate(inst, address, instSize, cpuMode, temp_manager, nullptr));
+        }
+        patch.push_back(Mov(cpuMode, Reg(REG_LR), temp_manager->getRegForTemp(temp)));
+
+        return patch;
+    }
+};
+
+class SimulateExchange : public PatchGenerator, public AutoAlloc<PatchGenerator, SimulateExchange> {
+    Temp  temp;
+
+public:
+
+    /*! Simulate the effects of the link operation performed by BL and BLX instructions: the address of
+     * the next instruction is copied into the LR register. A temp and a shadow are needed to
+     * compute this address.
+     *
+     * @param[in] temp   Any unused temporary, overwritten by this generator.
+    */
+    SimulateExchange(Temp temp): temp(temp) {}
+
+    /*! Output:
+     *
+     * LDR REG32 temp, MEM32 Shadow(IMM32 1)
+     * STR REG32 temp, MEM32 DSataBlock[Offset(hostState.exchange)]
+    */
+    RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst, rword address, rword instSize, 
+        CPUMode cpuMode, TempManager *temp_manager, const Patch *toMerge) {
+        RelocatableInst::SharedPtrVec patch;
+
+        append(patch, GetConstant(temp, Constant(1)).generate(inst, address, instSize, cpuMode, temp_manager, nullptr));
+        append(patch, WriteTemp(temp, Offset(offsetof(Context, hostState.exchange))).generate(inst, address, instSize, cpuMode, temp_manager, nullptr));
 
         return patch;
     }
@@ -370,7 +419,7 @@ public:
      *
      * LDR REG32 temp, MEM32 Shadow(IMM32 (address + 4))
      * POPcc REG32 temp
-     * STR MEM32 DataBlock[Offset(PC)], REG32 temp
+     * STR REG32 temp, MEM32 DataBlock[Offset(PC)]
      *
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst, rword address, rword instSize,

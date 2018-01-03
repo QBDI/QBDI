@@ -301,6 +301,15 @@ bool Engine::run(rword start, rword stop) {
         else {
             LogDebug("Engine::run", "Executing 0x%" PRIRWORD " through DBI", currentPC);
             VMEvent event = VMEvent::SEQUENCE_ENTRY;
+            
+            #if defined(QBDI_ARCH_ARM)
+            // Handle ARM mode switching, only at the start of an execution or when the guest 
+            // signal an exchange.
+            if(curExecBlock == nullptr || curExecBlock->getContext()->hostState.exchange == 1) {
+                curCPUMode = currentPC & 1 ? CPUMode::Thumb : CPUMode::ARM;
+                currentPC = currentPC & (~1);
+            }
+            #endif
 
             // Is cache flush pending?
             if(blockManager->isFlushPending()) {
