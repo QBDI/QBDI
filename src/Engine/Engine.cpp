@@ -430,18 +430,29 @@ uint32_t Engine::addVMEventCB(VMEvent mask, VMCallback cbk, void *data) {
     return id | EVENTID_VM_MASK;
 }
 
-void Engine::signalEvent(VMEvent kind, rword currentPC, GPRState *gprState, FPRState *fprState) {
-    VMState state = VMState {kind, currentPC, currentPC, currentPC, currentPC, 0};
-    if(curExecBlock != nullptr) {
-        const BBInfo* bbInfo = blockManager->getBBInfo(currentPC);
-        state.sequenceEnd = curExecBlock->getInstMetadata(curExecBlock->getSeqEnd(curExecBlock->getCurrentSeqID()))->endAddress();
-        state.basicBlockStart = bbInfo->start;
-        state.basicBlockEnd = bbInfo->end;
-    }
+void Engine::signalEvent(VMEvent event, rword currentPC, GPRState *gprState, FPRState *fprState) {
+    static VMState vmState;
+    static rword lastUpdatePC = 0;
+
     for(const auto& item : vmCallbacks) {
         const QBDI::CallbackRegistration& r = item.second;
-        if(kind & r.mask) {
-            r.cbk(vminstance, &state, gprState, fprState, r.data);
+        if(event & r.mask) {
+            if(lastUpdatePC != currentPC) {
+                lastUpdatePC = currentPC;
+                if(curExecBlock != nullptr) {
+                    const BBInfo* bbInfo = blockManager->getBBInfo(currentPC);
+                    uint16_t seqID = curExecBlock->getCurrentSeqID();
+                    vmState.sequenceStart = curExecBlock->getInstMetadata(curExecBlock->getSeqStart(seqID))->address;
+                    vmState.sequenceEnd   = curExecBlock->getInstMetadata(curExecBlock->getSeqEnd(seqID))->endAddress();
+                    vmState.basicBlockStart = bbInfo->start;
+                    vmState.basicBlockEnd   = bbInfo->end;
+                }
+                else {
+                    vmState = VMState {event, currentPC, currentPC, currentPC, currentPC, 0};
+                }
+            }
+            vmState.event = event;
+            r.cbk(vminstance, &vmState, gprState, fprState, r.data);
         }
     }
 }
