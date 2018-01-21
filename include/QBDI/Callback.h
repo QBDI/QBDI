@@ -86,14 +86,14 @@ _QBDI_ENABLE_BITMASK_OPERATORS(VMEvent)
 /*!
  * Structure describing the current VM state
  */
-struct VMState {
+typedef struct {
     VMEvent event;           /*!< The event which triggered the callback.*/   
     rword sequenceStart;     /*!< The current sequence start address which can also be the execution transfer destination.*/
     rword sequenceEnd;       /*!< The current sequence end address which can also be the execution transfer destination.*/
     rword basicBlockStart;   /*!< The current basic block start address which can also be the execution transfer destination.*/
     rword basicBlockEnd;     /*!< The current basic block end address which can also be the execution transfer destination.*/
     rword lastSignal;        /*!< Not implemented.*/
-};
+} VMState;
 
 /*! VM callback function type.
  * 
@@ -107,7 +107,7 @@ struct VMState {
  *
  * @return                  The callback result used to signal subsequent actions the VM needs to take.
  */
-typedef VMAction (*VMCallback)(VMInstanceRef vm, const struct VMState *vmState, GPRState *gprState, FPRState *fprState, void *data);
+typedef VMAction (*VMCallback)(VMInstanceRef vm, const VMState *vmState, GPRState *gprState, FPRState *fprState, void *data);
 
 static const uint16_t NO_REGISTRATION = 0xFFFF;
 static const uint16_t NOT_FOUND = 0xFFFF;
@@ -125,13 +125,13 @@ _QBDI_ENABLE_BITMASK_OPERATORS(MemoryAccessType);
 
 /*! Describe a memory access
  */
-struct MemoryAccess {
+typedef struct {
     rword instAddress;     /*!< Address of instruction making the access */
     rword accessAddress;   /*!< Address of accessed memory */
     rword value;           /*!< Value read from / written to memory */
     uint8_t size;          /*!< Size of memory access (in bytes) */
     MemoryAccessType type; /*!< Memory access type (READ / WRITE) */
-};
+} MemoryAccess;
 
 #ifdef __cplusplus
 } // QBDI::

@@ -37,7 +37,7 @@ namespace QBDI {
 
 typedef uint64_t rword;
 
-struct FPControl {
+typedef struct {
     uint16_t invalid :1,
              denorm  :1,
              zdiv    :1,
@@ -49,9 +49,9 @@ struct FPControl {
              rc      :2,
              /*inf*/ :1,
                      :3;
-};
+} FPControl;
 
-struct FPStatus {
+typedef struct {
     uint16_t invalid :1,
              denorm  :1,
              zdiv    :1,
@@ -66,24 +66,24 @@ struct FPStatus {
              tos     :3,
              c3      :1,
              busy    :1;
-};
+} FPStatus;
 
-struct MMSTReg {
+typedef struct {
     char    reg[10];
     char    rsrv[6];
-};
+} MMSTReg;
 
 // SPHINX_X86_64_FPRSTATE_BEGIN
 /*! X86_64 Floating Point Register context.
  */
 typedef struct {
     union {
-        struct FPControl  fcw;      /* x87 FPU control word */
-        uint16_t          rfcw;
+        FPControl     fcw;      /* x87 FPU control word */
+        uint16_t      rfcw;
     };
     union {
-        struct FPStatus   fsw;      /* x87 FPU status word */
-        uint16_t          rfsw;
+        FPStatus      fsw;      /* x87 FPU status word */
+        uint16_t      rfsw;
     };
     uint8_t           ftw;          /* x87 FPU tag word */
     uint8_t           rsrv1;        /* reserved */
@@ -96,14 +96,14 @@ typedef struct {
     uint16_t          rsrv3;        /* reserved */
     uint32_t          mxcsr;        /* MXCSR Register state */
     uint32_t          mxcsrmask;    /* MXCSR mask */
-    struct MMSTReg    stmm0;        /* ST0/MM0   */
-    struct MMSTReg    stmm1;        /* ST1/MM1  */
-    struct MMSTReg    stmm2;        /* ST2/MM2  */
-    struct MMSTReg    stmm3;        /* ST3/MM3  */
-    struct MMSTReg    stmm4;        /* ST4/MM4  */
-    struct MMSTReg    stmm5;        /* ST5/MM5  */
-    struct MMSTReg    stmm6;        /* ST6/MM6  */
-    struct MMSTReg    stmm7;        /* ST7/MM7  */
+    MMSTReg           stmm0;        /* ST0/MM0   */
+    MMSTReg           stmm1;        /* ST1/MM1  */
+    MMSTReg           stmm2;        /* ST2/MM2  */
+    MMSTReg           stmm3;        /* ST3/MM3  */
+    MMSTReg           stmm4;        /* ST4/MM4  */
+    MMSTReg           stmm5;        /* ST5/MM5  */
+    MMSTReg           stmm6;        /* ST6/MM6  */
+    MMSTReg           stmm7;        /* ST7/MM7  */
     char              xmm0[16];     /* XMM 0  */
     char              xmm1[16];     /* XMM 1  */
     char              xmm2[16];     /* XMM 2  */
