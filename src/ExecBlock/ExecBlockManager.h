@@ -39,14 +39,12 @@ struct InstLoc {
 };
 
 struct SeqLoc {
-    ExecBlock *execBlock;
+    uint16_t blockIdx;
     uint16_t seqID;
-    uint16_t bbIdx;
-};
-
-struct BBInfo {
-    rword start;
-    rword end;
+    rword bbStart;
+    rword bbEnd;
+    rword seqStart;
+    rword seqEnd;
 };
 
 struct ExecRegion {
@@ -54,7 +52,6 @@ struct ExecRegion {
     unsigned                        translated; 
     unsigned                        available;
     std::vector<ExecBlock*>         blocks;
-    std::vector<BBInfo>             bbRegistry;
     std::map<rword, SeqLoc>         sequenceCache;
     std::map<rword, InstLoc>        instCache;
     std::map<rword, InstAnalysis*>  analysisCache;
@@ -80,8 +77,6 @@ private:
 
     size_t findRegion(Range<rword> codeRange);
 
-    SeqLoc getSeqLoc(rword address);
-
     void updateRegionStat(size_t r, rword translated);
 
     float getExpansionRatio() const;
@@ -95,9 +90,9 @@ public:
 
     void printCacheStatistics(FILE* output) const;
 
-    ExecBlock* getExecBlock(rword address);
+    ExecBlock* getProgrammedExecBlock(rword address);
 
-    const BBInfo* getBBInfo(rword address) const;
+    const SeqLoc* getSeqLoc(rword address) const;
 
     void writeBasicBlock(const std::vector<Patch>& basicBlock);
 

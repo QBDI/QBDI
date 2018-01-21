@@ -29,17 +29,17 @@ TEST_F(ExecBlockManagerTest, BasicBlockLookup) {
     QBDI::ExecBlockManager execBlockManager(*MCII, *MRI, *assembly);
     
     execBlockManager.writeBasicBlock(getEmptyBB(0x42424242));
-    ASSERT_EQ(nullptr, execBlockManager.getExecBlock(0x13371337));
-    ASSERT_NE(nullptr, execBlockManager.getExecBlock(0x42424242));
+    ASSERT_EQ(nullptr, execBlockManager.getProgrammedExecBlock(0x13371337));
+    ASSERT_NE(nullptr, execBlockManager.getProgrammedExecBlock(0x42424242));
 }
 
 TEST_F(ExecBlockManagerTest, ClearCache) {
     QBDI::ExecBlockManager execBlockManager(*MCII, *MRI, *assembly);
 
     execBlockManager.writeBasicBlock(getEmptyBB(0x42424242));
-    ASSERT_NE(nullptr, execBlockManager.getExecBlock(0x42424242));
+    ASSERT_NE(nullptr, execBlockManager.getProgrammedExecBlock(0x42424242));
     execBlockManager.clearCache();
-    ASSERT_EQ(nullptr, execBlockManager.getExecBlock(0x42424242));
+    ASSERT_EQ(nullptr, execBlockManager.getProgrammedExecBlock(0x42424242));
 }
 
 TEST_F(ExecBlockManagerTest, ExecBlockReuse) {
@@ -47,8 +47,8 @@ TEST_F(ExecBlockManagerTest, ExecBlockReuse) {
 
     execBlockManager.writeBasicBlock(getEmptyBB(0x42424242));
     execBlockManager.writeBasicBlock(getEmptyBB(0x42424243));
-    ASSERT_EQ(execBlockManager.getExecBlock(0x42424242), 
-              execBlockManager.getExecBlock(0x42424243));
+    ASSERT_EQ(execBlockManager.getProgrammedExecBlock(0x42424242),
+              execBlockManager.getProgrammedExecBlock(0x42424243));
 }
 
 TEST_F(ExecBlockManagerTest, ExecBlockRegions) {
@@ -56,8 +56,8 @@ TEST_F(ExecBlockManagerTest, ExecBlockRegions) {
 
     execBlockManager.writeBasicBlock(getEmptyBB(0x42424242));
     execBlockManager.writeBasicBlock(getEmptyBB(0x24242424));
-    ASSERT_NE(execBlockManager.getExecBlock(0x42424242), 
-              execBlockManager.getExecBlock(0x24242424));
+    ASSERT_NE(execBlockManager.getProgrammedExecBlock(0x42424242),
+              execBlockManager.getProgrammedExecBlock(0x24242424));
 }
 
 TEST_F(ExecBlockManagerTest, ExecBlockAlloc) {
@@ -68,8 +68,8 @@ TEST_F(ExecBlockManagerTest, ExecBlockAlloc) {
         execBlockManager.writeBasicBlock(getEmptyBB(address));
     }
 
-    ASSERT_NE(execBlockManager.getExecBlock(0), 
-              execBlockManager.getExecBlock(0xfff));
+    ASSERT_NE(execBlockManager.getProgrammedExecBlock(0),
+              execBlockManager.getProgrammedExecBlock(0xfff));
 }
 
 TEST_F(ExecBlockManagerTest, CacheRewrite) {
@@ -77,11 +77,11 @@ TEST_F(ExecBlockManagerTest, CacheRewrite) {
     unsigned int i = 0;
 
     execBlockManager.writeBasicBlock(getEmptyBB(0x42424242));
-    QBDI::ExecBlock* block1 = execBlockManager.getExecBlock(0x42424242);
+    QBDI::ExecBlock* block1 = execBlockManager.getProgrammedExecBlock(0x42424242);
     for(i = 0; i < 0x1000; i++) {
         execBlockManager.writeBasicBlock(getEmptyBB(0x42424242));
     }
-    QBDI::ExecBlock* block2 = execBlockManager.getExecBlock(0x42424242);
+    QBDI::ExecBlock* block2 = execBlockManager.getProgrammedExecBlock(0x42424242);
 
     ASSERT_EQ(block1, block2);
 }
@@ -97,12 +97,12 @@ TEST_F(ExecBlockManagerTest, MultipleBasicBlockExecution) {
     execBlockManager.writeBasicBlock(terminator1);
     execBlockManager.writeBasicBlock(terminator2);
     // Execute the two basic block and get the value of PC from the data block
-    block = execBlockManager.getExecBlock(0x42424242);
+    block = execBlockManager.getProgrammedExecBlock(0x42424242);
     ASSERT_NE(nullptr, block);
     block->execute();
     ASSERT_EQ((QBDI::rword) 0x42424242, QBDI_GPR_GET(&block->getContext()->gprState, QBDI::REG_PC));
 
-    block = execBlockManager.getExecBlock(0x13371337);
+    block = execBlockManager.getProgrammedExecBlock(0x13371337);
     ASSERT_NE(nullptr, block);
     block->execute();
     ASSERT_EQ((QBDI::rword) 0x13371337, QBDI_GPR_GET(&block->getContext()->gprState, QBDI::REG_PC));
@@ -116,13 +116,13 @@ TEST_F(ExecBlockManagerTest, Stresstest) {
         QBDI::Patch::Vec terminator = getEmptyBB(address);
         terminator[0].append(QBDI::getTerminator(address));
         execBlockManager.writeBasicBlock(terminator);
-        QBDI::ExecBlock *block = execBlockManager.getExecBlock(address);
+        QBDI::ExecBlock *block = execBlockManager.getProgrammedExecBlock(address);
         ASSERT_NE(nullptr, block);
         block->execute();
         ASSERT_EQ(address, QBDI_GPR_GET(&block->getContext()->gprState, QBDI::REG_PC));
     }
     for(; address > 0; address--) {
-        QBDI::ExecBlock *block = execBlockManager.getExecBlock(address-1);
+        QBDI::ExecBlock *block = execBlockManager.getProgrammedExecBlock(address-1);
         ASSERT_NE(nullptr, block);
         block->execute();
         ASSERT_EQ(address - 1, QBDI_GPR_GET(&block->getContext()->gprState, QBDI::REG_PC));
