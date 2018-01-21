@@ -336,8 +336,9 @@ bool Engine::run(rword start, rword stop) {
         }
         // Else execute through DBI
         else {
-            bool newBasicBlock = false;
+            VMEvent event = VMEvent::SEQUENCE_ENTRY;
             LogDebug("Engine::run", "Executing 0x%" PRIRWORD " through DBI", currentPC);
+
             // Is cache flush pending?
             if(blockManager->isFlushPending()) {
                 // Backup fprState and gprState
@@ -348,33 +349,32 @@ bool Engine::run(rword start, rword stop) {
                 // Commit the flush
                 blockManager->flushCommit();
             }
+
             // Test if we have it in cache
             curExecBlock = blockManager->getExecBlock(currentPC);
             if(curExecBlock == nullptr) {
                 LogDebug("Engine::run", "Cache miss for 0x%" PRIRWORD ", patching & instrumenting new basic block", currentPC);
                 handleNewBasicBlock(currentPC);
-                // Used to signal the event
-                newBasicBlock = true;
+                // Signal a new basic block
+                event |= BASIC_BLOCK_NEW;
                 // Set new basic block as current
                 curExecBlock = blockManager->getExecBlock(currentPC);
             }
+
             // Set context if necessary
-            if(&(curExecBlock->getContext()->gprState) != curGPRState) {
+            if(&(curExecBlock->getContext()->gprState) != curGPRState || &(curExecBlock->getContext()->fprState) != curFPRState) {
                 curExecBlock->getContext()->gprState = *curGPRState;
-            }
-            if(&(curExecBlock->getContext()->fprState) != curFPRState) {
                 curExecBlock->getContext()->fprState = *curFPRState;
             }
             curGPRState = &(curExecBlock->getContext()->gprState);
             curFPRState = &(curExecBlock->getContext()->fprState);
+
             // Signal events
-            if(newBasicBlock) {
-                signalEvent(BASIC_BLOCK_NEW, currentPC, curGPRState, curFPRState);
+            if ((curExecBlock->getSeqType(curExecBlock->getCurrentSeqID()) & SeqType::Entry) > 0) {
+                event |= BASIC_BLOCK_ENTRY;
             }
-            if(curExecBlock->getSeqType(curExecBlock->getCurrentSeqID()) & SeqType::Entry) {
-                signalEvent(BASIC_BLOCK_ENTRY, currentPC, curGPRState, curFPRState);
-            }
-            signalEvent(SEQUENCE_ENTRY, currentPC, curGPRState, curFPRState);
+            signalEvent(event, currentPC, curGPRState, curFPRState);
+
             // Execute
             hasRan = true;
             switch(curExecBlock->execute()) {
@@ -388,11 +388,13 @@ bool Engine::run(rword start, rword stop) {
                     curFPRState = fprState.get();
                     return hasRan;
             }
+
             // Signal events
-            if(curExecBlock->getSeqType(curExecBlock->getCurrentSeqID()) & SeqType::Exit) {
-                signalEvent(BASIC_BLOCK_EXIT, currentPC, curGPRState, curFPRState);
+            event = SEQUENCE_EXIT;
+            if ((curExecBlock->getSeqType(curExecBlock->getCurrentSeqID()) & SeqType::Exit) > 0) {
+                event |= BASIC_BLOCK_EXIT;
             }
-            signalEvent(SEQUENCE_EXIT, currentPC, curGPRState, curFPRState);
+            signalEvent(event, currentPC, curGPRState, curFPRState);
         }
         // Get next block PC
         currentPC = QBDI_GPR_GET(curGPRState, REG_PC);
