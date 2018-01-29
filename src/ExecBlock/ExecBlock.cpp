@@ -162,6 +162,7 @@ void ExecBlock::show() const {
 void ExecBlock::selectSeq(uint16_t seqID) {
     Require("ExecBlock::selectSeq", seqID < seqRegistry.size());
     currentSeq = seqID;
+    currentInst = seqRegistry[currentSeq].startInstID;
     context->hostState.selector = (rword) codeBlock.base() + (rword) instRegistry[seqRegistry[seqID].startInstID].offset;
 }
 
@@ -178,7 +179,6 @@ void ExecBlock::run() {
 VMAction ExecBlock::execute() {
     LogDebug("ExecBlock::execute", "Executing ExecBlock %p programmed with selector at 0x%" PRIRWORD, 
              this, context->hostState.selector);
-    currentInst = seqRegistry[currentSeq].startInstID;
     do {
         context->hostState.callback = (rword) 0;
         context->hostState.data = (rword) 0;
