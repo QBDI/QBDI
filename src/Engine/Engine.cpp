@@ -302,7 +302,7 @@ void Engine::handleNewBasicBlock(rword pc) {
 
 
 bool Engine::precacheBasicBlock(rword pc) {
-    if (blockManager->getExecBlock(pc) != nullptr) {
+    if (blockManager->getProgrammedExecBlock(pc) != nullptr) {
         // already in cache
         return false;
     }
@@ -336,8 +336,9 @@ bool Engine::run(rword start, rword stop) {
         }
         // Else execute through DBI
         else {
-            bool newBasicBlock = false;
+            VMEvent event = VMEvent::SEQUENCE_ENTRY;
             LogDebug("Engine::run", "Executing 0x%" PRIRWORD " through DBI", currentPC);
+
             // Is cache flush pending?
             if(blockManager->isFlushPending()) {
                 // Backup fprState and gprState
@@ -348,33 +349,32 @@ bool Engine::run(rword start, rword stop) {
                 // Commit the flush
                 blockManager->flushCommit();
             }
+
             // Test if we have it in cache
-            curExecBlock = blockManager->getExecBlock(currentPC);
+            curExecBlock = blockManager->getProgrammedExecBlock(currentPC);
             if(curExecBlock == nullptr) {
                 LogDebug("Engine::run", "Cache miss for 0x%" PRIRWORD ", patching & instrumenting new basic block", currentPC);
                 handleNewBasicBlock(currentPC);
-                // Used to signal the event
-                newBasicBlock = true;
+                // Signal a new basic block
+                event |= BASIC_BLOCK_NEW;
                 // Set new basic block as current
-                curExecBlock = blockManager->getExecBlock(currentPC);
+                curExecBlock = blockManager->getProgrammedExecBlock(currentPC);
             }
+
             // Set context if necessary
-            if(&(curExecBlock->getContext()->gprState) != curGPRState) {
+            if(&(curExecBlock->getContext()->gprState) != curGPRState || &(curExecBlock->getContext()->fprState) != curFPRState) {
                 curExecBlock->getContext()->gprState = *curGPRState;
-            }
-            if(&(curExecBlock->getContext()->fprState) != curFPRState) {
                 curExecBlock->getContext()->fprState = *curFPRState;
             }
             curGPRState = &(curExecBlock->getContext()->gprState);
             curFPRState = &(curExecBlock->getContext()->fprState);
+
             // Signal events
-            if(newBasicBlock) {
-                signalEvent(BASIC_BLOCK_NEW, currentPC, curGPRState, curFPRState);
+            if ((curExecBlock->getSeqType(curExecBlock->getCurrentSeqID()) & SeqType::Entry) > 0) {
+                event |= BASIC_BLOCK_ENTRY;
             }
-            if(curExecBlock->getSeqType(curExecBlock->getCurrentSeqID()) & SeqType::Entry) {
-                signalEvent(BASIC_BLOCK_ENTRY, currentPC, curGPRState, curFPRState);
-            }
-            signalEvent(SEQUENCE_ENTRY, currentPC, curGPRState, curFPRState);
+            signalEvent(event, currentPC, curGPRState, curFPRState);
+
             // Execute
             hasRan = true;
             switch(curExecBlock->execute()) {
@@ -388,11 +388,13 @@ bool Engine::run(rword start, rword stop) {
                     curFPRState = fprState.get();
                     return hasRan;
             }
+
             // Signal events
-            if(curExecBlock->getSeqType(curExecBlock->getCurrentSeqID()) & SeqType::Exit) {
-                signalEvent(BASIC_BLOCK_EXIT, currentPC, curGPRState, curFPRState);
+            event = SEQUENCE_EXIT;
+            if ((curExecBlock->getSeqType(curExecBlock->getCurrentSeqID()) & SeqType::Exit) > 0) {
+                event |= BASIC_BLOCK_EXIT;
             }
-            signalEvent(SEQUENCE_EXIT, currentPC, curGPRState, curFPRState);
+            signalEvent(event, currentPC, curGPRState, curFPRState);
         }
         // Get next block PC
         currentPC = QBDI_GPR_GET(curGPRState, REG_PC);
@@ -430,18 +432,28 @@ uint32_t Engine::addVMEventCB(VMEvent mask, VMCallback cbk, void *data) {
     return id | EVENTID_VM_MASK;
 }
 
-void Engine::signalEvent(VMEvent kind, rword currentPC, GPRState *gprState, FPRState *fprState) {
-    VMState state = VMState {kind, currentPC, currentPC, currentPC, currentPC, 0};
-    if(curExecBlock != nullptr) {
-        const BBInfo* bbInfo = blockManager->getBBInfo(currentPC);
-        state.sequenceEnd = curExecBlock->getInstMetadata(curExecBlock->getSeqEnd(curExecBlock->getCurrentSeqID()))->endAddress();
-        state.basicBlockStart = bbInfo->start;
-        state.basicBlockEnd = bbInfo->end;
-    }
+void Engine::signalEvent(VMEvent event, rword currentPC, GPRState *gprState, FPRState *fprState) {
+    static VMState vmState;
+    static rword lastUpdatePC = 0;
+
     for(const auto& item : vmCallbacks) {
         const QBDI::CallbackRegistration& r = item.second;
-        if(kind & r.mask) {
-            r.cbk(vminstance, &state, gprState, fprState, r.data);
+        if(event & r.mask) {
+            if(lastUpdatePC != currentPC) {
+                lastUpdatePC = currentPC;
+                if(curExecBlock != nullptr) {
+                    const SeqLoc* seqLoc    = blockManager->getSeqLoc(currentPC);
+                    vmState.basicBlockStart = seqLoc->bbStart;
+                    vmState.basicBlockEnd   = seqLoc->bbEnd;
+                    vmState.sequenceStart   = seqLoc->seqStart;
+                    vmState.sequenceEnd     = seqLoc->seqEnd;
+                }
+                else {
+                    vmState = VMState {event, currentPC, currentPC, currentPC, currentPC, 0};
+                }
+            }
+            vmState.event = event;
+            r.cbk(vminstance, &vmState, gprState, fprState, r.data);
         }
     }
 }

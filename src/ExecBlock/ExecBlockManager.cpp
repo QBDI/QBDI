@@ -70,55 +70,58 @@ void ExecBlockManager::printCacheStatistics(FILE* output) const {
     fprintf(output, "\tRegion overflow count: %zu\n", region_overflow);
 }
 
-SeqLoc ExecBlockManager::getSeqLoc(rword address) {
-    LogDebug("ExecBlockManager::getSeqLoc", "Looking up sequence at address %" PRIRWORD, address);
+ExecBlock* ExecBlockManager::getProgrammedExecBlock(rword address) {
+    LogDebug("ExecBlockManager::getProgrammedExecBlock", "Looking up sequence at address %" PRIRWORD, address);
+
+    size_t r = searchRegion(address);
+
+    if(r < regions.size() && regions[r].covered.contains(address)) {
+        ExecRegion& region = regions[r];
+
+        // Attempting sequenceCache resolution
+        const std::map<rword, SeqLoc>::const_iterator seqLoc = region.sequenceCache.find(address);
+        if(seqLoc != region.sequenceCache.end()) {
+            LogDebug("ExecBlockManager::getProgrammedExecBlock", "Found sequence 0x%" PRIRWORD " in ExecBlock %p as seqID %" PRIu16, 
+                     address, region.blocks[seqLoc->second.blockIdx], seqLoc->second.seqID);
+            // Select sequence and return execBlock
+            region.blocks[seqLoc->second.blockIdx]->selectSeq(seqLoc->second.seqID);
+            return region.blocks[seqLoc->second.blockIdx];
+        }
+
+        // Attempting instCache resolution    
+        const std::map<rword, InstLoc>::const_iterator instLoc = region.instCache.find(address);
+        if(instLoc != region.instCache.end()) {
+            // Retrieving corresponding block and seqLoc
+            ExecBlock* block = region.blocks[instLoc->second.blockIdx];
+            uint16_t existingSeqId = block->getSeqID(instLoc->second.instID);
+            const SeqLoc& existingSeqLoc = region.sequenceCache[block->getInstMetadata(block->getSeqStart(existingSeqId))->address];
+            // Creating a new sequence at that instruction and saving it in the sequenceCache
+            uint16_t newSeqID = block->splitSequence(instLoc->second.instID);
+            regions[r].sequenceCache[address] = SeqLoc {
+                instLoc->second.blockIdx,
+                newSeqID,
+                address,
+                existingSeqLoc.bbEnd,
+                address,
+                existingSeqLoc.seqEnd,
+            };
+            LogDebug("ExecBlockManager::getProgrammedExecBlock", "Splitted seqID %" PRIu16 " at instID %" PRIu16 " in ExecBlock %p as new sequence with seqID %" PRIu16,
+                     existingSeqId, instLoc->second.instID, block, newSeqID);
+            block->selectSeq(newSeqID);
+            return block;
+        }
+    }
+    LogDebug("ExecBlockManager::getProgrammedExecBlock", "Cache miss for sequence 0x%" PRIRWORD, address);
+    return nullptr;
+}
+
+const SeqLoc* ExecBlockManager::getSeqLoc(rword address) const {
     size_t r = searchRegion(address);
     if(r < regions.size() && regions[r].covered.contains(address)) {
-        // Attempting sequenceCache resolution
-        if(regions[r].sequenceCache.count(address) == 1) {
-            SeqLoc seqLoc = regions[r].sequenceCache[address];
-            LogDebug("ExecBlockManager::getSeqLoc", "Found sequence 0x%" PRIRWORD " in ExecBlock %p as seqID %" PRIu16, 
-                     address, seqLoc.execBlock, seqLoc.seqID);
-            return seqLoc;
+        const std::map<rword, SeqLoc>::const_iterator seqLoc = regions[r].sequenceCache.find(address);
+        if(seqLoc != regions[r].sequenceCache.end()) {
+            return &(seqLoc->second);
         }
-        // Attempting instCache resolution    
-        if(regions[r].instCache.count(address) == 1) {
-            // Retrieving instruction and corresponding block
-            InstLoc instLoc = regions[r].instCache[address];
-            ExecBlock* block = regions[r].blocks[instLoc.blockIdx];
-            // Registering new basic block
-            uint16_t existingSeqId = block->getSeqID(instLoc.instID);
-            regions[r].bbRegistry.push_back(BBInfo {
-                address, 
-                block->getInstMetadata(block->getSeqEnd(existingSeqId))->endAddress()
-            });
-            // Creating a new sequence at that instruction and saving it in the sequenceCache
-            uint16_t newSeqID = block->splitSequence(instLoc.instID);
-            SeqLoc seqLoc = SeqLoc {block, newSeqID, (uint16_t) (regions[r].bbRegistry.size() - 1)};
-            regions[r].sequenceCache[address] = seqLoc;
-            LogDebug("ExecBlockManager::getSeqLoc", "Splitted seqID %" PRIu16 " at instID %" PRIu16 " in ExecBlock %p as new sequence with seqID %" PRIu16,
-                     existingSeqId, instLoc.instID, block, newSeqID);
-            return seqLoc;
-        }
-    }
-    LogDebug("ExecBlockManager::getSeqLoc", "Cache miss for sequence 0x%" PRIRWORD, address);
-    return {nullptr, 0};
-}
-
-ExecBlock* ExecBlockManager::getExecBlock(rword address) {
-    SeqLoc seqLoc = getSeqLoc(address);
-    // Program the selector
-    if(seqLoc.execBlock != nullptr) {
-        seqLoc.execBlock->selectSeq(seqLoc.seqID);
-    }
-    return seqLoc.execBlock;
-}
-
-const BBInfo* ExecBlockManager::getBBInfo(rword address) const {
-    size_t r = searchRegion(address);
-    if(r < regions.size() && regions[r].covered.contains(address) && regions[r].sequenceCache.count(address) == 1) {
-        const SeqLoc &seqLoc = regions[r].sequenceCache.at(address);
-        return &regions[r].bbRegistry[seqLoc.bbIdx];
     }
     return nullptr;
 }
@@ -129,30 +132,27 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock) {
     size_t patchIdx = 0, patchEnd = basicBlock.size();
     const Patch& firstPatch = basicBlock.front();
     const Patch& lastPatch = basicBlock.back();
+    rword bbStart = firstPatch.metadata.address;
+    rword bbEnd = lastPatch.metadata.endAddress();
 
     // Locating an approriate cache region
-    Range<rword> codeRange(firstPatch.metadata.address, lastPatch.metadata.address + lastPatch.metadata.instSize);
-    size_t r = findRegion(codeRange);
+    size_t r = findRegion(Range<rword>(bbStart, bbEnd));
+    ExecRegion& region = regions[r];
 
     // Basic block truncation to prevent dedoubled sequence
     for(size_t i = 0; i < basicBlock.size(); i++) {
-        if(regions[r].sequenceCache.count(basicBlock[i].metadata.address) != 0) {
+        if(region.sequenceCache.count(basicBlock[i].metadata.address) != 0) {
             patchEnd = i;
             break;
         }
     }
-    // Cache integrity safeguard
+    // Cache integrity safeguard, should never happen
     if(patchEnd == 0) {
         LogDebug("ExecBlockManager::writeBasicBlock", "Cache hit, basic block 0x%" PRIRWORD " already exist", firstPatch.metadata.address);
         return;
     }
     LogDebug("ExecBlockManager::writeBasicBlock", "Writting new basic block 0x%" PRIRWORD, firstPatch.metadata.address);
-    
-    // Registering basic block
-    regions[r].bbRegistry.push_back(BBInfo {
-        firstPatch.metadata.address,
-        lastPatch.metadata.address + lastPatch.metadata.instSize
-    });
+
     // Writing the basic block as one or more sequences
     while(patchIdx < patchEnd) {
         // Attempting to find an ExecBlock in the region
@@ -160,38 +160,38 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock) {
             // If the region doesn't have enough space in its ExecBlocks, we add one.
             // Optimally, a region should only have one ExecBlocks but misspredictions or oversized 
             // basic blocks can cause overflows.
-            if(i >= regions[r].blocks.size()) {
-                regions[r].blocks.push_back(new ExecBlock(assembly, vminstance));
+            if(i >= region.blocks.size()) {
+                region.blocks.push_back(new ExecBlock(assembly, vminstance));
             }
             // Determine sequence type
             SeqType seqType = (SeqType) 0;
             if(patchIdx == 0) seqType = (SeqType) (seqType | SeqType::Entry);
             if(patchEnd == basicBlock.size()) seqType = (SeqType) (seqType | SeqType::Exit);
             // Write sequence
-            SeqWriteResult res = regions[r].blocks[i]->writeSequence(basicBlock.begin() + patchIdx, basicBlock.begin() + patchEnd, seqType);
+            SeqWriteResult res = region.blocks[i]->writeSequence(basicBlock.begin() + patchIdx, basicBlock.begin() + patchEnd, seqType);
             // Successful write
             if(res.seqID != EXEC_BLOCK_FULL) {
                 // Saving sequence in the sequence cache
-                SeqLoc currentSeq;
-                currentSeq.execBlock = regions[r].blocks[i];
-                currentSeq.seqID = res.seqID;
-                currentSeq.bbIdx = regions[r].bbRegistry.size() - 1;
-                regions[r].sequenceCache[basicBlock[patchIdx].metadata.address] = currentSeq;
+                regions[r].sequenceCache[basicBlock[patchIdx].metadata.address] = SeqLoc {
+                    (uint16_t) i,
+                    res.seqID,
+                    bbStart,
+                    bbEnd,
+                    basicBlock[patchIdx].metadata.address,
+                    basicBlock[patchIdx + res.patchWritten - 1].metadata.endAddress(),
+                };
                 // Generate instruction mapping cache
-                uint16_t startID = regions[r].blocks[i]->getSeqStart(res.seqID);
-                uint16_t endID = regions[r].blocks[i]->getSeqEnd(res.seqID);
-                for(uint16_t id = startID; id <= endID; id++) {
-                    regions[r].instCache[basicBlock[patchIdx + id - startID].metadata.address] = InstLoc {(uint16_t) i, id};
+                uint16_t startID = region.blocks[i]->getSeqStart(res.seqID);
+                for(size_t j = 0; j < res.patchWritten; j++) {
+                    region.instCache[basicBlock[patchIdx + j].metadata.address] = InstLoc {(uint16_t) i, (uint16_t) (startID + j)};
                 }
                 LogDebug("ExecBlockManager::writeBasicBlock", 
                          "Sequence 0x%" PRIRWORD "-0x%" PRIRWORD " written in ExecBlock %p as seqID %" PRIu16,
                          basicBlock[patchIdx].metadata.address,
-                         basicBlock[patchIdx + res.patchWritten - 1].metadata.address,
-                         currentSeq.execBlock, currentSeq.seqID);
+                         basicBlock[patchIdx + res.patchWritten - 1].metadata.endAddress(),
+                         region.blocks[i], res.seqID);
                 // Updating counters
-                translated += (basicBlock[patchIdx + res.patchWritten - 1].metadata.address + 
-                               basicBlock[patchIdx + res.patchWritten - 1].metadata.instSize) - 
-                               basicBlock[patchIdx].metadata.address;
+                translated += basicBlock[patchIdx + res.patchWritten - 1].metadata.endAddress() - basicBlock[patchIdx].metadata.address;
                 translation += res.bytesWritten;
                 patchIdx += res.patchWritten;
                 break;

@@ -88,10 +88,10 @@ _QBDI_ENABLE_BITMASK_OPERATORS(VMEvent)
  */
 typedef struct {
     VMEvent event;           /*!< The event which triggered the callback.*/   
-    rword sequenceStart;     /*!< The current sequence start address which can also be the execution transfer destination.*/
-    rword sequenceEnd;       /*!< The current sequence end address which can also be the execution transfer destination.*/
     rword basicBlockStart;   /*!< The current basic block start address which can also be the execution transfer destination.*/
     rword basicBlockEnd;     /*!< The current basic block end address which can also be the execution transfer destination.*/
+    rword sequenceStart;     /*!< The current sequence start address which can also be the execution transfer destination.*/
+    rword sequenceEnd;       /*!< The current sequence end address which can also be the execution transfer destination.*/
     rword lastSignal;        /*!< Not implemented.*/
 } VMState;
 
