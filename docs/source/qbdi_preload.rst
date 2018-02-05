@@ -1,3 +1,5 @@
+.. _qbdipreload:
+
 QBDIPreload
 ===========
 
@@ -22,8 +24,12 @@ You can look at the :ref:`qbdi_preload_template` for a working example with buil
 instructions.
 
 .. note::
+   QBDIPreload automaticaly takes care of blacklisting instrumentation of the C standard library 
+   and the OS loader as described in :ref:`intro_limitations`.
+
+.. note::
    Please note that QBDIPreload does not allow to instrument a binary before the main function 
-   (inside the loader and the library constructors / init).
+   (inside the loader and the library constructors / init) as explained in :ref:`intro_limitations`.
 
 
 QBDIPreload API

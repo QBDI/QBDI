@@ -7,6 +7,15 @@ PyQBDI offers you a way to script your instrumentation, allowing a fast and easy
 It also lets you interact with python environment, so you can, for example, post process any data
 you collected during the instrumentation.
 
+.. note::
+   Because PyQBDI is a bindings on top of QBDIPreload, it has the same limitations as QBDIPreload 
+   wich are describred in :ref:`qbdipreload`.
+
+.. note::
+   It is not possible to instrument a python process using PyQBDI because there will be a conflict 
+   between the **host** and the **guest** both trying to use the python runtime as described in 
+   :ref:`intro_limitations`. We would recommend directly using :ref:`qbdipreload`.
+
 We provide examples along with the API documentation in the following sections.
 
 .. toctree::
