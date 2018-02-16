@@ -87,7 +87,7 @@ _QBDI_ENABLE_BITMASK_OPERATORS(VMEvent)
  * Structure describing the current VM state
  */
 typedef struct {
-    VMEvent event;           /*!< The event which triggered the callback.*/   
+    VMEvent event;           /*!< The event(s) which triggered the callback (must be checked using a mask: event & BASIC_BLOCK_ENTRY).*/
     rword basicBlockStart;   /*!< The current basic block start address which can also be the execution transfer destination.*/
     rword basicBlockEnd;     /*!< The current basic block end address which can also be the execution transfer destination.*/
     rword sequenceStart;     /*!< The current sequence start address which can also be the execution transfer destination.*/

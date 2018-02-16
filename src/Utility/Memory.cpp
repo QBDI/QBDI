@@ -222,7 +222,7 @@ char *getImagePath(task_t task, const struct dyld_image_info* image_info) {
     if (image_info->imageFilePath == nullptr) {
         // see getImageInfo
         if (image_info->imageFileModDate == -1) {
-            return strdup("/usr/bin/dyld");
+            return strdup("/usr/lib/dyld");
         }
         return NULL;
     }

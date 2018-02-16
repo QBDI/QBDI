@@ -1532,7 +1532,7 @@ function QBDI() {
 
           Example:
                 >>> var vcbk = vm.newVMCallback(function(vm, evt, gpr, fpr, data) {
-                >>>   if (evt.event === VMEvent.EXEC_TRANSFER_CALL) {
+                >>>   if (evt.event & VMEvent.EXEC_TRANSFER_CALL) {
                 >>>     console.warn("[!] External call to 0x" + evt.basicBlockStart.toString(16));
                 >>>   }
                 >>>   return VMAction.CONTINUE;

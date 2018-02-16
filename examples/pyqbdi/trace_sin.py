@@ -8,10 +8,10 @@ import pyqbdi
 
 
 def vmCB(vm, evt, gpr, fpr, data):
-    if evt.event == pyqbdi.BASIC_BLOCK_ENTRY:
+    if evt.event & pyqbdi.BASIC_BLOCK_ENTRY:
         print "[*] Basic Block: 0x%x -> 0x%x" % \
                 (evt.basicBlockStart, evt.basicBlockEnd)
-    elif evt.event == pyqbdi.BASIC_BLOCK_EXIT:
+    elif evt.event & pyqbdi.BASIC_BLOCK_EXIT:
         for acs in vm.getBBMemoryAccess():
             print "@ {:#x} {:#x}:{:#x}".format(acs.instAddress,
                                                acs.accessAddress, acs.value)
