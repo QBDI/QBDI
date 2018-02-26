@@ -187,6 +187,12 @@ TEST_F(VMTest, ExternalCall) {
 }
 
 
+QBDI::VMAction countInstruction(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBDI::FPRState *fprState, void *data) {
+    *((uint32_t*)data) += 1;
+    return QBDI::VMAction::CONTINUE;
+}
+
+
 QBDI::VMAction evilCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBDI::FPRState *fprState, void *data) {
     const QBDI::InstAnalysis* ana = vm->getInstAnalysis();
     EXPECT_NE(ana->mnemonic, nullptr);
@@ -205,6 +211,19 @@ QBDI::VMAction evilCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBDI::F
         return QBDI::VMAction::STOP;
     }
     return QBDI::VMAction::CONTINUE;
+}
+
+
+/* This test is used to ensure that addCodeAddrCB is not broken */
+TEST_F(VMTest, Breakpoint) {
+    uint32_t counter = 0;
+    QBDI::rword retval = 0;
+    vm->addCodeAddrCB((QBDI::rword)dummyFun0, QBDI::InstPosition::PREINST, countInstruction, &counter);
+    vm->call(&retval, (QBDI::rword) dummyFun0);
+    ASSERT_EQ(retval, (QBDI::rword) 42);
+    ASSERT_EQ(counter, 1);
+
+    SUCCEED();
 }
 
 
@@ -382,11 +401,6 @@ TEST_F(VMTest, VMEvent_ExecTransfer) {
     ASSERT_EQ(ret, (QBDI::rword) 42);
     ASSERT_EQ(4, s);
     vm->deleteAllInstrumentations();
-}
-
-QBDI::VMAction countInstruction(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBDI::FPRState *fprState, void *data) {
-    *((uint32_t*)data) += 1;
-    return QBDI::VMAction::CONTINUE;
 }
 
 TEST_F(VMTest, CacheInvalidation) {

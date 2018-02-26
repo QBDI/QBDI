@@ -389,7 +389,7 @@ Instruction Conditions
 
 .. doxygenfunction:: QBDI::UseReg::UseReg
 
-.. doxygenfunction:: QBDI::AddressInRange::AddressInRange
+.. doxygenfunction:: QBDI::InstructionInRange::InstructionInRange
 
 .. doxygenfunction:: QBDI::OperandIsReg::OperandIsReg
 
