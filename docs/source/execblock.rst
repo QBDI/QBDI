@@ -19,6 +19,13 @@ addressing load and store. While x86 and x86-64 allow 32 bits offset, ARM only a
 offset [#]_. The ExecBlock design thus only requires to be able to load and store general purpose 
 registers with an address offset up to 4096 bytes.
 
+.. note::
+
+    By default, AVX registers are also saved, one may want to disable this in case where it is not
+    necessary, thus improving perfomances. It can be achieved using the environnement flag 
+    **QBDI_FORCE_DISABLE_AVX**.
+
+
 Some modern operating systems do not allow the allocation of memory pages with read, write and 
 execute permissions (RWX) for security reasons as this greatly facilitates remote code execution 
 exploits. It is thus necessary to allocate two separate pages, with different permissions, for code 
