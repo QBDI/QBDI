@@ -225,14 +225,19 @@ uint32_t VM::addCodeCB(InstPosition pos, InstCallback cbk, void *data) {
 
 uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk, void *data) {
     RequireAction("VM::addCodeAddrCB", cbk != nullptr, return VMError::INVALID_EVENTID);
-    return addCodeRangeCB(address, address + 1, pos, cbk, data);
+    return addInstrRule(InstrRule(
+        AddressIs(address),
+        getCallbackGenerator(cbk, data),
+        pos,
+        true
+    ));
 }
 
 uint32_t VM::addCodeRangeCB(rword start, rword end, InstPosition pos, InstCallback cbk, void *data) {
     RequireAction("VM::addCodeRangeCB", start < end, return VMError::INVALID_EVENTID);
     RequireAction("VM::addCodeRangeCB", cbk != nullptr, return VMError::INVALID_EVENTID);
     return addInstrRule(InstrRule(
-        AddressInRange(start, end),
+        InstructionInRange(start, end),
         getCallbackGenerator(cbk, data),
         pos,
         true

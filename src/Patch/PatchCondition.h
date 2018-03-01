@@ -127,7 +127,7 @@ public:
     }
 };
 
-class AddressInRange : public PatchCondition, public AutoAlloc<PatchCondition, AddressInRange> {
+class InstructionInRange : public PatchCondition, public AutoAlloc<PatchCondition, InstructionInRange> {
     Range<rword> range;
 
 public:
@@ -137,7 +137,7 @@ public:
      * @param[in] start Start of the range.
      * @param[in] end   End of the range (not included).
     */
-    AddressInRange(Constant start, Constant end) : range(start, end) {};
+    InstructionInRange(Constant start, Constant end) : range(start, end) {};
 
     bool test(const llvm::MCInst* inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) {
         if(range.contains(Range<rword>(address, address + instSize))) {
@@ -153,6 +153,20 @@ public:
         r.add(range);
         return r;
     }
+};
+
+class AddressIs : public PatchCondition, public AutoAlloc<PatchCondition, AddressIs> {
+    rword breakpoint;
+     
+public:
+
+    /*! Return true if on specified address
+    */
+    AddressIs(rword breakpoint) : breakpoint(breakpoint) {};
+    bool test(const llvm::MCInst* inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) {
+        return address == breakpoint;
+    }
+
 };
 
 class OperandIsReg : public PatchCondition, public AutoAlloc<PatchCondition, OperandIsReg> {
