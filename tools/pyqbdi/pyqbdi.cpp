@@ -3174,9 +3174,9 @@ namespace QBDI {
       }
 
 
-      /*! Get a list of all the modules loaded in the process memory.
+      /*! Get a list of all the memory maps (regions) of the current process.
        *
-       * @return  A list of MemoryMap, each one containing the metadata of a loaded module.
+       * @return  A list of MemoryMap, each one containing the metadata of a region.
        */
       static PyObject* pyqbdi_getCurrentProcessMaps(PyObject* self, PyObject* noarg) {
         PyObject* ret  = nullptr;
@@ -3323,7 +3323,7 @@ namespace QBDI {
         {"decodeFloat",          (PyCFunction)pyqbdi_decodeFloat,          METH_O,        "Decode a float encoded as a long."},
         {"encodeFloat",          (PyCFunction)pyqbdi_encodeFloat,          METH_O,        "Encode a float as a long."},
         {"getModuleNames",       (PyCFunction)pyqbdi_getModuleNames,       METH_NOARGS,   "Get a list of all the module names loaded in the process memory."},
-        {"getCurrentProcessMaps",(PyCFunction)pyqbdi_getCurrentProcessMaps,METH_NOARGS,   "Get a list of all the modules loaded in the process memory."},
+        {"getCurrentProcessMaps",(PyCFunction)pyqbdi_getCurrentProcessMaps,METH_NOARGS,   "Get a list of all the memory maps (regions) of the current process."},
         {"readMemory",           (PyCFunction)pyqbdi_readMemory,           METH_VARARGS,  "Read a memory content from a base address."},
         {"simulateCall",         (PyCFunction)pyqbdi_simulateCall,         METH_VARARGS,  "Simulate a call by modifying the stack and registers accordingly."},
         {"writeMemory",          (PyCFunction)pyqbdi_writeMemory,          METH_VARARGS,  "Write a memory content to a base address."},

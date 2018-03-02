@@ -129,7 +129,7 @@ exclude_patterns = []
 
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
-#add_module_names = True
+# add_module_names = True
 
 # If true, sectionauthor and moduleauthor directives will be shown in the
 # output. They are ignored by default.
@@ -338,3 +338,5 @@ breathe_projects = {
 breathe_domain_by_file_pattern = {
     "include/VM_C.h" : "c",
 }
+
+breathe_use_project_refids = True

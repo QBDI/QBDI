@@ -245,13 +245,13 @@ increment an integer passed as a pointer through the data parameter::
    } 
 
 The return value of this function is very important to determine how the VM should handle the 
-resuming of execution. :cpp:enum:`QBDI_CONTINUE` will directly switch back to the 
+resuming of execution. :cpp:enumerator:`QBDI_CONTINUE` will directly switch back to the 
 guest code in the current ExecBlock without further processing by the VM. This means that 
 modification of the Program Counter will not be taken into account and modifications of the program 
 code will only be effective after the end of the current basic block (provided the code cache is 
 cleared, which is not currently exported via the API). One can force those changes to be taken into 
 account by breaking from the ExecBlock execution and returning early inside the VM using the 
-:cpp:enum:`QBDI_BREAK_TO_VM`. :cpp:enum:`QBDI_STOP` causes the VM to stop the execution and the 
+:cpp:enumerator:`QBDI_BREAK_TO_VM`. :cpp:enumerator:`QBDI_STOP` causes the VM to stop the execution and the 
 :c:func:`qbdi_run` to return.
 
 The :c:func:`qbdi_addCodeCB` function allows to add a callback on every instruction (inside the
@@ -311,9 +311,9 @@ to log the memory writes.
 
 The type parameter allows to filter the callback on specific memory access type:
 
-* :cpp:enum:`QBDI_MEMORY_READ` triggers the callback **before** every instruction performing a memory read.
-* :cpp:enum:`QBDI_MEMORY_WRITE` triggers the callback **after** every instruction performing a memory write.
-* :cpp:enum:`QBDI_MEMORY_READ_WRITE` triggers the callback **after** every instruction performing a memory read and/or write.
+* :cpp:enumerator:`QBDI_MEMORY_READ` triggers the callback **before** every instruction performing a memory read.
+* :cpp:enumerator:`QBDI_MEMORY_WRITE` triggers the callback **after** every instruction performing a memory write.
+* :cpp:enumerator:`QBDI_MEMORY_READ_WRITE` triggers the callback **after** every instruction performing a memory read and/or write.
 
 .. doxygenfunction:: qbdi_addMemAccessCB
    :project: QBDI_C
@@ -445,14 +445,14 @@ callbacks.
 .. doxygenfunction:: qbdi_recordMemoryAccess
    :project: QBDI_C
 
-The memory access type always refers to either :cpp:enum:`QBDI_MEMORY_READ`, :cpp:enum:`QBDI_MEMORY_WRITE`, 
-:cpp:enum:`QBDI_MEMORY_READ_WRITE` (which is a bitfield combination of the two previous ones).
+The memory access type always refers to either :cpp:enumerator:`QBDI_MEMORY_READ`, :cpp:enumerator:`QBDI_MEMORY_WRITE`, 
+:cpp:enumerator:`QBDI_MEMORY_READ_WRITE` (which is a bitfield combination of the two previous ones).
 
 Once the logging has been enabled, :c:func:`qbdi_getInstMemoryAccess` and 
 :c:func:`qbdi_getBBMemoryAccess` can be used to retrieve the memory accesses made by the 
 last instruction or by the last basic block. These two APIs return :c:func:`qbdi_MemoryAccess` 
 structures. Write memory accesses are only returned if the instruction has already been executed 
-(i.e. in the case of a :cpp:enum:`QBDI_POSTINST`). The :ref:`cryptolock-c` example 
+(i.e. in the case of a :cpp:enumerator:`QBDI_POSTINST`). The :ref:`cryptolock-c` example 
 shows how to use those APIs to log the memory writes.
 
 
