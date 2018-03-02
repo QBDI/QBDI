@@ -221,7 +221,7 @@ TEST_F(VMTest, Breakpoint) {
     vm->addCodeAddrCB((QBDI::rword)dummyFun0, QBDI::InstPosition::PREINST, countInstruction, &counter);
     vm->call(&retval, (QBDI::rword) dummyFun0);
     ASSERT_EQ(retval, (QBDI::rword) 42);
-    ASSERT_EQ(counter, 1);
+    ASSERT_EQ(counter, 1u);
 
     SUCCEED();
 }

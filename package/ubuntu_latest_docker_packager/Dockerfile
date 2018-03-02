@@ -1,4 +1,4 @@
-FROM ubuntu:17.04
+FROM ubuntu:17.10
 MAINTAINER Charles Hubain <chubain@quarkslab.com>
 
 ARG QBDI_BUILD_TYPE=Release
