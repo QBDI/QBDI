@@ -5,28 +5,28 @@ class vm():
     def getGPRState():
         """Obtain the current general purpose register state.
 
-            :returns: GPRState  (a structure containing the GPR state).
+            :returns: GPRState  (an object containing the GPR state).
         """
         pass
 
     def getFPRState():
         """Obtain the current floating point register state.
 
-            :returns: FPRState  (a structure containing the FPR state).
+            :returns: FPRState  (an object containing the FPR state).
         """
         pass
 
     def setGPRState(gprState):
         """Set the general purpose register state.
 
-            :param grpState: A structure containing the GPR state.
+            :param grpState: An object containing the GPR state.
         """
         pass
 
     def setFPRState(fprState):
         """Set the current floating point register state.
 
-            :param fprState: A structure containing the FPR state
+            :param fprState: An object containing the FPR state
         """
         pass
 
@@ -54,7 +54,7 @@ class vm():
         """Register a callback event for a specific instruction event.
 
             :param pos: Relative position of the event callback (:py:const:`pyqbdi.PREINST` / :py:const:`pyqbdi.POSTINST`).
-            :param cbk: A function pointer to the callback.
+            :param cbk: A function to be called back.
             :param data: User defined data passed to the callback.
 
             :returns: The id of the registered instrumentation (or :py:const:`pyqbdi.INVALID_EVENTID` in case of failure).
@@ -66,7 +66,7 @@ class vm():
 
             :param address: Code address which will trigger the callback.
             :param pos: Relative position of the event callback (:py:const:`pyqbdi.PREINST` / :py:const:`pyqbdi.POSTINST`).
-            :param cbk: A function pointer to the callback.
+            :param cbk: A function to be called back.
             :param data: User defined data passed to the callback.
 
             :returns: The id of the registered instrumentation (or :py:const:`pyqbdi.INVALID_EVENTID` in case of failure).
@@ -79,7 +79,7 @@ class vm():
             :param start: Start of the address range which will trigger the callback.
             :param end: End of the address range which will trigger the callback.
             :param pos: Relative position of the event callback (:py:const:`pyqbdi.PREINST` / :py:const:`pyqbdi.POSTINST`).
-            :param cbk: A function pointer to the callback.
+            :param cbk: A function to be called back.
             :param data: User defined data passed to the callback.
 
             :returns: The id of the registered instrumentation (or :py:const:`pyqbdi.INVALID_EVENTID` in case of failure).
@@ -91,7 +91,7 @@ class vm():
 
             :param mnemonic: Mnemonic to match.
             :param pos: Relative position of the event callback (:py:const:`pyqbdi.PREINST` / :py:const:`pyqbdi.POSTINST`).
-            :param cbk: A function pointer to the callback.
+            :param cbk: A function to be called back.
             :param data: User defined data passed to the callback.
 
             :returns: The id of the registered instrumentation (or :py:const:`pyqbdi.INVALID_EVENTID` in case of failure).
@@ -117,7 +117,7 @@ class vm():
 
             :param address: Code address which will trigger the callback.
             :param type: A mode bitfield: either :py:const:`pyqbdi.MEMORY_READ`, :py:const:`pyqbdi.MEMORY_WRITE` or both (:py:const:`pyqbdi.MEMORY_READ_WRITE`).
-            :param cbk: A function pointer to the callback.
+            :param cbk: A function to be called back.
             :param data: User defined data passed to the callback.
 
             :returns:  The id of the registered instrumentation (or :py:const:`pyqbdi.INVALID_EVENTID` in case of failure).
@@ -130,7 +130,7 @@ class vm():
             :param start: Start of the address range which will trigger the callback.
             :param end: End of the address range which will trigger the callback.
             :param type: A mode bitfield: either :py:const:`pyqbdi.MEMORY_READ`, :py:const:`pyqbdi.MEMORY_WRITE` or both (:py:const:`pyqbdi.MEMORY_READ_WRITE`).
-            :param cbk: A function pointer to the callback.
+            :param cbk: A function to be called back.
             :param data: User defined data passed to the callback.
 
             :returns:  The id of the registered instrumentation (or :py:const:`pyqbdi.INVALID_EVENTID` in case of failure).
@@ -141,7 +141,7 @@ class vm():
         """Register a callback event for every memory access matching the type bitfield made by an instruction.
 
             :param type: A mode bitfield: either :py:const:`pyqbdi.MEMORY_READ`, :py:const:`pyqbdi.MEMORY_WRITE` or both (:py:const:`pyqbdi.MEMORY_READ_WRITE`).
-            :param cbk: A function pointer to the callback.
+            :param cbk: A function to be called back.
             :param data: User defined data passed to the callback.
 
             :returns: The id of the registered instrumentation (or :py:const:`pyqbdi.INVALID_EVENTID` in case of failure).
@@ -158,25 +158,25 @@ class vm():
         pass
 
     def getInstAnalysis(type):
-        """ Obtain the analysis of an instruction metadata. Analysis results are cached in the VM. The validity of the returned pointer is only guaranteed until the end of the callback, else  a deepcopy of the structure is required.
+        """ Obtain the analysis of an instruction metadata. Analysis results are cached in the VM. The validity of the returned object is only guaranteed until the end of the callback, else a deepcopy of the object is required.
 
-            :param type: Properties to retrieve during analysis.
+            :param type: Properties to retrieve during analysis (pyqbdi.ANALYSIS_INSTRUCTION, pyqbdi.ANALYSIS_DISASSEMBLY, pyqbdi.ANALYSIS_OPERANDS, pyqbdi.ANALYSIS_SYMBOL).
 
-            :returns: A InstAnalysis structure containing the analysis result.
+            :returns: A :py:class:`InstAnalysis` object containing the analysis result.
         """
         pass
 
     def getInstMemoryAccess():
         """Obtain the memory accesses made by the last executed instruction.
 
-            :returns: An array of memory accesses made by the instruction.
+            :returns: A list of memory accesses (:py:class:`MemoryAccess`) made by the instruction.
         """
         pass
 
     def getBBMemoryAccess():
         """Obtain the memory accesses made by the last executed basic block.
 
-            :returns: An array of memory accesses made by the basic block.
+            :returns: A list of memory accesses (:py:class:`MemoryAccess`) made by the basic block.
         """
         pass
 
@@ -206,7 +206,7 @@ class vm():
         """Register a callback event for a specific VM event.
 
             :param mask: A mask of VM event type which will trigger the callback.
-            :param cbk: A function pointer to the callback.
+            :param cbk: A function to be called back.
             :param data: User defined data passed to the callback.
 
             :returns: The id of the registered instrumentation (or :py:const:`pyqbdi.INVALID_EVENTID` in case of failure).
@@ -286,7 +286,7 @@ def alignedAlloc(size, align):
         :param size: Allocation size in bytes.
         :param align: Base address alignement in bytes.
 
-        :returns: Pointer to the allocated memory or NULL in case an error was encountered.
+        :returns: Pointer to the allocated memory (as a long) or NULL in case an error was encountered.
     """
     pass
 
@@ -323,6 +323,14 @@ def getModuleNames():
     """ Get a list of all the module names loaded in the process memory.
 
         :returns: A list of strings, each one containing the name of a loaded module.
+    """
+    pass
+
+
+def getCurrentProcessMaps():
+    """ Get a list of all the memory maps (regions) of the current process.
+
+        :returns: A list of :py:class:`MemoryMap` object.
     """
     pass
 
@@ -372,21 +380,111 @@ def encodeFloat(val):
 
 
 # Various objects
-InstAnalysis = None
-""" InstAnalysis object, a binding to :cpp:type:`QBDI::InstAnalysis`
-"""
+class MemoryMap:
+    """ Map of a memory area (region).
+    """
+    range = (0, 0xffff)
+    """ A range of memory (region), delimited between a start and an (excluded) end address. """
+    permission = 0
+    """ Region access rights (PF_READ, PF_WRITE, PF_EXEC). """
+    name = ""
+    """ Region name (useful when a region is mapping a module). """
+
+
+class InstAnalysis:
+    """ Object containing analysis results of an instruction provided by the VM.
+    """
+    mnemonic = ""
+    """ LLVM mnemonic (warning: None if !ANALYSIS_INSTRUCTION) """
+    address = 0
+    """ Instruction address """
+    instSize = 0
+    """ Instruction size (in bytes) """
+    affectControlFlow = False
+    """ true if instruction affects control flow """
+    isBranch = False
+    """ true if instruction acts like a 'jump' """
+    isCall = False
+    """ true if instruction acts like a 'call' """
+    isReturn = False
+    """ true if instruction acts like a 'return' """
+    isCompare = False
+    """ true if instruction is a comparison """
+    isPredicable = False
+    """ true if instruction contains a predicate (~is conditional) """
+    mayLoad = False
+    """ true if instruction 'may' load data from memory """
+    mayStore = False
+    """ true if instruction 'may' store data to memory """
+    disassembly = ""
+    """ Instruction disassembly (warning: None if !ANALYSIS_DISASSEMBLY) """
+    numOperands = 0
+    """ Number of operands used by the instruction """
+    operands = []
+    """ A list of :py:class:`OperandAnalysis` objects.
+        (warning: empty if !ANALYSIS_OPERANDS) """
+    symbol = ""
+    """ Instruction symbol (warning: None if !ANALYSIS_SYMBOL or not found) """
+    symbolOffset = 0
+    """ Instruction symbol offset """
+    module = ""
+    """ Instruction module name (warning: None if !ANALYSIS_SYMBOL or not found) """
+
+
+class OperandAnalysis:
+    """ Object containing analysis results of an operand provided by the VM.
+    """
+    # Common fields
+    type = 0
+    """ Operand type (pyqbdi.OPERAND_IMM, pyqbdi.OPERAND_REG, pyqbdi.OPERAND_PRED) """
+    value = 0
+    """ Operand value (if immediate), or register Id """
+    size = 0
+    """ Operand size (in bytes) """
+    # Register specific fields
+    regOff = 0
+    """ Sub-register offset in register (in bits) """
+    regCtxIdx = 0
+    """ Register index in VM state """
+    regName = ""
+    """ Register name """
+    regAccess = 0
+    """ Register access type (pyqbdi.REGISTER_READ, pyqbdi.REGISTER_WRITE, pyqbdi.REGISTER_READ_WRITE) """
+
+
+class VMState:
+    """ Object describing the current VM state.
+    """
+    event = 0
+    """ The event(s) which triggered the callback (must be checked using a mask: event & pyqbdi.BASIC_BLOCK_ENTRY). """
+    basicBlockStart = 0
+    """ The current basic block start address which can also be the execution transfer destination. """
+    basicBlockEnd = 0
+    """ The current basic block end address which can also be the execution transfer destination. """
+    sequenceStart = 0
+    """ The current sequence start address which can also be the execution transfer destination. """
+    sequenceEnd = 0
+    """ The current sequence end address which can also be the execution transfer destination. """
+
+
+class MemoryAccess:
+    """ Describe a memory access
+    """
+    instAddress = 0
+    """ Address of instruction making the access. """
+    accessAddress = 0
+    """ Address of accessed memory. """
+    value = 0
+    """ Value read from / written to memory. """
+    size = 0
+    """ Size of memory access (in bytes). """
+    type = 0
+    """ Memory access type (pyqbdi.MEMORY_READ, pyqbdi.MEMORY_WRITE, pyqbdi.MEMORY_READ_WRITE). """
+
+
 GPRState = None
 """ GPRState object, a binding to :cpp:type:`QBDI::GPRState`
 """
 FPRState = None
 """ FPRState object, a binding to :cpp:type:`QBDI::FPRState`
-"""
-MemoryAccess = None
-""" MemoryAccess object, a binding to :cpp:type:`QBDI::MemoryAccess`
-"""
-OperandAnalysis = None
-""" OperandAnalysis object, a binding to :cpp:type:`QBDI::OperandAnalysis`
-"""
-VMState = None
-""" VMState object, a binding to :cpp:type:`QBDI::VMState`
 """

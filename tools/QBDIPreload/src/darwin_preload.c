@@ -46,6 +46,7 @@ static const uint8_t BRK_INS = 0xCC;
 #endif
 static const size_t STACK_SIZE = 8388608;
 
+static bool HAS_EXITED = false;
 static bool DEFAULT_HANDLER = false;
 static GPRState ENTRY_GPR;
 static FPRState ENTRY_FPR;
@@ -341,13 +342,19 @@ int qbdipreload_hook_main(void *main) {
 }
 
 QBDI_EXPORT void intercept_exit(int status) {
-    qbdipreload_on_exit(status);
+    if (!HAS_EXITED) {
+        HAS_EXITED = true;
+        qbdipreload_on_exit(status);
+    }
     exit(status);
 }
 DYLD_INTERPOSE(intercept_exit, exit)
 
 QBDI_EXPORT void intercept__exit(int status) {
-    qbdipreload_on_exit(status);
+    if (!HAS_EXITED) {
+        HAS_EXITED = true;
+        qbdipreload_on_exit(status);
+    }
     _exit(status);
 }
 DYLD_INTERPOSE(intercept__exit, _exit)

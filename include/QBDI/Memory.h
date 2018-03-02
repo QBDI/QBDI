@@ -34,31 +34,44 @@
 
 namespace QBDI {
 
+/*! Memory access rights.
+ */
 typedef enum {
-    PF_NONE = 0,
-    PF_READ = 1,
-    PF_WRITE = 2,
-    PF_EXEC = 4
+    _QBDI_EI(PF_NONE) = 0,   /*!< No access */
+    _QBDI_EI(PF_READ) = 1,   /*!< Read access */
+    _QBDI_EI(PF_WRITE) = 2,  /*!< Write access */
+    _QBDI_EI(PF_EXEC) = 4    /*!< Execution access */
 } Permission;
 
 _QBDI_ENABLE_BITMASK_OPERATORS(Permission)
 
+/*! Map of a memory area (region).
+ */
 class MemoryMap {
 
 public:
 
-    Range<rword> range;
-    Permission   permission;
-    std::string  name;
+    Range<rword> range;       /*!< A range of memory (region), delimited between a start and an (excluded) end address. */
+    Permission   permission;  /*!< Region access rights (PF_READ, PF_WRITE, PF_EXEC). */
+    std::string  name;        /*!< Region name (useful when a region is mapping a module). */
 
+    /* Construct a new (empty) MemoryMap.
+     */
     MemoryMap() : range(0, 0), permission(QBDI::PF_NONE), name("") {};
 
-    MemoryMap(Range<rword> range, Permission permission, std::string name) : 
+    /*! Construct a new MemoryMap (given some properties).
+     *
+     * @param[in] range        A range of memory (region), delimited between
+     *                         a start and an (excluded) end address.
+     * @param[in] permission   Region access rights (PF_READ, PF_WRITE, PF_EXEC).
+     * @param[in] name         Region name (useful when a region is mapping a module).
+     */
+   MemoryMap(Range<rword> range, Permission permission, std::string name) :
         range(range), permission(permission), name(name) {}
 
 };
 
-/*! Get a list of all the memory maps of a process.
+/*! Get a list of all the memory maps (regions) of a process.
  *
  * @param[in] pid The identifier of the process.
  *
@@ -66,7 +79,7 @@ public:
  */
 QBDI_EXPORT std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid);
 
-/*! Get a list of all the memory maps of the current process.
+/*! Get a list of all the memory maps (regions) of the current process.
  *
  * @return  A vector of MemoryMap object.
  */

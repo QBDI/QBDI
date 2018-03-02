@@ -1,6 +1,6 @@
 # Maintainer: Charles Hubain <chubain@quarkslab.com>
 pkgname=QBDI
-pkgver=0.5.0
+pkgver=0.6.0
 pkgrel=1
 epoch=
 pkgdesc="Quarkslab Dynamic Binary Instrumentation Framework"

@@ -1,0 +1,53 @@
+language: cpp
+
+matrix:
+  include:
+    - os: linux
+      sudo: required
+      dist: trusty
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+      env:
+        - BUILD_ENV="CC=gcc-7 && CXX=g++-7"
+        - QBDI_PLATFORM="linux-X86_64"
+        - CMAKE_DOWNLOAD="https://cmake.org/files/v3.9/cmake-3.9.4-Linux-x86_64.tar.gz"
+        - CMAKE_BIN="cmake-3.9.4-Linux-x86_64/bin/"
+        - CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=${QBDI_PLATFORM} -DFORCE_DISABLE_AVX=TRUE"
+
+    - os: osx
+      osx_image: xcode9.1
+      env:
+        - BUILD_ENV=""
+        - QBDI_PLATFORM="macOS-X86_64"
+        - CMAKE_DOWNLOAD="https://cmake.org/files/v3.9/cmake-3.9.4-Darwin-x86_64.tar.gz"
+        - CMAKE_BIN="cmake-3.9.4-Darwin-x86_64/bin/"
+        - CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=${QBDI_PLATFORM} -DFORCE_DISABLE_AVX=TRUE"
+
+cache:
+  directories:
+    - deps/
+
+before_install:
+  - eval "${BUILD_ENV}"
+
+install:
+  - mkdir build && cd build
+  - wget ${CMAKE_DOWNLOAD}
+  - tar xf cmake-*.tar.gz
+  - export PATH=${PWD}/${CMAKE_BIN}:${PATH}
+
+script:
+  - cmake .. ${CMAKE_ARGS}
+  - eval "[[ -d ../deps/llvm/${QBDI_PLATFORM}/lib && -d ../deps/llvm/${QBDI_PLATFORM}/include ]] || make llvm"
+  - eval "[[ -d ../deps/gtest/${QBDI_PLATFORM}/lib && -d ../deps/gtest/${QBDI_PLATFORM}/include ]] || make gtest"
+  - cmake .. ${CMAKE_ARGS}
+  - make -j2
+  - ./test/QBDITest
+
+before_cache:
+  - sh ../deps/llvm/${QBDI_PLATFORM}/build.sh clean
+  - sh ../deps/gtest/${QBDI_PLATFORM}/build.sh clean

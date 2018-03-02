@@ -87,27 +87,27 @@ struct StructDesc {
 };
 
 struct StructDesc MemoryAccessDesc {
-    sizeof(struct MemoryAccess),
+    sizeof(MemoryAccess),
     5,
     {
-        offsetof(struct MemoryAccess, instAddress),
-        offsetof(struct MemoryAccess, accessAddress),
-        offsetof(struct MemoryAccess, value),
-        offsetof(struct MemoryAccess, size),
-        offsetof(struct MemoryAccess, type)
+        offsetof(MemoryAccess, instAddress),
+        offsetof(MemoryAccess, accessAddress),
+        offsetof(MemoryAccess, value),
+        offsetof(MemoryAccess, size),
+        offsetof(MemoryAccess, type)
     }
 };
 
 struct StructDesc VMStateDesc {
-    sizeof(struct VMState),
+    sizeof(VMState),
     6,
     {
-        offsetof(struct VMState, event),
-        offsetof(struct VMState, sequenceStart),
-        offsetof(struct VMState, sequenceEnd),
-        offsetof(struct VMState, basicBlockStart),
-        offsetof(struct VMState, basicBlockEnd),
-        offsetof(struct VMState, lastSignal),
+        offsetof(VMState, event),
+        offsetof(VMState, sequenceStart),
+        offsetof(VMState, sequenceEnd),
+        offsetof(VMState, basicBlockStart),
+        offsetof(VMState, basicBlockEnd),
+        offsetof(VMState, lastSignal),
     }
 };
 

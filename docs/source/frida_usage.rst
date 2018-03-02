@@ -88,6 +88,20 @@ with more information is available in Frida/QBDI :ref:`frida-bindins-api` docume
     vm.call(functionPtr, []);
 
 
+If you ever want to pass argument to your callback, this can be done via the **data** argument :
+
+.. code-block:: javascript
+
+    // This callback is used to count the number of basicblocks executed
+    var userData = { counter: 0};
+    var BasicBlockCallback = vm.newVMCallback(function(vm, evt, gpr, fpr, data) {
+        data.counter++;
+        return VMAction.CONTINUE;
+    });
+    vm.addVMEventCB(VMEvent.BASIC_BLOCK_ENTRY, BasicBlockCallback, userData);
+    console.log(userData.counter);
+
+
 Scripts
 +++++++
 

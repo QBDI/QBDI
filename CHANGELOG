@@ -1,3 +1,13 @@
+2018-03-02 Charles HUBAIN <chubain@quarkslab.com>
+
+    * Version 0.6
+    * Important performance improvement in the core engine (#30)
+      **This slightly changes the behavior of VMEvents.**
+    * Fix the addCodeAddrCB API (#37)
+    * atexit and getCurrentProcessMap in python bindings (#35)
+    * Fix getInstAnalysis on BASIC_BLOCK_ENTRY (#28)
+    * Various documentation improvements (#34, #37, #38, #40) and an API uniformisation (#29)
+
 2017-12-22 Cedric TESSIER <ctessier@quarkslab.com>
 
     * Version 0.5

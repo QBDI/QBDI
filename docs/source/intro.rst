@@ -60,3 +60,26 @@ process, and then instrumented as instructed by the instrumentation tool. This i
 block is written in executable memory, executed and returns the address of the next basic block to 
 execute. To avoid doing twice the same work, this **instrumented code** is actually written in a 
 code cache.
+
+.. _intro_limitations:
+
+Limitations
+-----------
+
+The **host** and the **guest** share the same process and thus the same resources. This means that 
+they use the same heap and the same libraries and this will cause issues with any non-reentrant 
+code. We could have chosen to shield users from those issues by forbidding instrumentation tools to 
+use any external libraries like some other DBI frameworks have done. However we believe this is 
+an overblown issue and that there are effective mechanisms to mitigate the problem. Nonetheless 
+users need to be aware of this design limitation and the mitigations side-effects. 
+
+For example, tracing the heap memory allocator will cause deadlocks because it is not reentrant. 
+There are other problematic cases but they are mostly limited to the standard C library and the OS 
+loader. To avoid such issues we have an execution brokering system that allows to whitelist/blacklist 
+specific pieces of code. These will be executed outside of the instrumentation process via a call 
+hooking mechanism. This execution broker system is documented in :ref:`execution-filtering-c` and 
+:ref:`execution-filtering`.
+
+Moreover, the **host** relies on the loader loading and initializing its library dependencies which 
+means the instrumentation process cannot be started before the loader has finished its job. As a 
+result the loader itself cannot be instrumented.

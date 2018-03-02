@@ -46,7 +46,7 @@ Instrumentation
              removeInstrumentedModule, removeInstrumentedModuleFromAddr
 
 .. automodule:: pyqbdi
-   :members: getModuleNames
+   :members: getModuleNames, getCurrentProcessMaps
 
 
 Memory Callback
@@ -88,14 +88,21 @@ Helpers
 Objects
 ^^^^^^^
 
-.. autodata:: pyqbdi.InstAnalysis
+.. autoclass:: pyqbdi.MemoryMap
+    :members:
+
+.. autoclass:: pyqbdi.InstAnalysis
+    :members:
+
+.. autoclass:: pyqbdi.OperandAnalysis
+    :members:
+
+.. autoclass:: pyqbdi.VMState
+    :members:
+
+.. autoclass:: pyqbdi.MemoryAccess
+    :members:
 
 .. autodata:: pyqbdi.GPRState
 
 .. autodata:: pyqbdi.FPRState
-
-.. autodata:: pyqbdi.MemoryAccess
-
-.. autodata:: pyqbdi.OperandAnalysis
-
-.. autodata:: pyqbdi.VMState

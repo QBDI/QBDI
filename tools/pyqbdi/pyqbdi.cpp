@@ -62,13 +62,9 @@ int fopen_s(FILE** fd, const char* fn, const char* flags) {
 
 #include "QBDIPreload.h"
 
-#include "VM.h"
-#include "Memory.h"
-#include "Platform.h"
 
 /* Init the QBDIPreload */
 QBDIPRELOAD_INIT;
-
 
 
 namespace QBDI {
@@ -107,6 +103,12 @@ namespace QBDI {
         PyObject_HEAD
         QBDI::MemoryAccess* memoryAccess;
       } MemoryAccess_Object;
+
+      //! pyMemoryMap object.
+      typedef struct {
+        PyObject_HEAD
+        QBDI::MemoryMap* memoryMap;
+      } MemoryMap_Object;
 
       //! pyOperandAnalysis object.
       typedef struct {
@@ -150,6 +152,12 @@ namespace QBDI {
       /*! Returns the QBDI::MemoryAccess. */
       #define PyMemoryAccess_AsMemoryAccess(v) (((QBDI::Bindings::Python::MemoryAccess_Object*)(v))->memoryAccess)
 
+      /*! Checks if the pyObject is a pyqbdi.MemoryMap. */
+      #define PyMemoryMap_Check(v) ((v)->ob_type == &QBDI::Bindings::Python::MemoryMap_Type)
+
+      /*! Returns the QBDI::MemoryMap. */
+      #define PyMemoryMap_AsMemoryMap(v) (((QBDI::Bindings::Python::MemoryMap_Object*)(v))->memoryMap)
+
       /*! Checks if the pyObject is a pyqbdi.OperandAnalysis. */
       #define PyOperandAnalysis_Check(v) ((v)->ob_type == &QBDI::Bindings::Python::OperandAnalysis_Type)
 
@@ -176,6 +184,8 @@ namespace QBDI {
       static PyObject* PyInstAnalysis(const QBDI::InstAnalysis*);
       static PyObject* PyMemoryAccess(const QBDI::MemoryAccess&);
       static PyObject* PyMemoryAccess(const QBDI::MemoryAccess*);
+      static PyObject* PyMemoryMap(const QBDI::MemoryMap&);
+      static PyObject* PyMemoryMap(const QBDI::MemoryMap*);
       static PyObject* PyOperandAnalysis(const QBDI::OperandAnalysis*);
       static PyObject* PyVMInstance(QBDI::VMInstanceRef vm);
       static PyObject* PyVMState(const QBDI::VMState* state);
@@ -1634,6 +1644,110 @@ namespace QBDI {
       }
 
 
+      /* PyMemoryMap destructor */
+      static void MemoryMap_dealloc(PyObject* self) {
+        std::cout << std::flush;
+        delete PyMemoryMap_AsMemoryMap(self);
+        Py_DECREF(self);
+      }
+
+
+      /* PyMemoryMap attributes */
+      static PyObject* MemoryMap_getattro(PyObject* self, PyObject* name) {
+        try {
+          if (std::string(PyString_AsString(name)) == "range") {
+            Range<rword> range = PyMemoryMap_AsMemoryMap(self)->range;
+            /* Create function arguments */
+            PyObject* res = PyTuple_New(2);
+            PyTuple_SetItem(res, 0, PyLong_FromLong(range.start));
+            PyTuple_SetItem(res, 1, PyLong_FromLong(range.end));
+            return res;
+          }
+          else if (std::string(PyString_AsString(name)) == "permission")
+            return PyLong_FromLong(PyMemoryMap_AsMemoryMap(self)->permission);
+
+          else if (std::string(PyString_AsString(name)) == "name")
+            return PyString_FromString(PyMemoryMap_AsMemoryMap(self)->name.c_str());
+        }
+        catch (const std::exception& e) {
+          return PyErr_Format(PyExc_TypeError, "%s", e.what());
+        }
+
+        return PyObject_GenericGetAttr((PyObject *)self, name);
+      }
+
+
+      /* Description of the python representation of a MemoryMap */
+      PyTypeObject MemoryMap_Type = {
+        PyObject_HEAD_INIT(&PyType_Type)
+        0,                                          /* ob_size */
+        "MemoryMap",                                /* tp_name */
+        sizeof(MemoryMap_Object),                   /* tp_basicsize */
+        0,                                          /* tp_itemsize */
+        MemoryMap_dealloc,                          /* tp_dealloc */
+        0,                                          /* tp_print */
+        0,                                          /* tp_getattr */
+        0,                                          /* tp_setattr */
+        0,                                          /* tp_compare */
+        0,                                          /* tp_repr */
+        0,                                          /* tp_as_number */
+        0,                                          /* tp_as_sequence */
+        0,                                          /* tp_as_mapping */
+        0,                                          /* tp_hash */
+        0,                                          /* tp_call */
+        0,                                          /* tp_str */
+        (getattrofunc)MemoryMap_getattro,           /* tp_getattro */
+        0,                                          /* tp_setattro */
+        0,                                          /* tp_as_buffer */
+        Py_TPFLAGS_DEFAULT,                         /* tp_flags */
+        "MemoryMap objects",                        /* tp_doc */
+        0,                                          /* tp_traverse */
+        0,                                          /* tp_clear */
+        0,                                          /* tp_richcompare */
+        0,                                          /* tp_weaklistoffset */
+        0,                                          /* tp_iter */
+        0,                                          /* tp_iternext */
+        0,                                          /* tp_methods */
+        0,                                          /* tp_members */
+        0,                                          /* tp_getset */
+        0,                                          /* tp_base */
+        0,                                          /* tp_dict */
+        0,                                          /* tp_descr_get */
+        0,                                          /* tp_descr_set */
+        0,                                          /* tp_dictoffset */
+        0,                                          /* tp_init */
+        0,                                          /* tp_alloc */
+        0,                                          /* tp_new */
+        0,                                          /* tp_free */
+        0,                                          /* tp_is_gc */
+        0,                                          /* tp_bases */
+        0,                                          /* tp_mro */
+        0,                                          /* tp_cache */
+        0,                                          /* tp_subclasses */
+        0,                                          /* tp_weaklist */
+        0,                                          /* tp_del */
+        0                                           /* tp_version_tag */
+      };
+
+
+      static PyObject* PyMemoryMap(const QBDI::MemoryMap* memoryMap) {
+        MemoryMap_Object* object;
+
+        PyType_Ready(&MemoryMap_Type);
+        object = PyObject_NEW(MemoryMap_Object, &MemoryMap_Type);
+        if (object != NULL) {
+          object->memoryMap = new QBDI::MemoryMap(memoryMap->range, memoryMap->permission, memoryMap->name);
+        }
+
+        return (PyObject*)object;
+      }
+
+
+      static PyObject* PyMemoryMap(const QBDI::MemoryMap& memoryMap) {
+        return PyMemoryMap(&memoryMap);
+      }
+
+
       /* Trampoline for python callbacks (InstCallback) */
       static QBDI::VMAction trampoline(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* multipleData) {
         Py_INCREF(reinterpret_cast<PyObject**>(multipleData)[1]);
@@ -3060,6 +3174,31 @@ namespace QBDI {
       }
 
 
+      /*! Get a list of all the memory maps (regions) of the current process.
+       *
+       * @return  A list of MemoryMap, each one containing the metadata of a region.
+       */
+      static PyObject* pyqbdi_getCurrentProcessMaps(PyObject* self, PyObject* noarg) {
+        PyObject* ret  = nullptr;
+        try {
+          std::vector<MemoryMap> maps = QBDI::getCurrentProcessMaps();
+          size_t size = maps.size();
+          uint32_t i = 0;
+          ret = PyList_New(size);
+          if (size) {
+            for(const QBDI::MemoryMap& m: maps) {
+              PyList_SetItem(ret, i++, PyMemoryMap(m));
+            }
+          }
+        }
+        catch (const std::exception& e) {
+          return PyErr_Format(PyExc_TypeError, "%s", e.what());
+        }
+
+        return ret;
+      }
+
+
       /*! Read a memory content from a base address.
        *
        * @param[in] address   Base address.
@@ -3184,6 +3323,7 @@ namespace QBDI {
         {"decodeFloat",          (PyCFunction)pyqbdi_decodeFloat,          METH_O,        "Decode a float encoded as a long."},
         {"encodeFloat",          (PyCFunction)pyqbdi_encodeFloat,          METH_O,        "Encode a float as a long."},
         {"getModuleNames",       (PyCFunction)pyqbdi_getModuleNames,       METH_NOARGS,   "Get a list of all the module names loaded in the process memory."},
+        {"getCurrentProcessMaps",(PyCFunction)pyqbdi_getCurrentProcessMaps,METH_NOARGS,   "Get a list of all the memory maps (regions) of the current process."},
         {"readMemory",           (PyCFunction)pyqbdi_readMemory,           METH_VARARGS,  "Read a memory content from a base address."},
         {"simulateCall",         (PyCFunction)pyqbdi_simulateCall,         METH_VARARGS,  "Simulate a call by modifying the stack and registers accordingly."},
         {"writeMemory",          (PyCFunction)pyqbdi_writeMemory,          METH_VARARGS,  "Write a memory content to a base address."},
@@ -3227,6 +3367,10 @@ namespace QBDI {
         PyModule_AddObject(QBDI::Bindings::Python::module, "OPERAND_IMM",           PyInt_FromLong(QBDI::OPERAND_IMM));
         PyModule_AddObject(QBDI::Bindings::Python::module, "OPERAND_INVALID",       PyInt_FromLong(QBDI::OPERAND_INVALID));
         PyModule_AddObject(QBDI::Bindings::Python::module, "OPERAND_PRED",          PyInt_FromLong(QBDI::OPERAND_PRED));
+        PyModule_AddObject(QBDI::Bindings::Python::module, "PF_EXEC",               PyInt_FromLong(QBDI::PF_EXEC));
+        PyModule_AddObject(QBDI::Bindings::Python::module, "PF_NONE",               PyInt_FromLong(QBDI::PF_NONE));
+        PyModule_AddObject(QBDI::Bindings::Python::module, "PF_READ",               PyInt_FromLong(QBDI::PF_READ));
+        PyModule_AddObject(QBDI::Bindings::Python::module, "PF_WRITE",              PyInt_FromLong(QBDI::PF_WRITE));
         PyModule_AddObject(QBDI::Bindings::Python::module, "POSTINST",              PyInt_FromLong(QBDI::POSTINST));
         PyModule_AddObject(QBDI::Bindings::Python::module, "PREINST",               PyInt_FromLong(QBDI::PREINST));
         PyModule_AddObject(QBDI::Bindings::Python::module, "REGISTER_READ",         PyInt_FromLong(QBDI::REGISTER_READ));
@@ -3354,5 +3498,21 @@ int QBDI::qbdipreload_on_run(QBDI::VMInstanceRef vm, QBDI::rword start, QBDI::rw
 
 
 int QBDI::qbdipreload_on_exit(int status) {
+  PyObject* atexit = PyImport_ImportModule("atexit");
+  if (atexit == nullptr) {
+    /* Something strange happened, but we can't really do anything about it... */
+    return QBDIPRELOAD_NO_ERROR;
+  }
+  PyObject* dict = PyModule_GetDict(atexit);
+  PyObject* _run_exitfuncs = PyDict_GetItemString(dict, "_run_exitfuncs");
+  /* Free unused resources */
+  Py_DECREF(atexit);
+  Py_DECREF(dict);
+  /* Force call atexit registred callbacks */
+  if (_run_exitfuncs != nullptr) {
+    if (PyCallable_Check(_run_exitfuncs)) {
+        PyObject_CallObject(_run_exitfuncs, nullptr);
+    }
+  }
   return QBDIPRELOAD_NO_ERROR;
 }

@@ -6,14 +6,14 @@ VM C++
 Initialization
 --------------
 
-The :cpp:member:`QBDI::VM::VM` constructor is used to create a new VM instance, using host
+The :cpp:func:`QBDI::VM::VM` constructor is used to create a new VM instance, using host
 CPU as a reference::
 
     QBDI::VM *vm = new QBDI::VM();
 
 .. doxygenfunction:: QBDI::VM::VM
 
-The :cpp:member:`QBDI::VM::VM` constructor can also take two optional parameters used to specify 
+The :cpp:func:`QBDI::VM::VM` constructor can also take two optional parameters used to specify 
 the CPU type or architecture and additional attributes of the CPU. Those are the same used by LLVM. 
 Here's how you would initialize a VM for an ARM Cortex-A9 supporting the VFP2 floating point 
 instructions::
@@ -26,16 +26,16 @@ State Management
 The state of the guest processor can be queried and modified using two architectures dependent structures :cpp:class:`GPRState` and :cpp:class:`FPRState` which are detailed below for each architecture 
 (:ref:`cpp-state-x86-64` and :ref:`cpp-state-arm`).
 
-The :cpp:member:`QBDI::VM::getGPRState` and :cpp:member:`QBDI::VM::getFPRState` allow to 
-query the current state of the guest processor while the :cpp:member:`QBDI::VM::setGPRState` 
-and :cpp:member:`QBDI::VM::setFPRState` allow to modify it::
+The :cpp:func:`QBDI::VM::getGPRState` and :cpp:func:`QBDI::VM::getFPRState` allow to 
+query the current state of the guest processor while the :cpp:func:`QBDI::VM::setGPRState` 
+and :cpp:func:`QBDI::VM::setFPRState` allow to modify it::
 
    QBDI::GPRState gprState; // local GPRState structure
    gprState = *(vm->getGPRState()); // Copy the vm structure into our local structure
    gprState.rax = (QBDI::rword) 42; // Set the value of the RAX register
    vm->setGPRState(&gprState); // Copy our local structure to the vm structure
 
-As :cpp:member:`QBDI::VM::getGPRState` and :cpp:member:`QBDI::VM::getFPRState` return 
+As :cpp:func:`QBDI::VM::getGPRState` and :cpp:func:`QBDI::VM::getFPRState` return 
 pointers to the VM context, it is possible to use them to modify the GPR and FPR states 
 directly. The code below is equivalent to the example from above but avoid unnecessary copies::
 
@@ -116,19 +116,19 @@ Execution
 Starting a Run
 ^^^^^^^^^^^^^^
 
-The :cpp:member:`QBDI::VM::run` method is used to start the execution of a piece of code by the 
+The :cpp:func:`QBDI::VM::run` method is used to start the execution of a piece of code by the 
 DBI. It first sets the Program Counter of the VM CPU state to the start parameter then runs the 
 code through the DBI until a control flow instruction branches on the stop parameter. See the 
-:ref:`fibonacci-cpp` example for a basic usage of QBDI and the :cpp:member:`QBDI::VM::run` 
+:ref:`fibonacci-cpp` example for a basic usage of QBDI and the :cpp:func:`QBDI::VM::run` 
 method.
 
 .. doxygenfunction:: QBDI::VM::run
 
-:cpp:member:`QBDI::VM::run` is a low level method which implies that the :cpp:class:`QBDI::GPRState`
+:cpp:func:`QBDI::VM::run` is a low level method which implies that the :cpp:class:`QBDI::GPRState`
 has been properly initialized before.
 
 But a very common usage of QBDI is to start instrumentation on a function call.
-The :cpp:member:`QBDI::VM::call` is a helper method which behaves like a function call.
+The :cpp:func:`QBDI::VM::call` is a helper method which behaves like a function call.
 It takes a function pointer, a list of arguments, and return the call's result.
 The only requirement is a valid (and properly aligned) stack pointer.
 In most cases, using :cpp:func:`QBDI::allocateVirtualStack` is enough, as a call
@@ -151,12 +151,12 @@ out of the set of instrumented ranges nor guaranteed to actually catch the retur
 set of instrumented ranges.
 
 .. warning::
-   By default the set of instrumented ranges is empty, a call to :cpp:member:`QBDI::VM::run` 
+   By default the set of instrumented ranges is empty, a call to :cpp:func:`QBDI::VM::run` 
    will thus very quickly escape from the instrumentation process through an execution transfer 
    made by the :cpp:class:`QBDI::ExecBroker`.
 
 The basic methods to manipulate this set of instrumented ranges are 
-:cpp:member:`QBDI::VM::addInstrumentedRange` and :cpp:member:`QBDI::VM::removeInstrumentedRange`.
+:cpp:func:`QBDI::VM::addInstrumentedRange` and :cpp:func:`QBDI::VM::removeInstrumentedRange`.
 
 .. doxygenfunction:: QBDI::VM::addInstrumentedRange
    :project: QBDI_CPP
@@ -166,27 +166,42 @@ The basic methods to manipulate this set of instrumented ranges are
    :project: QBDI_CPP
 
 As manipulating address ranges can be problematic, helpers API allow to use process memory maps 
-information. The :cpp:member:`QBDI::VM::addInstrumentedModule` and 
-:cpp:member:`QBDI::VM::removeInstrumentedModule` allow to use executable module names instead 
+information. The :cpp:func:`QBDI::VM::addInstrumentedModule` and 
+:cpp:func:`QBDI::VM::removeInstrumentedModule` allow to use executable module names instead 
 of address ranges. The currently loaded module names can be queried using 
-:cpp:func:`QBDI::getModuleNames`. The :cpp:member:`QBDI::VM::addInstrumentedModuleFromAddr`
-and :cpp:member:`QBDI::VM::removeInstrumentedModuleFromAddr` methods allow to use any known
+:cpp:func:`QBDI::getModuleNames`. The :cpp:func:`QBDI::VM::addInstrumentedModuleFromAddr`
+and :cpp:func:`QBDI::VM::removeInstrumentedModuleFromAddr` methods allow to use any known
 address from a module to instrument it.
 
-The :cpp:member:`QBDI::VM::instrumentAllExecutableMaps` allows to instrument every memory map 
+The :cpp:func:`QBDI::VM::instrumentAllExecutableMaps` allows to instrument every memory map 
 which is executable, the undesired address range can later be removed using the previous APIs in a 
 blacklist approach. This approach is demonstrated in the :ref:`thedude-cpp` example where 
 sub-functions are removed in function of a trace level supplied as argument.
 
-The :cpp:member:`QBDI::VM::removeAllInstrumentedRanges` can be used to remove **all** ranges recorded
+The :cpp:func:`QBDI::VM::removeAllInstrumentedRanges` can be used to remove **all** ranges recorded
 through previous APIs (after this call, the VM will have no range left to instrument).
 
-Below is an example of how to obtain, iterate then destroy the module names using the API.
+Below is an example of how to obtain, iterate then print the module names using the API.
 
 .. include:: ../../examples/modules.cpp
    :code:
 
+.. doxygenclass:: QBDI::MemoryMap
+   :project: QBDI_CPP
+   :members:
+
+.. doxygenenum:: QBDI::Permission
+   :project: QBDI_CPP
+
+.. doxygenclass:: QBDI::Range
+   :project: QBDI_CPP
+   :members:
+
+.. doxygenfunction:: QBDI::getCurrentProcessMaps
+   :project: QBDI_CPP
+
 .. doxygenfunction:: QBDI::getModuleNames
+   :project: QBDI_CPP
 
 .. doxygenfunction:: QBDI::VM::addInstrumentedModule
 
@@ -237,7 +252,7 @@ cleared, which is not currently exported via the API). One can force those chang
 account by breaking from the ExecBlock execution and returning early inside the VM using the 
 :cpp:enumerator:`BREAK_TO_VM`. :cpp:enumerator:`STOP` is not yet implemented.
 
-The :cpp:member:`QBDI::VM::addCodeCB` method allows to add a callback on every instruction (inside the
+The :cpp:func:`QBDI::VM::addCodeCB` method allows to add a callback on every instruction (inside the
 instrumented range).
 If we register the previous callback to be called before every instruction, we effectively get
 an instruction counting instrumentation::
@@ -257,8 +272,8 @@ an instruction counting instrumentation::
 .. doxygenfunction:: QBDI::VM::addCodeCB
 
 It is also possible to register an :cpp:type:`QBDI::InstCallback` for a specific instruction 
-address or address range with the :cpp:member:`QBDI::VM::addCodeAddrCB` and 
-:cpp:member:`QBDI::VM::addCodeRangeCB` methods. These allow to fine-tune the instrumentation to 
+address or address range with the :cpp:func:`QBDI::VM::addCodeAddrCB` and 
+:cpp:func:`QBDI::VM::addCodeRangeCB` methods. These allow to fine-tune the instrumentation to 
 specific codes or portions of them.
 
 .. doxygenfunction:: QBDI::VM::addCodeAddrCB
@@ -280,9 +295,9 @@ Memory Callback
 
 The memory callbacks (currently only supported under X86_64) allow to trigger callbacks on specific 
 memory events. They use the same callback prototype, :cpp:type:`QBDI::InstCallback`, than 
-instruction callback. They can be registered using the :cpp:member:`QBDI::VM::addMemAccessCB` API.
+instruction callback. They can be registered using the :cpp:func:`QBDI::VM::addMemAccessCB` API.
 The API takes care of enabling the corresponding inline memory access logging instrumentation using 
-:cpp:member:`QBDI::VM::recordMemoryAccess`. The memory accesses themselves are not directly provided 
+:cpp:func:`QBDI::VM::recordMemoryAccess`. The memory accesses themselves are not directly provided 
 as a callback parameter and need to be retrieved using the memory access APIs (see 
 :ref:`memory-access-analysis-cpp`). The :ref:`cryptolock-cpp` example shows how to use those APIs 
 to log the memory writes.
@@ -290,19 +305,19 @@ to log the memory writes.
 
 The type parameter allows to filter the callback on specific memory access type:
 
-* :cpp:var:`QBDI::MEMORY_READ` triggers the callback **before** every instruction performing a memory read.
-* :cpp:var:`QBDI::MEMORY_WRITE` triggers the callback **after** every instruction performing a memory write.
-* :cpp:var:`QBDI::MEMORY_READ_WRITE` triggers the callback **after** every instruction performing a memory read and/or write.
+* :cpp:enumerator:`QBDI::MEMORY_READ` triggers the callback **before** every instruction performing a memory read.
+* :cpp:enumerator:`QBDI::MEMORY_WRITE` triggers the callback **after** every instruction performing a memory write.
+* :cpp:enumerator:`QBDI::MEMORY_READ_WRITE` triggers the callback **after** every instruction performing a memory read and/or write.
 
 .. doxygenfunction:: QBDI::VM::addMemAccessCB
 
-To enable more flexibility on the callback filtering, :cpp:member:`QBDI::VM::addMemAddrCB` and 
-:cpp:member:`QBDI::VM::addMemRangeCB` allow to filter for memory accesses targeting a specific 
+To enable more flexibility on the callback filtering, :cpp:func:`QBDI::VM::addMemAddrCB` and 
+:cpp:func:`QBDI::VM::addMemRangeCB` allow to filter for memory accesses targeting a specific 
 memory address or range. However those callbacks are virtual callbacks: they cannot be directly 
 triggered by the instrumentation because the access address needs to be checked dynamically but 
 are instead triggered by a gate callback which takes care of the dynamic access address check and 
 forwards or not the event to the virtual callback. This system thus has the same overhead as 
-:cpp:member:`QBDI::VM::addMemAccessCB` and is only meant as an API helper.
+:cpp:func:`QBDI::VM::addMemAccessCB` and is only meant as an API helper.
 
 .. doxygenfunction:: QBDI::VM::addMemAddrCB
 
@@ -343,8 +358,8 @@ Removing Instrumentations
 
 Several callbacks can be registered for the same event and will run in the order they were added.
 The id returned by this method can be used to modify the callback afterward. The 
-:cpp:member:`QBDI::VM::deleteInstrumentation` method allows to remove an instrumentation by id 
-while the :cpp:member:`QBDI::VM::deleteAllInstrumentations` method will remove all 
+:cpp:func:`QBDI::VM::deleteInstrumentation` method allows to remove an instrumentation by id 
+while the :cpp:func:`QBDI::VM::deleteAllInstrumentations` method will remove all 
 instrumentations. This code would do two different executions with different callbacks::
 
    uint32_t cb1 = vm->addCodeCB(QBDI::InstPosition::PREINST, Callback1, &some_data);
@@ -393,7 +408,7 @@ and is amortized using a cache inside the VM.
    :undoc-members:
 
 If provided :cpp:type:`QBDI::AnalysisType` is equal to `QBDI::ANALYSIS_OPERANDS`, then
-:cpp:member:`QBDI::getInstAnalysis` will also analyze all instruction operands, and
+:cpp:func:`QBDI::getInstAnalysis` will also analyze all instruction operands, and
 fill an array of :cpp:type:`QBDI::OperandAnalysis` (of length `numOperands`).
 
 .. doxygenstruct:: QBDI::OperandAnalysis
@@ -413,18 +428,18 @@ Memory Access Analysis
 
 QBDI VM can log memory access using inline instrumentation. This adds instrumentation rules 
 which store the accessed addresses and values into specific memory variables called 
-*instruction shadows*. To enable this memory logging, the :cpp:member:`QBDI::VM::recordMemoryAccess` 
+*instruction shadows*. To enable this memory logging, the :cpp:func:`QBDI::VM::recordMemoryAccess` 
 API can be used. This memory logging is also automatically enabled when calling one of the memory 
 callbacks.
 
 .. doxygenfunction:: QBDI::VM::recordMemoryAccess
 
-The memory access type always refers to either :cpp:var:`QBDI::MEMORY_READ`, 
-:cpp:var:`QBDI::MEMORY_WRITE`, :cpp:var:`QBDI::MEMORY_READ_WRITE` (which is a bit field combination 
+The memory access type always refers to either :cpp:enumerator:`QBDI::MEMORY_READ`, 
+:cpp:enumerator:`QBDI::MEMORY_WRITE`, :cpp:enumerator:`QBDI::MEMORY_READ_WRITE` (which is a bit field combination 
 of the two previous ones).
 
-Once the logging has been enabled, :cpp:member:`QBDI::VM::getInstMemoryAccess` and 
-:cpp:member:`QBDI::VM::getBBMemoryAccess` can be used to retrieve the memory accesses made by the 
+Once the logging has been enabled, :cpp:func:`QBDI::VM::getInstMemoryAccess` and 
+:cpp:func:`QBDI::VM::getBBMemoryAccess` can be used to retrieve the memory accesses made by the 
 last instruction or by the last basic block. These two APIs return :cpp:class:`QBDI::MemoryAccess` 
 structures. Write memory accesses are only returned if the instruction has already been executed 
 (i.e. in the case of a :cpp:enumerator:`QBDI::InstPosition::POSTINST`). The :ref:`cryptolock-cpp` 

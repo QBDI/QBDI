@@ -58,7 +58,7 @@ VMAction onwrite(VMInstanceRef vm, GPRState *gprState, FPRState *fprState, void 
     // Obtain an analysis of the instruction from the vm
     const InstAnalysis* instAnalysis = qbdi_getInstAnalysis(vm, QBDI_ANALYSIS_INSTRUCTION | QBDI_ANALYSIS_DISASSEMBLY);
     // Obtain the instruction memory accesses
-    struct MemoryAccess* memAccesses = qbdi_getInstMemoryAccess(vm, &num_access);
+    MemoryAccess* memAccesses = qbdi_getInstMemoryAccess(vm, &num_access);
 
     // Printing disassembly
     printf("%" PRIRWORD ": %s\n", instAnalysis->address, instAnalysis->disassembly);

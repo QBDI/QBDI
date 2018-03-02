@@ -36,9 +36,13 @@ private:
 
 public:
 
-    T start;
-    T end;
+    T start;  /*!< Range start value. */
+    T end;    /*!< Range end value (always excluded). */
 
+    /*! Construct a new range.
+     * @param[in] start  Range start value.
+     * @param[in] end  Range end value (excluded).
+     */
     Range(T start, T end) {
         if(start < end) {
             this->start = start;
@@ -49,32 +53,68 @@ public:
         }
     }
 
+    /*! Return the total length of a range.
+     */
     T size() const {
         return end - start;
     }
 
+    /*! Return True if two ranges are equal (same boundaries).
+     *
+     * @param[in] r  Range to check.
+     *
+     * @return  True if equal.
+     */
     bool operator == (const Range& r) const {
         return r.start == start && r.end == end;
     }
 
+    /*! Return True if an value is inside current range boundaries.
+     *
+     * @param[in] t  Value to check.
+     *
+     * @return  True if contained.
+     */
     bool contains(T t) const {
         return (start <= t) && (t < end);
     }
 
+    /*! Return True if a range is inside current range boundaries.
+     *
+     * @param[in] r  Range to check.
+     *
+     * @return  True if contained.
+     */
     bool contains(Range<T> r) const {
         return (start <= r.start) && (r.end <= end);
     }
 
+    /*! Return True if a range is overlapping current range lower or/and upper boundary.
+     *
+     * @param[in] r  Range to check.
+     *
+     * @return  True if overlapping.
+     */
     bool overlaps(Range<T> r) const {
         return r.contains(*this) || this->contains(r) ||
                ((start <= r.start) && (r.start < end)) || 
                ((start < r.end) && (r.end <= end));
     }
 
+    /*! Pretty print a range
+     *
+     * @param[in] os  An output stream.
+     */
     void display(std::ostream &os) const {
         os << "(0x" << std::hex << start << ", 0x" << end << ")";
     }
 
+    /*! Return the intersection of two ranges.
+     *
+     * @param[in] r  Range to intersect with current range.
+     *
+     * @return  A new range.
+     */
     Range<T> intersect(Range<T> r) const {
         return Range<T>(max(start, r.start), min(end, r.end));
     }

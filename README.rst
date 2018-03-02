@@ -68,7 +68,7 @@ Linux
 x86-64
 ^^^^^^
 
-Create a new directory at the root of the source tree, and execute the linux configuration script::
+Create a new directory at the root of the source tree, and execute the Linux configuration script::
 
     mkdir build
     cd build
@@ -101,7 +101,15 @@ instead. This script however needs to be customized for your cross-compilation t
 macOS
 -----
 
-Create a new directory at the root of the source tree, and execute the linux configuration script::
+Compiling QBDI on macOS requires a few things:
+
+* A modern version of **macOS** (like Sierra)
+* **Xcode** (from the *App Store* or *Apple Developer Tools*)
+* the **Command Line Tools** (``xcode-select --install``)
+* a package manager (preferably **MacPorts**, but *HomeBrew* should also be fine)
+* some packages (``port install cmake wget``)
+
+Once requirements are met, create a new directory at the root of the source tree, and execute the macOS configuration script::
 
     mkdir build
     cd build
@@ -123,8 +131,11 @@ then relaunch the build script from above and compile::
 Windows
 -------
 
-Building on windows requires a working bash interpreter, both Cygwin and the Windows Subsytem for 
-Linux have been used successfully. It also requires a pure Windows installation of Python 2.
+Building on Windows requires a working *bash* interpreter with some command line tools (*tar*, *wget*)
+in order to build our dependencies (we really hope to improve this in the future). Both *Cygwin* and the
+*Windows Subsytem for Linux* have been used successfully (but *Cygwin* is our official way to do it).
+It also requires a pure Windows installation of *Python 2* (from the official packages,
+this is mandatory) and an up-to-date CMake.
 
 First, the ``config-win-X86_64.sh`` should be edited to use the generator (the ``-G`` flag) 
 matching your Visual Studio installation. Then the following command should be run::

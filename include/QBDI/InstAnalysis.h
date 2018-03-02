@@ -86,8 +86,8 @@ typedef struct {
     bool        isPredicable;       /*!< true if instruction contains a predicate (~is conditional) */
     bool        mayLoad;            /*!< true if instruction 'may' load data from memory */
     bool        mayStore;           /*!< true if instruction 'may' store data to memory */
-    // ANALISYS_DISASSEMBLY
-    char*       disassembly;        /*!< Instruction disassembly (warning: NULL if !ANALISYS_DISASSEMBLY) */
+    // ANALYSIS_DISASSEMBLY
+    char*       disassembly;        /*!< Instruction disassembly (warning: NULL if !ANALYSIS_DISASSEMBLY) */
     // ANALYSIS_OPERANDS
     uint8_t     numOperands;        /*!< Number of operands used by the instruction */
     OperandAnalysis* operands;      /*!< Structure containing analysis results of an operand provided by the VM.

@@ -26,6 +26,7 @@
 #include <mach/mach.h>
 #include <mach-o/loader.h>
 #include <mach-o/dyld.h>
+#include <mach-o/dyld_images.h>
 #include <mach-o/getsect.h>
 #elif defined(QBDI_OS_WIN)
 #include <Windows.h>
@@ -133,12 +134,6 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
 }
 
 #elif defined(QBDI_OS_DARWIN)
-
-std::vector<MemoryMap> getCurrentProcessMaps() {
-    return getRemoteProcessMaps(getpid());
-}
-
-std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
 #ifdef QBDI_BITS_64
 #define STRUCT_HEADER mach_header_64
 #define STRUCT_SEG segment_command_64
@@ -150,10 +145,126 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
 #define MAGIC_HEADER MH_MAGIC
 #define MAGIC_SEG LC_SEGMENT
 #endif
+
+mach_vm_address_t getDyldAllImageInfoAddr(task_t task, mach_vm_size_t* all_image_info_size) {
+    task_dyld_info_data_t dyld_info;
+    mach_msg_type_number_t count = TASK_DYLD_INFO_COUNT;
+    kern_return_t kr = task_info(task, TASK_DYLD_INFO,
+                                 reinterpret_cast<task_info_t>(&dyld_info),
+                                 &count);
+    if (kr != KERN_SUCCESS) {
+        return 0;
+    }
+    if (all_image_info_size) {
+        *all_image_info_size = dyld_info.all_image_info_size;
+    }
+    return dyld_info.all_image_info_addr;
+}
+
+
+bool getDyldAllImageInfo(task_t task, struct dyld_all_image_infos* all_image_infos) {
+    if (!all_image_infos) {
+        return false;
+    }
+    mach_vm_size_t all_image_info_size;
+    mach_vm_address_t all_image_info_addr = getDyldAllImageInfoAddr(task, &all_image_info_size);
+    vm_size_t size = sizeof(struct dyld_all_image_infos);
+    memset(all_image_infos, 0, size);
+    kern_return_t kr = vm_read_overwrite(task, all_image_info_addr, size, (vm_address_t) all_image_infos, &size);
+    if (kr != KERN_SUCCESS) {
+        return false;
+    }
+    return true;
+}
+
+
+struct dyld_image_info *getImageInfo(task_t task, struct dyld_all_image_infos& all_image_infos, uint32_t i) {
+    vm_size_t size = sizeof(struct dyld_image_info);
+    struct dyld_image_info* image_info = (struct dyld_image_info*) calloc(1, size);
+    // If are asking for more than image count, let's return dyld
+    if (all_image_infos.infoArrayCount <= i) {
+        image_info->imageLoadAddress = all_image_infos.dyldImageLoadAddress;
+        if (all_image_infos.version >= 15) {
+            image_info->imageFilePath = all_image_infos.dyldPath;
+        }
+        image_info->imageFileModDate = -1;
+    } else {
+        kern_return_t kr = vm_read_overwrite(task, (vm_address_t) &(all_image_infos.infoArray[i]), size, (vm_address_t) image_info, &size);
+        if (kr != KERN_SUCCESS) {
+            return NULL;
+        }
+    }
+    return image_info;
+}
+
+
+struct STRUCT_HEADER *getImageHeader(task_t task, const struct dyld_image_info* image_info) {
+    struct STRUCT_HEADER mh;
+    vm_size_t size = sizeof(struct STRUCT_HEADER);
+    // read macho header first bytes
+    kern_return_t kr = vm_read_overwrite(task, (vm_address_t)image_info->imageLoadAddress, size, (vm_address_t) &mh, &size);
+    if ((kr != KERN_SUCCESS) || (mh.magic != MAGIC_HEADER)) {
+        return NULL;
+    }
+    // read whole macho header
+    size = mh.sizeofcmds + sizeof(struct STRUCT_HEADER);
+    struct STRUCT_HEADER* header = (struct STRUCT_HEADER*) malloc(size);
+    kr = vm_read_overwrite(task, (vm_address_t)image_info->imageLoadAddress, size, (vm_address_t) header, &size);
+    if (kr != KERN_SUCCESS) {
+        free(header);
+        return NULL;
+    }
+    return header;
+}
+
+
+char *getImagePath(task_t task, const struct dyld_image_info* image_info) {
+    if (image_info->imageFilePath == nullptr) {
+        // see getImageInfo
+        if (image_info->imageFileModDate == -1) {
+            return strdup("/usr/lib/dyld");
+        }
+        return NULL;
+    }
+    vm_size_t size = PATH_MAX;
+    char* imagePath = (char*) malloc(size);
+    kern_return_t kr = vm_read_overwrite(task, (vm_address_t)image_info->imageFilePath, size, (vm_address_t) imagePath, &size);
+    if (kr != KERN_SUCCESS) {
+        free(imagePath);
+        return NULL;
+    }
+    char *ret = strdup(imagePath);
+    free(imagePath);
+    return ret;
+}
+
+
+uintptr_t getImageSlideWithHeader(const struct dyld_image_info* image_info, const struct STRUCT_HEADER* mh) {
+    struct load_command        *lc = NULL;
+    struct STRUCT_SEG          *seg = NULL;
+
+    for (   lc = (struct load_command *)((uintptr_t)mh + sizeof(struct STRUCT_HEADER));
+            (uintptr_t)lc < (uintptr_t)mh + (uintptr_t)mh->sizeofcmds;
+            lc = (struct load_command *)((uintptr_t)lc + (uintptr_t)lc->cmdsize)   ) {
+        if (lc->cmd == MAGIC_SEG) {
+            seg = (struct STRUCT_SEG *)lc;
+            if ( strcmp(seg->segname, "__TEXT") == 0 )
+                return (char*)(image_info->imageLoadAddress) - (char*)(seg->vmaddr);
+        }
+    }
+    return 0;
+}
+
+
+std::vector<MemoryMap> getCurrentProcessMaps() {
+    return getRemoteProcessMaps(getpid());
+}
+
+std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
     uint32_t                    icnt = 0;
-    const struct STRUCT_HEADER *mh = NULL;
-    const char                 *path = NULL;
-    const char                 *name = NULL;
+    struct STRUCT_HEADER       *mh = NULL;
+    char                       *path = NULL;
+    char                       *name = NULL;
     uintptr_t                   slide = 0;
     struct load_command        *lc = NULL;
     struct STRUCT_SEG          *seg = NULL;
@@ -200,40 +311,49 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
     }
 
     // Create a map of loaded images segments
-    icnt = _dyld_image_count();
-    for (int i = 0; i < icnt; i++) {
-        mh = (const struct STRUCT_HEADER *) _dyld_get_image_header(i);
-        if (!mh || (mh->magic != MAGIC_HEADER)) {
-            continue;
-        }
-        path = _dyld_get_image_name(i);
-        slide = _dyld_get_image_vmaddr_slide(i);
+    struct dyld_all_image_infos all_image_infos;
+    bool res = getDyldAllImageInfo(task, &all_image_infos);
+    // add +1 in order to include dyld (see getImageInfo)
+    icnt = res ? all_image_infos.infoArrayCount + 1 : 0;
 
-        // dirty basename, but thead safe
-        name = strrchr(path, '/');
-        if (!(name++)) {
-            continue;
-        }
+    for (uint32_t i = 0; i < icnt; i++) {
+        struct dyld_image_info* image_info = getImageInfo(task, all_image_infos, i);
+        if (image_info) {
+            mh = getImageHeader(task, image_info);
+            if (mh) {
+                path = getImagePath(task, image_info);
+                if (path) {
+                    slide = getImageSlideWithHeader(image_info, mh);
 
-        // Scan all segments
-        for (   lc = (struct load_command *)((uintptr_t)mh + sizeof(struct STRUCT_HEADER));
-                (uintptr_t)lc < (uintptr_t)mh + (uintptr_t)mh->sizeofcmds;
-                lc = (struct load_command *)((uintptr_t)lc + (uintptr_t)lc->cmdsize)   ) {
-            if (lc->cmd == MAGIC_SEG) {
-                seg = (struct STRUCT_SEG *)lc;
-                // Skip __ZERO segment
-                if (!seg->fileoff && !seg->filesize) {
-                    continue;
+                    // dirty basename, but thead safe
+                    name = strrchr(path, '/');
+                    if (name++) {
+                        // Scan all segments
+                        for (   lc = (struct load_command *)((uintptr_t)mh + sizeof(struct STRUCT_HEADER));
+                                (uintptr_t)lc < (uintptr_t)mh + (uintptr_t)mh->sizeofcmds;
+                                lc = (struct load_command *)((uintptr_t)lc + (uintptr_t)lc->cmdsize)   ) {
+                            if (lc->cmd == MAGIC_SEG) {
+                                seg = (struct STRUCT_SEG *)lc;
+                                // Skip __ZERO segment
+                                if (!seg->fileoff && !seg->filesize) {
+                                    continue;
+                                }
+
+                                // Create a map entry
+                                MemoryMap m;
+                                m.range.start = seg->vmaddr + slide;
+                                m.range.end = m.range.start + seg->vmsize;
+                                m.name = std::string(name);
+
+                                modMaps.push_back(m);
+                            }
+                        }
+                    }
+                    free(path);
                 }
-
-                // Create a map entry
-                MemoryMap m;
-                m.range.start = seg->vmaddr + slide;
-                m.range.end = m.range.start + seg->vmsize;
-                m.name = std::string(name);
-
-                modMaps.push_back(m);
+                free(mh);
             }
+            free(image_info);
         }
     }
 

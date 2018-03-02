@@ -358,7 +358,7 @@ QBDI_EXPORT bool qbdi_recordMemoryAccess(VMInstanceRef instance, MemoryAccessTyp
  *
  * @return An array of memory accesses made by the instruction.
  */
-QBDI_EXPORT struct MemoryAccess* qbdi_getInstMemoryAccess(VMInstanceRef instance, size_t* size);
+QBDI_EXPORT MemoryAccess* qbdi_getInstMemoryAccess(VMInstanceRef instance, size_t* size);
 
 /*! Obtain the memory accesses made by the last executed basic block.
  *  Return NULL and a size of 0 if the basic block made no memory access.
@@ -368,7 +368,7 @@ QBDI_EXPORT struct MemoryAccess* qbdi_getInstMemoryAccess(VMInstanceRef instance
  *
  * @return An array of memory accesses made by the basic block.
  */
-QBDI_EXPORT struct MemoryAccess* qbdi_getBBMemoryAccess(VMInstanceRef instance, size_t* size);
+QBDI_EXPORT MemoryAccess* qbdi_getBBMemoryAccess(VMInstanceRef instance, size_t* size);
 
 /*! Pre-cache a known basic block
  *

@@ -16,7 +16,7 @@ The methods generating the most important logs are:
 * ``Engine::run`` for everything related to execution decisions.
 * ``Engine::patch`` for patch generations.
 * ``Engine::instrument`` for instrumentation generations.
-* ``ExecBlockManager::getExecBlock`` for code cache lookup.
+* ``ExecBlockManager::getProgrammedExecBlock`` for code cache lookup.
 * ``ExecBlock::writeSequence`` for JIT code generation.
 * ``ExecBlock::execute`` for sequence execution and callback execution.
 

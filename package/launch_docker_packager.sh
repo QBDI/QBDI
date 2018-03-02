@@ -1,5 +1,5 @@
 #!/bin/sh
-VERSION=0.5.0
+VERSION=0.6.0
 RELEASE_VERSION=$VERSION
 
 BASEDIR=$(cd $(dirname "$0") && pwd -P)
@@ -20,7 +20,7 @@ docker run --rm qbdi_debian_latest cat qbdi/build/QBDI-$VERSION-linux-X86_64.deb
 
 # Ubuntu stable
 docker build -t qbdi_ubuntu_latest -f ubuntu_latest_docker_packager/Dockerfile .
-docker run --rm qbdi_ubuntu_latest cat qbdi/build/QBDI-$VERSION-linux-X86_64.deb > QBDI-$RELEASE_VERSION-ubuntu17.04-X86_64.deb
+docker run --rm qbdi_ubuntu_latest cat qbdi/build/QBDI-$VERSION-linux-X86_64.deb > QBDI-$RELEASE_VERSION-ubuntu17.10-X86_64.deb
 
 # Ubuntu LTS
 docker build -t qbdi_ubuntu_lts -f ubuntu_lts_docker_packager/Dockerfile .
