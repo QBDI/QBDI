@@ -167,6 +167,11 @@ public:
         return address == breakpoint;
     }
 
+    RangeSet<rword> affectedRange() {
+        RangeSet<rword> r;
+        r.add(Range<rword>(breakpoint, breakpoint + 1));
+        return r;
+    }
 };
 
 class OperandIsReg : public PatchCondition, public AutoAlloc<PatchCondition, OperandIsReg> {
