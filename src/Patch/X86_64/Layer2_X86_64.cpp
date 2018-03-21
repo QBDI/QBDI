@@ -159,10 +159,10 @@ llvm::MCInst fxrstor(unsigned int base, rword offset) {
     return inst;
 }
 
-llvm::MCInst vextracti128(unsigned int base, rword offset, unsigned int src, uint8_t regoffset) {
+llvm::MCInst vextractf128(unsigned int base, rword offset, unsigned int src, uint8_t regoffset) {
     llvm::MCInst inst;
 
-    inst.setOpcode(llvm::X86::VEXTRACTI128mr);
+    inst.setOpcode(llvm::X86::VEXTRACTF128mr);
     inst.addOperand(llvm::MCOperand::createReg(base));
     inst.addOperand(llvm::MCOperand::createImm(1));
     inst.addOperand(llvm::MCOperand::createReg(0));
@@ -174,10 +174,10 @@ llvm::MCInst vextracti128(unsigned int base, rword offset, unsigned int src, uin
     return inst;
 }
 
-llvm::MCInst vinserti128(unsigned int dst, unsigned int base, rword offset, uint8_t regoffset) {
+llvm::MCInst vinsertf128(unsigned int dst, unsigned int base, rword offset, uint8_t regoffset) {
     llvm::MCInst inst;
 
-    inst.setOpcode(llvm::X86::VINSERTI128rm);
+    inst.setOpcode(llvm::X86::VINSERTF128rm);
     inst.addOperand(llvm::MCOperand::createReg(dst));
     inst.addOperand(llvm::MCOperand::createReg(dst));
     inst.addOperand(llvm::MCOperand::createReg(base));
@@ -289,12 +289,12 @@ RelocatableInst::SharedPtr Fxrstor(Offset offset) {
     return DataBlockRel(fxrstor(Reg(REG_PC), 0), 3, offset-7);
 }
 
-RelocatableInst::SharedPtr Vextracti128(Offset offset, unsigned int src, Constant regoffset) {
-    return DataBlockRel(vextracti128(Reg(REG_PC), 0, src, regoffset), 3, offset-10);
+RelocatableInst::SharedPtr Vextractf128(Offset offset, unsigned int src, Constant regoffset) {
+    return DataBlockRel(vextractf128(Reg(REG_PC), 0, src, regoffset), 3, offset-10);
 }
 
-RelocatableInst::SharedPtr Vinserti128(unsigned int dst, Offset offset, Constant regoffset) {
-    return DataBlockRel(vinserti128(dst, Reg(REG_PC), 0, regoffset), 5, offset-10);
+RelocatableInst::SharedPtr Vinsertf128(unsigned int dst, Offset offset, Constant regoffset) {
+    return DataBlockRel(vinsertf128(dst, Reg(REG_PC), 0, regoffset), 5, offset-10);
 }
 
 RelocatableInst::SharedPtr Pushr(Reg reg) {

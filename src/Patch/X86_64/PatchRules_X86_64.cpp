@@ -35,22 +35,22 @@ RelocatableInst::SharedPtrVec getExecBlockPrologue() {
     prologue.push_back(Fxrstor(Offset(offsetof(Context, fprState))));
     if(isHostCPUFeaturePresent("avx")) {
         LogDebug("getExecBlockPrologue", "AVX support enabled in guest context switches");
-        prologue.push_back(Vinserti128(llvm::X86::YMM0, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm0)), 1));
-        prologue.push_back(Vinserti128(llvm::X86::YMM1, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm1)), 1));
-        prologue.push_back(Vinserti128(llvm::X86::YMM2, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm2)), 1));
-        prologue.push_back(Vinserti128(llvm::X86::YMM3, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm3)), 1));
-        prologue.push_back(Vinserti128(llvm::X86::YMM4, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm4)), 1));
-        prologue.push_back(Vinserti128(llvm::X86::YMM5, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm5)), 1));
-        prologue.push_back(Vinserti128(llvm::X86::YMM6, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm6)), 1));
-        prologue.push_back(Vinserti128(llvm::X86::YMM7, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm7)), 1));
-        prologue.push_back(Vinserti128(llvm::X86::YMM8, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm8)), 1));
-        prologue.push_back(Vinserti128(llvm::X86::YMM9, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm9)), 1));
-        prologue.push_back(Vinserti128(llvm::X86::YMM10, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm10)), 1));
-        prologue.push_back(Vinserti128(llvm::X86::YMM11, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm11)), 1));
-        prologue.push_back(Vinserti128(llvm::X86::YMM12, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm12)), 1));
-        prologue.push_back(Vinserti128(llvm::X86::YMM13, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm13)), 1));
-        prologue.push_back(Vinserti128(llvm::X86::YMM14, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm14)), 1));
-        prologue.push_back(Vinserti128(llvm::X86::YMM15, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm15)), 1));
+        prologue.push_back(Vinsertf128(llvm::X86::YMM0, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm0)), 1));
+        prologue.push_back(Vinsertf128(llvm::X86::YMM1, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm1)), 1));
+        prologue.push_back(Vinsertf128(llvm::X86::YMM2, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm2)), 1));
+        prologue.push_back(Vinsertf128(llvm::X86::YMM3, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm3)), 1));
+        prologue.push_back(Vinsertf128(llvm::X86::YMM4, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm4)), 1));
+        prologue.push_back(Vinsertf128(llvm::X86::YMM5, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm5)), 1));
+        prologue.push_back(Vinsertf128(llvm::X86::YMM6, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm6)), 1));
+        prologue.push_back(Vinsertf128(llvm::X86::YMM7, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm7)), 1));
+        prologue.push_back(Vinsertf128(llvm::X86::YMM8, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm8)), 1));
+        prologue.push_back(Vinsertf128(llvm::X86::YMM9, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm9)), 1));
+        prologue.push_back(Vinsertf128(llvm::X86::YMM10, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm10)), 1));
+        prologue.push_back(Vinsertf128(llvm::X86::YMM11, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm11)), 1));
+        prologue.push_back(Vinsertf128(llvm::X86::YMM12, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm12)), 1));
+        prologue.push_back(Vinsertf128(llvm::X86::YMM13, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm13)), 1));
+        prologue.push_back(Vinsertf128(llvm::X86::YMM14, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm14)), 1));
+        prologue.push_back(Vinsertf128(llvm::X86::YMM15, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm15)), 1));
     }
 #endif
     // Restore EFLAGS
@@ -77,22 +77,22 @@ RelocatableInst::SharedPtrVec getExecBlockEpilogue() {
     epilogue.push_back(Fxsave(Offset(offsetof(Context, fprState))));
     if(isHostCPUFeaturePresent("avx")) {
         LogDebug("getExecBlockEpilogue", "AVX support enabled in guest context switches");
-        epilogue.push_back(Vextracti128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm0)), llvm::X86::YMM0, 1));
-        epilogue.push_back(Vextracti128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm1)), llvm::X86::YMM1, 1));
-        epilogue.push_back(Vextracti128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm2)), llvm::X86::YMM2, 1));
-        epilogue.push_back(Vextracti128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm3)), llvm::X86::YMM3, 1));
-        epilogue.push_back(Vextracti128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm4)), llvm::X86::YMM4, 1));
-        epilogue.push_back(Vextracti128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm5)), llvm::X86::YMM5, 1));
-        epilogue.push_back(Vextracti128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm6)), llvm::X86::YMM6, 1));
-        epilogue.push_back(Vextracti128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm7)), llvm::X86::YMM7, 1));
-        epilogue.push_back(Vextracti128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm8)), llvm::X86::YMM8, 1));
-        epilogue.push_back(Vextracti128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm9)), llvm::X86::YMM9, 1));
-        epilogue.push_back(Vextracti128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm10)), llvm::X86::YMM10, 1));
-        epilogue.push_back(Vextracti128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm11)), llvm::X86::YMM11, 1));
-        epilogue.push_back(Vextracti128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm12)), llvm::X86::YMM12, 1));
-        epilogue.push_back(Vextracti128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm13)), llvm::X86::YMM13, 1));
-        epilogue.push_back(Vextracti128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm14)), llvm::X86::YMM14, 1));
-        epilogue.push_back(Vextracti128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm15)), llvm::X86::YMM15, 1));
+        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm0)), llvm::X86::YMM0, 1));
+        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm1)), llvm::X86::YMM1, 1));
+        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm2)), llvm::X86::YMM2, 1));
+        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm3)), llvm::X86::YMM3, 1));
+        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm4)), llvm::X86::YMM4, 1));
+        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm5)), llvm::X86::YMM5, 1));
+        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm6)), llvm::X86::YMM6, 1));
+        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm7)), llvm::X86::YMM7, 1));
+        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm8)), llvm::X86::YMM8, 1));
+        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm9)), llvm::X86::YMM9, 1));
+        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm10)), llvm::X86::YMM10, 1));
+        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm11)), llvm::X86::YMM11, 1));
+        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm12)), llvm::X86::YMM12, 1));
+        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm13)), llvm::X86::YMM13, 1));
+        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm14)), llvm::X86::YMM14, 1));
+        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm15)), llvm::X86::YMM15, 1));
     }
 #endif
     // Restore host RBP, RSP
