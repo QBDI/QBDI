@@ -1,5 +1,5 @@
 #!/bin/sh
-VERSION=0.6.0
+VERSION=0.6.1
 RELEASE_VERSION=$VERSION
 
 BASEDIR=$(cd $(dirname "$0") && pwd -P)

@@ -1,3 +1,14 @@
+2018-03-22 Charles HUBAIN <chubain@quarkslab.com>
+
+    * Version 0.6.1
+    * Fixing a performance regression with the addCodeAddrCB (#42):
+      Since 0.6, this API would trigger a complete cache flush forcing the engine to regenerate
+      all the instrumented code after each call. Since this API is used inside VM:run(), this
+      had the effect of completely canceling precaching optimization where used.
+    * Fixing support for AVX host without AVX2 support (#19):
+      Context switching was wrongly using AVX2 instructions instead of AVX instructions causing
+      segfaults under hosts supporting AVX but not AVX2.
+
 2018-03-02 Charles HUBAIN <chubain@quarkslab.com>
 
     * Version 0.6

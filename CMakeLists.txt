@@ -4,7 +4,7 @@ project(QBDI)
 # QBDI version
 set(QBDI_VERSION_MAJOR 0)
 set(QBDI_VERSION_MINOR 6)
-set(QBDI_VERSION_PATCH 0)
+set(QBDI_VERSION_PATCH 1)
 
 set(SUPPORTED_PLATFORM linux-X86_64 linux-ARM macOS-X86_64 android-ARM
     win-X86_64 iOS-ARM)
