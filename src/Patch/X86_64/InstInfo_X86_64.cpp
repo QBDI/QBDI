@@ -26,6 +26,7 @@ unsigned READ_8[] = {
 	llvm::X86::MOV8rm,
 	llvm::X86::ADC8rm,
 	llvm::X86::ADD8rm,
+	llvm::X86::AND8rm,
 	llvm::X86::LXADD8,
 	llvm::X86::OR8rm,
 	llvm::X86::SBB8rm,
