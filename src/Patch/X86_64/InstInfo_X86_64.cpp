@@ -958,6 +958,7 @@ unsigned STACK_WRITE_64[] = {
 	llvm::X86::PUSH64rmm,
 	llvm::X86::PUSH64r,
 	llvm::X86::PUSH64i8,
+	llvm::X86::PUSH64i32,
 	llvm::X86::CALL16m,
 	llvm::X86::CALL32m,
 	llvm::X86::CALL64m,
