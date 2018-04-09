@@ -162,11 +162,11 @@ public:
     unsigned getRegSize(unsigned reg) {
         for(unsigned i = 0; i < MRI->getNumRegClasses(); i++) {
             if(MRI->getRegClass(i).contains(reg)) {
-                return MRI->getRegClass(i).getSize();
+                return MRI->getRegClass(i).getPhysRegSize();
             }
         }
-        LogError("TempManager::getRegSize", "Register class not found");
-        abort();
+        LogError("TempManager::getRegSize", "Register class for register %u not found", reg);
+        return 0;
     }
 
     unsigned getSizedSubReg(unsigned reg, unsigned size) {
@@ -175,7 +175,7 @@ public:
         }
         for(unsigned i = 1; i < MRI->getNumSubRegIndices(); i++) {
             unsigned subreg = MRI->getSubReg(reg, i);
-            if(getRegSize(subreg) == size) {
+            if(subreg != 0 && getRegSize(subreg) == size) {
                 return subreg;
             }
         }

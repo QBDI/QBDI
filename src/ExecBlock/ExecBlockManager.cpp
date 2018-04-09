@@ -310,7 +310,7 @@ void ExecBlockManager::updateRegionStat(size_t r, rword translated) {
     unsigned reserved = (unsigned) (((float) (regions[r].covered.size() - regions[r].translated)) * getExpansionRatio());
     LogDebug(
         "ExecBlockManager::updateRegionStat", 
-        "Region %zu has %zu bytes available of which %zu are reserved for %zu bytes of untranslated code",
+        "Region %zu has %zu bytes available of which %u are reserved for %zu bytes of untranslated code",
         r,
         regions[r].available,
         reserved,
