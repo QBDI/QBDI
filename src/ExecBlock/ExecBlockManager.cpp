@@ -235,7 +235,7 @@ size_t ExecBlockManager::findRegion(Range<rword> codeRange) {
     size_t best_region = regions.size();
     size_t low = searchRegion(codeRange.start);
     unsigned best_cost = 0xFFFFFFFF;
-    for(size_t i = low; i < low + 3 && i < regions.size(); i++) {
+    for(size_t i = low; i < low + 2 && i < regions.size(); i++) {
         unsigned cost = 0;
         // Easy case: the code range is inside one of the region, we can return immediately
         if(regions[i].covered.contains(codeRange)) {
