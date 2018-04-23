@@ -30,7 +30,7 @@
 
 namespace QBDI {
 
-RelocatableInst::SharedPtrVec getBreakToHost(Reg temp);
+RelocatableInst::SharedPtrVec getBreakToHost(Reg temp, CPUMode cpuMode);
 
 }
 

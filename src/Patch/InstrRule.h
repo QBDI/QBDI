@@ -24,6 +24,7 @@
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCRegisterInfo.h"
 
+#include "Engine/LLVMCPU.h"
 #include "Patch/PatchUtils.h"
 #include "Patch/PatchGenerator.h"
 #include "Patch/PatchCondition.h"
@@ -78,35 +79,32 @@ public:
      *  context.
      *
      * @param[in] patch  A patch containing the current context.
-     * @param[in] MCII   An LLVM MC instruction info context.
+     * @param[in] llvmCPU   The LLVM CPU instance
      *
      * @return True if this instrumentation condition evaluate to true on this patch.
     */
-    bool canBeApplied(const Patch &patch, llvm::MCInstrInfo* MCII) {
-        return condition->test(&patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII);
+    bool canBeApplied(const Patch &patch, LLVMCPU* llvmCPU) {
+        return condition->test(&patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, llvmCPU->getMII());
     }
 
     /*! Instrument a patch by evaluating its generators on the current context. Also handles the
      *  temporary register management for this patch.
      *
      * @param[in] patch  The current patch to instrument.
-     * @param[in] MCII   A LLVM::MCInstrInfo classes used for internal architecture specific
-     *                   queries.
-     * @param[in] MRI    A LLVM::MCRegisterInfo classes used for internal architecture specific
-     *                   queries.
+     * @param[in] llvmCPU   The LLVM CPU instance
     */
-    void instrument(Patch &patch, llvm::MCInstrInfo* MCII, llvm::MCRegisterInfo* MRI) {
+    void instrument(Patch &patch, LLVMCPU* llvmCPU) {
         /* The instrument function needs to handle several different cases. An instrumentation can 
          * be either prepended or appended to the patch and, in each case, can trigger a break to 
          * host.
         */
         RelocatableInst::SharedPtrVec instru;
-        TempManager tempManager(&patch.metadata.inst, MCII, MRI);
+        TempManager tempManager(&patch.metadata.inst, llvmCPU->getMII(), llvmCPU->getMRI());
 
         // Generate the instrumentation code from the original instruction context
         for(PatchGenerator::SharedPtr& g : patchGen) {
             append(instru,
-                g->generate(&patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, &tempManager, nullptr)
+                g->generate(&patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, patch.metadata.cpuMode, &tempManager, nullptr)
             );
         }
 
@@ -126,6 +124,7 @@ public:
                                     &patch.metadata.inst,
                                     patch.metadata.address,
                                     patch.metadata.instSize,
+                                    patch.metadata.cpuMode,
                                     &tempManager,
                                     nullptr
                                )
@@ -141,13 +140,14 @@ public:
                                     &patch.metadata.inst,
                                     patch.metadata.address,
                                     patch.metadata.instSize,
+                                    patch.metadata.cpuMode,
                                     &tempManager,
                                     nullptr
                                )
                         );
                         break;
                 }
-                append(instru, SaveReg(tempManager.getRegForTemp(0), Offset(Reg(REG_PC))));
+                append(instru, SaveReg(tempManager.getRegForTemp(0), Offset(Reg(REG_PC))).generate(patch.metadata.cpuMode));
             }
         }
 
@@ -159,21 +159,21 @@ public:
         // Prepend the temporary register saving code to the instrumentation
         Reg::Vec usedRegisters = tempManager.getUsedRegisters();
         for(uint32_t i = 0; i < usedRegisters.size(); i++) {
-            prepend(instru, SaveReg(usedRegisters[i], Offset(usedRegisters[i])));
+            prepend(instru, SaveReg(usedRegisters[i], Offset(usedRegisters[i])).generate(patch.metadata.cpuMode));
         }
 
         // In the break to host case the first used register is not restored and instead given to
         // the break to host code as a scratch. It will later be restored by the break to host code.
         if(breakToHost) {
             for(uint32_t i = 1; i < usedRegisters.size(); i++) {
-                append(instru, LoadReg(usedRegisters[i], Offset(usedRegisters[i])));
+                append(instru, LoadReg(usedRegisters[i], Offset(usedRegisters[i])).generate(patch.metadata.cpuMode));
             }
-            append(instru, getBreakToHost(usedRegisters[0]));
+            append(instru, getBreakToHost(usedRegisters[0], patch.metadata.cpuMode));
         }
         // Normal case where we append the temporary register restoration code to the instrumentation
         else {
             for(uint32_t i = 0; i < usedRegisters.size(); i++) {
-                append(instru, LoadReg(usedRegisters[i], Offset(usedRegisters[i])));
+                append(instru, LoadReg(usedRegisters[i], Offset(usedRegisters[i])).generate(patch.metadata.cpuMode));
             }
         }
 

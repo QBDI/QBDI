@@ -31,22 +31,14 @@
 
 namespace QBDI {
 
-template<typename T> class PureEval {
-public:
-
-    operator RelocatableInst::SharedPtrVec() {
-        return (static_cast<T*>(this))->generate(nullptr, 0, 0, nullptr, nullptr);
-    }
-};
-
 class PatchGenerator {
 public:
 
     using SharedPtr    = std::shared_ptr<PatchGenerator>;
     using SharedPtrVec = std::vector<std::shared_ptr<PatchGenerator>>;
 
-    virtual RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) = 0;
+    virtual RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst, rword address,
+        rword instSize, CPUMode cpuMode, TempManager *temp_manager, const Patch *toMerge) = 0;
 
     virtual ~PatchGenerator() {};
 
@@ -71,8 +63,8 @@ public:
      * Output:
      *   (depends on the current instructions and transforms)
     */
-    RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
+    RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst, rword address, rword instSize,
+        CPUMode cpuMode, TempManager *temp_manager, const Patch *toMerge) {
 
         llvm::MCInst a(*inst);
         for(auto t: transforms) {
@@ -102,8 +94,8 @@ public:
      * Output:
      *   (none)
     */
-    RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
+    RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst, rword address, rword instSize,
+        CPUMode cpuMode, TempManager *temp_manager, const Patch *toMerge) {
         return {};
     }
 

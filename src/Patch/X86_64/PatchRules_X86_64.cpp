@@ -28,8 +28,8 @@ RelocatableInst::SharedPtrVec getExecBlockPrologue() {
     
 
     // Save host RBP, RSP
-    append(prologue, SaveReg(Reg(REG_BP), Offset(offsetof(Context, hostState.rbp))));
-    append(prologue, SaveReg(Reg(REG_SP), Offset(offsetof(Context, hostState.rsp))));
+    append(prologue, SaveReg(Reg(REG_BP), Offset(offsetof(Context, hostState.rbp))).generate((CPUMode) 0));
+    append(prologue, SaveReg(Reg(REG_SP), Offset(offsetof(Context, hostState.rsp))).generate((CPUMode) 0));
     // Restore FPR
 #ifndef _QBDI_ASAN_ENABLED_ // Disabled if ASAN is enabled as it breaks context alignment
     prologue.push_back(Fxrstor(Offset(offsetof(Context, fprState))));
@@ -54,12 +54,12 @@ RelocatableInst::SharedPtrVec getExecBlockPrologue() {
     }
 #endif
     // Restore EFLAGS
-    append(prologue, LoadReg(Reg(0), Offset(offsetof(Context, gprState.eflags))));
+    append(prologue, LoadReg(Reg(0), Offset(offsetof(Context, gprState.eflags))).generate((CPUMode) 0));
     prologue.push_back(Pushr(Reg(0)));
     prologue.push_back(Popf());
     // Restore GPR
     for(unsigned int i = 0; i < NUM_GPR-1; i++)
-        append(prologue, LoadReg(Reg(i), Offset(Reg(i))));
+        append(prologue, LoadReg(Reg(i), Offset(Reg(i))).generate((CPUMode) 0));
     // Jump selector
     prologue.push_back(Jmp64m(Offset(offsetof(Context, hostState.selector))));
 
@@ -71,7 +71,7 @@ RelocatableInst::SharedPtrVec getExecBlockEpilogue() {
 
     // Save GPR
     for(unsigned int i = 0; i < NUM_GPR-1; i++)
-        append(epilogue, SaveReg(Reg(i), Offset(Reg(i))));
+        append(epilogue, SaveReg(Reg(i), Offset(Reg(i))).generate((CPUMode) 0));
     // Save FPR
 #ifndef _QBDI_ASAN_ENABLED_ // Disabled if ASAN is enabled as it breaks context alignment
     epilogue.push_back(Fxsave(Offset(offsetof(Context, fprState))));
@@ -96,12 +96,12 @@ RelocatableInst::SharedPtrVec getExecBlockEpilogue() {
     }
 #endif
     // Restore host RBP, RSP
-    append(epilogue, LoadReg(Reg(REG_BP), Offset(offsetof(Context, hostState.rbp))));
-    append(epilogue, LoadReg(Reg(REG_SP), Offset(offsetof(Context, hostState.rsp))));
+    append(epilogue, LoadReg(Reg(REG_BP), Offset(offsetof(Context, hostState.rbp))).generate((CPUMode) 0));
+    append(epilogue, LoadReg(Reg(REG_SP), Offset(offsetof(Context, hostState.rsp))).generate((CPUMode) 0));
     // Save EFLAGS
     epilogue.push_back(Pushf());
     epilogue.push_back(Popr(Reg(0)));
-    append(epilogue, SaveReg(Reg(0), Offset(offsetof(Context, gprState.eflags))));
+    append(epilogue, SaveReg(Reg(0), Offset(offsetof(Context, gprState.eflags))).generate((CPUMode) 0));
     // return to host
     epilogue.push_back(Ret());
 
@@ -453,13 +453,13 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
 }
 
 // Patch allowing to terminate a basic block early by writing address into DataBlock[Offset(RIP)]
-RelocatableInst::SharedPtrVec getTerminator(rword address) {
+RelocatableInst::SharedPtrVec getTerminator(rword address, CPUMode cpuMode) {
     RelocatableInst::SharedPtrVec terminator;
 
-    append(terminator, SaveReg(Reg(0), Offset(Reg(0))));
+    append(terminator, SaveReg(Reg(0), Offset(Reg(0))).generate(cpuMode));
     terminator.push_back(NoReloc(mov64ri(Reg(0), address)));
-    append(terminator, SaveReg(Reg(0), Offset(Reg(REG_PC))));
-    append(terminator, LoadReg(Reg(0), Offset(Reg(0))));
+    append(terminator, SaveReg(Reg(0), Offset(Reg(REG_PC))).generate(cpuMode));
+    append(terminator, LoadReg(Reg(0), Offset(Reg(0))).generate(cpuMode));
 
     return terminator;
 }

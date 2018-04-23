@@ -46,7 +46,7 @@ private:
 
 public:
 
-    ExecBroker(Assembly& assembly, VMInstanceRef vminstance = nullptr);
+    ExecBroker(Assembly* assembly[CPUMode::COUNT], VMInstanceRef vminstance = nullptr);
 
     bool isInstrumented(rword addr) const { return instrumented.contains(addr);}
 

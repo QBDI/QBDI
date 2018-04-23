@@ -23,41 +23,34 @@
 
 namespace QBDI {
 
-Assembly::Assembly(llvm::MCContext &MCTX, llvm::MCAsmBackend &MAB, llvm::MCInstrInfo &MCII, 
-                   const llvm::Target &target, llvm::MCSubtargetInfo &MSTI) 
-    : MAB(MAB), MCII(MCII), MRI(*MCTX.getRegisterInfo()), MAI(*MCTX.getAsmInfo()), MSTI(MSTI) {
-
+Assembly::Assembly(LLVMCPU* llvmCPU) : llvmCPU(llvmCPU) {
     unsigned int variant = 0;
 
     null_ostream = std::unique_ptr<llvm::raw_pwrite_stream>(
         new llvm::raw_null_ostream()
     );
 
-    disassembler = std::unique_ptr<llvm::MCDisassembler>(
-        target.createMCDisassembler(MSTI, MCTX)
-    );
-
-    codeEmitter = std::unique_ptr<llvm::MCCodeEmitter>(
-        target.createMCCodeEmitter(MCII, MRI, MCTX)
-    );
-
     objectWriter = std::unique_ptr<llvm::MCObjectWriter>(
-        MAB.createObjectWriter(*null_ostream)
+        llvmCPU->getMAB()->createObjectWriter(*null_ostream)
+    );
+
+    disassembler = std::unique_ptr<llvm::MCDisassembler>(
+        llvmCPU->getTarget()->createMCDisassembler(*llvmCPU->getMSTI(), *llvmCPU->getMCTX())
     );
 
     assembler = std::unique_ptr<llvm::MCAssembler>(
-        new llvm::MCAssembler(MCTX, MAB, *codeEmitter, *objectWriter)
+        new llvm::MCAssembler(*llvmCPU->getMCTX(), *llvmCPU->getMAB(), *llvmCPU->getMCE(), *objectWriter)
     );
 
     // TODO: find better way to handle variant
     #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
     variant = 1; // Force Intel
     #else
-    variant = MAI.getAssemblerDialect();
+    variant = llvmCPU->getMAI()->getAssemblerDialect();
     #endif // __x86_64__
 
     asmPrinter = std::unique_ptr<llvm::MCInstPrinter>(
-        target.createMCInstPrinter(MSTI.getTargetTriple(), variant, MAI, MCII, MRI)
+        llvmCPU->getTarget()->createMCInstPrinter(llvmCPU->getMSTI()->getTargetTriple(), variant, *llvmCPU->getMAI(), *llvmCPU->getMII(), *llvmCPU->getMRI())
     );
     asmPrinter->setPrintImmHex(true);
     asmPrinter->setPrintImmHex(llvm::HexStyle::C);
@@ -82,7 +75,7 @@ void Assembly::writeInstruction(const llvm::MCInst inst, memory_ostream *stream)
         disassOs.flush();
         fprintf(log, "Assembling %s at 0x%" PRIRWORD, disass.c_str(), (rword) stream->get_ptr() + (rword) pos);
     });
-    codeEmitter->encodeInstruction(inst, *stream, fixups, MSTI);
+    llvmCPU->getMCE()->encodeInstruction(inst, *stream, fixups, *llvmCPU->getMSTI());
     uint64_t size = stream->current_pos() - pos;
 
     if(fixups.size() > 0) {
@@ -90,7 +83,7 @@ void Assembly::writeInstruction(const llvm::MCInst inst, memory_ostream *stream)
         llvm::MCFixup fixup = fixups.pop_back_val();
         int64_t value;
         if(fixup.getValue()->evaluateAsAbsolute(value)) {
-            MAB.applyFixup(*assembler, fixup, target, llvm::MutableArrayRef<char>((char*) stream->get_ptr() + pos, size), (uint64_t) value, true);
+            llvmCPU->getMAB()->applyFixup(*assembler, fixup, target, llvm::MutableArrayRef<char>((char*) stream->get_ptr() + pos, size), (uint64_t) value, true);
         }
         else {
             LogWarning("Assembly::writeInstruction", "Could not evalutate fixup, might crash!");
@@ -109,7 +102,7 @@ void Assembly::writeInstruction(const llvm::MCInst inst, memory_ostream *stream)
 
 void Assembly::printDisasm(const llvm::MCInst &inst, llvm::raw_ostream &out) const {
     llvm::StringRef   unusedAnnotations;
-    asmPrinter->printInst(&inst, out, unusedAnnotations, MSTI);
+    asmPrinter->printInst(&inst, out, unusedAnnotations, *llvmCPU->getMSTI());
 }
 
 }

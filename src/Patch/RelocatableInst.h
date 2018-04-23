@@ -41,7 +41,7 @@ public:
         this->inst = inst;
     }
 
-    virtual llvm::MCInst reloc(ExecBlock *exec_block) {
+    virtual llvm::MCInst reloc(ExecBlock *exec_block, CPUMode cpuMode) {
         return inst;
     }
 
@@ -53,35 +53,7 @@ public:
 
     NoReloc(llvm::MCInst inst) : RelocatableInst(inst) {}
 
-    llvm::MCInst reloc(ExecBlock *exec_block) {
-        return inst;
-    }
-};
-
-class DataBlockRel : public RelocatableInst, public AutoAlloc<RelocatableInst, DataBlockRel> {
-    unsigned int opn;
-    rword        offset;
-
-public:
-    DataBlockRel(llvm::MCInst inst, unsigned int opn, rword offset)
-        : RelocatableInst(inst), opn(opn), offset(offset) {};
-
-    llvm::MCInst reloc(ExecBlock *exec_block) {
-        inst.getOperand(opn).setImm(offset + exec_block->getDataBlockOffset());
-        return inst;
-    }
-};
-
-class EpilogueRel : public RelocatableInst, public AutoAlloc<RelocatableInst, EpilogueRel> {
-    unsigned int opn;
-    rword        offset;
-
-public:
-    EpilogueRel(llvm::MCInst inst, unsigned int opn, rword offset)
-        : RelocatableInst(inst), opn(opn), offset(offset) {};
-
-    llvm::MCInst reloc(ExecBlock *exec_block) {
-        inst.getOperand(opn).setImm(offset + exec_block->getEpilogueOffset());
+    llvm::MCInst reloc(ExecBlock *exec_block, CPUMode cpuMode) {
         return inst;
     }
 };
