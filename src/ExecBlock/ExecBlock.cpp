@@ -47,7 +47,8 @@ RelocatableInst::SharedPtrVec ExecBlock::execBlockPrologue = RelocatableInst::Sh
 RelocatableInst::SharedPtrVec ExecBlock::execBlockEpilogue = RelocatableInst::SharedPtrVec();
 void (*ExecBlock::runCodeBlockFct)(void*) = NULL;
 
-ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(vminstance), assembly(assembly) {
+ExecBlock::ExecBlock(Assembly* assembly[CPUMode::COUNT], VMInstanceRef vminstance) : vminstance(vminstance) {
+    unsigned i = 0;
     // Allocate memory blocks
     std::error_code ec;
 #ifdef QBDI_OS_IOS
@@ -61,6 +62,11 @@ ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(
 #ifdef QBDI_OS_IOS
              mflags |= PF::MF_EXEC;
 #endif
+
+    // Copy Assembly
+    for(i = 0; i < CPUMode::COUNT; i++) {
+        this->assembly[i] = assembly[i];
+    }
 
     // Allocate 2 pages block
     codeBlock = QBDI::allocateMappedMemory(2*pageSize, nullptr, mflags, ec);
@@ -86,7 +92,7 @@ ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(
         execBlockEpilogue = getExecBlockEpilogue();
         // Only way to know the epilogue size is to JIT is somewhere
         for(auto &inst: execBlockEpilogue) {
-            assembly.writeInstruction(inst->reloc(this), codeStream);
+            assembly[0]->writeInstruction(inst->reloc(this, (CPUMode) 0), codeStream);
         }
         epilogueSize = codeStream->current_pos();
         codeStream->seek(0);
@@ -106,11 +112,11 @@ ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(
     // JIT prologue and epilogue
     codeStream->seek(codeBlock.size() - epilogueSize);
     for(auto &inst: execBlockEpilogue) {
-        assembly.writeInstruction(inst->reloc(this), codeStream);
+        assembly[0]->writeInstruction(inst->reloc(this, (CPUMode) 0), codeStream);
     }
     codeStream->seek(0);
     for(auto &inst: execBlockPrologue) {
-        assembly.writeInstruction(inst->reloc(this), codeStream);
+        assembly[0]->writeInstruction(inst->reloc(this, (CPUMode) 0), codeStream);
     }
 }
 
@@ -133,20 +139,21 @@ void ExecBlock::show() const {
         llvm::MCInst inst;
         std::string disass;
 
-        dstatus = assembly.getInstruction(inst, instSize, jitCode.slice(i), i);
+        // Broken: does not support multi cpu mode
+        dstatus = assembly[0]->getInstruction(inst, instSize, jitCode.slice(i), i);
         RequireAction("ExecBlock::show", dstatus != llvm::MCDisassembler::Fail, 
             break
         );
 
         llvm::raw_string_ostream disassOs(disass);
-        assembly.printDisasm(inst, disassOs);
+        assembly[0]->printDisasm(inst, disassOs);
         disassOs.flush();
         fprintf(stderr, "%s\n", disass.c_str());
     }
 
     fprintf(stderr, "---- CONTEXT ----\n");
     for (i = 0; i < NUM_GPR; i++) {
-        fprintf(stderr, "%s=0x%016" PRIRWORD " ", assembly.getRegisterName(GPR_ID[i]), QBDI_GPR_GET(&context->gprState, i));
+        fprintf(stderr, "%s=0x%016" PRIRWORD " ", assembly[0]->getRegisterName(GPR_ID[i]), QBDI_GPR_GET(&context->gprState, i));
         if(i % 4 == 0) fprintf(stderr, "\n");
     }
     fprintf(stderr, "\n");
@@ -179,6 +186,9 @@ void ExecBlock::run() {
 VMAction ExecBlock::execute() {
     LogDebug("ExecBlock::execute", "Executing ExecBlock %p programmed with selector at 0x%" PRIRWORD, 
              this, context->hostState.selector);
+
+    currentInst = seqRegistry[currentSeq].startInstID;
+
     do {
         context->hostState.callback = (rword) 0;
         context->hostState.data = (rword) 0;
@@ -188,6 +198,7 @@ VMAction ExecBlock::execute() {
         run();
 
         if(context->hostState.callback != 0) {
+
             currentInst = context->hostState.origin;
 
             LogDebug("ExecBlock::execute", "Callback request by ExecBlock %p for callback 0x%" PRIRWORD, 
@@ -230,17 +241,21 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
         return {EXEC_BLOCK_FULL, 0, 0};
     }
 
+    CPUMode cpuMode = seqIt->metadata.cpuMode;
+
     // Check if there's enough space left
     if(getEpilogueOffset() < MINIMAL_BLOCK_SIZE) {
         LogDebug("ExecBlock::writeBasicBlock", "ExecBlock %p is full", this);
         return {EXEC_BLOCK_FULL, 0, 0};
     }
-    LogDebug("ExecBlock::writeBasicBlock", "Attempting to write %zu patches to ExecBlock %p", std::distance(seqIt, seqEnd), this);
+    LogDebug("ExecBlock::writeBasicBlock", "Attempting to write %zu patches to ExecBlock %p in CPU mode %d", std::distance(seqIt, seqEnd), this, cpuMode);
+
     // Pages are RWX on iOS
-#ifndef QBDI_OS_IOS
+    #ifndef QBDI_OS_IOS
     // Ensure code block is RW
     makeRW();
-#endif // QBDI_OS_IOS
+    #endif // QBDI_OS_IOS
+
     // JIT the basic block instructions patch per patch
     // A patch correspond to an original instruction and should be written in its entierty
     while(seqIt != seqEnd) {
@@ -253,7 +268,7 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
         // Attempt to write a complete patch. If not, rollback to the last complete patch written
         for(const RelocatableInst::SharedPtr& inst : seqIt->insts) {
             if(getEpilogueOffset() > MINIMAL_BLOCK_SIZE) {
-                assembly.writeInstruction(inst->reloc(this), codeStream);
+                assembly[cpuMode]->writeInstruction(inst->reloc(this, cpuMode), codeStream);
             }
             else {
                 // Not enough space left, rollback
@@ -291,19 +306,19 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
     // If it's a rollback or a non-exit sequence, add a terminator
     if((seqType & SeqType::Exit) == 0) {
         LogDebug("ExecBlock::writeBasicBlock", "Writting terminator to ExecBlock %p to finish non-exit sequence", this);
-        RelocatableInst::SharedPtrVec terminator = getTerminator(seqIt->metadata.address);
+        RelocatableInst::SharedPtrVec terminator = getTerminator(seqIt->metadata.address, cpuMode);
         for(RelocatableInst::SharedPtr &inst : terminator) {
-            assembly.writeInstruction(inst->reloc(this), codeStream);
+            assembly[cpuMode]->writeInstruction(inst->reloc(this, cpuMode), codeStream);
         }
     }
     // JIT the jump to epilogue
-    RelocatableInst::SharedPtrVec jmpEpilogue = JmpEpilogue();
+    RelocatableInst::SharedPtrVec jmpEpilogue = JmpEpilogue().generate(nullptr, 0, 0, cpuMode, nullptr, nullptr);
     for(RelocatableInst::SharedPtr &inst : jmpEpilogue) {
-        assembly.writeInstruction(inst->reloc(this), codeStream);
+        assembly[cpuMode]->writeInstruction(inst->reloc(this, cpuMode), codeStream);
     }
     // Register sequence
     uint16_t endInstID = (uint16_t) (getNextInstID() - 1);
-    seqRegistry.push_back(SeqInfo {startInstID, endInstID, seqType});
+    seqRegistry.push_back(SeqInfo {startInstID, endInstID, seqType, cpuMode});
     // Return write results
     unsigned bytesWritten = (unsigned) (codeStream->current_pos() - startOffset);
     return SeqWriteResult {seqID, bytesWritten, patchWritten};
@@ -315,7 +330,8 @@ uint16_t ExecBlock::splitSequence(uint16_t instID) {
     seqRegistry.push_back(SeqInfo {
         instID, 
         seqRegistry[seqID].endInstID, 
-        (SeqType) (SeqType::Entry | seqRegistry[seqID].type)
+        (SeqType) (SeqType::Entry | seqRegistry[seqID].type),
+        seqRegistry[seqID].cpuMode
     });
     return getNextSeqID() - 1;
 }

@@ -40,6 +40,7 @@
 #include "Callback.h"
 #include "InstAnalysis.h"
 #include "State.h"
+#include "Engine/LLVMCPU.h"
 #include "Patch/Types.h"
 
 namespace QBDI {
@@ -65,20 +66,9 @@ struct CallbackRegistration {
 class Engine {
 private:
 
-    std::unique_ptr<llvm::MCAsmBackend>      MAB;
-    std::unique_ptr<llvm::MCAsmInfo>         MAI;
-    std::unique_ptr<llvm::MCCodeEmitter>     MCE;
-    std::unique_ptr<llvm::MCContext>         MCTX;
-    std::unique_ptr<llvm::MCInstrInfo>       MCII;
-    std::unique_ptr<llvm::MCObjectFileInfo>  MOFI;
-    std::unique_ptr<llvm::MCRegisterInfo>    MRI;
-    std::unique_ptr<llvm::MCSubtargetInfo>   MSTI;
-    std::string                              tripleName;
-    std::string                              cpu;
-    std::vector<std::string>                 mattrs;
-    VMInstanceRef                            vminstance;
-
-    Assembly*                                                       assembly;
+    VMInstanceRef                                                   vminstance;
+    LLVMCPU*                                                        llvmCPU[CPUMode::COUNT];
+    Assembly*                                                       assembly[CPUMode::COUNT];
     ExecBlockManager*                                               blockManager;
     ExecBroker*                                                     execBroker;
     std::vector<std::shared_ptr<PatchRule>>                         patchRules;
@@ -91,6 +81,7 @@ private:
     GPRState*                                                       curGPRState;
     FPRState*                                                       curFPRState;
     ExecBlock*                                                      curExecBlock;
+    CPUMode                                                         curCPUMode;
 
     std::vector<Patch> patch(rword start);
 

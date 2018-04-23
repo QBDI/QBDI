@@ -213,6 +213,7 @@ endif()
 
 set(SOURCES
     "src/Engine/Engine.cpp"
+    "src/Engine/LLVMCPU.cpp"
     "src/Engine/VM.cpp"
     "src/Engine/VM_C.cpp"
     "src/ExecBlock/ExecBlock.cpp"

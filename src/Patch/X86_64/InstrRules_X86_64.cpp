@@ -23,7 +23,7 @@ namespace QBDI {
  * break to host. It receive in argument a temporary reg which will be used for computations then 
  * finally restored.
 */
-RelocatableInst::SharedPtrVec getBreakToHost(Reg temp) {
+RelocatableInst::SharedPtrVec getBreakToHost(Reg temp, CPUMode cpuMode) {
     RelocatableInst::SharedPtrVec breakToHost;
 
     // Use the temporary register to compute RIP + 29 which is the address which will follow this 
@@ -31,11 +31,11 @@ RelocatableInst::SharedPtrVec getBreakToHost(Reg temp) {
     breakToHost.push_back(HostPCRel(mov64ri(temp, 0), 1, 29));
     // Set the selector to this address so the execution can be resumed when the exec block will be 
     // reexecuted
-    append(breakToHost, SaveReg(temp, Offset(offsetof(Context, hostState.selector))));
+    append(breakToHost, SaveReg(temp, Offset(offsetof(Context, hostState.selector))).generate(cpuMode));
     // Restore the temporary register
-    append(breakToHost, LoadReg(temp, Offset(temp)));
+    append(breakToHost, LoadReg(temp, Offset(temp)).generate(cpuMode));
     // Jump to the epilogue to break to the host
-    append(breakToHost, JmpEpilogue());
+    append(breakToHost, JmpEpilogue().generate(cpuMode));
 
     return breakToHost;
 }

@@ -28,11 +28,11 @@ RelocatableInst::SharedPtrVec getExecBlockPrologue() {
     // save return address on host stack
     prologue.push_back(Pushr(Reg(REG_LR)));
     // save host fp and sp
-    append(prologue, SaveReg(Reg(REG_SP), Offset(offsetof(Context, hostState.sp))));
+    append(prologue, SaveReg(Reg(REG_SP), Offset(offsetof(Context, hostState.sp))).generate((CPUMode) 0));
     // Move sp at the beginning of the data block to solve memory addressing range problems
     // This instruction needs to be EXACTLY HERE for relative addressing alignement reasons
     prologue.push_back(Adr(Reg(REG_SP), 4080));
-    append(prologue, SaveReg(Reg(REG_BP), Offset(offsetof(Context, hostState.fp))));
+    append(prologue, SaveReg(Reg(REG_BP), Offset(offsetof(Context, hostState.fp))).generate((CPUMode) 0));
     // Restore FPR
     for(unsigned int i = 0; i < QBDI_NUM_FPR; i++)
         prologue.push_back(
@@ -43,7 +43,7 @@ RelocatableInst::SharedPtrVec getExecBlockPrologue() {
     prologue.push_back(Msr(Reg(0)));
     // Restore GPR
     for(unsigned int i = 0; i < NUM_GPR-1; i++)
-        append(prologue, LoadReg(Reg(i), Offset(Reg(i))));
+        append(prologue, LoadReg(Reg(i), Offset(Reg(i))).generate((CPUMode) 0));
     // Jump selector
     prologue.push_back(
         Ldr(Reg(REG_PC), Offset(offsetof(Context, hostState.selector)))
@@ -57,7 +57,7 @@ RelocatableInst::SharedPtrVec getExecBlockEpilogue() {
 
     // Save guest state
     for(unsigned int i = 0; i < NUM_GPR-1; i++)
-        append(epilogue, SaveReg(Reg(i), Offset(Reg(i))));
+        append(epilogue, SaveReg(Reg(i), Offset(Reg(i))).generate((CPUMode) 0));
     // Move sp at the beginning of the data block to solve memory addressing range problems
     epilogue.push_back(Adr(Reg(REG_SP), Offset(0)));
     // Save FPR
@@ -69,8 +69,8 @@ RelocatableInst::SharedPtrVec getExecBlockEpilogue() {
     epilogue.push_back(Mrs(Reg(0)));
     epilogue.push_back(Str(Reg(0), Offset(offsetof(Context, gprState.cpsr))));
     // Restore host RBP, RSP
-    append(epilogue, LoadReg(Reg(REG_BP), Offset(offsetof(Context, hostState.fp))));
-    append(epilogue, LoadReg(Reg(REG_SP), Offset(offsetof(Context, hostState.sp))));
+    append(epilogue, LoadReg(Reg(REG_BP), Offset(offsetof(Context, hostState.fp))).generate((CPUMode) 0));
+    append(epilogue, LoadReg(Reg(REG_SP), Offset(offsetof(Context, hostState.sp))).generate((CPUMode) 0));
     // return to host
     epilogue.push_back(Popr(Reg(REG_PC)));
 
@@ -254,13 +254,13 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
 }
 
 // Patch allowing to terminate a basic block early by writing address into DataBlock[Offset(PC)]
-RelocatableInst::SharedPtrVec getTerminator(rword address) {
+RelocatableInst::SharedPtrVec getTerminator(rword address, CPUMode cpuMode) {
     RelocatableInst::SharedPtrVec terminator;
     
-    append(terminator, SaveReg(Reg(2), Offset(Reg(2))));
+    append(terminator, SaveReg(Reg(2), Offset(Reg(2))).generate(cpuMode));
     terminator.push_back(Ldr(Reg(2), Constant(address)));
-    append(terminator, SaveReg(Reg(2), Offset(Reg(REG_PC))));
-    append(terminator, LoadReg(Reg(2), Offset(Reg(2))));
+    append(terminator, SaveReg(Reg(2), Offset(Reg(REG_PC))).generate(cpuMode));
+    append(terminator, LoadReg(Reg(2), Offset(Reg(2))).generate(cpuMode));
 
     return terminator;
 }

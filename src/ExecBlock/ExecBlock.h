@@ -51,6 +51,7 @@ struct SeqInfo {
     uint16_t startInstID;
     uint16_t endInstID;
     SeqType  type;
+    CPUMode  cpuMode;
 };
 
 struct SeqWriteResult {
@@ -87,7 +88,7 @@ private:
     llvm::sys::MemoryBlock      codeBlock;
     llvm::sys::MemoryBlock      dataBlock;
     memory_ostream*             codeStream;
-    Assembly&                   assembly;
+    Assembly*                   assembly[CPUMode::COUNT];
     Context*                    context;
     rword*                      shadows;
     std::vector<ShadowInfo>     shadowRegistry;
@@ -126,7 +127,7 @@ public:
      * @param[in] assembly    Assembly used to assemble instructions in the ExecBlock.
      * @param[in] vminstance  Pointer to public engine interface
      */
-    ExecBlock(Assembly& assembly, VMInstanceRef vminstance = nullptr);
+    ExecBlock(Assembly* assembly[CPUMode::COUNT], VMInstanceRef vminstance = nullptr);
 
     ~ExecBlock();
 

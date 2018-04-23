@@ -31,7 +31,7 @@ public:
     MemoryConstant(llvm::MCInst inst, unsigned int opn, rword value)
         : RelocatableInst(inst), opn(opn), value(value) {};
 
-    llvm::MCInst reloc(ExecBlock *exec_block) {
+    llvm::MCInst reloc(ExecBlock *exec_block, CPUMode cpuMode) {
         uint16_t id = exec_block->newShadow();
         exec_block->setShadow(id, value);
         inst.getOperand(opn).setImm(
@@ -41,6 +41,35 @@ public:
     }
 };
 
+class DataBlockRel : public RelocatableInst, public AutoAlloc<RelocatableInst, DataBlockRel> {
+    unsigned int opn;
+    rword        offset;
+
+public:
+    DataBlockRel(llvm::MCInst inst, unsigned int opn, rword offset)
+        : RelocatableInst(inst), opn(opn), offset(offset) {};
+
+    llvm::MCInst reloc(ExecBlock *exec_block, CPUMode cpuMode) {
+        inst.getOperand(opn).setImm(offset + exec_block->getDataBlockOffset() - 8);
+        return inst;
+    }
+};
+
+class EpilogueRel : public RelocatableInst, public AutoAlloc<RelocatableInst, EpilogueRel> {
+    unsigned int opn;
+    rword        offset;
+
+public:
+    EpilogueRel(llvm::MCInst inst, unsigned int opn, rword offset)
+        : RelocatableInst(inst), opn(opn), offset(offset) {};
+
+    llvm::MCInst reloc(ExecBlock *exec_block, CPUMode cpuMode) {
+        inst.getOperand(opn).setImm(offset + exec_block->getEpilogueOffset() - 8);
+        return inst;
+    }
+};
+
+
 class HostPCRel : public RelocatableInst, public AutoAlloc<RelocatableInst, HostPCRel> {
     unsigned int opn;
     rword        offset;
@@ -49,7 +78,7 @@ public:
   HostPCRel(llvm::MCInst inst, unsigned int opn, rword offset)
         : RelocatableInst(inst), opn(opn), offset(offset) {};
 
-    llvm::MCInst reloc(ExecBlock *exec_block) {
+    llvm::MCInst reloc(ExecBlock *exec_block, CPUMode cpuMode) {
         uint16_t id = exec_block->newShadow();
         exec_block->setShadow(id, offset + exec_block->getCurrentPC());
         inst.getOperand(opn).setImm(
@@ -66,7 +95,7 @@ public:
     InstId(llvm::MCInst inst, unsigned int opn)
         : RelocatableInst(inst), opn(opn) {};
 
-    llvm::MCInst reloc(ExecBlock *exec_block) {
+    llvm::MCInst reloc(ExecBlock *exec_block, CPUMode cpuMode) {
         uint16_t id = exec_block->newShadow();
         exec_block->setShadow(id, exec_block->getNextInstID());
         inst.getOperand(opn).setImm(
@@ -75,7 +104,6 @@ public:
         return inst;
     }
 };
-
 
 }
 

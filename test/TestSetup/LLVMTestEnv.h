@@ -38,25 +38,18 @@
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
 
+#include "Engine/Engine.h"
+#include "Engine/LLVMCPU.h"
 #include "Utility/Assembly.h"
 
 
 class LLVMTestEnv : public ::testing::Test {
 protected:
 
-    std::unique_ptr<llvm::MCAsmBackend>      MAB;
-    std::unique_ptr<llvm::MCAsmInfo>         MAI;
-    std::unique_ptr<llvm::MCCodeEmitter>     MCE;
-    std::unique_ptr<llvm::MCContext>         MCTX;
-    std::unique_ptr<llvm::MCInstrInfo>       MCII;
-    std::unique_ptr<llvm::MCObjectFileInfo>  MOFI;
-    std::unique_ptr<llvm::MCRegisterInfo>    MRI;
-    std::unique_ptr<llvm::MCSubtargetInfo>   MSTI;
-    std::unique_ptr<QBDI::Assembly>          assembly;
-    const llvm::Target*                      processTarget;
-    std::string                              tripleName;
     std::string                              cpu;
     std::vector<std::string>                 mattrs;
+    QBDI::LLVMCPU*                           llvmCPU[QBDI::CPUMode::COUNT];
+    QBDI::Assembly*                          assembly[QBDI::CPUMode::COUNT];
 
     virtual void SetUp();
 
@@ -64,6 +57,15 @@ public:
 
     LLVMTestEnv(std::string cpu = "", std::vector<std::string> mattrs = {}): 
         cpu(cpu), mattrs(mattrs) {}
+
+    ~LLVMTestEnv() {
+        unsigned i = 0;
+
+        for(i = 0; i < QBDI::CPUMode::COUNT; i++) {
+            delete assembly[i];
+            delete llvmCPU[i];
+        }
+    }
 };
 
 #endif

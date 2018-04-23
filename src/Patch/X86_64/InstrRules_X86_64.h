@@ -31,7 +31,7 @@ namespace QBDI {
 
 class InstrRule;
 
-RelocatableInst::SharedPtrVec getBreakToHost(Reg temp);
+RelocatableInst::SharedPtrVec getBreakToHost(Reg temp, CPUMode cpuMode);
 
 std::vector<std::shared_ptr<InstrRule>> getMemAccessInstrRules();
 

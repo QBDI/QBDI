@@ -20,6 +20,7 @@
 
 #include "Patch/Types.h"
 #include "Patch/RelocatableInst.h"
+#include "Patch/X86_64/RelocatableInst_X86_64.h"
 
 namespace QBDI {
 

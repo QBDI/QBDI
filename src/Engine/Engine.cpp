@@ -29,8 +29,6 @@
 #include "llvm/Support/FileUtilities.h"
 #include "llvm/Support/Process.h"
 #include "llvm/Support/SourceMgr.h"
-#include "llvm/Support/TargetRegistry.h"
-#include "llvm/Support/TargetSelect.h"
 
 #include "Platform.h"
 #include "ExecBlock/ExecBlockManager.h"
@@ -42,7 +40,6 @@
 #include "Patch/InstInfo.h"
 #include "Utility/Assembly.h"
 #include "Utility/LogSys.h"
-#include "Utility/System.h"
 
 
 // Mask to identify VM events
@@ -50,71 +47,26 @@
 
 namespace QBDI {
 
-Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs, VMInstanceRef vminstance)
-    : cpu(_cpu), mattrs(_mattrs), vminstance(vminstance), instrRulesCounter(0), vmCallbacksCounter(0) {
+Engine::Engine(const std::string& cpu, const std::vector<std::string>& mattrs, VMInstanceRef vminstance)
+    : vminstance(vminstance), instrRulesCounter(0), vmCallbacksCounter(0) {
+    unsigned i = 0;
 
-    std::string          error;
-    std::string          featuresStr;
-    const llvm::Target*  processTarget;
-
-    llvm::InitializeAllTargetInfos();
-    llvm::InitializeAllTargetMCs();
-    llvm::InitializeAllAsmParsers();
-    llvm::InitializeAllDisassemblers();
     initMemAccessInfo();
 
-    // Build features string
-    if (cpu.empty()) {
-        cpu = QBDI::getHostCPUName();
-        // If API is broken on ARM, we are facing big problems...
-#if defined(QBDI_ARCH_ARM)
-        Require("Engine::Engine", !cpu.empty() && cpu != "generic");
-#endif
+    // Allocate LLVM CPUs
+    #if defined(QBDI_ARCH_ARM)
+    llvmCPU[CPUMode::ARM]     = new LLVMCPU(cpu, "arm", mattrs);
+    llvmCPU[CPUMode::Thumb]   = new LLVMCPU(cpu, "thumb", mattrs);
+    #elif defined(QBDI_ARCH_X86_64)
+    llvmCPU[CPUMode::X86_64] = new LLVMCPU(cpu, "", mattrs);
+    #endif
+    // Allocate corresponding Assembly
+    for(i = 0; i < CPUMode::COUNT; i++) {
+        assembly[i] = new Assembly(llvmCPU[i]);
     }
-    if (mattrs.empty()) {
-        mattrs = getHostCPUFeatures();
-    }
-    if (!mattrs.empty()) {
-        llvm::SubtargetFeatures features;
-        for (unsigned i = 0; i != mattrs.size(); ++i) {
-            features.AddFeature(mattrs[i]);
-        }
-        featuresStr = features.getString();
-    }
-
-    // lookup target
-    tripleName = llvm::Triple::normalize(
-        llvm::sys::getDefaultTargetTriple()
-    );
-    llvm::Triple processTriple(tripleName);
-    processTarget = llvm::TargetRegistry::lookupTarget(tripleName, error);
-    LogDebug("Engine::Engine", "Initialized LLVM for target %s", tripleName.c_str());
-
-    // Allocate all LLVM classes
-    MRI = std::unique_ptr<llvm::MCRegisterInfo>(
-        processTarget->createMCRegInfo(tripleName)
-    );
-    MAI = std::unique_ptr<llvm::MCAsmInfo>(
-        processTarget->createMCAsmInfo(*MRI, tripleName)
-    );
-    MOFI = std::unique_ptr<llvm::MCObjectFileInfo>(new llvm::MCObjectFileInfo());
-    MCTX = std::unique_ptr<llvm::MCContext>(new llvm::MCContext(MAI.get(), MRI.get(), MOFI.get()));
-    MOFI->InitMCObjectFileInfo(processTriple, llvm::Reloc::Static, llvm::CodeModel::Default, *MCTX);
-    MCII = std::unique_ptr<llvm::MCInstrInfo>(processTarget->createMCInstrInfo());
-    MSTI = std::unique_ptr<llvm::MCSubtargetInfo>(
-      processTarget->createMCSubtargetInfo(tripleName, cpu, featuresStr)
-    );
-    LogDebug("Engine::Engine", "Initialized LLVM subtarget with cpu %s and features %s", cpu.c_str(), featuresStr.c_str());
-    MAB = std::unique_ptr<llvm::MCAsmBackend>(
-        processTarget->createMCAsmBackend(*MRI, tripleName, cpu, llvm::MCTargetOptions())
-    );
-    MCE = std::unique_ptr<llvm::MCCodeEmitter>(
-       processTarget->createMCCodeEmitter(*MCII, *MRI, *MCTX)
-    );
-    // Allocate QBDI classes
-    assembly = new Assembly(*MCTX, *MAB, *MCII, *processTarget, *MSTI);
-    blockManager = new ExecBlockManager(*MCII, *MRI, *assembly, vminstance);
-    execBroker = new ExecBroker(*assembly, vminstance);
+    // Allocate remaining managing classes
+    blockManager = new ExecBlockManager(llvmCPU, assembly, vminstance);
+    execBroker = new ExecBroker(assembly, vminstance);
 
     // Get default Patch rules for this architecture
     patchRules = getDefaultPatchRules();
@@ -123,6 +75,7 @@ Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs,
     fprState = std::unique_ptr<FPRState>(new FPRState);
     curGPRState = gprState.get();
     curFPRState = fprState.get();
+    curCPUMode = (CPUMode) 0;
 
     initGPRState();
     initFPRState();
@@ -131,7 +84,12 @@ Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs,
 }
 
 Engine::~Engine() {
-    delete assembly;
+    unsigned i = 0;
+
+    for(i = 0; i < CPUMode::COUNT; i++) {
+        delete assembly[i];
+        delete llvmCPU[i];
+    }
     delete blockManager;
     delete execBroker;
 }
@@ -143,13 +101,13 @@ void Engine::initGPRState() {
 void Engine::initFPRState() {
     memset(fprState.get(), 0, sizeof(FPRState));
 
-#if defined(QBDI_ARCH_X86_64)
+    #if defined(QBDI_ARCH_X86_64)
     fprState->rfcw = 0x37F;
     fprState->ftw = 0xFF;
     fprState->rsrv1 = 0xFF;
     fprState->mxcsr = 0x1F80;
     fprState->mxcsrmask = 0xFFFF;
-#endif
+    #endif
 }
 
 GPRState* Engine::getGPRState() const {
@@ -213,8 +171,8 @@ void Engine::removeAllInstrumentedRanges() {
 
 std::vector<Patch> Engine::patch(rword start) {
     std::vector<Patch> basicBlock;
-    const llvm::ArrayRef<uint8_t> code((uint8_t*) start, (size_t) -1);
     bool basicBlockEnd = false;
+    const llvm::ArrayRef<uint8_t> code((uint8_t*) start, (size_t) -1);
     rword i = 0;
     LogDebug("Engine::patch", "Patching basic block at address 0x%" PRIRWORD, start);
 
@@ -229,26 +187,31 @@ std::vector<Patch> Engine::patch(rword start) {
         // Aggregate a complete patch
         do {
             // Disassemble
-            dstatus = assembly->getInstruction(inst, instSize, code.slice(i), i);
+            dstatus = assembly[curCPUMode]->getInstruction(inst, instSize, code.slice(i), i);
             address = start + i;
             RequireAction("Engine::patch", llvm::MCDisassembler::Success == dstatus, abort());
             LogCallback(LogPriority::DEBUG, "Engine::patch", [&] (FILE *log) -> void {
+                uint8_t* ptr = (uint8_t*) address;
                 std::string disass;
                 llvm::raw_string_ostream disassOs(disass);
-                assembly->printDisasm(inst, disassOs);
+                assembly[curCPUMode]->printDisasm(inst, disassOs);
                 disassOs.flush();
-                fprintf(log, "Patching 0x%" PRIRWORD " %s", address, disass.c_str());
+                fprintf(log, "Patching 0x%" PRIRWORD " ", address);
+                for(uint32_t j = 0; j < instSize; j++) {
+                    fprintf(log, " %02" PRIx8, ptr[j]);
+                }
+                fprintf(log, " %s", disass.c_str());
             });
             // Patch & merge
             for(uint32_t j = 0; j < patchRules.size(); j++) {
-                if(patchRules[j]->canBeApplied(&inst, address, instSize, MCII.get())) {
+                if(patchRules[j]->canBeApplied(&inst, address, instSize, llvmCPU[curCPUMode])) {
                     LogDebug("Engine::patch", "Patch rule %" PRIu32 " applied", j);
                     if(patch.insts.size() == 0) {
-                        patch = patchRules[j]->generate(&inst, address, instSize, MCII.get(), MRI.get());
+                        patch = patchRules[j]->generate(&inst, address, instSize, curCPUMode, llvmCPU[curCPUMode]);
                     }
                     else {
                         LogDebug("Engine::patch", "Previous instruction merged");
-                        patch = patchRules[j]->generate(&inst, address, instSize, MCII.get(), MRI.get(), &patch);
+                        patch = patchRules[j]->generate(&inst, address, instSize, curCPUMode, llvmCPU[curCPUMode], &patch);
                     }
                     break;
                 }
@@ -275,15 +238,15 @@ void Engine::instrument(std::vector<Patch> &basicBlock) {
         LogCallback(LogPriority::DEBUG, "Engine::instrument", [&] (FILE *log) -> void {
             std::string disass;
             llvm::raw_string_ostream disassOs(disass);
-            assembly->printDisasm(patch.metadata.inst, disassOs);
+            assembly[curCPUMode]->printDisasm(patch.metadata.inst, disassOs);
             disassOs.flush();
             fprintf(log, "Instrumenting 0x%" PRIRWORD " %s", patch.metadata.address, disass.c_str());
         });
         // Instrument
-        for (const auto& item: instrRules) {
+        for(const auto& item: instrRules) {
             const std::shared_ptr<InstrRule>& rule = item.second;
-            if (rule->canBeApplied(patch, MCII.get())) { // Push MCII
-                rule->instrument(patch, MCII.get(), MRI.get());
+            if(rule->canBeApplied(patch, llvmCPU[curCPUMode])) { // Push MCII
+                rule->instrument(patch, llvmCPU[curCPUMode]);
                 LogDebug("Engine::instrument", "Instrumentation rule %" PRIu32 " applied", item.first);
             }
         }
@@ -302,7 +265,7 @@ void Engine::handleNewBasicBlock(rword pc) {
 
 
 bool Engine::precacheBasicBlock(rword pc) {
-    if (blockManager->getProgrammedExecBlock(pc) != nullptr) {
+    if(blockManager->getProgrammedExecBlock(pc) != nullptr) {
         // already in cache
         return false;
     }
@@ -318,7 +281,7 @@ bool Engine::run(rword start, rword stop) {
     curFPRState = fprState.get();
 
     // Start address is out of range
-    if (!execBroker->isInstrumented(start)) {
+    if(!execBroker->isInstrumented(start)) {
         return false;
     }
 
@@ -336,8 +299,8 @@ bool Engine::run(rword start, rword stop) {
         }
         // Else execute through DBI
         else {
-            VMEvent event = VMEvent::SEQUENCE_ENTRY;
             LogDebug("Engine::run", "Executing 0x%" PRIRWORD " through DBI", currentPC);
+            VMEvent event = VMEvent::SEQUENCE_ENTRY;
 
             // Is cache flush pending?
             if(blockManager->isFlushPending()) {

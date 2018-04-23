@@ -187,6 +187,7 @@ public:
     rword address;
     uint32_t instSize;
     uint32_t patchSize;
+    CPUMode  cpuMode;
     bool modifyPC;
     bool merge;
 

@@ -19,7 +19,7 @@
 
 TEST_F(ExecBlockTest, EmptyBasicBlock) {
     // Allocate ExecBlock
-    QBDI::ExecBlock execBlock(*assembly);
+    QBDI::ExecBlock execBlock(assembly);
     // Write an empty basic block
     QBDI::Patch::Vec empty;
     QBDI::SeqWriteResult res = execBlock.writeSequence(empty.begin(), empty.end(), QBDI::SeqType::Exit);
@@ -28,14 +28,14 @@ TEST_F(ExecBlockTest, EmptyBasicBlock) {
 
 TEST_F(ExecBlockTest, MultipleBasicBlock) {
     // Allocate ExecBlock
-    QBDI::ExecBlock execBlock(*assembly);
+    QBDI::ExecBlock execBlock(assembly);
     // Jit two different terminators 
     QBDI::Patch::Vec terminator1;
     QBDI::Patch::Vec terminator2;
     terminator1.push_back(QBDI::Patch());
     terminator2.push_back(QBDI::Patch());
-    terminator1[0].append(QBDI::getTerminator(0x42424242));
-    terminator2[0].append(QBDI::getTerminator(0x13371337));
+    terminator1[0].append(QBDI::getTerminator(0x42424242, (QBDI::CPUMode) 0));
+    terminator2[0].append(QBDI::getTerminator(0x13371337, (QBDI::CPUMode) 0));
     QBDI::SeqWriteResult block1 = execBlock.writeSequence(terminator1.begin(), terminator1.end(), QBDI::SeqType::Exit);
     QBDI::SeqWriteResult block2 = execBlock.writeSequence(terminator2.begin(), terminator2.end(), QBDI::SeqType::Exit);
     // Are the seqID valid?
@@ -57,7 +57,7 @@ TEST_F(ExecBlockTest, MultipleBasicBlock) {
 
 TEST_F(ExecBlockTest, BasicBlockOverload) {
     // Allocate ExecBlock
-    QBDI::ExecBlock execBlock(*assembly);
+    QBDI::ExecBlock execBlock(assembly);
     QBDI::Patch::Vec empty;
     QBDI::SeqWriteResult res;
     uint32_t i = 0;

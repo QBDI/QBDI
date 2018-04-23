@@ -22,6 +22,34 @@
 
 namespace QBDI {
 
+class DataBlockRel : public RelocatableInst, public AutoAlloc<RelocatableInst, DataBlockRel> {
+    unsigned int opn;
+    rword        offset;
+
+public:
+    DataBlockRel(llvm::MCInst inst, unsigned int opn, rword offset)
+        : RelocatableInst(inst), opn(opn), offset(offset) {};
+
+    llvm::MCInst reloc(ExecBlock *exec_block, CPUMode cpuMode) {
+        inst.getOperand(opn).setImm(offset + exec_block->getDataBlockOffset());
+        return inst;
+    }
+};
+
+class EpilogueRel : public RelocatableInst, public AutoAlloc<RelocatableInst, EpilogueRel> {
+    unsigned int opn;
+    rword        offset;
+
+public:
+    EpilogueRel(llvm::MCInst inst, unsigned int opn, rword offset)
+        : RelocatableInst(inst), opn(opn), offset(offset) {};
+
+    llvm::MCInst reloc(ExecBlock *exec_block, CPUMode cpuMode) {
+        inst.getOperand(opn).setImm(offset + exec_block->getEpilogueOffset());
+        return inst;
+    }
+};
+
 class HostPCRel : public RelocatableInst, public AutoAlloc<RelocatableInst, HostPCRel> {
     unsigned int opn;
     rword        offset;
@@ -30,7 +58,7 @@ public:
   HostPCRel(llvm::MCInst inst, unsigned int opn, rword offset)
         : RelocatableInst(inst), opn(opn), offset(offset) {};
 
-    llvm::MCInst reloc(ExecBlock *exec_block) {
+    llvm::MCInst reloc(ExecBlock *exec_block, CPUMode cpuMode) {
         inst.getOperand(opn).setImm(offset + exec_block->getCurrentPC());
         return inst;
     }
@@ -43,7 +71,7 @@ public:
     InstId(llvm::MCInst inst, unsigned int opn)
         : RelocatableInst(inst), opn(opn) {};
 
-    llvm::MCInst reloc(ExecBlock *exec_block) {
+    llvm::MCInst reloc(ExecBlock *exec_block, CPUMode cpuMode) {
         inst.getOperand(opn).setImm(exec_block->getNextInstID());
         return inst;
     }
@@ -58,7 +86,7 @@ public:
     TaggedShadow(llvm::MCInst inst, unsigned int opn, uint16_t tag)
         : RelocatableInst(inst), opn(opn), tag(tag) {};
 
-    llvm::MCInst reloc(ExecBlock *exec_block) {
+    llvm::MCInst reloc(ExecBlock *exec_block, CPUMode cpuMode) {
         uint16_t id = exec_block->newShadow(tag);
         inst.getOperand(opn).setImm(
             exec_block->getDataBlockOffset() + exec_block->getShadowOffset(id) - 7

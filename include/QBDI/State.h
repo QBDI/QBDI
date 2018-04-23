@@ -37,6 +37,13 @@ namespace QBDI {
 
 typedef uint64_t rword;
 
+/*! X86 CPU modes.
+ */
+typedef enum {
+    X86_64 = 0,
+    COUNT
+} CPUMode;
+
 typedef struct {
     uint16_t invalid :1,
              denorm  :1,
@@ -216,6 +223,14 @@ namespace QBDI {
 #define QBDI_NUM_FPR 32
 
 typedef uint32_t rword;
+
+/*! ARM CPU modes.
+ */
+typedef enum {
+    ARM = 0,
+    Thumb,
+    COUNT
+} CPUMode;
 
 // SPHINX_ARM_FPRSTATE_BEGIN
 /*! ARM Floating Point Register context.

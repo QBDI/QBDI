@@ -78,6 +78,7 @@ typedef struct {
     const char* mnemonic;           /*!< LLVM mnemonic (warning: NULL if !ANALYSIS_INSTRUCTION) */
     rword       address;            /*!< Instruction address */
     uint32_t    instSize;           /*!< Instruction size (in bytes) */
+    CPUMode     cpuMode;            /*!< Instruction CPU mode */
     bool        affectControlFlow;  /*!< true if instruction affects control flow */
     bool        isBranch;           /*!< true if instruction acts like a 'jump' */
     bool        isCall;             /*!< true if instruction acts like a 'call' */
