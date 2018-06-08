@@ -1,5 +1,7 @@
-FROM ubuntu:18.10
-MAINTAINER Charles Hubain <chubain@quarkslab.com>
+ARG UBUNTU_TAG=latest
+
+# Packager image
+FROM ubuntu:$UBUNTU_TAG as builder
 
 ARG QBDI_BUILD_TYPE=Release
 
@@ -74,12 +76,25 @@ RUN sudo chown -R $USER:$USER . && \
     ln -s $HOME/qbdi-deps/deps deps && \
     mkdir build && \
     cd build && \
-    cmake -DCMAKE_BUILD_TYPE=$QBDI_BUILD_TYPE -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=$QBDI_PLATFORM -DCMAKE_INSTALL_PREFIX=$PREFIX ../ && \
+    cmake -DCMAKE_BUILD_TYPE=$QBDI_BUILD_TYPE \
+          -DCMAKE_CROSSCOMPILING=FALSE \
+          -DPLATFORM=$QBDI_PLATFORM \
+          -DCMAKE_INSTALL_PREFIX=$PREFIX .. && \
     make -j2 && \
     ./test/QBDITest && \
-    rm -f QBDI-*-$QBDI_PLATFORM.deb && \
-    cpack -G DEB && \
-    sudo dpkg -i QBDI-*-$QBDI_PLATFORM.deb
+    cpack -G DEB
 
-WORKDIR "$HOME/"
+# Target image
+FROM ubuntu:$UBUNTU_TAG
+MAINTAINER Charles Hubain <chubain@quarkslab.com>
+
+ENV USER docker
+ENV HOME /home/$USER
+ENV QBDI_PLATFORM linux-X86_64
+
+WORKDIR /root
+COPY --from=builder $HOME/qbdi/build/*.deb .
+RUN apt-get update && \
+    apt-get install -y ./*.deb
+
 CMD ["/bin/bash"]
