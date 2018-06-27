@@ -335,7 +335,7 @@ static void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm
         if (MRI.isSubRegisterEq(GPR_ID[j], regNo)) {
             if (GPR_ID[j] != regNo) {
                 unsigned int subregidx = MRI.getSubRegIndex(GPR_ID[j], regNo);
-                opa.size = MRI.getSubRegIdxSize(subregidx);
+                opa.size = MRI.getSubRegIdxSize(subregidx) >> 3; // size is in bits, we want bytes
                 opa.regOff = MRI.getSubRegIdxOffset(subregidx);
             } else {
                 opa.size = sizeof(rword);
@@ -464,7 +464,8 @@ static void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst
                 opa.type = OPERAND_IMM;
             }
             opa.value = (rword) op.getImm();
-            opa.size = sizeof(rword);
+            // FIXME: immediate size is architecture dependent (see X86BaseInfo.h for example)
+            opa.size = sizeof(rword); // set it to maximum size
             instAnalysis->numOperands++;
         }
     }
