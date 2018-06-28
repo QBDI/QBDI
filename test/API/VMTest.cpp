@@ -71,47 +71,52 @@ QBDI_NOINLINE int dummyFunCall(int arg0) {
 
 
 #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
-#define CMP_COUNT 2u
-#define CMP_REG_NAME "DH"
-#define CMP2_REG_NAME "EAX"
-#define CMP_VALIDATION 38u
+#define MNEM_COUNT 4u
+#define MNEM_VALIDATION 61u
 #elif defined(QBDI_ARCH_ARM)
-#define CMP_COUNT 1u
-#define CMP_REG_NAME "R3"
-#define CMP_VALIDATION 25u
+#define MNEM_COUNT 1u
+#define MNEM_VALIDATION 25u
 #endif
-#define CMP_IMM_VAL 66
-#define CMP2_IMM_VAL 42424242
-#define CMP_IMM_STRVAL "66"
-#define CMP2_IMM_STRVAL "42424242"
+#define MNEM_IMM_SHORT_VAL 66
+#define MNEM_IMM_VAL 42424242
+#define MNEM_IMM_SHORT_STRVAL "66"
+#define MNEM_IMM_STRVAL "42424242"
 
 struct TestInst {
     uint32_t instSize;
     uint8_t numOperands;
+    bool isCompare;
     QBDI::OperandAnalysis operands[3];
 };
 
 #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
-struct TestInst TestInsts[CMP_COUNT] = {
-    {3, 2, {
-               {QBDI::OPERAND_GPR, 0, 1, 8, 3, CMP_REG_NAME, QBDI::REGISTER_READ},
-               // FIXME: immediate size is not implemented
-               {QBDI::OPERAND_IMM, CMP_IMM_VAL, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
-           }
+struct TestInst TestInsts[MNEM_COUNT] = {
+    {3, 2, true, {
+           {QBDI::OPERAND_GPR, 0, 1, 8, 3, "DH", QBDI::REGISTER_READ},
+           // FIXME: immediate size is not implemented
+           {QBDI::OPERAND_IMM, MNEM_IMM_SHORT_VAL, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
+        }
     },
-    {5, 2, {
-               {QBDI::OPERAND_IMM, CMP2_IMM_VAL, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
-               {QBDI::OPERAND_GPR, 0, 4, 0, 0, CMP2_REG_NAME, QBDI::REGISTER_READ},
-           }
+    {3, 2, true, {
+           {QBDI::OPERAND_GPR, 0, 8, 0, 0, "RAX", QBDI::REGISTER_READ},
+           {QBDI::OPERAND_GPR, 0, 8, 0, 1, "RBX", QBDI::REGISTER_READ},
+        }
+    },
+    {5, 2, true, {
+           {QBDI::OPERAND_IMM, MNEM_IMM_VAL, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
+           {QBDI::OPERAND_GPR, 0, 4, 0, 0, "EAX", QBDI::REGISTER_READ},
+        }
+    },
+    {1, 0, false, {}
     },
 };
 #elif defined(QBDI_ARCH_ARM)
-struct TestInst TestInsts[CMP_COUNT] = {
-    {4, 3, {
-               {QBDI::OPERAND_GPR, 0, sizeof(QBDI::rword), 0, 3, CMP_REG_NAME, QBDI::REGISTER_READ},
-               {QBDI::OPERAND_IMM, CMP_IMM_VAL, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
-               {QBDI::OPERAND_PRED, 0, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
-           }
+struct TestInst TestInsts[MNEM_COUNT] = {
+    {4, 3, true, {
+            {QBDI::OPERAND_GPR, 0, sizeof(QBDI::rword), 0, 3, "R3", QBDI::REGISTER_READ},
+            {QBDI::OPERAND_IMM, MNEM_IMM_SHORT_VAL, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
+            {QBDI::OPERAND_PRED, 0, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
+        }
     }
 };
 #endif
@@ -120,11 +125,13 @@ struct TestInst TestInsts[CMP_COUNT] = {
 QBDI_NOINLINE QBDI::rword satanicFun(QBDI::rword arg0) {
 #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
  #ifndef QBDI_OS_WIN
-    asm("cmp $" CMP_IMM_STRVAL ", %" CMP_REG_NAME);
-    asm("cmp $" CMP2_IMM_STRVAL ", %" CMP2_REG_NAME); // explicit register
+    asm("cmp $" MNEM_IMM_SHORT_STRVAL ", %dh");
+    asm("cmp %rbx, %rax");
+    asm("cmp $" MNEM_IMM_STRVAL ", %eax"); // explicit register
+    asm("movq %0, %%rdi; movq %1, %%rsi; cmpsb %%es:(%%rdi), (%%rsi)"::"r"(&arg0), "r"(&arg0));
  #endif
 #elif defined(QBDI_ARCH_ARM)
-    asm("cmp " CMP_REG_NAME ", #" CMP_IMM_STRVAL);
+    asm("cmp r3, #" MNEM_IMM_SHORT_STRVAL);
 #endif
     return arg0 + 0x666;
 }
@@ -312,12 +319,14 @@ QBDI::VMAction evilMnemCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBD
 #endif
             info[1]++;
         }
-        // validate instruction type
-        if (TEST_GUARD(!ana->isBranch &&
-            !ana->isCall &&
-            !ana->isReturn &&
-            ana->isCompare)) {
-            info[1]++;
+        // validate instruction type (kinda...)
+        if (currentInst.isCompare) {
+            if (TEST_GUARD(!ana->isBranch &&
+                !ana->isCall &&
+                !ana->isReturn &&
+                ana->isCompare)) {
+                info[1]++;
+            }
         }
         // validate number of analyzed operands
         if (TEST_GUARD(ana->numOperands == currentInst.numOperands)) {
@@ -375,12 +384,12 @@ TEST_F(VMTest, MnemCallback) {
     ASSERT_TRUE(ran);
 
     EXPECT_EQ(retval, (QBDI::rword) satanicFun(info[2]));
-    EXPECT_EQ(info[0], CMP_COUNT);
+    EXPECT_EQ(info[0], MNEM_COUNT);
     // TODO: try to find a way to support windows
 #ifdef QBDI_OS_WIN
     EXPECT_EQ(info[1], (QBDI::rword) 0);
 #else
-    EXPECT_EQ(info[1], (QBDI::rword) CMP_VALIDATION);
+    EXPECT_EQ(info[1], (QBDI::rword) MNEM_VALIDATION);
 #endif
 
     bool success = vm->deleteInstrumentation(instrId);
