@@ -14,6 +14,12 @@ include_directories(QBDIPreload ${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_library(QBDIPreload STATIC ${SOURCES})
 
 install(TARGETS QBDIPreload
+        EXPORT QBDIPreload_targets
         ARCHIVE DESTINATION lib)
 
 install(FILES include/QBDIPreload.h DESTINATION include/)
+
+install(EXPORT QBDIPreload_targets
+        FILE QBDIPreloadConfig.cmake
+        NAMESPACE QBDIPreload::
+        DESTINATION ${PRELOAD_RESOURCES_PREFIX}/cmake)
