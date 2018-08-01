@@ -23,7 +23,7 @@ if(HAS_QBDIPRELOAD AND (NOT ${ARCH} STREQUAL "ARM"))
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
         ${CMAKE_CURRENT_SOURCE_DIR}/../QBDIPreload/include
         )
-    target_link_libraries(pyqbdi QBDIPreload QBDI_lib ${PYTHON_LIBRARIES})
+    target_link_libraries(pyqbdi QBDIPreload QBDI ${PYTHON_LIBRARIES})
     install(TARGETS pyqbdi
     LIBRARY DESTINATION lib)
 endif()

@@ -33,14 +33,14 @@ add_signature(QBDITest)
 if(${PLATFORM} STREQUAL "win-X86_64")
 
 target_link_libraries(QBDITest
-    QBDI
+    QBDI_static
     gtest.lib
 )
 
 else()
 
 target_link_libraries(QBDITest
-    QBDI
+    QBDI_static
     libgtest.a
 )
 

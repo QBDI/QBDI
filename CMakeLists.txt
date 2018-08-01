@@ -278,19 +278,22 @@ if(${PLATFORM} STREQUAL "win-X86_64")
 else()
     set(qbdi_static_libs ${LLVM_STATIC_LIBS} $<TARGET_FILE:QBDI_obj>)
 endif()
-MERGE_STATIC_LIBS(QBDI QBDI \${qbdi_static_libs})
+MERGE_STATIC_LIBS(QBDI_static QBDI \${qbdi_static_libs})
+add_library(QBDI::QBDI_static ALIAS QBDI_static)
 
-target_link_libraries(QBDI ${LLVM_LIBS})
-add_dependencies(QBDI QBDI_obj)
+target_link_libraries(QBDI_static ${LLVM_LIBS})
+add_dependencies(QBDI_static QBDI_obj)
 
 # QBDI as a shared library
-add_library(QBDI_lib SHARED cmake/stub.cpp)
-target_link_libraries(QBDI_lib QBDI ${LLVM_LIBS})
-add_dependencies(QBDI_lib QBDI_obj)
-set_target_properties(QBDI_lib PROPERTIES OUTPUT_NAME QBDI)
+add_library(QBDI SHARED cmake/stub.cpp)
+add_library(QBDI::QBDI ALIAS QBDI)
+
+target_link_libraries(QBDI QBDI_static ${LLVM_LIBS})
+add_dependencies(QBDI QBDI_obj)
+set_target_properties(QBDI PROPERTIES OUTPUT_NAME QBDI)
 # Hack: output stub not in the same directory than static to avoid conflicts
 if(${PLATFORM} STREQUAL "win-X86_64")
-    set_target_properties(QBDI PROPERTIES OUTPUT_NAME QBDI_static)
+    set_target_properties(QBDI_static PROPERTIES OUTPUT_NAME QBDI_static)
 endif()
 
 if(DEFINED STRIP_PATH)
@@ -304,9 +307,9 @@ if(DEFINED CMAKE_STRIP AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     elseif(UNIX)
         set(STRIP_ARGS ${STRIP_ARGS} -x)
     endif()
-    add_custom_command(TARGET QBDI_lib
+    add_custom_command(TARGET QBDI
         POST_BUILD
-        COMMAND ${CMAKE_STRIP} ${STRIP_ARGS} "$<TARGET_FILE:QBDI_lib>")
+        COMMAND ${CMAKE_STRIP} ${STRIP_ARGS} "$<TARGET_FILE:QBDI>")
 endif()
 
 # Configure QBDIPreload
@@ -325,10 +328,12 @@ endif()
 
 # Install targets
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME "QBDI")
-install(TARGETS QBDI
+install(TARGETS QBDI_static
+        EXPORT QBDI_targets
         ARCHIVE DESTINATION lib)
 
-install(TARGETS QBDI_lib
+install(TARGETS QBDI
+        EXPORT QBDI_targets
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION lib)
@@ -350,6 +355,11 @@ if(FULL_PACKAGE)
 
     set(RESOURCES_PREFIX ${CMAKE_INSTALL_PREFIX}/share/qbdi)
 
+    install(EXPORT QBDI_targets
+        FILE QBDIConfig.cmake
+        NAMESPACE QBDI::
+        DESTINATION ${RESOURCES_PREFIX}/cmake)
+
     # QBDI template
     configure_file(package/qbdi-template.in package/qbdi-template)
     install(DIRECTORY templates/qbdi_template DESTINATION ${RESOURCES_PREFIX}
@@ -359,8 +369,10 @@ if(FULL_PACKAGE)
 
     # QBDI preload template
     if(HAS_QBDIPRELOAD)
+        set(PRELOAD_RESOURCES_PREFIX ${CMAKE_INSTALL_PREFIX}/share/qbdipreload)
+
         configure_file(package/qbdi-preload-template.in package/qbdi-preload-template)
-        install(DIRECTORY templates/qbdi_preload_template DESTINATION ${RESOURCES_PREFIX}
+        install(DIRECTORY templates/qbdi_preload_template DESTINATION ${PRELOAD_RESOURCES_PREFIX}
                 COMPONENT QBDITemplate)
         install(PROGRAMS ${CMAKE_BINARY_DIR}/package/qbdi-preload-template DESTINATION bin
                 COMPONENT QBDITemplate)

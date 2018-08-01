@@ -17,4 +17,4 @@ include_directories(validator PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
     ${CMAKE_CURRENT_SOURCE_DIR}/../QBDIPreload/include
     )
-target_link_libraries(validator QBDIPreload QBDI)
+target_link_libraries(validator QBDIPreload QBDI_static)
