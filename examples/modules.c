@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "Memory.h"
+
+#include <QBDI.h>
 
 int main(int argc, char** argv) {
     size_t size = 0, i = 0;

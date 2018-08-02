@@ -21,12 +21,16 @@ else()
 endif()
 SET(CPACK_RESOURCE_FILE_WELCOME "${CMAKE_CURRENT_SOURCE_DIR}/Welcome.txt")
 SET(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/Readme.txt")
-SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE.txt")
+SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/../LICENSE.txt")
+
+# Configure NSIS
+configure_file(NSIS_gen.in NSIS_gen.nsh)
+
 INCLUDE(CPack)
 
 if(UNIX AND NOT ("${PLATFORM}" STREQUAL "android-ARM"))
     add_custom_target(docker_packager
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/package/
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../package/
         COMMAND "sh" launch_docker_packager.sh
     )
 endif()

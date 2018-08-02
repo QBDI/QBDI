@@ -102,10 +102,6 @@ message("LLVM_ARCH: ${LLVM_ARCH}")
 
 configure_file(include/QBDI/Version.h.in "${CMAKE_SOURCE_DIR}/include/QBDI/Version.h" @ONLY)
 
-# Configure NSIS
-configure_file(package/NSIS_gen.in NSIS_gen.nsh)
-
-
 # Add dependency build targets
 
 add_subdirectory(deps)
@@ -115,20 +111,6 @@ if(${DEPENDENCY_SATISFIED})
 # Add includes
 
 set(LLVM_LIBS_DIR deps/llvm/${PLATFORM}/lib)
-
-include_directories(
-    "include/"
-    "include/QBDI"
-    "src/"
-    "deps/llvm/${PLATFORM}/include"
-    "deps/llvm/${PLATFORM}/lib/Target/${LLVM_ARCH}"
-    "deps/gtest/${PLATFORM}/include"
-)
-
-link_directories(
-    ${LLVM_LIBS_DIR}
-    "deps/gtest/${PLATFORM}/lib"
-)
 
 # Resolve LLVM options
 
@@ -273,6 +255,14 @@ endif()
 
 # Final QBDI static library is a merge of static libraries
 add_library(QBDI_obj STATIC ${SOURCES})
+
+target_include_directories(QBDI_obj PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    "${CMAKE_CURRENT_SOURCE_DIR}/deps/llvm/${PLATFORM}/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/deps/llvm/${PLATFORM}/lib/Target/${LLVM_ARCH}"
+)
+
 # Hack because generators expressions don't work properly under visual studio ...
 if(${PLATFORM} STREQUAL "win-X86_64")
     set(qbdi_static_libs ${LLVM_STATIC_LIBS} ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/QBDI_obj.lib)
@@ -282,14 +272,18 @@ endif()
 MERGE_STATIC_LIBS(QBDI_static QBDI \${qbdi_static_libs})
 add_library(QBDI::QBDI_static ALIAS QBDI_static)
 
-target_link_libraries(QBDI_static ${LLVM_LIBS})
+target_link_libraries(QBDI_static PUBLIC ${LLVM_LIBS})
 add_dependencies(QBDI_static QBDI_obj)
 
 # QBDI as a shared library
 add_library(QBDI SHARED cmake/stub.cpp)
 add_library(QBDI::QBDI ALIAS QBDI)
+target_include_directories(QBDI PUBLIC
+    $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+)
 
-target_link_libraries(QBDI QBDI_static ${LLVM_LIBS})
+target_link_libraries(QBDI PUBLIC ${LLVM_LIBS} PRIVATE QBDI_static)
 add_dependencies(QBDI QBDI_obj)
 set_target_properties(QBDI PROPERTIES OUTPUT_NAME QBDI)
 # Hack: output stub not in the same directory than static to avoid conflicts

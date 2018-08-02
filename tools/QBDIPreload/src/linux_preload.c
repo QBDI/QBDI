@@ -25,9 +25,7 @@
 #include <sys/mman.h>
 #include <sys/wait.h>
 
-#include "Memory.h"
-#include "Platform.h"
-#include "Logs.h"
+#include <QBDI.h>
 
 #if defined(QBDI_ARCH_X86_64)
 #define SIGBRK SIGTRAP

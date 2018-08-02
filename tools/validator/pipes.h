@@ -15,8 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "State.h"
 #include <stdio.h>
+
+#include <QBDI/State.h>
 
 #define CTRL_PIPE ".ctrl"
 #define DATA_PIPE ".data"
