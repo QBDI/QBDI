@@ -1,7 +1,3 @@
-include_directories(
-    "."
-)
-
 set(SOURCES
     QBDITest.cpp
     API/AllocTest.cpp
@@ -30,21 +26,24 @@ endif()
 add_executable(QBDITest ${SOURCES})
 add_signature(QBDITest)
 
-if(${PLATFORM} STREQUAL "win-X86_64")
+target_include_directories(QBDITest PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../include/QBDI"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../src"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../deps/llvm/${PLATFORM}/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../deps/llvm/${PLATFORM}/lib/Target/${LLVM_ARCH}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../deps/gtest/${PLATFORM}/include"
+)
+
+find_library(GTEST gtest PATHS
+    "${CMAKE_CURRENT_SOURCE_DIR}/../deps/gtest/${PLATFORM}/lib"
+    NO_DEFAULT_PATH)
 
 target_link_libraries(QBDITest
     QBDI_static
-    gtest.lib
+    ${GTEST}
 )
-
-else()
-
-target_link_libraries(QBDITest
-    QBDI_static
-    libgtest.a
-)
-
-endif()
 
 set_property(TARGET QBDITest PROPERTY CXX_STANDARD 11)
 set_property(TARGET QBDITest PROPERTY CXX_STANDARD_REQUIRED ON)

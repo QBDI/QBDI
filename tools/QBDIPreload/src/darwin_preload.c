@@ -33,9 +33,7 @@
 #include <mach-o/dyld.h>
 #include <mach-o/loader.h>
 
-#include "Memory.h"
-#include "Platform.h"
-#include "Logs.h"
+#include <QBDI.h>
 
 #define DYLD_INTERPOSE(_replacment,_replacee) \
     __attribute__((used)) static struct{ const void* replacment; const void* replacee; } _interpose_##_replacee \
