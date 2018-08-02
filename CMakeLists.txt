@@ -271,6 +271,10 @@ else()
 endif()
 MERGE_STATIC_LIBS(QBDI_static QBDI \${qbdi_static_libs})
 add_library(QBDI::QBDI_static ALIAS QBDI_static)
+target_include_directories(QBDI_static PUBLIC
+    $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+)
 
 target_link_libraries(QBDI_static PUBLIC ${LLVM_LIBS})
 add_dependencies(QBDI_static QBDI_obj)
