@@ -386,6 +386,11 @@ if(FULL_PACKAGE)
     install(FILES tools/frida-qbdi.js DESTINATION ${RESOURCES_PREFIX})
 
 else()
+    install(EXPORT QBDI_targets
+        FILE QBDIConfig.cmake
+        NAMESPACE QBDI::
+        DESTINATION cmake)
+
     install(DIRECTORY templates/ DESTINATION templates)
     install(FILES LICENSE.txt package/Readme.txt DESTINATION .)
     install(FILES tools/frida-qbdi.js DESTINATION .)
