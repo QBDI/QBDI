@@ -4,4 +4,10 @@ project(QBDITemplate)
 find_package(QBDI REQUIRED)
 
 add_executable(qbdi_template qbdi_template.c)
-target_link_libraries(qbdi_template QBDI::QBDI)
+
+# Easier to build using QBDI static library on Windows
+if(MSVC)
+    target_link_libraries(qbdi_template QBDI::QBDI_static)
+else()
+    target_link_libraries(qbdi_template QBDI::QBDI)
+endif()
