@@ -52,9 +52,9 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
         LogDebug("getRemoteProcessMaps", "Parsing line: %s", line);
 
         // Read range
-        m.range.start = strtoul(ptr, &ptr, 16);
+        m.start = strtoul(ptr, &ptr, 16);
         ptr++; // '-'
-        m.range.end = strtoul(ptr, &ptr, 16);
+        m.end = strtoul(ptr, &ptr, 16);
 
         // skip the spaces
         while(isspace(*ptr)) ptr++;
@@ -94,14 +94,14 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
 
         // Get the file name
         if((ptr = strrchr(ptr, '/')) != nullptr) {
-            m.name = std::string(ptr + 1);
+            m.name = strdup(ptr + 1);
         }
         else {
-            m.name = std::string("");
+            m.name = strdup("");
         }
 
         LogCallback(LogPriority::DEBUG, "getRemoteProcessMaps", [&] (FILE *out) -> void {
-            fprintf(out, "Read new map [%" PRIRWORD ", %" PRIRWORD "] %s ", m.range.start, m.range.end, m.name.c_str());
+            fprintf(out, "Read new map [%" PRIRWORD ", %" PRIRWORD "] %s ", m.range.start, m.range.end, m.name);
             if(m.permission & QBDI::PF_READ)  fprintf(out, "r");
             if(m.permission & QBDI::PF_WRITE) fprintf(out, "w");
             if(m.permission & QBDI::PF_EXEC)  fprintf(out, "x");
@@ -111,6 +111,10 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
     fclose(mapfile);
     delete[] line;
     return maps;
+}
+
+MemoryMap* qbdi_getCurrentProcessMaps(size_t* size) {
+    return qbdi_getRemoteProcessMaps(getpid(), size);
 }
 
 }

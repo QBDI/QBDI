@@ -47,10 +47,10 @@ int QBDI::qbdipreload_on_main(int argc, char** argv) {
     QBDI::VM* vm = new QBDI::VM();
     vm->instrumentAllExecutableMaps();
     for(const QBDI::MemoryMap& m :  QBDI::getCurrentProcessMaps()) {
-        if((m.name.compare(0, 7, "libc-2.") == 0) ||
-           (m.name.compare(0, 5, "ld-2.") == 0)   ||
-           (m.name.compare(0, 7, "libcofi") == 0)) {
-            vm->removeInstrumentedRange(m.range.start, m.range.end);
+        if((strncmp(m.name, "libc-2.", 7) == 0) ||
+           (strncmp(m.name, "ld-2.", 5) == 0)   ||
+           (strncmp(m.name, "libcofi", 7) == 0)) {
+            vm->removeInstrumentedRange(m.start, m.end);
         }
     }
 

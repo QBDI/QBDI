@@ -29,7 +29,7 @@ std::vector<std::string> getModuleNames() {
     std::vector<std::string> modules;
 
     for(const MemoryMap& m : getCurrentProcessMaps()) {
-        if(m.name != "") {
+        if(m.name[0] != '\0') {
             bool exist = false;
 
             for(const std::string& s : modules) {
@@ -47,7 +47,6 @@ std::vector<std::string> getModuleNames() {
     return modules;
 }
 
-
 char** qbdi_getModuleNames(size_t* size) {
     std::vector<std::string> modules = getModuleNames();
     *size = modules.size();
@@ -62,6 +61,18 @@ char** qbdi_getModuleNames(size_t* size) {
     return names;
 }
 
+MemoryMap* qbdi_getRemoteProcessMaps(rword pid, size_t* size) {
+    std::vector<MemoryMap> vmaps = getRemoteProcessMaps(pid);
+    *size = vmaps.size();
+    if(*size == 0) {
+        return NULL;
+    }
+    MemoryMap* amaps = (MemoryMap*) malloc(vmaps.size() * sizeof(MemoryMap));
+    for(size_t i = 0; i < vmaps.size(); i++) {
+        amaps[i] = vmaps[i];
+    }
+    return amaps;
+}
 
 bool qbdi_allocateVirtualStack(GPRState *ctx, uint32_t stackSize, uint8_t **stack) {
     (*stack) = (uint8_t*) alignedAlloc(stackSize, 16);

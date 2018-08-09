@@ -90,18 +90,22 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
 #ifdef UNICODE
             std::wstring wstr(path);
             std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
-            m.name = conv.to_bytes(wstr);
+            m.name = strdup(conv.to_bytes(wstr).c_str());
 #else
-            m.name = std::string(path);
+            m.name = strdup(path);
 #endif
         } else {
             // fallback to empty name
-            m.name = "";
+            m.name = strdup("");
         }
         maps.push_back(m);
     }
     CloseHandle(self);
     return maps;
+}
+
+MemoryMap* qbdi_getCurrentProcessMaps(size_t* size) {
+    return qbdi_getRemoteProcessMaps(GetCurrentProcessId(), size);
 }
 
 }
