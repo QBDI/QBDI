@@ -301,7 +301,7 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
     // sort the probably unordered map
     std::sort(omaps.begin(), omaps.end(),
             [](const MemoryMap& a, const MemoryMap& b) -> bool {
-                return a.range.start < b.range.start;
+                return a.start < b.start;
             });
 
     return omaps;
