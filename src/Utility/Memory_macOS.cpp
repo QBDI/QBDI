@@ -203,7 +203,7 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
         // add a new memory map
         m.start = (rword) addr;
         m.end = (rword) next;
-        m.name = strdup("");
+        m.setName("");
         m.permission = static_cast<Permission>(basic_info.protection);
         memMaps.push_back(m);
     }
@@ -241,7 +241,7 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
                                 MemoryMap m;
                                 m.start = seg->vmaddr + slide;
                                 m.end = m.start + seg->vmsize;
-                                m.name = strdup(name);
+                                m.setName(name);
 
                                 modMaps.push_back(m);
                             }
@@ -277,9 +277,9 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
                 m.permission = mem.permission;
                 // do not add name to the shared __LINKEDIT
                 if (m.permission == PF_READ && !(modr == memr)) {
-                    m.name = strdup("");
+                    m.setName("");
                 } else {
-                    m.name = strdup(mod.name);
+                    m.setName(mod.name);
                 }
                 omaps.push_back(m);
                 // mark range as inserted
@@ -293,7 +293,7 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
             MemoryMap m;
             m.start = r.start;
             m.end = r.end;
-            m.name = strdup("");
+            m.setName("");
             m.permission = mem.permission;
             omaps.push_back(m);
         }
