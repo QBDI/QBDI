@@ -939,24 +939,30 @@ size_t WRITE_64_SIZE = sizeof(WRITE_64)/sizeof(unsigned);
 
 unsigned STACK_WRITE_16[] = {
 	llvm::X86::PUSH16rmm,
+	llvm::X86::PUSH16rmr,
 	llvm::X86::PUSH16r,
-	llvm::X86::PUSH16i8
+	llvm::X86::PUSH16i8,
+	llvm::X86::PUSHi16,
 };
 
 size_t STACK_WRITE_16_SIZE = sizeof(STACK_WRITE_16)/sizeof(unsigned);
 
 unsigned STACK_WRITE_32[] = {
 	llvm::X86::PUSH32rmm,
+	llvm::X86::PUSH32rmr,
 	llvm::X86::PUSH32r,
-	llvm::X86::PUSH32i8
+	llvm::X86::PUSH32i8,
+	llvm::X86::PUSHi32
 };
 
 size_t STACK_WRITE_32_SIZE = sizeof(STACK_WRITE_32)/sizeof(unsigned);
 
 unsigned STACK_WRITE_64[] = {
 	llvm::X86::PUSH64rmm,
+	llvm::X86::PUSH64rmr,
 	llvm::X86::PUSH64r,
 	llvm::X86::PUSH64i8,
+	llvm::X86::PUSH64i32,
 	llvm::X86::CALL16m,
 	llvm::X86::CALL32m,
 	llvm::X86::CALL64m,
