@@ -1,53 +1,83 @@
-language: cpp
+language: cpp 
 
-matrix:
-  include:
-    - os: linux
-      sudo: required
-      dist: trusty
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-7
-      env:
-        - BUILD_ENV="CC=gcc-7 && CXX=g++-7"
-        - QBDI_PLATFORM="linux-X86_64"
-        - CMAKE_DOWNLOAD="https://cmake.org/files/v3.9/cmake-3.9.4-Linux-x86_64.tar.gz"
-        - CMAKE_BIN="cmake-3.9.4-Linux-x86_64/bin/"
-        - CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=${QBDI_PLATFORM} -DFORCE_DISABLE_AVX=TRUE"
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+  packages:
+    - g++-7
+    - ccache
+  homebrew:
+    packages:
+      - ccache
 
-    - os: osx
-      osx_image: xcode9.1
-      env:
-        - BUILD_ENV=""
-        - QBDI_PLATFORM="macOS-X86_64"
-        - CMAKE_DOWNLOAD="https://cmake.org/files/v3.9/cmake-3.9.4-Darwin-x86_64.tar.gz"
-        - CMAKE_BIN="cmake-3.9.4-Darwin-x86_64/bin/"
-        - CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=${QBDI_PLATFORM} -DFORCE_DISABLE_AVX=TRUE"
+linux_target: &linux_target
+  os: linux
+  dist: trusty
+  compiler: gcc
+  env:
+    QBDI_PLATFORM="linux-X86_64"
+    CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=${QBDI_PLATFORM} -DFORCE_DISABLE_AVX=TRUE"
+
+osx_target: &osx_target
+  os: osx
+  osx_image: xcode9.4
+  env:
+    - QBDI_PLATFORM="macOS-X86_64"
+    - CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=${QBDI_PLATFORM} -DFORCE_DISABLE_AVX=TRUE"
+
+install_llvm: &install_llvm
+  script:
+    - mkdir build && cd build
+    - cmake .. ${CMAKE_ARGS}
+    - eval "[[ -d ../deps/llvm/${QBDI_PLATFORM}/lib && -d ../deps/llvm/${QBDI_PLATFORM}/include ]] || make -j2 llvm"
+  before_cache:
+    # Reduce cache size
+    - sh ../deps/llvm/${QBDI_PLATFORM}/build.sh clean
+
+install_gtest: &install_gtest
+  script:
+    - mkdir build && cd build
+    - cmake .. ${CMAKE_ARGS}
+    - eval "[[ -d ../deps/gtest/${QBDI_PLATFORM}/lib && -d ../deps/gtest/${QBDI_PLATFORM}/include ]] || make -j2 gtest"
+  before_cache:
+    # Reduce cache size
+    - sh ../deps/gtest/${QBDI_PLATFORM}/build.sh clean
+
+compile_and_test: &compile_and_test
+  script:
+    - mkdir build && cd build
+    - cmake .. ${CMAKE_ARGS}
+    - make -j2
+    - ./test/QBDITest
+
+cache:
+  - apt
+  - ccache
 
 cache:
   directories:
-    - deps/
+    - deps
 
-before_install:
-  - eval "${BUILD_ENV}"
+sudo: required
 
-install:
-  - mkdir build && cd build
-  - wget ${CMAKE_DOWNLOAD}
-  - tar xf cmake-*.tar.gz
-  - export PATH=${PWD}/${CMAKE_BIN}:${PATH}
-
-script:
-  - cmake .. ${CMAKE_ARGS}
-  - eval "[[ -d ../deps/llvm/${QBDI_PLATFORM}/lib && -d ../deps/llvm/${QBDI_PLATFORM}/include ]] || make llvm"
-  - eval "[[ -d ../deps/gtest/${QBDI_PLATFORM}/lib && -d ../deps/gtest/${QBDI_PLATFORM}/include ]] || make gtest"
-  - cmake .. ${CMAKE_ARGS}
-  - make -j2
-  - ./test/QBDITest
-
-before_cache:
-  - sh ../deps/llvm/${QBDI_PLATFORM}/build.sh clean
-  - sh ../deps/gtest/${QBDI_PLATFORM}/build.sh clean
+jobs:
+  include:
+    - stage: deps_llvm
+      <<: *osx_target
+      <<: *install_llvm
+    - stage: deps_llvm
+      <<: *linux_target
+      <<: *install_llvm
+    - stage: deps_gtest
+      <<: *osx_target
+      <<: *install_gtest
+    - stage: deps_gtest
+      <<: *linux_target
+      <<: *install_gtest
+    - stage: qbdi
+      <<: *osx_target
+      <<: *compile_and_test
+    - stage: qbdi
+      <<: *linux_target
+      <<: *compile_and_test
