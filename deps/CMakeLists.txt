@@ -2,18 +2,22 @@ set(DEPENDENCY_SATISFIED On PARENT_SCOPE)
 
 # LLVM
 
-if(${OS} STREQUAL "win")
-    set(SH "C:\\cygwin64\\bin\\sh")
-else()
-    set(SH "sh")
-endif()
-
+if(${PLATFORM} STREQUAL win-X86_64)
 add_custom_target(llvm
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/deps/llvm/${PLATFORM}/
-    COMMAND ${SH} build.sh prepare
-    COMMAND ${SH} build.sh build
-    COMMAND ${SH} build.sh package
+    COMMAND python --version
+    COMMAND python build.py prepare
+    COMMAND python build.py build
+    COMMAND python build.py package
 )
+else()
+add_custom_target(llvm
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/deps/llvm/${PLATFORM}/
+    COMMAND sh build.sh prepare
+    COMMAND sh build.sh build
+    COMMAND sh build.sh package
+)
+endif()
 
 if(NOT (EXISTS "${CMAKE_SOURCE_DIR}/deps/llvm/${PLATFORM}/include/" AND
    EXISTS "${CMAKE_SOURCE_DIR}/deps/llvm/${PLATFORM}/lib/"))
@@ -27,12 +31,21 @@ endif()
 
 # Google Test
 
+if(${PLATFORM} STREQUAL win-X86_64)
 add_custom_target(gtest
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/deps/gtest/${PLATFORM}/
-    COMMAND ${SH} build.sh prepare
-    COMMAND ${SH} build.sh build
-    COMMAND ${SH} build.sh package
+    COMMAND python build.py prepare
+    COMMAND python build.py build
+    COMMAND python build.py package
 )
+else()
+add_custom_target(gtest
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/deps/gtest/${PLATFORM}/
+    COMMAND sh build.sh prepare
+    COMMAND sh build.sh build
+    COMMAND sh build.sh package
+)
+endif()
 
 if(NOT (EXISTS "${CMAKE_SOURCE_DIR}/deps/gtest/${PLATFORM}/include/" AND
    EXISTS "${CMAKE_SOURCE_DIR}/deps/gtest/${PLATFORM}/lib/"))

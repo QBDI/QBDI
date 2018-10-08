@@ -1,0 +1,46 @@
+version: 0.1.{build}
+
+clone_folder: c:\projects\qbdi
+
+configuration:
+  - Release
+
+environment:
+  PYTHON: "C:\\Python35-x64"
+  platform: X64
+  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+  CMAKE_TEMPLATE: Visual Studio 14 2015
+
+cache:
+  - deps\llvm\win-X86_64\lib
+  - deps\llvm\win-X86_64\include
+  - deps\gtest\win-X86_64\lib
+  - deps\gtest\win-X86_64\include
+
+install:
+  # Install Python (from the official .msi of https://python.org) and pip when
+  # not already installed.
+  #- ps: if (-not(Test-Path($env:PYTHON))) { & appveyor\install.ps1 }
+
+  # Prepend newly installed Python to the PATH of this build (this cannot be
+  # done from inside the powershell script as it would require to restart
+  # the parent CMD process).
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+  - cmd: mkdir build
+  - cmd: cd build
+
+build_script:
+  - "\"C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\vcvarsall.bat\" %Platform%"
+  - cmd: cmake .. -G "Visual Studio 14 2015 Win64" -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=win-X86_64
+  - ps: if (-not((Test-Path("../deps/llvm/win-X86_64/lib")) -and (Test-Path("../deps/llvm/win-X86_64/include")))) { MSbuild deps\llvm.vcxproj /m:3 }
+  - cmd: python ..\deps\llvm\win-X86_64\build.py clean
+  - ps: if (-not((Test-Path("../deps/gtest/win-X86_64/lib")) -and (Test-Path("../deps/gtest/win-X86_64/include")))) { MSbuild deps\gtest.vcxproj /m:3 }
+  - cmd: python ..\deps\gtest\win-X86_64\build.py clean
+  - cmd: cmake .. -G "Visual Studio 14 2015 Win64" -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=win-X86_64
+  - cmd: MSbuild /p:Configuration=%configuration% ALL_BUILD.vcxproj /m:3
+
+test_script:
+  - cmd: ls c:\projects\qbdi\build\
+  - cmd: ls c:\projects\qbdi\build\test
+  - cmd: ls c:\projects\qbdi\build\test\Release
+  - cmd: c:\projects\qbdi\build\test\Release\QBDItest
