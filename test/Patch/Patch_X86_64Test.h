@@ -23,10 +23,20 @@
 #include <sstream>
 #include <gtest/gtest.h>
 
+#include "Platform.h"
+
+#if defined(QBDI_ARCH_X86)
+#include "ComparedExecutor_X86.h"
+
+class Patch_X86_64Test : public ComparedExecutor_X86 {
+
+};
+#else
 #include "ComparedExecutor_X86_64.h"
 
 class Patch_X86_64Test : public ComparedExecutor_X86_64 {
 
 };
+#endif
 
 #endif

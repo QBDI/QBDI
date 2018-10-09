@@ -9,6 +9,7 @@ deps/**
 !deps/*
 !deps/*/*
 !deps/**/build.sh
+!deps/**/rename-object.py
 !deps/**/*.patch
 
 docs/build

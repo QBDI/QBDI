@@ -1,6 +1,6 @@
 set(SOURCES "pyqbdi.cpp")
 
-if(HAS_QBDIPRELOAD AND (NOT ${ARCH} STREQUAL "ARM"))
+if(HAS_QBDIPRELOAD AND (NOT (${ARCH} STREQUAL "ARM" OR ${ARCH} STREQUAL "X86")))
     # Find Python 2.7
     find_package(PythonInterp 2.7 REQUIRED)
     if(NOT PYTHON_INCLUDE_DIRS)

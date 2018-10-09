@@ -50,7 +50,7 @@ Assembly::Assembly(llvm::MCContext &MCTX, llvm::MCAsmBackend &MAB, llvm::MCInstr
     );
 
     // TODO: find better way to handle variant
-    #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
+    #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
     variant = 1; // Force Intel
     #else
     variant = MAI.getAssemblerDialect();

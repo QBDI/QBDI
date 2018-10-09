@@ -27,9 +27,9 @@ RelocatableInst::SharedPtrVec getExecBlockPrologue() {
     RelocatableInst::SharedPtrVec prologue;
     
 
-    // Save host RBP, RSP
-    append(prologue, SaveReg(Reg(REG_BP), Offset(offsetof(Context, hostState.rbp))));
-    append(prologue, SaveReg(Reg(REG_SP), Offset(offsetof(Context, hostState.rsp))));
+    // Save host BP, SP
+    append(prologue, SaveReg(Reg(REG_BP), Offset(offsetof(Context, hostState.bp))));
+    append(prologue, SaveReg(Reg(REG_SP), Offset(offsetof(Context, hostState.sp))));
     // Restore FPR
 #ifndef _QBDI_ASAN_ENABLED_ // Disabled if ASAN is enabled as it breaks context alignment
     prologue.push_back(Fxrstor(Offset(offsetof(Context, fprState))));
@@ -43,6 +43,7 @@ RelocatableInst::SharedPtrVec getExecBlockPrologue() {
         prologue.push_back(Vinsertf128(llvm::X86::YMM5, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm5)), 1));
         prologue.push_back(Vinsertf128(llvm::X86::YMM6, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm6)), 1));
         prologue.push_back(Vinsertf128(llvm::X86::YMM7, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm7)), 1));
+#if defined(QBDI_ARCH_X86_64)
         prologue.push_back(Vinsertf128(llvm::X86::YMM8, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm8)), 1));
         prologue.push_back(Vinsertf128(llvm::X86::YMM9, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm9)), 1));
         prologue.push_back(Vinsertf128(llvm::X86::YMM10, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm10)), 1));
@@ -51,6 +52,7 @@ RelocatableInst::SharedPtrVec getExecBlockPrologue() {
         prologue.push_back(Vinsertf128(llvm::X86::YMM13, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm13)), 1));
         prologue.push_back(Vinsertf128(llvm::X86::YMM14, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm14)), 1));
         prologue.push_back(Vinsertf128(llvm::X86::YMM15, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm15)), 1));
+#endif // QBDI_ARCH_X86_64
     }
 #endif
     // Restore EFLAGS
@@ -61,7 +63,7 @@ RelocatableInst::SharedPtrVec getExecBlockPrologue() {
     for(unsigned int i = 0; i < NUM_GPR-1; i++)
         append(prologue, LoadReg(Reg(i), Offset(Reg(i))));
     // Jump selector
-    prologue.push_back(Jmp64m(Offset(offsetof(Context, hostState.selector))));
+    prologue.push_back(JmpM(Offset(offsetof(Context, hostState.selector))));
 
     return prologue;
 }
@@ -85,6 +87,7 @@ RelocatableInst::SharedPtrVec getExecBlockEpilogue() {
         epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm5)), llvm::X86::YMM5, 1));
         epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm6)), llvm::X86::YMM6, 1));
         epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm7)), llvm::X86::YMM7, 1));
+#if defined(QBDI_ARCH_X86_64)
         epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm8)), llvm::X86::YMM8, 1));
         epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm9)), llvm::X86::YMM9, 1));
         epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm10)), llvm::X86::YMM10, 1));
@@ -93,11 +96,12 @@ RelocatableInst::SharedPtrVec getExecBlockEpilogue() {
         epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm13)), llvm::X86::YMM13, 1));
         epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm14)), llvm::X86::YMM14, 1));
         epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm15)), llvm::X86::YMM15, 1));
+#endif // QBDI_ARCH_X86_64
     }
 #endif
-    // Restore host RBP, RSP
-    append(epilogue, LoadReg(Reg(REG_BP), Offset(offsetof(Context, hostState.rbp))));
-    append(epilogue, LoadReg(Reg(REG_SP), Offset(offsetof(Context, hostState.rsp))));
+    // Restore host BP, SP
+    append(epilogue, LoadReg(Reg(REG_BP), Offset(offsetof(Context, hostState.bp))));
+    append(epilogue, LoadReg(Reg(REG_SP), Offset(offsetof(Context, hostState.sp))));
     // Save EFLAGS
     epilogue.push_back(Pushf());
     epilogue.push_back(Popr(Reg(0)));
@@ -212,10 +216,18 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
     */
     rules.push_back(
         PatchRule(
+#if defined(QBDI_ARCH_X86)
+            OpIs(llvm::X86::JMP32m),
+#else
             OpIs(llvm::X86::JMP64m),
+#endif
             {
                 ModifyInstruction({
+#if defined(QBDI_ARCH_X86)
+                    SetOpcode(llvm::X86::MOV32rm),
+#else
                     SetOpcode(llvm::X86::MOV64rm),
+#endif
                     AddOperand(Operand(0), Temp(0))
                 }),
                 WriteTemp(Temp(0), Offset(Reg(REG_PC)))
@@ -230,10 +242,18 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
     */
     rules.push_back(
         PatchRule(
+#if defined(QBDI_ARCH_X86)
+            OpIs(llvm::X86::CALL32m),
+#else
             OpIs(llvm::X86::CALL64m),
+#endif
             {
                 ModifyInstruction({
+#if defined(QBDI_ARCH_X86)
+                    SetOpcode(llvm::X86::MOV32rm),
+#else
                     SetOpcode(llvm::X86::MOV64rm),
+#endif
                     AddOperand(Operand(0), Temp(0))
                 }),
                 SimulateCall(Temp(0))
@@ -267,7 +287,11 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
     */
     rules.push_back(
         PatchRule(
+#if defined(QBDI_ARCH_X86)
+            OpIs(llvm::X86::JMP32r),
+#else
             OpIs(llvm::X86::JMP64r),
+#endif
             {
                 GetOperand(Temp(0), Operand(0)),
                 WriteTemp(Temp(0), Offset(Reg(REG_PC)))
@@ -283,7 +307,11 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
     */
     rules.push_back(
         PatchRule(
+#if defined(QBDI_ARCH_X86)
+            OpIs(llvm::X86::CALL32r),
+#else
             OpIs(llvm::X86::CALL64r),
+#endif
             {
                 GetOperand(Temp(0), Operand(0)),
                 SimulateCall(Temp(0))
@@ -322,7 +350,11 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
             {
                 GetPCOffset(Temp(0), Operand(0)),
                 ModifyInstruction({
+#if defined(QBDI_ARCH_X86)
+                    SetOperand(Operand(0), Constant(6)) // Offset to jump the next load.
+#else
                     SetOperand(Operand(0), Constant(11)) // Offset to jump the next load.
+#endif
                 }),
                 GetPCOffset(Temp(0), Constant(0)),
                 WriteTemp(Temp(0), Offset(Reg(REG_PC)))
@@ -360,7 +392,11 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
             {
                 GetPCOffset(Temp(0), Operand(0)),
                 ModifyInstruction({
+#if defined(QBDI_ARCH_X86)
+                    SetOperand(Operand(0), Constant(7))
+#else
                     SetOperand(Operand(0), Constant(12))
+#endif
                 }),
                 GetPCOffset(Temp(0), Constant(0)),
                 WriteTemp(Temp(0), Offset(Reg(REG_PC)))
@@ -398,7 +434,11 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
             {
                 GetPCOffset(Temp(0), Operand(0)),
                 ModifyInstruction({
+#if defined(QBDI_ARCH_X86)
+                    SetOperand(Operand(0), Constant(9))
+#else
                     SetOperand(Operand(0), Constant(14))
+#endif
                 }),
                 GetPCOffset(Temp(0), Constant(0)),
                 WriteTemp(Temp(0), Offset(Reg(REG_PC)))
@@ -432,9 +472,11 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
     rules.push_back(
         PatchRule(
             Or({
+                OpIs(llvm::X86::RETL),
                 OpIs(llvm::X86::RETQ),
-                OpIs(llvm::X86::RETIQ),
                 OpIs(llvm::X86::RETW),
+                OpIs(llvm::X86::RETIL),
+                OpIs(llvm::X86::RETIQ),
                 OpIs(llvm::X86::RETIW)
             }),
             {
@@ -457,7 +499,11 @@ RelocatableInst::SharedPtrVec getTerminator(rword address) {
     RelocatableInst::SharedPtrVec terminator;
 
     append(terminator, SaveReg(Reg(0), Offset(Reg(0))));
+#if defined(QBDI_ARCH_X86)
+    terminator.push_back(NoReloc(mov32ri(Reg(0), address)));
+#else
     terminator.push_back(NoReloc(mov64ri(Reg(0), address)));
+#endif
     append(terminator, SaveReg(Reg(0), Offset(Reg(REG_PC))));
     append(terminator, LoadReg(Reg(0), Offset(Reg(0))));
 

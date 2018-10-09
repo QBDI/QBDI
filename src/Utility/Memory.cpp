@@ -542,9 +542,9 @@ void qbdi_simulateCallA(GPRState *ctx, rword returnAddress, uint32_t argNum, con
     QBDI_GPR_SET(ctx, REG_SP, QBDI_GPR_GET(ctx, REG_SP) - FRAME_LENGTH * sizeof(rword));
 
     // Handle the return address
-#if defined(QBDI_ARCH_X86_64)
-    ctx->rsp -= sizeof(rword);
-    *((rword*) ctx->rsp) = returnAddress;
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+    QBDI_GPR_SET(ctx, REG_SP, QBDI_GPR_GET(ctx, REG_SP) - sizeof(rword));
+    *(rword*)(QBDI_GPR_GET(ctx, REG_SP)) = returnAddress;
     argsoff++;
 #elif defined(QBDI_ARCH_ARM)
     ctx->lr = returnAddress;
@@ -569,6 +569,8 @@ void qbdi_simulateCallA(GPRState *ctx, rword returnAddress, uint32_t argNum, con
     UNSTACK_ARG(r8);
     UNSTACK_ARG(r9);
  #endif // OS
+#elif defined(QBDI_ARCH_X86)
+    // no register used
 #elif defined(QBDI_ARCH_ARM)
     UNSTACK_ARG(r0);
     UNSTACK_ARG(r1);

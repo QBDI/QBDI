@@ -8,8 +8,8 @@ set(SOURCES
     ExecBlock/ExecBlockManagerTest.cpp
     TestSetup/LLVMTestEnv.cpp
     Patch/ComparedExecutor_${ARCH}.cpp
-    Patch/Instr_${ARCH}Test.cpp
-    Patch/Patch_${ARCH}Test.cpp
+    Patch/Instr_${BASE_ARCH}Test.cpp
+    Patch/Patch_${BASE_ARCH}Test.cpp
     Miscs/StringTest.cpp
     TestSetup/InMemoryAssembler.cpp
     TestSetup/ShellcodeTester.cpp

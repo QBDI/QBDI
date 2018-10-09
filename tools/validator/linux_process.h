@@ -20,7 +20,7 @@
 
 #include "process.h"
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 
 #define GPR_STRUCT user_regs_struct
 #define FPR_STRUCT user_fpregs_struct

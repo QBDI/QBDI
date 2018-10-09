@@ -145,11 +145,11 @@ bool ExecBroker::transferExecution(rword addr, GPRState *gprState, FPRState *fpr
     return true;
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 
 rword *ExecBroker::getReturnPoint(GPRState *gprState) const {
     static int SCAN_DISTANCE = 3;
-    rword *ptr = (rword*) gprState->rsp;
+    rword *ptr = (rword*) QBDI_GPR_GET(gprState, REG_SP);
 
     for(int i = 0; i < SCAN_DISTANCE; i++) {
         if(isInstrumented(ptr[i])) {

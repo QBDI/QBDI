@@ -143,7 +143,7 @@ void Engine::initGPRState() {
 void Engine::initFPRState() {
     memset(fprState.get(), 0, sizeof(FPRState));
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
     fprState->rfcw = 0x37F;
     fprState->ftw = 0xFF;
     fprState->rsrv1 = 0xFF;

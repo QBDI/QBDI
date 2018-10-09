@@ -79,6 +79,9 @@ int QBDI::qbdipreload_on_premain(void *gprCtx, void *fpuCtx) {
 #if defined(QBDI_ARCH_X86_64)
     uap->uc_mcontext.gregs[REG_RSP] = (uint64_t) newStack + STACK_SIZE - 8;
     uap->uc_mcontext.gregs[REG_RBP] = (uint64_t) newStack + STACK_SIZE - 8;
+#elif defined(QBDI_ARCH_X86)
+    uap->uc_mcontext.gregs[REG_ESP] = (uint32_t) newStack + STACK_SIZE - 8;
+    uap->uc_mcontext.gregs[REG_EBP] = (uint32_t) newStack + STACK_SIZE - 8;
 #elif defined(QBDI_ARCH_ARM)
     uap->uc_mcontext.arm_sp = (uint32_t) newStack + STACK_SIZE - 8;
     uap->uc_mcontext.arm_fp = (uint32_t) newStack + STACK_SIZE - 8;

@@ -72,6 +72,20 @@ public:
     }
 };
 
+class DataBlockAbsRel : public RelocatableInst, public AutoAlloc<RelocatableInst, DataBlockAbsRel> {
+    unsigned int opn;
+    rword        offset;
+
+public:
+    DataBlockAbsRel(llvm::MCInst inst, unsigned int opn, rword offset)
+        : RelocatableInst(inst), opn(opn), offset(offset) {};
+
+    llvm::MCInst reloc(ExecBlock *exec_block) {
+        inst.getOperand(opn).setImm(exec_block->getDataBlockBase() + offset);
+        return inst;
+    }
+};
+
 class EpilogueRel : public RelocatableInst, public AutoAlloc<RelocatableInst, EpilogueRel> {
     unsigned int opn;
     rword        offset;

@@ -43,6 +43,17 @@ static void userToGPRState(const GPR_STRUCT* user, QBDI::GPRState* gprState) {
     gprState->r15 = user->r15;
     gprState->rip = user->rip;
     gprState->eflags = user->eflags;
+    #elif defined(QBDI_ARCH_X86)
+    gprState->eax = user->eax;
+    gprState->ebx = user->ebx;
+    gprState->ecx = user->ecx;
+    gprState->edx = user->edx;
+    gprState->esi = user->esi;
+    gprState->edi = user->edi;
+    gprState->ebp = user->ebp;
+    gprState->esp = user->esp;
+    gprState->eip = user->eip;
+    gprState->eflags = user->eflags;
     #elif defined(QBDI_ARCH_ARM)
     gprState->r0   = user->uregs[0];
     gprState->r1   = user->uregs[1];
@@ -65,7 +76,7 @@ static void userToGPRState(const GPR_STRUCT* user, QBDI::GPRState* gprState) {
 }
 
 void userToFPRState(const FPR_STRUCT* user, QBDI::FPRState* fprState) {
-    #if defined(QBDI_ARCH_X86_64)
+    #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
     memcpy(&fprState->stmm0, &user->st_space[0], 10);
     memcpy(&fprState->stmm1, &user->st_space[4], 10);
     memcpy(&fprState->stmm2, &user->st_space[8], 10);
@@ -82,6 +93,7 @@ void userToFPRState(const FPR_STRUCT* user, QBDI::FPRState* fprState) {
     memcpy(&fprState->xmm5, &user->xmm_space[20], 16);
     memcpy(&fprState->xmm6, &user->xmm_space[24], 16);
     memcpy(&fprState->xmm7, &user->xmm_space[28], 16);
+    #if defined(QBDI_ARCH_X86_64)
     memcpy(&fprState->xmm8, &user->xmm_space[32], 16);
     memcpy(&fprState->xmm9, &user->xmm_space[36], 16);
     memcpy(&fprState->xmm10, &user->xmm_space[40], 16);
@@ -90,6 +102,7 @@ void userToFPRState(const FPR_STRUCT* user, QBDI::FPRState* fprState) {
     memcpy(&fprState->xmm13, &user->xmm_space[52], 16);
     memcpy(&fprState->xmm14, &user->xmm_space[56], 16);
     memcpy(&fprState->xmm15, &user->xmm_space[60], 16);
+    #endif
     fprState->rfcw =  user->cwd;
     fprState->rfsw = user->swd;
     fprState->ftw = user->ftw;
@@ -124,7 +137,7 @@ void LinuxProcess::continueExecution() {
 int LinuxProcess::waitForStatus() {
     int status = 0;
     waitpid(this->pid, &status, 0);
-    #if defined(QBDI_ARCH_X86_64)
+    #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
     if(WSTOPSIG(status) == SIGBRK) {
         GPR_STRUCT user;
         ptrace(PTRACE_GETREGS, this->pid, NULL, &user);

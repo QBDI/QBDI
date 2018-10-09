@@ -277,7 +277,18 @@ void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, 
         DIFF_S("s30", fprStateDbg->s[30], fprStateInstr->s[30]);
         DIFF_S("s31", fprStateDbg->s[31], fprStateInstr->s[31]);
         #undef DIFF_S
-        #elif defined(QBDI_ARCH_X86_64)
+        #elif defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+        #if defined(QBDI_ARCH_X86)
+        // GPR
+        if((e = diffGPR(0, gprStateDbg->eax, gprStateInstr->eax))       != -1) curLogEntry->errorIDs.push_back(e);
+        if((e = diffGPR(1, gprStateDbg->ebx, gprStateInstr->ebx))       != -1) curLogEntry->errorIDs.push_back(e);
+        if((e = diffGPR(2, gprStateDbg->ecx, gprStateInstr->ecx))       != -1) curLogEntry->errorIDs.push_back(e);
+        if((e = diffGPR(3, gprStateDbg->edx, gprStateInstr->edx))       != -1) curLogEntry->errorIDs.push_back(e);
+        if((e = diffGPR(4, gprStateDbg->esi, gprStateInstr->esi))       != -1) curLogEntry->errorIDs.push_back(e);
+        if((e = diffGPR(5, gprStateDbg->edi, gprStateInstr->edi))       != -1) curLogEntry->errorIDs.push_back(e);
+        if((e = diffGPR(6, gprStateDbg->ebp, gprStateInstr->ebp))       != -1) curLogEntry->errorIDs.push_back(e);
+        if((e = diffGPR(7, gprStateDbg->esp, gprStateInstr->esp))       != -1) curLogEntry->errorIDs.push_back(e);
+        #else
         // GPR
         if((e = diffGPR(0,  gprStateDbg->rax, gprStateInstr->rax))       != -1) curLogEntry->errorIDs.push_back(e);
         if((e = diffGPR(1,  gprStateDbg->rbx, gprStateInstr->rbx))       != -1) curLogEntry->errorIDs.push_back(e);
@@ -295,6 +306,7 @@ void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, 
         if((e = diffGPR(13, gprStateDbg->r15, gprStateInstr->r15))       != -1) curLogEntry->errorIDs.push_back(e);
         if((e = diffGPR(14, gprStateDbg->rbp, gprStateInstr->rbp))       != -1) curLogEntry->errorIDs.push_back(e);
         if((e = diffGPR(15, gprStateDbg->rsp, gprStateInstr->rsp))       != -1) curLogEntry->errorIDs.push_back(e);
+        #endif // QBDI_ARCH_X86
         // FPR
         union {
             QBDI::MMSTReg st;
@@ -343,6 +355,7 @@ void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, 
         DIFF_XMM("xmm5", fprStateDbg->xmm5, fprStateInstr->xmm5);
         DIFF_XMM("xmm6", fprStateDbg->xmm6, fprStateInstr->xmm6);
         DIFF_XMM("xmm7", fprStateDbg->xmm7, fprStateInstr->xmm7);
+        #if defined(QBDI_ARCH_X86_64)
         DIFF_XMM("xmm8", fprStateDbg->xmm8, fprStateInstr->xmm8);
         DIFF_XMM("xmm9", fprStateDbg->xmm9, fprStateInstr->xmm9);
         DIFF_XMM("xmm10", fprStateDbg->xmm10, fprStateInstr->xmm10);
@@ -351,6 +364,7 @@ void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, 
         DIFF_XMM("xmm13", fprStateDbg->xmm13, fprStateInstr->xmm13);
         DIFF_XMM("xmm14", fprStateDbg->xmm14, fprStateInstr->xmm14);
         DIFF_XMM("xmm15", fprStateDbg->xmm15, fprStateInstr->xmm15);
+        #endif // QBDI_ARCH_X86_64
         // FIXME
 #if 0
         DIFF_XMM("ymm0", fprStateDbg->ymm0, fprStateInstr->ymm0);

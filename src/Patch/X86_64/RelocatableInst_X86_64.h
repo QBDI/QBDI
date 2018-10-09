@@ -67,6 +67,24 @@ public:
     }
 };
 
+class TaggedShadowAbs : public RelocatableInst, public AutoAlloc<RelocatableInst, TaggedShadowAbs> {
+
+    unsigned int opn;
+    uint16_t tag;
+
+public:
+    TaggedShadowAbs(llvm::MCInst inst, unsigned int opn, uint16_t tag)
+        : RelocatableInst(inst), opn(opn), tag(tag) {};
+
+    llvm::MCInst reloc(ExecBlock *exec_block) {
+        uint16_t id = exec_block->newShadow(tag);
+        inst.getOperand(opn).setImm(
+            exec_block->getDataBlockBase() + exec_block->getShadowOffset(id)
+        );
+        return inst;
+    }
+};
+
 }
 
 #endif
