@@ -7,7 +7,7 @@ set(QBDI_VERSION_MINOR 6)
 set(QBDI_VERSION_PATCH 1)
 
 set(SUPPORTED_PLATFORM linux-X86_64 linux-ARM macOS-X86_64 android-ARM
-    win-X86_64 iOS-ARM macOS-X86)
+    win-X86_64 iOS-ARM linux-X86 macOS-X86)
 
 # Force find system utils (strip)
 include(CMakeFindBinUtils)
@@ -120,6 +120,7 @@ set(LLVM_LIBS_DIR deps/llvm/${PLATFORM}/lib)
 # Resolve LLVM options
 
 if((${PLATFORM} STREQUAL "linux-X86_64") OR
+   (${PLATFORM} STREQUAL "linux-X86") OR
    (${PLATFORM} STREQUAL "macOS-X86_64") OR
    (${PLATFORM} STREQUAL "macOS-X86") OR
    (${PLATFORM} STREQUAL "linux-ARM") OR
@@ -140,6 +141,9 @@ endif()
 if(${PLATFORM} STREQUAL "macOS-X86")
     set(CMAKE_C_FLAGS "-arch i386 ${CMAKE_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "-arch i386 ${CMAKE_CXX_FLAGS}")
+elseif(${PLATFORM} STREQUAL "linux-X86")
+    set(CMAKE_C_FLAGS "-m32 ${CMAKE_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "-m32 ${CMAKE_CXX_FLAGS}")
 endif()
 
 # Disable thumb on ARM (until we support it)
@@ -167,7 +171,7 @@ ENDFUNCTION(PREPEND)
 # Common static LLVM objects
 set(_LLVM_STATIC_LIBS LLVMBinaryFormat.a LLVMMCDisassembler.a LLVMSelectionDAG.a LLVMAsmPrinter.a LLVMCodeGen.a LLVMScalarOpts.a LLVMInstCombine.a LLVMTransformUtils.a LLVMAnalysis.a LLVMTarget.a LLVMObject.a LLVMMCParser.a LLVMBitReader.a LLVMCore.a LLVMMC.a LLVMSupport.a)
 
-if(${PLATFORM} STREQUAL "linux-X86_64")
+if(${PLATFORM} STREQUAL "linux-X86" OR ${PLATFORM} STREQUAL "linux-X86_64")
     find_package(Curses REQUIRED)
     set(NCURSES_LDFLAGS "-lncurses")
     if(CURSES_EXTRA_LIBRARY)
@@ -253,6 +257,8 @@ else()
         set(CMAKE_ASM-ATT_FLAGS "-arch ${ARM_ARCH}")
     elseif(${OS} STREQUAL "macOS" AND ${ARCH} STREQUAL "X86")
         set(CMAKE_ASM-ATT_FLAGS "-arch i386")
+    elseif(${OS} STREQUAL "linux" AND ${ARCH} STREQUAL "X86")
+        set(CMAKE_ASM-ATT_FLAGS "--32")
     endif()
 endif()
 

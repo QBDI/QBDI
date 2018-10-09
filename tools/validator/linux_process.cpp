@@ -102,13 +102,17 @@ void userToFPRState(const FPR_STRUCT* user, QBDI::FPRState* fprState) {
     memcpy(&fprState->xmm13, &user->xmm_space[52], 16);
     memcpy(&fprState->xmm14, &user->xmm_space[56], 16);
     memcpy(&fprState->xmm15, &user->xmm_space[60], 16);
+    fprState->ftw = user->ftw;
+    fprState->fop = user->fop;
+    fprState->mxcsrmask = user->mxcr_mask;
+    #else
+    fprState->ftw = 0xff; // user->twd;
+    fprState->mxcsr = user->mxcsr;
+    fprState->mxcsrmask = 0xffff;
     #endif
     fprState->rfcw =  user->cwd;
     fprState->rfsw = user->swd;
-    fprState->ftw = user->ftw;
-    fprState->fop = user->fop;
     fprState->mxcsr = user->mxcsr;
-    fprState->mxcsrmask = user->mxcr_mask;
     #elif defined(QBDI_ARCH_ARM)
     // According to gdb/aarch32-linux-nat.c
     // Copy d0 - d16
@@ -141,7 +145,11 @@ int LinuxProcess::waitForStatus() {
     if(WSTOPSIG(status) == SIGBRK) {
         GPR_STRUCT user;
         ptrace(PTRACE_GETREGS, this->pid, NULL, &user);
+#if defined(QBDI_ARCH_X86_64)
         user.rip -= 1;
+#elif defined(QBDI_ARCH_X86)
+        user.eip -= 1;
+#endif
         ptrace(PTRACE_SETREGS, this->pid, NULL, &user);
     }
     #endif
@@ -170,7 +178,11 @@ void LinuxProcess::getProcessFPR(QBDI::FPRState *fprState) {
     userToFPRState(user, fprState);
     #else
     FPR_STRUCT user;
+    #if defined(QBDI_ARCH_X86)
+    ptrace(PTRACE_GETFPXREGS, this->pid, NULL, &user);
+    #else
     ptrace(PTRACE_GETFPREGS, this->pid, NULL, &user);
+    #endif
     userToFPRState(&user, fprState);
     #endif
 }

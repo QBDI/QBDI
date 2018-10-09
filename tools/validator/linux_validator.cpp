@@ -57,10 +57,10 @@ int QBDI::qbdipreload_on_main(int argc, char** argv) {
     vm->setGPRState(&ENTRY_GPR);
     vm->setFPRState(&ENTRY_FPR);
 
-#if defined(__x86_64__)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
     QBDI::rword start = QBDI_GPR_GET(vm->getGPRState(), QBDI::REG_PC);
     QBDI::rword stop = *((QBDI::rword*) QBDI_GPR_GET(vm->getGPRState(), QBDI::REG_SP));
-#elif defined(__arm__)
+#elif defined(QBDI_ARCH_ARM)
     QBDI::rword start = QBDI_GPR_GET(vm->getGPRState(), QBDI::REG_PC);
     QBDI::rword stop = QBDI_GPR_GET(vm->getGPRState(), QBDI::REG_LR);
 #endif
@@ -77,14 +77,14 @@ int QBDI::qbdipreload_on_premain(void *gprCtx, void *fpuCtx) {
     qbdipreload_floatCtxToFPRState(uap, &ENTRY_FPR);
 
 #if defined(QBDI_ARCH_X86_64)
-    uap->uc_mcontext.gregs[REG_RSP] = (uint64_t) newStack + STACK_SIZE - 8;
-    uap->uc_mcontext.gregs[REG_RBP] = (uint64_t) newStack + STACK_SIZE - 8;
+    uap->uc_mcontext.gregs[REG_RSP] = (rword) newStack + STACK_SIZE - 8;
+    uap->uc_mcontext.gregs[REG_RBP] = (rword) newStack + STACK_SIZE - 8;
 #elif defined(QBDI_ARCH_X86)
-    uap->uc_mcontext.gregs[REG_ESP] = (uint32_t) newStack + STACK_SIZE - 8;
-    uap->uc_mcontext.gregs[REG_EBP] = (uint32_t) newStack + STACK_SIZE - 8;
+    uap->uc_mcontext.gregs[REG_ESP] = (rword) newStack + STACK_SIZE - 8;
+    uap->uc_mcontext.gregs[REG_EBP] = (rword) newStack + STACK_SIZE - 8;
 #elif defined(QBDI_ARCH_ARM)
-    uap->uc_mcontext.arm_sp = (uint32_t) newStack + STACK_SIZE - 8;
-    uap->uc_mcontext.arm_fp = (uint32_t) newStack + STACK_SIZE - 8;
+    uap->uc_mcontext.arm_sp = (rword) newStack + STACK_SIZE - 8;
+    uap->uc_mcontext.arm_fp = (rword) newStack + STACK_SIZE - 8;
 #endif
     return QBDIPRELOAD_NO_ERROR;
 }
