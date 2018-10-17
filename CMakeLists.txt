@@ -274,7 +274,7 @@ endif()
 add_library(QBDI_obj STATIC ${SOURCES})
 # Hack because generators expressions don't work properly under visual studio ...
 if(${PLATFORM} STREQUAL "win-X86_64")
-    set(qbdi_static_libs ${LLVM_STATIC_LIBS} ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/QBDI_obj.lib)
+    set(qbdi_static_libs ${LLVM_STATIC_LIBS} ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/QBDI_obj.lib)
 else()
     set(qbdi_static_libs ${LLVM_STATIC_LIBS} $<TARGET_FILE:QBDI_obj>)
 endif()
