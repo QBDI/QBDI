@@ -30,6 +30,7 @@ namespace QBDI {
 /*! Access type (R/W/RW) of a register operand
  */
 typedef enum {
+    _QBDI_EI(REGISTER_UNUSED)     = 0,    /*!< Unused register */
     _QBDI_EI(REGISTER_READ)       = 1,    /*!< Register read access */
     _QBDI_EI(REGISTER_WRITE)      = 1<<1, /*!< Register write access */
     _QBDI_EI(REGISTER_READ_WRITE) = 3     /*!< Register read/write access */
