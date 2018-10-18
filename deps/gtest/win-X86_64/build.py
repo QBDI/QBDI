@@ -1,12 +1,22 @@
-from urllib.request import urlopen
 import subprocess
 import os
 import shutil
 import sys
 import tarfile
 
-VERSION="1.7.0"
-SOURCE_URL="https://github.com/google/googletest/archive/release-" + VERSION + ".tar.gz"
+try:
+    from urllib.request import urlopen
+except ImportError:
+    raise Exception("Must be using Python 3")
+
+VERSION = "1.7.0"
+SOURCE_URL = "https://github.com/google/googletest/archive/release-" + \
+    VERSION + ".tar.gz"
+
+if len(sys.argv) < 2:
+    fmt = 'Usage: {} prepare|build|package|clean'
+    print(fmt.format(sys.argv[0]))
+    sys.exit(1)
 
 if sys.argv[1] == "prepare":
     if os.path.exists("release-" + VERSION + ".tar.gz"):
@@ -36,6 +46,8 @@ elif sys.argv[1] == "build":
 elif sys.argv[1] == "package":
     if os.path.exists("lib"):
         shutil.rmtree("lib")
+    if os.path.exists("include"):
+        shutil.rmtree("include")
     os.makedirs("lib")
     for file_ in ("gtest.lib", "gtest_main.lib"):
         shutil.copy(os.path.join("build", "Release", file_), "lib")

@@ -1,23 +1,30 @@
-from urllib.request import urlopen
 import subprocess
 import glob
 import os
 import shutil
 import sys
 import tarfile
+try:
+    from urllib.request import urlopen
+except ImportError:
+    raise Exception("Must be using Python 3")
 
-#FIXME: Add check for python version, we need python3 for xz extraction
+VERSION = "5.0.0"
+SOURCE_URL = "http://llvm.org/releases/" + VERSION + "/llvm-" + \
+    VERSION + ".src.tar.xz"
+TARGET = "X86"
+LIBRAIRIES = ["LLVMSelectionDAG.lib", "LLVMAsmPrinter.lib",
+              "LLVMBinaryFormat.lib", "LLVMCodeGen.lib", "LLVMScalarOpts.lib",
+              "LLVMProfileData.lib", "LLVMInstCombine.lib",
+              "LLVMTransformUtils.lib", "LLVMAnalysis.lib", "LLVMTarget.lib",
+              "LLVMObject.lib", "LLVMMCParser.lib", "LLVMBitReader.lib",
+              "LLVMMCDisassembler.lib", "LLVMMC.lib", "LLVMX86Utils.lib",
+              "LLVMCore.lib", "LLVMSupport.lib"]
 
-VERSION="5.0.0"
-SOURCE_URL="http://llvm.org/releases/" + VERSION + "/llvm-" + VERSION + ".src.tar.xz"
-TARGET="X86"
-LIBRAIRIES=["LLVMSelectionDAG.lib", "LLVMAsmPrinter.lib",
-            "LLVMBinaryFormat.lib", "LLVMCodeGen.lib", "LLVMScalarOpts.lib",
-            "LLVMProfileData.lib", "LLVMInstCombine.lib",
-            "LLVMTransformUtils.lib", "LLVMAnalysis.lib", "LLVMTarget.lib",
-            "LLVMObject.lib", "LLVMMCParser.lib", "LLVMBitReader.lib",
-            "LLVMMCDisassembler.lib", "LLVMMC.lib", "LLVMX86Utils.lib",
-            "LLVMCore.lib", "LLVMSupport.lib"]
+if len(sys.argv) < 2:
+    fmt = 'Usage: {} prepare|build|package|clean'
+    print(fmt.format(sys.argv[0]))
+    sys.exit(1)
 
 if sys.argv[1] == "prepare":
     if os.path.exists("llvm-" + VERSION + ".src.tar.xz"):
@@ -57,7 +64,8 @@ elif sys.argv[1] == "package":
         print(root, dirs, files)
         for file_ in files:
             if os.path.splitext(file_)[1] in (".h", ".def"):
-                new_root = os.path.abspath(root[len("llvm-" + VERSION + ".src")+1:])
+                new_root = root[len("llvm-" + VERSION + ".src")+1:]
+                new_root = os.path.abspath(new_root)
                 if not os.path.exists(new_root):
                     os.makedirs(new_root)
                 shutil.copy(os.path.join(root, file_), new_root)
@@ -72,17 +80,19 @@ elif sys.argv[1] == "package":
                 shutil.copy(os.path.join(root, file_), new_root)
 
     os.makedirs(os.path.join("lib", "Target", TARGET))
+    lib_path = os.path.join("build", "Release", "lib")
     for l in LIBRAIRIES:
-        shutil.copy(os.path.join("build", "Release", "lib", l), "lib")
+        shutil.copy(os.path.join(lib_path, l), "lib")
 
-    for path in glob.glob(os.path.join("build", "Release", "lib", "LLVM" + TARGET + "*")):
+    for path in glob.glob(os.path.join(lib_path, "LLVM" + TARGET + "*")):
         shutil.copy(path, "lib")
 
     prefix = os.path.join("llvm-" + VERSION + ".src", "lib", "Target", TARGET)
     for root, dirs, files in os.walk(prefix):
         for file_ in files:
             if os.path.splitext(file_)[1] in (".h", ".def"):
-                new_root = os.path.abspath(root[len("llvm-" + VERSION + ".src")+1:])
+                new_root = root[len("llvm-" + VERSION + ".src")+1:]
+                new_root = os.path.abspath(new_root)
                 if not os.path.exists(new_root):
                     os.makedirs(new_root)
                 shutil.copy(os.path.join(root, file_), new_root)
