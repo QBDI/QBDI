@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <algorithm>
 #include <gtest/gtest.h>
 #include "VMTest.h"
 
@@ -386,11 +387,11 @@ TEST_F(VMTest, MnemCallback) {
     ASSERT_TRUE(ran);
 
     EXPECT_EQ(retval, (QBDI::rword) satanicFun(info[2]));
-    EXPECT_EQ(info[0], MNEM_COUNT);
     // TODO: try to find a way to support windows
 #ifdef QBDI_OS_WIN
     EXPECT_EQ(info[1], (QBDI::rword) 0);
 #else
+    EXPECT_EQ(info[0], MNEM_COUNT);
     EXPECT_EQ(info[1], (QBDI::rword) MNEM_VALIDATION);
 #endif
 
