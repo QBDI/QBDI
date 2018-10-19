@@ -3361,6 +3361,7 @@ namespace QBDI {
         PyModule_AddObject(QBDI::Bindings::Python::module, "CONTINUE",              PyInt_FromLong(QBDI::CONTINUE));
         PyModule_AddObject(QBDI::Bindings::Python::module, "EXEC_TRANSFER_CALL",    PyInt_FromLong(QBDI::EXEC_TRANSFER_CALL));
         PyModule_AddObject(QBDI::Bindings::Python::module, "INVALID_EVENTID",       PyInt_FromLong(QBDI::INVALID_EVENTID));
+        PyModule_AddObject(QBDI::Bindings::Python::module, "MEMORY_READ",           PyInt_FromLong(QBDI::MEMORY_READ));
         PyModule_AddObject(QBDI::Bindings::Python::module, "MEMORY_READ_WRITE",     PyInt_FromLong(QBDI::MEMORY_READ_WRITE));
         PyModule_AddObject(QBDI::Bindings::Python::module, "MEMORY_WRITE",          PyInt_FromLong(QBDI::MEMORY_WRITE));
         PyModule_AddObject(QBDI::Bindings::Python::module, "OPERAND_GPR",           PyInt_FromLong(QBDI::OPERAND_GPR));

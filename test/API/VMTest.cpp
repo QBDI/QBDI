@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <algorithm>
 #include <gtest/gtest.h>
 #include "VMTest.h"
 
@@ -71,30 +72,71 @@ QBDI_NOINLINE int dummyFunCall(int arg0) {
 
 
 #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
-#define CMP_REG_NAME "DH"
-#define CMP_REG_SIZE 1
-#define CMP_REG_OFF 8
-#define CMP_OP_CNT 2
+#define MNEM_COUNT 4u
+#define MNEM_VALIDATION 61u
 #elif defined(QBDI_ARCH_ARM)
-#define CMP_REG_NAME "R3"
-#define CMP_REG_SIZE sizeof(QBDI::rword)
-#define CMP_REG_OFF 0
-#define CMP_OP_CNT 3
+#define MNEM_COUNT 1u
+#define MNEM_VALIDATION 25u
 #endif
-#define CMP_REG_CTXIDX 3
-#define CMP_IMM_VAL 42
-#define CMP_IMM_STRVAL "42"
+#define MNEM_IMM_SHORT_VAL 66
+#define MNEM_IMM_VAL 42424242
+#define MNEM_IMM_SHORT_STRVAL "66"
+#define MNEM_IMM_STRVAL "42424242"
+
+struct TestInst {
+    uint32_t instSize;
+    uint8_t numOperands;
+    bool isCompare;
+    QBDI::OperandAnalysis operands[3];
+};
+
+#if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
+struct TestInst TestInsts[MNEM_COUNT] = {
+    {3, 2, true, {
+           {QBDI::OPERAND_GPR, 0, 1, 8, 3, "DH", QBDI::REGISTER_READ},
+           // FIXME: immediate size is not implemented
+           {QBDI::OPERAND_IMM, MNEM_IMM_SHORT_VAL, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
+        }
+    },
+    {3, 2, true, {
+           {QBDI::OPERAND_GPR, 0, 8, 0, 0, "RAX", QBDI::REGISTER_READ},
+           {QBDI::OPERAND_GPR, 0, 8, 0, 1, "RBX", QBDI::REGISTER_READ},
+        }
+    },
+    {5, 2, true, {
+           {QBDI::OPERAND_IMM, MNEM_IMM_VAL, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
+           {QBDI::OPERAND_GPR, 0, 4, 0, 0, "EAX", QBDI::REGISTER_READ},
+        }
+    },
+    {1, 0, false, {}
+    },
+};
+#elif defined(QBDI_ARCH_ARM)
+struct TestInst TestInsts[MNEM_COUNT] = {
+    {4, 3, true, {
+            {QBDI::OPERAND_GPR, 0, sizeof(QBDI::rword), 0, 3, "R3", QBDI::REGISTER_READ},
+            {QBDI::OPERAND_IMM, MNEM_IMM_SHORT_VAL, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
+            {QBDI::OPERAND_PRED, 0, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
+        }
+    }
+};
+#endif
 
 
 QBDI_NOINLINE QBDI::rword satanicFun(QBDI::rword arg0) {
+    QBDI::rword volatile res = arg0 + 0x666;
 #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
+    QBDI::rword p = 0x42;
  #ifndef QBDI_OS_WIN
-    asm("cmp $" CMP_IMM_STRVAL ", %" CMP_REG_NAME);
+    asm("cmp $" MNEM_IMM_SHORT_STRVAL ", %%dh" ::: "dh");
+    asm("cmp %%rbx, %%rax" ::: "rbx", "rax");
+    asm("cmp $" MNEM_IMM_STRVAL ", %%eax" ::: "eax"); // explicit register
+    asm("movq %0, %%rdi; movq %1, %%rsi; cmpsb %%es:(%%rdi), (%%rsi)"::"r"(&p), "r"(&p): "rdi", "rsi");
  #endif
 #elif defined(QBDI_ARCH_ARM)
-    asm("cmp " CMP_REG_NAME ", #" CMP_IMM_STRVAL);
+    asm("cmp r3, #" MNEM_IMM_SHORT_STRVAL);
 #endif
-    return arg0 + 0x666;
+    return res;
 }
 
 
@@ -264,6 +306,7 @@ QBDI::VMAction evilMnemCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBD
     const QBDI::InstAnalysis* ana = vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION | QBDI::ANALYSIS_OPERANDS);
     // validate mnemonic
     if (TEST_GUARD(QBDI::String::startsWith(MNEM_CMP, ana->mnemonic))) {
+        info[0]++; // CMP count
         info[1]++;
         // validate address
         if (TEST_GUARD(ana->address >= (QBDI::rword) &satanicFun &&
@@ -271,52 +314,58 @@ QBDI::VMAction evilMnemCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBD
             info[1]++;
         }
         // validate inst size
+        struct TestInst& currentInst = TestInsts[info[0] - 1];
 #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
-        if (TEST_GUARD(ana->instSize == 3)) {
+        if (TEST_GUARD(ana->instSize == currentInst.instSize)) {
 #else
         {
 #endif
             info[1]++;
         }
-        // validate instruction type
-        if (TEST_GUARD(!ana->isBranch &&
-            !ana->isCall &&
-            !ana->isReturn &&
-            ana->isCompare)) {
-            info[1]++;
+        // validate instruction type (kinda...)
+        if (currentInst.isCompare) {
+            if (TEST_GUARD(!ana->isBranch &&
+                !ana->isCall &&
+                !ana->isReturn &&
+                ana->isCompare)) {
+                info[1]++;
+            }
         }
         // validate number of analyzed operands
-        if (TEST_GUARD(ana->numOperands == CMP_OP_CNT)) {
+        if (TEST_GUARD(ana->numOperands == currentInst.numOperands)) {
             info[1]++;
         }
         // validate operands
         if (TEST_GUARD(ana->operands != nullptr)) {
             info[1]++;
-            for (uint8_t idx = 0; idx < ana->numOperands; idx++) {
+            for (uint8_t idx = 0; idx < std::min(ana->numOperands, currentInst.numOperands); idx++) {
+                const QBDI::OperandAnalysis& cmpOp = currentInst.operands[idx];
                 const QBDI::OperandAnalysis& op = ana->operands[idx];
-                // validate immediate operand value
+                if (TEST_GUARD(op.type == cmpOp.type)) {
+                    info[1]++;
+                }
                 if (op.type == QBDI::OPERAND_IMM) {
-                    if (TEST_GUARD(op.value == CMP_IMM_VAL)) {
+                    if (TEST_GUARD(op.value == cmpOp.value)) {
                         info[1]++;
                     }
-                // validate GPR operand metadata
-                } else if (op.type == QBDI::OPERAND_GPR) {
-                    if (TEST_GUARD(op.regName != nullptr &&
-                        std::string(op.regName) == CMP_REG_NAME)) {
-                        info[1]++;
-                    }
-                    if (TEST_GUARD(op.size == CMP_REG_SIZE)) {
-                        info[1]++;
-                    }
-                    if (TEST_GUARD(op.regCtxIdx == CMP_REG_CTXIDX)) {
-                        info[1]++;
-                    }
-                    if (TEST_GUARD(op.regOff == CMP_REG_OFF)) {
-                        info[1]++;
-                    }
-                    if (TEST_GUARD(op.regAccess == QBDI::REGISTER_READ)) {
-                        info[1]++;
-                    }
+                }
+                if (op.regName == nullptr && cmpOp.regName == nullptr) {
+                    info[1]++;
+                } else if (TEST_GUARD(op.regName != nullptr && cmpOp.regName != nullptr &&
+                    std::string(op.regName) == std::string(cmpOp.regName))) {
+                    info[1]++;
+                }
+                if (TEST_GUARD(op.size == cmpOp.size)) {
+                    info[1]++;
+                }
+                if (TEST_GUARD(op.regCtxIdx == cmpOp.regCtxIdx)) {
+                    info[1]++;
+                }
+                if (TEST_GUARD(op.regOff == cmpOp.regOff)) {
+                    info[1]++;
+                }
+                if (TEST_GUARD(op.regAccess == cmpOp.regAccess)) {
+                    info[1]++;
                 }
             }
         }
@@ -326,7 +375,7 @@ QBDI::VMAction evilMnemCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBD
 
 
 TEST_F(VMTest, MnemCallback) {
-    QBDI::rword info[2] = {42, 0};
+    QBDI::rword info[3] = {0, 0, 42};
     QBDI::rword retval = 0;
     const char* noop = MNEM_CMP;
 
@@ -334,15 +383,16 @@ TEST_F(VMTest, MnemCallback) {
                                          QBDI::InstPosition::PREINST,
                                          evilMnemCbk, &info);
 
-    bool ran = vm->call(&retval, (QBDI::rword) satanicFun, {info[0]});
+    bool ran = vm->call(&retval, (QBDI::rword) satanicFun, {info[2]});
     ASSERT_TRUE(ran);
 
-    EXPECT_EQ(retval, (QBDI::rword) satanicFun(info[0]));
+    EXPECT_EQ(retval, (QBDI::rword) satanicFun(info[2]));
     // TODO: try to find a way to support windows
 #ifdef QBDI_OS_WIN
     EXPECT_EQ(info[1], (QBDI::rword) 0);
 #else
-    EXPECT_EQ(info[1], (QBDI::rword) 12);
+    EXPECT_EQ(info[0], MNEM_COUNT);
+    EXPECT_EQ(info[1], (QBDI::rword) MNEM_VALIDATION);
 #endif
 
     bool success = vm->deleteInstrumentation(instrId);

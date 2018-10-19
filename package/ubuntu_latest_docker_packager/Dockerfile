@@ -1,4 +1,4 @@
-FROM ubuntu:17.10
+FROM ubuntu:18.10
 MAINTAINER Charles Hubain <chubain@quarkslab.com>
 
 ARG QBDI_BUILD_TYPE=Release
@@ -18,6 +18,7 @@ RUN apt-get update \
     cmake \
     g++ \
     g++-multilib \
+    libncurses5 \
     libncurses5-dev \
     libstdc++-6-dev \
     make \

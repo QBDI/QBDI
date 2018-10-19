@@ -7,6 +7,8 @@ ENV USER docker
 ENV HOME /home/$USER
 ENV PREFIX /usr
 ENV QBDI_PLATFORM linux-X86_64
+ENV CMAKE_MAJOR 3.11
+ENV CMAKE_VERSION 3.11.4
 
 # Get latest package list, upgrade packages, install required packages 
 # and cleanup to keep container as small as possible
@@ -29,6 +31,15 @@ RUN apt-get update \
     vim \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+RUN wget "https://cmake.org/files/v$CMAKE_MAJOR/cmake-$CMAKE_VERSION.tar.gz" && \
+    tar xf cmake-$CMAKE_VERSION.tar.gz && \
+    cd cmake-$CMAKE_VERSION/ && \
+    ./configure --prefix=$PREFIX && \
+    make && \
+    make install && \
+    cd .. && \
+    rm -rf cmake-*
 
 # create a user
 RUN adduser --disabled-password --gecos '' $USER && \
