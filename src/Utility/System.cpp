@@ -35,9 +35,9 @@ const std::vector<std::string> getHostCPUFeatures() {
         for (const auto& feat: features) {
             // XXX: #19 Bad AVX support detection in VM environments
             #if defined(_QBDI_FORCE_DISABLE_AVX)
-            char* disable_avx = "1";
+            const char* disable_avx = "1";
             #else
-            char* disable_avx = getenv("QBDI_FORCE_DISABLE_AVX");
+            const char* disable_avx = getenv("QBDI_FORCE_DISABLE_AVX");
             #endif
             // fix buggy dynamic detection
             if(disable_avx != NULL &&
