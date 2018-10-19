@@ -125,8 +125,8 @@ struct TestInst TestInsts[MNEM_COUNT] = {
 
 QBDI_NOINLINE QBDI::rword satanicFun(QBDI::rword arg0) {
     QBDI::rword volatile res = arg0 + 0x666;
-    QBDI::rword p = 0x42;
 #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
+    QBDI::rword p = 0x42;
  #ifndef QBDI_OS_WIN
     asm("cmp $" MNEM_IMM_SHORT_STRVAL ", %%dh" ::: "dh");
     asm("cmp %%rbx, %%rax" ::: "rbx", "rax");

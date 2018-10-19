@@ -7,8 +7,8 @@ ENV USER docker
 ENV HOME /home/$USER
 ENV PREFIX /usr
 ENV QBDI_PLATFORM linux-X86_64
-ENV CMAKE_MAJOR 3.7
-ENV CMAKE_VERSION 3.7.1
+ENV CMAKE_MAJOR 3.11
+ENV CMAKE_VERSION 3.11.4
 
 # Get latest package list, upgrade packages, install required packages 
 # and cleanup to keep container as small as possible
