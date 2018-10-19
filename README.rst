@@ -23,6 +23,9 @@ threads creation) and C++ exception mechanisms.
 However, those system-dependent features will probably not be part of the core library (KISS),
 and should be integrated as a new layer (to be determined how).
 
+Status
+------
+
 .. role:: green
 .. role:: yellow
 .. role:: orange
@@ -36,6 +39,22 @@ ARM       Linux, Android, iOS     :yellow:`Partial`        :red:`Unsupported`
 AArch64   Linux, Android          :red:`Unsupported`       :red:`Unsupported`
 x86       Linux, macOS, Windows   :red:`Unsupported`       :red:`Unsupported`
 =======   =====================   ======================   =================================
+
+**stable**
+
+.. image:: https://travis-ci.com/QBDI/QBDI.svg?branch=master
+    :target: https://travis-ci.com/QBDI/QBDI
+
+.. image:: https://ci.appveyor.com/api/projects/status/s2qvpu8k8yiau647/branch/master?svg=true
+    :target: https://ci.appveyor.com/project/QBDI/qbdi/branch/master
+
+**dev**
+
+.. image:: https://travis-ci.com/QBDI/QBDI.svg?branch=dev-next
+    :target: https://travis-ci.com/QBDI/QBDI/branches
+
+.. image:: https://ci.appveyor.com/api/projects/status/s2qvpu8k8yiau647/branch/dev-next?svg=true
+    :target: https://ci.appveyor.com/project/QBDI/qbdi/branch/dev-next
 
 .. intro-end
 

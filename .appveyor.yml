@@ -12,10 +12,10 @@ environment:
   CMAKE_TEMPLATE: Visual Studio 14 2015
 
 cache:
-  - deps\llvm\win-X86_64\lib
-  - deps\llvm\win-X86_64\include
-  - deps\gtest\win-X86_64\lib
-  - deps\gtest\win-X86_64\include
+  - deps\llvm\win-X86_64\lib -> deps\llvm\win-X86_64\build.py
+  - deps\llvm\win-X86_64\include -> deps\llvm\win-X86_64\build.py
+  - deps\gtest\win-X86_64\lib -> deps\gtest\win-X86_64\build.py
+  - deps\gtest\win-X86_64\include -> deps\gtest\win-X86_64\build.py
 
 install:
   # Install Python (from the official .msi of https://python.org) and pip when

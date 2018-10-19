@@ -1,3 +1,13 @@
+2018-10-19 Cedric TESSIER <ctessier@quarkslab.com>
+
+    * Version 0.6.2
+    * Add support for a public CI (based on Travis and AppVeyor)
+    * Fix instruction operands analysis (#57, #59)
+    * Add missing MEMORY_READ enum value in Python bindings (#61)
+    * Fix cache misbehavior on corner cases (#49, #51)
+    * Add missing memory access instructions on x86_64 (#45, #47, #72)
+    * Enable asserts in Debug builds (#48)
+
 2018-03-22 Charles HUBAIN <chubain@quarkslab.com>
 
     * Version 0.6.1
