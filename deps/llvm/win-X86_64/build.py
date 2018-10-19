@@ -9,7 +9,7 @@ try:
 except ImportError:
     raise Exception("Must be using Python 3")
 
-VERSION = "5.0.0"
+VERSION = "5.0.2"
 SOURCE_URL = "http://llvm.org/releases/" + VERSION + "/llvm-" + \
     VERSION + ".src.tar.xz"
 TARGET = "X86"

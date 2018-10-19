@@ -8,6 +8,8 @@ ENV HOME /home/$USER
 ENV PREFIX /usr
 ENV QBDI_PLATFORM android-ARM
 ENV LLVM_VERSION 5.0
+ENV CMAKE_MAJOR 3.11
+ENV CMAKE_VERSION 3.11.4
 ENV NDK_VERSION r13b
 
 # Install base tools
@@ -53,6 +55,15 @@ RUN apt-get update \
     && ln -s /usr/bin/llvm-tblgen-$LLVM_VERSION /usr/bin/llvm-tblgen \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+RUN wget "https://cmake.org/files/v$CMAKE_MAJOR/cmake-$CMAKE_VERSION.tar.gz" && \
+    tar xf cmake-$CMAKE_VERSION.tar.gz && \
+    cd cmake-$CMAKE_VERSION/ && \
+    ./configure --prefix=$PREFIX && \
+    make && \
+    make install && \
+    cd .. && \
+    rm -rf cmake-*
 
 # create a user
 RUN adduser --disabled-password --gecos '' $USER && \

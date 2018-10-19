@@ -1,4 +1,4 @@
-FROM pritunl/archlinux:2017-10-21
+FROM base/archlinux:2018.10.01
 MAINTAINER Charles Hubain <chubain@quarkslab.com>
 
 ARG QBDI_BUILD_TYPE=Release
@@ -10,7 +10,7 @@ ENV QBDI_PLATFORM linux-X86_64
 
 # Get latest package list, upgrade packages, install required packages 
 # and cleanup to keep container as small as possible
-RUN pacman -S --noconfirm \
+RUN pacman -Sy && pacman -S --noconfirm \
     sudo \
     gcc \
     make \
@@ -23,8 +23,8 @@ RUN pacman -S --noconfirm \
     && pacman -Sc --noconfirm
 
 # create a user
-RUN useradd -Gwheel $USER && \
-    echo '%wheel ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+RUN useradd -Groot $USER && \
+    echo '%root ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 # switch to new user
 USER $USER
