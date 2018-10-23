@@ -22,7 +22,7 @@ namespace QBDI {
 unsigned READ_8[] = { 
 	llvm::X86::CMP8rm,
 	llvm::X86::CMP8mr,
-	llvm::X86::TEST8rm,
+	llvm::X86::TEST8mr,
 	llvm::X86::MOV8rm,
 	llvm::X86::ADC8rm,
 	llvm::X86::ADD8rm,
@@ -120,7 +120,7 @@ unsigned READ_16[] = {
 	llvm::X86::MOV16rm,
 	llvm::X86::MOVBE16rm,
 	llvm::X86::CMP16rm,
-	llvm::X86::TEST16rm,
+	llvm::X86::TEST16mr,
 	llvm::X86::ADD_FI16m,
 	llvm::X86::CALL16m,
 	llvm::X86::DIV16m,
@@ -267,7 +267,7 @@ size_t READ_16_SIZE = sizeof(READ_16)/sizeof(unsigned);
 unsigned READ_32[] = { 
 	llvm::X86::MOV32rm,
 	llvm::X86::CMP32rm,
-	llvm::X86::TEST32rm,
+	llvm::X86::TEST32mr,
 	llvm::X86::ADD_FI32m,
 	llvm::X86::CALL32m,
 	llvm::X86::DIV32m,
@@ -439,7 +439,7 @@ size_t READ_32_SIZE = sizeof(READ_32)/sizeof(unsigned);
 unsigned READ_64[] = { 
 	llvm::X86::MOV64rm,
 	llvm::X86::CMP64rm,
-	llvm::X86::TEST64rm,
+	llvm::X86::TEST64mr,
 	llvm::X86::CALL64m,
 	llvm::X86::DIV64m,
 	llvm::X86::IDIV64m,

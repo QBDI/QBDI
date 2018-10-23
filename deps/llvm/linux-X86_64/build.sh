@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION="5.0.2"
+VERSION="7.0.0"
 SOURCE_URL="http://llvm.org/releases/${VERSION}/llvm-${VERSION}.src.tar.xz"
 TARGET="X86"
 LIBRAIRIES="libLLVMSelectionDAG.a libLLVMAsmPrinter.a libLLVMBinaryFormat.a libLLVMCodeGen.a libLLVMScalarOpts.a libLLVMProfileData.a libLLVMInstCombine.a libLLVMTransformUtils.a libLLVMAnalysis.a libLLVMTarget.a libLLVMObject.a libLLVMMCParser.a libLLVMBitReader.a libLLVMMCDisassembler.a libLLVMMC.a libLLVMX86Utils.a libLLVMCore.a libLLVMSupport.a libLLVMDemangle.a"
@@ -34,7 +34,7 @@ case "$1" in
             mkdir -p ${nf%/*}
             cp $f $nf
         done
-        for f in $(find build/include/ -type f \( -iname \*.def -o -iname \*.h -o -iname \*.gen \)); do
+        for f in $(find build/include/ -type f \( -iname \*.def -o -iname \*.h -o -iname \*.gen -o -iname \*.inc \)); do
             nf=${f#*/}
             mkdir -p ${nf%/*}
             cp $f $nf

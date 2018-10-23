@@ -65,7 +65,6 @@ struct CallbackRegistration {
 class Engine {
 private:
 
-    std::unique_ptr<llvm::MCAsmBackend>      MAB;
     std::unique_ptr<llvm::MCAsmInfo>         MAI;
     std::unique_ptr<llvm::MCCodeEmitter>     MCE;
     std::unique_ptr<llvm::MCContext>         MCTX;

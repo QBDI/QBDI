@@ -67,15 +67,15 @@ void LLVMTestEnv::SetUp() {
       processTarget->createMCSubtargetInfo(tripleName, cpu, featuresStr)
     );
     ASSERT_TRUE(MSTI != nullptr);
-    MAB = std::unique_ptr<llvm::MCAsmBackend>(
-        processTarget->createMCAsmBackend(*MRI, tripleName, cpu, llvm::MCTargetOptions())
+    auto MAB = std::unique_ptr<llvm::MCAsmBackend>(
+        processTarget->createMCAsmBackend(*MSTI, *MRI, llvm::MCTargetOptions())
     );
     MCE = std::unique_ptr<llvm::MCCodeEmitter>(
        processTarget->createMCCodeEmitter(*MCII, *MRI, *MCTX)
     );
     ASSERT_TRUE(MAB != nullptr);
     assembly = std::unique_ptr<QBDI::Assembly>(
-        new QBDI::Assembly(*MCTX, *MAB, *MCII, *processTarget, *MSTI)
+        new QBDI::Assembly(*MCTX, std::move(MAB), *MCII, *processTarget, *MSTI)
     );
     ASSERT_TRUE(assembly != nullptr);
 }

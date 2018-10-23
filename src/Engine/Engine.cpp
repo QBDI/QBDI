@@ -99,20 +99,20 @@ Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs,
     );
     MOFI = std::unique_ptr<llvm::MCObjectFileInfo>(new llvm::MCObjectFileInfo());
     MCTX = std::unique_ptr<llvm::MCContext>(new llvm::MCContext(MAI.get(), MRI.get(), MOFI.get()));
-    MOFI->InitMCObjectFileInfo(processTriple, llvm::Reloc::Static, llvm::CodeModel::Default, *MCTX);
+    MOFI->InitMCObjectFileInfo(processTriple, false, *MCTX);
     MCII = std::unique_ptr<llvm::MCInstrInfo>(processTarget->createMCInstrInfo());
     MSTI = std::unique_ptr<llvm::MCSubtargetInfo>(
       processTarget->createMCSubtargetInfo(tripleName, cpu, featuresStr)
     );
     LogDebug("Engine::Engine", "Initialized LLVM subtarget with cpu %s and features %s", cpu.c_str(), featuresStr.c_str());
-    MAB = std::unique_ptr<llvm::MCAsmBackend>(
-        processTarget->createMCAsmBackend(*MRI, tripleName, cpu, llvm::MCTargetOptions())
+    auto MAB = std::unique_ptr<llvm::MCAsmBackend>(
+        processTarget->createMCAsmBackend(*MSTI, *MRI, llvm::MCTargetOptions())
     );
     MCE = std::unique_ptr<llvm::MCCodeEmitter>(
        processTarget->createMCCodeEmitter(*MCII, *MRI, *MCTX)
     );
     // Allocate QBDI classes
-    assembly = new Assembly(*MCTX, *MAB, *MCII, *processTarget, *MSTI);
+    assembly = new Assembly(*MCTX, std::move(MAB), *MCII, *processTarget, *MSTI);
     blockManager = new ExecBlockManager(*MCII, *MRI, *assembly, vminstance);
     execBroker = new ExecBroker(*assembly, vminstance);
 
