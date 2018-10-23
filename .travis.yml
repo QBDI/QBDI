@@ -4,7 +4,7 @@ addons:
   apt:
     sources:
     - ubuntu-toolchain-r-test
-  packages:
+    packages:
     - g++-7
     - ccache
   homebrew:
