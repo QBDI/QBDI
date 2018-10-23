@@ -43,20 +43,17 @@ namespace QBDI {
 class Assembly {
 protected:
 
-    llvm::MCAsmBackend                       &MAB;
     llvm::MCInstrInfo                        &MCII;
     const llvm::MCRegisterInfo               &MRI;
     const llvm::MCAsmInfo                    &MAI;
     llvm::MCSubtargetInfo                    &MSTI;
     std::unique_ptr<llvm::MCAssembler>       assembler;
     std::unique_ptr<llvm::MCDisassembler>    disassembler;
-    std::unique_ptr<llvm::MCCodeEmitter>     codeEmitter;
     std::unique_ptr<llvm::MCInstPrinter>     asmPrinter;
-    std::unique_ptr<llvm::MCObjectWriter>    objectWriter;
     std::unique_ptr<llvm::raw_pwrite_stream> null_ostream;
 
 public:
-    Assembly(llvm::MCContext &context, llvm::MCAsmBackend &MAB, llvm::MCInstrInfo &MCII,
+    Assembly(llvm::MCContext &context, std::unique_ptr<llvm::MCAsmBackend> MAB, llvm::MCInstrInfo &MCII,
              const llvm::Target &target, llvm::MCSubtargetInfo &MSTI);
 
     void writeInstruction(llvm::MCInst inst, memory_ostream* stream) const;

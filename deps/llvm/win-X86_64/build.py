@@ -9,7 +9,7 @@ try:
 except ImportError:
     raise Exception("Must be using Python 3")
 
-VERSION = "5.0.2"
+VERSION = "7.0.0"
 SOURCE_URL = "http://llvm.org/releases/" + VERSION + "/llvm-" + \
     VERSION + ".src.tar.xz"
 TARGET = "X86"
@@ -73,7 +73,7 @@ elif sys.argv[1] == "package":
     prefix = os.path.join("build", "include")
     for root, dirs, files in os.walk(prefix):
         for file_ in files:
-            if os.path.splitext(file_)[1] in (".h", ".def", ".gen"):
+            if os.path.splitext(file_)[1] in (".h", ".def", ".gen", ".inc"):
                 new_root = os.path.abspath(root[len("build")+1:])
                 if not os.path.exists(new_root):
                     os.makedirs(new_root)

@@ -23,9 +23,9 @@
 
 namespace QBDI {
 
-Assembly::Assembly(llvm::MCContext &MCTX, llvm::MCAsmBackend &MAB, llvm::MCInstrInfo &MCII, 
+Assembly::Assembly(llvm::MCContext &MCTX, std::unique_ptr<llvm::MCAsmBackend> MAB, llvm::MCInstrInfo &MCII, 
                    const llvm::Target &target, llvm::MCSubtargetInfo &MSTI) 
-    : MAB(MAB), MCII(MCII), MRI(*MCTX.getRegisterInfo()), MAI(*MCTX.getAsmInfo()), MSTI(MSTI) {
+    : MCII(MCII), MRI(*MCTX.getRegisterInfo()), MAI(*MCTX.getAsmInfo()), MSTI(MSTI) {
 
     unsigned int variant = 0;
 
@@ -37,16 +37,16 @@ Assembly::Assembly(llvm::MCContext &MCTX, llvm::MCAsmBackend &MAB, llvm::MCInstr
         target.createMCDisassembler(MSTI, MCTX)
     );
 
-    codeEmitter = std::unique_ptr<llvm::MCCodeEmitter>(
+    auto codeEmitter = std::unique_ptr<llvm::MCCodeEmitter>(
         target.createMCCodeEmitter(MCII, MRI, MCTX)
     );
 
-    objectWriter = std::unique_ptr<llvm::MCObjectWriter>(
-        MAB.createObjectWriter(*null_ostream)
+    auto objectWriter = std::unique_ptr<llvm::MCObjectWriter>(
+        MAB->createObjectWriter(*null_ostream)
     );
 
     assembler = std::unique_ptr<llvm::MCAssembler>(
-        new llvm::MCAssembler(MCTX, MAB, *codeEmitter, *objectWriter)
+        new llvm::MCAssembler(MCTX, std::move(MAB), std::move(codeEmitter), std::move(objectWriter))
     );
 
     // TODO: find better way to handle variant
@@ -82,7 +82,7 @@ void Assembly::writeInstruction(const llvm::MCInst inst, memory_ostream *stream)
         disassOs.flush();
         fprintf(log, "Assembling %s at 0x%" PRIRWORD, disass.c_str(), (rword) stream->get_ptr() + (rword) pos);
     });
-    codeEmitter->encodeInstruction(inst, *stream, fixups, MSTI);
+    assembler->getEmitter().encodeInstruction(inst, *stream, fixups, MSTI);
     uint64_t size = stream->current_pos() - pos;
 
     if(fixups.size() > 0) {
@@ -90,7 +90,7 @@ void Assembly::writeInstruction(const llvm::MCInst inst, memory_ostream *stream)
         llvm::MCFixup fixup = fixups.pop_back_val();
         int64_t value;
         if(fixup.getValue()->evaluateAsAbsolute(value)) {
-            MAB.applyFixup(*assembler, fixup, target, llvm::MutableArrayRef<char>((char*) stream->get_ptr() + pos, size), (uint64_t) value, true);
+            assembler->getBackend().applyFixup(*assembler, fixup, target, llvm::MutableArrayRef<char>((char*) stream->get_ptr() + pos, size), (uint64_t) value, true, &MSTI);
         }
         else {
             LogWarning("Assembly::writeInstruction", "Could not evalutate fixup, might crash!");

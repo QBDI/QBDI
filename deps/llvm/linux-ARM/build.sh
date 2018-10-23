@@ -4,7 +4,7 @@ ARM_ARCH=armv6
 ARM_C_INCLUDE=/usr/arm-linux-gnueabi/include/
 ARM_CXX_INCLUDE=/usr/arm-linux-gnueabi/include/c++/6/
 
-VERSION="5.0.2"
+VERSION="7.0.0"
 SOURCE_URL="http://llvm.org/releases/${VERSION}/llvm-${VERSION}.src.tar.xz"
 TARGET="ARM"
 LIBRAIRIES="libLLVMSelectionDAG.a libLLVMAsmPrinter.a libLLVMBinaryFormat.a libLLVMCodeGen.a libLLVMScalarOpts.a libLLVMProfileData.a libLLVMInstCombine.a libLLVMTransformUtils.a libLLVMAnalysis.a libLLVMTarget.a libLLVMObject.a libLLVMMCParser.a libLLVMBitReader.a libLLVMMCDisassembler.a libLLVMMC.a libLLVMCore.a libLLVMSupport.a"
@@ -45,7 +45,7 @@ case "$1" in
             mkdir -p ${nf%/*}
             cp $f $nf
         done
-        for f in $(find build/include/ -iregex '.*\.\(h\|def\|gen\)'); do 
+        for f in $(find build/include/ -iregex '.*\.\(h\|def\|gen\|inc\)'); do 
             nf=${f#*/}
             mkdir -p ${nf%/*}
             cp $f $nf
