@@ -2,21 +2,14 @@ set(DEPENDENCY_SATISFIED On PARENT_SCOPE)
 
 # LLVM
 
-if(${PLATFORM} STREQUAL win-X86_64)
+unset(PYTHON_EXECUTABLE CACHE)
+find_package(PythonInterp 3 REQUIRED)
+
 add_custom_target(llvm
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/deps/llvm/${PLATFORM}/
-    COMMAND python build.py prepare
-    COMMAND python build.py build
-    COMMAND python build.py package
+    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/llvm/build.py prepare ${PLATFORM}
+    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/llvm/build.py build ${PLATFORM}
+    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/llvm/build.py package ${PLATFORM}
 )
-else()
-add_custom_target(llvm
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/deps/llvm/${PLATFORM}/
-    COMMAND sh build.sh prepare
-    COMMAND sh build.sh build
-    COMMAND sh build.sh package
-)
-endif()
 
 if(NOT (EXISTS "${CMAKE_SOURCE_DIR}/deps/llvm/${PLATFORM}/include/" AND
    EXISTS "${CMAKE_SOURCE_DIR}/deps/llvm/${PLATFORM}/lib/"))
