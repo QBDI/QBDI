@@ -33,7 +33,7 @@ install_llvm: &install_llvm
     - eval "[[ -d ../deps/llvm/${QBDI_PLATFORM}/lib && -d ../deps/llvm/${QBDI_PLATFORM}/include ]] || make llvm"
   before_cache:
     # Reduce cache size
-    - sh ../deps/llvm/${QBDI_PLATFORM}/build.sh clean
+    - python3 ../deps/llvm/build.py clean ${QBDI_PLATFORM}
 
 install_gtest: &install_gtest
   script:
