@@ -1,9 +1,11 @@
 #!/bin/sh
 
+set -xe
+
 VERSION="7.0.0"
 SOURCE_URL="http://llvm.org/releases/${VERSION}/llvm-${VERSION}.src.tar.xz"
 TARGET="X86"
-LIBRAIRIES="libLLVMSelectionDAG.a libLLVMAsmPrinter.a libLLVMBinaryFormat.a libLLVMCodeGen.a libLLVMScalarOpts.a libLLVMProfileData.a libLLVMInstCombine.a libLLVMTransformUtils.a libLLVMAnalysis.a libLLVMTarget.a libLLVMObject.a libLLVMMCParser.a libLLVMBitReader.a libLLVMMCDisassembler.a libLLVMMC.a libLLVMX86Utils.a libLLVMCore.a libLLVMSupport.a libLLVMDemangle.a"
+LIBRAIRIES="libLLVMSelectionDAG.a libLLVMAsmPrinter.a libLLVMBinaryFormat.a libLLVMCodeGen.a libLLVMScalarOpts.a libLLVMProfileData.a libLLVMInstCombine.a libLLVMTransformUtils.a libLLVMAnalysis.a libLLVMTarget.a libLLVMObject.a libLLVMMCParser.a libLLVMBitReader.a libLLVMMCDisassembler.a libLLVMMC.a libLLVMX86Utils.a libLLVMCore.a libLLVMSupport.a libLLVMDemangle.a libLLVM${TARGET}Utils.a libLLVM${TARGET}Info.a libLLVM${TARGET}Disassembler.a libLLVM${TARGET}Desc.a libLLVM${TARGET}CodeGen.a libLLVM${TARGET}AsmPrinter.a libLLVM${TARGET}AsmParser.a"
 
 case "$1" in
 
@@ -24,7 +26,11 @@ case "$1" in
               -DLLVM_INCLUDE_TESTS=Off \
               -DCMAKE_C_FLAGS="-fvisibility=hidden" \
               -DCMAKE_CXX_FLAGS="-fvisibility=hidden"
-        make -j4
+
+        for t in $LIBRAIRIES; do
+            F=$(echo $t | cut -c 4-)
+            make -j4 ${F%.*}
+        done
     ;;
     package)
         rm -rf lib/
@@ -43,7 +49,6 @@ case "$1" in
         for l in $LIBRAIRIES; do
             cp build/lib/$l lib/
         done
-        cp build/lib/libLLVM${TARGET}* lib/
         cp build/lib/Target/${TARGET}/*.inc lib/Target/${TARGET}/
         for f in $(find llvm-${VERSION}.src/lib/Target/X86/ -type f \( -iname \*.def -o -iname \*.h \)); do
             nf=${f#*/}

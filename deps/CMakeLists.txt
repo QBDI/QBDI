@@ -5,7 +5,6 @@ set(DEPENDENCY_SATISFIED On PARENT_SCOPE)
 if(${PLATFORM} STREQUAL win-X86_64)
 add_custom_target(llvm
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/deps/llvm/${PLATFORM}/
-    COMMAND python --version
     COMMAND python build.py prepare
     COMMAND python build.py build
     COMMAND python build.py package
