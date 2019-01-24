@@ -231,7 +231,7 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
     }
 
     // Check if there's enough space left
-    if(getEpilogueOffset() < MINIMAL_BLOCK_SIZE) {
+    if(getEpilogueOffset() <= MINIMAL_BLOCK_SIZE) {
         LogDebug("ExecBlock::writeBasicBlock", "ExecBlock %p is full", this);
         return {EXEC_BLOCK_FULL, 0, 0};
     }
@@ -333,10 +333,10 @@ void ExecBlock::makeRX() {
 }
 
 void ExecBlock::makeRW() {
-    LogDebug("ExecBlock::makeRX", "Making ExecBlock %p RW", this);
+    LogDebug("ExecBlock::makeRW", "Making ExecBlock %p RW", this);
     if(pageState != RW) {
         RequireAction(
-            "ExecBlock::makeRX",
+            "ExecBlock::makeRW",
             !llvm::sys::Memory::protectMappedMemory(codeBlock, PF::MF_READ | PF::MF_WRITE),
             abort()
         );
