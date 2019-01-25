@@ -189,7 +189,7 @@ elseif(${PLATFORM} STREQUAL "win-X86_64")
 
 elseif(${PLATFORM} STREQUAL "linux-ARM")
 
-    set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMProfileData.a LLVMARMDisassembler.a LLVMARMCodeGen.a LLVMARMAsmParser.a LLVMARMDesc.a LLVMARMInfo.a LLVMARMAsmPrinter.a)
+    set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMProfileData.a LLVMARMDisassembler.a LLVMARMCodeGen.a LLVMARMAsmParser.a LLVMARMDesc.a LLVMARMInfo.a LLVMARMAsmPrinter.a LLVMARMUtils.a)
     set(LLVM_LIBS -ldl -lpthread -lm -lstdc++)
 
 elseif(${PLATFORM} STREQUAL "macOS-X86_64")
@@ -199,12 +199,12 @@ elseif(${PLATFORM} STREQUAL "macOS-X86_64")
 
 elseif(${PLATFORM} STREQUAL "android-ARM")
 
-    set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMProfileData.a LLVMARMDisassembler.a LLVMARMCodeGen.a LLVMARMAsmParser.a LLVMARMDesc.a LLVMARMInfo.a LLVMARMAsmPrinter.a)
+    set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMProfileData.a LLVMARMDisassembler.a LLVMARMCodeGen.a LLVMARMAsmParser.a LLVMARMDesc.a LLVMARMInfo.a LLVMARMAsmPrinter.a LLVMARMUtils.a)
     set(LLVM_LIBS -ldl -lz -lm -lgnustl_static)
 
 elseif(${PLATFORM} STREQUAL "iOS-ARM")
 
-    set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMDemangle.a LLVMProfileData.a LLVMARMDisassembler.a LLVMARMCodeGen.a LLVMARMAsmParser.a LLVMARMDesc.a LLVMARMInfo.a LLVMARMAsmPrinter.a)
+    set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMDemangle.a LLVMProfileData.a LLVMARMDisassembler.a LLVMARMCodeGen.a LLVMARMAsmParser.a LLVMARMDesc.a LLVMARMInfo.a LLVMARMAsmPrinter.a LLVMARMUtils.a)
     set(LLVM_LIBS -lz -lpthread -ledit -lcurses -lm -lc++)
 
 endif()
