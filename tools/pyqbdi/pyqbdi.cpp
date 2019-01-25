@@ -62,6 +62,22 @@ int fopen_s(FILE** fd, const char* fn, const char* flags) {
 
 #include "QBDIPreload.h"
 
+#if PY_MAJOR_VERSION >= 3
+#define IS_PY3K
+
+#define PyInt_Check PyLong_Check
+#define PyInt_AsLong PyLong_AsLong
+#define PyInt_FromLong PyLong_FromLong
+
+#define PyString_Check PyUnicode_Check
+#define PyString_AsString PyUnicode_AsUTF8
+#define PyString_FromString PyUnicode_FromString
+#define QBDI_PyMODINIT_FUNC PyMODINIT_FUNC
+
+#else
+#define QBDI_PyMODINIT_FUNC PyObject*
+
+#endif
 
 /* Init the QBDIPreload */
 QBDIPRELOAD_INIT;
@@ -189,6 +205,7 @@ namespace QBDI {
       static PyObject* PyOperandAnalysis(const QBDI::OperandAnalysis*);
       static PyObject* PyVMInstance(QBDI::VMInstanceRef vm);
       static PyObject* PyVMState(const QBDI::VMState* state);
+      QBDI_PyMODINIT_FUNC init_module();
 
       /* A small GC class */
       template <class T1, class T2>
@@ -307,7 +324,9 @@ namespace QBDI {
       /* Description of the python representation of an OperandAnalysis */
       PyTypeObject OperandAnalysis_Type = {
         PyObject_HEAD_INIT(&PyType_Type)
+        #ifndef IS_PY3K
         0,                                          /* ob_size */
+        #endif
         "OperandAnalysis",                          /* tp_name */
         sizeof(OperandAnalysis_Object),             /* tp_basicsize */
         0,                                          /* tp_itemsize */
@@ -315,7 +334,7 @@ namespace QBDI {
         0,                                          /* tp_print */
         0,                                          /* tp_getattr */
         0,                                          /* tp_setattr */
-        0,                                          /* tp_compare */
+        0,                                          /* tp_compare or tp_reserved */
         0,                                          /* tp_repr */
         0,                                          /* tp_as_number */
         0,                                          /* tp_as_sequence */
@@ -477,7 +496,9 @@ namespace QBDI {
       /* Description of the python representation of an InstAnalysis */
       PyTypeObject InstAnalysis_Type = {
         PyObject_HEAD_INIT(&PyType_Type)
+        #ifndef IS_PY3K
         0,                                          /* ob_size */
+        #endif
         "InstAnalysis",                             /* tp_name */
         sizeof(InstAnalysis_Object),                /* tp_basicsize */
         0,                                          /* tp_itemsize */
@@ -485,7 +506,7 @@ namespace QBDI {
         0,                                          /* tp_print */
         0,                                          /* tp_getattr */
         0,                                          /* tp_setattr */
-        0,                                          /* tp_compare */
+        0,                                          /* tp_compare or tp_reserved */
         0,                                          /* tp_repr */
         0,                                          /* tp_as_number */
         0,                                          /* tp_as_sequence */
@@ -811,7 +832,9 @@ namespace QBDI {
       /* Description of the python representation of a GPRState */
       PyTypeObject GPRState_Type = {
         PyObject_HEAD_INIT(&PyType_Type)
+        #ifndef IS_PY3K
         0,                                          /* ob_size */
+        #endif
         "GPRState",                                 /* tp_name */
         sizeof(GPRState_Object),                    /* tp_basicsize */
         0,                                          /* tp_itemsize */
@@ -819,7 +842,7 @@ namespace QBDI {
         0,                                          /* tp_print */
         0,                                          /* tp_getattr */
         0,                                          /* tp_setattr */
-        0,                                          /* tp_compare */
+        0,                                          /* tp_compare or tp_reserved */
         0,                                          /* tp_repr */
         0,                                          /* tp_as_number */
         0,                                          /* tp_as_sequence */
@@ -1466,7 +1489,9 @@ namespace QBDI {
       /* Description of the python representation of a FPRState */
       PyTypeObject FPRState_Type = {
         PyObject_HEAD_INIT(&PyType_Type)
+        #ifndef IS_PY3K
         0,                                          /* ob_size */
+        #endif
         "FPRState",                                 /* tp_name */
         sizeof(FPRState_Object),                    /* tp_basicsize */
         0,                                          /* tp_itemsize */
@@ -1474,7 +1499,7 @@ namespace QBDI {
         0,                                          /* tp_print */
         0,                                          /* tp_getattr */
         0,                                          /* tp_setattr */
-        0,                                          /* tp_compare */
+        0,                                          /* tp_compare or tp_reserved */
         0,                                          /* tp_repr */
         0,                                          /* tp_as_number */
         0,                                          /* tp_as_sequence */
@@ -1582,7 +1607,9 @@ namespace QBDI {
       /* Description of the python representation of a MemoryAccess */
       PyTypeObject MemoryAccess_Type = {
         PyObject_HEAD_INIT(&PyType_Type)
+        #ifndef IS_PY3K
         0,                                          /* ob_size */
+        #endif
         "MemoryAccess",                             /* tp_name */
         sizeof(MemoryAccess_Object),                /* tp_basicsize */
         0,                                          /* tp_itemsize */
@@ -1590,7 +1617,7 @@ namespace QBDI {
         0,                                          /* tp_print */
         0,                                          /* tp_getattr */
         0,                                          /* tp_setattr */
-        0,                                          /* tp_compare */
+        0,                                          /* tp_compare or tp_reserved */
         0,                                          /* tp_repr */
         0,                                          /* tp_as_number */
         0,                                          /* tp_as_sequence */
@@ -1688,7 +1715,9 @@ namespace QBDI {
       /* Description of the python representation of a MemoryMap */
       PyTypeObject MemoryMap_Type = {
         PyObject_HEAD_INIT(&PyType_Type)
+        #ifndef IS_PY3K
         0,                                          /* ob_size */
+        #endif
         "MemoryMap",                                /* tp_name */
         sizeof(MemoryMap_Object),                   /* tp_basicsize */
         0,                                          /* tp_itemsize */
@@ -1696,7 +1725,7 @@ namespace QBDI {
         0,                                          /* tp_print */
         0,                                          /* tp_getattr */
         0,                                          /* tp_setattr */
-        0,                                          /* tp_compare */
+        0,                                          /* tp_compare or tp_reserved */
         0,                                          /* tp_repr */
         0,                                          /* tp_as_number */
         0,                                          /* tp_as_sequence */
@@ -2797,7 +2826,9 @@ namespace QBDI {
       /* Description of the python representation of a VMInstance */
       PyTypeObject VMInstance_Type = {
         PyObject_HEAD_INIT(&PyType_Type)
+        #ifndef IS_PY3K
         0,                                          /* ob_size */
+        #endif
         "VMInstance",                               /* tp_name */
         sizeof(VMInstance_Object),                  /* tp_basicsize */
         0,                                          /* tp_itemsize */
@@ -2805,7 +2836,7 @@ namespace QBDI {
         0,                                          /* tp_print */
         0,                                          /* tp_getattr */
         0,                                          /* tp_setattr */
-        0,                                          /* tp_compare */
+        0,                                          /* tp_compare or tp_reserved */
         0,                                          /* tp_repr */
         0,                                          /* tp_as_number */
         0,                                          /* tp_as_sequence */
@@ -2900,7 +2931,9 @@ namespace QBDI {
       /* Description of the python representation of a VMState */
       PyTypeObject VMState_Type = {
         PyObject_HEAD_INIT(&PyType_Type)
+        #ifndef IS_PY3K
         0,                                          /* ob_size */
+        #endif
         "VMState",                                  /* tp_name */
         sizeof(VMState_Object),                     /* tp_basicsize */
         0,                                          /* tp_itemsize */
@@ -2908,7 +2941,7 @@ namespace QBDI {
         0,                                          /* tp_print */
         0,                                          /* tp_getattr */
         0,                                          /* tp_setattr */
-        0,                                          /* tp_compare */
+        0,                                          /* tp_compare or tp_reserved */
         0,                                          /* tp_repr */
         0,                                          /* tp_as_number */
         0,                                          /* tp_as_sequence */
@@ -3339,8 +3372,72 @@ namespace QBDI {
         {nullptr,                nullptr,                                  0,             nullptr}
       };
 
+#ifdef IS_PY3K
+      static void setArgv() {
+        int i;
+        wchar_t **argv_copy = NULL;
+        char *oldloc = NULL;
+
+        argv_copy = (wchar_t**) malloc(sizeof(wchar_t*) * QBDI::Bindings::Python::argc);
+        if (!argv_copy) {
+          std::cerr << "Failed to allocate" << std::endl;
+          PyErr_Print();
+          exit(1);
+        }
+
+        oldloc = strdup(setlocale(LC_ALL, NULL));
+        if (!argv_copy) {
+          std::cerr << "Failed to getLocale" << std::endl;
+          PyErr_Print();
+          exit(1);
+        }
+
+        setlocale(LC_ALL, "");
+        for (i = 0; i < QBDI::Bindings::Python::argc; i++) {
+          argv_copy[i] = Py_DecodeLocale(QBDI::Bindings::Python::argv[i], NULL);
+          if (!argv_copy[i]) {
+            std::cerr << "Failed to allocate" << std::endl;
+            PyErr_Print();
+            exit(1);
+          }
+        }
+        setlocale(LC_ALL, oldloc);
+        free(oldloc);
+        oldloc = NULL;
+
+        PySys_SetArgvEx(QBDI::Bindings::Python::argc, argv_copy, 0);
+
+        for (i = 0; i < QBDI::Bindings::Python::argc; i++) {
+          PyMem_RawFree(argv_copy[i]);
+        }
+        free(argv_copy);
+      };
+
+      static struct PyModuleDef pyqbdidef = {
+        PyModuleDef_HEAD_INIT,
+        "pyqbdi",
+        NULL,
+        -1,
+        QBDI::Bindings::Python::pyqbdiCallbacks,
+        NULL,
+        NULL,
+        NULL,
+        NULL
+      }; 
 
       /* Python entry point */
+      static void init(void) {
+        PyImport_AppendInittab("pyqbdi", QBDI::Bindings::Python::init_module);
+        /* Initialize python */
+        Py_Initialize();
+
+        /* Initialize sys.argv  */
+        if (QBDI::Bindings::Python::argc && QBDI::Bindings::Python::argv)
+          QBDI::Bindings::Python::setArgv();
+        else
+          PySys_SetArgvEx(0, nullptr, 0);
+      }
+#else
       static void init(void) {
         /* Initialize python */
         Py_Initialize();
@@ -3350,8 +3447,20 @@ namespace QBDI {
           PySys_SetArgv(QBDI::Bindings::Python::argc, QBDI::Bindings::Python::argv);
         else
           PySys_SetArgvEx(0, nullptr, 0);
+        QBDI::Bindings::Python::init_module();
+      }
+#endif
 
+      QBDI_PyMODINIT_FUNC init_module() {
+        if (QBDI::Bindings::Python::module != nullptr) {
+          return QBDI::Bindings::Python::module;
+        }
+
+        #ifndef IS_PY3K
         QBDI::Bindings::Python::module = Py_InitModule("pyqbdi", QBDI::Bindings::Python::pyqbdiCallbacks);
+        #else
+        QBDI::Bindings::Python::module = PyModule_Create(&QBDI::Bindings::Python::pyqbdidef);
+        #endif
         if (QBDI::Bindings::Python::module == nullptr) {
           std::cerr << "Failed to initialize the pyqbdi bindings" << std::endl;
           PyErr_Print();
@@ -3396,8 +3505,9 @@ namespace QBDI {
         PyModule_AddObject(QBDI::Bindings::Python::module, "VERSION_MINOR",         PyInt_FromLong(QBDI_VERSION_MINOR));
         PyModule_AddObject(QBDI::Bindings::Python::module, "VERSION_PATCH",         PyInt_FromLong(QBDI_VERSION_PATCH));
         PyModule_AddObject(QBDI::Bindings::Python::module, "VERSION_STRING",        PyString_FromString(QBDI_VERSION_STRING));
-      }
 
+        return QBDI::Bindings::Python::module;
+      }
 
       static bool execScript(const char* fileName, VMInstanceRef vm, QBDI::rword start, QBDI::rword stop) {
         #if defined(__unix__) || defined(__APPLE__)
@@ -3515,14 +3625,14 @@ int QBDI::qbdipreload_on_exit(int status) {
   }
   PyObject* dict = PyModule_GetDict(atexit);
   PyObject* _run_exitfuncs = PyDict_GetItemString(dict, "_run_exitfuncs");
-  /* Free unused resources */
-  Py_DECREF(atexit);
-  Py_DECREF(dict);
   /* Force call atexit registred callbacks */
   if (_run_exitfuncs != nullptr) {
     if (PyCallable_Check(_run_exitfuncs)) {
         PyObject_CallObject(_run_exitfuncs, nullptr);
     }
   }
+  /* Free resources */
+  Py_DECREF(atexit);
+  Py_DECREF(dict);
   return QBDIPRELOAD_NO_ERROR;
 }
