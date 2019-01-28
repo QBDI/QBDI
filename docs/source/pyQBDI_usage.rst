@@ -10,14 +10,14 @@ their address and disassembly.
 
 .. code-block:: python
 
-    #!/usr/bin/env python2
+    #!/usr/bin/env python
     # -*- coding: utf-8 -*-
 
     import pyqbdi
 
     def mycb(vm, gpr, fpr, data):
         inst = vm.getInstAnalysis()
-        print "0x%x: %s" % (inst.address, inst.disassembly)
+        print("0x{:x}: {}".format(inst.address, inst.disassembly))
         return pyqbdi.CONTINUE
 
     def pyqbdipreload_on_run(vm, start, stop):
@@ -45,6 +45,7 @@ On macOS:
 
     DYLD_INSERT_LIBRARIES=/usr/local/lib/libpyqbdi.dylib PYQBDI_TOOL=./example.py /usr/bin/id
 
+.. note:: For python3 script, use ``libpyqbdi3`` in place of ``libpyqbdi``.
 
 .. note:: We will soon provide a loader script, making the use of pyQBDI easier.
 
