@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import pyqbdi
@@ -6,7 +6,7 @@ import pyqbdi
 
 def mycb(vm, gpr, fpr, data):
     inst = vm.getInstAnalysis()
-    print "0x%x: %s" % (inst.address, inst.disassembly)
+    print("0x{:x}: {}".format(inst.address, inst.disassembly))
     return pyqbdi.CONTINUE
 
 

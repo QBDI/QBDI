@@ -1,14 +1,14 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import pyqbdi
 import struct
 import atexit
 
-
 # write coverage (in drcov format)
 def writeCoverage(stats):
-    with open("a.cov", "w") as fp:
+    filename = "a.cov"
+    with open(filename, "w") as fp:
         # write header
         fp.write("DRCOV VERSION: 2\n")
         fp.write("DRCOV FLAVOR: drcov\n")
@@ -31,6 +31,8 @@ def writeCoverage(stats):
                     break
         # write basicblocks
         fp.write("BB Table: %u bbs\n" % len(starts))
+
+    with open(filename, "ab") as fp:
         for addr, (mid, start) in starts.items():
             # uint32_t start; uint16_t size; uint16_t id;
             bb = struct.pack("<IHH", start, sizes[addr], mid)

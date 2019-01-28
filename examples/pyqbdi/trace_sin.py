@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import sys
@@ -9,12 +9,12 @@ import pyqbdi
 
 def vmCB(vm, evt, gpr, fpr, data):
     if evt.event & pyqbdi.BASIC_BLOCK_ENTRY:
-        print "[*] Basic Block: 0x%x -> 0x%x" % \
-                (evt.basicBlockStart, evt.basicBlockEnd)
+        print("[*] Basic Block: 0x{:x} -> 0x{:x}".format(evt.basicBlockStart,
+                                                         evt.basicBlockEnd))
     elif evt.event & pyqbdi.BASIC_BLOCK_EXIT:
         for acs in vm.getBBMemoryAccess():
-            print "@ {:#x} {:#x}:{:#x}".format(acs.instAddress,
-                                               acs.accessAddress, acs.value)
+            print("@ {:#x} {:#x}:{:#x}".format(acs.instAddress,
+                                               acs.accessAddress, acs.value))
 
 
 def insnCB(vm, gpr, fpr, data):
@@ -22,7 +22,7 @@ def insnCB(vm, gpr, fpr, data):
     types = pyqbdi.ANALYSIS_INSTRUCTION | pyqbdi.ANALYSIS_DISASSEMBLY
     types |= pyqbdi.ANALYSIS_OPERANDS | pyqbdi.ANALYSIS_SYMBOL
     inst = vm.getInstAnalysis(types)
-    print "%s;0x%x: %s" % (inst.module, inst.address, inst.disassembly)
+    print("{};0x{:x}: {}".format(inst.module, inst.address, inst.disassembly))
     for op in inst.operands:
         if op.type == pyqbdi.OPERAND_IMM:
             print("const: {:d}".format(op.value))
