@@ -7,9 +7,11 @@ addons:
     packages:
     - g++-7
     - ccache
+    - python3.4-dev
   homebrew:
     packages:
       - ccache
+      - python3
 
 linux_target: &linux_target
   os: linux
