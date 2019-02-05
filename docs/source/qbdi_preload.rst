@@ -24,7 +24,7 @@ You can look at the :ref:`qbdi_preload_template` for a working example with buil
 instructions.
 
 .. note::
-   QBDIPreload automaticaly takes care of blacklisting instrumentation of the C standard library 
+   QBDIPreload automatically takes care of blacklisting instrumentation of the C standard library 
    and the OS loader as described in :ref:`intro_limitations`.
 
 .. note::

@@ -52,7 +52,7 @@ On macOS:
 An in-depth example
 -------------------
 
-If the previous example was not enough, here is an extensive test code showcasing current pyqbdi capatabilities.
+If the previous example was not enough, here is an extensive test code showcasing current pyqbdi capabilities.
 This example define multiple callbacks, based on events, instructions, and mnemonic. Those are instrumenting the **sin()** native function and its result is being compared with the python result.
 
 .. literalinclude:: ../../examples/pyqbdi/trace_sin.py
