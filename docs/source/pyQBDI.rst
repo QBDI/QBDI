@@ -9,7 +9,7 @@ you collected during the instrumentation.
 
 .. note::
    Because PyQBDI is a bindings on top of QBDIPreload, it has the same limitations as QBDIPreload 
-   wich are describred in :ref:`qbdipreload`.
+   which are describred in :ref:`qbdipreload`.
 
 .. note::
    It is not possible to instrument a python process using PyQBDI because there will be a conflict 

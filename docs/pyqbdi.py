@@ -284,7 +284,7 @@ def alignedAlloc(size, align):
     """Allocate a block of memory of a specified sized with an aligned base address.
 
         :param size: Allocation size in bytes.
-        :param align: Base address alignement in bytes.
+        :param align: Base address alignment in bytes.
 
         :returns: Pointer to the allocated memory (as a long) or NULL in case an error was encountered.
     """
@@ -304,7 +304,7 @@ def allocateVirtualStack(ctx, stackSize):
         :param ctx: GPRState which will be setup to use the new stack.
         :param stackSize: Size of the stack to be allocated.
 
-        :returns: A tuple (bool, stack) where 'bool' is true if stack allocation was successfull. And 'stack' the newly allocated stack pointer.
+        :returns: A tuple (bool, stack) where 'bool' is true if stack allocation was successful. And 'stack' the newly allocated stack pointer.
     """
     pass
 

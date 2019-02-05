@@ -48,7 +48,7 @@ VERSION_FULL = "%u.%u" % (VERSION_MAJOR, VERSION_MINOR)
 read_the_docs_build = os.environ.get('READTHEDOCS', None) == 'True'
 
 if read_the_docs_build:
-    # Update documentation in doxygen config file (what is normaly done by cmake)
+    # Update documentation in doxygen config file (what is normally done by cmake)
     sedcmd = "sed 's/${QBDI_VERSION_MAJOR}/%u/;s/${QBDI_VERSION_MINOR}/%u/'" % (VERSION_MAJOR, VERSION_MINOR)
     # Call doxygen
     subprocess.call("cd ../; %s qbdi_cpp.doxygen.in > qbdi_cpp.doxygen" % sedcmd, shell=True)
