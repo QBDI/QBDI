@@ -39,6 +39,7 @@ static const long BRK_INS = 0xE7FFDEFE;
 
 static const size_t STACK_SIZE = 8388608;
 static bool HAS_EXITED = false;
+static bool HAS_PRELOAD = false;
 static bool DEFAULT_HANDLER = false;
 GPRState ENTRY_GPR;
 FPRState ENTRY_FPR;
@@ -293,7 +294,7 @@ int qbdipreload_hook_main(void *main) {
 
 
 QBDI_EXPORT void exit(int status) {
-    if (!HAS_EXITED) {
+    if (!HAS_EXITED && HAS_PRELOAD) {
         HAS_EXITED = true;
         qbdipreload_on_exit(status);
     }
@@ -302,7 +303,7 @@ QBDI_EXPORT void exit(int status) {
 }
 
 QBDI_EXPORT void _exit(int status) {
-    if (!HAS_EXITED) {
+    if (!HAS_EXITED && HAS_PRELOAD) {
         HAS_EXITED = true;
         qbdipreload_on_exit(status);
     }
@@ -313,10 +314,14 @@ QBDI_EXPORT void _exit(int status) {
 typedef int (*start_main_fn)(int(*)(int, char**, char**), int, char**, void(*)(void), void(*)(void), void(*)(void), void*);
 
 QBDI_EXPORT int __libc_start_main(int (*main) (int, char**, char**), int argc, char** ubp_av, void (*init) (void), void (*fini) (void), void (*rtld_fini) (void), void (* stack_end)) {
-    start_main_fn o_libc_start_main = NULL;
 
-    o_libc_start_main = (start_main_fn) dlsym(RTLD_NEXT, "__libc_start_main");
+    start_main_fn o_libc_start_main = (start_main_fn) dlsym(RTLD_NEXT, "__libc_start_main");
 
+    // do nothing if the library isn't preload
+    if (getenv("LD_PRELOAD") == NULL)
+        return o_libc_start_main(main, argc, ubp_av, init, fini, rtld_fini, stack_end);
+
+    HAS_PRELOAD = true;
     int status = qbdipreload_on_start(main);
     if (status == QBDIPRELOAD_NOT_HANDLED) {
         status = qbdipreload_hook_main(main);

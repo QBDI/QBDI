@@ -1,15 +1,14 @@
 language: cpp 
 
 addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
   packages:
     - g++
     - ccache
+    - python3.4-dev
   homebrew:
     packages:
       - ccache
+      - python3
 
 linux_target: &linux_target
   os: linux

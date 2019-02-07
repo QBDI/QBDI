@@ -11,98 +11,26 @@ All you need to add to your script be able to use the bindings is:
     def pyqbdipreload_on_run(vm, start, stop):
         pass
 
+PyQBDI API
+----------
 
-API
----
+The PyQBDI API is almost the same as the :ref:`C++ API <ref_api_cpp>`.
 
-State Management
-^^^^^^^^^^^^^^^^
+PyQBDI Helpers
+--------------
 
-.. autoclass:: pyqbdi.vm
-   :members: getGPRState, getFPRState, setGPRState, setFPRState
+In addition of C++ API, some helper are available:
 
-
-State Initialization
-^^^^^^^^^^^^^^^^^^^^
-
-.. automodule:: pyqbdi
-   :members: alignedAlloc, allocateVirtualStack, simulateCall
-   :member-order: bysource
-
-
-Execution
-^^^^^^^^^
-
-.. autoclass:: pyqbdi.vm
-   :members: run, call
-
-
-Instrumentation
-^^^^^^^^^^^^^^^
-
-.. autoclass:: pyqbdi.vm
-   :members: addCodeCB, addCodeAddrCB, addCodeRangeCB, addMnemonicCB, deleteInstrumentation, deleteAllInstrumentations,
-             addInstrumentedRange, addInstrumentedModule, addInstrumentedModuleFromAddr, removeInstrumentedRange,
-             removeInstrumentedModule, removeInstrumentedModuleFromAddr
+Memory helpers
+~~~~~~~~~~~~~~
 
 .. automodule:: pyqbdi
-   :members: getModuleNames, getCurrentProcessMaps
+    :members: readMemory, readRword, writeMemory, writeRword, allocateRword, allocateMemory, freeMemory
 
-
-Memory Callback
-^^^^^^^^^^^^^^^
-
-.. autoclass:: pyqbdi.vm
-   :members: addMemAddrCB, addMemRangeCB, addMemAccessCB, recordMemoryAccess
-
-
-Analysis
-^^^^^^^^
-
-.. autoclass:: pyqbdi.vm
-   :members: getInstAnalysis, getInstMemoryAccess, getBBMemoryAccess
-   :member-order: bysource
-
-
-Cache management
-^^^^^^^^^^^^^^^^
-
-.. autoclass:: pyqbdi.vm
-   :members: precacheBasicBlock, clearCache, clearAllCache
-   :member-order: bysource
-
-
-VM Events
-^^^^^^^^^
-
-.. autoclass:: pyqbdi.vm
-   :members: addVMEventCB
-
-
-Helpers
-^^^^^^^
+Float helpers
+~~~~~~~~~~~~~
 
 .. automodule:: pyqbdi
-   :members: readMemory, writeMemory, decodeFloat, encodeFloat
+    :members: encodeFloat, decodeFloat, encodeFloatU, decodeFloatU, encodeDouble, decodeDouble, encodeDoubleU, decodeDoubleU
 
-Objects
-^^^^^^^
-
-.. autoclass:: pyqbdi.MemoryMap
-    :members:
-
-.. autoclass:: pyqbdi.InstAnalysis
-    :members:
-
-.. autoclass:: pyqbdi.OperandAnalysis
-    :members:
-
-.. autoclass:: pyqbdi.VMState
-    :members:
-
-.. autoclass:: pyqbdi.MemoryAccess
-    :members:
-
-.. autodata:: pyqbdi.GPRState
-
-.. autodata:: pyqbdi.FPRState
+For more conversion, you may want to used the `struct library <https://docs.python.org/3/library/struct.html>`_ of Python.

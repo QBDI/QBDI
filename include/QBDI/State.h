@@ -386,7 +386,7 @@ static const unsigned int REG_PC = 15;
 
 #ifdef __cplusplus
 
-#define QBDI_GPR_GET(state, i) (reinterpret_cast<QBDI::rword*>(state)[i])
+#define QBDI_GPR_GET(state, i) (reinterpret_cast<const QBDI::rword*>(state)[i])
 
 #define QBDI_GPR_SET(state, i, v) (reinterpret_cast<QBDI::rword*>(state)[i] = v)
 

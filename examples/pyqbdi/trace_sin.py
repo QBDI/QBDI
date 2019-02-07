@@ -1,20 +1,22 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import sys
 import math
 import ctypes
 import pyqbdi
+import struct
 
 
 def vmCB(vm, evt, gpr, fpr, data):
     if evt.event & pyqbdi.BASIC_BLOCK_ENTRY:
-        print "[*] Basic Block: 0x%x -> 0x%x" % \
-                (evt.basicBlockStart, evt.basicBlockEnd)
+        print("[*] Basic Block: 0x{:x} -> 0x{:x}".format(evt.basicBlockStart,
+                                                         evt.basicBlockEnd))
     elif evt.event & pyqbdi.BASIC_BLOCK_EXIT:
         for acs in vm.getBBMemoryAccess():
-            print "@ {:#x} {:#x}:{:#x}".format(acs.instAddress,
-                                               acs.accessAddress, acs.value)
+            print("@ {:#x} {:#x}:{:#x}".format(acs.instAddress,
+                                               acs.accessAddress, acs.value))
+    return pyqbdi.CONTINUE
 
 
 def insnCB(vm, gpr, fpr, data):
@@ -22,7 +24,7 @@ def insnCB(vm, gpr, fpr, data):
     types = pyqbdi.ANALYSIS_INSTRUCTION | pyqbdi.ANALYSIS_DISASSEMBLY
     types |= pyqbdi.ANALYSIS_OPERANDS | pyqbdi.ANALYSIS_SYMBOL
     inst = vm.getInstAnalysis(types)
-    print "%s;0x%x: %s" % (inst.module, inst.address, inst.disassembly)
+    print("{};0x{:x}: {}".format(inst.module, inst.address, inst.disassembly))
     for op in inst.operands:
         if op.type == pyqbdi.OPERAND_IMM:
             print("const: {:d}".format(op.value))
@@ -36,38 +38,50 @@ def cmpCB(vm, gpr, fpr, data):
     return pyqbdi.CONTINUE
 
 
-def pyqbdipreload_on_run(vm, start, stop):
+def run():
     # get sin function ptr
-    libcname = 'libSystem.dylib' if sys.platform == 'darwin' else 'libm.so.6'
-    libc = ctypes.cdll.LoadLibrary(libcname)
-    funcPtr = ctypes.cast(libc.sin, ctypes.c_void_p).value
+    libmname = 'libSystem.dylib' if sys.platform == 'darwin' else 'libm.so.6'
+    libm = ctypes.cdll.LoadLibrary(libmname)
+    funcPtr = ctypes.cast(libm.sin, ctypes.c_void_p).value
+
     # init VM
-    vm.addVMEventCB(pyqbdi.BASIC_BLOCK_ENTRY | pyqbdi.BASIC_BLOCK_EXIT,
-                    vmCB, None)
+    vm = pyqbdi.VM()
+
+    # create stack
     state = vm.getGPRState()
-    success, addr = pyqbdi.allocateVirtualStack(state, 0x100000)
+    addr = pyqbdi.allocateVirtualStack(state, 0x100000)
+    assert addr is not None
+
+    # instrument library and register memory access
     vm.addInstrumentedModuleFromAddr(funcPtr)
     vm.recordMemoryAccess(pyqbdi.MEMORY_READ_WRITE)
+
     # add callbacks on instructions
     udata = {"insn": 0, "cmp": 0}
-    iid = vm.addCodeCB(pyqbdi.PREINST, insnCB, udata)
-    iid2 = vm.addMnemonicCB("CMP*", pyqbdi.PREINST, cmpCB, udata)
-    # Cast double arg to long
+    vm.addCodeCB(pyqbdi.PREINST, insnCB, udata)
+    vm.addMnemonicCB("CMP*", pyqbdi.PREINST, cmpCB, udata)
+    vm.addVMEventCB(pyqbdi.BASIC_BLOCK_ENTRY | pyqbdi.BASIC_BLOCK_EXIT,
+                    vmCB, None)
+
+    # Cast double arg to long and set FPR
     arg = 1.0
-    carg = pyqbdi.encodeFloat(arg)
-    # set FPR argument
+    carg = struct.pack('<d', arg)
     fpr = vm.getFPRState()
     fpr.xmm0 = carg
-    vm.setFPRState(fpr)
-    pyqbdi.simulateCall(state, 0x42424242)
-    vm.setGPRState(state)
+
     # call sin(1.0)
+    pyqbdi.simulateCall(state, 0x42424242)
     success = vm.run(funcPtr, 0x42424242)
     print(udata)
+
     # Retrieve output FPR state
     fpr = vm.getFPRState()
     # Cast long arg to double
-    res = pyqbdi.decodeFloat(fpr.xmm0)
+    res = struct.unpack('<d', fpr.xmm0[:8])[0]
     print("%f (python) vs %f (qbdi)" % (math.sin(arg), res))
-    vm.deleteInstrumentation(iid)
-    vm.deleteInstrumentation(iid2)
+
+    # cleanup
+    pyqbdi.alignedFree(addr)
+
+if __name__ == "__main__":
+    run()
