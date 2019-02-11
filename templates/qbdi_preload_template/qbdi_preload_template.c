@@ -28,6 +28,7 @@ int qbdipreload_on_premain(void *gprCtx, void *fpuCtx) {
 
 
 int qbdipreload_on_main(int argc, char** argv) {
+    qbdi_addLogFilter("*", QBDI_DEBUG);
     return QBDIPRELOAD_NOT_HANDLED;
 }
 
