@@ -142,8 +142,13 @@ void qbdipreload_floatCtxToFPRState(const void* fprCtx, FPRState* fprState) {
 #else
     fprState->rfcw = uap->uc_mcontext.fpregs->cw;
     fprState->rfsw = uap->uc_mcontext.fpregs->sw;
-    fprState->ftw = uap->uc_mcontext.fpregs->tag & 0xFF;
-    fprState->rsrv1 = uap->uc_mcontext.fpregs->tag >> 8;
+    fprState->ftw = 0;
+    int i, j = uap->uc_mcontext.fpregs->tag;
+    for (i=0; i<8; i++) {
+        if ( ((j >> (i*2)) & 0x3) != 0x3) {
+            fprState->ftw |= 1 << i;
+        }
+    }
     fprState->mxcsr = 0x1f80;
     fprState->mxcsrmask = 0xffff;
 #endif
@@ -185,21 +190,20 @@ void catchEntrypoint(int argc, char** argv) {
         qbdi_instrumentAllExecutableMaps(vm);
 
         size_t size = 0, i = 0;
-        char **modules = qbdi_getModuleNames(&size);
+        QBDI_MemoryMap *modules = qbdi_getCurrentProcessMaps(&size);
 
         // Filter some modules to avoid conflicts
         qbdi_removeInstrumentedModuleFromAddr(vm, (rword) &catchEntrypoint);
         for(i = 0; i < size; i++) {
-            if (strstr(modules[i], "libc-2.") ||
-                strstr(modules[i], "ld-2.") ||
-                strstr(modules[i], "libcofi")) {
-                qbdi_removeInstrumentedModule(vm, modules[i]);
+            if ((modules[i].permission & QBDI_PF_EXEC) && (
+                    strstr(modules[i].name, "libc-2.") ||
+                    strstr(modules[i].name, "ld-2.") ||
+                    strstr(modules[i].name, "libcofi") ||
+                    modules[i].name[0] == 0)) {
+                qbdi_removeInstrumentedRange(vm, modules[i].start, modules[i].end);
             }
         }
-        for(i = 0; i < size; i++) {
-            free(modules[i]);
-        }
-        free(modules);
+        qbdi_freeMemoryMapArray(modules, size);
 
         // Set original states
         qbdi_setGPRState(vm, &ENTRY_GPR);
@@ -242,8 +246,11 @@ void redirectExec(int signum, siginfo_t *info, void* data) {
         uap->uc_mcontext.gregs[REG_RSP] = (rword) newStack + STACK_SIZE - 8;
         uap->uc_mcontext.gregs[REG_RBP] = (rword) newStack + STACK_SIZE - 8;
 #elif defined(QBDI_ARCH_X86)
-        uap->uc_mcontext.gregs[REG_ESP] = (rword) newStack + STACK_SIZE - 8;
-        uap->uc_mcontext.gregs[REG_EBP] = (rword) newStack + STACK_SIZE - 8;
+        // need to copy stack arguments
+        // main have only three arguments (int argc, char** argv, char** envp) => 0xc align on 0x10
+        memcpy(newStack + STACK_SIZE - 0x10, (void*) (uap->uc_mcontext.gregs[REG_ESP] + 0x4), 0x10);
+        uap->uc_mcontext.gregs[REG_ESP] = (rword) newStack + STACK_SIZE - 0x14;
+        uap->uc_mcontext.gregs[REG_EBP] = (rword) newStack + STACK_SIZE - 0x14;
 #elif defined(QBDI_ARCH_ARM)
         uap->uc_mcontext.arm_sp = (rword) newStack + STACK_SIZE - 8;
         uap->uc_mcontext.arm_fp = (rword) newStack + STACK_SIZE - 8;
