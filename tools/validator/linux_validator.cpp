@@ -80,8 +80,8 @@ int QBDI::qbdipreload_on_premain(void *gprCtx, void *fpuCtx) {
     uap->uc_mcontext.gregs[REG_RSP] = (rword) newStack + STACK_SIZE - 8;
     uap->uc_mcontext.gregs[REG_RBP] = (rword) newStack + STACK_SIZE - 8;
 #elif defined(QBDI_ARCH_X86)
-    uap->uc_mcontext.gregs[REG_ESP] = (rword) newStack + STACK_SIZE - 8;
-    uap->uc_mcontext.gregs[REG_EBP] = (rword) newStack + STACK_SIZE - 8;
+    uap->uc_mcontext.gregs[REG_ESP] = (rword) newStack + STACK_SIZE - 4;
+    uap->uc_mcontext.gregs[REG_EBP] = (rword) newStack + STACK_SIZE - 4;
 #elif defined(QBDI_ARCH_ARM)
     uap->uc_mcontext.arm_sp = (rword) newStack + STACK_SIZE - 8;
     uap->uc_mcontext.arm_fp = (rword) newStack + STACK_SIZE - 8;
