@@ -42,14 +42,15 @@ QBDIPRELOAD_INIT;
 
 
 int QBDI::qbdipreload_on_main(int argc, char** argv) {
-    QBDI::LOGSYS.addFilter("*", QBDI::LogPriority::DEBUG);
+    QBDI::LOGSYS.addFilter("*", QBDI::LogPriority::WARNING);
 
     QBDI::VM* vm = new QBDI::VM();
     vm->instrumentAllExecutableMaps();
     for(const QBDI::MemoryMap& m :  QBDI::getCurrentProcessMaps()) {
         if((m.name.compare(0, 7, "libc-2.") == 0) ||
            (m.name.compare(0, 5, "ld-2.") == 0)   ||
-           (m.name.compare(0, 7, "libcofi") == 0)) {
+           (m.name.compare(0, 7, "libcofi") == 0) ||
+           (m.name.compare("") == 0)) {
             vm->removeInstrumentedRange(m.range.start, m.range.end);
         }
     }

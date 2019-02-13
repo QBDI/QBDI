@@ -33,6 +33,7 @@
 
 
 namespace QBDI {
+#endif
 
 /*! Memory access rights.
  */
@@ -41,10 +42,18 @@ typedef enum {
     _QBDI_EI(PF_READ) = 1,   /*!< Read access */
     _QBDI_EI(PF_WRITE) = 2,  /*!< Write access */
     _QBDI_EI(PF_EXEC) = 4    /*!< Execution access */
-} Permission;
+} _QBDI_EI(Permission);
 
 _QBDI_ENABLE_BITMASK_OPERATORS(Permission)
 
+struct _QBDI_EI(C_MemoryMap) {
+    rword start;
+    rword end;
+    _QBDI_EI(Permission) permission;
+    char* name; 
+};
+
+#ifdef __cplusplus
 /*! Map of a memory area (region).
  */
 class MemoryMap {
@@ -98,6 +107,14 @@ QBDI_EXPORT std::vector<std::string> getModuleNames();
 #ifdef __cplusplus
 namespace QBDI {
 extern "C" {
+
+QBDI_EXPORT struct C_MemoryMap** qbdi_getRemoteProcessMaps(QBDI::rword pid, size_t* size);
+QBDI_EXPORT struct C_MemoryMap** qbdi_getCurrentProcessMaps(size_t* size);
+#else
+typedef struct _QBDI_EI(C_MemoryMap) _QBDI_EI(MemoryMap);
+
+QBDI_EXPORT QBDI_MemoryMap** qbdi_getRemoteProcessMaps(rword pid, size_t* size);
+QBDI_EXPORT QBDI_MemoryMap** qbdi_getCurrentProcessMaps(size_t* size);
 #endif
 
 

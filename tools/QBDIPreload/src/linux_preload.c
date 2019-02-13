@@ -185,18 +185,21 @@ void catchEntrypoint(int argc, char** argv) {
         qbdi_instrumentAllExecutableMaps(vm);
 
         size_t size = 0, i = 0;
-        char **modules = qbdi_getModuleNames(&size);
+        QBDI_MemoryMap **modules = qbdi_getCurrentProcessMaps(&size);
 
         // Filter some modules to avoid conflicts
         qbdi_removeInstrumentedModuleFromAddr(vm, (rword) &catchEntrypoint);
         for(i = 0; i < size; i++) {
-            if (strstr(modules[i], "libc-2.") ||
-                strstr(modules[i], "ld-2.") ||
-                strstr(modules[i], "libcofi")) {
-                qbdi_removeInstrumentedModule(vm, modules[i]);
+            if ((modules[i]->permission & QBDI_PF_EXEC) && (
+                    strstr(modules[i]->name, "libc-2.") ||
+                    strstr(modules[i]->name, "ld-2.") ||
+                    strstr(modules[i]->name, "libcofi") ||
+                    modules[i]->name[0] == 0)) {
+                qbdi_removeInstrumentedRange(vm, modules[i]->start, modules[i]->end);
             }
         }
         for(i = 0; i < size; i++) {
+            free(modules[i]->name);
             free(modules[i]);
         }
         free(modules);

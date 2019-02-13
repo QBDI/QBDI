@@ -483,6 +483,34 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
 
 #endif
 
+struct C_MemoryMap** convert_MemoryMap_to_C(std::vector<MemoryMap> map, size_t* size) {
+    struct C_MemoryMap** res = (struct C_MemoryMap**) malloc(map.size() * sizeof(struct C_MemoryMap*));
+    RequireAction("convert_MemoryMap_to_C", res != NULL, abort());    
+
+    memset(res, 0, map.size()* sizeof(struct C_MemoryMap*));
+    int i = 0;
+    
+    for (auto m : map) {
+        res[i] = (struct C_MemoryMap*) malloc(map.size()* sizeof(struct C_MemoryMap));
+        RequireAction("convert_MemoryMap_to_C", res[i] != NULL, abort());
+        res[i]->start = m.range.start;
+        res[i]->end = m.range.end;
+        res[i]->permission = m.permission;
+        res[i]->name = strdup(m.name.c_str());
+        i++;
+    }
+    *size = map.size();
+    return res;
+}
+
+struct C_MemoryMap** qbdi_getRemoteProcessMaps(rword pid, size_t* size) {
+    return convert_MemoryMap_to_C(getRemoteProcessMaps(pid), size);
+}
+
+struct C_MemoryMap** qbdi_getCurrentProcessMaps(size_t* size){
+    return convert_MemoryMap_to_C(getCurrentProcessMaps(), size);
+}
+
 std::vector<std::string> getModuleNames() {
     std::vector<std::string> modules;
 
