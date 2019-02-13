@@ -269,9 +269,6 @@ void catchEntrypoint(int argc, char **argv) {
     status = qbdipreload_on_main(argc, argv);
 
     if (DEFAULT_HANDLER && (status == QBDIPRELOAD_NOT_HANDLED)) {
-#if defined(_QBDI_DEBUG)
-        qbdi_addLogFilter("*", QBDI_DEBUG);
-#endif
         VMInstanceRef vm;
         qbdi_initVM(&vm, NULL, NULL);
         qbdi_instrumentAllExecutableMaps(vm);
