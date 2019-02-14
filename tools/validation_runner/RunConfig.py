@@ -38,7 +38,7 @@ class TestConfig:
         self.command = d['command']
         self.arguments = list(d['arguments'].lstrip("['").rstrip("']").split("', '"))
         return self
-        
+
     def command_line(self):
         return '{} {}'.format(self.command, ' '.join(self.arguments))
 
