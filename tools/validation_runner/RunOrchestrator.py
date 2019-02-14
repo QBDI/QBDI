@@ -26,29 +26,43 @@ from RunResult import RunResult
 def run_test(test, env, idx):
     print('[{}] Validating {}'.format(idx, test.command_line()))
     # Setup files
-    result = open('.{}_result'.format(idx), 'w')
-    output = open('.{}_output'.format(idx), 'w')
-    env['VALIDATOR_COVERAGE'] = '.{}_coverage'.format(idx)
-    # Execute
-    process = subprocess.Popen([test.command] + test.arguments, stdout=output, stderr=result, env=env)
-    retcode = process.wait()
-    output.close()
-    result.close()
-    if retcode == 0:
+    result_file = '.{}_result'.format(idx)
+    output_file = '.{}_output'.format(idx)
+    coverage_file = '.{}_coverage'.format(idx)
+    error = False
+
+    with open(result_file, 'w') as result:
+        with open(output_file, 'w') as output:
+            env['VALIDATOR_COVERAGE'] = coverage_file
+            # Execute
+            try:
+                process = subprocess.Popen([test.command] + test.arguments, stdout=output, stderr=result, env=env)
+                retcode = process.wait()
+            except OSError as e:
+                print('[{}] Failled to execute {} : {}'.format(idx, test.command_line(), e))
+                retcode = 255
+                error = True
+
+    # Parse test results and remove test files
+    with open(result_file, 'r') as f:
+        result = f.read()
+
+    if os.path.isfile(coverage_file):
+        with open(coverage_file, 'r') as f:
+            coverage = f.read()
+        os.remove(coverage_file)
+    else:
+        coverage = ""
+
+    test_result = TestResult(test, retcode, result, coverage, error)
+
+    if test_result.retcode == 0:
         print('[{}] Validated {}'.format(idx, test.command_line()))
     else:
         print('[{}] Failed validation {}'.format(idx, test.command_line()))
-    # Parse test results and remove test files
-    with open('.{}_result'.format(idx), 'r') as f:
-        result = f.read()
-        f.close()
-    with open('.{}_coverage'.format(idx), 'r') as f:
-        coverage = f.read()
-        f.close()
-    test_result = TestResult(test, retcode, result, coverage)
-    os.remove('.{}_result'.format(idx))
-    os.remove('.{}_coverage'.format(idx))
-    os.remove('.{}_output'.format(idx))
+
+    os.remove(result_file)
+    os.remove(output_file)
     return test_result
 
 class RunOrchestrator:

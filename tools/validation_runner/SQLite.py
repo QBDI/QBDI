@@ -30,8 +30,8 @@ class SQLiteDBAdapter:
     def setup_db(self):
         cursor = self.connection.cursor()
         cursor.execute('''CREATE TABLE IF NOT EXISTS Runs (
-                            run_id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                            branch TEXT, 
+                            run_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            branch TEXT,
                             "commit" TEXT,
                             timestamp INTEGER,
                             total_tests INTEGER,
@@ -48,7 +48,7 @@ class SQLiteDBAdapter:
                             critical_casc INTEGER,
                             coverage_log TEXT);''')
         cursor.execute('''CREATE TABLE IF NOT EXISTS Tests (
-                            test_id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                            test_id INTEGER PRIMARY KEY AUTOINCREMENT,
                             run_id INTEGER,
                             command TEXT,
                             arguments TEXT,
@@ -72,10 +72,10 @@ class SQLiteDBAdapter:
 
     def insert_run_result(self, run_result):
         cursor = self.connection.cursor()
-        cursor.execute('''INSERT INTO Runs (branch, "commit", timestamp, total_tests, passed_tests, 
-                          total_instr, unique_instr, errors, no_impact_err, non_critical_err, 
-                          critical_err, cascades, no_impact_casc, non_critical_casc, critical_casc, 
-                          coverage_log) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);''', 
+        cursor.execute('''INSERT INTO Runs (branch, "commit", timestamp, total_tests, passed_tests,
+                          total_instr, unique_instr, errors, no_impact_err, non_critical_err,
+                          critical_err, cascades, no_impact_casc, non_critical_casc, critical_casc,
+                          coverage_log) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);''',
                           (run_result.branch, run_result.commit, int(time.time()), run_result.total_tests,
                           run_result.passed_tests, run_result.total_instr, run_result.unique_instr,
                           run_result.errors, run_result.no_impact_err, run_result.non_critical_err,
@@ -88,14 +88,14 @@ class SQLiteDBAdapter:
     def insert_test_result(self, run_id, test_result):
         cursor = self.connection.cursor()
         cursor.execute('''INSERT INTO Tests (run_id, command, arguments, binary_hash, retcode,
-                          total_instr, unique_instr, diff_map, errors, no_impact_err, non_critical_err, 
-                          critical_err, cascades, no_impact_casc, non_critical_casc, critical_casc, 
-                          cascades_log, coverage_log) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);''', 
-                          (run_id, test_result.cfg.command, str(test_result.cfg.arguments), 
-                          test_result.binary_hash, test_result.retcode, test_result.total_instr, 
-                          test_result.unique_instr, test_result.diff_map, test_result.errors, 
-                          test_result.no_impact_err, test_result.non_critical_err, test_result.critical_err, 
-                          test_result.cascades, test_result.no_impact_casc, test_result.non_critical_casc, 
+                          total_instr, unique_instr, diff_map, errors, no_impact_err, non_critical_err,
+                          critical_err, cascades, no_impact_casc, non_critical_casc, critical_casc,
+                          cascades_log, coverage_log) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);''',
+                          (run_id, test_result.cfg.command, str(test_result.cfg.arguments),
+                          test_result.binary_hash, test_result.retcode, test_result.total_instr,
+                          test_result.unique_instr, test_result.diff_map, test_result.errors,
+                          test_result.no_impact_err, test_result.non_critical_err, test_result.critical_err,
+                          test_result.cascades, test_result.no_impact_casc, test_result.non_critical_casc,
                           test_result.critical_casc, test_result.cascades_log, test_result.coverage_log))
         run_id = cursor.lastrowid
         self.connection.commit()
