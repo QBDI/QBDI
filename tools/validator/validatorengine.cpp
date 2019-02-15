@@ -76,9 +76,51 @@ ssize_t ValidatorEngine::logEntryLookup(uint64_t execID) {
 }
 
 void ValidatorEngine::outputLogEntry(const LogEntry& entry) {
-    fprintf(stderr, "ExecID: %" PRIu64 " \t%016" PRIRWORD ": %s\n", entry.execID, entry.address, entry.disassembly);
-    if(entry.transfer != 0)
-        fprintf(stderr, "\tCaused a transfer to address 0x%" PRIRWORD "\n", entry.transfer);
+    static QBDI::MemoryMap *module = nullptr;
+    static std::vector<QBDI::MemoryMap> memoryModule;
+
+    // try to find module name of current address
+    if (module != nullptr)
+        if (!module->hasAddress(entry.address))
+            module = nullptr;
+
+    if (module == nullptr)
+        for (auto &m : memoryModule) {
+            if (m.hasAddress(entry.address)) {
+                module = &m;
+                break;
+            }
+        }
+
+    if (module == nullptr) {
+        memoryModule.clear();
+        for (auto &m : QBDI::getRemoteProcessMaps(instrumented)) {
+            if (m.permission & QBDI::PF_EXEC) {
+                memoryModule.push_back(m);
+            }
+        }
+        for (auto &m : memoryModule) {
+            if (m.hasAddress(entry.address)) {
+                module = &m;
+                break;
+            }
+        }
+    }
+
+    fprintf(stderr, "ExecID: %" PRIu64 " \t%25s 0x%016" PRIRWORD ": %s\n", entry.execID,
+            (module != nullptr && module->name != nullptr) ? module->name : "",
+            entry.address, entry.disassembly);
+    if(entry.transfer != 0) {
+        QBDI::MemoryMap *transfer_module = nullptr;
+        for (auto &m : memoryModule) {
+            if (m.hasAddress(entry.transfer)) {
+                transfer_module = &m;
+                break;
+            }
+        }
+        fprintf(stderr, "\tCaused a transfer to address 0x%" PRIRWORD " %s\n", entry.transfer,
+                (transfer_module != nullptr && transfer_module->name != nullptr) ? transfer_module->name : "");
+    }
     for(ssize_t eID : entry.errorIDs) {
         if(errors[eID].severity == ErrorSeverity::NoImpact)
             fprintf(stderr, "\tError with no impact ");
@@ -211,8 +253,8 @@ template<typename T> ssize_t ValidatorEngine::diffSPR(const char* regName, T rea
     return diff<QBDI::rword>(regName, real, qbdi);
 }
 
-void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, const char* disassembly, 
-                        const QBDI::GPRState *gprStateDbg, const QBDI::FPRState *fprStateDbg, 
+void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, const char* disassembly,
+                        const QBDI::GPRState *gprStateDbg, const QBDI::FPRState *fprStateDbg,
                         const QBDI::GPRState *gprStateInstr, const QBDI::FPRState *fprStateInstr) {
     ssize_t e;
 
@@ -346,7 +388,7 @@ void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, 
             if((e = diffSPR(name "[0:32]",   xmmreg1.m0, xmmreg2.m0))  != -1) curLogEntry->errorIDs.push_back(e); \
             if((e = diffSPR(name "[32:64]",  xmmreg1.m1, xmmreg2.m1))  != -1) curLogEntry->errorIDs.push_back(e); \
             if((e = diffSPR(name "[64:96]",  xmmreg1.m2, xmmreg2.m2))  != -1) curLogEntry->errorIDs.push_back(e); \
-            if((e = diffSPR(name "[96:128]", xmmreg1.m3, xmmreg2.m3))  != -1) curLogEntry->errorIDs.push_back(e); 
+            if((e = diffSPR(name "[96:128]", xmmreg1.m3, xmmreg2.m3))  != -1) curLogEntry->errorIDs.push_back(e);
         DIFF_XMM("xmm0", fprStateDbg->xmm0, fprStateInstr->xmm0);
         DIFF_XMM("xmm1", fprStateDbg->xmm1, fprStateInstr->xmm1);
         DIFF_XMM("xmm2", fprStateDbg->xmm2, fprStateInstr->xmm2);
@@ -406,7 +448,7 @@ void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, 
             }
         }
     }
-    
+
     if(lastLogEntry != nullptr) {
         if(verbosity == LogVerbosity::Full) {
             outputLogEntry(*lastLogEntry);

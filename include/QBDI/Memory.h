@@ -71,7 +71,7 @@ public:
      * @param[in] name         Region name (useful when a region is mapping a module).
      */
     MemoryMap(rword start, rword end, Permission permission, char* name) :
-        start(start), end(end), permission(permission), name(name) {}
+        start(start), end(end), permission(permission), name(strdup(name)) {}
 
     ~MemoryMap() {
         if(name) {
@@ -101,6 +101,11 @@ public:
             this->name = strdup(name);
         }
     }
+
+    bool hasAddress(rword addr) {
+        return (start <= addr && addr < end);
+    }
+
 };
 #else
 } _QBDI_EI(MemoryMap);
