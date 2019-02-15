@@ -22,6 +22,10 @@ docker run --rm qbdi_debian_latest cat qbdi/build/QBDI-$VERSION-linux-X86_64.deb
 docker build -t qbdi_ubuntu_latest -f ubuntu_latest_docker_packager/Dockerfile .
 docker run --rm qbdi_ubuntu_latest cat qbdi/build/QBDI-$VERSION-linux-X86_64.deb > QBDI-$RELEASE_VERSION-ubuntu18.10-X86_64.deb
 
+# Ubuntu I386
+docker build -t qbdi_ubuntu_i386 -f ubuntu_latext_i386_docker/Dockerfile .
+docker run --rm qbdi_ubuntu_i386 cat qbdi/build/QBDI-$VERSION-linux-X86.deb > QBDI-$RELEASE_VERSION-ubuntu16.04-X86.deb
+
 # Ubuntu LTS
 docker build -t qbdi_ubuntu_lts -f ubuntu_lts_docker_packager/Dockerfile .
 docker run --rm qbdi_ubuntu_lts cat qbdi/build/QBDI-$VERSION-linux-X86_64.deb > QBDI-$RELEASE_VERSION-ubuntu16.04-X86_64.deb
