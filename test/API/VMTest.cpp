@@ -98,11 +98,19 @@ struct TestInst TestInsts[MNEM_COUNT] = {
            {QBDI::OPERAND_IMM, MNEM_IMM_SHORT_VAL, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
         }
     },
+#if defined(QBDI_ARCH_X86_64)
     {3, 2, true, {
            {QBDI::OPERAND_GPR, 0, 8, 0, 0, "RAX", QBDI::REGISTER_READ},
            {QBDI::OPERAND_GPR, 0, 8, 0, 1, "RBX", QBDI::REGISTER_READ},
         }
     },
+#else
+    {3, 2, true, {
+           {QBDI::OPERAND_GPR, 0, 2, 0, 0, "AX", QBDI::REGISTER_READ},
+           {QBDI::OPERAND_GPR, 0, 2, 0, 1, "BX", QBDI::REGISTER_READ},
+        }
+    },
+#endif
     {5, 2, true, {
            {QBDI::OPERAND_IMM, MNEM_IMM_VAL, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
            {QBDI::OPERAND_GPR, 0, 4, 0, 0, "EAX", QBDI::REGISTER_READ},
@@ -129,9 +137,15 @@ QBDI_NOINLINE QBDI::rword satanicFun(QBDI::rword arg0) {
     QBDI::rword p = 0x42;
  #ifndef QBDI_OS_WIN
     asm("cmp $" MNEM_IMM_SHORT_STRVAL ", %%dh" ::: "dh");
+  #if defined(QBDI_ARCH_X86_64)
     asm("cmp %%rbx, %%rax" ::: "rbx", "rax");
     asm("cmp $" MNEM_IMM_STRVAL ", %%eax" ::: "eax"); // explicit register
     asm("movq %0, %%rdi; movq %1, %%rsi; cmpsb %%es:(%%rdi), (%%rsi)"::"r"(&p), "r"(&p): "rdi", "rsi");
+  #else
+    asm("cmp %%bx, %%ax" ::: "bx", "ax");
+    asm("cmp $" MNEM_IMM_STRVAL ", %%eax" ::: "eax"); // explicit register
+    asm("mov %0, %%edi; mov %1, %%esi; cmpsb %%es:(%%edi), (%%esi)"::"r"(&p), "r"(&p): "edi", "esi");
+  #endif
  #endif
 #elif defined(QBDI_ARCH_ARM)
     asm("cmp r3, #" MNEM_IMM_SHORT_STRVAL);
@@ -471,7 +485,7 @@ TEST_F(VMTest, CacheInvalidation) {
     ASSERT_NE((uint32_t) 0, count1);
     ASSERT_EQ((uint32_t) 0, count2);
 
-    uint32_t instr2 = vm->addCodeRangeCB((QBDI::rword)&dummyFun5, ((QBDI::rword)&dummyFun5) + 64, 
+    uint32_t instr2 = vm->addCodeRangeCB((QBDI::rword)&dummyFun5, ((QBDI::rword)&dummyFun5) + 64,
                                          QBDI::InstPosition::POSTINST, countInstruction, &count2);
 
     count1 = 0;
@@ -507,7 +521,7 @@ TEST_F(VMTest, CacheInvalidation) {
     ASSERT_NE((uint32_t) 0, count2);
 
     instr1 = vm->addCodeCB(QBDI::InstPosition::POSTINST, countInstruction, &count1);
-    
+
     count1 = 0;
     count2 = 0;
     QBDI::simulateCall(state, FAKE_RET_ADDR, {1, 2, 3, 4, 5});
@@ -555,13 +569,13 @@ QBDI::VMAction funkyCountInstruction(QBDI::VMInstanceRef vm, QBDI::GPRState *gpr
     info->instID = vm->addCodeRangeCB(QBDI_GPR_GET(gprState, QBDI::REG_PC), QBDI_GPR_GET(gprState, QBDI::REG_PC) + 10,
                                     QBDI::InstPosition::POSTINST, funkyCountInstruction, data);
     const QBDI::InstAnalysis* instAnalysis3 = vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION);
-    // instAnalysis1, instAnalysis2 and instAnalysis3 should be the same pointer because the cache 
+    // instAnalysis1, instAnalysis2 and instAnalysis3 should be the same pointer because the cache
     // flush initiated by deleteInstrumentation and addCodeRangeCB is delayed.
     if(instAnalysis1 == instAnalysis2 && instAnalysis2 == instAnalysis3) {
         info->count += 1;
     }
 
-    // instAnalysis3 should not have disassembly information, but instAnalysis4 and instAnalysis5 
+    // instAnalysis3 should not have disassembly information, but instAnalysis4 and instAnalysis5
     // should.
     EXPECT_EQ(instAnalysis3->disassembly, nullptr);
     EXPECT_EQ(instAnalysis3->operands, nullptr);
@@ -578,11 +592,11 @@ QBDI::VMAction funkyCountInstruction(QBDI::VMInstanceRef vm, QBDI::GPRState *gpr
 TEST_F(VMTest, DelayedCacheFlush) {
     uint32_t count = 0;
     FunkyInfo info = FunkyInfo {0, 0};
-    
+
     bool instrumented = vm->addInstrumentedModuleFromAddr((QBDI::rword)&dummyFunCall);
     ASSERT_TRUE(instrumented);
     vm->addCodeCB(QBDI::InstPosition::POSTINST, countInstruction, &count);
-    info.instID = vm->addCodeRangeCB((QBDI::rword) dummyFun4, ((QBDI::rword) dummyFun4) + 10, 
+    info.instID = vm->addCodeRangeCB((QBDI::rword) dummyFun4, ((QBDI::rword) dummyFun4) + 10,
                                     QBDI::InstPosition::POSTINST, funkyCountInstruction, &info);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {1, 2, 3, 4});
