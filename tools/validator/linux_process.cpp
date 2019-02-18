@@ -103,13 +103,12 @@ void userToFPRState(const FPR_STRUCT* user, QBDI::FPRState* fprState) {
     memcpy(&fprState->xmm14, &user->xmm_space[56], 16);
     memcpy(&fprState->xmm15, &user->xmm_space[60], 16);
     fprState->ftw = user->ftw;
-    fprState->fop = user->fop;
     fprState->mxcsrmask = user->mxcr_mask;
     #else
-    fprState->ftw = 0xff; // user->twd;
-    fprState->mxcsr = user->mxcsr;
+    fprState->ftw = user->twd;
     fprState->mxcsrmask = 0xffff;
     #endif
+    fprState->fop = user->fop;
     fprState->rfcw =  user->cwd;
     fprState->rfsw = user->swd;
     fprState->mxcsr = user->mxcsr;

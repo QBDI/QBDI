@@ -142,8 +142,13 @@ void qbdipreload_floatCtxToFPRState(const void* fprCtx, FPRState* fprState) {
 #else
     fprState->rfcw = uap->uc_mcontext.fpregs->cw;
     fprState->rfsw = uap->uc_mcontext.fpregs->sw;
-    fprState->ftw = uap->uc_mcontext.fpregs->tag & 0xFF;
-    fprState->rsrv1 = uap->uc_mcontext.fpregs->tag >> 8;
+    fprState->ftw = 0;
+    int i, j = uap->uc_mcontext.fpregs->tag;
+    for (i=0; i<8; i++) {
+        if ( ((j >> (i*2)) & 0x3) != 0x3) {
+            fprState->ftw |= 1 << i;
+        }
+    }
     fprState->mxcsr = 0x1f80;
     fprState->mxcsrmask = 0xffff;
 #endif
