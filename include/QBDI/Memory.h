@@ -20,11 +20,11 @@
 
 #include <stdbool.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "Platform.h"
 #include "State.h"
 
-// C++ Only functions
 #ifdef __cplusplus
 #include <string>
 #include <vector>
@@ -44,42 +44,70 @@ typedef enum {
     _QBDI_EI(PF_EXEC) = 4    /*!< Execution access */
 } _QBDI_EI(Permission);
 
-_QBDI_ENABLE_BITMASK_OPERATORS(Permission)
-
-struct _QBDI_EI(C_MemoryMap) {
-    rword start;
-    rword end;
-    _QBDI_EI(Permission) permission;
-    char* name; 
-};
+_QBDI_ENABLE_BITMASK_OPERATORS(_QBDI_EI(Permission))
 
 #ifdef __cplusplus
-/*! Map of a memory area (region).
- */
-class MemoryMap {
+struct _QBDI_EI(MemoryMap) {
+#else
+typedef struct _QBDI_EI(_MemoryMap) {
+#endif
 
+    rword                 start;          /*!< Range start value. */
+    rword                 end;            /*!< Range end value (always excluded). */
+    _QBDI_EI(Permission)  permission;     /*!< Region access rights (PF_READ, PF_WRITE, PF_EXEC). */
+    char*                 name;           /*!< Region name (useful when a region is mapping a module). */
+
+#ifdef __cplusplus
 public:
-
-    Range<rword> range;       /*!< A range of memory (region), delimited between a start and an (excluded) end address. */
-    Permission   permission;  /*!< Region access rights (PF_READ, PF_WRITE, PF_EXEC). */
-    std::string  name;        /*!< Region name (useful when a region is mapping a module). */
-
     /* Construct a new (empty) MemoryMap.
      */
-    MemoryMap() : range(0, 0), permission(QBDI::PF_NONE), name("") {};
+    MemoryMap() : start(0), end(0), permission(QBDI::PF_NONE), name(nullptr) {};
 
     /*! Construct a new MemoryMap (given some properties).
      *
-     * @param[in] range        A range of memory (region), delimited between
-     *                         a start and an (excluded) end address.
+     * @param[in] start        Range start value.
+     * @param[in] end          Range end value (always excluded).
      * @param[in] permission   Region access rights (PF_READ, PF_WRITE, PF_EXEC).
      * @param[in] name         Region name (useful when a region is mapping a module).
      */
-   MemoryMap(Range<rword> range, Permission permission, std::string name) :
-        range(range), permission(permission), name(name) {}
+    MemoryMap(rword start, rword end, Permission permission, char* name) :
+        start(start), end(end), permission(permission), name(name) {}
 
+    ~MemoryMap() {
+        if(name) {
+            free(name);
+        }
+    }
+
+    MemoryMap(const MemoryMap& m) :
+        start(m.start), end(m.end), permission(m.permission) {
+        name = m.name ? strdup(m.name) : nullptr;
+    }
+
+    MemoryMap& operator=(const MemoryMap& copy) {
+        start = copy.start;
+        end = copy.end;
+        permission= copy.permission;
+        name = copy.name ? strdup(copy.name) : nullptr;
+        return *this;
+    }
+
+    void setName(const char* name) {
+        if(this->name) {
+            free(this->name);
+            this->name = nullptr;
+        }
+        if(name) {
+            this->name = strdup(name);
+        }
+    }
 };
+#else
+} _QBDI_EI(MemoryMap);
+#endif
 
+// C++ Only functions
+#ifdef __cplusplus
 /*! Get a list of all the memory maps (regions) of a process.
  *
  * @param[in] pid The identifier of the process.
@@ -107,19 +135,11 @@ QBDI_EXPORT std::vector<std::string> getModuleNames();
 #ifdef __cplusplus
 namespace QBDI {
 extern "C" {
-
-QBDI_EXPORT struct C_MemoryMap** qbdi_getRemoteProcessMaps(QBDI::rword pid, size_t* size);
-QBDI_EXPORT struct C_MemoryMap** qbdi_getCurrentProcessMaps(size_t* size);
-#else
-typedef struct _QBDI_EI(C_MemoryMap) _QBDI_EI(MemoryMap);
-
-QBDI_EXPORT QBDI_MemoryMap** qbdi_getRemoteProcessMaps(rword pid, size_t* size);
-QBDI_EXPORT QBDI_MemoryMap** qbdi_getCurrentProcessMaps(size_t* size);
 #endif
 
 
 /*! Allocate a block of memory of a specified sized with an aligned base address.
- * 
+ *
  * @param[in] size  Allocation size in bytes.
  * @param[in] align Base address alignement in bytes.
  *
@@ -129,7 +149,7 @@ QBDI_EXPORT QBDI_MemoryMap** qbdi_getCurrentProcessMaps(size_t* size);
 QBDI_EXPORT void* qbdi_alignedAlloc(size_t size, size_t align);
 
 /*! Free a block of aligned memory allocated with alignedAlloc.
- * 
+ *
  * @param[in] ptr  Pointer to the allocated memory.
  *
 */
@@ -141,7 +161,7 @@ QBDI_EXPORT void qbdi_alignedFree(void* ptr);
  * @param[out] size    Will be set to the number of strings in the returned array.
  *
  * @return  An array of C strings, each one containing the name of a loaded module.
- *          This array needs to be free'd by the caller by repetively calling free() on each of its 
+ *          This array needs to be free'd by the caller by repetively calling free() on each of its
  *          element then finally on the array itself.
  */
 QBDI_EXPORT char** qbdi_getModuleNames(size_t* size);
@@ -151,7 +171,7 @@ QBDI_EXPORT char** qbdi_getModuleNames(size_t* size);
  *
  *  @param[in]  ctx       GPRState which will be setup to use the new stack.
  *  @param[in]  stackSize Size of the stack to be allocated.
- *  @param[out] stack     The newly allocated stack pointer will be returned in the variable 
+ *  @param[out] stack     The newly allocated stack pointer will be returned in the variable
  *                        pointed by stack.
  *
  *  @return               True if stack allocation was successfull.
@@ -160,7 +180,7 @@ QBDI_EXPORT bool qbdi_allocateVirtualStack(GPRState *ctx, uint32_t stackSize, ui
 
 /*! Simulate a call by modifying the stack and registers accordingly.
  *
- *  @param[in] ctx           GPRState where the simulated call will be setup. The state needs to 
+ *  @param[in] ctx           GPRState where the simulated call will be setup. The state needs to
  *                           point to a valid stack for example setup with allocateVirtualStack().
  *  @param[in] returnAddress Return address of the call to simulate.
  *  @param[in] argNum        The number of arguments in the variadic list.
@@ -170,7 +190,7 @@ QBDI_EXPORT void qbdi_simulateCall(GPRState *ctx, rword returnAddress, uint32_t 
 
 /*! Simulate a call by modifying the stack and registers accordingly (stdarg version).
  *
- *  @param[in] ctx           GPRState where the simulated call will be setup. The state needs to 
+ *  @param[in] ctx           GPRState where the simulated call will be setup. The state needs to
  *                           point to a valid stack for example setup with allocateVirtualStack().
  *  @param[in] returnAddress Return address of the call to simulate.
  *  @param[in] argNum        The number of arguments in the va_list object.
@@ -180,7 +200,7 @@ QBDI_EXPORT void qbdi_simulateCallV(GPRState *ctx, rword returnAddress, uint32_t
 
 /*! Simulate a call by modifying the stack and registers accordingly (C array version).
  *
- *  @param[in] ctx           GPRState where the simulated call will be setup. The state needs to 
+ *  @param[in] ctx           GPRState where the simulated call will be setup. The state needs to
  *                           point to a valid stack for example setup with allocateVirtualStack().
  *  @param[in] returnAddress Return address of the call to simulate.
  *  @param[in] argNum        The number of arguments in the array args.
@@ -188,13 +208,38 @@ QBDI_EXPORT void qbdi_simulateCallV(GPRState *ctx, rword returnAddress, uint32_t
  */
 QBDI_EXPORT void qbdi_simulateCallA(GPRState *ctx, rword returnAddress, uint32_t argNum, const rword* args);
 
+/*! Get a list of all the memory maps (regions) of a process.
+ *
+ * @param[in]  pid  The identifier of the process.
+ * @param[out] size Will be set to the number of strings in the returned array.
+ *
+ * @return  An array of MemoryMap object.
+ */
+QBDI_EXPORT _QBDI_EI(MemoryMap)* qbdi_getRemoteProcessMaps(rword pid, size_t* size);
+
+/*! Get a list of all the memory maps (regions) of the current process.
+ *
+ * @param[out] size Will be set to the number of strings in the returned array.
+ *
+ * @return  An array of MemoryMap object.
+ */
+QBDI_EXPORT _QBDI_EI(MemoryMap)* qbdi_getCurrentProcessMaps(size_t* size);
+
+/*! Free an array of memory maps objects.
+ *
+ * @param[in] arr  An array of MemoryMap object.
+ * @param[in] size Number of elements in the array.
+ */
+QBDI_EXPORT void qbdi_freeMemoryMapArray(_QBDI_EI(MemoryMap)* arr, size_t size);
+
+
 #ifdef __cplusplus
 /*
  * C API C++ bindings
  */
 
 /*! Allocate a block of memory of a specified sized with an aligned base address.
- * 
+ *
  * @param[in] size  Allocation size in bytes.
  * @param[in] align Base address alignement in bytes.
  *
@@ -206,7 +251,7 @@ inline void* alignedAlloc(size_t size, size_t align) {
 }
 
 /*! Free a block of aligned memory allocated with alignedAlloc.
- * 
+ *
  * @param[in] ptr  Pointer to the allocated memory.
  *
 */
@@ -220,7 +265,7 @@ inline void alignedFree(void* ptr) {
  * @param[out] size    Will be set to the number of strings in the returned array.
  *
  * @return  An array of C strings, each one containing the name of a loaded module.
- *          This array needs to be free'd by the caller by repetively calling free() on each of its 
+ *          This array needs to be free'd by the caller by repetively calling free() on each of its
  *          element then finally on the array itself.
  */
 inline char** getModuleNames(size_t* size) {
@@ -232,7 +277,7 @@ inline char** getModuleNames(size_t* size) {
  *
  *  @param[in]  ctx       GPRState which will be setup to use the new stack.
  *  @param[in]  stackSize Size of the stack to be allocated.
- *  @param[out] stack     The newly allocated stack pointer will be returned in the variable 
+ *  @param[out] stack     The newly allocated stack pointer will be returned in the variable
  *                        pointed by stack.
  *
  *  @return               True if stack allocation was successfull.
@@ -243,7 +288,7 @@ inline bool allocateVirtualStack(GPRState *ctx, uint32_t stackSize, uint8_t **st
 
 /*! Simulate a call by modifying the stack and registers accordingly (std::vector version).
  *
- *  @param[in] ctx           GPRState where the simulated call will be setup. The state needs to 
+ *  @param[in] ctx           GPRState where the simulated call will be setup. The state needs to
  *                           point to a valid stack for example setup with allocateVirtualStack().
  *  @param[in] returnAddress Return address of the call to simulate.
  *  @param[in] args          A list of arguments.
@@ -254,7 +299,7 @@ inline void simulateCall(GPRState *ctx, rword returnAddress, const std::vector<r
 
 /*! Simulate a call by modifying the stack and registers accordingly (stdarg version).
  *
- *  @param[in] ctx           GPRState where the simulated call will be setup. The state needs to 
+ *  @param[in] ctx           GPRState where the simulated call will be setup. The state needs to
  *                           point to a valid stack for example setup with allocateVirtualStack().
  *  @param[in] returnAddress Return address of the call to simulate.
  *  @param[in] argNum        The number of arguments in the va_list object.
@@ -266,7 +311,7 @@ inline void simulateCallV(GPRState *ctx, rword returnAddress, uint32_t argNum, v
 
 /*! Simulate a call by modifying the stack and registers accordingly (C array version).
  *
- *  @param[in] ctx           GPRState where the simulated call will be setup. The state needs to 
+ *  @param[in] ctx           GPRState where the simulated call will be setup. The state needs to
  *                           point to a valid stack for example setup with allocateVirtualStack().
  *  @param[in] returnAddress Return address of the call to simulate.
  *  @param[in] argNum        The number of arguments in the array args.

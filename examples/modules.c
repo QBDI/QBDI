@@ -16,5 +16,12 @@ int main(int argc, char** argv) {
     }
     free(modules);
 
+    QBDI_MemoryMap *maps = qbdi_getCurrentProcessMaps(&size);
+    for(size_t i = 0; i < size; i++) {
+        printf("%s (%d) ", maps[i].name, maps[i].permission);
+        printf("(%#" PRIRWORD ", %#" PRIRWORD ")\n", maps[i].start, maps[i].end);
+    }
+    qbdi_freeMemoryMapArray(maps, size);
+
     return 0;
 }

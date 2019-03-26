@@ -155,7 +155,7 @@ void qbdipreload_floatCtxToFPRState(const void* fprCtx, FPRState* fprState) {
 void setEntryBreakpoint(void *address) {
     long pageSize = sysconf(_SC_PAGESIZE);
     uintptr_t base = (uintptr_t) address - ((uintptr_t) address % pageSize);
-    
+
     ENTRY_BRK.address = address;
     mprotect((void*) base, pageSize, PROT_READ | PROT_WRITE);
     ENTRY_BRK.value = *((long*) address);
@@ -185,24 +185,20 @@ void catchEntrypoint(int argc, char** argv) {
         qbdi_instrumentAllExecutableMaps(vm);
 
         size_t size = 0, i = 0;
-        QBDI_MemoryMap **modules = qbdi_getCurrentProcessMaps(&size);
+        QBDI_MemoryMap *modules = qbdi_getCurrentProcessMaps(&size);
 
         // Filter some modules to avoid conflicts
         qbdi_removeInstrumentedModuleFromAddr(vm, (rword) &catchEntrypoint);
         for(i = 0; i < size; i++) {
-            if ((modules[i]->permission & QBDI_PF_EXEC) && (
-                    strstr(modules[i]->name, "libc-2.") ||
-                    strstr(modules[i]->name, "ld-2.") ||
-                    strstr(modules[i]->name, "libcofi") ||
-                    modules[i]->name[0] == 0)) {
-                qbdi_removeInstrumentedRange(vm, modules[i]->start, modules[i]->end);
+            if ((modules[i].permission & QBDI_PF_EXEC) && (
+                    strstr(modules[i].name, "libc-2.") ||
+                    strstr(modules[i].name, "ld-2.") ||
+                    strstr(modules[i].name, "libcofi") ||
+                    modules[i].name[0] == 0)) {
+                qbdi_removeInstrumentedRange(vm, modules[i].start, modules[i].end);
             }
         }
-        for(i = 0; i < size; i++) {
-            free(modules[i]->name);
-            free(modules[i]);
-        }
-        free(modules);
+        qbdi_freeMemoryMapArray(modules, size);
 
         // Set original states
         qbdi_setGPRState(vm, &ENTRY_GPR);

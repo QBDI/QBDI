@@ -225,6 +225,7 @@ set(SOURCES
     "src/Utility/memory_ostream.cpp"
     "src/Utility/Assembly.cpp"
     "src/Utility/Memory.cpp"
+    "src/Utility/Memory_${OS}.cpp"
     "src/Utility/System.cpp"
     "src/Utility/LogSys.cpp"
     "src/Utility/Version.cpp"

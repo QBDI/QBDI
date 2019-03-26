@@ -24,16 +24,16 @@ ExecBroker::ExecBroker(Assembly& assembly, VMInstanceRef vminstance) :
     pageSize = llvm::sys::Process::getPageSize();
 }
 
-void ExecBroker::addInstrumentedRange(const Range<rword>& r) {
-    LogDebug("ExecBroker::addInstrumentedRange", "Adding instrumented range [%" PRIRWORD ", %" PRIRWORD "]", 
-             r.start, r.end);
-    instrumented.add(r);
+void ExecBroker::addInstrumentedRange(rword start, rword end) {
+    LogDebug("ExecBroker::addInstrumentedRange", "Adding instrumented range [%" PRIRWORD ", %" PRIRWORD "]",
+             start, end);
+    instrumented.add(Range<rword>(start, end));
 }
 
-void ExecBroker::removeInstrumentedRange(const Range<rword>& r) {
-    LogDebug("ExecBroker::removeInstrumentedRange", "Removing instrumented range [%" PRIRWORD ", %" PRIRWORD "]", 
-             r.start, r.end);
-    instrumented.remove(r);
+void ExecBroker::removeInstrumentedRange(rword start, rword end) {
+    LogDebug("ExecBroker::removeInstrumentedRange", "Removing instrumented range [%" PRIRWORD ", %" PRIRWORD "]",
+             start, end);
+    instrumented.remove(Range<rword>(start, end));
 }
 
 void ExecBroker::removeAllInstrumentedRanges() {
@@ -48,7 +48,7 @@ bool ExecBroker::addInstrumentedModule(const std::string& name) {
 
     for(const MemoryMap& m : getCurrentProcessMaps()) {
         if((m.name == name) && (m.permission & QBDI::PF_EXEC)) {
-            addInstrumentedRange(m.range);
+            addInstrumentedRange(m.start, m.end);
             instrumented = true;
         }
     }
@@ -59,7 +59,8 @@ bool ExecBroker::addInstrumentedModuleFromAddr(rword addr) {
     bool instrumented = false;
 
     for(const MemoryMap& m : getCurrentProcessMaps()) {
-        if(m.range.contains(addr)) {
+        Range<rword> r(m.start, m.end);
+        if(r.contains(addr)) {
             instrumented = addInstrumentedModule(m.name);
             break;
         }
@@ -72,7 +73,7 @@ bool ExecBroker::removeInstrumentedModule(const std::string& name) {
 
     for(const MemoryMap& m : getCurrentProcessMaps()) {
         if((m.name == name) && (m.permission & QBDI::PF_EXEC)) {
-            removeInstrumentedRange(m.range);
+            removeInstrumentedRange(m.start, m.end);
             removed = true;
         }
     }
@@ -83,7 +84,8 @@ bool ExecBroker::removeInstrumentedModuleFromAddr(rword addr) {
     bool removed = false;
 
     for(const MemoryMap& m : getCurrentProcessMaps()) {
-        if(m.range.contains(addr)) {
+        Range<rword> r(m.start, m.end);
+        if(r.contains(addr)) {
             removed = removeInstrumentedModule(m.name);
             break;
         }
@@ -96,7 +98,7 @@ bool ExecBroker::instrumentAllExecutableMaps() {
 
     for(const MemoryMap& m : getCurrentProcessMaps()) {
         if(m.permission & QBDI::PF_EXEC) {
-            addInstrumentedRange(m.range);
+            addInstrumentedRange(m.start, m.end);
             instrumented = true;
         }
     }
