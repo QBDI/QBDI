@@ -23,6 +23,9 @@ threads creation) and C++ exception mechanisms.
 However, those system-dependent features will probably not be part of the core library (KISS),
 and should be integrated as a new layer (to be determined how).
 
+Status
+------
+
 .. role:: green
 .. role:: yellow
 .. role:: orange
@@ -36,6 +39,22 @@ ARM       Linux, Android, iOS     :yellow:`Partial`        :red:`Unsupported`
 AArch64   Linux, Android          :red:`Unsupported`       :red:`Unsupported`
 x86       Linux, macOS, Windows   :red:`Unsupported`       :red:`Unsupported`
 =======   =====================   ======================   =================================
+
+**stable**
+
+.. image:: https://travis-ci.com/QBDI/QBDI.svg?branch=master
+    :target: https://travis-ci.com/QBDI/QBDI
+
+.. image:: https://ci.appveyor.com/api/projects/status/s2qvpu8k8yiau647/branch/master?svg=true
+    :target: https://ci.appveyor.com/project/QBDI/qbdi/branch/master
+
+**dev**
+
+.. image:: https://travis-ci.com/QBDI/QBDI.svg?branch=dev-next
+    :target: https://travis-ci.com/QBDI/QBDI/branches
+
+.. image:: https://ci.appveyor.com/api/projects/status/s2qvpu8k8yiau647/branch/dev-next?svg=true
+    :target: https://ci.appveyor.com/project/QBDI/qbdi/branch/dev-next
 
 .. intro-end
 
@@ -131,30 +150,29 @@ then relaunch the build script from above and compile::
 Windows
 -------
 
-Building on Windows requires a working *bash* interpreter with some command line tools (*tar*, *wget*)
-in order to build our dependencies (we really hope to improve this in the future). Both *Cygwin* and the
-*Windows Subsytem for Linux* have been used successfully (but *Cygwin* is our official way to do it).
-It also requires a pure Windows installation of *Python 2* (from the official packages,
-this is mandatory) and an up-to-date CMake.
+Building on Windows requires a pure Windows installation of *Python 3*
+(from the official packages, this is mandatory) in order to build our dependencies
+(we really hope to improve this in the future).
+It also requires an up-to-date CMake.
 
-First, the ``config-win-X86_64.sh`` should be edited to use the generator (the ``-G`` flag) 
+First, the ``config-win-X86_64.py`` should be edited to use the generator (the ``-G`` flag)
 matching your Visual Studio installation. Then the following command should be run::
 
     mkdir build
     cd build
-    ../cmake/config-win-X86_64.sh
+    python ../cmake/config-win-X86_64.py
 
 If the build script warns you of missing dependencies for your platform (in the case of a first 
 compilation), or if you want to rebuild them, execute the following commands::
 
-    MSBuild deps\llvm.vcxproj
-    MSBuild deps\gtest.vcxproj
+    MSBuild.exe deps\llvm.vcxproj
+    MSBuild.exe deps\gtest.vcxproj
 
 This will rebuild the binary distribution of those dependencies for your platform. You can
 then relaunch the build script from above and compile::
 
-    ../cmake/config-win-X86_64.sh
-    MSBuild /p:Configuration=Release ALL_BUILD.vcxproj
+    python ../cmake/config-win-X86_64.py
+    MSBuild.exe /p:Configuration=Release ALL_BUILD.vcxproj
 
 Android
 -------

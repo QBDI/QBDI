@@ -4,7 +4,7 @@ project(QBDI)
 # QBDI version
 set(QBDI_VERSION_MAJOR 0)
 set(QBDI_VERSION_MINOR 6)
-set(QBDI_VERSION_PATCH 1)
+set(QBDI_VERSION_PATCH 2)
 
 set(SUPPORTED_PLATFORM linux-X86_64 linux-ARM macOS-X86_64 android-ARM
     win-X86_64 iOS-ARM linux-X86 macOS-X86)
@@ -127,8 +127,8 @@ if((${PLATFORM} STREQUAL "linux-X86_64") OR
    (${PLATFORM} STREQUAL "iOS-ARM") OR
    (${PLATFORM} STREQUAL "android-ARM"))
 
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Wall -ffunction-sections -fdata-sections -fvisibility=hidden -O3 -DNDEBUG  -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -fvisibility-inlines-hidden  -fvisibility=hidden -std=c++11 -ffunction-sections -fdata-sections -O3 -DNDEBUG  -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -fno-rtti")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Wall -ffunction-sections -fdata-sections -fvisibility=hidden -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -fvisibility-inlines-hidden  -fvisibility=hidden -std=c++11 -ffunction-sections -fdata-sections -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -fno-rtti")
 
 elseif(${PLATFORM} STREQUAL "win-X86_64")
 
@@ -285,7 +285,7 @@ target_include_directories(QBDI_obj PRIVATE
 
 # Hack because generators expressions don't work properly under visual studio ...
 if(${PLATFORM} STREQUAL "win-X86_64")
-    set(qbdi_static_libs ${LLVM_STATIC_LIBS} ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/QBDI_obj.lib)
+    set(qbdi_static_libs ${LLVM_STATIC_LIBS} ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/QBDI_obj.lib)
 else()
     set(qbdi_static_libs ${LLVM_STATIC_LIBS} $<TARGET_FILE:QBDI_obj>)
 endif()

@@ -20,6 +20,9 @@
 #include "Patch/PatchRule.h"
 #include "Utility/LogSys.h"
 
+#include <cstdint>
+#include <algorithm>
+
 #ifndef QBDI_OS_WIN
 #if defined(QBDI_OS_LINUX) && !defined(__USE_GNU)
 #define __USE_GNU
@@ -335,7 +338,7 @@ static void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm
         if (MRI.isSubRegisterEq(GPR_ID[j], regNo)) {
             if (GPR_ID[j] != regNo) {
                 unsigned int subregidx = MRI.getSubRegIndex(GPR_ID[j], regNo);
-                opa.size = MRI.getSubRegIdxSize(subregidx);
+                opa.size = MRI.getSubRegIdxSize(subregidx) / CHAR_BIT; // size is in bits, we want bytes
                 opa.regOff = MRI.getSubRegIdxOffset(subregidx);
             } else {
                 opa.size = sizeof(rword);
@@ -348,12 +351,15 @@ static void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm
 
 static void tryMergeCurrentRegister(InstAnalysis* instAnalysis) {
     OperandAnalysis& opa = instAnalysis->operands[instAnalysis->numOperands - 1];
+    if (opa.type != QBDI::OPERAND_GPR) {
+        return;
+    }
     for (uint16_t j = 0; j < instAnalysis->numOperands - 1; j++) {
         OperandAnalysis& pop = instAnalysis->operands[j];
         if (pop.type != opa.type) {
             continue;
         }
-        if (pop.regName == opa.regName &&
+        if (pop.regCtxIdx == opa.regCtxIdx &&
             pop.size == opa.size &&
             pop.regOff == opa.regOff) {
             // merge current one into previous one
@@ -365,13 +371,22 @@ static void tryMergeCurrentRegister(InstAnalysis* instAnalysis) {
     }
 }
 
-static void analyseImplicitRegisters(InstAnalysis* instAnalysis, const uint16_t* implicitRegs, RegisterAccessType type, const llvm::MCRegisterInfo& MRI) {
+static void analyseImplicitRegisters(InstAnalysis* instAnalysis, const uint16_t* implicitRegs, std::vector<unsigned int>& skipRegs,
+                                     RegisterAccessType type, const llvm::MCRegisterInfo& MRI) {
     if (!implicitRegs) {
         return;
     }
     // Iteration style copied from LLVM code
     for (; *implicitRegs; ++implicitRegs) {
         OperandAnalysis topa;
+        llvm::MCPhysReg regNo = *implicitRegs;
+        // skip register if in blacklist
+        if(std::find_if(skipRegs.begin(), skipRegs.end(),
+                [&regNo, &MRI](const unsigned int skipRegNo) {
+                    return MRI.isSubRegisterEq(skipRegNo, regNo);
+                }) != skipRegs.end()) {
+            continue;
+        }
         analyseRegister(topa, *implicitRegs, MRI);
         // we found a GPR (as size is only known for GPR)
         // TODO: add support for more registers
@@ -414,6 +429,7 @@ static void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst
         }
     }
     unsigned int numClasses = MRI.getNumRegClasses();
+    std::vector<unsigned int> skipRegs;
     // for each instruction operands
     for (uint8_t i = 0; i < numOperands; i++) {
         const llvm::MCOperand& op = inst.getOperand(i);
@@ -428,6 +444,9 @@ static void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst
             // validate that this is really a register operand, not
             // something else (memory access)
             if (opdesc.OperandType != llvm::MCOI::OPERAND_REGISTER) {
+                if (regNo != 0) {
+                    skipRegs.push_back(regNo);
+                }
                 continue;
             }
             // fill the operand analysis
@@ -464,14 +483,15 @@ static void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst
                 opa.type = OPERAND_IMM;
             }
             opa.value = (rword) op.getImm();
-            opa.size = sizeof(rword);
+            // FIXME: immediate size is architecture dependent (see X86BaseInfo.h for example)
+            opa.size = sizeof(rword); // set it to maximum size
             instAnalysis->numOperands++;
         }
     }
 
     // analyse implicit registers (R/W)
-    analyseImplicitRegisters(instAnalysis, desc.getImplicitDefs(), REGISTER_WRITE, MRI);
-    analyseImplicitRegisters(instAnalysis, desc.getImplicitUses(), REGISTER_READ, MRI);
+    analyseImplicitRegisters(instAnalysis, desc.getImplicitDefs(), skipRegs, REGISTER_WRITE, MRI);
+    analyseImplicitRegisters(instAnalysis, desc.getImplicitUses(), skipRegs, REGISTER_READ, MRI);
 }
 
 
