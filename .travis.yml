@@ -3,9 +3,9 @@ language: cpp
 addons:
   apt:
     sources:
-    - ubuntu-toolchain-r-test
+      - ubuntu-toolchain-r-test
   packages:
-    - g++-7
+    - g++
     - ccache
   homebrew:
     packages:
@@ -13,7 +13,7 @@ addons:
 
 linux_target: &linux_target
   os: linux
-  dist: trusty
+  dist: xenial
   compiler: gcc
   env:
     QBDI_PLATFORM="linux-X86_64"
@@ -21,8 +21,17 @@ linux_target: &linux_target
 
 linux_target32: &linux_target32
   os: linux
-  dist: trusty
+  dist: xenial
   compiler: gcc
+  addons:
+    apt:
+      packages:
+        - g++-multilib
+        - libc6-dev-i386
+        # in llvm build, detect 64bit lib version and try to use it, but 32bit is not install
+        - lib32tinfo-dev
+        - lib32z-dev
+        - lib32ncurses5-dev 
   env:
     QBDI_PLATFORM="linux-X86"
     CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=${QBDI_PLATFORM}"
