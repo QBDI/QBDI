@@ -17,7 +17,7 @@
  */
 #include "ComparedExecutor_X86.h"
 
-#if defined(_M_X64)
+#if defined(_M_IX86)
 
 extern "C" void runRealExec(const uint8_t* code, void* ctxBlock);
 
@@ -62,7 +62,7 @@ InMemoryObject ComparedExecutor_X86::compileWithContextSwitch(const char* source
     return InMemoryObject(finalSource.str().c_str());
 }
 
-QBDI::Context ComparedExecutor_X86::jitExec(llvm::ArrayRef<uint8_t> code, QBDI::Context &inputState, 
+QBDI::Context ComparedExecutor_X86::jitExec(llvm::ArrayRef<uint8_t> code, QBDI::Context &inputState,
                        llvm::sys::MemoryBlock &stack) {
     QBDI::Context           outputState;
     QBDI::Context           outerState;
@@ -70,9 +70,9 @@ QBDI::Context ComparedExecutor_X86::jitExec(llvm::ArrayRef<uint8_t> code, QBDI::
     llvm::sys::MemoryBlock  outerStack;
     std::error_code         ec;
 
-    ctxBlock = llvm::sys::Memory::allocateMappedMemory(4096, nullptr, 
+    ctxBlock = llvm::sys::Memory::allocateMappedMemory(4096, nullptr,
                                                        PF::MF_READ | PF::MF_WRITE, ec);
-    outerStack = llvm::sys::Memory::allocateMappedMemory(4096, nullptr, 
+    outerStack = llvm::sys::Memory::allocateMappedMemory(4096, nullptr,
                                                          PF::MF_READ | PF::MF_WRITE, ec);
     memset((void*)&outerState, 0, sizeof(QBDI::Context));
     // Put the inputState on the stack
@@ -100,15 +100,15 @@ QBDI::Context ComparedExecutor_X86::jitExec(llvm::ArrayRef<uint8_t> code, QBDI::
     return outputState;
 }
 
-QBDI::Context ComparedExecutor_X86::realExec(llvm::ArrayRef<uint8_t> code, 
-                                             QBDI::Context &inputState, 
+QBDI::Context ComparedExecutor_X86::realExec(llvm::ArrayRef<uint8_t> code,
+                                             QBDI::Context &inputState,
                                              llvm::sys::MemoryBlock &stack) {
 
     QBDI::Context           outputState;
     std::error_code         ec;
     llvm::sys::MemoryBlock  ctxBlock;
 
-    ctxBlock = llvm::sys::Memory::allocateMappedMemory(4096, nullptr, 
+    ctxBlock = llvm::sys::Memory::allocateMappedMemory(4096, nullptr,
                                                        PF::MF_READ | PF::MF_WRITE, ec);
 
     // Put the inputState on the stack
@@ -118,7 +118,7 @@ QBDI::Context ComparedExecutor_X86::realExec(llvm::ArrayRef<uint8_t> code,
     // Copy the input context
     memcpy(ctxBlock.base(), (void*) &inputState, sizeof(QBDI::Context));
     // Execute
-    #if defined(_M_X64)
+    #if defined(_M_IX86)
     runRealExec(code.data(), ctxBlock.base());
     #else
     __asm__ volatile(
@@ -214,7 +214,7 @@ const char* ConditionalBranching_s =
         "    .long 0x32253676\n"
         "end:\n";
 
-const char* FibonacciRecursion_s = 
+const char* FibonacciRecursion_s =
         "   call L1\n"
         "L1:\n"
         "   pop %esi\n"
@@ -263,7 +263,7 @@ const char* StackTricks_s =
         "   cmp $2, %eax\n"
         "   cmova %ecx, %edx\n"
         "   push %edx\n"
-        "   ret\n"   
+        "   ret\n"
         "f2:\n"
         "   dec %eax\n"
         "   lea f4-L1(%ebp), %ecx\n"

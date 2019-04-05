@@ -23,7 +23,7 @@
     #define QBDI_OS_WIN
     #define _QBDI_UNREACHABLE() __assume(0)
 
-    #if defined(_M_X86)
+    #if defined(_M_IX86)
         #define QBDI_ARCH_X86
         #define QBDI_BITS_32
     #elif defined(_M_X64)

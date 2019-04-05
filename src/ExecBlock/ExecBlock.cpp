@@ -348,7 +348,7 @@ uint16_t ExecBlock::newShadow(uint16_t tag) {
     uint16_t id = shadowIdx++;
     RequireAction("ExecBlock::newShadow", id * sizeof(rword) < dataBlock.size() - sizeof(Context), abort());
     if(tag != NO_REGISTRATION) {
-        LogDebug("ExecBlock::newShadow", "Registering new tagged shadow %" PRIu16 "for instID %" PRIu16 " wih tag %" PRIu16, id, getNextInstID(), tag);
+        LogDebug("ExecBlock::newShadow", "Registering new tagged shadow %" PRIu16 " for instID %" PRIu16 " wih tag %" PRIu16, id, getNextInstID(), tag);
         shadowRegistry.push_back({
             getNextSeqID(),
             getNextInstID(),

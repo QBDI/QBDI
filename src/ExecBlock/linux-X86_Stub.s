@@ -28,9 +28,9 @@ __qbdi_runCodeBlockSSE:
     sub esp, 512;
     and esp, -512;
     fxsave [esp];
-    pusha;
+    pushad;
     call eax;
-    popa;
+    popad;
     fxrstor [esp];
     mov esp, edx;
     ret;

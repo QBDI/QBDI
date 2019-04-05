@@ -25,7 +25,7 @@ endif()
 
 # Google Test
 
-if(${PLATFORM} STREQUAL win-X86_64)
+if(${OS} STREQUAL "win")
 add_custom_target(gtest
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/deps/gtest/${PLATFORM}/
     COMMAND python build.py prepare

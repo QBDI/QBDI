@@ -16,11 +16,14 @@ set(SOURCES
 )
 
 if(${PLATFORM} STREQUAL "win-X86_64")
-
-set(SOURCES ${SOURCES}
-    Patch/WIN64_RunRealExec.asm
-)
-
+    set(SOURCES ${SOURCES}
+        Patch/WIN64_RunRealExec.asm
+    )
+elseif (${PLATFORM} STREQUAL "win-X86")
+    set(SOURCES ${SOURCES}
+        Patch/WIN86_RunRealExec.asm
+    )
+    set_source_files_properties("Patch/WIN86_RunRealExec.asm" PROPERTIES COMPILE_FLAGS "/safeseh")
 endif()
 
 add_executable(QBDITest ${SOURCES})

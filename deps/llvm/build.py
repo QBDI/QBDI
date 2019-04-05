@@ -66,7 +66,9 @@ def build_llvm(llvm_dir, build_dir, arch, platform, arch_opt=None):
         build_dir.mkdir()
 
     # set platform specific arguments.
-    if platform == "win":
+    if platform == "win" and arch_opt == "i386":
+        cmake_specific_option = ["-G", "Visual Studio 14 2015"]
+    elif platform == "win":
         cmake_specific_option = ["-G", "Visual Studio 14 2015 Win64"]
     elif platform == "iOS":
         cc = subprocess.check_output(["xcrun", "--sdk", "iphoneos", "-f", "clang"])
@@ -158,7 +160,8 @@ def build_llvm(llvm_dir, build_dir, arch, platform, arch_opt=None):
     # Compile llvm libraries
     if platform == "win":
         subprocess.check_call(["MSBuild.exe", "ALL_BUILD.vcxproj",
-                               "/p:Configuration=Release,Platform=X64",
+                               "/p:Configuration=Release",
+                               "/p:Platform=X86" if arch_opt == "i386" else "/p:Platform=X64",
                                "/m:4"],
                               cwd=str(build_dir))
     else:
@@ -223,7 +226,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     target = sys.argv[2]
-    assert(target in ("android-ARM", "iOS-ARM", "linux-ARM", "linux-X86_64", "linux-X86", "macOS-X86_64", "macOS-X86", "win-X86_64"))
+    assert(target in ("android-ARM", "iOS-ARM", "linux-ARM", "linux-X86_64", "linux-X86", "macOS-X86_64", "macOS-X86", "win-X86_64", "win-X86"))
 
     platform = target.split("-")[0]
     arch = target.split("-")[1]
