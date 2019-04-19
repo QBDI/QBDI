@@ -123,7 +123,6 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
                 OpIs(llvm::X86::REP_PREFIX),
                 OpIs(llvm::X86::REPNE_PREFIX),
                 OpIs(llvm::X86::DATA16_PREFIX),
-                OpIs(llvm::X86::DATA32_PREFIX),
                 OpIs(llvm::X86::CS_PREFIX),
                 OpIs(llvm::X86::SS_PREFIX),
                 OpIs(llvm::X86::DS_PREFIX),

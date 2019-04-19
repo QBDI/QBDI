@@ -4,7 +4,7 @@ addons:
   apt:
     sources:
     - ubuntu-toolchain-r-test
-  packages:
+    packages:
     - g++-7
     - ccache
   homebrew:
@@ -30,16 +30,16 @@ install_llvm: &install_llvm
   script:
     - mkdir build && cd build
     - cmake .. ${CMAKE_ARGS}
-    - eval "[[ -d ../deps/llvm/${QBDI_PLATFORM}/lib && -d ../deps/llvm/${QBDI_PLATFORM}/include ]] || make -j2 llvm"
+    - eval "[[ -d ../deps/llvm/${QBDI_PLATFORM}/lib && -d ../deps/llvm/${QBDI_PLATFORM}/include ]] || make llvm"
   before_cache:
     # Reduce cache size
-    - sh ../deps/llvm/${QBDI_PLATFORM}/build.sh clean
+    - python3 ../deps/llvm/build.py clean ${QBDI_PLATFORM}
 
 install_gtest: &install_gtest
   script:
     - mkdir build && cd build
     - cmake .. ${CMAKE_ARGS}
-    - eval "[[ -d ../deps/gtest/${QBDI_PLATFORM}/lib && -d ../deps/gtest/${QBDI_PLATFORM}/include ]] || make -j2 gtest"
+    - eval "[[ -d ../deps/gtest/${QBDI_PLATFORM}/lib && -d ../deps/gtest/${QBDI_PLATFORM}/include ]] || make gtest"
   before_cache:
     # Reduce cache size
     - sh ../deps/gtest/${QBDI_PLATFORM}/build.sh clean
@@ -57,7 +57,14 @@ cache:
 
 cache:
   directories:
-    - deps
+    - deps/llvm/linux-X86_64/include
+    - deps/llvm/linux-X86_64/lib
+    - deps/gtest/linux-X86_64/include
+    - deps/gtest/linux-X86_64/lib
+    - deps/llvm/macOS-X86_64/include
+    - deps/llvm/macOS-X86_64/lib
+    - deps/gtest/macOS-X86_64/include
+    - deps/gtest/macOS-X86_64/lib
 
 sudo: required
 
