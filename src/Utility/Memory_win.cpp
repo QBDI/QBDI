@@ -90,13 +90,13 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
 #ifdef UNICODE
             std::wstring wstr(path);
             std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
-            m.name = strdup(conv.to_bytes(wstr).c_str());
+            m.setName(conv.to_bytes(wstr).c_str());
 #else
-            m.name = strdup(path);
+            m.setName(path);
 #endif
         } else {
             // fallback to empty name
-            m.name = strdup("");
+            m.setName("");
         }
         maps.push_back(m);
     }

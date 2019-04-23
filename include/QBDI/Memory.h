@@ -50,7 +50,11 @@ _QBDI_ENABLE_BITMASK_OPERATORS(Permission)
 
 /*! Map of a memory area (region).
  */
+#ifdef __cplusplus
+struct MemoryMap {
+#else
 typedef struct _MemoryMap {
+#endif
 
     rword       start;          /*!< Range start value. */
     rword       end;            /*!< Range end value (always excluded). */
@@ -61,7 +65,7 @@ typedef struct _MemoryMap {
 public:
     /* Construct a new (empty) MemoryMap.
      */
-    _MemoryMap() : start(0), end(0), permission(QBDI::PF_NONE), name(nullptr) {};
+    MemoryMap() : start(0), end(0), permission(QBDI::PF_NONE), name(nullptr) {};
 
     /*! Construct a new MemoryMap (given some properties).
      *
@@ -70,29 +74,41 @@ public:
      * @param[in] permission   Region access rights (PF_READ, PF_WRITE, PF_EXEC).
      * @param[in] name         Region name (useful when a region is mapping a module).
      */
-    _MemoryMap(rword start, rword end, Permission permission, char* name) :
+    MemoryMap(rword start, rword end, Permission permission, char* name) :
         start(start), end(end), permission(permission), name(name) {}
 
-    ~_MemoryMap() {
+    ~MemoryMap() {
         if(name) {
             free(name);
         }
     }
 
-    _MemoryMap(const _MemoryMap& m) : 
+    MemoryMap(const MemoryMap& m) : 
         start(m.start), end(m.end), permission(m.permission) {
         name = m.name ? strdup(m.name) : nullptr;
     }
 
-    _MemoryMap& operator=(const _MemoryMap& copy) {
+    MemoryMap& operator=(const MemoryMap& copy) {
         start = copy.start;
         end = copy.end;
         permission= copy.permission;
         name = copy.name ? strdup(copy.name) : nullptr;
         return *this;
     }
-#endif
+
+    void setName(const char* name) {
+        if(this->name) {
+            free(this->name);
+            this->name = nullptr;
+        }
+        if(name) {
+            this->name = strdup(name);
+        }
+    }    
+};
+#else
 } MemoryMap;
+#endif
 
 // C++ Only functions
 #ifdef __cplusplus
@@ -218,14 +234,7 @@ QBDI_EXPORT MemoryMap* qbdi_getCurrentProcessMaps(size_t* size);
  * @param[in] arr  An array of MemoryMap object.
  * @param[in] size Number of elements in the array.
  */
-QBDI_EXPORT inline void qbdi_freeMemoryMapArray(MemoryMap* arr, size_t size) {
-    for(size_t i = 0; i < size; i++) {
-        if(arr[i].name) {
-            free(arr[i].name);
-        }
-    }
-    free(arr);
-}
+QBDI_EXPORT void qbdi_freeMemoryMapArray(MemoryMap* arr, size_t size);
 
 
 #ifdef __cplusplus

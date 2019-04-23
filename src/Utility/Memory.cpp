@@ -180,4 +180,13 @@ void qbdi_alignedFree(void* ptr) {
 #endif
 }
 
+void qbdi_freeMemoryMapArray(MemoryMap* arr, size_t size) {
+    for(size_t i = 0; i < size; i++) {
+        if(arr[i].name) {
+            free(arr[i].name);
+        }
+    }
+    free(arr);
+}
+
 }

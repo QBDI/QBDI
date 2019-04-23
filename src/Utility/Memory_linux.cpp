@@ -94,10 +94,10 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
 
         // Get the file name
         if((ptr = strrchr(ptr, '/')) != nullptr) {
-            m.name = strdup(ptr + 1);
+            m.setName(ptr + 1);
         }
         else {
-            m.name = strdup("");
+            m.setName("");
         }
 
         LogCallback(LogPriority::DEBUG, "getRemoteProcessMaps", [&] (FILE *out) -> void {
