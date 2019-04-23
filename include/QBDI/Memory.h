@@ -20,11 +20,11 @@
 
 #include <stdbool.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "Platform.h"
 #include "State.h"
 
-// C++ Only functions
 #ifdef __cplusplus
 #include <string>
 #include <vector>
@@ -33,6 +33,7 @@
 
 
 namespace QBDI {
+#endif
 
 /*! Memory access rights.
  */
@@ -43,34 +44,58 @@ typedef enum {
     _QBDI_EI(PF_EXEC) = 4    /*!< Execution access */
 } Permission;
 
+#ifdef __cplusplus
 _QBDI_ENABLE_BITMASK_OPERATORS(Permission)
+#endif
 
 /*! Map of a memory area (region).
  */
-class MemoryMap {
+typedef struct _MemoryMap {
 
+    rword       start;          /*!< Range start value. */
+    rword       end;            /*!< Range end value (always excluded). */
+    Permission  permission;     /*!< Region access rights (PF_READ, PF_WRITE, PF_EXEC). */
+    char*       name;           /*!< Region name (useful when a region is mapping a module). */
+
+#ifdef __cplusplus
 public:
-
-    Range<rword> range;       /*!< A range of memory (region), delimited between a start and an (excluded) end address. */
-    Permission   permission;  /*!< Region access rights (PF_READ, PF_WRITE, PF_EXEC). */
-    std::string  name;        /*!< Region name (useful when a region is mapping a module). */
-
     /* Construct a new (empty) MemoryMap.
      */
-    MemoryMap() : range(0, 0), permission(QBDI::PF_NONE), name("") {};
+    _MemoryMap() : start(0), end(0), permission(QBDI::PF_NONE), name(nullptr) {};
 
     /*! Construct a new MemoryMap (given some properties).
      *
-     * @param[in] range        A range of memory (region), delimited between
-     *                         a start and an (excluded) end address.
+     * @param[in] start        Range start value.
+     * @param[in] end          Range end value (always excluded).
      * @param[in] permission   Region access rights (PF_READ, PF_WRITE, PF_EXEC).
      * @param[in] name         Region name (useful when a region is mapping a module).
      */
-   MemoryMap(Range<rword> range, Permission permission, std::string name) :
-        range(range), permission(permission), name(name) {}
+    _MemoryMap(rword start, rword end, Permission permission, char* name) :
+        start(start), end(end), permission(permission), name(name) {}
 
-};
+    ~_MemoryMap() {
+        if(name) {
+            free(name);
+        }
+    }
 
+    _MemoryMap(const _MemoryMap& m) : 
+        start(m.start), end(m.end), permission(m.permission) {
+        name = m.name ? strdup(m.name) : nullptr;
+    }
+
+    _MemoryMap& operator=(const _MemoryMap& copy) {
+        start = copy.start;
+        end = copy.end;
+        permission= copy.permission;
+        name = copy.name ? strdup(copy.name) : nullptr;
+        return *this;
+    }
+#endif
+} MemoryMap;
+
+// C++ Only functions
+#ifdef __cplusplus
 /*! Get a list of all the memory maps (regions) of a process.
  *
  * @param[in] pid The identifier of the process.
@@ -170,6 +195,38 @@ QBDI_EXPORT void qbdi_simulateCallV(GPRState *ctx, rword returnAddress, uint32_t
  *  @param[in] args          An array or arguments.
  */
 QBDI_EXPORT void qbdi_simulateCallA(GPRState *ctx, rword returnAddress, uint32_t argNum, const rword* args);
+
+/*! Get a list of all the memory maps (regions) of a process.
+ *
+ * @param[in]  pid  The identifier of the process.
+ * @param[out] size Will be set to the number of strings in the returned array.
+ *
+ * @return  An array of MemoryMap object.
+ */
+QBDI_EXPORT MemoryMap* qbdi_getRemoteProcessMaps(rword pid, size_t* size);
+
+/*! Get a list of all the memory maps (regions) of the current process.
+ *
+ * @param[out] size Will be set to the number of strings in the returned array.
+ *
+ * @return  An array of MemoryMap object.
+ */
+QBDI_EXPORT MemoryMap* qbdi_getCurrentProcessMaps(size_t* size);
+
+/*! Free an array of memory maps objects.
+ *
+ * @param[in] arr  An array of MemoryMap object.
+ * @param[in] size Number of elements in the array.
+ */
+QBDI_EXPORT inline void qbdi_freeMemoryMapArray(MemoryMap* arr, size_t size) {
+    for(size_t i = 0; i < size; i++) {
+        if(arr[i].name) {
+            free(arr[i].name);
+        }
+    }
+    free(arr);
+}
+
 
 #ifdef __cplusplus
 /*
