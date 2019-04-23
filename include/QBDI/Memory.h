@@ -75,7 +75,7 @@ public:
      * @param[in] name         Region name (useful when a region is mapping a module).
      */
     MemoryMap(rword start, rword end, Permission permission, char* name) :
-        start(start), end(end), permission(permission), name(name) {}
+        start(start), end(end), permission(permission), name(strdup(name)) {}
 
     ~MemoryMap() {
         if(name) {
