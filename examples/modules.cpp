@@ -1,5 +1,5 @@
 #include <iostream>
-#include "Memory.h"
+#include "Memory.hpp"
 
 int main(int argc, char** argv) {
     for(const QBDI::MemoryMap& m :  QBDI::getCurrentProcessMaps()) {

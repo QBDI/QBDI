@@ -20,11 +20,12 @@
 
 #ifdef __cplusplus
 #include "QBDI/VM.h"
+#include "QBDI/Memory.hpp"
 #else
 #include "QBDI/VM_C.h"
+#include "QBDI/Memory.h"
 #endif
 
-#include "QBDI/Memory.h"
 #include "QBDI/Logs.h"
 #include "QBDI/Version.h"
 

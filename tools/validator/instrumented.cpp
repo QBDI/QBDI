@@ -26,7 +26,7 @@
 #include "instrumented.h"
 #include "pipes.h"
 
-#include "Memory.h"
+#include "Memory.hpp"
 #include "Platform.h"
 #include "Utility/LogSys.h"
 #include "VM.h"

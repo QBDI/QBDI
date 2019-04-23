@@ -137,7 +137,7 @@ void qbdipreload_floatCtxToFPRState(const void* fprCtx, FPRState* fprState) {
 void setEntryBreakpoint(void *address) {
     long pageSize = sysconf(_SC_PAGESIZE);
     uintptr_t base = (uintptr_t) address - ((uintptr_t) address % pageSize);
-    
+
     ENTRY_BRK.address = address;
     mprotect((void*) base, pageSize, PROT_READ | PROT_WRITE);
     ENTRY_BRK.value = *((long*) address);

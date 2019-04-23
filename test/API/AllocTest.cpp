@@ -19,7 +19,7 @@
 #include <cstdint>
 #include <gtest/gtest.h>
 
-#include "Memory.h"
+#include "Memory.hpp"
 
 TEST(AllocAlignedTest, CorrectSize) {
     const static size_t size = 1000;

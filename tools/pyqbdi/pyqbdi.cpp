@@ -2078,7 +2078,7 @@ namespace QBDI {
       }
 
 
-      /*! Add a virtual callback which is triggered for any memory access at a specific address 
+      /*! Add a virtual callback which is triggered for any memory access at a specific address
        *  matching the access type. Virtual callbacks are called via callback forwarding by a
        *  gate callback triggered on every memory access. This incurs a high performance cost.
        *
@@ -3151,19 +3151,17 @@ namespace QBDI {
        */
       static PyObject* pyqbdi_getModuleNames(PyObject* self, PyObject* noarg) {
         PyObject* ret  = nullptr;
-        char** modules = nullptr;
         size_t size    = 0;
 
         try {
-          modules = QBDI::getModuleNames(&size);
+          std::vector<std::string> modules = QBDI::getModuleNames();
+          size = modules.size();
 
           ret = PyList_New(size);
           if (size) {
             for (unsigned int i = 0; i < size; i++) {
-              PyList_SetItem(ret, i, PyString_FromString(modules[i]));
-              free(modules[i]);
+              PyList_SetItem(ret, i, PyString_FromString(modules[i].c_str()));
             }
-            free(modules);
           }
         }
         catch (const std::exception& e) {
