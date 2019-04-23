@@ -69,8 +69,8 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
 
         // create new memory map entry
         MemoryMap m;
-        m.range.start = addr;
-        m.range.end = next;
+        m.start = addr;
+        m.end = next;
         m.permission = QBDI::PF_NONE;
         m.permission |= PROT_ISREAD(info.Protect) ? QBDI::PF_READ : QBDI::PF_NONE;
         m.permission |= PROT_ISWRITE(info.Protect) ? QBDI::PF_WRITE : QBDI::PF_NONE;
