@@ -30,7 +30,7 @@ install_llvm: &install_llvm
   script:
     - mkdir build && cd build
     - cmake .. ${CMAKE_ARGS}
-    - eval "[[ -d ../deps/llvm/${QBDI_PLATFORM}/lib && -d ../deps/llvm/${QBDI_PLATFORM}/include ]] || make llvm"
+    - eval '[[ -n "$(find ../deps/llvm/${QBDI_PLATFORM}/lib -type f -print -quit)" && -n "$(find ../deps/llvm/${QBDI_PLATFORM}/include -type f -print -quit)" ]] || make llvm'
   before_cache:
     # Reduce cache size
     - python3 ../deps/llvm/build.py clean ${QBDI_PLATFORM}
@@ -39,7 +39,7 @@ install_gtest: &install_gtest
   script:
     - mkdir build && cd build
     - cmake .. ${CMAKE_ARGS}
-    - eval "[[ -d ../deps/gtest/${QBDI_PLATFORM}/lib && -d ../deps/gtest/${QBDI_PLATFORM}/include ]] || make gtest"
+    - eval '[[ -n "$(find ../deps/gtest/${QBDI_PLATFORM}/lib -type f -print -quit)" && -n "$(find ../deps/gtest/${QBDI_PLATFORM}/include -type f -print -quit)" ]] || make gtest'
   before_cache:
     # Reduce cache size
     - sh ../deps/gtest/${QBDI_PLATFORM}/build.sh clean
