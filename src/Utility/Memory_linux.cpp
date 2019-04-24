@@ -101,7 +101,7 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
         }
 
         LogCallback(LogPriority::DEBUG, "getRemoteProcessMaps", [&] (FILE *out) -> void {
-            fprintf(out, "Read new map [%" PRIRWORD ", %" PRIRWORD "] %s ", m.range.start, m.range.end, m.name);
+            fprintf(out, "Read new map [%" PRIRWORD ", %" PRIRWORD "] %s ", m.start, m.end, m.name);
             if(m.permission & QBDI::PF_READ)  fprintf(out, "r");
             if(m.permission & QBDI::PF_WRITE) fprintf(out, "w");
             if(m.permission & QBDI::PF_EXEC)  fprintf(out, "x");
