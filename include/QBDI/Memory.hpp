@@ -91,6 +91,11 @@ QBDI_EXPORT std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid);
  */
 QBDI_EXPORT std::vector<MemoryMap> getCurrentProcessMaps();
 
+// TODO test header, only to test getCurrentProcessMaps with dl_iterate_phdr
+#if defined(QBDI_OS_LINUX) || defined(QBDI_OS_ANDROID)
+QBDI_EXPORT std::vector<MemoryMap> getCurrentProcessMaps2();
+#endif
+
 /*! Get a list of all the module names loaded in the process memory.
  *
  * @return  A vector of string of module names.
