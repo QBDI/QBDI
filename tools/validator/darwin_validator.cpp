@@ -25,7 +25,7 @@
 #include <mach/mach.h>
 #include <mach/task.h>
 
-#include "Memory.h"
+#include "Memory.hpp"
 #include "Platform.h"
 #include "Utility/LogSys.h"
 
@@ -124,7 +124,7 @@ int QBDI::qbdipreload_on_exit(int status) {
 
 
 int QBDI::qbdipreload_on_start(void *main) {
-    INSTRUMENTED = fork(); 
+    INSTRUMENTED = fork();
     if(INSTRUMENTED == 0) {
         ROLE = Role::Instrumented;
         QBDI::qbdipreload_hook_main(main);

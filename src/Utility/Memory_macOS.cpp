@@ -18,6 +18,7 @@
 #include "llvm/Support/Process.h"
 
 #include "Utility/LogSys.h"
+#include "Memory.hpp"
 #include "Memory.h"
 
 #include <set>
@@ -305,10 +306,6 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
             });
 
     return omaps;
-}
-
-MemoryMap* qbdi_getCurrentProcessMaps(size_t* size) {
-    return qbdi_getRemoteProcessMaps(getpid(), size);
 }
 
 }

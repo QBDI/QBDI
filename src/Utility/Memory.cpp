@@ -18,6 +18,7 @@
 #include "llvm/Support/Process.h"
 
 #include "Utility/LogSys.h"
+#include "Memory.hpp"
 #include "Memory.h"
 
 #define FRAME_LENGTH       16
@@ -25,6 +26,63 @@
 
 namespace QBDI {
 
+// MemoryMap
+const char MemoryMap::default_name = '\0';
+
+MemoryMap::MemoryMap(rword start, rword end, Permission permission, const char* name) :
+        _name(nullptr), start(start), end(end), permission(permission), name(&default_name) {
+    if (name != nullptr) {
+        _name = strdup(name);
+        this->name = _name;
+    }
+}
+
+MemoryMap::~MemoryMap() {
+    if (_name) {
+        free(_name);
+    }
+}
+
+MemoryMap::MemoryMap(const MemoryMap& m) :
+    start(m.start), end(m.end), permission(m.permission) {
+    _name = m.name ? strdup(m.name) : nullptr;
+    name = _name;
+}
+
+MemoryMap& MemoryMap::operator=(const MemoryMap&& mov) {
+    start = mov.start;
+    end = mov.end;
+    permission = mov.permission;
+    if (_name)
+        free(_name);
+    _name = mov._name;
+    name = mov.name;
+    return *this;
+}
+
+MemoryMap& MemoryMap::operator=(const MemoryMap& copy) {
+    start = copy.start;
+    end = copy.end;
+    permission = copy.permission;
+    if (_name)
+        free(_name);
+    _name = copy.name ? strdup(copy.name) : nullptr;
+    name = _name ? _name : &default_name;
+    return *this;
+}
+
+void MemoryMap::setName(const char* name) {
+    if(_name) {
+        free(_name);
+        _name = nullptr;
+    }
+    if(name) {
+        _name = strdup(name);
+    }
+    this->name = _name ? _name : &default_name;
+}
+
+// C++ method
 std::vector<std::string> getModuleNames() {
     std::vector<std::string> modules;
 
@@ -47,34 +105,32 @@ std::vector<std::string> getModuleNames() {
     return modules;
 }
 
-char** qbdi_getModuleNames(size_t* size) {
-    std::vector<std::string> modules = getModuleNames();
-    *size = modules.size();
-    if(*size == 0) {
-        return NULL;
+void* alignedAlloc(size_t size, size_t align) {
+    void* allocated = nullptr;
+    // Alignment needs to be a power of 2
+    if ((align == 0) || ((align & (align - 1)) != 0)) {
+        return nullptr;
     }
-    char** names = (char**) malloc(modules.size() * sizeof(char**));
-    for(size_t i = 0; i < modules.size(); i++) {
-        names[i] = (char*) malloc((modules[i].length() + 1) * sizeof(char));
-        strncpy(names[i], modules[i].c_str(), modules[i].length() + 1);
+#if defined(QBDI_OS_LINUX) || defined(QBDI_OS_ANDROID) || defined(QBDI_OS_DARWIN)
+    int ret = posix_memalign(&allocated, align, size);
+    if (ret != 0) {
+        return nullptr;
     }
-    return names;
+#elif defined(QBDI_OS_WIN)
+    allocated = _aligned_malloc(size, align);
+#endif
+    return allocated;
 }
 
-MemoryMap* qbdi_getRemoteProcessMaps(rword pid, size_t* size) {
-    std::vector<MemoryMap> vmaps = getRemoteProcessMaps(pid);
-    *size = vmaps.size();
-    if(*size == 0) {
-        return NULL;
-    }
-    MemoryMap* amaps = (MemoryMap*) malloc(vmaps.size() * sizeof(MemoryMap));
-    for(size_t i = 0; i < vmaps.size(); i++) {
-        amaps[i] = vmaps[i];
-    }
-    return amaps;
+void alignedFree(void* ptr) {
+#if defined(QBDI_OS_LINUX) || defined(QBDI_OS_ANDROID) || defined(QBDI_OS_DARWIN)
+    free(ptr);
+#elif defined(QBDI_OS_WIN)
+    _aligned_free(ptr);
+#endif
 }
 
-bool qbdi_allocateVirtualStack(GPRState *ctx, uint32_t stackSize, uint8_t **stack) {
+bool allocateVirtualStack(GPRState *ctx, uint32_t stackSize, uint8_t **stack) {
     (*stack) = (uint8_t*) alignedAlloc(stackSize, 16);
     if(*stack == nullptr) {
         return false;
@@ -86,7 +142,20 @@ bool qbdi_allocateVirtualStack(GPRState *ctx, uint32_t stackSize, uint8_t **stac
     return true;
 }
 
-void qbdi_simulateCallA(GPRState *ctx, rword returnAddress, uint32_t argNum, const rword* args) {
+void simulateCall(GPRState *ctx, rword returnAddress, const std::vector<rword>& args) {
+    simulateCallA(ctx, returnAddress, args.size(), args.data());
+}
+
+void simulateCallV(GPRState *ctx, rword returnAddress, uint32_t argNum, va_list ap) {
+    rword* args = new rword[argNum];
+    for(uint32_t i = 0; i < argNum; i++) {
+        args[i] = va_arg(ap, rword);
+    }
+    simulateCallA(ctx, returnAddress, argNum, args);
+    delete[] args;
+}
+
+void simulateCallA(GPRState *ctx, rword returnAddress, uint32_t argNum, const rword* args) {
     uint32_t i = 0;
     uint32_t argsoff = 0;
     uint32_t limit = FRAME_LENGTH;
@@ -138,55 +207,87 @@ void qbdi_simulateCallA(GPRState *ctx, rword returnAddress, uint32_t argNum, con
     }
 }
 
-void qbdi_simulateCallV(GPRState *ctx, rword returnAddress, uint32_t argNum, va_list ap) {
-    rword* args = new rword[argNum];
-    for(uint32_t i = 0; i < argNum; i++) {
-        args[i] = va_arg(ap, rword);
+// C method
+qbdi_MemoryMap* convert_MemoryMap_to_C(std::vector<MemoryMap> maps, size_t* size) {
+    if (size == NULL)
+        return NULL;
+    *size = maps.size();
+    if(*size == 0) {
+        return NULL;
     }
-    qbdi_simulateCallA(ctx, returnAddress, argNum, args);
-    delete[] args;
-}
-
-void qbdi_simulateCall(GPRState *ctx, rword returnAddress, uint32_t argNum, ...) {
-    va_list  ap;
-    // Handle the arguments
-    va_start(ap, argNum);
-    qbdi_simulateCallV(ctx, returnAddress, argNum, ap);
-    va_end(ap);
-}
-
-void* qbdi_alignedAlloc(size_t size, size_t align) {
-    void* allocated = nullptr;
-    // Alignment needs to be a power of 2
-    if ((align == 0) || ((align & (align - 1)) != 0)) {
-        return nullptr;
+    qbdi_MemoryMap* cmaps = (qbdi_MemoryMap*) malloc(*size * sizeof(qbdi_MemoryMap));
+    RequireAction("convert_MemoryMap_to_C", cmaps != NULL, abort());
+    for(size_t i = 0; i < *size; i++) {
+        cmaps[i].start = maps[i].start;
+        cmaps[i].end = maps[i].end;
+        cmaps[i].permission = static_cast<qbdi_Permission>(maps[i].permission);
+        cmaps[i].name = strdup(maps[i].name);
     }
-#if defined(QBDI_OS_LINUX) || defined(QBDI_OS_ANDROID) || defined(QBDI_OS_DARWIN)
-    int ret = posix_memalign(&allocated, align, size);
-    if (ret != 0) {
-        return nullptr;
-    }
-#elif defined(QBDI_OS_WIN)
-    allocated = _aligned_malloc(size, align);
-#endif
-    return allocated;
+    return cmaps;
 }
 
-void qbdi_alignedFree(void* ptr) {
-#if defined(QBDI_OS_LINUX) || defined(QBDI_OS_ANDROID) || defined(QBDI_OS_DARWIN)
-    free(ptr);
-#elif defined(QBDI_OS_WIN)
-    _aligned_free(ptr);
-#endif
+qbdi_MemoryMap* qbdi_getRemoteProcessMaps(rword pid, size_t* size) {
+    if (size == NULL)
+        return NULL;
+    return convert_MemoryMap_to_C(getRemoteProcessMaps(pid), size);
 }
 
-void qbdi_freeMemoryMapArray(MemoryMap* arr, size_t size) {
+qbdi_MemoryMap* qbdi_getCurrentProcessMaps(size_t* size) {
+    if (size == NULL)
+        return NULL;
+    return convert_MemoryMap_to_C(getCurrentProcessMaps(), size);
+}
+
+void qbdi_freeMemoryMapArray(qbdi_MemoryMap* arr, size_t size) {
     for(size_t i = 0; i < size; i++) {
         if(arr[i].name) {
             free(arr[i].name);
         }
     }
     free(arr);
+}
+
+char** qbdi_getModuleNames(size_t* size) {
+    if (size == NULL)
+        return NULL;
+    std::vector<std::string> modules = getModuleNames();
+    *size = modules.size();
+    if(*size == 0) {
+        return NULL;
+    }
+    char** names = (char**) malloc(modules.size() * sizeof(char*));
+    RequireAction("getModuleNames", names != NULL, abort());
+    for(size_t i = 0; i < modules.size(); i++) {
+        names[i] = strdup(modules[i].c_str());
+    }
+    return names;
+}
+
+void* qbdi_alignedAlloc(size_t size, size_t align) {
+    return alignedAlloc(size, align);
+}
+
+void qbdi_alignedFree(void* ptr) {
+    alignedFree(ptr);
+}
+
+bool qbdi_allocateVirtualStack(GPRState *ctx, uint32_t stackSize, uint8_t **stack) {
+    return allocateVirtualStack(ctx, stackSize, stack);
+}
+
+void qbdi_simulateCall(GPRState *ctx, rword returnAddress, uint32_t argNum, ...) {
+    va_list  ap;
+    // Handle the arguments
+    va_start(ap, argNum);
+    simulateCallV(ctx, returnAddress, argNum, ap);
+    va_end(ap);
+}
+void qbdi_simulateCallV(GPRState *ctx, rword returnAddress, uint32_t argNum, va_list ap) {
+    simulateCallV(ctx, returnAddress, argNum, ap);
+}
+
+void qbdi_simulateCallA(GPRState *ctx, rword returnAddress, uint32_t argNum, const rword* args) {
+    simulateCallA(ctx, returnAddress, argNum, args);
 }
 
 }

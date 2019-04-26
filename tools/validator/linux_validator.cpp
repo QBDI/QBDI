@@ -29,7 +29,7 @@
 #include <sys/ptrace.h>
 #include <sys/wait.h>
 
-#include "Memory.h"
+#include "Memory.hpp"
 #include "Platform.h"
 #include "Utility/LogSys.h"
 

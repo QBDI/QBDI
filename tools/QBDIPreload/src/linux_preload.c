@@ -137,7 +137,7 @@ void qbdipreload_floatCtxToFPRState(const void* fprCtx, FPRState* fprState) {
 void setEntryBreakpoint(void *address) {
     long pageSize = sysconf(_SC_PAGESIZE);
     uintptr_t base = (uintptr_t) address - ((uintptr_t) address % pageSize);
-    
+
     ENTRY_BRK.address = address;
     mprotect((void*) base, pageSize, PROT_READ | PROT_WRITE);
     ENTRY_BRK.value = *((long*) address);
@@ -163,7 +163,7 @@ void catchEntrypoint(int argc, char** argv) {
 
     if (DEFAULT_HANDLER && (status == QBDIPRELOAD_NOT_HANDLED)) {
 #if defined(_QBDI_DEBUG)
-        qbdi_addLogFilter("*", QBDI_DEBUG);
+//        qbdi_addLogFilter("*", QBDI_DEBUG);
 #endif
         VMInstanceRef vm;
         qbdi_initVM(&vm, NULL, NULL);
