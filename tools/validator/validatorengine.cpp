@@ -50,8 +50,8 @@ LogEntry::~LogEntry() {
 std::pair<QBDI::rword, QBDI::rword> getValidOffsetRange(QBDI::rword address, pid_t pid) {
     std::vector<QBDI::MemoryMap> maps = QBDI::getRemoteProcessMaps(pid);
     for(QBDI::MemoryMap &m : maps) {
-        if(m.start <= address && m.end > address) {
-            return std::make_pair(address - m.start, m.end - address - 1);
+        if(m.range.contains(address)) {
+            return std::make_pair(address - m.range.start, m.range.end - address - 1);
         }
     }
     return std::make_pair(0, 0);
@@ -211,8 +211,8 @@ template<typename T> ssize_t ValidatorEngine::diffSPR(const char* regName, T rea
     return diff<QBDI::rword>(regName, real, qbdi);
 }
 
-void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, const char* disassembly, 
-                        const QBDI::GPRState *gprStateDbg, const QBDI::FPRState *fprStateDbg, 
+void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, const char* disassembly,
+                        const QBDI::GPRState *gprStateDbg, const QBDI::FPRState *fprStateDbg,
                         const QBDI::GPRState *gprStateInstr, const QBDI::FPRState *fprStateInstr) {
     ssize_t e;
 
@@ -334,7 +334,7 @@ void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, 
             if((e = diffSPR(name "[0:32]",   xmmreg1.m0, xmmreg2.m0))  != -1) curLogEntry->errorIDs.push_back(e); \
             if((e = diffSPR(name "[32:64]",  xmmreg1.m1, xmmreg2.m1))  != -1) curLogEntry->errorIDs.push_back(e); \
             if((e = diffSPR(name "[64:96]",  xmmreg1.m2, xmmreg2.m2))  != -1) curLogEntry->errorIDs.push_back(e); \
-            if((e = diffSPR(name "[96:128]", xmmreg1.m3, xmmreg2.m3))  != -1) curLogEntry->errorIDs.push_back(e); 
+            if((e = diffSPR(name "[96:128]", xmmreg1.m3, xmmreg2.m3))  != -1) curLogEntry->errorIDs.push_back(e);
         DIFF_XMM("xmm0", fprStateDbg->xmm0, fprStateInstr->xmm0);
         DIFF_XMM("xmm1", fprStateDbg->xmm1, fprStateInstr->xmm1);
         DIFF_XMM("xmm2", fprStateDbg->xmm2, fprStateInstr->xmm2);
@@ -392,7 +392,7 @@ void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, 
             }
         }
     }
-    
+
     if(lastLogEntry != nullptr) {
         if(verbosity == LogVerbosity::Full) {
             outputLogEntry(*lastLogEntry);

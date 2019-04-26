@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "ExecBroker/ExecBroker.h" 
+#include "ExecBroker/ExecBroker.h"
 
 namespace QBDI {
 
@@ -24,16 +24,16 @@ ExecBroker::ExecBroker(Assembly& assembly, VMInstanceRef vminstance) :
     pageSize = llvm::sys::Process::getPageSize();
 }
 
-void ExecBroker::addInstrumentedRange(rword start, rword end) {
+void ExecBroker::addInstrumentedRange(const Range<rword>& r) {
     LogDebug("ExecBroker::addInstrumentedRange", "Adding instrumented range [%" PRIRWORD ", %" PRIRWORD "]",
-             start, end);
-    instrumented.add(Range<rword>(start, end));
+             r.start, r.end);
+    instrumented.add(r);
 }
 
-void ExecBroker::removeInstrumentedRange(rword start, rword end) {
+void ExecBroker::removeInstrumentedRange(const Range<rword>& r) {
     LogDebug("ExecBroker::removeInstrumentedRange", "Removing instrumented range [%" PRIRWORD ", %" PRIRWORD "]",
-             start, end);
-    instrumented.remove(Range<rword>(start, end));
+             r.start, r.end);
+    instrumented.remove(r);
 }
 
 void ExecBroker::removeAllInstrumentedRanges() {
@@ -48,7 +48,7 @@ bool ExecBroker::addInstrumentedModule(const std::string& name) {
 
     for(const MemoryMap& m : getCurrentProcessMaps()) {
         if((m.name == name) && (m.permission & QBDI::PF_EXEC)) {
-            addInstrumentedRange(m.start, m.end);
+            addInstrumentedRange(m.range);
             instrumented = true;
         }
     }
@@ -59,8 +59,7 @@ bool ExecBroker::addInstrumentedModuleFromAddr(rword addr) {
     bool instrumented = false;
 
     for(const MemoryMap& m : getCurrentProcessMaps()) {
-        Range<rword> r(m.start, m.end);
-        if(r.contains(addr)) {
+        if(m.range.contains(addr)) {
             instrumented = addInstrumentedModule(m.name);
             break;
         }
@@ -73,7 +72,7 @@ bool ExecBroker::removeInstrumentedModule(const std::string& name) {
 
     for(const MemoryMap& m : getCurrentProcessMaps()) {
         if((m.name == name) && (m.permission & QBDI::PF_EXEC)) {
-            removeInstrumentedRange(m.start, m.end);
+            removeInstrumentedRange(m.range);
             removed = true;
         }
     }
@@ -84,8 +83,7 @@ bool ExecBroker::removeInstrumentedModuleFromAddr(rword addr) {
     bool removed = false;
 
     for(const MemoryMap& m : getCurrentProcessMaps()) {
-        Range<rword> r(m.start, m.end);
-        if(r.contains(addr)) {
+        if(m.range.contains(addr)) {
             removed = removeInstrumentedModule(m.name);
             break;
         }
@@ -98,7 +96,7 @@ bool ExecBroker::instrumentAllExecutableMaps() {
 
     for(const MemoryMap& m : getCurrentProcessMaps()) {
         if(m.permission & QBDI::PF_EXEC) {
-            addInstrumentedRange(m.start, m.end);
+            addInstrumentedRange(m.range);
             instrumented = true;
         }
     }
@@ -122,7 +120,7 @@ bool ExecBroker::transferExecution(rword addr, GPRState *gprState, FPRState *fpr
     hookedAddress = *ptr;
     hook = transferBlock.getCurrentPC() + transferBlock.getEpilogueOffset();
     *ptr = hook;
-    LogDebug("ExecBroker::transferExecution", "Patched %p hooking return address 0x%" PRIRWORD " with 0x%" PRIRWORD, 
+    LogDebug("ExecBroker::transferExecution", "Patched %p hooking return address 0x%" PRIRWORD " with 0x%" PRIRWORD,
              ptr, hookedAddress, *ptr);
 
     // Write transfer state

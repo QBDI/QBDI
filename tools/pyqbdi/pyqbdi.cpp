@@ -1656,7 +1656,7 @@ namespace QBDI {
       static PyObject* MemoryMap_getattro(PyObject* self, PyObject* name) {
         try {
           if (std::string(PyString_AsString(name)) == "range") {
-            Range<rword> range(PyMemoryMap_AsMemoryMap(self)->start, PyMemoryMap_AsMemoryMap(self)->end);
+            Range<rword> range = PyMemoryMap_AsMemoryMap(self)->range;
             /* Create function arguments */
             PyObject* res = PyTuple_New(2);
             PyTuple_SetItem(res, 0, PyLong_FromLong(range.start));
@@ -1667,7 +1667,7 @@ namespace QBDI {
             return PyLong_FromLong(PyMemoryMap_AsMemoryMap(self)->permission);
 
           else if (std::string(PyString_AsString(name)) == "name")
-            return PyString_FromString(PyMemoryMap_AsMemoryMap(self)->name);
+            return PyString_FromString(PyMemoryMap_AsMemoryMap(self)->name.c_str());
         }
         catch (const std::exception& e) {
           return PyErr_Format(PyExc_TypeError, "%s", e.what());
@@ -1736,7 +1736,7 @@ namespace QBDI {
         PyType_Ready(&MemoryMap_Type);
         object = PyObject_NEW(MemoryMap_Object, &MemoryMap_Type);
         if (object != NULL) {
-          object->memoryMap = new QBDI::MemoryMap(memoryMap->start, memoryMap->end, memoryMap->permission, memoryMap->name);
+          object->memoryMap = new QBDI::MemoryMap(memoryMap->range, memoryMap->permission, memoryMap->name);
         }
 
         return (PyObject*)object;

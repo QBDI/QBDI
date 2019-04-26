@@ -59,10 +59,10 @@ int QBDI::qbdipreload_on_main(int argc, char** argv) {
 
         // Skip ourself, system library (to avoid conflicts) and objc (to avoid awful performances)
         for(const QBDI::MemoryMap& m :  QBDI::getCurrentProcessMaps()) {
-            if((strcmp(m.name, "libsystem") == 0 ||
-                strcmp(m.name, "libobjc") == 0 ||
-                strcmp(m.name, "libvalidator2") == 0)) {
-                vm->removeInstrumentedRange(m.start, m.end);
+            if((m.name.compare(0, 9, "libsystem") == 0 ||
+                m.name.compare(0, 7, "libobjc") == 0 ||
+                m.name.compare(0, 13, "libvalidator2") == 0)) {
+                vm->removeInstrumentedRange(m.range.start, m.range.end);
             }
         }
 

@@ -48,16 +48,13 @@ _QBDI_ENABLE_BITMASK_OPERATORS(Permission)
  */
 struct MemoryMap {
 
-    static const char default_name;
-    rword       start;          /*!< Range start value. */
-    rword       end;            /*!< Range end value (always excluded). */
+    Range<rword> range;         /*!< A range of memory (region), delimited between a start and an (excluded) end address. */
     Permission  permission;     /*!< Region access rights (PF_READ, PF_WRITE, PF_EXEC). */
-    std::string sname;          /*!< Region name (useful when a region is mapping a module). */
-    const char* name;           /*!< same as sname; */
+    std::string name;           /*!< Region name (useful when a region is mapping a module). */
 
     /* Construct a new (empty) MemoryMap.
      */
-    MemoryMap() : start(0), end(0), permission(QBDI::PF_NONE), name(sname.c_str()) {};
+    MemoryMap() : range(0, 0), permission(QBDI::PF_NONE) {};
 
     /*! Construct a new MemoryMap (given some properties).
      *
@@ -66,11 +63,18 @@ struct MemoryMap {
      * @param[in] permission   Region access rights (PF_READ, PF_WRITE, PF_EXEC).
      * @param[in] name         Region name (useful when a region is mapping a module).
      */
-    MemoryMap(rword start, rword end, Permission permission, const char* name);
-    MemoryMap(const MemoryMap& m);
-    MemoryMap& operator=(const MemoryMap& copy);
+    MemoryMap(rword start, rword end, Permission permission, std::string name) :
+        range(start, end), permission(permission), name(name) {}
 
-    void setName(const char* name);
+    /*! Construct a new MemoryMap (given some properties).
+     *
+     * @param[in] range        A range of memory (region), delimited between
+     *                         a start and an (excluded) end address.
+     * @param[in] permission   Region access rights (PF_READ, PF_WRITE, PF_EXEC).
+     * @param[in] name         Region name (useful when a region is mapping a module).
+     */
+    MemoryMap(Range<rword> range, Permission permission, std::string name) :
+        range(range), permission(permission), name(name) {}
 };
 
 /*! Get a list of all the memory maps (regions) of a process.

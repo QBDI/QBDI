@@ -202,9 +202,8 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
         next += size;
 
         // add a new memory map
-        m.start = (rword) addr;
-        m.end = (rword) next;
-        m.setName("");
+        m.range = Range<rword>((rword) addr, (rword) next);
+        m.name.clear();
         m.permission = static_cast<Permission>(basic_info.protection);
         memMaps.push_back(m);
     }
@@ -240,9 +239,9 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
 
                                 // Create a map entry
                                 MemoryMap m;
-                                m.start = seg->vmaddr + slide;
-                                m.end = m.start + seg->vmsize;
-                                m.setName(name);
+                                m.range.start = seg->vmaddr + slide;
+                                m.range.end = m.range.start + seg->vmsize;
+                                m.name = name;
 
                                 modMaps.push_back(m);
                             }
@@ -260,41 +259,37 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
     std::set<rword> inserted;
     for (const MemoryMap& mem: memMaps) {
         // create a range set of current memory range
-        Range<rword> memr(mem.start, mem.end);
         RangeSet<rword> rs;
-        rs.add(memr);
+        rs.add(mem.range);
 
         // try to map modules to current memory range
         for (const MemoryMap& mod: modMaps) {
-            Range<rword> modr(mod.start, mod.end);
-            if (memr.overlaps(modr)) {
+            if (mem.range.overlaps(mod.range)) {
                 // skip if already inserted (due to previous overlap)
-                if (inserted.count(modr.start))
+                if (inserted.count(mod.range.start))
                     continue;
                 // add new entry in map
                 MemoryMap m;
-                m.start = modr.start;
-                m.end = modr.end;
+                m.range = mod.range;
                 m.permission = mem.permission;
                 // do not add name to the shared __LINKEDIT
-                if (m.permission == PF_READ && !(modr == memr)) {
-                    m.setName("");
+                if (m.permission == PF_READ && !(mod.range == mem.range)) {
+                    m.name.clear();
                 } else {
-                    m.setName(mod.name);
+                    m.name = mod.name;
                 }
                 omaps.push_back(m);
                 // mark range as inserted
-                inserted.insert(m.start);
+                inserted.insert(m.range.start);
                 // remove module range from memory range
-                rs.remove(modr);
+                rs.remove(mod.range);
             }
         }
         // add unmatched ranges in memory map
         for (const Range<rword>& r: rs.getRanges()) {
             MemoryMap m;
-            m.start = r.start;
-            m.end = r.end;
-            m.setName("");
+            m.range = r;
+            m.name.clear();
             m.permission = mem.permission;
             omaps.push_back(m);
         }
@@ -302,7 +297,7 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
     // sort the probably unordered map
     std::sort(omaps.begin(), omaps.end(),
             [](const MemoryMap& a, const MemoryMap& b) -> bool {
-                return a.start < b.start;
+                return a.range.start < b.range.start;
             });
 
     return omaps;

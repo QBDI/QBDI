@@ -50,11 +50,11 @@ public:
 
     bool isInstrumented(rword addr) const { return instrumented.contains(addr);}
 
-    void addInstrumentedRange(rword start, rword end);
+    void addInstrumentedRange(const Range<rword>& r);
     bool addInstrumentedModule(const std::string& name);
     bool addInstrumentedModuleFromAddr(rword addr);
 
-    void removeInstrumentedRange(rword start, rword end);
+    void removeInstrumentedRange(const Range<rword>& r);
     bool removeInstrumentedModule(const std::string& name);
     bool removeInstrumentedModuleFromAddr(rword addr);
     void removeAllInstrumentedRanges();

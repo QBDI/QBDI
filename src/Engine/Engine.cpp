@@ -180,7 +180,7 @@ bool Engine::isPreInst() const {
 }
 
 void Engine::addInstrumentedRange(rword start, rword end) {
-    execBroker->addInstrumentedRange(start, end);
+    execBroker->addInstrumentedRange(Range<rword>(start, end));
 }
 
 bool Engine::addInstrumentedModule(const std::string& name) {
@@ -196,7 +196,7 @@ bool Engine::instrumentAllExecutableMaps() {
 }
 
 void Engine::removeInstrumentedRange(rword start, rword end) {
-    execBroker->removeInstrumentedRange(start, end);
+    execBroker->removeInstrumentedRange(Range<rword>(start, end));
 }
 
 bool Engine::removeInstrumentedModule(const std::string& name) {

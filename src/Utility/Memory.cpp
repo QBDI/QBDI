@@ -26,56 +26,22 @@
 
 namespace QBDI {
 
-// MemoryMap
-MemoryMap::MemoryMap(rword start, rword end, Permission permission, const char* name) :
-        start(start), end(end), permission(permission){
-    if (name != nullptr) {
-        sname = name;
-    }
-    this->name = sname.c_str();
-}
-
-MemoryMap::MemoryMap(const MemoryMap& m) :
-    start(m.start), end(m.end), permission(m.permission), sname(m.sname), name(sname.c_str()) {}
-
-MemoryMap& MemoryMap::operator=(const MemoryMap& copy) {
-    start = copy.start;
-    end = copy.end;
-    permission = copy.permission;
-    if (copy.name) {
-        sname = copy.name;
-    } else {
-        sname.clear();
-    }
-    name = sname.c_str();
-    return *this;
-}
-
-void MemoryMap::setName(const char* name) {
-    if (name) {
-        sname = name;
-    } else {
-        sname.clear();
-    }
-    this->name = sname.c_str();
-}
-
 // C++ method
 std::vector<std::string> getModuleNames() {
     std::vector<std::string> modules;
 
     for(const MemoryMap& m : getCurrentProcessMaps()) {
-        if(m.name[0] != '\0') {
+        if(m.name != "") {
             bool exist = false;
 
             for(const std::string& s : modules) {
-                if(s == m.sname) {
+                if(s == m.name) {
                     exist = true;
                 }
             }
 
             if(!exist) {
-                modules.push_back(m.sname);
+                modules.push_back(m.name);
             }
         }
     }
@@ -196,10 +162,10 @@ qbdi_MemoryMap* convert_MemoryMap_to_C(std::vector<MemoryMap> maps, size_t* size
     qbdi_MemoryMap* cmaps = (qbdi_MemoryMap*) malloc(*size * sizeof(qbdi_MemoryMap));
     RequireAction("convert_MemoryMap_to_C", cmaps != NULL, abort());
     for(size_t i = 0; i < *size; i++) {
-        cmaps[i].start = maps[i].start;
-        cmaps[i].end = maps[i].end;
+        cmaps[i].start = maps[i].range.start;
+        cmaps[i].end = maps[i].range.end;
         cmaps[i].permission = static_cast<qbdi_Permission>(maps[i].permission);
-        cmaps[i].name = strdup(maps[i].name);
+        cmaps[i].name = strdup(maps[i].name.c_str());
     }
     return cmaps;
 }

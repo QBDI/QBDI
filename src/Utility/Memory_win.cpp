@@ -70,8 +70,8 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
 
         // create new memory map entry
         MemoryMap m;
-        m.start = addr;
-        m.end = next;
+        m.range.start = addr;
+        m.range.end = next;
         m.permission = QBDI::PF_NONE;
         m.permission |= PROT_ISREAD(info.Protect) ? QBDI::PF_READ : QBDI::PF_NONE;
         m.permission |= PROT_ISWRITE(info.Protect) ? QBDI::PF_WRITE : QBDI::PF_NONE;
@@ -91,13 +91,13 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
 #ifdef UNICODE
             std::wstring wstr(path);
             std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
-            m.setName(conv.to_bytes(wstr).c_str());
+            m.name = conv.to_bytes(wstr);
 #else
-            m.setName(path);
+            m.name = std::string(path);
 #endif
         } else {
             // fallback to empty name
-            m.setName("");
+            m.name.clear();
         }
         maps.push_back(m);
     }

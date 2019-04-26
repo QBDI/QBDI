@@ -126,7 +126,7 @@ void start_instrumented(QBDI::VM* vm, QBDI::rword start, QBDI::rword stop) {
 #if defined(_QBDI_DEBUG)
     for(const QBDI::MemoryMap& m :  QBDI::getCurrentProcessMaps()) {
         std::cout << m.name << " (" << m.permission << ") ";
-        QBDI::Range<QBDI::rword>(m.start, m.end).display(std::cout);
+        m.range.display(std::cout);
         std::cout << std::endl;
     }
 #endif
