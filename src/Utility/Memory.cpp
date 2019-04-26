@@ -27,59 +27,37 @@
 namespace QBDI {
 
 // MemoryMap
-const char MemoryMap::default_name = '\0';
-
 MemoryMap::MemoryMap(rword start, rword end, Permission permission, const char* name) :
-        _name(nullptr), start(start), end(end), permission(permission), name(&default_name) {
+        start(start), end(end), permission(permission){
     if (name != nullptr) {
-        _name = strdup(name);
-        this->name = _name;
+        sname = name;
     }
-}
-
-MemoryMap::~MemoryMap() {
-    if (_name) {
-        free(_name);
-    }
+    this->name = sname.c_str();
 }
 
 MemoryMap::MemoryMap(const MemoryMap& m) :
-    start(m.start), end(m.end), permission(m.permission) {
-    _name = m.name ? strdup(m.name) : nullptr;
-    name = _name;
-}
-
-MemoryMap& MemoryMap::operator=(const MemoryMap&& mov) {
-    start = mov.start;
-    end = mov.end;
-    permission = mov.permission;
-    if (_name)
-        free(_name);
-    _name = mov._name;
-    name = mov.name;
-    return *this;
-}
+    start(m.start), end(m.end), permission(m.permission), sname(m.sname), name(sname.c_str()) {}
 
 MemoryMap& MemoryMap::operator=(const MemoryMap& copy) {
     start = copy.start;
     end = copy.end;
     permission = copy.permission;
-    if (_name)
-        free(_name);
-    _name = copy.name ? strdup(copy.name) : nullptr;
-    name = _name ? _name : &default_name;
+    if (copy.name) {
+        sname = copy.name;
+    } else {
+        sname.clear();
+    }
+    name = sname.c_str();
     return *this;
 }
 
 void MemoryMap::setName(const char* name) {
-    if(_name) {
-        free(_name);
-        _name = nullptr;
+    if (name) {
+        sname = name;
+    } else {
+        sname.clear();
     }
-    if(name) {
-        _name = strdup(name);
-    }
-    this->name = _name ? _name : &default_name;
+    this->name = sname.c_str();
 }
 
 // C++ method
@@ -91,13 +69,13 @@ std::vector<std::string> getModuleNames() {
             bool exist = false;
 
             for(const std::string& s : modules) {
-                if(s == m.name) {
+                if(s == m.sname) {
                     exist = true;
                 }
             }
 
             if(!exist) {
-                modules.push_back(m.name);
+                modules.push_back(m.sname);
             }
         }
     }

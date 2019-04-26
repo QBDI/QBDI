@@ -46,19 +46,18 @@ _QBDI_ENABLE_BITMASK_OPERATORS(Permission)
 
 /*! Map of a memory area (region).
  */
-class MemoryMap {
-    char* _name;
+struct MemoryMap {
 
-public:
     static const char default_name;
     rword       start;          /*!< Range start value. */
     rword       end;            /*!< Range end value (always excluded). */
     Permission  permission;     /*!< Region access rights (PF_READ, PF_WRITE, PF_EXEC). */
-    const char* name;           /*!< Region name (useful when a region is mapping a module). */
+    std::string sname;          /*!< Region name (useful when a region is mapping a module). */
+    const char* name;           /*!< same as sname; */
 
     /* Construct a new (empty) MemoryMap.
      */
-    MemoryMap() : _name(nullptr), start(0), end(0), permission(QBDI::PF_NONE), name(&default_name) {};
+    MemoryMap() : start(0), end(0), permission(QBDI::PF_NONE), name(sname.c_str()) {};
 
     /*! Construct a new MemoryMap (given some properties).
      *
@@ -68,9 +67,7 @@ public:
      * @param[in] name         Region name (useful when a region is mapping a module).
      */
     MemoryMap(rword start, rword end, Permission permission, const char* name);
-    ~MemoryMap();
     MemoryMap(const MemoryMap& m);
-    MemoryMap& operator=(const MemoryMap&& mov);
     MemoryMap& operator=(const MemoryMap& copy);
 
     void setName(const char* name);
