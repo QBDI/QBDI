@@ -4,6 +4,7 @@
 #include <Platform.h>
 #include <VM_C.h>
 #include <Memory.h>
+#include <Memory.hpp>
 #include <Logs.h>
 #include <State.h>
 #include <Version.h>

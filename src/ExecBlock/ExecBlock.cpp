@@ -20,7 +20,7 @@
 #include "ExecBlock.h"
 #include "Patch/Patch.h"
 #include "Platform.h"
-#include "Memory.h"
+#include "Memory.hpp"
 #include "Utility/LogSys.h"
 #include "Utility/System.h"
 
@@ -79,7 +79,7 @@ ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(
     codeStream = new memory_ostream(codeBlock);
     pageState = RW;
 
-    // Epilogue and prologue management. 
+    // Epilogue and prologue management.
     // If epilogueSize == 0 then static members are not yet initialized
     if(epilogueSize == 0) {
         execBlockPrologue = getExecBlockPrologue();
@@ -134,7 +134,7 @@ void ExecBlock::show() const {
         std::string disass;
 
         dstatus = assembly.getInstruction(inst, instSize, jitCode.slice(i), i);
-        RequireAction("ExecBlock::show", dstatus != llvm::MCDisassembler::Fail, 
+        RequireAction("ExecBlock::show", dstatus != llvm::MCDisassembler::Fail,
             break
         );
 
@@ -177,26 +177,26 @@ void ExecBlock::run() {
 }
 
 VMAction ExecBlock::execute() {
-    LogDebug("ExecBlock::execute", "Executing ExecBlock %p programmed with selector at 0x%" PRIRWORD, 
+    LogDebug("ExecBlock::execute", "Executing ExecBlock %p programmed with selector at 0x%" PRIRWORD,
              this, context->hostState.selector);
     do {
         context->hostState.callback = (rword) 0;
         context->hostState.data = (rword) 0;
 
-        LogDebug("ExecBlock::execute", "Execution of ExecBlock %p resumed at 0x%" PRIRWORD, 
+        LogDebug("ExecBlock::execute", "Execution of ExecBlock %p resumed at 0x%" PRIRWORD,
                  this, context->hostState.selector);
         run();
 
         if(context->hostState.callback != 0) {
             currentInst = context->hostState.origin;
 
-            LogDebug("ExecBlock::execute", "Callback request by ExecBlock %p for callback 0x%" PRIRWORD, 
+            LogDebug("ExecBlock::execute", "Callback request by ExecBlock %p for callback 0x%" PRIRWORD,
                      this, context->hostState.callback);
             Require("ExecBlock::execute", currentInst < instMetadata.size());
 
             VMAction r = ((InstCallback)context->hostState.callback)(
                 vminstance,
-                &context->gprState, &context->fprState, 
+                &context->gprState, &context->fprState,
                (void*) context->hostState.data
             );
 
@@ -248,7 +248,7 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
         rword rollbackOffset = codeStream->current_pos();
         uint32_t rollbackShadowIdx = shadowIdx;
         size_t rollbackShadowRegistry = shadowRegistry.size();
-        
+
         LogDebug("ExecBlock::writeBasicBlock", "Attempting to write patch of %zu RelocatableInst to ExecBlock %p", seqIt->metadata.patchSize, this);
         // Attempt to write a complete patch. If not, rollback to the last complete patch written
         for(const RelocatableInst::SharedPtr& inst : seqIt->insts) {
@@ -313,8 +313,8 @@ uint16_t ExecBlock::splitSequence(uint16_t instID) {
     Require("ExecBlock::splitSequence", instID < instRegistry.size());
     uint16_t seqID = instRegistry[instID].seqID;
     seqRegistry.push_back(SeqInfo {
-        instID, 
-        seqRegistry[seqID].endInstID, 
+        instID,
+        seqRegistry[seqID].endInstID,
         (SeqType) (SeqType::Entry | seqRegistry[seqID].type)
     });
     return getNextSeqID() - 1;

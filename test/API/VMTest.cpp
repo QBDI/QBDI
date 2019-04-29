@@ -23,7 +23,7 @@
 
 #include "Utility/String.h"
 #include "Platform.h"
-#include "Memory.h"
+#include "Memory.hpp"
 
 #ifndef QBDI_OS_WIN
 // Can be used to log failure on a test (usefull in subroutines)
@@ -471,7 +471,7 @@ TEST_F(VMTest, CacheInvalidation) {
     ASSERT_NE((uint32_t) 0, count1);
     ASSERT_EQ((uint32_t) 0, count2);
 
-    uint32_t instr2 = vm->addCodeRangeCB((QBDI::rword)&dummyFun5, ((QBDI::rword)&dummyFun5) + 64, 
+    uint32_t instr2 = vm->addCodeRangeCB((QBDI::rword)&dummyFun5, ((QBDI::rword)&dummyFun5) + 64,
                                          QBDI::InstPosition::POSTINST, countInstruction, &count2);
 
     count1 = 0;
@@ -507,7 +507,7 @@ TEST_F(VMTest, CacheInvalidation) {
     ASSERT_NE((uint32_t) 0, count2);
 
     instr1 = vm->addCodeCB(QBDI::InstPosition::POSTINST, countInstruction, &count1);
-    
+
     count1 = 0;
     count2 = 0;
     QBDI::simulateCall(state, FAKE_RET_ADDR, {1, 2, 3, 4, 5});
@@ -555,13 +555,13 @@ QBDI::VMAction funkyCountInstruction(QBDI::VMInstanceRef vm, QBDI::GPRState *gpr
     info->instID = vm->addCodeRangeCB(QBDI_GPR_GET(gprState, QBDI::REG_PC), QBDI_GPR_GET(gprState, QBDI::REG_PC) + 10,
                                     QBDI::InstPosition::POSTINST, funkyCountInstruction, data);
     const QBDI::InstAnalysis* instAnalysis3 = vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION);
-    // instAnalysis1, instAnalysis2 and instAnalysis3 should be the same pointer because the cache 
+    // instAnalysis1, instAnalysis2 and instAnalysis3 should be the same pointer because the cache
     // flush initiated by deleteInstrumentation and addCodeRangeCB is delayed.
     if(instAnalysis1 == instAnalysis2 && instAnalysis2 == instAnalysis3) {
         info->count += 1;
     }
 
-    // instAnalysis3 should not have disassembly information, but instAnalysis4 and instAnalysis5 
+    // instAnalysis3 should not have disassembly information, but instAnalysis4 and instAnalysis5
     // should.
     EXPECT_EQ(instAnalysis3->disassembly, nullptr);
     EXPECT_EQ(instAnalysis3->operands, nullptr);
@@ -578,11 +578,11 @@ QBDI::VMAction funkyCountInstruction(QBDI::VMInstanceRef vm, QBDI::GPRState *gpr
 TEST_F(VMTest, DelayedCacheFlush) {
     uint32_t count = 0;
     FunkyInfo info = FunkyInfo {0, 0};
-    
+
     bool instrumented = vm->addInstrumentedModuleFromAddr((QBDI::rword)&dummyFunCall);
     ASSERT_TRUE(instrumented);
     vm->addCodeCB(QBDI::InstPosition::POSTINST, countInstruction, &count);
-    info.instID = vm->addCodeRangeCB((QBDI::rword) dummyFun4, ((QBDI::rword) dummyFun4) + 10, 
+    info.instID = vm->addCodeRangeCB((QBDI::rword) dummyFun4, ((QBDI::rword) dummyFun4) + 10,
                                     QBDI::InstPosition::POSTINST, funkyCountInstruction, &info);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {1, 2, 3, 4});

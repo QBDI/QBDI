@@ -22,7 +22,7 @@
 
 #include "llvm/Support/Process.h"
 
-#include "Memory.h"
+#include "Memory.hpp"
 #include "Range.h"
 #include "State.h"
 #include "ExecBlock/ExecBlock.h"
@@ -34,7 +34,7 @@ namespace QBDI {
 class ExecBroker {
 
 private:
-    
+
     RangeSet<rword>        instrumented;
     ExecBlock              transferBlock;
     rword                  pageSize;
@@ -53,7 +53,7 @@ public:
     void addInstrumentedRange(const Range<rword>& r);
     bool addInstrumentedModule(const std::string& name);
     bool addInstrumentedModuleFromAddr(rword addr);
-    
+
     void removeInstrumentedRange(const Range<rword>& r);
     bool removeInstrumentedModule(const std::string& name);
     bool removeInstrumentedModuleFromAddr(rword addr);

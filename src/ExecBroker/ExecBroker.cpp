@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "ExecBroker/ExecBroker.h" 
+#include "ExecBroker/ExecBroker.h"
 
 namespace QBDI {
 
@@ -25,13 +25,13 @@ ExecBroker::ExecBroker(Assembly& assembly, VMInstanceRef vminstance) :
 }
 
 void ExecBroker::addInstrumentedRange(const Range<rword>& r) {
-    LogDebug("ExecBroker::addInstrumentedRange", "Adding instrumented range [%" PRIRWORD ", %" PRIRWORD "]", 
+    LogDebug("ExecBroker::addInstrumentedRange", "Adding instrumented range [%" PRIRWORD ", %" PRIRWORD "]",
              r.start, r.end);
     instrumented.add(r);
 }
 
 void ExecBroker::removeInstrumentedRange(const Range<rword>& r) {
-    LogDebug("ExecBroker::removeInstrumentedRange", "Removing instrumented range [%" PRIRWORD ", %" PRIRWORD "]", 
+    LogDebug("ExecBroker::removeInstrumentedRange", "Removing instrumented range [%" PRIRWORD ", %" PRIRWORD "]",
              r.start, r.end);
     instrumented.remove(r);
 }
@@ -120,7 +120,7 @@ bool ExecBroker::transferExecution(rword addr, GPRState *gprState, FPRState *fpr
     hookedAddress = *ptr;
     hook = transferBlock.getCurrentPC() + transferBlock.getEpilogueOffset();
     *ptr = hook;
-    LogDebug("ExecBroker::transferExecution", "Patched %p hooking return address 0x%" PRIRWORD " with 0x%" PRIRWORD, 
+    LogDebug("ExecBroker::transferExecution", "Patched %p hooking return address 0x%" PRIRWORD " with 0x%" PRIRWORD,
              ptr, hookedAddress, *ptr);
 
     // Write transfer state

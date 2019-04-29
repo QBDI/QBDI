@@ -20,7 +20,7 @@
 #include "validator.h"
 #include "validatorengine.h"
 
-#include "Memory.h"
+#include "Memory.hpp"
 
 #include <stdlib.h>
 #include <string.h>

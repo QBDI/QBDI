@@ -23,7 +23,7 @@
 #include <vector>
 #include <map>
 
-#include "Memory.h"
+#include "Memory.hpp"
 #include "Utility/LogSys.h"
 
 enum LogVerbosity {
@@ -112,11 +112,11 @@ class ValidatorEngine {
 public:
 
     ValidatorEngine(pid_t debugged, pid_t instrumented, LogVerbosity verbosity) :
-        lastLogEntry(nullptr), curLogEntry(nullptr), debugged(debugged), 
+        lastLogEntry(nullptr), curLogEntry(nullptr), debugged(debugged),
         instrumented(instrumented), verbosity(verbosity), execID(0) {}
 
-    void signalNewState(QBDI::rword address, const char* mnemonic, const char* disassembly, 
-                        const QBDI::GPRState *gprStateDbg, const QBDI::FPRState *fprStateDbg, 
+    void signalNewState(QBDI::rword address, const char* mnemonic, const char* disassembly,
+                        const QBDI::GPRState *gprStateDbg, const QBDI::FPRState *fprStateDbg,
                         const QBDI::GPRState *gprStateInstr, const QBDI::FPRState *fprStateInstr);
 
     void signalExecTransfer(QBDI::rword address);
