@@ -26,8 +26,7 @@
 #include "instrumented.h"
 #include "pipes.h"
 
-#include "Memory.hpp"
-#include "Platform.h"
+#include <QBDI.h>
 #include "Utility/LogSys.h"
 
 #if defined(_QBDI_DEBUG)

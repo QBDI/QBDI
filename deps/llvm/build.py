@@ -60,7 +60,7 @@ def get_llvm(url, dest):
         tar.extractall(str(dest))
 
 
-def build_llvm(llvm_dir, build_dir, arch, platform, arm_arch=None):
+def build_llvm(llvm_dir, build_dir, arch, platform, arch_opt=None):
 
     if not build_dir.exists():
         build_dir.mkdir()
@@ -77,8 +77,8 @@ def build_llvm(llvm_dir, build_dir, arch, platform, arm_arch=None):
                                  "-DLLVM_DEFAULT_TARGET_TRIPLE=arm-apple-darwin10",
                                  "-DLLVM_TARGET_ARCH=" + arch,
                                  "-DLLVM_ENABLE_THREADS=Off",
-                                 "-DCMAKE_C_FLAGS=\"-arch " + arm_arch + " -isysroot " + sdk + " -fvisibility=hidden\"",
-                                 "-DCMAKE_CXX_FLAGS=\"-arch " + arm_arch + " -isysroot " + sdk + " -fvisibility=hidden\"",
+                                 "-DCMAKE_C_FLAGS=\"-arch " + arch_opt + " -isysroot " + sdk + " -fvisibility=hidden\"",
+                                 "-DCMAKE_CXX_FLAGS=\"-arch " + arch_opt + " -isysroot " + sdk + " -fvisibility=hidden\"",
                                  "-DCMAKE_C_COMPILER=" + cc,
                                  "-DCMAKE_CXX_COMPILER=" + cxx]
     elif platform == "linux" and arch == "ARM":
@@ -89,8 +89,8 @@ def build_llvm(llvm_dir, build_dir, arch, platform, arm_arch=None):
             "-DLLVM_TABLEGEN=/usr/bin/llvm-tblgen",
             "-DLLVM_DEFAULT_TARGET_TRIPLE=arm-linux-gnueabi",
             "-DLLVM_TARGET_ARCH=" + arch,
-            "-DCMAKE_C_FLAGS=\"-fvisibility=hidden -march=" + arm_arch + " -I" + ARM_C_INCLUDE + '"',
-            "-DCMAKE_CXX_FLAGS=\"-fvisibility=hidden -march=" + arm_arch + " -I" + ARM_C_INCLUDE + " -I" + ARM_CXX_INCLUDE + '"',
+            "-DCMAKE_C_FLAGS=\"-fvisibility=hidden -march=" + arch_opt + " -I" + ARM_C_INCLUDE + '"',
+            "-DCMAKE_CXX_FLAGS=\"-fvisibility=hidden -march=" + arch_opt + " -I" + ARM_C_INCLUDE + " -I" + ARM_CXX_INCLUDE + '"',
         ]
     elif platform == "android":
         ndk_path = Path.home() / "android-ndk-r13b"
@@ -102,7 +102,7 @@ def build_llvm(llvm_dir, build_dir, arch, platform, arm_arch=None):
               "-DLLVM_TARGET_ARCH=" + arch,
               "-DLLVM_INCLUDE_UTILS=Off",
               '-DCMAKE_C_FLAGS="-fvisibility=hidden \
-                                -march=' + arm_arch + '\
+                                -march=' + arch_opt + '\
                                 -mcpu=cortex-a9 \
                                 -I' + ndk_path + '/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/include \
                                 -I' + ndk_path + '/sources/cxx-stl/gnu-libstdc++/4.9/include/ \
@@ -113,7 +113,7 @@ def build_llvm(llvm_dir, build_dir, arch, platform, arm_arch=None):
                                 --sysroot=' + ndk_path + '/platforms/android-' + api_level + '/arch-arm \
                                 -fpie"',
               '-DCMAKE_CXX_FLAGS="-fvisibility=hidden \
-                                  -march=' + arm_arch + '\
+                                  -march=' + arch_opt + '\
                                   -mcpu=cortex-a9 \
                                   -I' + ndk_path + '/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/include \
                                   -I' + ndk_path + '/sources/cxx-stl/gnu-libstdc++/4.9/include/ \
@@ -131,6 +131,16 @@ def build_llvm(llvm_dir, build_dir, arch, platform, arm_arch=None):
         # Do we still need export
         # PATH=$PATH:${NDK_PATH}/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin/
         # with CMAKE_C_COMPILER?
+    elif platform == "macOS" and arch_opt == "i386":
+        cmake_specific_option = ['-DLLVM_BUILD_32_BITS=On',
+                                 '-DLLVM_DEFAULT_TARGET_TRIPLE=i386-apple-darwin17.7.0',
+                                 '-DCMAKE_C_FLAGS="-fvisibility=hidden"',
+                                 '-DCMAKE_CXX_FLAGS="-fvisibility=hidden"']
+    elif platform == "linux" and arch_opt == "i386":
+        cmake_specific_option = ['-DLLVM_BUILD_32_BITS=On',
+                                 '-DLLVM_DEFAULT_TARGET_TRIPLE=i386-pc-linux',
+                                 '-DCMAKE_C_FLAGS="-fvisibility=hidden"',
+                                 '-DCMAKE_CXX_FLAGS="-fvisibility=hidden"']
     else:
         cmake_specific_option = ['-DCMAKE_C_FLAGS="-fvisibility=hidden"',
                                  '-DCMAKE_CXX_FLAGS="-fvisibility=hidden"']
@@ -213,22 +223,25 @@ if __name__ == "__main__":
         sys.exit(1)
 
     target = sys.argv[2]
-    assert(target in ("android-ARM", "iOS-ARM", "linux-ARM", "linux-X86_64", "macOS-X86_64", "win-X86_64"))
+    assert(target in ("android-ARM", "iOS-ARM", "linux-ARM", "linux-X86_64", "linux-X86", "macOS-X86_64", "macOS-X86", "win-X86_64"))
 
-    arch = "X86" if target.endswith("X86_64") else "ARM"
     platform = target.split("-")[0]
+    arch = target.split("-")[1]
 
+    arch_opt = None
     if arch == "ARM":
         if platform == "linux":
-            arm_arch = "armv6"
+            arch_opt = "armv6"
         elif platform == "iOS":
-            arm_arch = "armv7"
+            arch_opt = "armv7"
         elif platform == "android":
-            arm_arch = "armv7-a"
+            arch_opt = "armv7-a"
         else:
             raise RuntimeError("Unknown platform")
-    else:
-        arm_arch = None
+    elif arch == "X86":
+        arch_opt = "i386"
+    elif arch == "X86_64":
+        arch = "X86"
 
     if not (TARGET_DIR / target).exists():
         (TARGET_DIR / target).mkdir()
@@ -241,7 +254,7 @@ if __name__ == "__main__":
 
     elif sys.argv[1] == "build":
         build_llvm(extracted_llvm_dir,
-                   build_dir, arch, platform, arm_arch)
+                   build_dir, arch, platform, arch_opt)
 
     elif sys.argv[1] == "package":
         install_header_and_lib(extracted_llvm_dir,
