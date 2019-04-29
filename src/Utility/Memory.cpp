@@ -20,6 +20,7 @@
 #include "Utility/LogSys.h"
 #include "Memory.hpp"
 #include "Memory.h"
+#include <set>
 
 #define FRAME_LENGTH       16
 
@@ -28,25 +29,13 @@ namespace QBDI {
 
 // C++ method
 std::vector<std::string> getModuleNames() {
-    std::vector<std::string> modules;
+    std::set<std::string> modules;
 
-    for(const MemoryMap& m : getCurrentProcessMaps()) {
-        if(m.name != "") {
-            bool exist = false;
+    for(const MemoryMap& m : getCurrentProcessMaps())
+        if(!m.name.empty())
+            modules.insert(m.name);
 
-            for(const std::string& s : modules) {
-                if(s == m.name) {
-                    exist = true;
-                }
-            }
-
-            if(!exist) {
-                modules.push_back(m.name);
-            }
-        }
-    }
-
-    return modules;
+    return {std::begin(modules), std::end(modules)};
 }
 
 void* alignedAlloc(size_t size, size_t align) {

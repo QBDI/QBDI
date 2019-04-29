@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef _MEMORY_H_
-#define _MEMORY_H_
+#ifndef QBDI_MEMORY_H_
+#define QBDI_MEMORY_H_
 
 #include <stdbool.h>
 #include <stdarg.h>
@@ -151,4 +151,4 @@ QBDI_EXPORT void qbdi_simulateCallA(GPRState *ctx, rword returnAddress, uint32_t
 }
 #endif
 
-#endif // _MEMORY_H_
+#endif // QBDI_MEMORY_H_
