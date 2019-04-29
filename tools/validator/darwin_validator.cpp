@@ -57,9 +57,11 @@ int QBDI::qbdipreload_on_main(int argc, char** argv) {
         QBDI::VM* vm = new QBDI::VM();
         vm->instrumentAllExecutableMaps();
 
-        // Skip ourself, system library (to avoid conflicts) and objc (to avoid awful performances)
+        // Skip ourself, the loader, system library (to avoid conflicts) and objc (to avoid awful performances)
         for(const QBDI::MemoryMap& m :  QBDI::getCurrentProcessMaps()) {
             if((m.name.compare(0, 9, "libsystem") == 0 ||
+                m.name.compare(0, 4, "dyld") == 0 ||
+                m.name.compare(0, 7, "libdyld") == 0 ||
                 m.name.compare(0, 7, "libobjc") == 0 ||
                 m.name.compare(0, 13, "libvalidator2") == 0)) {
                 vm->removeInstrumentedRange(m.range.start, m.range.end);
@@ -78,8 +80,8 @@ int QBDI::qbdipreload_on_main(int argc, char** argv) {
 
 
 int QBDI::qbdipreload_on_premain(void *gprCtx, void *fpuCtx) {
-    x86_thread_state64_t* threadState = (x86_thread_state64_t*) gprCtx;
-    x86_float_state64_t* floatState = (x86_float_state64_t*) fpuCtx;
+    THREAD_STATE* threadState = (THREAD_STATE*) gprCtx;
+    THREAD_STATE_FP* floatState = (THREAD_STATE_FP*) fpuCtx;
 
     // Perform stack swapping and GPR / FPR init for Instrumented only
     if(ROLE == Role::Instrumented) {
@@ -95,14 +97,20 @@ int QBDI::qbdipreload_on_premain(void *gprCtx, void *fpuCtx) {
         floatStateToFPRState(floatState, &ENTRY_FPR);
 
         // Swapping to fake stack
-        threadState->__rbp = (uint64_t) newStack + STACK_SIZE - 8;
-        threadState->__rsp = threadState->__rbp;
+#if defined(QBDI_ARCH_X86)
+        threadState->THREAD_STATE_BP = (rword) newStack + STACK_SIZE - 8;
+        threadState->THREAD_STATE_SP = threadState->THREAD_STATE_BP - 44;
+        memcpy((void*)threadState->THREAD_STATE_SP, (void*) ENTRY_GPR.esp, 44);
+#else
+        threadState->THREAD_STATE_BP = (rword) newStack + STACK_SIZE - 8;
+        threadState->THREAD_STATE_SP = threadState->THREAD_STATE_BP;
+#endif
     } else if(ROLE == Role::Master) {
         // LC_UNIXTHREAD binaries use a different calling convention
         // This allow to call catchEntrypoint, and have not side effect
         // as original execution is never resumed in Master mode
-        if ((threadState->__rsp & 0x8) == 0) {
-            threadState->__rsp -= 8;
+        if ((threadState->THREAD_STATE_SP & 0x8) == 0) {
+            threadState->THREAD_STATE_SP -= 8;
         }
     }
 

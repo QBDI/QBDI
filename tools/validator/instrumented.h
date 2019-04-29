@@ -18,7 +18,7 @@
 #ifndef INSTRUMENTED_H
 #define INSTRUMENTED_H
 
-#include "VM.h"
+#include <QBDI/VM.h>
 
 void start_instrumented(QBDI::VM* vm, QBDI::rword start, QBDI::rword stop);
 

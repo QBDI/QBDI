@@ -31,6 +31,12 @@ llvm::MCInst mov64ri(unsigned int reg, rword imm);
 
 llvm::MCInst mov64mr(unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg, unsigned int src);
 
+llvm::MCInst mov32rr(unsigned int dst, unsigned int src);
+
+llvm::MCInst mov32ri(unsigned int reg, rword imm);
+
+llvm::MCInst mov32mr(unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg, unsigned int src);
+
 llvm::MCInst mov32rm8(unsigned int dst, unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg);
 
 llvm::MCInst mov32rm16(unsigned int dst, unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg);
@@ -75,7 +81,7 @@ RelocatableInst::SharedPtr Mov(Offset offset, Reg reg);
 
 RelocatableInst::SharedPtr Mov(Reg reg, Offset offset);
 
-RelocatableInst::SharedPtr Jmp64m(Offset offset);
+RelocatableInst::SharedPtr JmpM(Offset offset);
 
 RelocatableInst::SharedPtr Fxsave(Offset offset);
 

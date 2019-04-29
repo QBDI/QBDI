@@ -18,7 +18,7 @@
 #ifndef _QBDI_H_
 #define _QBDI_H_
 
-#ifdef __cplusplus
+#if defined(__cplusplus) && !defined(_QBDI_FORCE_C)
 #include "QBDI/VM.h"
 #include "QBDI/Memory.hpp"
 #else

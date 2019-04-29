@@ -1,6 +1,6 @@
 set(SOURCES "pyqbdi.cpp")
 
-if(HAS_QBDIPRELOAD AND (NOT ${ARCH} STREQUAL "ARM"))
+if(HAS_QBDIPRELOAD AND (NOT (${ARCH} STREQUAL "ARM" OR ${ARCH} STREQUAL "X86")))
     unset(PYTHON_EXECUTABLE CACHE)
     unset(PYTHON_INCLUDE_DIR CACHE)
     # Find Python 2.7
@@ -25,7 +25,7 @@ if(HAS_QBDIPRELOAD AND (NOT ${ARCH} STREQUAL "ARM"))
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
         ${CMAKE_CURRENT_SOURCE_DIR}/../QBDIPreload/include
         )
-    target_link_libraries(pyqbdi QBDIPreload QBDI_lib ${PYTHON_LIBRARIES})
+    target_link_libraries(pyqbdi QBDIPreload QBDI ${PYTHON_LIBRARIES})
     install(TARGETS pyqbdi
     LIBRARY DESTINATION lib)
 endif()

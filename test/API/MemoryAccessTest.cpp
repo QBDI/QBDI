@@ -340,7 +340,7 @@ QBDI::VMAction writeSnooper(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState, QB
 }
 
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, Read8) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_Read8) {
@@ -360,7 +360,7 @@ TEST_F(MemoryAccessTest, DISABLED_Read8) {
     ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, Read16) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_Read16) {
@@ -380,7 +380,7 @@ TEST_F(MemoryAccessTest, DISABLED_Read16) {
     ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, Read32) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_Read32) {
@@ -400,7 +400,7 @@ TEST_F(MemoryAccessTest, DISABLED_Read32) {
     ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, Write8) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_Write8) {
@@ -420,7 +420,7 @@ TEST_F(MemoryAccessTest, DISABLED_Write8) {
     ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, Write16) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_Write16) {
@@ -440,7 +440,7 @@ TEST_F(MemoryAccessTest, DISABLED_Write16) {
     ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, Write32) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_Write32) {
@@ -460,7 +460,7 @@ TEST_F(MemoryAccessTest, DISABLED_Write32) {
     ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, BasicBlockRead) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_BasicBlockRead) {
@@ -481,7 +481,7 @@ TEST_F(MemoryAccessTest, DISABLED_BasicBlockRead) {
     ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, BasicBlockWrite) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_BasicBlockWrite) {
@@ -502,7 +502,7 @@ TEST_F(MemoryAccessTest, DISABLED_BasicBlockWrite) {
     ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, ReadRange) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_ReadRange) {
@@ -522,7 +522,7 @@ TEST_F(MemoryAccessTest, DISABLED_ReadRange) {
     ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, WriteRange) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_WriteRange) {
@@ -542,7 +542,7 @@ TEST_F(MemoryAccessTest, DISABLED_WriteRange) {
     ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, ReadWriteRange) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_ReadWriteRange) {
@@ -572,7 +572,7 @@ TEST_F(MemoryAccessTest, DISABLED_ReadWriteRange) {
     ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, MemorySnooping) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_MemorySnooping) {

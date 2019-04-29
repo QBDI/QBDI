@@ -48,7 +48,11 @@ public:
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
         rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
         if(inst->getOperand(op).isReg()) {
+#if defined(QBDI_ARCH_X86)
+            return {NoReloc(mov32rr(temp_manager->getRegForTemp(temp), inst->getOperand(op).getReg()))};
+#else
             return {NoReloc(mov64rr(temp_manager->getRegForTemp(temp), inst->getOperand(op).getReg()))};
+#endif
         }
         else if(inst->getOperand(op).isImm()) {
             return {Mov(temp_manager->getRegForTemp(temp), Constant(inst->getOperand(op).getImm()))};
@@ -524,7 +528,11 @@ public:
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
         rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
 
+#if defined(QBDI_ARCH_X86)
+        return {InstId(mov32ri(temp_manager->getRegForTemp(temp), 0), 1)};
+#else
         return {InstId(mov64ri(temp_manager->getRegForTemp(temp), 0), 1)};
+#endif
     }
 };
 
@@ -569,11 +577,19 @@ public:
             return {Mov(offset, temp_manager->getRegForTemp(temp))};
         }
         else if(type == ShadowType) {
+#if defined(QBDI_ARCH_X86)
+            return {TaggedShadowAbs(
+                mov32mr(0, 0, 0, 0, 0, temp_manager->getRegForTemp(temp)),
+                3,
+                shadow.getTag()
+            )};
+#else
             return {TaggedShadow(
                 mov64mr(Reg(REG_PC), 0, 0, 0, 0, temp_manager->getRegForTemp(temp)),
                 3,
                 shadow.getTag()
             )};
+#endif
         }
         _QBDI_UNREACHABLE();
     }

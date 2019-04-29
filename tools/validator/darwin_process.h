@@ -25,6 +25,28 @@
 
 static const uint8_t BRK_INS = 0xCC;
 
+#if defined(QBDI_ARCH_X86)
+#define THREAD_STATE_ID x86_THREAD_STATE32
+#define THREAD_STATE_COUNT x86_THREAD_STATE32_COUNT
+#define THREAD_STATE_FP_ID x86_FLOAT_STATE32
+#define THREAD_STATE_FP_COUNT x86_FLOAT_STATE32_COUNT
+#define THREAD_STATE x86_thread_state32_t
+#define THREAD_STATE_FP x86_float_state32_t
+#define THREAD_STATE_BP __ebp
+#define THREAD_STATE_SP __esp
+#define THREAD_STATE_PC __eip
+#elif defined(QBDI_ARCH_X86_64)
+#define THREAD_STATE_ID x86_THREAD_STATE64
+#define THREAD_STATE_COUNT x86_THREAD_STATE64_COUNT
+#define THREAD_STATE_FP_ID x86_FLOAT_STATE64
+#define THREAD_STATE_FP_COUNT x86_FLOAT_STATE64_COUNT
+#define THREAD_STATE x86_thread_state64_t
+#define THREAD_STATE_FP x86_float_state64_t
+#define THREAD_STATE_BP __rbp
+#define THREAD_STATE_SP __rsp
+#define THREAD_STATE_PC __rip
+#endif
+
 class DarwinProcess : public Process {
 
 private:
@@ -67,8 +89,8 @@ public:
     void getProcessFPR(QBDI::FPRState *fprState);
 };
 
-void threadStateToGPRState(x86_thread_state64_t* ts, QBDI::GPRState* gprState);
+void threadStateToGPRState(THREAD_STATE* ts, QBDI::GPRState* gprState);
 
-void floatStateToFPRState(x86_float_state64_t* fs, QBDI::FPRState* fprState);
+void floatStateToFPRState(THREAD_STATE_FP* fs, QBDI::FPRState* fprState);
 
 #endif // DARWIN_PROCESS_H

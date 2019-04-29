@@ -36,13 +36,14 @@ struct Context;
 // X86_64 Context
 // ============================================================================
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 
 #include "X86InstrInfo.h"
 #include "X86RegisterInfo.h"
 
 namespace QBDI {
 
+#if defined(QBDI_ARCH_X86_64)
 static const unsigned int GPR_ID[] = {
     llvm::X86::RAX, llvm::X86::RBX, llvm::X86::RCX, llvm::X86::RDX, 
     llvm::X86::RSI, llvm::X86::RDI, llvm::X86::R8,  llvm::X86::R9,
@@ -51,18 +52,26 @@ static const unsigned int GPR_ID[] = {
     llvm::X86::RIP
 };
 
-/*! X86_64 Host context.
+#elif defined(QBDI_ARCH_X86)
+static const unsigned int GPR_ID[] = {
+    llvm::X86::EAX, llvm::X86::EBX, llvm::X86::ECX, llvm::X86::EDX,
+    llvm::X86::ESI, llvm::X86::EDI, llvm::X86::EBP, llvm::X86::ESP,
+    llvm::X86::EIP
+};
+#endif
+
+/*! X86 / X86_64 Host context.
  */
 struct HostState {
-    rword rbp;
-    rword rsp;
+    rword bp;
+    rword sp;
     rword selector;
     rword callback;
     rword data;
     rword origin;
 };
 
-/*! X86_64 Execution context.
+/*! X86 / X86_64 Execution context.
  */
 struct Context {
 

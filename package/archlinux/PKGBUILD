@@ -7,7 +7,7 @@ pkgdesc="Quarkslab Dynamic Binary Instrumentation Framework"
 arch=('x86_64')
 url=""
 license=('PROPRIETARY')
-depends=('ncurses' 'zlib' 'pkg-config')
+depends=('ncurses' 'zlib')
 options=(staticlibs)
 makedepends=()
 

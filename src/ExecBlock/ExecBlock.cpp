@@ -25,14 +25,14 @@
 #include "Utility/System.h"
 
 #if defined(QBDI_OS_WIN)
-    #if defined(QBDI_ARCH_X86_64)
+    #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
         extern "C" void qbdi_runCodeBlockSSE(void *codeBlock);
         extern "C" void qbdi_runCodeBlockAVX(void *codeBlock);
     #else
         extern "C" void qbdi_runCodeBlock(void *codeBlock);
     #endif
 #else
-    #if defined(QBDI_ARCH_X86_64)
+    #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
         extern void qbdi_runCodeBlockSSE(void *codeBlock) asm ("__qbdi_runCodeBlockSSE");
         extern void qbdi_runCodeBlockAVX(void *codeBlock) asm ("__qbdi_runCodeBlockAVX");
     #else
@@ -91,7 +91,7 @@ ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(
         epilogueSize = codeStream->current_pos();
         codeStream->seek(0);
         // runCodeBlock variant selection
-        #if defined(QBDI_ARCH_X86_64)
+        #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
         if(isHostCPUFeaturePresent("avx")) {
             LogDebug("ExecBlock::ExecBlock", "AVX support enabled in host context switches");
             runCodeBlockFct = qbdi_runCodeBlockAVX;

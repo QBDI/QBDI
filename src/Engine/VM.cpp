@@ -338,7 +338,7 @@ const InstAnalysis* VM::getInstAnalysis(AnalysisType type) {
 }
 
 bool VM::recordMemoryAccess(MemoryAccessType type) {
-#ifdef QBDI_ARCH_X86_64
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
     if(type & MEMORY_READ && !(memoryLoggingLevel & MEMORY_READ)) {
         memoryLoggingLevel |= MEMORY_READ;
         addInstrRule(InstrRule(

@@ -29,7 +29,7 @@
 #include "Patch/Patch.h"
 #include "Platform.h"
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 #include "Patch/X86_64/PatchRules_X86_64.h"
 #elif defined(QBDI_ARCH_ARM)
 #include "Patch/ARM/PatchRules_ARM.h"

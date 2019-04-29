@@ -164,6 +164,10 @@ public:
      */
     uint16_t splitSequence(uint16_t instID);
 
+    rword getDataBlockBase() const {
+        return (rword) dataBlock.base();
+    }
+
     /*! Compute the offset between the current code stream position and the start of the data block.
      *  Used for pc relative memory access to the data block.
      *  
