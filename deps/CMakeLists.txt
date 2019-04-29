@@ -11,8 +11,10 @@ add_custom_target(llvm
     COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/llvm/build.py package ${PLATFORM}
 )
 
-if(NOT (EXISTS "${CMAKE_SOURCE_DIR}/deps/llvm/${PLATFORM}/include/" AND
-   EXISTS "${CMAKE_SOURCE_DIR}/deps/llvm/${PLATFORM}/lib/"))
+file(GLOB LLVMIncludeFile LIST_DIRECTORIES true "${CMAKE_SOURCE_DIR}/deps/llvm/${PLATFORM}/include/*")
+file(GLOB LLVMLibFile LIST_DIRECTORIES true "${CMAKE_SOURCE_DIR}/deps/llvm/${PLATFORM}/lib/*")
+
+if (NOT (LLVMLibFile AND LLVMIncludeFile))
 
     set(DEPENDENCY_SATISFIED Off PARENT_SCOPE)
     message(WARNING "
@@ -39,8 +41,10 @@ add_custom_target(gtest
 )
 endif()
 
-if(NOT (EXISTS "${CMAKE_SOURCE_DIR}/deps/gtest/${PLATFORM}/include/" AND
-   EXISTS "${CMAKE_SOURCE_DIR}/deps/gtest/${PLATFORM}/lib/"))
+file(GLOB GTestIncludeFile LIST_DIRECTORIES true "${CMAKE_SOURCE_DIR}/deps/gtest/${PLATFORM}/include/*")
+file(GLOB GTestLibFile LIST_DIRECTORIES true "${CMAKE_SOURCE_DIR}/deps/gtest/${PLATFORM}/lib/*")
+
+if (NOT (GTestLibFile AND GTestIncludeFile))
 
     set(DEPENDENCY_SATISFIED Off PARENT_SCOPE)
     message(WARNING "
