@@ -19,9 +19,37 @@
 #define LAYER2_X86_64_H
 
 #include "Patch/Types.h"
-#include "Patch/RelocatableInst.h"
+#include "Patch/X86_64/RelocatableInst_X86_64.h"
 
 namespace QBDI {
+
+#ifdef QBDI_ARCH_X86_64
+#define movrr mov64rr
+#define movri mov64ri
+#define movmr mov64mr
+#define movrm mov64rm
+#define pushr push64r
+#define popr pop64r
+#define addri addr64i
+#define lea lea64
+#define popf popf64
+#define pushf pushf64
+#define jmpm jmp64m
+
+#else /* QBDI_ARCH_X86 */
+#define movrr mov32rr
+#define movri mov32ri
+#define movmr mov32mr
+#define movrm mov32rm
+#define pushr push32r
+#define popr pop32r
+#define addri addr32i
+#define lea lea32
+#define popf popf32
+#define pushf pushf32
+#define jmpm jmp32m
+
+#endif
 
 // low level layer 2
 
@@ -45,6 +73,8 @@ llvm::MCInst mov32rm(unsigned int dst, unsigned int base, rword scale, unsigned 
 
 llvm::MCInst mov64rm(unsigned int dst, unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg);
 
+llvm::MCInst jmp32m(unsigned int base, rword offset);
+
 llvm::MCInst jmp64m(unsigned int base, rword offset);
 
 llvm::MCInst fxsave(unsigned int base, rword offset);
@@ -55,17 +85,29 @@ llvm::MCInst vextractf128(unsigned int base, rword offset, unsigned int src, uin
 
 llvm::MCInst vinsertf128(unsigned int dst, unsigned int base, rword offset, uint8_t regoffset);
 
-llvm::MCInst pushr(unsigned int reg);
+llvm::MCInst push32r(unsigned int reg);
 
-llvm::MCInst popr(unsigned int reg);
+llvm::MCInst push64r(unsigned int reg);
 
-llvm::MCInst addri(unsigned int reg, rword imm);
+llvm::MCInst pop32r(unsigned int reg);
 
-llvm::MCInst lea(unsigned int dst, unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg);
+llvm::MCInst pop64r(unsigned int reg);
 
-llvm::MCInst pushf();
+llvm::MCInst addr32i(unsigned int reg, rword imm);
 
-llvm::MCInst popf();
+llvm::MCInst addr64i(unsigned int reg, rword imm);
+
+llvm::MCInst lea32(unsigned int dst, unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg);
+
+llvm::MCInst lea64(unsigned int dst, unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg);
+
+llvm::MCInst pushf32();
+
+llvm::MCInst pushf64();
+
+llvm::MCInst popf32();
+
+llvm::MCInst popf64();
 
 llvm::MCInst jmp(rword offset);
 

@@ -68,7 +68,7 @@ struct ShadowInfo {
 
 static const uint16_t EXEC_BLOCK_FULL = 0xFFFF;
 
-/*! Manages the concept of an exec block made of two contiguous memory blocks (one for the code, 
+/*! Manages the concept of an exec block made of two contiguous memory blocks (one for the code,
  *  the other for the data) used to store and execute instrumented basic blocks.
  */
 class ExecBlock {
@@ -104,7 +104,7 @@ private:
      * @return Return true if the code block is in read execute mode.
      */
     bool isRX() const {return pageState == RX;}
-    
+
     /*! Verify if the code block is in read write mode.
      *
      * @return Return true if the code block is in read write mode.
@@ -133,21 +133,21 @@ public:
     /*! Display the content of an exec block to stderr.
      */
     void show() const;
-    
+
     /* Low level run function. Does not take care of the callbacks.
     */
     void run();
 
-    /*! Execute the sequence currently programmed in the selector of the exec block. Take care 
+    /*! Execute the sequence currently programmed in the selector of the exec block. Take care
      *  of the callbacks handling.
      */
     VMAction execute();
 
-    /*! Write a new sequence in the exec block. This function does not guarantee that the 
+    /*! Write a new sequence in the exec block. This function does not guarantee that the
      *  sequence will be written in its entierty and might stop before the end using an
      *  architecture specific terminator. Return 0 if the exec block was full and no instruction was
      *  written.
-     *  
+     *
      * @param seqStart [in] Iterator to the start of a list of patches.
      * @param seqEnd   [in] Iterator to the end of a list of patches.
      * @param seqType  [in] Type of the sequence.
@@ -165,22 +165,22 @@ public:
     uint16_t splitSequence(uint16_t instID);
 
     rword getDataBlockBase() const {
-        return (rword) dataBlock.base();
+        return reinterpret_cast<rword>(dataBlock.base());
     }
 
     /*! Compute the offset between the current code stream position and the start of the data block.
      *  Used for pc relative memory access to the data block.
-     *  
+     *
      * @return The computed offset.
      */
     rword getDataBlockOffset() const {
-        return (rword) dataBlock.base() - (rword) codeBlock.base() - codeStream->current_pos();
+        return reinterpret_cast<rword>(dataBlock.base()) - reinterpret_cast<rword>(codeBlock.base()) - codeStream->current_pos();
     }
 
-    /*! Compute the offset between the current code stream position and the start of the 
-     *  exec block epilogue code. Used for computing the remaining code space left or jumping to 
+    /*! Compute the offset between the current code stream position and the start of the
+     *  exec block epilogue code. Used for computing the remaining code space left or jumping to
      *  the exec block epilogue at the end of a sequence.
-     *  
+     *
      * @return The computed offset.
      */
     rword getEpilogueOffset() const {
@@ -192,7 +192,7 @@ public:
      * @return The PC value.
      */
     rword getCurrentPC() const {
-        return (rword) codeBlock.base() + codeStream->current_pos();
+        return reinterpret_cast<rword>(codeBlock.base()) + codeStream->current_pos();
     }
 
     /*! Obtain the current instruction ID.
@@ -200,10 +200,10 @@ public:
      * @return The current instruction ID.
      */
     uint16_t getNextInstID() const {
-        return (uint16_t) instMetadata.size();
+        return static_cast<uint16_t>(instMetadata.size());
     }
 
-    /*! Obtain the instruction ID for a specific address (the address must exactly match the start 
+    /*! Obtain the instruction ID for a specific address (the address must exactly match the start
      *  of the instruction).
      *
      * @param address The address of the start of the instruction.
@@ -247,10 +247,10 @@ public:
      * @return The next sequence ID.
      */
     uint16_t getNextSeqID() const {
-        return (uint16_t) seqRegistry.size();
+        return static_cast<uint16_t>(seqRegistry.size());
     }
 
-    /*! Obtain the sequence ID for a specific address (the address must exactly match the start 
+    /*! Obtain the sequence ID for a specific address (the address must exactly match the start
      *  of the sequence).
      *
      * @param address The address of the start of the sequence.
@@ -305,7 +305,7 @@ public:
     void selectSeq(uint16_t seqID);
 
     /*! Get a pointer to the context structure stored in the data block.
-     *  
+     *
      * @return The context pointer.
      */
     Context* getContext() const {return context;}

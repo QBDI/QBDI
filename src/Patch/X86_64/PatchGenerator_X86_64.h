@@ -19,8 +19,6 @@
 #define PATCHGENERATOR_X86_64_H
 
 #include "Patch/X86_64/Layer2_X86_64.h"
-#include "Patch/PatchUtils.h"
-#include "Patch/X86_64/RelocatableInst_X86_64.h"
 #include "Patch/PatchGenerator.h"
 #include "Patch/InstInfo.h"
 
@@ -32,36 +30,21 @@ class GetOperand : public PatchGenerator, public AutoAlloc<PatchGenerator, GetOp
 
 public:
 
-    /*! Obtain the value of the operand op and copy it's value in a temporary. If op is an immediate 
+    /*! Obtain the value of the operand op and copy it's value in a temporary. If op is an immediate
      * the immediate value is copied, if op is a register the register value is copied.
-     * 
+     *
      * @param[in] temp   A temporary where the value will be copied.
-     * @param[in] op     The operand index (relative to the instruction LLVM MCInst representation) 
+     * @param[in] op     The operand index (relative to the instruction LLVM MCInst representation)
      *                   to be copied.
     */
     GetOperand(Temp temp, Operand op): temp(temp), op(op) {}
 
-    /*! 
+    /*!
      * Output:
      *   MOV REG64 temp, IMM64/REG64 op
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-        if(inst->getOperand(op).isReg()) {
-#if defined(QBDI_ARCH_X86)
-            return {NoReloc(mov32rr(temp_manager->getRegForTemp(temp), inst->getOperand(op).getReg()))};
-#else
-            return {NoReloc(mov64rr(temp_manager->getRegForTemp(temp), inst->getOperand(op).getReg()))};
-#endif
-        }
-        else if(inst->getOperand(op).isImm()) {
-            return {Mov(temp_manager->getRegForTemp(temp), Constant(inst->getOperand(op).getImm()))};
-        }
-        else {
-            LogError("GetOperand::generate", "Invalid operand type for GetOperand()");
-            return {};
-        }
-    }
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 };
 
 
@@ -83,10 +66,7 @@ public:
      * MOV REG64 temp, IMM64 cst
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-
-        return {Mov(temp_manager->getRegForTemp(temp), cst)};
-    }
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 };
 
 class GetPCOffset : public PatchGenerator, public AutoAlloc<PatchGenerator, GetPCOffset> {
@@ -101,7 +81,7 @@ class GetPCOffset : public PatchGenerator, public AutoAlloc<PatchGenerator, GetP
 
 public:
 
-    /*! Interpret a constant as a RIP relative offset and copy it in a temporary. It can be used to 
+    /*! Interpret a constant as a RIP relative offset and copy it in a temporary. It can be used to
      * obtain the current value of RIP by using a constant of 0.
      *
      * @param[in] temp     A temporary where the value will be copied.
@@ -109,11 +89,11 @@ public:
     */
     GetPCOffset(Temp temp, Constant cst): temp(temp), cst(cst), op(0), type(ConstantType) {}
 
-    /*! Interpret an operand as a RIP relative offset and copy it in a temporary. It can be used to 
+    /*! Interpret an operand as a RIP relative offset and copy it in a temporary. It can be used to
      * obtain jump/call targets or relative memory access addresses.
      *
      * @param[in] temp     A temporary where the value will be copied.
-     * @param[in] op       The  operand index (relative to the instruction LLVM MCInst 
+     * @param[in] op       The  operand index (relative to the instruction LLVM MCInst
      *                     representation) to be used.
     */
     GetPCOffset(Temp temp, Operand op): temp(temp), cst(0), op(op), type(OperandType) {}
@@ -128,19 +108,7 @@ public:
      *
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-        if(type == ConstantType) {
-            return{Mov(temp_manager->getRegForTemp(temp), Constant(address + instSize + cst))};
-        }
-        else if(type == OperandType) {
-            // FIXME: Implement for register operand
-            return {Mov(
-                temp_manager->getRegForTemp(temp),
-                Constant(address + instSize + inst->getOperand(op).getImm()))
-            };
-        }
-        _QBDI_UNREACHABLE();
-    }
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 };
 
 class GetReadAddress : public PatchGenerator, public AutoAlloc<PatchGenerator, GetReadAddress> {
@@ -148,9 +116,9 @@ class GetReadAddress : public PatchGenerator, public AutoAlloc<PatchGenerator, G
     Temp temp;
 
 public:
-    
-    /*! Resolve the memory address where the instructions will read its value and copy the address in a 
-     * temporary. This PatchGenerator is only guaranteed to work before the instruction has been 
+
+    /*! Resolve the memory address where the instructions will read its value and copy the address in a
+     * temporary. This PatchGenerator is only guaranteed to work before the instruction has been
      * executed.
      *
      * @param[in] temp   A temporary where the memory address will be copied.
@@ -161,61 +129,12 @@ public:
      *
      * if stack access:
      * MOV REG64 temp, REG64 RSP
-     * 
+     *
      * else:
      * LEA REG64 temp, MEM64 addr
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-        // Check if this instruction does indeed read something
-        if(getReadSize(inst) > 0) {
-            // If it is a stack read, return RSP value
-            if(isStackRead(inst)) {
-                return {Mov(temp_manager->getRegForTemp(temp), Reg(REG_SP))};
-            }
-            // Else replace the instruction with a LEA on the same address
-            else {
-                // Scan for LLVM X86 address encoding
-                for(unsigned i = 0; i + 4 <= inst->getNumOperands(); i++) {
-                    if(inst->getOperand(i + 0).isReg() && inst->getOperand(i + 1).isImm() &&
-                       inst->getOperand(i + 2).isReg() && inst->getOperand(i + 3).isImm() &&
-                       inst->getOperand(i + 4).isReg()) {
-                        // If it uses PC as a base register, substitute PC
-                        if(inst->getOperand(i + 0).getReg() == Reg(REG_PC)) {
-                            return {
-                                Mov(
-                                    temp_manager->getRegForTemp(0xFFFFFFFF), 
-                                    Constant(address + instSize)
-                                ),
-                                NoReloc(lea(
-                                    temp_manager->getRegForTemp(temp),
-                                    temp_manager->getRegForTemp(0xFFFFFFFF), 
-                                    inst->getOperand(i + 1).getImm(),
-                                    inst->getOperand(i + 2).getReg(),
-                                    inst->getOperand(i + 3).getImm(),
-                                    inst->getOperand(i + 4).getReg())
-                                )
-                            };
-                        }
-                        else {
-                            return {
-                                NoReloc(lea(
-                                    temp_manager->getRegForTemp(temp),
-                                    inst->getOperand(i + 0).getReg(),
-                                    inst->getOperand(i + 1).getImm(),
-                                    inst->getOperand(i + 2).getReg(),
-                                    inst->getOperand(i + 3).getImm(),
-                                    inst->getOperand(i + 4).getReg()
-                                ))
-                            };
-                        }
-                    }
-                }
-                RequireAction("GetReadAddress::generate", false && "No memory address found in the instruction", abort());
-            }
-        }
-        RequireAction("GetReadAddress::generate", false && "Called on an instruction which does not make read access", abort());
-    }
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 };
 
 class GetWriteAddress : public PatchGenerator, public AutoAlloc<PatchGenerator, GetWriteAddress> {
@@ -223,9 +142,9 @@ class GetWriteAddress : public PatchGenerator, public AutoAlloc<PatchGenerator, 
     Temp temp;
 
 public:
-    
-    /*! Resolve the memory address where the instructions will write its value and copy the address in a 
-     * temporary. This PatchGenerator is only guaranteed to work before the instruction has been 
+
+    /*! Resolve the memory address where the instructions will write its value and copy the address in a
+     * temporary. This PatchGenerator is only guaranteed to work before the instruction has been
      * executed.
      *
      * @param[in] temp   A temporary where the memory address will be copied.
@@ -236,166 +155,44 @@ public:
      *
      * if stack access:
      * MOV REG64 temp, REG64 RSP
-     * 
+     *
      * else:
      * LEA REG64 temp, MEM64 addr
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-        // Check if this instruction does indeed read something
-        if(getWriteSize(inst) > 0) {
-            // If it is a stack read, return RSP value
-            if(isStackWrite(inst)) {
-                return {Mov(temp_manager->getRegForTemp(temp), Reg(REG_SP))};
-            }
-            // Else replace the instruction with a LEA on the same address
-            else {
-                // Scan for LLVM X86 address encoding
-                for(unsigned i = 0; i + 4 <= inst->getNumOperands(); i++) {
-                    if(inst->getOperand(i + 0).isReg() && inst->getOperand(i + 1).isImm() &&
-                       inst->getOperand(i + 2).isReg() && inst->getOperand(i + 3).isImm() &&
-                       inst->getOperand(i + 4).isReg()) {
-                        // If it uses PC as a base register, substitute PC
-                        if(inst->getOperand(i + 0).getReg() == Reg(REG_PC)) {
-                            return {
-                                Mov(
-                                    temp_manager->getRegForTemp(0xFFFFFFFF), 
-                                    Constant(address + instSize)
-                                ),
-                                NoReloc(lea(
-                                    temp_manager->getRegForTemp(temp),
-                                    temp_manager->getRegForTemp(0xFFFFFFFF), 
-                                    inst->getOperand(i + 1).getImm(),
-                                    inst->getOperand(i + 2).getReg(),
-                                    inst->getOperand(i + 3).getImm(),
-                                    inst->getOperand(i + 4).getReg())
-                                )
-                            };
-                        }
-                        else {
-                            return {
-                                NoReloc(lea(
-                                    temp_manager->getRegForTemp(temp),
-                                    inst->getOperand(i + 0).getReg(),
-                                    inst->getOperand(i + 1).getImm(),
-                                    inst->getOperand(i + 2).getReg(),
-                                    inst->getOperand(i + 3).getImm(),
-                                    inst->getOperand(i + 4).getReg()
-                                ))
-                            };
-                        }
-                    }
-                }
-                RequireAction("GetWriteAddress::generate", false && "No memory address found in the instruction", abort());
-            }
-        }
-        RequireAction("GetWriteAddress::generate", false && "Called on an instruction which does not make write access", abort());
-    }
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 };
 
 class GetReadValue : public PatchGenerator, public AutoAlloc<PatchGenerator, GetReadValue> {
- 
+
     Temp temp;
- 
+
  public:
-     
-    /*! Resolve the memory address where the instructions will read its value and copy the value in a 
-     * temporary. This PatchGenerator is only guaranteed to work before the instruction has been 
+
+    /*! Resolve the memory address where the instructions will read its value and copy the value in a
+     * temporary. This PatchGenerator is only guaranteed to work before the instruction has been
      * executed.
      *
      * @param[in] temp   A temporary where the memory value will be copied.
     */
     GetReadValue(Temp temp) : temp(temp) {}
- 
+
     /*! Output:
      *
      * MOV REG64 temp, MEM64 val
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-         rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-        if(getReadSize(inst) > 0) {
-            unsigned size = getReadSize(inst);
-            unsigned dst = temp_manager->getRegForTemp(temp);
-            if(size < 8) {
-                dst = temp_manager->getSizedSubReg(dst, 4);
-            }
-            if(isStackRead(inst)) {
-                llvm::MCInst readinst;
-                if(size == 8) {
-                    readinst = mov64rm(dst, Reg(REG_SP), 1, 0, 0, 0);
-                }
-                else if(size == 4) {
-                    readinst = mov32rm(dst, Reg(REG_SP), 1, 0, 0, 0);
-                }
-                else if(size == 2) {
-                    readinst = mov32rm16(dst, Reg(REG_SP), 1, 0, 0, 0);
-                }
-                else if(size == 1) {
-                    readinst = mov32rm8(dst, Reg(REG_SP), 1, 0, 0, 0);
-                }
-                return {NoReloc(readinst)};
-            }
-            else {
-                for(unsigned i = 0; i + 4 <= inst->getNumOperands(); i++) {
-                    if(inst->getOperand(i + 0).isReg() && inst->getOperand(i + 1).isImm() &&
-                       inst->getOperand(i + 2).isReg() && inst->getOperand(i + 3).isImm() &&
-                       inst->getOperand(i + 4).isReg()) {
-                        llvm::MCInst readinst;
-
-                        unsigned base = inst->getOperand(i + 0).getReg();
-                        rword scale = inst->getOperand(i + 1).getImm();
-                        unsigned offset = inst->getOperand(i + 2).getReg();
-                        rword displacement = inst->getOperand(i + 3).getImm();
-                        unsigned seg = inst->getOperand(i + 4).getReg();
-
-                        if(inst->getOperand(i + 0).getReg() == Reg(REG_PC)) {
-                            base = temp_manager->getRegForTemp(0xFFFFFFFF);
-                        }
-
-                        if(size == 8) {
-                            readinst = mov64rm(dst, base, scale, offset, displacement, seg);
-                        }
-                        else if(size == 4) {
-                            readinst = mov32rm(dst, base, scale, offset, displacement, seg);
-                        }
-                        else if(size == 2) {
-                            readinst = mov32rm16(dst, base, scale, offset, displacement, seg);
-                        }
-                        else if(size == 1) {
-                            readinst = mov32rm8(dst, base, scale, offset, displacement, seg);
-                        }
-         
-                        if(inst->getOperand(i + 0).getReg() == Reg(REG_PC)) {
-                            return {
-                                Mov(
-                                    temp_manager->getRegForTemp(0xFFFFFFFF), 
-                                    Constant(address + instSize)
-                                ),
-                                NoReloc(readinst)
-                            };
-                        }
-                        else {
-                            return {
-                                NoReloc(readinst)
-                            };
-                        }
-                    }
-                }
-                RequireAction("GetReadValue::generate", false && "No memory address found in the instruction", abort());
-            }
-        }
-        RequireAction("GetReadValue::generate", false && "Called on an instruction which does not make read access", abort());
-	}
+         rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 };
 
 class GetWriteValue : public PatchGenerator, public AutoAlloc<PatchGenerator, GetWriteValue> {
- 
+
     Temp temp;
- 
+
 public:
-     
-    /*! Resolve the memory address where the instructions has written its value and copy back the value 
-     * in a temporary. This PatchGenerator is only guaranteed to work after the instruction has been 
+
+    /*! Resolve the memory address where the instructions has written its value and copy back the value
+     * in a temporary. This PatchGenerator is only guaranteed to work after the instruction has been
      * executed.
      *
      * @param[in] temp   A temporary where the memory value will be copied.
@@ -407,81 +204,7 @@ public:
      * MOV REG64 temp, MEM64 val
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-         rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-        if(getWriteSize(inst) > 0) {
-            unsigned size = getWriteSize(inst);
-            unsigned dst = temp_manager->getRegForTemp(temp);
-            if(size < 8) {
-                dst = temp_manager->getSizedSubReg(dst, 4);
-            }
-
-            if(isStackWrite(inst)) {
-                llvm::MCInst readinst;
-                if(size == 8) {
-                    readinst = mov64rm(dst, Reg(REG_SP), 1, 0, 0, 0);
-                }
-                else if(size == 4) {
-                    readinst = mov32rm(dst, Reg(REG_SP), 1, 0, 0, 0);
-                }
-                else if(size == 2) {
-                    readinst = mov32rm16(dst, Reg(REG_SP), 1, 0, 0, 0);
-                }
-                else if(size == 1) {
-                    readinst = mov32rm8(dst, Reg(REG_SP), 1, 0, 0, 0);
-                }
-                return {NoReloc(readinst)};
-            }
-            else {
-                for(unsigned i = 0; i + 4 <= inst->getNumOperands(); i++) {
-                    if(inst->getOperand(i + 0).isReg() && inst->getOperand(i + 1).isImm() &&
-                       inst->getOperand(i + 2).isReg() && inst->getOperand(i + 3).isImm() &&
-                       inst->getOperand(i + 4).isReg()) {
-                        llvm::MCInst readinst;
-
-                        unsigned base = inst->getOperand(i + 0).getReg();
-                        rword scale = inst->getOperand(i + 1).getImm();
-                        unsigned offset = inst->getOperand(i + 2).getReg();
-                        rword displacement = inst->getOperand(i + 3).getImm();
-                        unsigned seg = inst->getOperand(i + 4).getReg();
-
-                        if(inst->getOperand(i + 0).getReg() == Reg(REG_PC)) {
-                            base = temp_manager->getRegForTemp(0xFFFFFFFF);
-                        }
-
-                        if(size == 8) {
-                            readinst = mov64rm(dst, base, scale, offset, displacement, seg);
-                        }
-                        else if(size == 4) {
-                            readinst = mov32rm(dst, base, scale, offset, displacement, seg);
-                        }
-                        else if(size == 2) {
-                            readinst = mov32rm16(dst, base, scale, offset, displacement, seg);
-                        }
-                        else if(size == 1) {
-                            readinst = mov32rm8(dst, base, scale, offset, displacement, seg);
-                        }
-         
-                        if(inst->getOperand(i + 0).getReg() == Reg(REG_PC)) {
-                            return {
-                                Mov(
-                                    temp_manager->getRegForTemp(0xFFFFFFFF), 
-                                    Constant(address + instSize)
-                                ),
-                                NoReloc(readinst)
-                            };
-                        }
-                        else {
-                            return {
-                                NoReloc(readinst)
-                            };
-                        }
-                    }
-                }
-                RequireAction("GetWriteValue::generate", false && "No memory address found in the instruction", abort());
-            }
-        }
-        RequireAction("GetWriteValue::generate", false && "Called on an instruction which does not make write access", abort());
-	}
+         rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 };
 
 class CopyReg : public PatchGenerator, public AutoAlloc<PatchGenerator, CopyReg> {
@@ -489,7 +212,7 @@ class CopyReg : public PatchGenerator, public AutoAlloc<PatchGenerator, CopyReg>
     Reg src;
 
 public:
-    
+
     /*! Copy a register in a temporary.
      *
      * @param[in] dst    A temporary where the register will be copied.
@@ -502,9 +225,7 @@ public:
      * MOV REG64 temp, REG64 reg
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-        return {Mov(temp_manager->getRegForTemp(dst), src)};
-    }
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 };
 
 class GetInstId : public PatchGenerator, public AutoAlloc<PatchGenerator, GetInstId> {
@@ -526,14 +247,7 @@ public:
      * MOV REG64 temp, IMM64 instID
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-
-#if defined(QBDI_ARCH_X86)
-        return {InstId(mov32ri(temp_manager->getRegForTemp(temp), 0), 1)};
-#else
-        return {InstId(mov64ri(temp_manager->getRegForTemp(temp), 0), 1)};
-#endif
-    }
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 };
 
 class WriteTemp : public PatchGenerator, public AutoAlloc<PatchGenerator, WriteTemp> {
@@ -571,32 +285,9 @@ public:
      * MOV MEM64 DataBlock[offset], REG64 temp
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-        
-        if(type == OffsetType) {
-            return {Mov(offset, temp_manager->getRegForTemp(temp))};
-        }
-        else if(type == ShadowType) {
-#if defined(QBDI_ARCH_X86)
-            return {TaggedShadowAbs(
-                mov32mr(0, 0, 0, 0, 0, temp_manager->getRegForTemp(temp)),
-                3,
-                shadow.getTag()
-            )};
-#else
-            return {TaggedShadow(
-                mov64mr(Reg(REG_PC), 0, 0, 0, 0, temp_manager->getRegForTemp(temp)),
-                3,
-                shadow.getTag()
-            )};
-#endif
-        }
-        _QBDI_UNREACHABLE();
-    }
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 
-    bool modifyPC() {
-        return offset == Offset(Reg(REG_PC));
-    }
+    bool modifyPC() {return offset == Offset(Reg(REG_PC));}
 };
 
 class SaveReg : public PatchGenerator, public AutoAlloc<PatchGenerator, SaveReg>,
@@ -620,10 +311,7 @@ public:
      * MOV MEM64 DataBlock[offset], REG64 reg
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-
-        return {Mov(offset, reg)};
-    }
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 };
 
 class LoadReg : public PatchGenerator, public AutoAlloc<PatchGenerator, LoadReg>,
@@ -647,10 +335,7 @@ public:
      * MOV REG64 reg, MEM64 DataBlock[offset]
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-
-        return {Mov(reg, offset)};
-    }
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 };
 
 class JmpEpilogue : public PatchGenerator, public AutoAlloc<PatchGenerator, JmpEpilogue>,
@@ -667,10 +352,7 @@ public:
      * JMP Offset(Epilogue)
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-
-        return {EpilogueRel(jmp(0), 0, -1)};
-    }
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 };
 
 class SimulateCall : public PatchGenerator, public AutoAlloc<PatchGenerator, SimulateCall> {
@@ -695,19 +377,9 @@ public:
      * PUSH REG64 temp
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-        RelocatableInst::SharedPtrVec patch;
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 
-        append(patch, WriteTemp(temp, Offset(Reg(REG_PC))).generate(inst, address, instSize, temp_manager, nullptr));
-        append(patch, GetPCOffset(temp, Constant(0)).generate(inst, address, instSize, temp_manager, nullptr));
-        patch.push_back(Pushr(temp_manager->getRegForTemp(temp)));
-
-        return {patch};
-    }
-
-    bool modifyPC() {
-        return true;
-    }
+    bool modifyPC() {return true;}
 };
 
 class SimulateRet : public PatchGenerator, public AutoAlloc<PatchGenerator, SimulateRet> {
@@ -735,21 +407,9 @@ public:
      * MOV MEM64 DataBlock[Offset(RIP)], REG64 temp
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-        RelocatableInst::SharedPtrVec patch;
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 
-        patch.push_back(Popr(temp_manager->getRegForTemp(temp)));
-        if(inst->getNumOperands() == 1 && inst->getOperand(0).isImm()) {
-            patch.push_back(Add(Reg(REG_SP), Constant(inst->getOperand(0).getImm())));
-        }
-        append(patch, WriteTemp(temp, Offset(Reg(REG_PC))).generate(inst, address, instSize, temp_manager, nullptr));
-
-        return {patch};
-    }
-
-    bool modifyPC() {
-        return true;
-    }
+    bool modifyPC() {return true;}
 };
 
 

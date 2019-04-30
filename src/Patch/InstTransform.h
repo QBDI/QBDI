@@ -57,38 +57,26 @@ public:
 
     /*! Set the operand opn of the instruction as the Temp temp.
      *
-     * @param[in] opn   Operand index in the LLVM MCInst representation.    
+     * @param[in] opn   Operand index in the LLVM MCInst representation.
      * @param[in] temp  Temporary register which will be set as the new operand
     */
     SetOperand(Operand opn, Temp temp) : opn(opn), type(TempOperandType), temp(temp), reg(0), imm(0) {}
 
     /*! Set the operand opn of the instruction as the Reg reg.
      *
-     * @param[in] opn  Operand index in the LLVM MCInst representation.    
+     * @param[in] opn  Operand index in the LLVM MCInst representation.
      * @param[in] reg  Register which will be set as the new operand.
     */
     SetOperand(Operand opn, Reg reg) : opn(opn), type(RegOperandType), temp(0), reg(reg), imm(0) {}
 
     /*! Set the operand opn of the instruction as the immediate imm.
      *
-     * @param[in] opn  Operand index in the LLVM MCInst representation.    
+     * @param[in] opn  Operand index in the LLVM MCInst representation.
      * @param[in] imm  Constant which will be set as the new immediate operand.
     */
     SetOperand(Operand opn, Constant imm) : opn(opn), type(ImmOperandType), temp(0), reg(0), imm(imm) {}
 
-    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) {
-        switch(type) {
-            case TempOperandType:
-                inst.getOperand(opn).setReg(temp_manager->getRegForTemp(temp));
-                break;
-            case RegOperandType:
-                inst.getOperand(opn).setReg(reg);
-                break;
-            case ImmOperandType:
-                inst.getOperand(opn).setImm(imm);
-                break;
-        }
-    }
+    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager);
 };
 
 class SubstituteWithTemp : public InstTransform,
@@ -105,14 +93,7 @@ public:
     */
     SubstituteWithTemp(Reg reg, Temp temp) : reg(reg), temp(temp) {};
 
-    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) {
-        for(unsigned int i = 0; i < inst.getNumOperands(); i++) {
-            llvm::MCOperand &op = inst.getOperand(i);
-            if(op.isReg() && op.getReg() == reg) {
-                op.setReg(temp_manager->getRegForTemp(temp));
-            }
-        }
-    }
+    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager);
 };
 
 class AddOperand : public InstTransform, public AutoAlloc<InstTransform, AddOperand> {
@@ -153,19 +134,7 @@ public:
     */
     AddOperand(Operand opn, Constant imm) : opn(opn), type(ImmOperandType), temp(0), reg(0), imm(imm) {}
 
-    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) {
-        switch(type) {
-            case TempOperandType:
-                inst.insert(inst.begin() + opn, llvm::MCOperand::createReg(temp_manager->getRegForTemp(temp)));
-                break;
-            case RegOperandType:
-                inst.insert(inst.begin() + opn, llvm::MCOperand::createReg(reg));
-                break;
-            case ImmOperandType:
-                inst.insert(inst.begin() + opn, llvm::MCOperand::createImm(imm));
-                break;
-        }
-    }
+    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager);
 };
 
 class RemoveOperand : public InstTransform, public AutoAlloc<InstTransform, RemoveOperand> {
@@ -180,14 +149,7 @@ public:
     */
     RemoveOperand(Reg reg) : reg(reg) {}
 
-    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) {
-        for(auto it = inst.begin(); it != inst.end(); ++it) {
-            if(it->isReg() && it->getReg() == reg) {
-                inst.erase(it);
-                break;
-            }
-        }
-    }
+    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager);
 };
 
 
@@ -203,9 +165,7 @@ public:
     */
     SetOpcode(unsigned int opcode) : opcode(opcode) {}
 
-    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) {
-        inst.setOpcode(opcode);
-    }
+    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager);
 };
 
 }

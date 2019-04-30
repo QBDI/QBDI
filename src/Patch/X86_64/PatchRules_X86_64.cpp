@@ -25,7 +25,7 @@ namespace QBDI {
 
 RelocatableInst::SharedPtrVec getExecBlockPrologue() {
     RelocatableInst::SharedPtrVec prologue;
-    
+
 
     // Save host BP, SP
     append(prologue, SaveReg(Reg(REG_BP), Offset(offsetof(Context, hostState.bp))));
@@ -215,11 +215,10 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
     */
     rules.push_back(
         PatchRule(
-#if defined(QBDI_ARCH_X86)
-            OpIs(llvm::X86::JMP32m),
-#else
-            OpIs(llvm::X86::JMP64m),
-#endif
+            Or({
+                OpIs(llvm::X86::JMP32m),
+                OpIs(llvm::X86::JMP64m)
+            }),
             {
                 ModifyInstruction({
 #if defined(QBDI_ARCH_X86)
@@ -241,11 +240,10 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
     */
     rules.push_back(
         PatchRule(
-#if defined(QBDI_ARCH_X86)
-            OpIs(llvm::X86::CALL32m),
-#else
-            OpIs(llvm::X86::CALL64m),
-#endif
+            Or({
+                OpIs(llvm::X86::CALL32m),
+                OpIs(llvm::X86::CALL64m)
+            }),
             {
                 ModifyInstruction({
 #if defined(QBDI_ARCH_X86)
@@ -286,11 +284,10 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
     */
     rules.push_back(
         PatchRule(
-#if defined(QBDI_ARCH_X86)
-            OpIs(llvm::X86::JMP32r),
-#else
-            OpIs(llvm::X86::JMP64r),
-#endif
+            Or({
+                OpIs(llvm::X86::JMP32r),
+                OpIs(llvm::X86::JMP64r)
+            }),
             {
                 GetOperand(Temp(0), Operand(0)),
                 WriteTemp(Temp(0), Offset(Reg(REG_PC)))
@@ -306,11 +303,10 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
     */
     rules.push_back(
         PatchRule(
-#if defined(QBDI_ARCH_X86)
-            OpIs(llvm::X86::CALL32r),
-#else
-            OpIs(llvm::X86::CALL64r),
-#endif
+            Or({
+                OpIs(llvm::X86::CALL32r),
+                OpIs(llvm::X86::CALL64r),
+            }),
             {
                 GetOperand(Temp(0), Operand(0)),
                 SimulateCall(Temp(0))
@@ -498,11 +494,7 @@ RelocatableInst::SharedPtrVec getTerminator(rword address) {
     RelocatableInst::SharedPtrVec terminator;
 
     append(terminator, SaveReg(Reg(0), Offset(Reg(0))));
-#if defined(QBDI_ARCH_X86)
-    terminator.push_back(NoReloc(mov32ri(Reg(0), address)));
-#else
-    terminator.push_back(NoReloc(mov64ri(Reg(0), address)));
-#endif
+    terminator.push_back(NoReloc(movri(Reg(0), address)));
     append(terminator, SaveReg(Reg(0), Offset(Reg(REG_PC))));
     append(terminator, LoadReg(Reg(0), Offset(Reg(0))));
 
