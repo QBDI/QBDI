@@ -955,6 +955,7 @@ unsigned STACK_WRITE_32[] = {
 	llvm::X86::PUSH32i8,
 	llvm::X86::PUSHi32,
 #ifdef QBDI_ARCH_X86
+	llvm::X86::ENTER,
 	llvm::X86::CALL16m,
 	llvm::X86::CALL32m,
 	llvm::X86::CALL64m,
@@ -976,6 +977,7 @@ unsigned STACK_WRITE_64[] = {
 	llvm::X86::PUSH64i8,
 	llvm::X86::PUSH64i32,
 #ifdef QBDI_ARCH_X86_64
+	llvm::X86::ENTER,
 	llvm::X86::CALL16m,
 	llvm::X86::CALL32m,
 	llvm::X86::CALL64m,
@@ -1001,6 +1003,7 @@ unsigned STACK_READ_32[] = {
 	llvm::X86::POP32rmm,
 	llvm::X86::POP32r,
 #ifdef QBDI_ARCH_X86
+	llvm::X86::LEAVE,
 	llvm::X86::RETL,
 	llvm::X86::RETQ,
 	llvm::X86::RETW,
@@ -1015,7 +1018,9 @@ size_t STACK_READ_32_SIZE = sizeof(STACK_READ_32)/sizeof(unsigned);
 unsigned STACK_READ_64[] = {
 	llvm::X86::POP64rmm,
 	llvm::X86::POP64r,
+	llvm::X86::LEAVE64,
 #ifdef QBDI_ARCH_X86_64
+	llvm::X86::LEAVE,
 	llvm::X86::RETL,
 	llvm::X86::RETQ,
 	llvm::X86::RETW,

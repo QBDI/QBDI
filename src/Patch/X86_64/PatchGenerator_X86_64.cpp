@@ -64,7 +64,11 @@ RelocatableInst::SharedPtrVec GetReadAddress::generate(const llvm::MCInst* inst,
     if(getReadSize(inst) > 0) {
         // If it is a stack read, return RSP value
         if(isStackRead(inst)) {
-            return {Mov(temp_manager->getRegForTemp(temp), Reg(REG_SP))};
+            if (inst->getOpcode() == llvm::X86::LEAVE || inst->getOpcode() == llvm::X86::LEAVE64) {
+                return {Mov(temp_manager->getRegForTemp(temp), Reg(REG_BP))};
+            } else {
+                return {Mov(temp_manager->getRegForTemp(temp), Reg(REG_SP))};
+            }
         }
         // Else replace the instruction with a LEA on the same address
         else {
@@ -116,7 +120,11 @@ RelocatableInst::SharedPtrVec GetWriteAddress::generate(const llvm::MCInst* inst
     if(getWriteSize(inst) > 0) {
         // If it is a stack read, return RSP value
         if(isStackWrite(inst)) {
-            return {Mov(temp_manager->getRegForTemp(temp), Reg(REG_SP))};
+            if (inst->getOpcode() == llvm::X86::ENTER) {
+                return {Mov(temp_manager->getRegForTemp(temp), Reg(REG_BP))};
+            } else {
+                return {Mov(temp_manager->getRegForTemp(temp), Reg(REG_SP))};
+            }
         }
         // Else replace the instruction with a LEA on the same address
         else {
@@ -172,17 +180,21 @@ RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
         }
         if(isStackRead(inst)) {
             llvm::MCInst readinst;
+            unsigned int stack_register = REG_SP;
+            if (inst->getOpcode() == llvm::X86::LEAVE || inst->getOpcode() == llvm::X86::LEAVE64) {
+                stack_register = REG_BP;
+            }
             if(size == 8) {
-                readinst = mov64rm(dst, Reg(REG_SP), 1, 0, 0, 0);
+                readinst = mov64rm(dst, Reg(stack_register), 1, 0, 0, 0);
             }
             else if(size == 4) {
-                readinst = mov32rm(dst, Reg(REG_SP), 1, 0, 0, 0);
+                readinst = mov32rm(dst, Reg(stack_register), 1, 0, 0, 0);
             }
             else if(size == 2) {
-                readinst = mov32rm16(dst, Reg(REG_SP), 1, 0, 0, 0);
+                readinst = mov32rm16(dst, Reg(stack_register), 1, 0, 0, 0);
             }
             else if(size == 1) {
-                readinst = mov32rm8(dst, Reg(REG_SP), 1, 0, 0, 0);
+                readinst = mov32rm8(dst, Reg(stack_register), 1, 0, 0, 0);
             }
             return {NoReloc(readinst)};
         }
@@ -249,17 +261,21 @@ RelocatableInst::SharedPtrVec GetWriteValue::generate(const llvm::MCInst* inst,
 
         if(isStackWrite(inst)) {
             llvm::MCInst readinst;
+            unsigned int stack_register = REG_SP;
+            if (inst->getOpcode() == llvm::X86::ENTER) {
+                stack_register = REG_BP;
+            }
             if(size == 8) {
-                readinst = mov64rm(dst, Reg(REG_SP), 1, 0, 0, 0);
+                readinst = mov64rm(dst, Reg(stack_register), 1, 0, 0, 0);
             }
             else if(size == 4) {
-                readinst = mov32rm(dst, Reg(REG_SP), 1, 0, 0, 0);
+                readinst = mov32rm(dst, Reg(stack_register), 1, 0, 0, 0);
             }
             else if(size == 2) {
-                readinst = mov32rm16(dst, Reg(REG_SP), 1, 0, 0, 0);
+                readinst = mov32rm16(dst, Reg(stack_register), 1, 0, 0, 0);
             }
             else if(size == 1) {
-                readinst = mov32rm8(dst, Reg(REG_SP), 1, 0, 0, 0);
+                readinst = mov32rm8(dst, Reg(stack_register), 1, 0, 0, 0);
             }
             return {NoReloc(readinst)};
         }
