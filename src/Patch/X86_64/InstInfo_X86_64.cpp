@@ -19,7 +19,7 @@
 
 namespace QBDI {
 
-unsigned READ_8[] = { 
+unsigned READ_8[] = {
 	llvm::X86::CMP8rm,
 	llvm::X86::CMP8mr,
 	llvm::X86::TEST8mr,
@@ -116,7 +116,7 @@ unsigned READ_8[] = {
 
 size_t READ_8_SIZE = sizeof(READ_8)/sizeof(unsigned);
 
-unsigned READ_16[] = { 
+unsigned READ_16[] = {
 	llvm::X86::MOV16rm,
 	llvm::X86::MOVBE16rm,
 	llvm::X86::CMP16rm,
@@ -264,7 +264,7 @@ unsigned READ_16[] = {
 
 size_t READ_16_SIZE = sizeof(READ_16)/sizeof(unsigned);
 
-unsigned READ_32[] = { 
+unsigned READ_32[] = {
 	llvm::X86::MOV32rm,
 	llvm::X86::CMP32rm,
 	llvm::X86::TEST32mr,
@@ -436,7 +436,7 @@ unsigned READ_32[] = {
 
 size_t READ_32_SIZE = sizeof(READ_32)/sizeof(unsigned);
 
-unsigned READ_64[] = { 
+unsigned READ_64[] = {
 	llvm::X86::MOV64rm,
 	llvm::X86::CMP64rm,
 	llvm::X86::TEST64mr,
@@ -590,7 +590,7 @@ unsigned READ_64[] = {
 
 size_t READ_64_SIZE = sizeof(READ_64)/sizeof(unsigned);
 
-unsigned WRITE_8[] = { 
+unsigned WRITE_8[] = {
 	llvm::X86::MOV8mr,
 	llvm::X86::SETAEm,
 	llvm::X86::SETAm,
@@ -676,7 +676,7 @@ unsigned WRITE_8[] = {
 
 size_t WRITE_8_SIZE = sizeof(WRITE_8)/sizeof(unsigned);
 
-unsigned WRITE_16[] = { 
+unsigned WRITE_16[] = {
 	llvm::X86::MOV16mr,
 	llvm::X86::ISTT_FP16m,
 	llvm::X86::IST_F16m,
@@ -766,7 +766,7 @@ unsigned WRITE_16[] = {
 
 size_t WRITE_16_SIZE = sizeof(WRITE_16)/sizeof(unsigned);
 
-unsigned WRITE_32[] = { 
+unsigned WRITE_32[] = {
 	llvm::X86::MOV32mr,
 	llvm::X86::ISTT_FP32m,
 	llvm::X86::IST_F32m,
@@ -855,7 +855,7 @@ unsigned WRITE_32[] = {
 
 size_t WRITE_32_SIZE = sizeof(WRITE_32)/sizeof(unsigned);
 
-unsigned WRITE_64[] = { 
+unsigned WRITE_64[] = {
 	llvm::X86::MOV64mr,
 	llvm::X86::ILD_F64m,
 	llvm::X86::ISTT_FP64m,
@@ -953,7 +953,18 @@ unsigned STACK_WRITE_32[] = {
 	llvm::X86::PUSH32rmr,
 	llvm::X86::PUSH32r,
 	llvm::X86::PUSH32i8,
-	llvm::X86::PUSHi32
+	llvm::X86::PUSHi32,
+#ifdef QBDI_ARCH_X86
+	llvm::X86::CALL16m,
+	llvm::X86::CALL32m,
+	llvm::X86::CALL64m,
+	llvm::X86::CALL16r,
+	llvm::X86::CALL32r,
+	llvm::X86::CALL64r,
+	llvm::X86::CALL64pcrel32,
+	llvm::X86::CALLpcrel16,
+	llvm::X86::CALLpcrel32
+#endif
 };
 
 size_t STACK_WRITE_32_SIZE = sizeof(STACK_WRITE_32)/sizeof(unsigned);
@@ -964,6 +975,7 @@ unsigned STACK_WRITE_64[] = {
 	llvm::X86::PUSH64r,
 	llvm::X86::PUSH64i8,
 	llvm::X86::PUSH64i32,
+#ifdef QBDI_ARCH_X86_64
 	llvm::X86::CALL16m,
 	llvm::X86::CALL32m,
 	llvm::X86::CALL64m,
@@ -973,6 +985,7 @@ unsigned STACK_WRITE_64[] = {
 	llvm::X86::CALL64pcrel32,
 	llvm::X86::CALLpcrel16,
 	llvm::X86::CALLpcrel32
+#endif
 };
 
 size_t STACK_WRITE_64_SIZE = sizeof(STACK_WRITE_64)/sizeof(unsigned);
@@ -987,6 +1000,14 @@ size_t STACK_READ_16_SIZE = sizeof(STACK_READ_16)/sizeof(unsigned);
 unsigned STACK_READ_32[] = {
 	llvm::X86::POP32rmm,
 	llvm::X86::POP32r,
+#ifdef QBDI_ARCH_X86
+	llvm::X86::RETL,
+	llvm::X86::RETQ,
+	llvm::X86::RETW,
+	llvm::X86::RETIL,
+	llvm::X86::RETIQ,
+	llvm::X86::RETIW
+#endif
 };
 
 size_t STACK_READ_32_SIZE = sizeof(STACK_READ_32)/sizeof(unsigned);
@@ -994,12 +1015,14 @@ size_t STACK_READ_32_SIZE = sizeof(STACK_READ_32)/sizeof(unsigned);
 unsigned STACK_READ_64[] = {
 	llvm::X86::POP64rmm,
 	llvm::X86::POP64r,
+#ifdef QBDI_ARCH_X86_64
 	llvm::X86::RETL,
 	llvm::X86::RETQ,
 	llvm::X86::RETW,
 	llvm::X86::RETIL,
 	llvm::X86::RETIQ,
 	llvm::X86::RETIW
+#endif
 };
 
 size_t STACK_READ_64_SIZE = sizeof(STACK_READ_64)/sizeof(unsigned);
