@@ -22,11 +22,14 @@ from operator import itemgetter
 
 from RunConfig import TestConfig
 
+class Scan_Pattern_Exception(Exception):
+    pass
+
 def scan_for_pattern(data, pattern):
     m = re.search(pattern, data)
     if m != None:
         return m.groups()
-    return None
+    raise Scan_Pattern_Exception("Not found {} in :\n{}".format(pattern, data))
 
 def coverage_to_log(coverage):
     coverage = list(coverage)
@@ -34,35 +37,60 @@ def coverage_to_log(coverage):
     return '\n'.join(map(lambda x: '{}: {}'.format(x[0], x[1]), coverage))
 
 class TestResult:
-    def __init__(self, cfg = None, retcode = None, result = None, coverage = None):
+    def __init__(self, cfg = None, retcode = None, result = None, coverage = None, error=False):
         if cfg == None or retcode == None or result == None or coverage == None:
             return
         self.cfg = cfg
         self.retcode = retcode
+        self.exec_error = error
         self.binary_hash = self.get_binary_hash()
         # Process coverage file, rebuilding a dictionnary from it
         self.coverage = {}
-        for line in coverage.split('\n'):
-            if ':' in line:
-                inst, count = line.split(':')
-                self.coverage[inst] = int(count)
-        # Process result file, getting statistics
-        self.total_instr = int(scan_for_pattern(result, 'Executed (\d+) total instructions')[0])
-        self.unique_instr = int(scan_for_pattern(result, 'Executed (\d+) unique instructions')[0])
-        self.diff_map = int(scan_for_pattern(result, 'Encountered (\d+) difference mappings')[0])
-        self.errors = int(scan_for_pattern(result, 'Encountered (\d+) errors')[0])
-        self.no_impact_err = int(scan_for_pattern(result, 'No impact errors: (\d+)')[0])
-        self.non_critical_err = int(scan_for_pattern(result, 'Non critical errors: (\d+)')[0])
-        self.critical_err = int(scan_for_pattern(result, 'Critical errors: (\d+)')[0])
-        self.cascades = int(scan_for_pattern(result, 'Encountered (\d+) error cascades')[0])
-        self.no_impact_casc = int(scan_for_pattern(result, 'No impact cascades: (\d+)')[0])
-        self.non_critical_casc = int(scan_for_pattern(result, 'Non critical cascades: (\d+)')[0])
-        self.critical_casc = int(scan_for_pattern(result, 'Critical cascades: (\d+)')[0])
+        if not error:
+            for line in coverage.split('\n'):
+                if ':' in line:
+                    inst, count = line.split(':')
+                    self.coverage[inst] = int(count)
 
-        # Storing logs
-        cascade_start = result.find('Error cascades:')
-        self.cascades_log = result[cascade_start:]
-        self.coverage_log = coverage_to_log(self.coverage.items())
+            try:
+                # Process result file, getting statistics
+                self.total_instr = int(scan_for_pattern(result, 'Executed (\d+) total instructions')[0])
+                self.unique_instr = int(scan_for_pattern(result, 'Executed (\d+) unique instructions')[0])
+                self.diff_map = int(scan_for_pattern(result, 'Encountered (\d+) difference mappings')[0])
+                self.errors = int(scan_for_pattern(result, 'Encountered (\d+) errors')[0])
+                self.no_impact_err = int(scan_for_pattern(result, 'No impact errors: (\d+)')[0])
+                self.non_critical_err = int(scan_for_pattern(result, 'Non critical errors: (\d+)')[0])
+                self.critical_err = int(scan_for_pattern(result, 'Critical errors: (\d+)')[0])
+                self.cascades = int(scan_for_pattern(result, 'Encountered (\d+) error cascades')[0])
+                self.no_impact_casc = int(scan_for_pattern(result, 'No impact cascades: (\d+)')[0])
+                self.non_critical_casc = int(scan_for_pattern(result, 'Non critical cascades: (\d+)')[0])
+                self.critical_casc = int(scan_for_pattern(result, 'Critical cascades: (\d+)')[0])
+            except Scan_Pattern_Exception as e:
+                print("[!] {}".format(e))
+                error = True
+                self.retcode = 255
+            else:
+                # Storing logs
+                cascade_start = result.find('Error cascades:')
+                self.cascades_log = result[cascade_start:]
+                self.coverage_log = coverage_to_log(self.coverage.items())
+        if error:
+            # Process result file, getting statistics
+            self.total_instr = 0
+            self.unique_instr = 0
+            self.diff_map = 0
+            self.errors = 0
+            self.no_impact_err = 0
+            self.non_critical_err = 0
+            self.critical_err = 0
+            self.cascades = 0
+            self.no_impact_casc = 0
+            self.non_critical_casc = 0
+            self.critical_casc = 0
+
+            # Storing logs
+            self.cascades_log = ""
+            self.coverage_log = ""
 
     @classmethod
     def from_dict(cls, d):
