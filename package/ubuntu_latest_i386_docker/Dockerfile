@@ -27,8 +27,11 @@ RUN apt-get update \
     zlib1g-dev \
     vim \
     libncurses5 \
+    python3-pip \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install pathlib
 
 # create a user
 RUN adduser --disabled-password --gecos '' $USER && \
@@ -56,10 +59,10 @@ RUN sh build.sh prepare && \
 
 WORKDIR $HOME/qbdi-deps/deps/llvm/
 
-RUN python build.py prepare $QBDI_PLATFORM && \
-    python build.py build $QBDI_PLATFORM && \
-    python build.py package $QBDI_PLATFORM && \
-    python build.py clean $QBDI_PLATFORM
+RUN python3 build.py prepare $QBDI_PLATFORM && \
+    python3 build.py build $QBDI_PLATFORM && \
+    python3 build.py package $QBDI_PLATFORM && \
+    python3 build.py clean $QBDI_PLATFORM
 
 # build / test / install QBDI
 
