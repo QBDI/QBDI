@@ -74,6 +74,8 @@ compile_and_test: &compile_and_test
     - cmake .. ${CMAKE_ARGS}
     - make -j2
     - ./test/QBDITest
+    - pip install --user pyaml
+    - cd ../tools/validation_runner && (python ./ValidationRunner.py travis.cfg || true)
 
 cache:
   - apt
@@ -97,6 +99,7 @@ cache:
     - deps/gtest/macOS-X86_64/lib
     - deps/gtest/macOS-X86/include
     - deps/gtest/macOS-X86/lib
+    - tools/validation_runner/travis_db
 
 sudo: required
 
