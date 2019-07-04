@@ -15,12 +15,6 @@ include(CMakeFindBinUtils)
 # Macros
 include(cmake/libutils.cmake)
 
-# Process the DEBUG variable
-
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    message(STATUS "Compiling with QBDI_DEBUG")
-    add_definitions(-D_QBDI_DEBUG)
-endif()
 
 # Process the PLATFORM variable
 
@@ -39,17 +33,35 @@ if(IS_PLATFORM_SUPPORTED EQUAL -1)
     ")
 endif()
 
-# FORCE_DISABLE_AVX - default is OFF
-option(FORCE_DISABLE_AVX "Force disable AVX support in case dynamic support detection is buggy" OFF)
+# Extract variables (OS / ARCH) from PLATFORM variable
+string(REGEX MATCH "(.*)-(.*)" _ ${PLATFORM})
+set(OS ${CMAKE_MATCH_1})
+set(ARCH ${CMAKE_MATCH_2})
+if(${ARCH} STREQUAL "X86")
+    set(BASE_ARCH "X86_64")
+else()
+    set(BASE_ARCH "${ARCH}")
+endif()
+string(REGEX MATCH "([A-Za-z0-9]*)_*" _ ${ARCH})
+set(LLVM_ARCH ${CMAKE_MATCH_1})
+message("OS: ${OS}")
+message("ARCH: ${ARCH}")
+message("LLVM_ARCH: ${LLVM_ARCH}")
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+include(QBDIOptions)
+
+if((LOG_DEBUG) OR (CMAKE_BUILD_TYPE STREQUAL "Debug"))
+    message(STATUS "Compiling with LOG_DEBUG")
+    add_definitions(-D_QBDI_LOG_DEBUG)
+endif()
 
 if(FORCE_DISABLE_AVX)
     message(STATUS "Compiling with FORCE_DISABLE_AVX")
     add_definitions(-D_QBDI_FORCE_DISABLE_AVX)
 endif()
 
-# ASAN option - default is OFF
 include(CheckCCompilerFlag)
-option(ASAN "Enable AddressSanitizer (ASAN) for debugging (May be slow down)" OFF)
 
 if (ASAN)
   set(CMAKE_REQUIRED_FLAGS "-Werror -fsanitize=address")
@@ -88,22 +100,6 @@ if(APPLE)
      set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
   endif("${isSystemDir}" STREQUAL "-1")
 endif()
-
-# Extract variables (OS / ARCH) from PLATFORM variable
-
-string(REGEX MATCH "(.*)-(.*)" _ ${PLATFORM})
-set(OS ${CMAKE_MATCH_1})
-set(ARCH ${CMAKE_MATCH_2})
-if(${ARCH} STREQUAL "X86")
-    set(BASE_ARCH "X86_64")
-else()
-    set(BASE_ARCH "${ARCH}")
-endif()
-string(REGEX MATCH "([A-Za-z0-9]*)_*" _ ${ARCH})
-set(LLVM_ARCH ${CMAKE_MATCH_1})
-message("OS: ${OS}")
-message("ARCH: ${ARCH}")
-message("LLVM_ARCH: ${LLVM_ARCH}")
 
 configure_file(include/QBDI/Version.h.in "${CMAKE_SOURCE_DIR}/include/QBDI/Version.h" @ONLY)
 
@@ -397,7 +393,7 @@ if(FULL_PACKAGE)
             COMPONENT QBDITemplate)
 
     # QBDI preload template
-    if(HAS_QBDIPRELOAD)
+    if(HAS_QBDIPRELOAD AND TOOLS_QBDIPRELOAD)
         set(PRELOAD_RESOURCES_PREFIX ${CMAKE_INSTALL_PREFIX}/share/qbdipreload)
 
         configure_file(package/qbdi-preload-template.in package/qbdi-preload-template)
@@ -408,12 +404,14 @@ if(FULL_PACKAGE)
     endif()
 
     # Frida template
-    configure_file(package/qbdi-frida-template.in package/qbdi-frida-template)
-    install(DIRECTORY templates/qbdi_frida_template DESTINATION ${RESOURCES_PREFIX}
-            COMPONENT QBDIFridaTemplate)
-    install(PROGRAMS ${CMAKE_BINARY_DIR}/package/qbdi-frida-template DESTINATION bin
-            COMPONENT QBDIFridaTemplate)
-    install(FILES tools/frida-qbdi.js DESTINATION ${RESOURCES_PREFIX})
+    if(TOOLS_FRIDAQBDI)
+        configure_file(package/qbdi-frida-template.in package/qbdi-frida-template)
+        install(DIRECTORY templates/qbdi_frida_template DESTINATION ${RESOURCES_PREFIX}
+                COMPONENT QBDIFridaTemplate)
+        install(PROGRAMS ${CMAKE_BINARY_DIR}/package/qbdi-frida-template DESTINATION bin
+                COMPONENT QBDIFridaTemplate)
+        install(FILES tools/frida-qbdi.js DESTINATION ${RESOURCES_PREFIX})
+    endif()
 
 else()
     install(EXPORT QBDI_targets
@@ -423,7 +421,10 @@ else()
 
     install(DIRECTORY templates/ DESTINATION templates)
     install(FILES LICENSE.txt package/Readme.txt DESTINATION .)
-    install(FILES tools/frida-qbdi.js DESTINATION .)
+
+    if(TOOLS_FRIDAQBDI)
+        install(FILES tools/frida-qbdi.js DESTINATION .)
+    endif()
 endif()
 
 # Configure iOS code signature
@@ -449,13 +450,19 @@ endif()
 
 
 # Add tests
-add_subdirectory(test)
+if(QBDITEST)
+    message(STATUS "Compile Test")
+    add_subdirectory(test)
+endif()
 
 # Add tools
 add_subdirectory(tools)
 
 # Add examples
-add_subdirectory(examples)
+if(EXAMPLES)
+    message(STATUS "Compile Exemples")
+    add_subdirectory(examples)
+endif()
 
 # DEPENDENCY_SATISFIED
 endif()

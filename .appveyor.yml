@@ -40,12 +40,12 @@ install:
 
 build_script:
   - "\"C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\vcvarsall.bat\" %Platform%"
-  - cmd: cmake .. -G "%VS_string%" -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=%qbdi_plateform%
+  - cmd: cmake .. -G "%VS_string%" -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=%qbdi_plateform% -DEXAMPLES=TRUE
   - ps: if (-not((Test-Path("../deps/llvm/$env:qbdi_plateform/lib")) -and (Test-Path("../deps/llvm/$env:qbdi_plateform/include")))) { MSbuild deps\llvm.vcxproj /p:Configuration=$env:configuration,Platform=$env:platform /m:3 }
   - cmd: python ..\deps\llvm\build.py clean %qbdi_plateform%
   - ps: if (-not((Test-Path("../deps/gtest/$env:qbdi_plateform/lib")) -and (Test-Path("../deps/gtest/$env:qbdi_plateform/include")))) { MSbuild deps\gtest.vcxproj /p:Configuration=$env:configuration,Platform=$env:platform /m:3 }
   - cmd: python ..\deps\gtest\%qbdi_plateform%\build.py clean %qbdi_plateform%
-  - cmd: cmake .. -G "%VS_string%" -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=%qbdi_plateform%
+  - cmd: cmake .. -G "%VS_string%" -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=%qbdi_plateform% -DEXAMPLES=TRUE
   - cmd: MSbuild /p:Configuration=%configuration%,Platform=%platform% ALL_BUILD.vcxproj /m:3
 
 test_script:

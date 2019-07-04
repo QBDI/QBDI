@@ -29,7 +29,7 @@
 #include <QBDI.h>
 #include "Utility/LogSys.h"
 
-#if defined(_QBDI_DEBUG)
+#if defined(_QBDI_LOG_DEBUG)
 #include <iostream>
 #endif
 
@@ -121,7 +121,7 @@ void start_instrumented(QBDI::VM* vm, QBDI::rword start, QBDI::rword stop) {
 
     VM = vm;
     QBDI::LOGSYS.addFilter("*", QBDI::LogPriority::ERROR);
-#if defined(_QBDI_DEBUG)
+#if defined(_QBDI_LOG_DEBUG)
     for(const QBDI::MemoryMap& m :  QBDI::getCurrentProcessMaps()) {
         std::cout << m.name << " (" << m.permission << ") ";
         m.range.display(std::cout);
