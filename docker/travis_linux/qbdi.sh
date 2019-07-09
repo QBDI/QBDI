@@ -22,6 +22,6 @@ set +e
 
 docker run -it --name validator --cap-add=SYS_PTRACE --security-opt seccomp:unconfined -w "/home/docker/qbdi" qbdi_build:qbdi python tools/validation_runner/ValidationRunner.py tools/validation_runner/travis.cfg
 
-docker cp "validator:/home/docker/qbdi/tools/validation_runner/travis_db/travis.db" "tools/validation_runner/travis_db/"
+docker cp "validator:/home/docker/qbdi/tools/validation_runner/travis_db/travis.db" "${GITDIR}/tools/validation_runner/travis_db/"
 
 docker rm validator

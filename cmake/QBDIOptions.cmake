@@ -27,3 +27,5 @@ else()
     option(TOOLS_PYQBDI "Compile python binding (need TOOLS_QBDIPRELOAD)" OFF)
 endif()
 
+# package
+option(PACKAGE_LIBNCURSE6 "create package with libncurse6 (default libncurse5)" OFF)
