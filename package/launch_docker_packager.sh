@@ -53,6 +53,18 @@ build_ubuntu_debian() {
     docker rm package
 }
 
+build_archlinux () {
+    TARGET="$1"
+
+    docker build "${BASEDIR}" -t qbdi:package \
+                              -f "${GITDIR}/docker/archlinux/Dockerfile.${TARGET}" \
+                              --build-arg QBDI_PLATFORM="linux-${TARGET}" \
+                              --pull
+
+    docker create --name package qbdi:package
+    docker cp "package:${DOCKER_BUILD}/QBDI-${TARGET}-${QBDI_VERSION}-1-x86_64.pkg.tar.xz" "QBDI-${QBDI_VERSION}-archlinux$(date +%F)-${TARGET}.pkg.tar.xz"
+    docker rm package
+}
 
 prepare_archive
 
@@ -73,6 +85,12 @@ build_ubuntu_debian ubuntu 19.04 X86 " -DPACKAGE_LIBNCURSE6=TRUE"
 
 # ubuntu 19.04 x64
 build_ubuntu_debian ubuntu 19.04 X86_64 " -DPACKAGE_LIBNCURSE6=TRUE"
+
+# archlinux x64
+build_archlinux X86_64
+
+# archlinux x86
+build_archlinux X86
 
 delete_archive
 

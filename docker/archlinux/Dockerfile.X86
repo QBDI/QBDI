@@ -1,26 +1,29 @@
-FROM base/archlinux:2018.10.01
+FROM archlinux/base:latest
 MAINTAINER Charles Hubain <chubain@quarkslab.com>
 
-ARG QBDI_BUILD_TYPE=Release
+ARG QBDI_PLATFORM="linux-X86"
 
-ENV USER docker
-ENV HOME /home/$USER
-ENV PREFIX /usr
-ENV QBDI_PLATFORM linux-X86_64
+ENV USER="docker" \
+    HOME="/home/docker" \
+    PREFIX="/usr"
 
 # Get latest package list, upgrade packages, install required packages 
 # and cleanup to keep container as small as possible
-RUN pacman -Sy && pacman -S --noconfirm \
-    sudo \
-    gcc \
-    make \
-    cmake \
-    pkg-config \
-    fakeroot \
-    python2 \
-    wget \
-    vim \
-    && pacman -Sc --noconfirm
+RUN echo "[multilib]" >> /etc/pacman.conf && \
+    echo "Include = /etc/pacman.d/mirrorlist" >> /etc/pacman.conf && \
+    pacman -Suy --noconfirm && \
+    pacman -S --noconfirm \
+        base-devel \
+        sudo \
+        gcc \
+        make \
+        cmake \
+        python3 \
+        wget \
+        multilib-devel \
+        lib32-ncurses \
+        lib32-zlib && \
+    (pacman -Sc --noconfirm || true)
 
 # create a user
 RUN useradd -Groot $USER && \
@@ -38,19 +41,19 @@ WORKDIR $HOME
 
 RUN sudo chown -R $USER:$USER .
 
+WORKDIR $HOME/qbdi-deps/deps/llvm/
+
+RUN python3 build.py prepare $QBDI_PLATFORM && \
+    python3 build.py build $QBDI_PLATFORM && \
+    python3 build.py package $QBDI_PLATFORM && \
+    python3 build.py clean $QBDI_PLATFORM
+
 WORKDIR $HOME/qbdi-deps/deps/gtest/$QBDI_PLATFORM
 
 RUN sh build.sh prepare && \
     sh build.sh build && \
     sh build.sh package && \
     sh build.sh clean
-
-WORKDIR $HOME/qbdi-deps/deps/llvm/
-
-RUN python build.py prepare $QBDI_PLATFORM && \
-    python build.py build $QBDI_PLATFORM && \
-    python build.py package $QBDI_PLATFORM && \
-    python build.py clean $QBDI_PLATFORM
 
 # build / test / install QBDI
 
@@ -64,9 +67,9 @@ RUN sudo chown -R $USER:$USER . && \
     ln -s $HOME/qbdi-deps/deps deps && \
     mkdir build && \
     cd build && \
-    cp ../package/archlinux/PKGBUILD . && \
+    cp ../docker/archlinux/PKGBUILD.$QBDI_PLATFORM PKGBUILD && \
     makepkg -fc && \
-    sudo pacman -U --noconfirm QBDI-*-x86_64.pkg.tar.xz
+    sudo pacman -U --noconfirm QBDI-*.pkg.tar.xz
 
 WORKDIR "$HOME/"
 CMD ["/bin/bash"]

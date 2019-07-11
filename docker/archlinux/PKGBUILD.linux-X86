@@ -1,0 +1,46 @@
+# Maintainer: Charles Hubain <chubain@quarkslab.com>
+
+pkgname=QBDI-X86
+pkgver=0.6.2
+pkgrel=1
+epoch=
+pkgdesc="QuarkslaB Dynamic binary Instrumentation for linux-X86"
+arch=('x86_64' 'i686')
+url="https://qbdi.quarkslab.com/"
+license=('apache2')
+depends=('lib32-ncurses' 'lib32-zlib')
+options=(staticlibs)
+makedepends=('cmake' 'make' 'gcc' 'python')
+
+prepare() {
+    mkdir "$pkgname-$pkgver"
+}
+
+build() {
+    cd "$pkgname-$pkgver"
+    cmake -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_CROSSCOMPILING=FALSE \
+          -DPLATFORM=linux-X86 \
+          -DCMAKE_INSTALL_PREFIX=/usr \
+          -DTOOLS_PYQBDI=FALSE \
+          ../../../
+    [[ -d "../../../deps/llvm/linux-X86" ]] || make llvm
+    [[ -d "../../../deps/gtest/linux-X86" ]] || make gtest
+    cmake -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_CROSSCOMPILING=FALSE \
+          -DPLATFORM=linux-X86 \
+          -DCMAKE_INSTALL_PREFIX=/usr \
+          -DTOOLS_PYQBDI=FALSE \
+          ../../../
+    make -j4
+}
+
+check() {
+    cd "$pkgname-$pkgver"
+    ./test/QBDITest
+}
+
+package() {
+    cd "$pkgname-$pkgver"
+    make DESTDIR="$pkgdir/" install
+}
