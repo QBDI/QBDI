@@ -50,19 +50,19 @@ WORKDIR $HOME
 
 RUN sudo chown -R $USER:$USER .
 
-WORKDIR $HOME/qbdi-deps/deps/llvm/
-
-RUN python3 build.py prepare $QBDI_PLATFORM && \
-    python3 build.py build $QBDI_PLATFORM && \
-    python3 build.py package $QBDI_PLATFORM && \
-    python3 build.py clean $QBDI_PLATFORM
-
 WORKDIR $HOME/qbdi-deps/deps/gtest/$QBDI_PLATFORM
 
 RUN sh build.sh prepare && \
     sh build.sh build && \
     sh build.sh package && \
     sh build.sh clean
+
+WORKDIR $HOME/qbdi-deps/deps/llvm/
+
+RUN python3 build.py prepare $QBDI_PLATFORM && \
+    python3 build.py build $QBDI_PLATFORM && \
+    python3 build.py package $QBDI_PLATFORM && \
+    python3 build.py clean $QBDI_PLATFORM
 
 # install validator dependency after build llvm to use the same cache between devel and release image
 RUN sudo apt-get update && \
