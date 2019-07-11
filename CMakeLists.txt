@@ -120,8 +120,7 @@ if((${PLATFORM} STREQUAL "linux-X86_64") OR
    (${PLATFORM} STREQUAL "macOS-X86_64") OR
    (${PLATFORM} STREQUAL "macOS-X86") OR
    (${PLATFORM} STREQUAL "linux-ARM") OR
-   (${PLATFORM} STREQUAL "iOS-ARM") OR
-   (${PLATFORM} STREQUAL "android-ARM"))
+   (${PLATFORM} STREQUAL "iOS-ARM"))
 
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Wall -ffunction-sections -fdata-sections -fvisibility=hidden -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -fvisibility-inlines-hidden  -fvisibility=hidden -std=c++11 -ffunction-sections -fdata-sections -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -fno-rtti")
@@ -131,6 +130,11 @@ elseif((${PLATFORM} STREQUAL "win-X86_64") OR
 
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /DWIN32 /D_WINDOWS /W3   /MP -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS -D_SCL_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -wd4141 -wd4146 -wd4180 -wd4244 -wd4258 -wd4267 -wd4291 -wd4345 -wd4351 -wd4355 -wd4456 -wd4457 -wd4458 -wd4459 -wd4503 -wd4624 -wd4722 -wd4800 -w14062 -we4238 -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DWIN32 /D_WINDOWS /W3     /MP -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS -D_SCL_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -wd4141 -wd4146 -wd4180 -wd4244 -wd4258 -wd4267 -wd4291 -wd4345 -wd4351 -wd4355 -wd4456 -wd4457 -wd4458 -wd4459 -wd4503 -wd4624 -wd4722 -wd4800 -w14062 -we4238 -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS")
+
+elseif((${PLATFORM} STREQUAL "android-ARM"))
+
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -ffunction-sections -fdata-sections -fvisibility=hidden")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fvisibility-inlines-hidden -fvisibility=hidden -std=c++11 -ffunction-sections -fdata-sections -fno-rtti")
 
 endif()
 
@@ -196,7 +200,7 @@ elseif(${PLATFORM} STREQUAL "macOS-X86" OR ${PLATFORM} STREQUAL "macOS-X86_64")
 elseif(${PLATFORM} STREQUAL "android-ARM")
 
     set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMProfileData.a LLVMARMDisassembler.a LLVMARMCodeGen.a LLVMARMAsmParser.a LLVMARMDesc.a LLVMARMInfo.a LLVMARMAsmPrinter.a LLVMARMUtils.a)
-    set(LLVM_LIBS -ldl -lz -lm -lgnustl_static)
+    set(LLVM_LIBS -ldl -lz -lm) # -lgnustl_static)
 
 elseif(${PLATFORM} STREQUAL "iOS-ARM")
 
@@ -373,6 +377,7 @@ install(DIRECTORY include/QBDI DESTINATION include/
 
 install(FILES include/QBDI.h DESTINATION include/)
 
+
 if(FULL_PACKAGE)
     string(REPLACE ";" " " LLVM_LIBS_STR "${LLVM_LIBS}")
     configure_file(package/qbdi.pc.in package/qbdi.pc @ONLY)
@@ -392,10 +397,9 @@ if(FULL_PACKAGE)
     install(PROGRAMS ${CMAKE_BINARY_DIR}/package/qbdi-template DESTINATION bin
             COMPONENT QBDITemplate)
 
+    set(PRELOAD_RESOURCES_PREFIX ${CMAKE_INSTALL_PREFIX}/share/qbdipreload)
     # QBDI preload template
     if(HAS_QBDIPRELOAD AND TOOLS_QBDIPRELOAD)
-        set(PRELOAD_RESOURCES_PREFIX ${CMAKE_INSTALL_PREFIX}/share/qbdipreload)
-
         configure_file(package/qbdi-preload-template.in package/qbdi-preload-template)
         install(DIRECTORY templates/qbdi_preload_template DESTINATION ${PRELOAD_RESOURCES_PREFIX}
                 COMPONENT QBDITemplate)
@@ -421,6 +425,8 @@ else()
 
     install(DIRECTORY templates/ DESTINATION templates)
     install(FILES LICENSE.txt package/Readme.txt DESTINATION .)
+
+    set(PRELOAD_RESOURCES_PREFIX qbdipreload)
 
     if(TOOLS_FRIDAQBDI)
         install(FILES tools/frida-qbdi.js DESTINATION .)
