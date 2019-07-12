@@ -10,7 +10,7 @@ option(ASAN "Enable AddressSanitizer (ASAN) for debugging (May be slow down)" OF
 option(LOG_DEBUG "Enable Debug log level" OFF)
 
 # test (need gtest)
-option(QBDITEST "Compile tests" ON)
+option(TEST_QBDI "Compile tests" ON)
 
 # example
 option(EXAMPLES "Compile examples" OFF)

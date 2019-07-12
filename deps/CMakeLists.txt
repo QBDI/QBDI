@@ -24,7 +24,7 @@ if (NOT (LLVMLibFile AND LLVMIncludeFile))
 endif()
 
 # Google Test
-if(QBDITEST)
+if(TEST_QBDI)
     if(${OS} STREQUAL "win")
     add_custom_target(gtest
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/deps/gtest/${PLATFORM}/

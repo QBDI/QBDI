@@ -450,7 +450,7 @@ endif()
 
 
 # Add tests
-if(QBDITEST)
+if(TEST_QBDI)
     message(STATUS "Compile Test")
     add_subdirectory(test)
 endif()
