@@ -7,26 +7,7 @@ GITDIR=$(cd "${BASEDIR}/.." && pwd -P)
 
 . "${GITDIR}/docker/common.sh"
 
-docker_extract() {
-    CONTAINER="$1"
-    SRC="$2"
-    DEST="$3"
-
-    docker cp "${CONTAINER}:$SRC" "$DEST"
-    docker rm "${CONTAINER}"
-}
-
-docker_extract_img() {
-    IMAGE="$1"
-    SRC="$2"
-    DEST="$3"
-
-    docker create --name qbdi_extract "$IMAGE"
-    docker_extract qbdi_extract "$2" "$3"
-}
-
 build_ubuntu_debian() {
-    DOCKER_BUILD="/home/docker/qbdi/build"
     OS="$1"
     TAG="$2"
     TARGET="$3"
@@ -47,9 +28,9 @@ build_ubuntu_debian() {
                               --target builder
 
     # deb is already create, but need to create the tar.gz
-    docker run -w "$DOCKER_BUILD" --name package qbdi:package cpack
-    docker cp "package:${DOCKER_BUILD}/QBDI-${QBDI_VERSION}-linux-${TARGET}.deb" "${BASEDIR}/QBDI-${QBDI_VERSION}-${OS}${TAG}-${TARGET}.deb"
-    docker cp "package:${DOCKER_BUILD}/QBDI-${QBDI_VERSION}-linux-${TARGET}.tar.gz" "${BASEDIR}/QBDI-${QBDI_VERSION}-${OS}${TAG}-${TARGET}.tar.gz"
+    docker run -w "$DOCKER_BUILD_DIR" --name package qbdi:package cpack
+    docker cp "package:${DOCKER_BUILD_DIR}/QBDI-${QBDI_VERSION}-linux-${TARGET}.deb" "${BASEDIR}/QBDI-${QBDI_VERSION}-${OS}${TAG}-${TARGET}.deb"
+    docker cp "package:${DOCKER_BUILD_DIR}/QBDI-${QBDI_VERSION}-linux-${TARGET}.tar.gz" "${BASEDIR}/QBDI-${QBDI_VERSION}-${OS}${TAG}-${TARGET}.tar.gz"
     docker rm package
 }
 
@@ -62,7 +43,18 @@ build_archlinux () {
                               --pull
 
     docker create --name package qbdi:package
-    docker cp "package:${DOCKER_BUILD}/QBDI-${TARGET}-${QBDI_VERSION}-1-x86_64.pkg.tar.xz" "QBDI-${QBDI_VERSION}-archlinux$(date +%F)-${TARGET}.pkg.tar.xz"
+    docker cp "package:${DOCKER_BUILD_DIR}/QBDI-${TARGET}-${QBDI_VERSION}-1-x86_64.pkg.tar.xz" "QBDI-${QBDI_VERSION}-archlinux$(date +%F)-${TARGET}.pkg.tar.xz"
+    docker rm package
+}
+
+
+build_androidarm() {
+    docker build "${BASEDIR}" -t qbdi:package \
+                              -f "${GITDIR}/package/android_ARM_docker_packager/Dockerfile" \
+                              --pull
+
+    docker create --name package qbdi:package
+    docker cp "package:${DOCKER_BUILD_DIR}/QBDI-${QBDI_VERSION}-android-ARM.tar.gz" "QBDI-${QBDI_VERSION}-android-ARM.tar.gz"
     docker rm package
 }
 
@@ -92,18 +84,8 @@ build_archlinux X86_64
 # archlinux x86
 build_archlinux X86
 
+# android-ARM
+build_androidarm
+
 delete_archive
 
-# TODO
-# 
-# # Arch Linux
-# docker build -t qbdi_archlinux_snapshot:2018-10-01 -f archlinux/Dockerfile .
-# docker run --rm qbdi_archlinux_snapshot:2018-10-01 cat qbdi/build/QBDI-$VERSION-1-x86_64.pkg.tar.xz > QBDI-$RELEASE_VERSION-archlinux20181001-X86_64.pkg.tar.xz
-# 
-# # Linux ARM
-# docker build -t qbdi_linux_arm -f linux_ARM_docker_packager/Dockerfile .
-# docker run --rm qbdi_linux_arm cat qbdi/build/QBDI-$VERSION-linux-ARM.tar.gz > QBDI-$RELEASE_VERSION-linux-ARM.tar.gz
-# 
-# # Android ARM
-# docker build -t qbdi_android_arm -f android_ARM_docker_packager/Dockerfile .
-# docker run --rm qbdi_android_arm cat qbdi/build/QBDI-$VERSION-android-ARM.tar.gz > QBDI-$RELEASE_VERSION-android-ARM.tar.gz

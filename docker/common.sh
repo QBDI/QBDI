@@ -1,6 +1,7 @@
 
 QBDI_VERSION="0.6.2"
-DOCKERHUB_REPO="nsurbay/test-qbdi"
+DOCKERHUB_REPO="qbdi/qbdi"
+DOCKER_BUILD_DIR="/home/docker/qbdi/build"
 
 prepare_archive (){
     pushd "${GITDIR}" >/dev/null
