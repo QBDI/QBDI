@@ -423,7 +423,16 @@ else()
         NAMESPACE QBDI::
         DESTINATION cmake)
 
-    install(DIRECTORY templates/ DESTINATION templates)
+    install(DIRECTORY templates/qbdi_template/ DESTINATION templates/qbdi_template)
+
+    if(HAS_QBDIPRELOAD AND TOOLS_QBDIPRELOAD)
+        install(DIRECTORY templates/qbdi_preload_template DESTINATION templates/qbdi_preload_template)
+    endif()
+
+    if(TOOLS_FRIDAQBDI)
+        install(DIRECTORY templates/qbdi_frida_template DESTINATION templates/qbdi_frida_template)
+    endif()
+
     install(FILES LICENSE.txt package/Readme.txt DESTINATION .)
 
     set(PRELOAD_RESOURCES_PREFIX qbdipreload)
