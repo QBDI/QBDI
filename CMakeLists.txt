@@ -7,7 +7,7 @@ set(QBDI_VERSION_MINOR 6)
 set(QBDI_VERSION_PATCH 2)
 
 set(SUPPORTED_PLATFORM linux-X86_64 linux-ARM macOS-X86_64 android-ARM
-    win-X86_64 iOS-ARM linux-X86 macOS-X86 win-X86)
+    android-X86 win-X86_64 iOS-ARM linux-X86 macOS-X86 win-X86)
 
 # Force find system utils (strip)
 include(CMakeFindBinUtils)
@@ -37,7 +37,7 @@ endif()
 string(REGEX MATCH "(.*)-(.*)" _ ${PLATFORM})
 set(OS ${CMAKE_MATCH_1})
 set(ARCH ${CMAKE_MATCH_2})
-if(${ARCH} STREQUAL "X86")
+if("${ARCH}" STREQUAL "X86")
     set(BASE_ARCH "X86_64")
 else()
     set(BASE_ARCH "${ARCH}")
@@ -46,6 +46,7 @@ string(REGEX MATCH "([A-Za-z0-9]*)_*" _ ${ARCH})
 set(LLVM_ARCH ${CMAKE_MATCH_1})
 message("OS: ${OS}")
 message("ARCH: ${ARCH}")
+message("BASE_ARCH: ${BASE_ARCH}")
 message("LLVM_ARCH: ${LLVM_ARCH}")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
@@ -131,10 +132,11 @@ elseif((${PLATFORM} STREQUAL "win-X86_64") OR
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /DWIN32 /D_WINDOWS /W3   /MP -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS -D_SCL_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -wd4141 -wd4146 -wd4180 -wd4244 -wd4258 -wd4267 -wd4291 -wd4345 -wd4351 -wd4355 -wd4456 -wd4457 -wd4458 -wd4459 -wd4503 -wd4624 -wd4722 -wd4800 -w14062 -we4238 -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DWIN32 /D_WINDOWS /W3     /MP -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS -D_SCL_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -wd4141 -wd4146 -wd4180 -wd4244 -wd4258 -wd4267 -wd4291 -wd4345 -wd4351 -wd4355 -wd4456 -wd4457 -wd4458 -wd4459 -wd4503 -wd4624 -wd4722 -wd4800 -w14062 -we4238 -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS")
 
-elseif((${PLATFORM} STREQUAL "android-ARM"))
+elseif((${PLATFORM} STREQUAL "android-ARM") OR
+       (${PLATFORM} STREQUAL "android-X86"))
 
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -ffunction-sections -fdata-sections -fvisibility=hidden")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fvisibility-inlines-hidden -fvisibility=hidden -std=c++11 -ffunction-sections -fdata-sections -fno-rtti")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Wall -ffunction-sections -fdata-sections -fvisibility=hidden")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -fvisibility-inlines-hidden -fvisibility=hidden -std=c++11 -ffunction-sections -fdata-sections -fno-rtti")
 
 endif()
 
@@ -202,6 +204,11 @@ elseif(${PLATFORM} STREQUAL "android-ARM")
     set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMProfileData.a LLVMARMDisassembler.a LLVMARMCodeGen.a LLVMARMAsmParser.a LLVMARMDesc.a LLVMARMInfo.a LLVMARMAsmPrinter.a LLVMARMUtils.a)
     set(LLVM_LIBS -ldl -lz -lm) # -lgnustl_static)
 
+elseif(${PLATFORM} STREQUAL "android-X86")
+
+    set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMProfileData.a LLVMX86Disassembler.a LLVMX86CodeGen.a LLVMX86AsmParser.a LLVMX86Desc.a LLVMX86Info.a LLVMX86AsmPrinter.a LLVMX86Utils.a)
+    set(LLVM_LIBS -ldl -lz -lm) # -lgnustl_static)
+
 elseif(${PLATFORM} STREQUAL "iOS-ARM")
 
     set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMDemangle.a LLVMProfileData.a LLVMARMDisassembler.a LLVMARMCodeGen.a LLVMARMAsmParser.a LLVMARMDesc.a LLVMARMInfo.a LLVMARMAsmPrinter.a LLVMARMUtils.a)
@@ -263,7 +270,7 @@ else()
         set(CMAKE_ASM-ATT_FLAGS "-arch ${ARM_ARCH}")
     elseif(${OS} STREQUAL "macOS" AND ${ARCH} STREQUAL "X86")
         set(CMAKE_ASM-ATT_FLAGS "-arch i386")
-    elseif(${OS} STREQUAL "linux" AND ${ARCH} STREQUAL "X86")
+    elseif(((${OS} STREQUAL "linux") OR (${OS} STREQUAL "android")) AND ${ARCH} STREQUAL "X86")
         set(CMAKE_ASM-ATT_FLAGS "--32")
     endif()
 endif()

@@ -4,7 +4,7 @@ MAINTAINER Charles Hubain <chubain@quarkslab.com>
 ENV USER="docker" \
     HOME="/home/docker" \
     PREFIX="/usr" \
-    QBDI_PLATFORM="android-ARM" \
+    QBDI_PLATFORM="android-X86" \
     NDK_VERSION="r20" \
     ANDROID_PLATFORM="23"
 
@@ -84,7 +84,7 @@ RUN sudo chown -R $USER:$USER . && \
     cmake -DPLATFORM=$QBDI_PLATFORM \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_TOOLCHAIN_FILE=$HOME/android-ndk-$NDK_VERSION/build/cmake/android.toolchain.cmake \
-          -DANDROID_ABI=armeabi-v7a \
+          -DANDROID_ABI=x86 \
           -DANDROID_PLATFORM=$ANDROID_PLATFORM \
           -DTEST_QBDI=off \
           .. && \
