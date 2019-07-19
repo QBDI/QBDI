@@ -43,10 +43,19 @@ find_library(GTEST gtest PATHS
     "${CMAKE_CURRENT_SOURCE_DIR}/../deps/gtest/${PLATFORM}/lib"
     NO_DEFAULT_PATH)
 
-target_link_libraries(QBDITest
-    QBDI_static
-    ${GTEST}
-)
+
+if (${GTEST} STREQUAL "GTEST-NOTFOUND")
+    target_link_libraries(QBDITest
+        QBDI_static
+        "${CMAKE_CURRENT_SOURCE_DIR}/../deps/gtest/${PLATFORM}/lib/libgtest.a"
+    )
+else()
+    target_link_libraries(QBDITest
+        QBDI_static
+        ${GTEST}
+    )
+endif()
+
 
 set_property(TARGET QBDITest PROPERTY CXX_STANDARD 11)
 set_property(TARGET QBDITest PROPERTY CXX_STANDARD_REQUIRED ON)

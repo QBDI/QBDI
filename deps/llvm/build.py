@@ -100,14 +100,24 @@ def build_llvm(llvm_dir, build_dir, arch, platform, arch_opt=None):
         ndk_path = str(Path.home() / "android-ndk-r20")
         api_level = "23"
         cmake_specific_option = [
-              '-DCMAKE_TOOLCHAIN_FILE=' + ndk_path + '/build/cmake/android.toolchain.cmake',
-              '-DCMAKE_C_FLAGS=-g0 -fvisibility=hidden -ffunction-sections -fdata-sections -fvisibility-inlines-hidden',
-              '-DCMAKE_CXX_FLAGS=-g0 -fvisibility=hidden -ffunction-sections -fdata-sections -fvisibility-inlines-hidden',
-              '-DCMAKE_EXE_LINKER_FLAGS=-fpie -pie -Wl,--gc-sections -Wl,--exclude-libs,ALL',
-              '-DANDROID_ABI=armeabi-v7a',
-              '-DANDROID_PLATFORM=' + api_level,
-              '-DLLVM_DEFAULT_TARGET_TRIPLE=armv7-linux-androideabi',
-        ]
+                '-DCMAKE_TOOLCHAIN_FILE=' + ndk_path + '/build/cmake/android.toolchain.cmake',
+                '-DCMAKE_C_FLAGS=-g0 -fvisibility=hidden -ffunction-sections -fdata-sections -fvisibility-inlines-hidden',
+                '-DCMAKE_CXX_FLAGS=-g0 -fvisibility=hidden -ffunction-sections -fdata-sections -fvisibility-inlines-hidden',
+                '-DCMAKE_EXE_LINKER_FLAGS=-fpie -pie -Wl,--gc-sections -Wl,--exclude-libs,ALL',
+                '-DANDROID_PLATFORM=' + api_level,
+                ]
+        if arch == "ARM":
+            cmake_specific_option += [
+                    '-DANDROID_ABI=armeabi-v7a',
+                    '-DLLVM_DEFAULT_TARGET_TRIPLE=armv7-linux-androideabi',
+                    ]
+        elif arch_opt == "i386":
+            cmake_specific_option += [
+                    '-DANDROID_ABI=x86',
+                    '-DLLVM_DEFAULT_TARGET_TRIPLE=i386-pc-linux',
+                    '-DLLVM_BUILD_32_BITS=On',
+                    ]
+
     elif platform == "macOS" and arch_opt == "i386":
         cmake_specific_option = ['-DLLVM_BUILD_32_BITS=On',
                                  '-DLLVM_DEFAULT_TARGET_TRIPLE=i386-apple-darwin17.7.0',
@@ -206,7 +216,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     target = sys.argv[2]
-    assert(target in ("android-ARM", "iOS-ARM", "linux-ARM", "linux-X86_64", "linux-X86", "macOS-X86_64", "macOS-X86", "win-X86_64", "win-X86"))
+    assert(target in ("android-ARM", "android-X86", "iOS-ARM", "linux-ARM", "linux-X86_64", "linux-X86", "macOS-X86_64", "macOS-X86", "win-X86_64", "win-X86"))
 
     platform = target.split("-")[0]
     arch = target.split("-")[1]
