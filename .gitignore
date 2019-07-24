@@ -20,6 +20,6 @@ docs/qbdi_cpp.doxygen
 docs/doxygen_tools
 docs/tools.doxygen
 
-package/qbdi-deps.tar.gz
-package/qbdi.tar.gz
+qbdi-deps.tar.gz
+qbdi.tar.gz
 package/QBDI-*

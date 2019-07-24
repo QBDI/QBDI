@@ -67,9 +67,11 @@ def build_llvm(llvm_dir, build_dir, arch, platform, arch_opt=None):
 
     # set platform specific arguments.
     if platform == "win" and arch_opt == "i386":
-        cmake_specific_option = ["-G", "Visual Studio 14 2015"]
+        cmake_specific_option = ["-G", "Visual Studio 14 2015",
+                                 "-DLLVM_BUILD_32_BITS=On"]
     elif platform == "win":
-        cmake_specific_option = ["-G", "Visual Studio 14 2015 Win64"]
+        cmake_specific_option = ["-G", "Visual Studio 14 2015 Win64",
+                                 "-Thost=x64"]
     elif platform == "iOS":
         cc = subprocess.check_output(["xcrun", "--sdk", "iphoneos", "-f", "clang"])
         cxx = subprocess.check_output(["xcrun", "--sdk", "iphoneos", "-f", "clang++"])
@@ -79,8 +81,8 @@ def build_llvm(llvm_dir, build_dir, arch, platform, arch_opt=None):
                                  "-DLLVM_DEFAULT_TARGET_TRIPLE=arm-apple-darwin10",
                                  "-DLLVM_TARGET_ARCH=" + arch,
                                  "-DLLVM_ENABLE_THREADS=Off",
-                                 "-DCMAKE_C_FLAGS=\"-arch " + arch_opt + " -isysroot " + sdk + " -fvisibility=hidden\"",
-                                 "-DCMAKE_CXX_FLAGS=\"-arch " + arch_opt + " -isysroot " + sdk + " -fvisibility=hidden\"",
+                                 "-DCMAKE_C_FLAGS=-arch " + arch_opt + " -isysroot " + sdk + " -fvisibility=hidden",
+                                 "-DCMAKE_CXX_FLAGS=-arch " + arch_opt + " -isysroot " + sdk + " -fvisibility=hidden",
                                  "-DCMAKE_C_COMPILER=" + cc,
                                  "-DCMAKE_CXX_COMPILER=" + cxx]
     elif platform == "linux" and arch == "ARM":
@@ -91,69 +93,47 @@ def build_llvm(llvm_dir, build_dir, arch, platform, arch_opt=None):
             "-DLLVM_TABLEGEN=/usr/bin/llvm-tblgen",
             "-DLLVM_DEFAULT_TARGET_TRIPLE=arm-linux-gnueabi",
             "-DLLVM_TARGET_ARCH=" + arch,
-            "-DCMAKE_C_FLAGS=\"-fvisibility=hidden -march=" + arch_opt + " -I" + ARM_C_INCLUDE + '"',
-            "-DCMAKE_CXX_FLAGS=\"-fvisibility=hidden -march=" + arch_opt + " -I" + ARM_C_INCLUDE + " -I" + ARM_CXX_INCLUDE + '"',
+            "-DCMAKE_C_FLAGS=-fvisibility=hidden -march=" + arch_opt + " -I" + ARM_C_INCLUDE,
+            "-DCMAKE_CXX_FLAGS=-fvisibility=hidden -march=" + arch_opt + " -I" + ARM_C_INCLUDE + " -I" + ARM_CXX_INCLUDE,
         ]
     elif platform == "android":
-        ndk_path = Path.home() / "android-ndk-r13b"
-        api_level = 23
+        ndk_path = str(Path.home() / "android-ndk-r20")
+        api_level = "23"
         cmake_specific_option = [
-              "-DCMAKE_CROSSCOMPILING=True",
-              "-DLLVM_TABLEGEN=/usr/bin/llvm-tblgen",
-              "-DLLVM_DEFAULT_TARGET_TRIPLE=arm-linux-gnueabihf",
-              "-DLLVM_TARGET_ARCH=" + arch,
-              "-DLLVM_INCLUDE_UTILS=Off",
-              '-DCMAKE_C_FLAGS="-fvisibility=hidden \
-                                -march=' + arch_opt + '\
-                                -mcpu=cortex-a9 \
-                                -I' + ndk_path + '/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/include \
-                                -I' + ndk_path + '/sources/cxx-stl/gnu-libstdc++/4.9/include/ \
-                                -I' + ndk_path + '/platforms/android-' + api_level + '/arch-arm/usr/include/ \
-                                -L' + ndk_path + '/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/ \
-                                -L' + ndk_path + '/platforms/android-' + api_level + '/arch-arm/usr/lib/ \
-                                -L' + ndk_path + '/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/lib/ \
-                                --sysroot=' + ndk_path + '/platforms/android-' + api_level + '/arch-arm \
-                                -fpie"',
-              '-DCMAKE_CXX_FLAGS="-fvisibility=hidden \
-                                  -march=' + arch_opt + '\
-                                  -mcpu=cortex-a9 \
-                                  -I' + ndk_path + '/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/include \
-                                  -I' + ndk_path + '/sources/cxx-stl/gnu-libstdc++/4.9/include/ \
-                                  -I' + ndk_path + '/platforms/android-' + api_level + '/arch-arm/usr/include/ \
-                                  -L' + ndk_path + '/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/ \
-                                  -L' + ndk_path + '/platforms/android-' + api_level + '/arch-arm/usr/lib/ \
-                                  -L' + ndk_path + '/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/lib/ \
-                                  --sysroot=' + ndk_path + '/platforms/android-' + api_level + '/arch-arm \
-                                  -lgnustl_shared \
-                                  -fpie"',
-              "-DCMAKE_EXE_LINKER_FLAGS='-fpie -pie'",
-              "-DCMAKE_C_COMPILER=" + ndk_path + "/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin/arm-linux-androideabi-gcc",
-              "-DCMAKE_CXX_COMPILER=" + ndk_path + "/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin/arm-linux-androideabi-g++",
+              '-DCMAKE_TOOLCHAIN_FILE=' + ndk_path + '/build/cmake/android.toolchain.cmake',
+              '-DCMAKE_C_FLAGS=-g0 -fvisibility=hidden -ffunction-sections -fdata-sections -fvisibility-inlines-hidden',
+              '-DCMAKE_CXX_FLAGS=-g0 -fvisibility=hidden -ffunction-sections -fdata-sections -fvisibility-inlines-hidden',
+              '-DCMAKE_EXE_LINKER_FLAGS=-fpie -pie -Wl,--gc-sections -Wl,--exclude-libs,ALL',
+              '-DANDROID_ABI=armeabi-v7a',
+              '-DANDROID_PLATFORM=' + api_level,
+              '-DLLVM_DEFAULT_TARGET_TRIPLE=armv7-linux-androideabi',
         ]
-        # Do we still need export
-        # PATH=$PATH:${NDK_PATH}/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin/
-        # with CMAKE_C_COMPILER?
     elif platform == "macOS" and arch_opt == "i386":
         cmake_specific_option = ['-DLLVM_BUILD_32_BITS=On',
                                  '-DLLVM_DEFAULT_TARGET_TRIPLE=i386-apple-darwin17.7.0',
-                                 '-DCMAKE_C_FLAGS="-fvisibility=hidden"',
-                                 '-DCMAKE_CXX_FLAGS="-fvisibility=hidden"']
+                                 '-DCMAKE_C_FLAGS=-fvisibility=hidden',
+                                 '-DCMAKE_CXX_FLAGS=-fvisibility=hidden']
     elif platform == "linux" and arch_opt == "i386":
         cmake_specific_option = ['-DLLVM_BUILD_32_BITS=On',
                                  '-DLLVM_DEFAULT_TARGET_TRIPLE=i386-pc-linux',
-                                 '-DCMAKE_C_FLAGS="-fvisibility=hidden"',
-                                 '-DCMAKE_CXX_FLAGS="-fvisibility=hidden"']
+                                 '-DCMAKE_C_FLAGS=-fvisibility=hidden',
+                                 '-DCMAKE_CXX_FLAGS=-fvisibility=hidden']
     else:
-        cmake_specific_option = ['-DCMAKE_C_FLAGS="-fvisibility=hidden"',
-                                 '-DCMAKE_CXX_FLAGS="-fvisibility=hidden"']
+        cmake_specific_option = ['-DCMAKE_C_FLAGS=-fvisibility=hidden',
+                                 '-DCMAKE_CXX_FLAGS=-fvisibility=hidden']
 
     # Run cmake
     subprocess.check_call(["cmake", str(llvm_dir.resolve()),
                            "-DCMAKE_BUILD_TYPE=Release",
                            "-DLLVM_TARGETS_TO_BUILD=" + arch,
                            "-DLLVM_BUILD_TOOLS=Off",
+                           "-DLLVM_BUILD_UTILS=Off",
                            "-DLLVM_BUILD_TESTS=Off",
-                           "-DLLVM_INCLUDE_TESTS=Off"] +
+                           "-DLLVM_BUILD_EXAMPLES=Off"
+                           "-DLLVM_INCLUDE_TOOLS=Off"
+                           "-DLLVM_INCLUDE_UTILS=Off"
+                           "-DLLVM_INCLUDE_TESTS=Off"
+                           "-DLLVM_INCLUDE_EXAMPLES=Off"] +
                           cmake_specific_option,
                           cwd=str(build_dir))
 

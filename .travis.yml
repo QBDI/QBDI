@@ -17,24 +17,13 @@ linux_target: &linux_target
   compiler: gcc
   env:
     QBDI_PLATFORM="linux-X86_64"
-    CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=${QBDI_PLATFORM} -DTOOLS_VALIDATOR=TRUE -DEXAMPLES=TRUE"
 
 linux_target32: &linux_target32
   os: linux
   dist: xenial
   compiler: gcc
-  addons:
-    apt:
-      packages:
-        - g++-multilib
-        - libc6-dev-i386
-        # in llvm build, detect 64bit lib version and try to use it, but 32bit is not install
-        - lib32tinfo-dev
-        - lib32z-dev
-        - lib32ncurses5-dev 
   env:
     QBDI_PLATFORM="linux-X86"
-    CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=${QBDI_PLATFORM} -DTOOLS_VALIDATOR=TRUE -DEXAMPLES=TRUE"
 
 osx_target: &osx_target
   os: osx
@@ -68,14 +57,30 @@ install_gtest: &install_gtest
     # Reduce cache size
     - sh ../deps/gtest/${QBDI_PLATFORM}/build.sh clean
 
+docker_llvm: &docker_llvm
+  services:
+    - docker
+  script:
+    - bash ./docker/travis_linux/llvm.sh
+
+install_gtest: &docker_gtest
+  services:
+    - docker
+  script:
+    - bash ./docker/travis_linux/gtest.sh
+
 compile_and_test: &compile_and_test
   script:
     - mkdir build && cd build
     - cmake .. ${CMAKE_ARGS}
     - make -j2
     - ./test/QBDITest
-    - pip install --user pyaml
-    - cd ../tools/validation_runner && (python ./ValidationRunner.py travis.cfg || true)
+
+docker_compile_and_test: &docker_compile_and_test
+  services:
+    - docker
+  script:
+    - bash ./docker/travis_linux/qbdi.sh
 
 cache:
   - apt
@@ -113,10 +118,10 @@ jobs:
       <<: *install_llvm
     - stage: deps_llvm
       <<: *linux_target
-      <<: *install_llvm
+      <<: *docker_llvm
     - stage: deps_llvm
       <<: *linux_target32
-      <<: *install_llvm
+      <<: *docker_llvm
 
     - stage: deps_gtest
       <<: *osx_target
@@ -126,10 +131,10 @@ jobs:
       <<: *install_gtest
     - stage: deps_gtest
       <<: *linux_target
-      <<: *install_gtest
+      <<: *docker_gtest
     - stage: deps_gtest
       <<: *linux_target32
-      <<: *install_gtest
+      <<: *docker_gtest
 
     - stage: qbdi
       <<: *osx_target
@@ -139,7 +144,7 @@ jobs:
       <<: *compile_and_test
     - stage: qbdi
       <<: *linux_target
-      <<: *compile_and_test
+      <<: *docker_compile_and_test
     - stage: qbdi
       <<: *linux_target32
-      <<: *compile_and_test
+      <<: *docker_compile_and_test

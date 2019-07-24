@@ -1,37 +1,36 @@
-FROM i386/ubuntu:18.10
+ARG DOCKER_IMG="ubuntu:18.04"
 
-ARG QBDI_BUILD_TYPE=Release
+FROM $DOCKER_IMG as builder
 
-ENV USER docker
-ENV HOME /home/$USER
-ENV PREFIX /usr
-ENV QBDI_PLATFORM linux-X86
+ARG QBDI_PLATFORM="linux-X86_64"
+
+ENV USER="docker" \
+    HOME="/home/docker" \
+    PREFIX="/usr"
 
 # Get latest package list, upgrade packages, install required packages
 # and cleanup to keep container as small as possible
-RUN apt-get update \
-    && apt-get install -y \
-    bash \
-    sudo \
-    build-essential \
-    cmake \
-    g++ \
-    g++-multilib \
-    libncurses5-dev \
-    libstdc++-6-dev \
-    make \
-    pkg-config \
-    python \
-    python-dev \
-    wget \
-    zlib1g-dev \
-    vim \
-    libncurses5 \
-    python3-pip \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN pip3 install pathlib
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        bash \
+        sudo \
+        build-essential \
+        cmake \
+        g++ \
+        g++-multilib \
+        libncurses-dev \
+        libstdc++-8-dev \
+        make \
+        pkg-config \
+        python \
+        python-dev \
+        wget \
+        ca-certificates \
+        zlib1g-dev \
+        python-pathlib \
+        python3 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # create a user
 RUN adduser --disabled-password --gecos '' $USER && \
@@ -65,6 +64,7 @@ RUN python3 build.py prepare $QBDI_PLATFORM && \
     python3 build.py clean $QBDI_PLATFORM
 
 # build / test / install QBDI
+ARG CMAKE_ARGUMENT=""
 
 # git archive -o qbdi.tar.gz --prefix=qbdi/ HEAD .
 ADD qbdi.tar.gz $HOME/
@@ -72,22 +72,35 @@ ADD qbdi.tar.gz $HOME/
 WORKDIR $HOME/qbdi
 
 RUN sudo chown -R $USER:$USER . && \
+    # link llvm and gtest
     rm -rf deps && \
     ln -s $HOME/qbdi-deps/deps deps && \
+    # build
     mkdir build && \
     cd build && \
-    cmake -DCMAKE_BUILD_TYPE=$QBDI_BUILD_TYPE -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=$QBDI_PLATFORM -DCMAKE_INSTALL_PREFIX=$PREFIX ../ && \
-    make -j2 && \
+    cmake -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_CROSSCOMPILING=FALSE \
+          -DPLATFORM=$QBDI_PLATFORM \
+          -DCMAKE_INSTALL_PREFIX=$PREFIX \
+          -DTOOLS_PYQBDI=TRUE \
+          $CMAKE_ARGUMENT \
+          ../ && \
+    make -j4 && \
+    # test
     ./test/QBDITest && \
+    # create package and install
     rm -f QBDI-*-$QBDI_PLATFORM.deb && \
-    cpack -G DEB && \
-    sudo dpkg -i QBDI-*-$QBDI_PLATFORM.deb
-
-# uncomment this line to test with validation_runner
-# run test with "docker run -it --cap-add SYS_PTRACE --rm qbdi_ubuntu_i386:latest /bin/bash"
-#RUN sudo apt-get update && \
-#    sudo apt-get install -y python-yaml tmux git imagemagick zip
+    cpack -G DEB
 
 
-WORKDIR "$HOME/"
+FROM $DOCKER_IMG
+
+WORKDIR /root
+
+COPY --from=builder /home/docker/qbdi/build/*.deb .
+RUN apt-get update && \
+    apt-get install -y ./*.deb && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 CMD ["/bin/bash"]

@@ -13,16 +13,9 @@ case "$1" in
     build)
         mkdir -p build
         cd build
-        export NDK_PATH=${HOME}/android-ndk-r13b
-        export PATH=$PATH:${NDK_PATH}/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin/
-        export CC=arm-linux-androideabi-gcc
-        export CXX=arm-linux-androideabi-g++
-        export API_LEVEL=23
+        NDK_PATH=${HOME}/android-ndk-r20
         cmake "../googletest-release-${VERSION}" \
-              -DCMAKE_CROSSCOMPILING=True \
-              -DCMAKE_C_FLAGS="-march=armv7-a -mcpu=cortex-a9 -I${NDK_PATH}/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/include -I${NDK_PATH}/sources/cxx-stl/gnu-libstdc++/4.9/include/ -I${NDK_PATH}/platforms/android-${API_LEVEL}/arch-arm/usr/include/ -L${NDK_PATH}/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/ -L${NDK_PATH}/platforms/android-${API_LEVEL}/arch-arm/usr/lib/ -L${NDK_PATH}/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/lib/ --sysroot=${NDK_PATH}/platforms/android-${API_LEVEL}/arch-arm -fpie" \
-              -DCMAKE_CXX_FLAGS="-march=armv7-a -mcpu=cortex-a9 -I${NDK_PATH}/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/include -I${NDK_PATH}/sources/cxx-stl/gnu-libstdc++/4.9/include/ -I${NDK_PATH}/platforms/android-${API_LEVEL}/arch-arm/usr/include/ -L${NDK_PATH}/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/ -L${NDK_PATH}/platforms/android-${API_LEVEL}/arch-arm/usr/lib/ -L${NDK_PATH}/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/lib/ --sysroot=${NDK_PATH}/platforms/android-${API_LEVEL}/arch-arm -lgnustl_shared -fpie" \
-              -DCMAKE_EXE_LINKER_FLAGS='-fpie -pie'
+              -DCMAKE_TOOLCHAIN_FILE="${NDK_PATH}/build/cmake/android.toolchain.cmake"
         make -j4
     ;;
     package)

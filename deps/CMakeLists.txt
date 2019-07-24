@@ -17,14 +17,13 @@ file(GLOB LLVMLibFile LIST_DIRECTORIES true "${CMAKE_SOURCE_DIR}/deps/llvm/${PLA
 if (NOT (LLVMLibFile AND LLVMIncludeFile))
 
     set(DEPENDENCY_SATISFIED Off PARENT_SCOPE)
-    message(WARNING "
-    LLVM is not build for this platform,
-    first execute make llvm then rerun cmake
-    ")
+    message(WARNING "\n"
+        "    LLVM is not build for this platform,\n"
+        "    first execute make llvm then rerun cmake\n")
 endif()
 
 # Google Test
-if(QBDITEST)
+if(TEST_QBDI)
     if(${OS} STREQUAL "win")
     add_custom_target(gtest
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/deps/gtest/${PLATFORM}/
@@ -47,9 +46,8 @@ if(QBDITEST)
     if (NOT (GTestLibFile AND GTestIncludeFile))
 
         set(DEPENDENCY_SATISFIED Off PARENT_SCOPE)
-        message(WARNING "
-        Google Test is not build for this platform,
-        first execute make gtest then rerun cmake
-        ")
+        message(WARNING "\n"
+            "    Google Test is not build for this platform,\n"
+            "    first execute make gtest then rerun cmake\n")
     endif()
 endif()

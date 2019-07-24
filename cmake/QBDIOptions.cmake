@@ -10,7 +10,7 @@ option(ASAN "Enable AddressSanitizer (ASAN) for debugging (May be slow down)" OF
 option(LOG_DEBUG "Enable Debug log level" OFF)
 
 # test (need gtest)
-option(QBDITEST "Compile tests" ON)
+option(TEST_QBDI "Compile tests" ON)
 
 # example
 option(EXAMPLES "Compile examples" OFF)
@@ -27,3 +27,5 @@ else()
     option(TOOLS_PYQBDI "Compile python binding (need TOOLS_QBDIPRELOAD)" OFF)
 endif()
 
+# package
+option(PACKAGE_LIBNCURSE6 "create package with libncurse6 (default libncurse5)" OFF)
