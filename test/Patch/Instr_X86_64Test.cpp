@@ -68,8 +68,13 @@ TEST_F(Instr_X86_64Test, RelativeAddressing_IC) {
 
     QBDI::Context inputState;
     memset(&inputState, 0, sizeof(QBDI::Context));
+#if defined(QBDI_ARCH_X86)
+    inputState.gprState.eax = (QBDI::rword)rand();
+    inputState.gprState.ebx = (QBDI::rword)rand();
+#else
     inputState.gprState.rax = ((QBDI::rword)rand() << 32) | rand();
     inputState.gprState.rbx = ((QBDI::rword)rand() << 32) | rand();
+#endif
 
     vm.deleteAllInstrumentations();
     vm.addCodeCB(QBDI::PREINST, increment, (void*) &count1);
@@ -89,10 +94,17 @@ TEST_F(Instr_X86_64Test, ConditionalBranching_IC) {
 
     QBDI::Context inputState;
     memset(&inputState, 0, sizeof(QBDI::Context));
+#if defined(QBDI_ARCH_X86)
+    inputState.gprState.eax = (QBDI::rword)rand();
+    inputState.gprState.ebx = (QBDI::rword)rand();
+    inputState.gprState.ecx = (QBDI::rword)rand();
+    inputState.gprState.edx = (QBDI::rword)rand();
+#else
     inputState.gprState.rax = ((QBDI::rword)rand() << 32) | rand();
     inputState.gprState.rbx = ((QBDI::rword)rand() << 32) | rand();
     inputState.gprState.rcx = ((QBDI::rword)rand() << 32) | rand();
     inputState.gprState.rdx = ((QBDI::rword)rand() << 32) | rand();
+#endif
 
     vm.deleteAllInstrumentations();
     vm.addCodeCB(QBDI::PREINST, increment, (void*) &count1);
@@ -112,7 +124,11 @@ TEST_F(Instr_X86_64Test, FibonacciRecursion_IC) {
 
     QBDI::Context inputState;
     memset(&inputState, 0, sizeof(QBDI::Context));
+#if defined(QBDI_ARCH_X86)
+    inputState.gprState.eax = (QBDI::rword) (rand() % 20) + 2;
+#else
     inputState.gprState.rax = (QBDI::rword) (rand() % 20) + 2;
+#endif
 
     vm.deleteAllInstrumentations();
     vm.addCodeCB(QBDI::PREINST, increment, (void*) &count1);
@@ -133,7 +149,11 @@ TEST_F(Instr_X86_64Test, StackTricks_IC) {
 
     QBDI::Context inputState;
     memset(&inputState, 0, sizeof(QBDI::Context));
+#if defined(QBDI_ARCH_X86)
+    inputState.gprState.eax = (QBDI::rword) (rand() % 20) + 2;
+#else
     inputState.gprState.rax = (QBDI::rword) (rand() % 20) + 2;
+#endif
 
     vm.deleteAllInstrumentations();
     vm.addCodeCB(QBDI::PREINST, increment, (void*) &count1);

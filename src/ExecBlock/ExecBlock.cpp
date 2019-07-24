@@ -25,14 +25,14 @@
 #include "Utility/System.h"
 
 #if defined(QBDI_OS_WIN)
-    #if defined(QBDI_ARCH_X86_64)
+    #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
         extern "C" void qbdi_runCodeBlockSSE(void *codeBlock);
         extern "C" void qbdi_runCodeBlockAVX(void *codeBlock);
     #else
         extern "C" void qbdi_runCodeBlock(void *codeBlock);
     #endif
 #else
-    #if defined(QBDI_ARCH_X86_64)
+    #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
         extern void qbdi_runCodeBlockSSE(void *codeBlock) asm ("__qbdi_runCodeBlockSSE");
         extern void qbdi_runCodeBlockAVX(void *codeBlock) asm ("__qbdi_runCodeBlockAVX");
     #else
@@ -66,13 +66,13 @@ ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(
     codeBlock = QBDI::allocateMappedMemory(2*pageSize, nullptr, mflags, ec);
     RequireAction("ExecBlock::ExecBlock", codeBlock.base() != nullptr, abort());
     // Split it in two blocks
-    dataBlock = llvm::sys::MemoryBlock((void*)((uint64_t) codeBlock.base() + pageSize), pageSize);
+    dataBlock = llvm::sys::MemoryBlock(reinterpret_cast<void*>(reinterpret_cast<uint64_t>(codeBlock.base()) + pageSize), pageSize);
     codeBlock = llvm::sys::MemoryBlock(codeBlock.base(), pageSize);
-    LogDebug("ExecBlock::ExecBlock", "codeBlock @ 0x%" PRIRWORD " | dataBlock @ 0x%" PRIRWORD, (rword) codeBlock.base(), (rword) dataBlock.base());
+    LogDebug("ExecBlock::ExecBlock", "codeBlock @ 0x%" PRIRWORD " | dataBlock @ 0x%" PRIRWORD, reinterpret_cast<rword>(codeBlock.base()), reinterpret_cast<rword>(dataBlock.base()));
 
     // Other initializations
-    context = (Context*) dataBlock.base();
-    shadows = (rword*) ((rword) dataBlock.base() + sizeof(Context));
+    context = static_cast<Context*>(dataBlock.base());
+    shadows = reinterpret_cast<rword*>(reinterpret_cast<rword>(dataBlock.base()) + sizeof(Context));
     shadowIdx = 0;
     currentSeq = 0;
     currentInst = 0;
@@ -91,7 +91,7 @@ ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(
         epilogueSize = codeStream->current_pos();
         codeStream->seek(0);
         // runCodeBlock variant selection
-        #if defined(QBDI_ARCH_X86_64)
+        #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
         if(isHostCPUFeaturePresent("avx")) {
             LogDebug("ExecBlock::ExecBlock", "AVX support enabled in host context switches");
             runCodeBlockFct = qbdi_runCodeBlockAVX;
@@ -125,7 +125,7 @@ void ExecBlock::show() const {
     rword i;
     uint64_t instSize;
     llvm::MCDisassembler::DecodeStatus dstatus;
-    llvm::ArrayRef<uint8_t> jitCode((const uint8_t*) codeBlock.base(), codeStream->current_pos());
+    llvm::ArrayRef<uint8_t> jitCode(static_cast<const uint8_t*>(codeBlock.base()), codeStream->current_pos());
 
     fprintf(stderr, "---- JIT CODE ----\n");
     for (i = 0; i < jitCode.size(); i += instSize)
@@ -163,7 +163,7 @@ void ExecBlock::selectSeq(uint16_t seqID) {
     Require("ExecBlock::selectSeq", seqID < seqRegistry.size());
     currentSeq = seqID;
     currentInst = seqRegistry[currentSeq].startInstID;
-    context->hostState.selector = (rword) codeBlock.base() + (rword) instRegistry[seqRegistry[seqID].startInstID].offset;
+    context->hostState.selector = reinterpret_cast<rword>(codeBlock.base()) + static_cast<rword>(instRegistry[seqRegistry[seqID].startInstID].offset);
 }
 
 void ExecBlock::run() {
@@ -194,7 +194,7 @@ VMAction ExecBlock::execute() {
                      this, context->hostState.callback);
             Require("ExecBlock::execute", currentInst < instMetadata.size());
 
-            VMAction r = ((InstCallback)context->hostState.callback)(
+            VMAction r = (reinterpret_cast<InstCallback>(context->hostState.callback))(
                 vminstance,
                 &context->gprState, &context->fprState,
                (void*) context->hostState.data
@@ -220,8 +220,8 @@ VMAction ExecBlock::execute() {
 
 SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt, std::vector<Patch>::const_iterator seqEnd, SeqType seqType) {
     rword startOffset = (rword)codeStream->current_pos();
-    uint16_t startInstID = (uint16_t) getNextInstID();
-    uint16_t seqID = (uint16_t) getNextSeqID();
+    uint16_t startInstID = getNextInstID();
+    uint16_t seqID = getNextSeqID();
     unsigned patchWritten = 0;
 
     // Refuse to write empty sequence
@@ -275,14 +275,14 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
                 return {EXEC_BLOCK_FULL, 0, 0};
             }
             // Because we didn't wrote the full sequence, only keep the Entry bit
-            seqType = (SeqType) (seqType & SeqType::Entry);
+            seqType = static_cast<SeqType>(seqType & SeqType::Entry);
             break;
         }
         else {
             // Complete instruction was written, we add the metadata
             instMetadata.push_back(seqIt->metadata);
             // Register instruction
-            instRegistry.push_back(InstInfo {seqID, (uint16_t) rollbackOffset});
+            instRegistry.push_back(InstInfo {seqID, static_cast<uint16_t>(rollbackOffset)});
             // Update indexes
             seqIt++;
             patchWritten += 1;
@@ -302,10 +302,10 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
         assembly.writeInstruction(inst->reloc(this), codeStream);
     }
     // Register sequence
-    uint16_t endInstID = (uint16_t) (getNextInstID() - 1);
+    uint16_t endInstID = getNextInstID() - 1;
     seqRegistry.push_back(SeqInfo {startInstID, endInstID, seqType});
     // Return write results
-    unsigned bytesWritten = (unsigned) (codeStream->current_pos() - startOffset);
+    unsigned bytesWritten = static_cast<unsigned>(codeStream->current_pos() - startOffset);
     return SeqWriteResult {seqID, bytesWritten, patchWritten};
 }
 
@@ -315,7 +315,7 @@ uint16_t ExecBlock::splitSequence(uint16_t instID) {
     seqRegistry.push_back(SeqInfo {
         instID,
         seqRegistry[seqID].endInstID,
-        (SeqType) (SeqType::Entry | seqRegistry[seqID].type)
+        static_cast<SeqType>(SeqType::Entry | seqRegistry[seqID].type)
     });
     return getNextSeqID() - 1;
 }
@@ -348,7 +348,7 @@ uint16_t ExecBlock::newShadow(uint16_t tag) {
     uint16_t id = shadowIdx++;
     RequireAction("ExecBlock::newShadow", id * sizeof(rword) < dataBlock.size() - sizeof(Context), abort());
     if(tag != NO_REGISTRATION) {
-        LogDebug("ExecBlock::newShadow", "Registering new tagged shadow %" PRIu16 "for instID %" PRIu16 " wih tag %" PRIu16, id, getNextInstID(), tag);
+        LogDebug("ExecBlock::newShadow", "Registering new tagged shadow %" PRIu16 " for instID %" PRIu16 " wih tag %" PRIu16, id, getNextInstID(), tag);
         shadowRegistry.push_back({
             getNextSeqID(),
             getNextInstID(),
@@ -455,7 +455,7 @@ std::vector<ShadowInfo> ExecBlock::queryShadowBySeq(uint16_t seqID, uint16_t tag
 }
 
 float ExecBlock::occupationRatio() const {
-    return ((float) codeBlock.size() - (float) getEpilogueOffset()) / (float) codeBlock.size();
+    return static_cast<float>(codeBlock.size() - getEpilogueOffset()) / static_cast<float>(codeBlock.size());
 }
 
 }

@@ -42,7 +42,7 @@ typedef enum {
 
 /*! Map of a memory area (region).
  */
-typedef struct _qbdi_MemoryMap{
+typedef struct {
     rword            start;          /*!< Range start value. */
     rword            end;            /*!< Range end value (always excluded). */
     qbdi_Permission  permission;     /*!< Region access rights (PF_READ, PF_WRITE, PF_EXEC). */

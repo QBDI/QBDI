@@ -3,9 +3,9 @@ language: cpp
 addons:
   apt:
     sources:
-    - ubuntu-toolchain-r-test
-    packages:
-    - g++-7
+      - ubuntu-toolchain-r-test
+  packages:
+    - g++
     - ccache
   homebrew:
     packages:
@@ -13,18 +13,42 @@ addons:
 
 linux_target: &linux_target
   os: linux
-  dist: trusty
+  dist: xenial
   compiler: gcc
   env:
     QBDI_PLATFORM="linux-X86_64"
-    CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=${QBDI_PLATFORM}"
+    CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=${QBDI_PLATFORM} -DTOOLS_VALIDATOR=TRUE -DEXAMPLES=TRUE"
+
+linux_target32: &linux_target32
+  os: linux
+  dist: xenial
+  compiler: gcc
+  addons:
+    apt:
+      packages:
+        - g++-multilib
+        - libc6-dev-i386
+        # in llvm build, detect 64bit lib version and try to use it, but 32bit is not install
+        - lib32tinfo-dev
+        - lib32z-dev
+        - lib32ncurses5-dev 
+  env:
+    QBDI_PLATFORM="linux-X86"
+    CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=${QBDI_PLATFORM} -DTOOLS_VALIDATOR=TRUE -DEXAMPLES=TRUE"
 
 osx_target: &osx_target
   os: osx
   osx_image: xcode9.4
   env:
     - QBDI_PLATFORM="macOS-X86_64"
-    - CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=${QBDI_PLATFORM}"
+    - CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=${QBDI_PLATFORM} -DTOOLS_VALIDATOR=TRUE -DEXAMPLES=TRUE"
+
+osx_target32: &osx_target32
+  os: osx
+  osx_image: xcode9.4
+  env:
+    - QBDI_PLATFORM="macOS-X86"
+    - CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=${QBDI_PLATFORM} -DTOOLS_VALIDATOR=TRUE -DEXAMPLES=TRUE"
 
 install_llvm: &install_llvm
   script:
@@ -50,6 +74,8 @@ compile_and_test: &compile_and_test
     - cmake .. ${CMAKE_ARGS}
     - make -j2
     - ./test/QBDITest
+    - pip install --user pyaml
+    - cd ../tools/validation_runner && (python ./ValidationRunner.py travis.cfg || true)
 
 cache:
   - apt
@@ -59,12 +85,21 @@ cache:
   directories:
     - deps/llvm/linux-X86_64/include
     - deps/llvm/linux-X86_64/lib
-    - deps/gtest/linux-X86_64/include
-    - deps/gtest/linux-X86_64/lib
+    - deps/llvm/linux-X86/include
+    - deps/llvm/linux-X86/lib
     - deps/llvm/macOS-X86_64/include
     - deps/llvm/macOS-X86_64/lib
+    - deps/llvm/macOS-X86/include
+    - deps/llvm/macOS-X86/lib
+    - deps/gtest/linux-X86_64/include
+    - deps/gtest/linux-X86_64/lib
+    - deps/gtest/linux-X86/include
+    - deps/gtest/linux-X86/lib
     - deps/gtest/macOS-X86_64/include
     - deps/gtest/macOS-X86_64/lib
+    - deps/gtest/macOS-X86/include
+    - deps/gtest/macOS-X86/lib
+    - tools/validation_runner/travis_db
 
 sudo: required
 
@@ -74,17 +109,37 @@ jobs:
       <<: *osx_target
       <<: *install_llvm
     - stage: deps_llvm
+      <<: *osx_target32
+      <<: *install_llvm
+    - stage: deps_llvm
       <<: *linux_target
       <<: *install_llvm
+    - stage: deps_llvm
+      <<: *linux_target32
+      <<: *install_llvm
+
     - stage: deps_gtest
       <<: *osx_target
       <<: *install_gtest
     - stage: deps_gtest
+      <<: *osx_target32
+      <<: *install_gtest
+    - stage: deps_gtest
       <<: *linux_target
       <<: *install_gtest
+    - stage: deps_gtest
+      <<: *linux_target32
+      <<: *install_gtest
+
     - stage: qbdi
       <<: *osx_target
       <<: *compile_and_test
     - stage: qbdi
+      <<: *osx_target32
+      <<: *compile_and_test
+    - stage: qbdi
       <<: *linux_target
+      <<: *compile_and_test
+    - stage: qbdi
+      <<: *linux_target32
       <<: *compile_and_test

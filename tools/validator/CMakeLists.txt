@@ -12,9 +12,14 @@ elseif(${OS} STREQUAL "macOS")
 endif()
 
 add_library(validator SHARED ${SOURCES})
-# Add build directory as include path for the mach_exc.h header
-include_directories(validator PRIVATE
+
+# Also add build directory as include path for the mach_exc.h header
+target_include_directories(validator PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-    ${CMAKE_CURRENT_SOURCE_DIR}/../QBDIPreload/include
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../src>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include/QBDI>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../QBDIPreload/include>
+    $<INSTALL_INTERFACE:include>
     )
-target_link_libraries(validator QBDIPreload QBDI)
+target_link_libraries(validator QBDIPreload QBDI_static)

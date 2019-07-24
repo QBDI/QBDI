@@ -95,12 +95,12 @@ RUN sh build.sh prepare && \
     sh build.sh package && \
     sh build.sh clean
 
-WORKDIR $HOME/qbdi-deps/deps/llvm/$QBDI_PLATFORM
+WORKDIR $HOME/qbdi-deps/deps/llvm/
 
-RUN sh build.sh prepare && \
-    sh build.sh build && \
-    sh build.sh package && \
-    sh build.sh clean
+RUN python build.py prepare $QBDI_PLATFORM && \
+    python build.py build $QBDI_PLATFORM && \
+    python build.py package $QBDI_PLATFORM && \
+    python build.py clean $QBDI_PLATFORM
 
 # build / test / install QBDI
 

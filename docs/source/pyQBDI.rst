@@ -8,13 +8,17 @@ It also lets you interact with python environment, so you can, for example, post
 you collected during the instrumentation.
 
 .. note::
-   Because PyQBDI is a bindings on top of QBDIPreload, it has the same limitations as QBDIPreload 
+   Because PyQBDI is a bindings on top of QBDIPreload, it has the same limitations as QBDIPreload
    which are describred in :ref:`qbdipreload`.
 
 .. note::
-   It is not possible to instrument a python process using PyQBDI because there will be a conflict 
-   between the **host** and the **guest** both trying to use the python runtime as described in 
+   It is not possible to instrument a python process using PyQBDI because there will be a conflict
+   between the **host** and the **guest** both trying to use the python runtime as described in
    :ref:`intro_limitations`. We would recommend directly using :ref:`qbdipreload`.
+
+.. note::
+   Only python2 is currently supported. A version 32 bits of python is needed for
+   PyQBDI in x86.
 
 We provide examples along with the API documentation in the following sections.
 

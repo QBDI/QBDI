@@ -26,12 +26,10 @@
 #include "instrumented.h"
 #include "pipes.h"
 
-#include "Memory.hpp"
-#include "Platform.h"
+#include <QBDI.h>
 #include "Utility/LogSys.h"
-#include "VM.h"
 
-#if defined(_QBDI_DEBUG)
+#if defined(_QBDI_LOG_DEBUG)
 #include <iostream>
 #endif
 
@@ -75,7 +73,7 @@ static QBDI::VMAction step(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBD
     return QBDI::VMAction::STOP;
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 static QBDI::VMAction logSyscall(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBDI::FPRState *fprState, void *data) {
     Pipes *pipes = (Pipes*) data;
     // We don't have the address, it just need to be different from 0
@@ -123,7 +121,7 @@ void start_instrumented(QBDI::VM* vm, QBDI::rword start, QBDI::rword stop) {
 
     VM = vm;
     QBDI::LOGSYS.addFilter("*", QBDI::LogPriority::ERROR);
-#if defined(_QBDI_DEBUG)
+#if defined(_QBDI_LOG_DEBUG)
     for(const QBDI::MemoryMap& m :  QBDI::getCurrentProcessMaps()) {
         std::cout << m.name << " (" << m.permission << ") ";
         m.range.display(std::cout);
@@ -143,7 +141,7 @@ void start_instrumented(QBDI::VM* vm, QBDI::rword start, QBDI::rword stop) {
     }
 
     vm->addCodeCB(QBDI::PREINST, step, (void*) &PIPES);
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
     vm->addMnemonicCB("syscall", QBDI::POSTINST, logSyscall, (void*) &PIPES);
 #endif
     vm->addVMEventCB(QBDI::VMEvent::EXEC_TRANSFER_CALL, logTransfer, (void*) &PIPES);

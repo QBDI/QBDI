@@ -7,7 +7,7 @@ set(QBDI_VERSION_MINOR 6)
 set(QBDI_VERSION_PATCH 2)
 
 set(SUPPORTED_PLATFORM linux-X86_64 linux-ARM macOS-X86_64 android-ARM
-    win-X86_64 iOS-ARM)
+    win-X86_64 iOS-ARM linux-X86 macOS-X86 win-X86)
 
 # Force find system utils (strip)
 include(CMakeFindBinUtils)
@@ -15,12 +15,6 @@ include(CMakeFindBinUtils)
 # Macros
 include(cmake/libutils.cmake)
 
-# Process the DEBUG variable
-
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    message(STATUS "Compiling with QBDI_DEBUG")
-    add_definitions(-D_QBDI_DEBUG)
-endif()
 
 # Process the PLATFORM variable
 
@@ -39,17 +33,35 @@ if(IS_PLATFORM_SUPPORTED EQUAL -1)
     ")
 endif()
 
-# FORCE_DISABLE_AVX - default is OFF
-option(FORCE_DISABLE_AVX "Force disable AVX support in case dynamic support detection is buggy" OFF)
+# Extract variables (OS / ARCH) from PLATFORM variable
+string(REGEX MATCH "(.*)-(.*)" _ ${PLATFORM})
+set(OS ${CMAKE_MATCH_1})
+set(ARCH ${CMAKE_MATCH_2})
+if(${ARCH} STREQUAL "X86")
+    set(BASE_ARCH "X86_64")
+else()
+    set(BASE_ARCH "${ARCH}")
+endif()
+string(REGEX MATCH "([A-Za-z0-9]*)_*" _ ${ARCH})
+set(LLVM_ARCH ${CMAKE_MATCH_1})
+message("OS: ${OS}")
+message("ARCH: ${ARCH}")
+message("LLVM_ARCH: ${LLVM_ARCH}")
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+include(QBDIOptions)
+
+if((LOG_DEBUG) OR (CMAKE_BUILD_TYPE STREQUAL "Debug"))
+    message(STATUS "Compiling with LOG_DEBUG")
+    add_definitions(-D_QBDI_LOG_DEBUG)
+endif()
 
 if(FORCE_DISABLE_AVX)
     message(STATUS "Compiling with FORCE_DISABLE_AVX")
     add_definitions(-D_QBDI_FORCE_DISABLE_AVX)
 endif()
 
-# ASAN option - default is OFF
 include(CheckCCompilerFlag)
-option(ASAN "Enable AddressSanitizer (ASAN) for debugging (May be slow down)" OFF)
 
 if (ASAN)
   set(CMAKE_REQUIRED_FLAGS "-Werror -fsanitize=address")
@@ -89,22 +101,7 @@ if(APPLE)
   endif("${isSystemDir}" STREQUAL "-1")
 endif()
 
-# Extract variables (OS / ARCH) from PLATFORM variable
-
-string(REGEX MATCH "(.*)-(.*)" _ ${PLATFORM})
-set(OS ${CMAKE_MATCH_1})
-set(ARCH ${CMAKE_MATCH_2})
-string(REGEX MATCH "([A-Za-z0-9]*)_*" _ ${ARCH})
-set(LLVM_ARCH ${CMAKE_MATCH_1})
-message("OS: ${OS}")
-message("ARCH: ${ARCH}")
-message("LLVM_ARCH: ${LLVM_ARCH}")
-
 configure_file(include/QBDI/Version.h.in "${CMAKE_SOURCE_DIR}/include/QBDI/Version.h" @ONLY)
-
-# Configure NSIS
-configure_file(package/NSIS_gen.in NSIS_gen.nsh)
-
 
 # Add dependency build targets
 
@@ -116,24 +113,12 @@ if(${DEPENDENCY_SATISFIED})
 
 set(LLVM_LIBS_DIR deps/llvm/${PLATFORM}/lib)
 
-include_directories(
-    "include/"
-    "include/QBDI"
-    "src/"
-    "deps/llvm/${PLATFORM}/include"
-    "deps/llvm/${PLATFORM}/lib/Target/${LLVM_ARCH}"
-    "deps/gtest/${PLATFORM}/include"
-)
-
-link_directories(
-    ${LLVM_LIBS_DIR}
-    "deps/gtest/${PLATFORM}/lib"
-)
-
 # Resolve LLVM options
 
 if((${PLATFORM} STREQUAL "linux-X86_64") OR
+   (${PLATFORM} STREQUAL "linux-X86") OR
    (${PLATFORM} STREQUAL "macOS-X86_64") OR
+   (${PLATFORM} STREQUAL "macOS-X86") OR
    (${PLATFORM} STREQUAL "linux-ARM") OR
    (${PLATFORM} STREQUAL "iOS-ARM") OR
    (${PLATFORM} STREQUAL "android-ARM"))
@@ -141,11 +126,21 @@ if((${PLATFORM} STREQUAL "linux-X86_64") OR
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Wall -ffunction-sections -fdata-sections -fvisibility=hidden -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -fvisibility-inlines-hidden  -fvisibility=hidden -std=c++11 -ffunction-sections -fdata-sections -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -fno-rtti")
 
-elseif(${PLATFORM} STREQUAL "win-X86_64")
+elseif((${PLATFORM} STREQUAL "win-X86_64") OR
+        (${PLATFORM} STREQUAL "win-X86"))
 
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /DWIN32 /D_WINDOWS /W3   /MP -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS -D_SCL_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -wd4141 -wd4146 -wd4180 -wd4244 -wd4258 -wd4267 -wd4291 -wd4345 -wd4351 -wd4355 -wd4456 -wd4457 -wd4458 -wd4459 -wd4503 -wd4624 -wd4722 -wd4800 -w14062 -we4238 -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DWIN32 /D_WINDOWS /W3     /MP -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS -D_SCL_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -wd4141 -wd4146 -wd4180 -wd4244 -wd4258 -wd4267 -wd4291 -wd4345 -wd4351 -wd4355 -wd4456 -wd4457 -wd4458 -wd4459 -wd4503 -wd4624 -wd4722 -wd4800 -w14062 -we4238 -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS")
 
+endif()
+
+# Force 32bit
+if(${PLATFORM} STREQUAL "macOS-X86")
+    set(CMAKE_C_FLAGS "-arch i386 ${CMAKE_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "-arch i386 ${CMAKE_CXX_FLAGS}")
+elseif(${PLATFORM} STREQUAL "linux-X86")
+    set(CMAKE_C_FLAGS "-m32 ${CMAKE_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "-m32 ${CMAKE_CXX_FLAGS}")
 endif()
 
 # Disable thumb on ARM (until we support it)
@@ -173,16 +168,17 @@ ENDFUNCTION(PREPEND)
 # Common static LLVM objects
 set(_LLVM_STATIC_LIBS LLVMBinaryFormat.a LLVMMCDisassembler.a LLVMSelectionDAG.a LLVMAsmPrinter.a LLVMCodeGen.a LLVMScalarOpts.a LLVMInstCombine.a LLVMTransformUtils.a LLVMAnalysis.a LLVMTarget.a LLVMObject.a LLVMMCParser.a LLVMBitReader.a LLVMCore.a LLVMMC.a LLVMSupport.a)
 
-if(${PLATFORM} STREQUAL "linux-X86_64")
+if(${PLATFORM} STREQUAL "linux-X86" OR ${PLATFORM} STREQUAL "linux-X86_64")
+    find_package(Curses REQUIRED)
+    set(NCURSES_LDFLAGS "-lncurses")
+    if(CURSES_EXTRA_LIBRARY)
+        set(NCURSES_LDFLAGS "${NCURSES_LDFLAGS} -ltinfo")
+    endif()
 
-    include(FindPkgConfig)
-    pkg_check_modules(NCURSES REQUIRED "ncurses")
-    # Some distrib require linking with tinfo
-    pkg_check_modules(TINFO QUIET "tinfo")
     set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMProfileData.a LLVMX86Disassembler.a LLVMX86AsmParser.a LLVMX86CodeGen.a LLVMX86Desc.a LLVMX86Info.a LLVMX86AsmPrinter.a LLVMX86Utils.a)
-    set(LLVM_LIBS -lrt -ldl ${NCURSES_LDFLAGS} ${TINFO_LDFLAGS} -latomic -lpthread -lz -lm -lstdc++)
+    set(LLVM_LIBS -lrt -ldl ${NCURSES_LDFLAGS} -latomic -lpthread -lz -lm -lstdc++)
 
-elseif(${PLATFORM} STREQUAL "win-X86_64")
+elseif((${PLATFORM} STREQUAL "win-X86_64") OR (${PLATFORM} STREQUAL "win-X86"))
 
     set(_LLVM_STATIC_LIBS LLVMAnalysis.lib LLVMBinaryFormat.lib LLVMCore.lib LLVMMCDisassembler.lib LLVMScalarOpts.lib LLVMTransformUtils.lib LLVMX86Desc.lib LLVMAsmPrinter.lib LLVMInstCombine.lib LLVMMCParser.lib LLVMSelectionDAG.lib LLVMX86AsmParser.lib LLVMX86Disassembler.lib LLVMBitReader.lib LLVMObject.lib LLVMSupport.lib LLVMX86AsmPrinter.lib LLVMX86Info.lib LLVMCodeGen.lib LLVMMC.lib LLVMProfileData.lib LLVMTarget.lib LLVMX86CodeGen.lib LLVMX86Utils.lib)
     set(LLVM_LIBS "")
@@ -192,7 +188,7 @@ elseif(${PLATFORM} STREQUAL "linux-ARM")
     set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMProfileData.a LLVMARMDisassembler.a LLVMARMCodeGen.a LLVMARMAsmParser.a LLVMARMDesc.a LLVMARMInfo.a LLVMARMAsmPrinter.a LLVMARMUtils.a)
     set(LLVM_LIBS -ldl -lpthread -lm -lstdc++)
 
-elseif(${PLATFORM} STREQUAL "macOS-X86_64")
+elseif(${PLATFORM} STREQUAL "macOS-X86" OR ${PLATFORM} STREQUAL "macOS-X86_64")
 
     set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMDemangle.a LLVMX86Disassembler.a LLVMX86AsmParser.a LLVMX86CodeGen.a LLVMX86Desc.a LLVMX86Info.a LLVMX86AsmPrinter.a LLVMX86Utils.a)
     set(LLVM_LIBS -lz -lpthread -lffi -ledit -lcurses -lm -lc++)
@@ -218,11 +214,15 @@ set(SOURCES
     "src/ExecBlock/ExecBlock.cpp"
     "src/ExecBlock/ExecBlockManager.cpp"
     "src/ExecBroker/ExecBroker.cpp"
+    "src/Patch/InstrRule.cpp"
     "src/Patch/InstrRules.cpp"
-    "src/Patch/${ARCH}/InstInfo_${ARCH}.cpp"
-    "src/Patch/${ARCH}/PatchRules_${ARCH}.cpp"
-    "src/Patch/${ARCH}/Layer2_${ARCH}.cpp"
-    "src/Patch/${ARCH}/InstrRules_${ARCH}.cpp"
+    "src/Patch/InstTransform.cpp"
+    "src/Patch/PatchUtils.cpp"
+    "src/Patch/${BASE_ARCH}/InstInfo_${BASE_ARCH}.cpp"
+    "src/Patch/${BASE_ARCH}/PatchRules_${BASE_ARCH}.cpp"
+    "src/Patch/${BASE_ARCH}/Layer2_${BASE_ARCH}.cpp"
+    "src/Patch/${BASE_ARCH}/InstrRules_${BASE_ARCH}.cpp"
+    "src/Patch/${BASE_ARCH}/PatchGenerator_${BASE_ARCH}.cpp"
     "src/Utility/memory_ostream.cpp"
     "src/Utility/Assembly.cpp"
     "src/Utility/Memory.cpp"
@@ -257,15 +257,23 @@ else()
     set(ASM_EXT "s")
     if(${OS} STREQUAL "iOS")
         set(CMAKE_ASM-ATT_FLAGS "-arch ${ARM_ARCH}")
+    elseif(${OS} STREQUAL "macOS" AND ${ARCH} STREQUAL "X86")
+        set(CMAKE_ASM-ATT_FLAGS "-arch i386")
+    elseif(${OS} STREQUAL "linux" AND ${ARCH} STREQUAL "X86")
+        set(CMAKE_ASM-ATT_FLAGS "--32")
     endif()
 endif()
 
 set(SOURCES ${SOURCES} "src/ExecBlock/${PLATFORM}_Stub.${ASM_EXT}")
 
+if (${PLATFORM} STREQUAL "win-X86")
+    set_source_files_properties("src/ExecBlock/${PLATFORM}_Stub.${ASM_EXT}" PROPERTIES COMPILE_FLAGS "/safeseh")
+endif()
+
 
 # Create a list of static LLVM objects
 
-if(${PLATFORM} STREQUAL "win-X86_64")
+if(${OS} STREQUAL "win")
     PREPEND(LLVM_STATIC_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/ ${_LLVM_STATIC_LIBS})
 else()
     PREPEND(LLVM_STATIC_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/lib ${_LLVM_STATIC_LIBS})
@@ -273,25 +281,44 @@ endif()
 
 # Final QBDI static library is a merge of static libraries
 add_library(QBDI_obj STATIC ${SOURCES})
+
+target_include_directories(QBDI_obj PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    "${CMAKE_CURRENT_SOURCE_DIR}/deps/llvm/${PLATFORM}/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/deps/llvm/${PLATFORM}/lib/Target/${LLVM_ARCH}"
+)
+
 # Hack because generators expressions don't work properly under visual studio ...
-if(${PLATFORM} STREQUAL "win-X86_64")
+if(${OS} STREQUAL "win")
     set(qbdi_static_libs ${LLVM_STATIC_LIBS} ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/QBDI_obj.lib)
 else()
     set(qbdi_static_libs ${LLVM_STATIC_LIBS} $<TARGET_FILE:QBDI_obj>)
 endif()
-MERGE_STATIC_LIBS(QBDI QBDI \${qbdi_static_libs})
+MERGE_STATIC_LIBS(QBDI_static QBDI \${qbdi_static_libs})
+add_library(QBDI::QBDI_static ALIAS QBDI_static)
+target_include_directories(QBDI_static PUBLIC
+    $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+)
 
-target_link_libraries(QBDI ${LLVM_LIBS})
-add_dependencies(QBDI QBDI_obj)
+target_link_libraries(QBDI_static PUBLIC ${LLVM_LIBS})
+add_dependencies(QBDI_static QBDI_obj)
 
 # QBDI as a shared library
-add_library(QBDI_lib SHARED cmake/stub.cpp)
-target_link_libraries(QBDI_lib QBDI ${LLVM_LIBS})
-add_dependencies(QBDI_lib QBDI_obj)
-set_target_properties(QBDI_lib PROPERTIES OUTPUT_NAME QBDI)
+add_library(QBDI SHARED cmake/stub.cpp)
+add_library(QBDI::QBDI ALIAS QBDI)
+target_include_directories(QBDI PUBLIC
+    $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+)
+
+target_link_libraries(QBDI PUBLIC ${LLVM_LIBS} PRIVATE QBDI_static)
+add_dependencies(QBDI QBDI_obj)
+set_target_properties(QBDI PROPERTIES OUTPUT_NAME QBDI)
 # Hack: output stub not in the same directory than static to avoid conflicts
-if(${PLATFORM} STREQUAL "win-X86_64")
-    set_target_properties(QBDI PROPERTIES OUTPUT_NAME QBDI_static)
+if(${OS} STREQUAL "win")
+    set_target_properties(QBDI_static PROPERTIES OUTPUT_NAME QBDI_static)
 endif()
 
 if(DEFINED STRIP_PATH)
@@ -305,9 +332,9 @@ if(DEFINED CMAKE_STRIP AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     elseif(UNIX)
         set(STRIP_ARGS ${STRIP_ARGS} -x)
     endif()
-    add_custom_command(TARGET QBDI_lib
+    add_custom_command(TARGET QBDI
         POST_BUILD
-        COMMAND ${CMAKE_STRIP} ${STRIP_ARGS} "$<TARGET_FILE:QBDI_lib>")
+        COMMAND ${CMAKE_STRIP} ${STRIP_ARGS} "$<TARGET_FILE:QBDI>")
 endif()
 
 # Configure QBDIPreload
@@ -326,15 +353,17 @@ endif()
 
 # Install targets
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME "QBDI")
-install(TARGETS QBDI
+install(TARGETS QBDI_static
+        EXPORT QBDI_targets
         ARCHIVE DESTINATION lib)
 
-install(TARGETS QBDI_lib
+install(TARGETS QBDI
+        EXPORT QBDI_targets
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION lib)
 
-if(${PLATFORM} STREQUAL "win-X86_64")
+if(${OS} STREQUAL "win")
     install(FILES ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/QBDI.exp
             DESTINATION lib)
 endif()
@@ -351,6 +380,11 @@ if(FULL_PACKAGE)
 
     set(RESOURCES_PREFIX ${CMAKE_INSTALL_PREFIX}/share/qbdi)
 
+    install(EXPORT QBDI_targets
+        FILE QBDIConfig.cmake
+        NAMESPACE QBDI::
+        DESTINATION ${RESOURCES_PREFIX}/cmake)
+
     # QBDI template
     configure_file(package/qbdi-template.in package/qbdi-template)
     install(DIRECTORY templates/qbdi_template DESTINATION ${RESOURCES_PREFIX}
@@ -359,26 +393,38 @@ if(FULL_PACKAGE)
             COMPONENT QBDITemplate)
 
     # QBDI preload template
-    if(HAS_QBDIPRELOAD)
+    if(HAS_QBDIPRELOAD AND TOOLS_QBDIPRELOAD)
+        set(PRELOAD_RESOURCES_PREFIX ${CMAKE_INSTALL_PREFIX}/share/qbdipreload)
+
         configure_file(package/qbdi-preload-template.in package/qbdi-preload-template)
-        install(DIRECTORY templates/qbdi_preload_template DESTINATION ${RESOURCES_PREFIX}
+        install(DIRECTORY templates/qbdi_preload_template DESTINATION ${PRELOAD_RESOURCES_PREFIX}
                 COMPONENT QBDITemplate)
         install(PROGRAMS ${CMAKE_BINARY_DIR}/package/qbdi-preload-template DESTINATION bin
                 COMPONENT QBDITemplate)
     endif()
 
     # Frida template
-    configure_file(package/qbdi-frida-template.in package/qbdi-frida-template)
-    install(DIRECTORY templates/qbdi_frida_template DESTINATION ${RESOURCES_PREFIX}
-            COMPONENT QBDIFridaTemplate)
-    install(PROGRAMS ${CMAKE_BINARY_DIR}/package/qbdi-frida-template DESTINATION bin
-            COMPONENT QBDIFridaTemplate)
-    install(FILES tools/frida-qbdi.js DESTINATION ${RESOURCES_PREFIX})
+    if(TOOLS_FRIDAQBDI)
+        configure_file(package/qbdi-frida-template.in package/qbdi-frida-template)
+        install(DIRECTORY templates/qbdi_frida_template DESTINATION ${RESOURCES_PREFIX}
+                COMPONENT QBDIFridaTemplate)
+        install(PROGRAMS ${CMAKE_BINARY_DIR}/package/qbdi-frida-template DESTINATION bin
+                COMPONENT QBDIFridaTemplate)
+        install(FILES tools/frida-qbdi.js DESTINATION ${RESOURCES_PREFIX})
+    endif()
 
 else()
+    install(EXPORT QBDI_targets
+        FILE QBDIConfig.cmake
+        NAMESPACE QBDI::
+        DESTINATION cmake)
+
     install(DIRECTORY templates/ DESTINATION templates)
     install(FILES LICENSE.txt package/Readme.txt DESTINATION .)
-    install(FILES tools/frida-qbdi.js DESTINATION .)
+
+    if(TOOLS_FRIDAQBDI)
+        install(FILES tools/frida-qbdi.js DESTINATION .)
+    endif()
 endif()
 
 # Configure iOS code signature
@@ -404,13 +450,19 @@ endif()
 
 
 # Add tests
-add_subdirectory(test)
+if(QBDITEST)
+    message(STATUS "Compile Test")
+    add_subdirectory(test)
+endif()
 
 # Add tools
 add_subdirectory(tools)
 
 # Add examples
-add_subdirectory(examples)
+if(EXAMPLES)
+    message(STATUS "Compile Exemples")
+    add_subdirectory(examples)
+endif()
 
 # DEPENDENCY_SATISFIED
 endif()

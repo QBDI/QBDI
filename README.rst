@@ -2,10 +2,10 @@ Introduction
 ============
 .. intro
 
-QuarkslaB Dynamic binary Instrumentation (QBDI) is a modular, cross-platform and cross-architecture 
-DBI framework. It aims to support Linux, macOS, Android, iOS and Windows operating systems running on 
-x86, x86-64, ARM and AArch64 architectures. Information about what is a DBI framework and how QBDI 
-works can be found in the user documentation introduction (:ref:`user-introduction`).
+QuarkslaB Dynamic binary Instrumentation (QBDI) is a modular, cross-platform and cross-architecture
+DBI framework. It aims to support Linux, macOS, Android, iOS and Windows operating systems running on
+x86, x86-64, ARM and AArch64 architectures. Information about what is a DBI framework and how QBDI
+works can be found in the user documentation introduction (`User Documentation <https://qbdi.readthedocs.io/en/stable/user.html>`_).
 
 QBDI modularity means it doesn't contain a preferred injection method and it is designed to be
 used in conjunction with an external injection tool. QBDI includes a tiny (``LD_PRELOAD`` based)
@@ -14,9 +14,10 @@ Python bindings (pyQBDI).
 QBDI is also fully integrated with `Frida <https://frida.re>`_, a reference dynamic instrumentation toolkit,
 allowing anybody to use their combined powers.
 
-x86-64 support is mature (even if SIMD memory access are not yet reported). ARM architecture is
+x86-64 support is mature (even if SIMD memory access are not yet reported). The support of x86
+is new and some bug may occur. ARM architecture is
 a work in progress but already sufficient to execute simple CLI program like *ls* or *cat*.
-x86 and AArch64 are planned, but currently unsupported.
+AArch64 is planned, but currently unsupported.
 
 A current limitation is that QBDI doesn't handle signals, multithreading (it doesn't deal with new
 threads creation) and C++ exception mechanisms.
@@ -35,9 +36,9 @@ Status
 CPU       Operating Systems       Execution                Memory Access Information
 =======   =====================   ======================   =================================
 x86-64    Linux, macOS, Windows   :green:`Supported`       :yellow:`Partial (only non SIMD)`
+x86       Linux, macOS, Windows   :orange:`Early`          :orange:`Partial Early (only non SIMD)`
 ARM       Linux, Android, iOS     :yellow:`Partial`        :red:`Unsupported`
 AArch64   Linux, Android          :red:`Unsupported`       :red:`Unsupported`
-x86       Linux, macOS, Windows   :red:`Unsupported`       :red:`Unsupported`
 =======   =====================   ======================   =================================
 
 **stable**
@@ -71,14 +72,14 @@ The compilation is a two-step process:
 * A local binary distribution of the dependencies is built.
 * QBDI is built using those binaries.
 
-The current dependencies which need to be built are LLVM and Google Test. This local built of 
-LLVM is required because QBDI uses private APIs not exported by regular LLVM installations and 
-because our code is only compatible with a specific version of those APIs. This first step is 
+The current dependencies which need to be built are LLVM and Google Test. This local built of
+LLVM is required because QBDI uses private APIs not exported by regular LLVM installations and
+because our code is only compatible with a specific version of those APIs. This first step is
 cached and only needs to be run once, subsequent builds only need to repeat the second step.
 
-QBDI build system relies on CMake and requires to pass build configuration flags. To help with 
-this step we provide shell scripts for common build configurations which follow the naming pattern 
-``config-OS-ARCH.sh``. Modifying these scripts is necessary if you want to compile in debug or 
+QBDI build system relies on CMake and requires to pass build configuration flags. To help with
+this step we provide shell scripts for common build configurations which follow the naming pattern
+``config-OS-ARCH.sh``. Modifying these scripts is necessary if you want to compile in debug or
 cross compile QBDI.
 
 Linux
@@ -93,7 +94,7 @@ Create a new directory at the root of the source tree, and execute the Linux con
     cd build
     ../cmake/config-linux-X86_64.sh
 
-If the build script warns you of missing dependencies for your platform (in the case of a first 
+If the build script warns you of missing dependencies for your platform (in the case of a first
 compilation), or if you want to rebuild them, execute the following commands::
 
     make llvm
@@ -105,16 +106,21 @@ then relaunch the configuration script from above and compile::
     ../cmake/config-linux-X86_64.sh
     make -j4
 
+x86
+^^^
+
+The previous step can be follow but using the ``config-linux-X86.sh`` configuration script instead.
+
 Cross-compiling for ARM
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-The same step as above can be used but using the ``config-linux-ARM.sh`` configuration script 
+The same step as above can be used but using the ``config-linux-ARM.sh`` configuration script
 instead. This script however needs to be customized for your cross-compilation toolchain:
 
-* The right binaries must be exported in the ``AS``, ``CC``, ``CXX`` and ``STRIP`` environment 
+* The right binaries must be exported in the ``AS``, ``CC``, ``CXX`` and ``STRIP`` environment
   variables.
-* The ``-DCMAKE_C_FLAGS`` and ``-DCMAKE_CXX_FLAGS`` should contain the correct default flags for 
-  your toolchain. At least the ``ARM_ARCH``, ``ARM_C_INCLUDE`` and ``ARM_CXX_INCLUDE`` should be 
+* The ``-DCMAKE_C_FLAGS`` and ``-DCMAKE_CXX_FLAGS`` should contain the correct default flags for
+  your toolchain. At least the ``ARM_ARCH``, ``ARM_C_INCLUDE`` and ``ARM_CXX_INCLUDE`` should be
   modified to match your toolchain but more might be needed.
 
 macOS
@@ -134,7 +140,7 @@ Once requirements are met, create a new directory at the root of the source tree
     cd build
     ../cmake/config-macOS-X86_64.sh
 
-If the build script warns you of missing dependencies for your platform (in the case of a first 
+If the build script warns you of missing dependencies for your platform (in the case of a first
 compilation), or if you want to rebuild them, execute the following commands::
 
     make llvm
@@ -162,7 +168,7 @@ matching your Visual Studio installation. Then the following command should be r
     cd build
     python ../cmake/config-win-X86_64.py
 
-If the build script warns you of missing dependencies for your platform (in the case of a first 
+If the build script warns you of missing dependencies for your platform (in the case of a first
 compilation), or if you want to rebuild them, execute the following commands::
 
     MSBuild.exe deps\llvm.vcxproj
@@ -177,14 +183,14 @@ then relaunch the build script from above and compile::
 Android
 -------
 
-Cross-compiling for Android requires the Android NDK and has only been tested under Linux. The 
-``config-android-ARM.sh`` configuration script should be customized to match your NDK installation 
+Cross-compiling for Android requires the Android NDK and has only been tested under Linux. The
+``config-android-ARM.sh`` configuration script should be customized to match your NDK installation
 and target platform:
 
 * ``NDK_PATH`` should point to your Android NDK
 * ``SDKBIN_PATH`` should be completed to point to the toolchain to use inside the NDK.
 * ``API_LEVEL`` should match the Android API level of your target.
-* The right binaries must be exported in the ``AS``, ``CC``, ``CXX`` and ``STRIP`` environment 
+* The right binaries must be exported in the ``AS``, ``CC``, ``CXX`` and ``STRIP`` environment
   variables (look at what is inside your ``SDKBIN_PATH``).
 
 From that point on the Linux guide can be followed using this configuration script.

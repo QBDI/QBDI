@@ -78,7 +78,7 @@ public:
 extern QBDI::LogSys LOGSYS;
 };
 
-#if defined(_QBDI_DEBUG)
+#if defined(_QBDI_LOG_DEBUG)
 
 #define Log(p, t, ...) QBDI::LOGSYS.log(p, t, __VA_ARGS__)
 #define LogCallback(p, t, c) QBDI::LOGSYS.logCallback(p, t, c)

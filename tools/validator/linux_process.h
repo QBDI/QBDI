@@ -20,10 +20,14 @@
 
 #include "process.h"
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 
 #define GPR_STRUCT user_regs_struct
+#if defined(QBDI_ARCH_X86_64)
 #define FPR_STRUCT user_fpregs_struct
+#elif defined(QBDI_ARCH_X86)
+#define FPR_STRUCT user_fpxregs_struct
+#endif
 #define SIGBRK SIGTRAP
 static const long BRK_MASK = 0xFF;
 static const long BRK_INS = 0xCC;

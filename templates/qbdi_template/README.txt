@@ -24,7 +24,7 @@ Windows
 $ # win
 $ mkdir build
 $ cd build
-$ cmake -G "Visual Studio 12 2013 Win64" -DCMAKE_BUILD_TYPE=Release ..
+$ cmake -G "Visual Studio 14 2015 Win64" -DCMAKE_BUILD_TYPE=Release ..
 $ MSBuild.exe /p:Configuration=Release ALL_BUILD.vcxproj
 
 If compilation is successful, test binary will be in Release directory.

@@ -98,11 +98,19 @@ struct TestInst TestInsts[MNEM_COUNT] = {
            {QBDI::OPERAND_IMM, MNEM_IMM_SHORT_VAL, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
         }
     },
+#if defined(QBDI_ARCH_X86_64)
     {3, 2, true, {
            {QBDI::OPERAND_GPR, 0, 8, 0, 0, "RAX", QBDI::REGISTER_READ},
            {QBDI::OPERAND_GPR, 0, 8, 0, 1, "RBX", QBDI::REGISTER_READ},
         }
     },
+#else
+    {3, 2, true, {
+           {QBDI::OPERAND_GPR, 0, 2, 0, 0, "AX", QBDI::REGISTER_READ},
+           {QBDI::OPERAND_GPR, 0, 2, 0, 1, "BX", QBDI::REGISTER_READ},
+        }
+    },
+#endif
     {5, 2, true, {
            {QBDI::OPERAND_IMM, MNEM_IMM_VAL, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
            {QBDI::OPERAND_GPR, 0, 4, 0, 0, "EAX", QBDI::REGISTER_READ},
@@ -129,9 +137,15 @@ QBDI_NOINLINE QBDI::rword satanicFun(QBDI::rword arg0) {
     QBDI::rword p = 0x42;
  #ifndef QBDI_OS_WIN
     asm("cmp $" MNEM_IMM_SHORT_STRVAL ", %%dh" ::: "dh");
+  #if defined(QBDI_ARCH_X86_64)
     asm("cmp %%rbx, %%rax" ::: "rbx", "rax");
     asm("cmp $" MNEM_IMM_STRVAL ", %%eax" ::: "eax"); // explicit register
     asm("movq %0, %%rdi; movq %1, %%rsi; cmpsb %%es:(%%rdi), (%%rsi)"::"r"(&p), "r"(&p): "rdi", "rsi");
+  #else
+    asm("cmp %%bx, %%ax" ::: "bx", "ax");
+    asm("cmp $" MNEM_IMM_STRVAL ", %%eax" ::: "eax"); // explicit register
+    asm("mov %0, %%edi; mov %1, %%esi; cmpsb %%es:(%%edi), (%%esi)"::"r"(&p), "r"(&p): "edi", "esi");
+  #endif
  #endif
 #elif defined(QBDI_ARCH_ARM)
     asm("cmp r3, #" MNEM_IMM_SHORT_STRVAL);
