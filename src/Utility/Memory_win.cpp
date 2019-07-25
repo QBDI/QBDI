@@ -35,11 +35,11 @@ namespace QBDI {
 #define PROT_ISWRITE(PROT)  ((PROT) & 0xCC)
 #define PROT_ISEXEC(PROT)   ((PROT) & 0xF0)
 
-std::vector<MemoryMap> getCurrentProcessMaps() {
-    return getRemoteProcessMaps(GetCurrentProcessId());
+std::vector<MemoryMap> getCurrentProcessMaps(bool full_path) {
+    return getRemoteProcessMaps(GetCurrentProcessId(), full_path);
 }
 
-std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
+std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path) {
     std::vector<MemoryMap> maps;
     MEMORY_BASIC_INFORMATION info;
     HMODULE mod;
@@ -84,7 +84,11 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
             ret = GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCTSTR) addr, &mod);
         }
         if (ret != 0 && mod != NULL) {
-            ret = GetModuleBaseName(self, mod, path, _countof(path));
+            if (full_path) {
+                ret = GetModuleFileNameEx(self, mod, path, _countof(path));
+            } else {
+                ret = GetModuleBaseName(self, mod, path, _countof(path));
+            }
             FreeLibrary(mod);
         }
         if (ret != 0) {
@@ -99,6 +103,12 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
             // fallback to empty name
             m.name.clear();
         }
+        LogCallback(LogPriority::DEBUG, "getRemoteProcessMaps", [&] (FILE *out) -> void {
+            fprintf(out, "Read new map [%" PRIRWORD ", %" PRIRWORD "] %s ", m.range.start, m.range.end, m.name.c_str());
+            if(m.permission & QBDI::PF_READ)  fprintf(out, "r");
+            if(m.permission & QBDI::PF_WRITE) fprintf(out, "w");
+            if(m.permission & QBDI::PF_EXEC)  fprintf(out, "x");
+        });
         maps.push_back(m);
     }
     CloseHandle(self);

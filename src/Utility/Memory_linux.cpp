@@ -24,11 +24,11 @@
 
 namespace QBDI {
 
-std::vector<MemoryMap> getCurrentProcessMaps() {
-    return getRemoteProcessMaps(getpid());
+std::vector<MemoryMap> getCurrentProcessMaps(bool full_path) {
+    return getRemoteProcessMaps(getpid(), full_path);
 }
 
-std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
+std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path) {
     static int BUFFER_SIZE = 256;
     char* line = new char[BUFFER_SIZE];
     FILE* mapfile = nullptr;
@@ -94,10 +94,14 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
         while(isspace(*ptr)) ptr++;
 
         // Get the file name
-        if((ptr = strrchr(ptr, '/')) != nullptr) {
-            m.name = ptr + 1;
+        if (full_path) {
+            m.name = ptr;
         } else {
-            m.name.clear();
+            if((ptr = strrchr(ptr, '/')) != nullptr) {
+                m.name = ptr + 1;
+            } else {
+                m.name.clear();
+            }
         }
 
 

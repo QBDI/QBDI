@@ -50,7 +50,7 @@ struct MemoryMap {
 
     Range<rword> range;         /*!< A range of memory (region), delimited between a start and an (excluded) end address. */
     Permission  permission;     /*!< Region access rights (PF_READ, PF_WRITE, PF_EXEC). */
-    std::string name;           /*!< Region name (useful when a region is mapping a module). */
+    std::string name;           /*!< Region name or path (useful when a region is mapping a module). */
 
     /* Construct a new (empty) MemoryMap.
      */
@@ -80,16 +80,18 @@ struct MemoryMap {
 /*! Get a list of all the memory maps (regions) of a process.
  *
  * @param[in] pid The identifier of the process.
+ * @param[in] full_path  Return the full path of the module in name field
  *
  * @return  A vector of MemoryMap object.
  */
-QBDI_EXPORT std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid);
+QBDI_EXPORT std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path=false);
 
 /*! Get a list of all the memory maps (regions) of the current process.
  *
+ * @param[in] full_path  Return the full path of the module in name field
  * @return  A vector of MemoryMap object.
  */
-QBDI_EXPORT std::vector<MemoryMap> getCurrentProcessMaps();
+QBDI_EXPORT std::vector<MemoryMap> getCurrentProcessMaps(bool full_path=false);
 
 /*! Get a list of all the module names loaded in the process memory.
  *

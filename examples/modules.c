@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
     }
     free(modules);
 
-    qbdi_MemoryMap *maps = qbdi_getCurrentProcessMaps(&size);
+    qbdi_MemoryMap *maps = qbdi_getCurrentProcessMaps(false, &size);
     for(i = 0; i < size; i++) {
         printf("%s (%c%c%c) ", maps[i].name,
                 maps[i].permission & QBDI_PF_READ ? 'r' : '-',
