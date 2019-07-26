@@ -13,9 +13,12 @@ try:
 except ImportError:
     raise Exception("Must be using Python 3")
 
-VERSION = "7.0.0"
-SOURCE_URL = "http://llvm.org/releases/" + VERSION + "/llvm-" + \
-    VERSION + ".src.tar.xz"
+VERSION = "8.0.1"
+#SOURCE_URL = "http://llvm.org/releases/" + VERSION + "/llvm-" + \
+#    VERSION + ".src.tar.xz"
+
+SOURCE_URL = "https://github.com/llvm/llvm-project/releases/download/llvmorg-{}/llvm-{}.src.tar.xz" \
+        .format(VERSION, VERSION)
 
 TARGET_DIR = Path(os.path.dirname(__file__))
 
