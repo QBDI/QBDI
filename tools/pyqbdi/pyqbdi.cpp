@@ -3260,12 +3260,22 @@ namespace QBDI {
 
       /*! Get a list of all the memory maps (regions) of the current process.
        *
+       * @param[in]  full_path  Return the full path of the module in name field.
+       *
        * @return  A list of MemoryMap, each one containing the metadata of a region.
        */
-      static PyObject* pyqbdi_getCurrentProcessMaps(PyObject* self, PyObject* noarg) {
+      static PyObject* pyqbdi_getCurrentProcessMaps(PyObject* self, PyObject* args) {
+        PyObject* full_path_args = nullptr;
+        bool full_path = false;
         PyObject* ret  = nullptr;
+
+        /* Extract arguments */
+        PyArg_ParseTuple(args, "|O", &full_path_args);
+        if (full_path_args != nullptr)
+            full_path = PyObject_IsTrue(full_path_args);
+
         try {
-          std::vector<MemoryMap> maps = QBDI::getCurrentProcessMaps();
+          std::vector<MemoryMap> maps = QBDI::getCurrentProcessMaps(full_path);
           size_t size = maps.size();
           uint32_t i = 0;
           ret = PyList_New(size);
@@ -3407,7 +3417,7 @@ namespace QBDI {
         {"decodeFloat",          (PyCFunction)pyqbdi_decodeFloat,          METH_O,        "Decode a float encoded as a long."},
         {"encodeFloat",          (PyCFunction)pyqbdi_encodeFloat,          METH_O,        "Encode a float as a long."},
         {"getModuleNames",       (PyCFunction)pyqbdi_getModuleNames,       METH_NOARGS,   "Get a list of all the module names loaded in the process memory."},
-        {"getCurrentProcessMaps",(PyCFunction)pyqbdi_getCurrentProcessMaps,METH_NOARGS,   "Get a list of all the memory maps (regions) of the current process."},
+        {"getCurrentProcessMaps",(PyCFunction)pyqbdi_getCurrentProcessMaps,METH_VARARGS,  "Get a list of all the memory maps (regions) of the current process."},
         {"readMemory",           (PyCFunction)pyqbdi_readMemory,           METH_VARARGS,  "Read a memory content from a base address."},
         {"simulateCall",         (PyCFunction)pyqbdi_simulateCall,         METH_VARARGS,  "Simulate a call by modifying the stack and registers accordingly."},
         {"writeMemory",          (PyCFunction)pyqbdi_writeMemory,          METH_VARARGS,  "Write a memory content to a base address."},

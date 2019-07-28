@@ -154,12 +154,12 @@ uintptr_t getImageSlideWithHeader(const struct dyld_image_info* image_info, cons
 }
 
 
-std::vector<MemoryMap> getCurrentProcessMaps() {
-    return getRemoteProcessMaps(getpid());
+std::vector<MemoryMap> getCurrentProcessMaps(bool full_path) {
+    return getRemoteProcessMaps(getpid(), full_path);
 }
 
 
-std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
+std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path) {
     uint32_t                    icnt = 0;
     struct STRUCT_HEADER       *mh = NULL;
     char                       *path = NULL;
@@ -241,7 +241,7 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid) {
                                 MemoryMap m;
                                 m.range.start = seg->vmaddr + slide;
                                 m.range.end = m.range.start + seg->vmsize;
-                                m.name = name;
+                                m.name = (full_path)? path : name;
 
                                 modMaps.push_back(m);
                             }

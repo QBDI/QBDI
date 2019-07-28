@@ -31,7 +31,7 @@ namespace QBDI {
 std::vector<std::string> getModuleNames() {
     std::set<std::string> modules;
 
-    for(const MemoryMap& m : getCurrentProcessMaps())
+    for(const MemoryMap& m : getCurrentProcessMaps(false))
         if(!m.name.empty())
             modules.insert(m.name);
 
@@ -161,16 +161,16 @@ qbdi_MemoryMap* convert_MemoryMap_to_C(std::vector<MemoryMap> maps, size_t* size
     return cmaps;
 }
 
-qbdi_MemoryMap* qbdi_getRemoteProcessMaps(rword pid, size_t* size) {
+qbdi_MemoryMap* qbdi_getRemoteProcessMaps(rword pid, bool full_path, size_t* size) {
     if (size == NULL)
         return NULL;
-    return convert_MemoryMap_to_C(getRemoteProcessMaps(pid), size);
+    return convert_MemoryMap_to_C(getRemoteProcessMaps(pid, full_path), size);
 }
 
-qbdi_MemoryMap* qbdi_getCurrentProcessMaps(size_t* size) {
+qbdi_MemoryMap* qbdi_getCurrentProcessMaps(bool full_path, size_t* size) {
     if (size == NULL)
         return NULL;
-    return convert_MemoryMap_to_C(getCurrentProcessMaps(), size);
+    return convert_MemoryMap_to_C(getCurrentProcessMaps(full_path), size);
 }
 
 void qbdi_freeMemoryMapArray(qbdi_MemoryMap* arr, size_t size) {

@@ -46,25 +46,27 @@ typedef struct {
     rword            start;          /*!< Range start value. */
     rword            end;            /*!< Range end value (always excluded). */
     qbdi_Permission  permission;     /*!< Region access rights (PF_READ, PF_WRITE, PF_EXEC). */
-    char*            name;           /*!< Region name (useful when a region is mapping a module). */
+    char*            name;           /*!< Region name or path (useful when a region is mapping a module). */
 } qbdi_MemoryMap;
 
 /*! Get a list of all the memory maps (regions) of a process.
  *
  * @param[in]  pid  The identifier of the process.
+ * @param[in]  full_path  Return the full path of the module in name field
  * @param[out] size Will be set to the number of strings in the returned array.
  *
  * @return  An array of MemoryMap object.
  */
-QBDI_EXPORT qbdi_MemoryMap* qbdi_getRemoteProcessMaps(rword pid, size_t* size);
+QBDI_EXPORT qbdi_MemoryMap* qbdi_getRemoteProcessMaps(rword pid, bool full_path, size_t* size);
 
 /*! Get a list of all the memory maps (regions) of the current process.
  *
+ * @param[in]  full_path  Return the full path of the module in name field
  * @param[out] size Will be set to the number of strings in the returned array.
  *
  * @return  An array of MemoryMap object.
  */
-QBDI_EXPORT qbdi_MemoryMap* qbdi_getCurrentProcessMaps(size_t* size);
+QBDI_EXPORT qbdi_MemoryMap* qbdi_getCurrentProcessMaps(bool full_path, size_t* size);
 
 /*! Free an array of memory maps objects.
  *

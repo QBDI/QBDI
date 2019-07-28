@@ -190,7 +190,7 @@ void catchEntrypoint(int argc, char** argv) {
         qbdi_instrumentAllExecutableMaps(vm);
 
         size_t size = 0, i = 0;
-        qbdi_MemoryMap *modules = qbdi_getCurrentProcessMaps(&size);
+        qbdi_MemoryMap *modules = qbdi_getCurrentProcessMaps(false, &size);
 
         // Filter some modules to avoid conflicts
         qbdi_removeInstrumentedModuleFromAddr(vm, (rword) &catchEntrypoint);
