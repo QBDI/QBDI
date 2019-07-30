@@ -24,8 +24,8 @@
 
 namespace QBDI {
 
-/* Highest 8 bits are the write access, lowest 8 bits are the read access. For each 8 bits part: the 
- * highest bit stores if the access is a stack access or not while the lowest 7 bits store the 
+/* Highest 8 bits are the write access, lowest 8 bits are the read access. For each 8 bits part: the
+ * highest bit stores if the access is a stack access or not while the lowest 7 bits store the
  * unsigned access size in bytes (thus up to 127 bytes). A size of 0 means no access.
  *
  * -----------------------------------------------------------------------------------------------------------------

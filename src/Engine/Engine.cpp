@@ -40,6 +40,7 @@
 #include "Patch/PatchRule.h"
 #include "Patch/InstrRules.h"
 #include "Patch/InstInfo.h"
+#include "Patch/RegisterSize.h"
 #include "Utility/Assembly.h"
 #include "Utility/LogSys.h"
 #include "Utility/System.h"
@@ -62,6 +63,7 @@ Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs,
     llvm::InitializeAllAsmParsers();
     llvm::InitializeAllDisassemblers();
     initMemAccessInfo();
+    initRegisterSize();
 
     // Build features string
     if (cpu.empty()) {

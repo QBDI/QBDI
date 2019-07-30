@@ -86,8 +86,6 @@ public:
 
     size_t getUsedRegisterNumber();
 
-    unsigned getRegSize(unsigned reg);
-
     unsigned getSizedSubReg(unsigned reg, unsigned size);
 };
 

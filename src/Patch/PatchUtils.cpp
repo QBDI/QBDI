@@ -19,6 +19,7 @@
 #include "Platform.h"
 #include "Patch/PatchUtils.h"
 #include "Patch/InstInfo.h"
+#include "Patch/RegisterSize.h"
 #include "Utility/LogSys.h"
 
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
@@ -119,27 +120,17 @@ size_t TempManager::getUsedRegisterNumber() {
     return temps.size();
 }
 
-unsigned TempManager::getRegSize(unsigned reg) {
-    for(unsigned i = 0; i < MRI->getNumRegClasses(); i++) {
-        if(MRI->getRegClass(i).contains(reg)) {
-            return MRI->getRegClass(i).getPhysRegSize();
-        }
-    }
-    LogError("TempManager::getRegSize", "Register class for register %u not found", reg);
-    return 0;
-}
-
 unsigned TempManager::getSizedSubReg(unsigned reg, unsigned size) {
-    if(getRegSize(reg) == size) {
+    if(getRegisterSize(reg) == size) {
         return reg;
     }
     for(unsigned i = 1; i < MRI->getNumSubRegIndices(); i++) {
         unsigned subreg = MRI->getSubReg(reg, i);
-        if(subreg != 0 && getRegSize(subreg) == size) {
+        if(subreg != 0 && getRegisterSize(subreg) == size) {
             return subreg;
         }
     }
-    LogError("TempManager::getSizedSubReg", "No sub register of size %u found for register %u (%s)", size, reg, MRI->getName(reg), MRI->getRegClass(reg).getSize());
+    LogError("TempManager::getSizedSubReg", "No sub register of size %u found for register %u (%s)", size, reg, MRI->getName(reg));
     abort();
 }
 
