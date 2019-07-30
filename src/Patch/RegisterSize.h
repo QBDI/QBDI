@@ -23,6 +23,7 @@
 namespace QBDI {
 
 void initRegisterSize();
+
 uint16_t getRegisterSize(unsigned reg);
 
 };

@@ -101,6 +101,8 @@ typedef struct {
     // ANALYSIS_DISASSEMBLY
     char*       disassembly;        /*!< Instruction disassembly (warning: NULL if !ANALYSIS_DISASSEMBLY) */
     // ANALYSIS_OPERANDS
+    RegisterAccessType flagsAccess; /*!< Flag access type (noaccess, r, w, rw)
+                                         (warning: REGISTER_UNUSED if !ANALYSIS_OPERANDS) */
     uint8_t     numOperands;        /*!< Number of operands used by the instruction */
     OperandAnalysis* operands;      /*!< Structure containing analysis results of an operand provided by the VM.
                                          (warning: NULL if !ANALYSIS_OPERANDS) */

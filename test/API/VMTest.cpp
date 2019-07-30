@@ -62,7 +62,7 @@ QBDI_NOINLINE int dummyFunCall(int arg0) {
 
 #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
 #define MNEM_COUNT 5u
-#define MNEM_VALIDATION 123u
+#define MNEM_VALIDATION 128u
 #elif defined(QBDI_ARCH_ARM)
 #define MNEM_COUNT 1u
 #define MNEM_VALIDATION 25u
@@ -76,35 +76,36 @@ struct TestInst {
     uint32_t instSize;
     uint8_t numOperands;
     bool isCompare;
+    QBDI::RegisterAccessType flagsAccess;
     QBDI::OperandAnalysis operands[6];
 };
 
 #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
 struct TestInst TestInsts[MNEM_COUNT] = {
-    {3, 2, true, {
+    {3, 2, true, QBDI::REGISTER_WRITE, {
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 1, 8, 3, "DH", QBDI::REGISTER_READ},
            {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_NONE, MNEM_IMM_SHORT_VAL, 1, 0, 0, nullptr, QBDI::REGISTER_UNUSED},
         }
     },
 #if defined(QBDI_ARCH_X86_64)
-    {3, 2, true, {
+    {3, 2, true, QBDI::REGISTER_WRITE, {
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 0, "RAX", QBDI::REGISTER_READ},
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 1, "RBX", QBDI::REGISTER_READ},
         }
     },
 #else
-    {3, 2, true, {
+    {3, 2, true, QBDI::REGISTER_WRITE, {
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 2, 0, 0, "AX", QBDI::REGISTER_READ},
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 2, 0, 1, "BX", QBDI::REGISTER_READ},
         }
     },
 #endif
-    {5, 2, true, {
+    {5, 2, true, QBDI::REGISTER_WRITE, {
            {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_NONE, MNEM_IMM_VAL, 4, 0, 0, nullptr, QBDI::REGISTER_UNUSED},
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 4, 0, 0, "EAX", QBDI::REGISTER_READ},
         }
     },
-    {1, 4, false, {
+    {1, 4, false, QBDI::REGISTER_READ | QBDI::REGISTER_WRITE, {
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0, 5, QBDI::GPR_NAMES[5], QBDI::REGISTER_READ},
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0, 4, QBDI::GPR_NAMES[4], QBDI::REGISTER_READ},
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 4, 0, 5, "EDI", QBDI::REGISTER_READ_WRITE},
@@ -112,9 +113,9 @@ struct TestInst TestInsts[MNEM_COUNT] = {
         }
     },
 #if defined(QBDI_ARCH_X86_64)
-    {5, 5, true, {
+    {5, 5, true, QBDI::REGISTER_WRITE, {
 #else
-    {4, 5, true, {
+    {4, 5, true, QBDI::REGISTER_WRITE, {
 #endif
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, sizeof(QBDI::rword), 0, 0, QBDI::GPR_NAMES[0], QBDI::REGISTER_READ},
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0, 4, QBDI::GPR_NAMES[4], QBDI::REGISTER_READ},
@@ -354,6 +355,9 @@ QBDI::VMAction evilMnemCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBD
                     CHECKED_IF(!ana->isReturn)
                         CHECKED_IF(ana->isCompare)
                             info[1]++;
+        }
+        CHECKED_IF(ana->flagsAccess == currentInst.flagsAccess) {
+            info[1]++;
         }
         // validate number of analyzed operands
         CHECKED_IF(ana->numOperands == currentInst.numOperands) {
@@ -797,8 +801,8 @@ TEST_CASE("VMTest, MoveAssignmentOperator") {
     REQUIRE(retvalue == 780);
     REQUIRE(data1.reachEventCB);
     REQUIRE(data1.reachInstCB);
-    REQUIRE(( not data2.reachEventCB));
-    REQUIRE(( not data2.reachInstCB));
+    REQUIRE_FALSE(data2.reachEventCB);
+    REQUIRE_FALSE(data2.reachInstCB);
 }
 
 TEST_CASE("VMTest, CopyAssignmentOperator") {
@@ -841,7 +845,7 @@ TEST_CASE("VMTest, CopyAssignmentOperator") {
     REQUIRE(retvalue == 670);
     REQUIRE(data2.reachEventCB);
     REQUIRE(data2.reachInstCB);
-    REQUIRE(( not data2.reachCB2));
+    REQUIRE_FALSE(data2.reachCB2);
 
     data2.reachEventCB = false;
     data2.reachInstCB = false;
@@ -856,9 +860,9 @@ TEST_CASE("VMTest, CopyAssignmentOperator") {
     REQUIRE(data1.reachEventCB);
     REQUIRE(data1.reachInstCB);
     REQUIRE(data1.reachCB2);
-    REQUIRE(( not data2.reachEventCB));
-    REQUIRE(( not data2.reachInstCB));
-    REQUIRE(( not data2.reachCB2));
+    REQUIRE_FALSE(data2.reachEventCB);
+    REQUIRE_FALSE(data2.reachInstCB);
+    REQUIRE_FALSE(data2.reachCB2);
 
     data1.reachEventCB = false;
     data1.reachInstCB = false;
@@ -871,7 +875,7 @@ TEST_CASE("VMTest, CopyAssignmentOperator") {
     REQUIRE(data1.reachEventCB);
     REQUIRE(data1.reachInstCB);
     REQUIRE(data1.reachCB2);
-    REQUIRE(( not data2.reachEventCB));
-    REQUIRE(( not data2.reachInstCB));
-    REQUIRE(( not data2.reachCB2));
+    REQUIRE_FALSE(data2.reachEventCB);
+    REQUIRE_FALSE(data2.reachInstCB);
+    REQUIRE_FALSE(data2.reachCB2);
 }

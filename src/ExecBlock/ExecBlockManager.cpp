@@ -460,6 +460,18 @@ void ExecBlockManager::updateRegionStat(size_t r, rword translated) {
     }
 }
 
+static bool isFlagRegister(unsigned int regNo) {
+    if (GPR_ID[REG_FLAG] == regNo) {
+        return true;
+    }
+    for(size_t j = 0; j < size_FLAG_ID; j++) {
+        if (regNo == FLAG_ID[j]) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm::MCRegisterInfo& MRI) {
     opa.regName = MRI.getName(regNo);
     opa.value = regNo;
@@ -515,6 +527,10 @@ static void analyseImplicitRegisters(InstAnalysis* instAnalysis, const uint16_t*
     for (; *implicitRegs; ++implicitRegs) {
         OperandAnalysis topa;
         llvm::MCPhysReg regNo = *implicitRegs;
+        if (isFlagRegister(regNo)) {
+            instAnalysis->flagsAccess |= type;
+            continue;
+        }
         // skip register if in blacklist
         if(std::find_if(skipRegs.begin(), skipRegs.end(),
                 [&regNo, &MRI](const unsigned int skipRegNo) {
@@ -580,6 +596,10 @@ static void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst
             // something else (memory access)
             if (regNo == 0)
                 continue;
+            if (isFlagRegister(regNo)) {
+                instAnalysis->flagsAccess |= regWrites.test(i) ? REGISTER_WRITE : REGISTER_READ;
+                continue;
+            }
             // fill the operand analysis
             analyseRegister(opa, regNo, MRI);
             // we have'nt found a GPR (as size is only known for GPR)
