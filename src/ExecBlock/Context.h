@@ -23,7 +23,9 @@
 namespace QBDI {
 
 extern const unsigned int GPR_ID[];
+extern const unsigned int FLAG_ID[];
 extern const unsigned int size_GPR_ID;
+extern const unsigned int size_FLAG_ID;
 
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 // ============================================================================

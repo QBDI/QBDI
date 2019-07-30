@@ -24,6 +24,7 @@
 #include "Utility/LogSys.h"
 
 namespace QBDI {
+namespace {
 
 uint16_t REGISTER_1BYTE[] = {
     llvm::X86::AL,
@@ -121,9 +122,8 @@ uint16_t REGISTER_4BYTES[] = {
     llvm::X86::R13D,
     llvm::X86::R14D,
     llvm::X86::R15D,
-#ifdef QBDI_ARCH_X86
+    // RFLAGS isn't defined in llvm, the upper 32bits is never used
     llvm::X86::EFLAGS,
-#endif
 
 };
 
@@ -147,15 +147,6 @@ uint16_t REGISTER_8BYTES[] = {
     llvm::X86::R13,
     llvm::X86::R14,
     llvm::X86::R15,
-#ifdef QBDI_ARCH_X86_64
-    llvm::X86::EFLAGS,
-#endif
-
-};
-
-size_t REGISTER_8BYTES_SIZE = sizeof(REGISTER_8BYTES)/sizeof(uint16_t);
-
-uint16_t REGISTER_10BYTES[] = {
     llvm::X86::MM0,
     llvm::X86::MM1,
     llvm::X86::MM2,
@@ -164,6 +155,11 @@ uint16_t REGISTER_10BYTES[] = {
     llvm::X86::MM5,
     llvm::X86::MM6,
     llvm::X86::MM7,
+};
+
+size_t REGISTER_8BYTES_SIZE = sizeof(REGISTER_8BYTES)/sizeof(uint16_t);
+
+uint16_t REGISTER_10BYTES[] = {
     llvm::X86::ST0,
     llvm::X86::ST1,
     llvm::X86::ST2,
@@ -288,6 +284,8 @@ uint16_t REGISTER_64BYTES[] = {
 size_t REGISTER_64BYTES_SIZE = sizeof(REGISTER_64BYTES)/sizeof(uint16_t);
 
 uint16_t REGISTER_SIZE_TABLE[llvm::X86::NUM_TARGET_REGS] = {0};
+
+} // anonymous namespace
 
 void initRegisterSize() {
     for(size_t i = 0; i < REGISTER_1BYTE_SIZE; i++) {

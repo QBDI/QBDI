@@ -71,7 +71,7 @@ QBDI_EXPORT const StructDesc* qbdi_getOperandAnalysisStructDesc() {
 QBDI_EXPORT const StructDesc* qbdi_getInstAnalysisStructDesc() {
     static const StructDesc InstAnalysisDesc {
         sizeof(InstAnalysis),
-        17,
+        18,
         {
             offsetof(InstAnalysis, mnemonic),
             offsetof(InstAnalysis, disassembly),
@@ -85,6 +85,7 @@ QBDI_EXPORT const StructDesc* qbdi_getInstAnalysisStructDesc() {
             offsetof(InstAnalysis, isPredicable),
             offsetof(InstAnalysis, mayLoad),
             offsetof(InstAnalysis, mayStore),
+            offsetof(InstAnalysis, flagsAccess),
             offsetof(InstAnalysis, numOperands),
             offsetof(InstAnalysis, operands),
             offsetof(InstAnalysis, symbol),

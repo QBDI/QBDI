@@ -151,13 +151,17 @@ Analysis
 
     LLVM mnemonic (if ANALYSIS_INSTRUCTION)
 
-  .. js:attribute:: module
+  .. js:attribute:: flagsAccess
 
-    Instruction module name (if ANALYSIS_SYMBOL and found)
+    Flag access type (noaccess, r, w, rw) (if ANALYSIS_OPERANDS)
 
   .. js:attribute:: operands
 
     Structure containing analysis results of an operand provided by the VM (if ANALYSIS_OPERANDS)
+
+  .. js:attribute:: module
+
+    Instruction module name (if ANALYSIS_SYMBOL and found)
 
   .. js:attribute:: symbol
 

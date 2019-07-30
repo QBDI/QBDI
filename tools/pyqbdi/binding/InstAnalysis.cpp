@@ -132,6 +132,10 @@ void init_binding_InstAnalysis(py::module_& m) {
                     return get_InstAnalysis_member(obj, &InstAnalysis::disassembly, ANALYSIS_DISASSEMBLY);
                 }, "Instruction disassembly (if ANALYSIS_DISASSEMBLY)")
         // ANALYSIS_OPERANDS
+        .def_property_readonly("flagsAccess",
+                [](const InstAnalysis& obj) {
+                    return get_InstAnalysis_member(obj, &InstAnalysis::flagsAccess, ANALYSIS_OPERANDS);
+                }, "Flag access type (noaccess, r, w, rw) (if ANALYSIS_OPERANDS)")
         .def_property_readonly("numOperands",
                 [](const InstAnalysis& obj) {
                     return get_InstAnalysis_member(obj, &InstAnalysis::numOperands, ANALYSIS_OPERANDS);
