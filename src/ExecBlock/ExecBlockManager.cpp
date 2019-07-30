@@ -18,6 +18,7 @@
 #include "Platform.h"
 #include "ExecBlock/ExecBlockManager.h"
 #include "Patch/PatchRule.h"
+#include "Patch/RegisterSize.h"
 #include "Utility/LogSys.h"
 
 #include <cstdint>
@@ -338,12 +339,10 @@ static void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm
         if (MRI.isSubRegisterEq(GPR_ID[j], regNo)) {
             if (GPR_ID[j] != regNo) {
                 unsigned int subregidx = MRI.getSubRegIndex(GPR_ID[j], regNo);
-                opa.size = MRI.getSubRegIdxSize(subregidx) / CHAR_BIT; // size is in bits, we want bytes
                 opa.regOff = MRI.getSubRegIdxOffset(subregidx);
-            } else {
-                opa.size = sizeof(rword);
             }
             opa.regCtxIdx = j;
+            opa.size = getRegisterSize(regNo);
             break;
         }
     }
@@ -436,6 +435,8 @@ static void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst
         const llvm::MCOperandInfo& opdesc = desc.OpInfo[i];
         // fill a new operand analysis
         OperandAnalysis& opa = instAnalysis->operands[instAnalysis->numOperands];
+        // reinitialise the opa if a previous iteration has write some value
+        opa = OperandAnalysis();
         if (!op.isValid()) {
             continue;
         }
@@ -455,12 +456,6 @@ static void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst
             if (opa.size == 0) {
                 // TODO: add support for more registers
                 continue;
-            }
-            // update register size using class
-            if (!opdesc.isLookupPtrRegClass() &&
-                (static_cast<unsigned int>(opdesc.RegClass) < numClasses)) {
-                const llvm::MCRegisterClass& regclass = MRI.getRegClass(opdesc.RegClass);
-                opa.size = regclass.getSize();
             }
             opa.type = OPERAND_GPR;
             opa.regAccess = regWrites.test(i) ? REGISTER_WRITE : REGISTER_READ;
