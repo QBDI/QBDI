@@ -9,16 +9,16 @@ configuration:
 
 environment:
   PYTHON: "C:\\Python35-x64"
-  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-  CMAKE_TEMPLATE: Visual Studio 14 2015
+  APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+  CMAKE_TEMPLATE: Visual Studio 15 2017
   matrix:
     - platform: X64
       qbdi_plateform: win-X86_64
-      VS_string: "Visual Studio 14 2015 Win64"
+      VS_string: "Visual Studio 15 2017 Win64"
       cmake_platform_args: "-Thost=x64"
     - platform: X86
       qbdi_plateform: win-X86
-      VS_string: "Visual Studio 14 2015"
+      VS_string: "Visual Studio 15 2017"
       cmake_platform_args: ""
 
 
@@ -41,7 +41,7 @@ install:
   - cmd: cd build
 
 build_script:
-  - "\"C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\vcvarsall.bat\" %Platform%"
+  - "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat\" %Platform%"
   - cmd: cmake .. -G "%VS_string%" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DPLATFORM=%qbdi_plateform% -DEXAMPLES=TRUE %cmake_platform_args%
   - ps: if (-not((Test-Path("../deps/llvm/$env:qbdi_plateform/lib")) -and (Test-Path("../deps/llvm/$env:qbdi_plateform/include")))) { MSbuild deps\llvm.vcxproj /p:Configuration=$env:configuration,Platform=$env:platform /m:3 }
   - cmd: python ..\deps\llvm\build.py clean %qbdi_plateform%
