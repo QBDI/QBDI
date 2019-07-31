@@ -37,7 +37,7 @@ elif sys.argv[1] == "build":
         shutil.rmtree("build")
     os.mkdir("build")
     subprocess.check_call(["cmake", "../googletest-release-" + VERSION,
-                           "-G", "Visual Studio 15 2017",
+                           "-G", "Visual Studio 16 2019", "-A", "Win32",
                            "-DCMAKE_BUILD_TYPE=Release",
                            "-DCMAKE_CXX_FLAGS=/D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING",
                            "-Dgtest_force_shared_crt=On"], cwd="build")
