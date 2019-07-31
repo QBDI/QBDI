@@ -66,13 +66,7 @@ class CMakeBuild(build_ext):
         build_args = ['--config', 'Release']
 
         if platform.system() == "Windows":
-            build_args += ['--', '/m']
-            if sys.maxsize > 2**32:
-                cmake_args += ['-G', 'Visual Studio 14 2015 Win64', '-Thost=x64']
-                build_args += ["/p:Platform=X64"]
-            else:
-                cmake_args += ['-G', 'Visual Studio 14 2015']
-                build_args += ["/p:Platform=X86"]
+            cmake_args += ["-G", "Ninja"]
         else:
             cmake_args += ['-DTOOLS_QBDIPRELOAD=On']
             build_args += ['--', '-j4']

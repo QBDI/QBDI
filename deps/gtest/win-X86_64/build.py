@@ -37,13 +37,11 @@ elif sys.argv[1] == "build":
         shutil.rmtree("build")
     os.mkdir("build")
     subprocess.check_call(["cmake", "../googletest-release-" + VERSION,
-                           "-G", "Visual Studio 14 2015 Win64",
-                           "-Thost=x64",
+                           "-G", "Ninja",
                            "-DCMAKE_BUILD_TYPE=Release",
                            "-DCMAKE_CXX_FLAGS=/D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING",
                            "-Dgtest_force_shared_crt=On"], cwd="build")
-    subprocess.check_call(["MSBuild.exe", "ALL_BUILD.vcxproj",
-                           "/p:Configuration=Release,Platform=X64"],
+    subprocess.check_call(["ninja"],
                           cwd="build")
 elif sys.argv[1] == "package":
     if os.path.exists("lib"):
@@ -52,7 +50,7 @@ elif sys.argv[1] == "package":
         shutil.rmtree("include")
     os.makedirs("lib")
     for file_ in ("gtest.lib", "gtest_main.lib"):
-        shutil.copy(os.path.join("build", "Release", file_), "lib")
+        shutil.copy(os.path.join("build", file_), "lib")
     shutil.copytree(os.path.join("googletest-release-" + VERSION, "include"),
                     "include")
 elif sys.argv[1] == "clean":

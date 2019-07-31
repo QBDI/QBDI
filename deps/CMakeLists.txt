@@ -18,7 +18,7 @@ if (NOT (LLVMLibFile AND LLVMIncludeFile))
     set(DEPENDENCY_SATISFIED Off PARENT_SCOPE)
     message(WARNING "\n"
         "    LLVM is not build for this platform,\n"
-        "    first execute make llvm then rerun cmake\n")
+        "    first execute make|ninja llvm then rerun cmake\n")
 endif()
 
 # Google Test
@@ -47,6 +47,6 @@ if(TEST_QBDI)
         set(DEPENDENCY_SATISFIED Off PARENT_SCOPE)
         message(WARNING "\n"
             "    Google Test is not build for this platform,\n"
-            "    first execute make gtest then rerun cmake\n")
+            "    first execute make|ninja gtest then rerun cmake\n")
     endif()
 endif()
