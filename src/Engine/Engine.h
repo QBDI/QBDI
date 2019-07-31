@@ -112,7 +112,7 @@ public:
     Engine(const std::string& cpu = "", const std::vector<std::string>& mattrs = {}, VMInstanceRef vminstance = nullptr);
 
     ~Engine();
-    
+
     /*! Obtain the current general purpose register state.
      *
      * @return A structure containing the GPR state.
@@ -159,7 +159,7 @@ public:
      */
     bool         addInstrumentedModuleFromAddr(rword addr);
 
-    /*! Adds all the executable memory maps to the instrumented range set. 
+    /*! Adds all the executable memory maps to the instrumented range set.
      * @return  True if at least one range was added to the instrumented ranges.
      */
     bool         instrumentAllExecutableMaps();
@@ -201,11 +201,12 @@ public:
     /*! Add a custom instrumentation rule to the engine. Requires internal headers
      *
      * @param[in] rule A custom instrumentation rule.
+     * @param[in] top_list Place the rule before all existing rules of its category
      *
      * @return The id of the registered instrumentation (or VMError::INVALID_EVENTID
      * in case of failure).
      */
-    uint32_t addInstrRule(InstrRule rule);
+    uint32_t addInstrRule(InstrRule rule, bool top_list);
 
     /*! Register a callback event for a specific VM event.
      *
@@ -231,7 +232,7 @@ public:
     void        deleteAllInstrumentations();
 
     /*! Obtain the analysis of an instruction metadata. Analysis results are cached in the VM.
-     *  The validity of the returned pointer is only guaranteed until the end of the callback, else 
+     *  The validity of the returned pointer is only guaranteed until the end of the callback, else
      *  a deepcopy of the structure is required.
      *
      * @param[in] instMetadata Metadata to analyze.

@@ -199,7 +199,7 @@ bool VM::callV(rword* retval, rword function, uint32_t argNum, va_list ap) {
 }
 
 uint32_t VM::addInstrRule(InstrRule rule) {
-    return engine->addInstrRule(rule);
+    return engine->addInstrRule(rule, false);
 }
 
 uint32_t VM::addMnemonicCB(const char* mnemonic, InstPosition pos, InstCallback cbk, void *data) {
@@ -341,7 +341,7 @@ bool VM::recordMemoryAccess(MemoryAccessType type) {
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
     if(type & MEMORY_READ && !(memoryLoggingLevel & MEMORY_READ)) {
         memoryLoggingLevel |= MEMORY_READ;
-        addInstrRule(InstrRule(
+        engine->addInstrRule(InstrRule(
             DoesReadAccess(),
             {
                 GetReadAddress(Temp(0)),
@@ -351,11 +351,11 @@ bool VM::recordMemoryAccess(MemoryAccessType type) {
             },
             PREINST,
             false
-        ));
+        ), true); // force the rule to be the first of PREINST
     }
     if(type & MEMORY_WRITE && !(memoryLoggingLevel & MEMORY_WRITE)) {
         memoryLoggingLevel |= MEMORY_WRITE;
-        addInstrRule(InstrRule(
+        engine->addInstrRule(InstrRule(
             DoesWriteAccess(),
             {
                 GetWriteAddress(Temp(0)),
@@ -365,7 +365,7 @@ bool VM::recordMemoryAccess(MemoryAccessType type) {
             },
             POSTINST,
             false
-        ));
+        ), true); // force the rule to be the first of POSTINST
     }
     return true;
 #else
