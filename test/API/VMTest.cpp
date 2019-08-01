@@ -73,7 +73,7 @@ QBDI_NOINLINE int dummyFunCall(int arg0) {
 
 #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
 #define MNEM_COUNT 5u
-#define MNEM_VALIDATION 123u
+#define MNEM_VALIDATION 159u
 #elif defined(QBDI_ARCH_ARM)
 #define MNEM_COUNT 1u
 #define MNEM_VALIDATION 25u
@@ -92,46 +92,53 @@ struct TestInst {
 
 #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
 struct TestInst TestInsts[MNEM_COUNT] = {
-    {3, 2, true, {
+    {3, 3, true, {
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 1, 8, 3, "DH", QBDI::REGISTER_READ},
            {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_NONE, MNEM_IMM_SHORT_VAL, 1, 0, 0, NULL, QBDI::REGISTER_UNUSED},
+           {QBDI::OPERAND_FLAG, QBDI::OPERANDFLAG_NONE, 0, 32, 0, QBDI::REG_FLAG, "EFLAGS", QBDI::REGISTER_WRITE},
         }
     },
 #if defined(QBDI_ARCH_X86_64)
-    {3, 2, true, {
+    {3, 3, true, {
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 0, "RAX", QBDI::REGISTER_READ},
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 1, "RBX", QBDI::REGISTER_READ},
+           {QBDI::OPERAND_FLAG, QBDI::OPERANDFLAG_NONE, 0, 32, 0, QBDI::REG_FLAG, "EFLAGS", QBDI::REGISTER_WRITE},
         }
     },
 #else
-    {3, 2, true, {
+    {3, 3, true, {
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 2, 0, 0, "AX", QBDI::REGISTER_READ},
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 2, 0, 1, "BX", QBDI::REGISTER_READ},
+           {QBDI::OPERAND_FLAG, QBDI::OPERANDFLAG_NONE, 0, 32, 0, QBDI::REG_FLAG, "EFLAGS", QBDI::REGISTER_WRITE},
         }
     },
 #endif
-    {5, 2, true, {
+    {5, 3, true, {
            {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_NONE, MNEM_IMM_VAL, 4, 0, 0, NULL, QBDI::REGISTER_UNUSED},
+           {QBDI::OPERAND_FLAG, QBDI::OPERANDFLAG_NONE, 0, 32, 0, QBDI::REG_FLAG, "EFLAGS", QBDI::REGISTER_WRITE},
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 4, 0, 0, "EAX", QBDI::REGISTER_READ},
         }
     },
-    {1, 4, false, {
+    {1, 6, false, {
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0, 5, QBDI::GPR_NAMES[5], QBDI::REGISTER_READ},
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0, 4, QBDI::GPR_NAMES[4], QBDI::REGISTER_READ},
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 4, 0, 5, "EDI", QBDI::REGISTER_READ_WRITE},
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 4, 0, 4, "ESI", QBDI::REGISTER_READ_WRITE},
+           {QBDI::OPERAND_FLAG, QBDI::OPERANDFLAG_NONE, 0, 32, 0, QBDI::REG_FLAG, "EFLAGS", QBDI::REGISTER_WRITE},
+           {QBDI::OPERAND_FLAG, QBDI::OPERANDFLAG_NONE, 0, 1, 14, QBDI::REG_FLAG, "DF", QBDI::REGISTER_READ},
         }
     },
 #if defined(QBDI_ARCH_X86_64)
-    {5, 5, true, {
+    {5, 6, true, {
 #else
-    {4, 5, true, {
+    {4, 6, true, {
 #endif
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, sizeof(QBDI::rword), 0, 0, QBDI::GPR_NAMES[0], QBDI::REGISTER_READ},
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0, 4, QBDI::GPR_NAMES[4], QBDI::REGISTER_READ},
            {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_ADDR, 1, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0, 5, QBDI::GPR_NAMES[5], QBDI::REGISTER_READ},
            {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_ADDR, 3, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
+           {QBDI::OPERAND_FLAG, QBDI::OPERANDFLAG_NONE, 0, 32, 0, QBDI::REG_FLAG, "EFLAGS", QBDI::REGISTER_WRITE},
         }
     },
 };
@@ -343,7 +350,7 @@ QBDI::VMAction evilMnemCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBD
         info[1]++;
         // validate address
         if (TEST_GUARD(ana->address >= (QBDI::rword) &satanicFun &&
-            ana->address < (((QBDI::rword) &satanicFun) + 100))) {
+            ana->address < (((QBDI::rword) &satanicFun) + 0x100))) {
             info[1]++;
         }
         // validate inst size

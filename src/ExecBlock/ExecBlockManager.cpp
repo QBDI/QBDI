@@ -350,6 +350,21 @@ static void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm
             return;
         }
     }
+    if (GPR_ID[REG_FLAG] == regNo) {
+        opa.regCtxIdx = REG_FLAG;
+        opa.size = getRegisterSize(regNo) * 8;
+        opa.type = OPERAND_FLAG;
+        return;
+    }
+    for (uint16_t j = 0; j < sizeof(rword)*8; j++) {
+        if (regNo == FLAG_ID[j]) {
+            opa.regCtxIdx = REG_FLAG;
+            opa.regOff = j;
+            opa.size = getRegisterBitsSize(regNo);
+            opa.type = OPERAND_FLAG;
+            return;
+        }
+    }
 }
 
 static void tryMergeCurrentRegister(InstAnalysis* instAnalysis) {

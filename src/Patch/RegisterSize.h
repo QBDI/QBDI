@@ -24,7 +24,12 @@
 namespace QBDI {
 
 void initRegisterSize();
+
+// return size in bytes, 0 if unknown or < 8 bits
 uint16_t getRegisterSize(unsigned reg);
+
+// return size in bits, 0 if unknown
+uint16_t getRegisterBitsSize(unsigned reg);
 
 };
 

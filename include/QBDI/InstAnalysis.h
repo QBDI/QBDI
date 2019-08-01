@@ -45,6 +45,7 @@ typedef enum {
     _QBDI_EI(OPERAND_IMM),          /*!< Immediate operand */
     _QBDI_EI(OPERAND_GPR),          /*!< Register operand */
     _QBDI_EI(OPERAND_PRED),         /*!< Predicate operand */
+    _QBDI_EI(OPERAND_FLAG),         /*!< Flag operand */
 } OperandType;
 
 typedef enum {
@@ -63,7 +64,7 @@ typedef struct {
     OperandType        type;       /*!< Operand type */
     OperandFlag        flag;       /*!< Operand flag */
     rword              value;      /*!< Operand value (if immediate), or register Id */
-    uint8_t            size;       /*!< Operand size (in bytes) */
+    uint8_t            size;       /*!< Operand size (in bytes, unless OPERAND_FLAG in bits) */
     // Register specific fields
     uint8_t            regOff;     /*!< Sub-register offset in register (in bits) */
     uint16_t           regCtxIdx;  /*!< Register index in VM state */

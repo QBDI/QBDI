@@ -58,7 +58,21 @@ static const unsigned int GPR_ID[] = {
     llvm::X86::ESI, llvm::X86::EDI, llvm::X86::EBP, llvm::X86::ESP,
     llvm::X86::EIP, llvm::X86::EFLAGS
 };
+
 #endif
+
+// only DF is defined in llvm
+static const unsigned int FLAG_ID[] = {
+    llvm::X86::NoRegister, llvm::X86::NoRegister, llvm::X86::NoRegister, llvm::X86::NoRegister,
+    llvm::X86::NoRegister, llvm::X86::NoRegister, llvm::X86::NoRegister, llvm::X86::NoRegister,
+    llvm::X86::NoRegister, llvm::X86::NoRegister, llvm::X86::NoRegister, llvm::X86::NoRegister,
+    llvm::X86::NoRegister, llvm::X86::NoRegister, llvm::X86::DF, llvm::X86::NoRegister,
+    llvm::X86::NoRegister, llvm::X86::NoRegister, llvm::X86::NoRegister, llvm::X86::NoRegister,
+    llvm::X86::NoRegister, llvm::X86::NoRegister, llvm::X86::NoRegister, llvm::X86::NoRegister,
+    llvm::X86::NoRegister, llvm::X86::NoRegister, llvm::X86::NoRegister, llvm::X86::NoRegister,
+    llvm::X86::NoRegister, llvm::X86::NoRegister, llvm::X86::NoRegister, llvm::X86::NoRegister,
+};
+
 
 /*! X86 / X86_64 Host context.
  */

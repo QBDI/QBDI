@@ -22,6 +22,12 @@
 
 namespace QBDI {
 
+uint16_t FLAG_1BIT[] = {
+    llvm::X86::DF,
+};
+
+size_t FLAG_1BIT_SIZE = sizeof(FLAG_1BIT)/sizeof(uint16_t);
+
 uint16_t REGISTER_1BYTE[] = {
     llvm::X86::AL,
     llvm::X86::BL,
@@ -118,9 +124,8 @@ uint16_t REGISTER_4BYTES[] = {
     llvm::X86::R13D,
     llvm::X86::R14D,
     llvm::X86::R15D,
-#ifdef QBDI_ARCH_X86
+    // RFLAGS isn't defined in llvm, the upper 32bits is never used
     llvm::X86::EFLAGS,
-#endif
 
 };
 
@@ -144,15 +149,6 @@ uint16_t REGISTER_8BYTES[] = {
     llvm::X86::R13,
     llvm::X86::R14,
     llvm::X86::R15,
-#ifdef QBDI_ARCH_X86_64
-    llvm::X86::EFLAGS,
-#endif
-
-};
-
-size_t REGISTER_8BYTES_SIZE = sizeof(REGISTER_8BYTES)/sizeof(uint16_t);
-
-uint16_t REGISTER_10BYTES[] = {
     llvm::X86::MM0,
     llvm::X86::MM1,
     llvm::X86::MM2,
@@ -161,6 +157,11 @@ uint16_t REGISTER_10BYTES[] = {
     llvm::X86::MM5,
     llvm::X86::MM6,
     llvm::X86::MM7,
+};
+
+size_t REGISTER_8BYTES_SIZE = sizeof(REGISTER_8BYTES)/sizeof(uint16_t);
+
+uint16_t REGISTER_10BYTES[] = {
     llvm::X86::ST0,
     llvm::X86::ST1,
     llvm::X86::ST2,
@@ -287,38 +288,53 @@ size_t REGISTER_64BYTES_SIZE = sizeof(REGISTER_64BYTES)/sizeof(uint16_t);
 uint16_t REGISTER_SIZE_TABLE[llvm::X86::NUM_TARGET_REGS] = {0};
 
 void initRegisterSize() {
+    for(size_t i = 0; i < FLAG_1BIT_SIZE; i++) {
+        REGISTER_SIZE_TABLE[FLAG_1BIT[i]] = 1;
+    }
     for(size_t i = 0; i < REGISTER_1BYTE_SIZE; i++) {
-        REGISTER_SIZE_TABLE[REGISTER_1BYTE[i]] = 1;
+        REGISTER_SIZE_TABLE[REGISTER_1BYTE[i]] = 1 * 8;
     }
     for(size_t i = 0; i < REGISTER_2BYTES_SIZE; i++) {
-        REGISTER_SIZE_TABLE[REGISTER_2BYTES[i]] = 2;
+        REGISTER_SIZE_TABLE[REGISTER_2BYTES[i]] = 2 * 8;
     }
     for(size_t i = 0; i < REGISTER_4BYTES_SIZE; i++) {
-        REGISTER_SIZE_TABLE[REGISTER_4BYTES[i]] = 4;
+        REGISTER_SIZE_TABLE[REGISTER_4BYTES[i]] = 4 * 8;
     }
     for(size_t i = 0; i < REGISTER_8BYTES_SIZE; i++) {
-        REGISTER_SIZE_TABLE[REGISTER_8BYTES[i]] = 8;
+        REGISTER_SIZE_TABLE[REGISTER_8BYTES[i]] = 8 * 8;
     }
     for(size_t i = 0; i < REGISTER_10BYTES_SIZE; i++) {
-        REGISTER_SIZE_TABLE[REGISTER_10BYTES[i]] = 10;
+        REGISTER_SIZE_TABLE[REGISTER_10BYTES[i]] = 10 * 8;
     }
     for(size_t i = 0; i < REGISTER_16BYTES_SIZE; i++) {
-        REGISTER_SIZE_TABLE[REGISTER_16BYTES[i]] = 16;
+        REGISTER_SIZE_TABLE[REGISTER_16BYTES[i]] = 16 * 8;
     }
     for(size_t i = 0; i < REGISTER_32BYTES_SIZE; i++) {
-        REGISTER_SIZE_TABLE[REGISTER_32BYTES[i]] = 32;
+        REGISTER_SIZE_TABLE[REGISTER_32BYTES[i]] = 32 * 8;
     }
     for(size_t i = 0; i < REGISTER_64BYTES_SIZE; i++) {
-        REGISTER_SIZE_TABLE[REGISTER_64BYTES[i]] = 64;
+        REGISTER_SIZE_TABLE[REGISTER_64BYTES[i]] = 64 * 8;
     }
 }
 
 uint16_t getRegisterSize(unsigned reg) {
-    if(reg < llvm::X86::NUM_TARGET_REGS)
-        return REGISTER_SIZE_TABLE[reg];
+    if(reg >= llvm::X86::NUM_TARGET_REGS) {
+        LogError("getRegisterSize", "No register %u", reg);
+        return 0;
+    }
+    if (REGISTER_SIZE_TABLE[reg] % 8 != 0)
+        LogWarning("getRegisterSize", "The size of register %d is not in bytes (%d bits)", reg, REGISTER_SIZE_TABLE[reg]);
 
-    LogError("getRegisterSize", "No register %u", reg);
-    return 0;
+    return REGISTER_SIZE_TABLE[reg] / 8;
+}
+
+uint16_t getRegisterBitsSize(unsigned reg) {
+    if(reg >= llvm::X86::NUM_TARGET_REGS) {
+        LogError("getRegisterSize", "No register %u", reg);
+        return 0;
+    }
+
+    return REGISTER_SIZE_TABLE[reg];
 }
 
 } // namespace QBDI

@@ -160,12 +160,19 @@ static const char* const GPR_NAMES[] = {
     "EFLAGS"
 };
 
+static const char* const FLAG_NAMES[] = {
+    "CF",   "", "PF",   "", "AF",   "", "ZF", "SF",
+    "TF", "IF", "DF", "OF", "IOPL", "IOPL", "NT", "",
+    "RF", "VM", "AC", "VIF", "VIP", "ID"
+};
+
 static const unsigned int NUM_GPR = 9;
 static const unsigned int AVAILABLE_GPR = 6;
 static const unsigned int REG_RETURN = 0;
 static const unsigned int REG_BP = 6;
 static const unsigned int REG_SP = 7;
 static const unsigned int REG_PC = 8;
+static const unsigned int REG_FLAG = 9;
 
 #endif // QBDI_ARCH_X86
 
@@ -295,12 +302,19 @@ static const char* const GPR_NAMES[] = {
     "EFLAGS"
 };
 
+static const char* const FLAG_NAMES[] = {
+    "CF",   "", "PF",   "", "AF",   "", "ZF", "SF",
+    "TF", "IF", "DF", "OF", "IOPL", "IOPL", "NT", "",
+    "RF", "VM", "AC", "VIF", "VIP", "ID"
+};
+
 static const unsigned int NUM_GPR = 17;
 static const unsigned int AVAILABLE_GPR = 14;
 static const unsigned int REG_RETURN = 0;
 static const unsigned int REG_BP = 14;
 static const unsigned int REG_SP = 15;
 static const unsigned int REG_PC = 16;
+static const unsigned int REG_FLAG = 17;
 
 #endif // QBDI_ARCH_X86_64
 
@@ -376,6 +390,7 @@ static const unsigned int REG_BP = 12;
 static const unsigned int REG_SP = 13;
 static const unsigned int REG_LR = 14;
 static const unsigned int REG_PC = 15;
+static const unsigned int REG_FLAG = 16;
 
 #endif // QBDI_ARCH_ARM
 
