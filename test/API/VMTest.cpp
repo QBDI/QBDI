@@ -72,8 +72,8 @@ QBDI_NOINLINE int dummyFunCall(int arg0) {
 
 
 #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
-#define MNEM_COUNT 4u
-#define MNEM_VALIDATION 61u
+#define MNEM_COUNT 5u
+#define MNEM_VALIDATION 123u
 #elif defined(QBDI_ARCH_ARM)
 #define MNEM_COUNT 1u
 #define MNEM_VALIDATION 25u
@@ -87,36 +87,52 @@ struct TestInst {
     uint32_t instSize;
     uint8_t numOperands;
     bool isCompare;
-    QBDI::OperandAnalysis operands[3];
+    QBDI::OperandAnalysis operands[6];
 };
 
 #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
 struct TestInst TestInsts[MNEM_COUNT] = {
     {3, 2, true, {
-           {QBDI::OPERAND_GPR, 0, 1, 8, 3, "DH", QBDI::REGISTER_READ},
-           // FIXME: immediate size is not implemented
-           {QBDI::OPERAND_IMM, MNEM_IMM_SHORT_VAL, 1, 0, 0, NULL, QBDI::REGISTER_UNUSED},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 1, 8, 3, "DH", QBDI::REGISTER_READ},
+           {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_NONE, MNEM_IMM_SHORT_VAL, 1, 0, 0, NULL, QBDI::REGISTER_UNUSED},
         }
     },
 #if defined(QBDI_ARCH_X86_64)
     {3, 2, true, {
-           {QBDI::OPERAND_GPR, 0, 8, 0, 0, "RAX", QBDI::REGISTER_READ},
-           {QBDI::OPERAND_GPR, 0, 8, 0, 1, "RBX", QBDI::REGISTER_READ},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 0, "RAX", QBDI::REGISTER_READ},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 1, "RBX", QBDI::REGISTER_READ},
         }
     },
 #else
     {3, 2, true, {
-           {QBDI::OPERAND_GPR, 0, 2, 0, 0, "AX", QBDI::REGISTER_READ},
-           {QBDI::OPERAND_GPR, 0, 2, 0, 1, "BX", QBDI::REGISTER_READ},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 2, 0, 0, "AX", QBDI::REGISTER_READ},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 2, 0, 1, "BX", QBDI::REGISTER_READ},
         }
     },
 #endif
     {5, 2, true, {
-           {QBDI::OPERAND_IMM, MNEM_IMM_VAL, 4, 0, 0, NULL, QBDI::REGISTER_UNUSED},
-           {QBDI::OPERAND_GPR, 0, 4, 0, 0, "EAX", QBDI::REGISTER_READ},
+           {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_NONE, MNEM_IMM_VAL, 4, 0, 0, NULL, QBDI::REGISTER_UNUSED},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 4, 0, 0, "EAX", QBDI::REGISTER_READ},
         }
     },
-    {1, 0, false, {}
+    {1, 4, false, {
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0, 5, QBDI::GPR_NAMES[5], QBDI::REGISTER_READ},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0, 4, QBDI::GPR_NAMES[4], QBDI::REGISTER_READ},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 4, 0, 5, "EDI", QBDI::REGISTER_READ_WRITE},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 4, 0, 4, "ESI", QBDI::REGISTER_READ_WRITE},
+        }
+    },
+#if defined(QBDI_ARCH_X86_64)
+    {5, 5, true, {
+#else
+    {4, 5, true, {
+#endif
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, sizeof(QBDI::rword), 0, 0, QBDI::GPR_NAMES[0], QBDI::REGISTER_READ},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0, 4, QBDI::GPR_NAMES[4], QBDI::REGISTER_READ},
+           {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_ADDR, 1, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0, 5, QBDI::GPR_NAMES[5], QBDI::REGISTER_READ},
+           {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_ADDR, 3, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
+        }
     },
 };
 #elif defined(QBDI_ARCH_ARM)
@@ -135,16 +151,19 @@ QBDI_NOSTACKPROTECTOR QBDI_NOINLINE QBDI::rword satanicFun(QBDI::rword arg0) {
     QBDI::rword volatile res = arg0 + 0x666;
 #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
     QBDI::rword p = 0x42;
+    QBDI::rword v[2] = {0x67, 0x45};
  #ifndef QBDI_OS_WIN
     asm("cmp $" MNEM_IMM_SHORT_STRVAL ", %%dh" ::: "dh");
   #if defined(QBDI_ARCH_X86_64)
     asm("cmp %%rbx, %%rax" ::: "rbx", "rax");
     asm("cmp $" MNEM_IMM_STRVAL ", %%eax" ::: "eax"); // explicit register
     asm("movq %0, %%rdi; movq %1, %%rsi; cmpsb %%es:(%%rdi), (%%rsi)"::"r"(&p), "r"(&p): "rdi", "rsi");
+    asm("mov %0, %%rdi; mov $1, %%rsi; cmp 0x3(%%rsi,%%rdi,1), %%rax"::"r"(v): "rdi", "rsi", "rax");
   #else
     asm("cmp %%bx, %%ax" ::: "bx", "ax");
     asm("cmp $" MNEM_IMM_STRVAL ", %%eax" ::: "eax"); // explicit register
     asm("mov %0, %%edi; mov %1, %%esi; cmpsb %%es:(%%edi), (%%esi)"::"r"(&p), "r"(&p): "edi", "esi");
+    asm("mov %0, %%edi; mov $1, %%esi; cmp 0x3(%%esi,%%edi,1), %%eax"::"r"(v): "edi", "esi", "eax");
   #endif
  #endif
 #elif defined(QBDI_ARCH_ARM)
