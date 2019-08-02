@@ -46,6 +46,8 @@ typedef enum {
     _QBDI_EI(OPERAND_IMM),          /*!< Immediate operand */
     _QBDI_EI(OPERAND_GPR),          /*!< Register operand */
     _QBDI_EI(OPERAND_PRED),         /*!< Predicate operand */
+    _QBDI_EI(OPERAND_FPR),          /*!< Float register operand */
+    _QBDI_EI(OPERAND_SEG),          /*!< Segment or unsaved register operand */
 } OperandType;
 
 typedef enum {
@@ -67,7 +69,7 @@ typedef struct {
     uint8_t            size;       /*!< Operand size (in bytes) */
     // Register specific fields
     uint8_t            regOff;     /*!< Sub-register offset in register (in bits) */
-    uint16_t           regCtxIdx;  /*!< Register index in VM state */
+    int16_t            regCtxIdx;  /*!< Register index in VM state (< 0 if not know) */
     const char*        regName;    /*!< Register name */
     RegisterAccessType regAccess;  /*!< Register access type (r, w, rw) */
 } OperandAnalysis;
