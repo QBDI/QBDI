@@ -30,11 +30,11 @@ namespace QBDI {
  */
 typedef enum {
     _QBDI_EI(CONTINUE)    = 0, /*!< The execution of the basic block continues. */
-    _QBDI_EI(BREAK_TO_VM) = 1, /*!< The execution breaks and returns to the VM causing a complete reevaluation of 
-                                *   the execution state. A BREAK_TO_VM is needed to ensure that modifications of 
+    _QBDI_EI(BREAK_TO_VM) = 1, /*!< The execution breaks and returns to the VM causing a complete reevaluation of
+                                *   the execution state. A BREAK_TO_VM is needed to ensure that modifications of
                                 *   the Program Counter or the program code are taken into account.
                                 */
-    _QBDI_EI(STOP)        = 2, /*!< Stops the execution of the program. This causes the run function to return 
+    _QBDI_EI(STOP)        = 2, /*!< Stops the execution of the program. This causes the run function to return
                                 *   early.
                                 */
 } VMAction;
@@ -49,11 +49,11 @@ typedef VMInstance* VMInstanceRef;
 #endif
 
 /*! Instruction callback function type.
- * 
+ *
  * @param[in] vm            VM instance of the callback.
- * @param[in] gprState      A structure containing the state of the General Purpose Registers. Modifying 
+ * @param[in] gprState      A structure containing the state of the General Purpose Registers. Modifying
  *                          it affects the VM execution accordingly.
- * @param[in] fprState      A structure containing the state of the Floating Point Registers. Modifying 
+ * @param[in] fprState      A structure containing the state of the Floating Point Registers. Modifying
  *                          it affects the VM execution accordingly.
  * @param[in] data          User defined data which can be defined when registering the callback.
  *
@@ -96,12 +96,12 @@ typedef struct {
 } VMState;
 
 /*! VM callback function type.
- * 
+ *
  * @param[in] vm            VM instance of the callback.
  * @param[in] vmState       A structure containing the current state of the VM.
- * @param[in] gprState      A structure containing the state of the General Purpose Registers. Modifying 
+ * @param[in] gprState      A structure containing the state of the General Purpose Registers. Modifying
  *                          it affects the VM execution accordingly.
- * @param[in] fprState      A structure containing the state of the Floating Point Registers. Modifying 
+ * @param[in] fprState      A structure containing the state of the Floating Point Registers. Modifying
  *                          it affects the VM execution accordingly.
  * @param[in] data          User defined data which can be defined when registering the callback.
  *
@@ -128,8 +128,8 @@ _QBDI_ENABLE_BITMASK_OPERATORS(MemoryAccessType);
 typedef struct {
     rword instAddress;     /*!< Address of instruction making the access */
     rword accessAddress;   /*!< Address of accessed memory */
-    rword value;           /*!< Value read from / written to memory */
-    uint8_t size;          /*!< Size of memory access (in bytes) */
+    rword value;           /*!< Value read from / written to memory (only when size < 8) */
+    uint16_t size;         /*!< Size of memory access (in bytes) */
     MemoryAccessType type; /*!< Memory access type (READ / WRITE) */
 } MemoryAccess;
 

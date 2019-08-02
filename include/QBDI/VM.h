@@ -260,9 +260,9 @@ class QBDI_EXPORT VM {
      * in case of failure).
      */
     uint32_t    addMemAccessCB(MemoryAccessType type, InstCallback cbk, void *data);
-    
-    /*! Add a virtual callback which is triggered for any memory access at a specific address 
-     *  matching the access type. Virtual callbacks are called via callback forwarding by a 
+
+    /*! Add a virtual callback which is triggered for any memory access at a specific address
+     *  matching the access type. Virtual callbacks are called via callback forwarding by a
      *  gate callback triggered on every memory access. This incurs a high performance cost.
      *
      * @param[in] address  Code address which will trigger the callback.
@@ -276,8 +276,8 @@ class QBDI_EXPORT VM {
      */
     uint32_t    addMemAddrCB(rword address, MemoryAccessType type, InstCallback cbk, void *data);
 
-    /*! Add a virtual callback which is triggered for any memory access in a specific address range 
-     *  matching the access type. Virtual callbacks are called via callback forwarding by a 
+    /*! Add a virtual callback which is triggered for any memory access in a specific address range
+     *  matching the access type. Virtual callbacks are called via callback forwarding by a
      *  gate callback triggered on every memory access. This incurs a high performance cost.
      *
      * @param[in] start    Start of the address range which will trigger the callback.
@@ -318,7 +318,7 @@ class QBDI_EXPORT VM {
     void        deleteAllInstrumentations();
 
     /*! Obtain the analysis of an instruction metadata. Analysis results are cached in the VM.
-     *  The validity of the returned pointer is only guaranteed until the end of the callback, else 
+     *  The validity of the returned pointer is only guaranteed until the end of the callback, else
      *  a deepcopy of the structure is required.
      *
      * @param[in] [type]         Properties to retrieve during analysis.

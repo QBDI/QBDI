@@ -177,6 +177,9 @@ RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
         unsigned dst = temp_manager->getRegForTemp(temp);
         if(size < 8) {
             dst = temp_manager->getSizedSubReg(dst, 4);
+        } else if (size > 8) {
+            // read value size greater than 8 bytes isn't implemented
+            return {NoReloc(mov64ri(dst, 0))};
         }
         if(isStackRead(inst)) {
             llvm::MCInst readinst;
@@ -257,6 +260,9 @@ RelocatableInst::SharedPtrVec GetWriteValue::generate(const llvm::MCInst* inst,
         unsigned dst = temp_manager->getRegForTemp(temp);
         if(size < 8) {
             dst = temp_manager->getSizedSubReg(dst, 4);
+        } else if (size > 8) {
+            // write value size greater than 8 bytes isn't implemented
+            return {NoReloc(mov64ri(dst, 0))};
         }
 
         if(isStackWrite(inst)) {

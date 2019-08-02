@@ -229,6 +229,7 @@ set(SOURCES
     "src/Engine/Engine.cpp"
     "src/Engine/VM.cpp"
     "src/Engine/VM_C.cpp"
+    "src/ExecBlock/Context.cpp"
     "src/ExecBlock/ExecBlock.cpp"
     "src/ExecBlock/ExecBlockManager.cpp"
     "src/ExecBroker/ExecBroker.cpp"

@@ -332,9 +332,11 @@ static void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm
     opa.regName = MRI.getName(regNo);
     opa.value = regNo;
     opa.size = 0;
+    opa.flag = OPERANDFLAG_NONE;
     opa.regOff = 0;
-    opa.regCtxIdx = 0;
+    opa.regCtxIdx = -1;
     opa.type = OPERAND_INVALID;
+    opa.regAccess = REGISTER_UNUSED;
     if (regNo == /* llvm::X86|ARM::NoRegister */ 0)
         return;
     // try to match register in our GPR context
@@ -347,6 +349,8 @@ static void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm
             opa.regCtxIdx = j;
             opa.size = getRegisterSize(regNo);
             opa.type = OPERAND_GPR;
+            if (!opa.size)
+                LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.regName);
             return;
         }
     }
@@ -354,17 +358,43 @@ static void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm
         opa.regCtxIdx = REG_FLAG;
         opa.size = getRegisterSize(regNo) * 8;
         opa.type = OPERAND_FLAG;
+        if (!opa.size)
+            LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.regName);
         return;
     }
-    for (uint16_t j = 0; j < sizeof(rword)*8; j++) {
+    for (uint16_t j = 0; j < size_FLAG_ID; j++) {
         if (regNo == FLAG_ID[j]) {
             opa.regCtxIdx = REG_FLAG;
             opa.regOff = j;
             opa.size = getRegisterBitsSize(regNo);
             opa.type = OPERAND_FLAG;
+            if (!opa.size)
+                LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.regName);
             return;
         }
     }
+    std::map<unsigned int, int16_t>::const_iterator it = FPR_ID.find(regNo);
+    if (it != FPR_ID.end()) {
+        opa.regCtxIdx = it->second;
+        opa.regOff = 0;
+        opa.size = getRegisterSize(regNo);
+        opa.type = OPERAND_FPR;
+        if (!opa.size)
+            LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.regName);
+        return;
+    }
+    for (uint16_t j = 0; j < size_SEG_ID; j++) {
+        if (regNo == SEG_ID[j]) {
+            opa.regCtxIdx = 0;
+            opa.regOff = 0;
+            opa.size = getRegisterSize(regNo);
+            opa.type = OPERAND_SEG;
+            if (!opa.size)
+                LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.regName);
+            return;
+        }
+    }
+    LogWarning("analyseRegister", "Unknown register %d : %s", regNo, opa.regName);
 }
 
 static void tryMergeCurrentRegister(InstAnalysis* instAnalysis) {

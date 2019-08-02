@@ -24,28 +24,34 @@
 
 namespace QBDI {
 
-/* Highest 8 bits are the write access, lowest 8 bits are the read access. For each 8 bits part: the
- * highest bit stores if the access is a stack access or not while the lowest 7 bits store the
- * unsigned access size in bytes (thus up to 127 bytes). A size of 0 means no access.
+/* Highest 16 bits are the write access, lowest 16 bits are the read access. For each 16 bits part: the
+ * highest bit stores if the access is a stack access or not while the lowest 12 bits store the
+ * unsigned access size in bytes (thus up to 4095 bytes). A size of 0 means no access.
  *
- * -----------------------------------------------------------------------------------------------------------------
- * |                     WRITE ACCESS                      |                      READ ACCESS                      |
- * -----------------------------------------------------------------------------------------------------------------
- * | 1 bit stack access flag | 7 bits unsigned access size | 1 bit stack access flag | 7 bits unsigned access size |
- * -----------------------------------------------------------------------------------------------------------------
+ * ----------------------------------------------------------------------------
+ * | Ox1f                        WRITE ACCESS                            0x10 |
+ * ----------------------------------------------------------------------------
+ * | 1 bit stack access flag | 3 bits reserved | 12 bits unsigned access size |
+ * ----------------------------------------------------------------------------
+ *
+ * ----------------------------------------------------------------------------
+ * | 0xf                          READ ACCESS                             0x0 |
+ * ----------------------------------------------------------------------------
+ * | 1 bit stack access flag | 3 bits reserved | 12 bits unsigned access size |
+ * ----------------------------------------------------------------------------
 */
 
-#define STACK_ACCESS_FLAG 0x40
+#define STACK_ACCESS_FLAG 0x8000
 #define READ(s) (s)
-#define WRITE(s) ((s)<<8)
+#define WRITE(s) ((s)<<16)
 #define STACK_READ(s) (STACK_ACCESS_FLAG | s)
-#define STACK_WRITE(s) ((STACK_ACCESS_FLAG | s)<<8)
-#define GET_READ_SIZE(v) ((v) & 0x3f)
-#define GET_WRITE_SIZE(v) (((v)>>8) & 0x3f)
+#define STACK_WRITE(s) ((STACK_ACCESS_FLAG | s)<<16)
+#define GET_READ_SIZE(v) ((v) & 0xfff)
+#define GET_WRITE_SIZE(v) (((v)>>16) & 0xfff)
 #define IS_STACK_READ(v) (((v) & STACK_ACCESS_FLAG) > 0)
-#define IS_STACK_WRITE(v) ((((v)>>8) & STACK_ACCESS_FLAG) > 0)
+#define IS_STACK_WRITE(v) ((((v)>>16) & STACK_ACCESS_FLAG) > 0)
 
-extern uint16_t MEMACCESS_INFO_TABLE[];
+extern uint32_t MEMACCESS_INFO_TABLE[];
 
 };
 

@@ -50,18 +50,18 @@ uint16_t REGISTER_1BYTE[] = {
     llvm::X86::R14B,
     llvm::X86::R15B,
     // artificial
-    //llvm::X86::SIH,
-    //llvm::X86::DIH,
-    //llvm::X86::BPH,
-    //llvm::X86::SPH,
-    //llvm::X86::R8BH,
-    //llvm::X86::R9BH,
-    //llvm::X86::R10BH,
-    //llvm::X86::R11BH,
-    //llvm::X86::R12BH,
-    //llvm::X86::R13BH,
-    //llvm::X86::R14BH,
-    //llvm::X86::R15BH,
+    llvm::X86::SIH,
+    llvm::X86::DIH,
+    llvm::X86::BPH,
+    llvm::X86::SPH,
+    llvm::X86::R8BH,
+    llvm::X86::R9BH,
+    llvm::X86::R10BH,
+    llvm::X86::R11BH,
+    llvm::X86::R12BH,
+    llvm::X86::R13BH,
+    llvm::X86::R14BH,
+    llvm::X86::R15BH,
 };
 
 size_t REGISTER_1BYTE_SIZE = sizeof(REGISTER_1BYTE)/sizeof(uint16_t);
@@ -84,24 +84,33 @@ uint16_t REGISTER_2BYTES[] = {
     llvm::X86::R14W,
     llvm::X86::R15W,
     llvm::X86::IP,
+    llvm::X86::FPCW,
+    llvm::X86::FPSW,
     // artificial
-    //llvm::X86::HAX,
-    //llvm::X86::HBX,
-    //llvm::X86::HCX,
-    //llvm::X86::HDX,
-    //llvm::X86::HSI,
-    //llvm::X86::HDI,
-    //llvm::X86::HBP,
-    //llvm::X86::HSP,
-    //llvm::X86::HIP,
-    //llvm::X86::R8WH,
-    //llvm::X86::R9WH,
-    //llvm::X86::R10WH,
-    //llvm::X86::R11WH,
-    //llvm::X86::R12WH,
-    //llvm::X86::R13WH,
-    //llvm::X86::R14WH,
-    //llvm::X86::R15WH,
+    llvm::X86::HAX,
+    llvm::X86::HBX,
+    llvm::X86::HCX,
+    llvm::X86::HDX,
+    llvm::X86::HSI,
+    llvm::X86::HDI,
+    llvm::X86::HBP,
+    llvm::X86::HSP,
+    llvm::X86::HIP,
+    llvm::X86::R8WH,
+    llvm::X86::R9WH,
+    llvm::X86::R10WH,
+    llvm::X86::R11WH,
+    llvm::X86::R12WH,
+    llvm::X86::R13WH,
+    llvm::X86::R14WH,
+    llvm::X86::R15WH,
+    // segment
+    llvm::X86::CS,
+    llvm::X86::DS,
+    llvm::X86::ES,
+    llvm::X86::FS,
+    llvm::X86::GS,
+    llvm::X86::SS,
 };
 
 size_t REGISTER_2BYTES_SIZE = sizeof(REGISTER_2BYTES)/sizeof(uint16_t);
@@ -126,7 +135,10 @@ uint16_t REGISTER_4BYTES[] = {
     llvm::X86::R15D,
     // RFLAGS isn't defined in llvm, the upper 32bits is never used
     llvm::X86::EFLAGS,
-
+#if defined(QBDI_ARCH_X86)
+    // shadow stack pointer
+    llvm::X86::SSP,
+#endif
 };
 
 size_t REGISTER_4BYTES_SIZE = sizeof(REGISTER_4BYTES)/sizeof(uint16_t);
@@ -157,6 +169,10 @@ uint16_t REGISTER_8BYTES[] = {
     llvm::X86::MM5,
     llvm::X86::MM6,
     llvm::X86::MM7,
+#if defined(QBDI_ARCH_X86_64)
+    // shadow stack pointer
+    llvm::X86::SSP,
+#endif
 };
 
 size_t REGISTER_8BYTES_SIZE = sizeof(REGISTER_8BYTES)/sizeof(uint16_t);
