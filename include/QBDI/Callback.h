@@ -21,8 +21,10 @@
 #include "Platform.h"
 #include "State.h"
 #include "Bitmask.h"
-
+#include "InstAnalysis.h"
 #ifdef __cplusplus
+#include <vector>
+
 namespace QBDI {
 #endif
 
@@ -133,7 +135,37 @@ typedef struct {
     MemoryAccessType type; /*!< Memory access type (READ / WRITE) */
 } MemoryAccess;
 
+
+typedef struct {
+    InstCallback cbk;       /*!< Address of the function to call when the instruction is executed */
+    void* data;             /*!< User defined data which will be forward to cbk */
+    InstPosition position;  /*!< Relative position of the event callback (PREINST / POSTINST). */
+} InstrumentDataCBK;
+
+/*! Instrument callback function type.
+ *
+ * @param[in] vm                VM instance of the callback.
+ * @param[in] inst              Instruction to instrument with the given AnalysisType
+ * @param[in] data              User defined data which can be defined when registering the callback.
+ * @param[out] len              Number of callback to apply
+ *
+ * @return                      Return the callback to apply for this instruction (can be NULL if len == 0).
+ *                                  Note that the result will be free and need to be allocate with malloc.
+ */
+typedef InstrumentDataCBK* (*QBDI_InstrumentCallback)(VMInstanceRef vm, const InstAnalysis *inst, void* data, size_t* len);
+
 #ifdef __cplusplus
+
+/*! Instrument callback function type.
+ *
+ * @param[in] vm                VM instance of the callback.
+ * @param[in] inst              Instruction to instrument with the given AnalysisType
+ * @param[in] data              User defined data which can be defined when registering the callback.
+ *
+ * @return                      Return if cbk need to be call for this instruction
+ */
+typedef std::vector<InstrumentDataCBK> (*InstrumentCallback)(VMInstanceRef vm, const InstAnalysis *inst, void* data);
+
 } // QBDI::
 #endif
 

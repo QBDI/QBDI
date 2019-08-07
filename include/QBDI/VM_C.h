@@ -206,9 +206,35 @@ QBDI_EXPORT void qbdi_setGPRState(VMInstanceRef instance, GPRState* gprState);
  */
 QBDI_EXPORT void qbdi_setFPRState(VMInstanceRef instance, FPRState* fprState);
 
-/*! Register a callback event for every memory access matching the type bitfield made by the instructions.
+/*! Add a custom instrumentation rule to the VM.
+ *
+ * @param[in] instance   VM instance.
+ * @param[in] cbk       A function pointer to the callback
+ * @param[in] type      Analyse type needed for this instruction function pointer to the callback
+ * @param[in] data      User defined data passed to the callback.
+ *
+ * @return The id of the registered instrumentation (or VMError::INVALID_EVENTID
+ * in case of failure).
+ */
+QBDI_EXPORT uint32_t qbdi_addInstrRule(VMInstanceRef instance, QBDI_InstrumentCallback cbk, AnalysisType type, void* data);
+
+/*! Add a custom instrumentation rule to the VM for a range of address
  *
  * @param[in] instance  VM instance.
+ * @param[in] start     Begin of the range of address where apply the rule
+ * @param[in] end       End of the range of address where apply the rule
+ * @param[in] cbk       A function pointer to the callback
+ * @param[in] type      Analyse type needed for this instruction function pointer to the callback
+ * @param[in] data      User defined data passed to the callback.
+ *
+ * @return The id of the registered instrumentation (or VMError::INVALID_EVENTID
+ * in case of failure).
+ */
+QBDI_EXPORT uint32_t qbdi_addInstrRuleRange(VMInstanceRef instance, rword start, rword end, QBDI_InstrumentCallback cbk, AnalysisType type, void* data);
+
+/*! Register a callback event for every memory access matching the type bitfield made by the instructions.
+ *
+ * @param[in] instance   VM instance.
  * @param[in] type       A mode bitfield: either QBDI_MEMORY_READ, QBDI_MEMORY_WRITE or both (QBDI_MEMORY_READ_WRITE).
  * @param[in] cbk        A function pointer to the callback.
  * @param[in] data       User defined data passed to the callback.

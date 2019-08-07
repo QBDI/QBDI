@@ -2,6 +2,7 @@
 set(SOURCES
     "${CMAKE_CURRENT_LIST_DIR}/memory_ostream.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/Assembly.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/InstAnalysis.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/Memory.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/Memory_${QBDI_PLATFORM}.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/System.cpp"

@@ -23,7 +23,7 @@
 #include <vector>
 
 #include "Callback.h"
-#include "InstAnalysis.h"
+#include "Utility/InstAnalysis_prive.h"
 #include "Range.h"
 #include "State.h"
 
@@ -40,11 +40,6 @@ class InstMetadata;
 class Patch;
 class RelocatableInst;
 
-struct InstAnalysisDestructor {
-  void operator()(InstAnalysis* ptr) const;
-};
-
-
 struct InstLoc {
     uint16_t blockIdx;
     uint16_t instID;
@@ -60,8 +55,6 @@ struct SeqLoc {
 };
 
 struct ExecRegion {
-    using InstAnalysisPtr = std::unique_ptr<InstAnalysis, InstAnalysisDestructor>;
-
     Range<rword>                             covered;
     unsigned                                 translated;
     unsigned                                 available;

@@ -198,7 +198,10 @@ Engine& Engine::operator=(const Engine& other) {
       reinit(other.cpu, other.mattrs);
 
     // copy the configuration
-    instrRules = other.instrRules;
+    instrRules.clear();
+    for (const auto& r : other.instrRules) {
+      instrRules.emplace_back(r.first, r.second->clone());
+    }
     vmCallbacks = other.vmCallbacks;
     instrRulesCounter = other.instrRulesCounter;
     vmCallbacksCounter = other.vmCallbacksCounter;
@@ -215,8 +218,12 @@ Engine& Engine::operator=(const Engine& other) {
 
 void Engine::changeVMInstanceRef(VMInstanceRef vminstance) {
     this->vminstance = vminstance;
+
     blockManager->changeVMInstanceRef(vminstance);
     execBroker->changeVMInstanceRef(vminstance);
+
+    for (auto& r : instrRules)
+      r.second->changeVMInstanceRef(vminstance);
 }
 
 void Engine::initGPRState() {
@@ -364,9 +371,8 @@ void Engine::instrument(std::vector<Patch> &basicBlock) {
         });
         // Instrument
         for (const auto& item: instrRules) {
-            const std::shared_ptr<InstrRule>& rule = item.second;
-            if (rule->canBeApplied(patch, MCII.get())) { // Push MCII
-                rule->instrument(patch, MCII.get(), MRI.get());
+            const InstrRule* rule = item.second.get();
+            if (rule->tryInstrument(patch, MCII.get(), MRI.get(), assembly.get())) { // Push MCII
                 LogDebug("Engine::instrument", "Instrumentation rule %" PRIu32 " applied", item.first);
             }
         }
@@ -498,24 +504,24 @@ bool Engine::run(rword start, rword stop) {
     return hasRan;
 }
 
-uint32_t Engine::addInstrRule(InstrRule rule, bool top_list) {
+uint32_t Engine::addInstrRule(std::unique_ptr<InstrRule>&& rule, bool top_list) {
     uint32_t id = instrRulesCounter++;
     RequireAction("Engine::addInstrRule", id < EVENTID_VM_MASK, return VMError::INVALID_EVENTID);
 
-    this->clearCache(rule.affectedRange());
-    switch(rule.getPosition()) {
+    this->clearCache(rule->affectedRange());
+    switch(rule->getPosition()) {
         case InstPosition::PREINST:
             if (top_list) {
-                instrRules.emplace_back(id, static_cast<InstrRule::SharedPtr>(rule));
+                instrRules.emplace_back(id, std::move(rule));
             } else {
-                instrRules.insert(instrRules.begin(), std::make_pair(id, static_cast<InstrRule::SharedPtr>(rule)));
+                instrRules.insert(instrRules.begin(), std::make_pair(id, std::move(rule)));
             }
             break;
         case InstPosition::POSTINST:
             if (top_list) {
-                instrRules.insert(instrRules.begin(), std::make_pair(id, static_cast<InstrRule::SharedPtr>(rule)));
+                instrRules.insert(instrRules.begin(), std::make_pair(id, std::move(rule)));
             } else {
-                instrRules.emplace_back(id, static_cast<InstrRule::SharedPtr>(rule));
+                instrRules.emplace_back(id, std::move(rule));
             }
             break;
     }
