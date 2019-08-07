@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 #include <bitset>
+#include <algorithm>
 
 #include "Engine.h"
 #include "Errors.h"
@@ -201,7 +202,7 @@ Engine& Engine::operator=(const Engine& other) {
     // copy the configuration
     instrRules.clear();
     for (const auto& r : other.instrRules) {
-        instrRules.emplace_back(r.first, std::make_unique<InstrRule>(*r.second));
+        instrRules.emplace_back(r.first, r.second->clone());
     }
     vmCallbacks = other.vmCallbacks;
     instrRulesCounter = other.instrRulesCounter;
@@ -219,8 +220,12 @@ Engine& Engine::operator=(const Engine& other) {
 
 void Engine::changeVMInstanceRef(VMInstanceRef vminstance) {
     this->vminstance = vminstance;
+
     blockManager->changeVMInstanceRef(vminstance);
     execBroker->changeVMInstanceRef(vminstance);
+
+    for (auto& r : instrRules)
+      r.second->changeVMInstanceRef(vminstance);
 }
 
 void Engine::initGPRState() {
@@ -368,9 +373,8 @@ void Engine::instrument(std::vector<Patch> &basicBlock) {
         });
         // Instrument
         for (const auto& item: instrRules) {
-            const std::unique_ptr<InstrRule>& rule = item.second;
-            if (rule->canBeApplied(patch, MCII.get())) { // Push MCII
-                rule->instrument(patch, MCII.get(), MRI.get());
+            const InstrRule* rule = item.second.get();
+            if (rule->tryInstrument(patch, MCII.get(), MRI.get(), assembly.get())) { // Push MCII
                 LogDebug("Engine::instrument", "Instrumentation rule %" PRIu32 " applied", item.first);
             }
         }
@@ -502,27 +506,21 @@ bool Engine::run(rword start, rword stop) {
     return hasRan;
 }
 
-uint32_t Engine::addInstrRule(std::unique_ptr<InstrRule> rule, bool top_list) {
+uint32_t Engine::addInstrRule(std::unique_ptr<InstrRule>&& rule) {
     uint32_t id = instrRulesCounter++;
     RequireAction("Engine::addInstrRule", id < EVENTID_VM_MASK, return VMError::INVALID_EVENTID);
 
     this->clearCache(rule->affectedRange());
-    switch(rule->getPosition()) {
-        case InstPosition::PREINST:
-            if (top_list) {
-                instrRules.emplace_back(id, std::move(rule));
-            } else {
-                instrRules.emplace(instrRules.begin(), id, std::move(rule));
-            }
-            break;
-        case InstPosition::POSTINST:
-            if (top_list) {
-                instrRules.emplace(instrRules.begin(), id, std::move(rule));
-            } else {
-                instrRules.emplace_back(id, std::move(rule));
-            }
-            break;
-    }
+
+    auto v = std::make_pair(id, std::move(rule));
+
+    // insert rule in instrRules and keep the priority order
+    auto it = std::upper_bound(instrRules.begin(), instrRules.end(), v,
+        [](const decltype(instrRules)::value_type& a, const decltype(instrRules)::value_type& b){
+            return a.second->getPriority() < b.second->getPriority();
+        });
+    instrRules.insert(it, std::move(v));
+
     return id;
 }
 

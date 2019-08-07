@@ -48,7 +48,7 @@ public:
     virtual std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst *inst,
         rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const = 0;
 
-    virtual ~PatchGenerator() {};
+    virtual ~PatchGenerator() = default;
 
     virtual bool modifyPC() const { return false; }
 

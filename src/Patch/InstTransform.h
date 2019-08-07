@@ -40,7 +40,7 @@ public:
 
     virtual void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const = 0;
 
-    virtual ~InstTransform() {}
+    virtual ~InstTransform() = default;
 };
 
 class SetOperand : public InstTransform, public AutoAlloc<InstTransform, SetOperand> {
