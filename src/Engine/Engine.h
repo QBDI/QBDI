@@ -52,10 +52,6 @@ class PatchRule;
 class InstrRule;
 class Patch;
 
-const static uint16_t MEM_READ_ADDRESS_TAG  = 0xfff0;
-const static uint16_t MEM_WRITE_ADDRESS_TAG = 0xfff1;
-const static uint16_t MEM_VALUE_TAG         = 0xfff2;
-
 struct CallbackRegistration {
     VMEvent    mask;
     VMCallback cbk;

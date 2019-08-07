@@ -118,6 +118,10 @@ bool InstrRuleBasic::canBeApplied(const Patch &patch, llvm::MCInstrInfo* MCII) {
     return condition->test(&patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII);
 }
 
+bool InstrRuleDynamic::canBeApplied(const Patch &patch, llvm::MCInstrInfo* MCII) {
+    return condition->test(&patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII);
+}
+
 bool InstrRuleUser::tryInstrument(Patch &patch, llvm::MCInstrInfo* MCII, llvm::MCRegisterInfo* MRI,
                                      Assembly* assembly) {
     if (!range.contains(Range<rword>(patch.metadata.address, patch.metadata.address + patch.metadata.instSize))) {

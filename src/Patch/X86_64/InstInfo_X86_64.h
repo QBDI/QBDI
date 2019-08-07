@@ -34,14 +34,15 @@ namespace QBDI {
  * | 1 bit stack access flag | 3 bits reserved | 12 bits unsigned access size |
  * ----------------------------------------------------------------------------
  *
- * ----------------------------------------------------------------------------
- * | 0xf                          READ ACCESS                             0x0 |
- * ----------------------------------------------------------------------------
- * | 1 bit stack access flag | 3 bits reserved | 12 bits unsigned access size |
- * ----------------------------------------------------------------------------
+ * ------------------------------------------------------------------------------------------------
+ * | 0xf                                   READ ACCESS                                        0x0 |
+ * ------------------------------------------------------------------------------------------------
+ * | 1 bit stack access flag | 1 bit double read | 2 bits reserved | 12 bits unsigned access size |
+ * ------------------------------------------------------------------------------------------------
 */
 
 #define STACK_ACCESS_FLAG 0x8000
+#define DOUBLE_READ_FLAG  0x4000
 #define READ(s) (s)
 #define WRITE(s) ((s)<<16)
 #define STACK_READ(s) (STACK_ACCESS_FLAG | s)
@@ -50,6 +51,7 @@ namespace QBDI {
 #define GET_WRITE_SIZE(v) (((v)>>16) & 0xfff)
 #define IS_STACK_READ(v) (((v) & STACK_ACCESS_FLAG) > 0)
 #define IS_STACK_WRITE(v) ((((v)>>16) & STACK_ACCESS_FLAG) > 0)
+#define IS_DOUBLE_READ(v) (((v) & DOUBLE_READ_FLAG) > 0)
 
 extern uint32_t MEMACCESS_INFO_TABLE[];
 

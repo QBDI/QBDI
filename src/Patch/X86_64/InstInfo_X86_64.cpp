@@ -22,11 +22,21 @@ namespace QBDI {
  * MONITOR & MWAIT // ununderstand access of these instructions
  * llvm::X86::MMX_MASKMOVQ64, // 64 bits implicit store to [rdi]
  * MOVS/MOVSB/MOVSW/MOVSD/MOVSQ // implicit move from [rsi] to [rdi] (between 8 and 64 bits r/w)
- * CMPS/CMPSB/CMPSW/CMPSD/CMPSQ // implicit compare betwen [rsi] and [rdi] (two read between 8 and 64 bits)
  * STOS/STOSB/STOSW/STOSD/STOSQ // implicit store to [rdi]
+ * REP/REPE/REPZ/REPNE/REPNZ    // instruction repeted
  */
 
+unsigned DOUBLE_READ[] = {
+	llvm::X86::CMPSB,
+	llvm::X86::CMPSW,
+	llvm::X86::CMPSL,
+	llvm::X86::CMPSQ,
+};
+
+size_t DOUBLE_READ_SIZE = sizeof(DOUBLE_READ)/sizeof(unsigned);
+
 unsigned READ_8[] = {
+	llvm::X86::CMPSB,
 	llvm::X86::CMP8rm,
 	llvm::X86::CMP8mr,
 	llvm::X86::TEST8mr,
@@ -119,6 +129,7 @@ unsigned READ_8[] = {
 size_t READ_8_SIZE = sizeof(READ_8)/sizeof(unsigned);
 
 unsigned READ_16[] = {
+	llvm::X86::CMPSW,
 	llvm::X86::MOV16rm,
 	llvm::X86::MOVBE16rm,
 	llvm::X86::CMP16rm,
@@ -270,6 +281,7 @@ unsigned READ_16[] = {
 size_t READ_16_SIZE = sizeof(READ_16)/sizeof(unsigned);
 
 unsigned READ_32[] = {
+	llvm::X86::CMPSL,
 	llvm::X86::MOV32rm,
 	llvm::X86::CMP32rm,
 	llvm::X86::TEST32mr,
@@ -516,6 +528,7 @@ unsigned READ_32[] = {
 size_t READ_32_SIZE = sizeof(READ_32)/sizeof(unsigned);
 
 unsigned READ_64[] = {
+	llvm::X86::CMPSQ,
 	llvm::X86::MOV64rm,
 	llvm::X86::CMP64rm,
 	llvm::X86::TEST64mr,
@@ -2088,6 +2101,9 @@ void initMemAccessInfo() {
     _initMemAccessStackWrite(STACK_WRITE_16, STACK_WRITE_16_SIZE, 2);
     _initMemAccessStackWrite(STACK_WRITE_32, STACK_WRITE_32_SIZE, 4);
     _initMemAccessStackWrite(STACK_WRITE_64, STACK_WRITE_64_SIZE, 8);
+    for (size_t i = 0; i < DOUBLE_READ_SIZE; i++) {
+        MEMACCESS_INFO_TABLE[DOUBLE_READ[i]] |= DOUBLE_READ_FLAG;
+    }
 }
 
 unsigned getReadSize(const llvm::MCInst* inst) {
@@ -2104,6 +2120,10 @@ bool isStackRead(const llvm::MCInst* inst) {
 
 bool isStackWrite(const llvm::MCInst* inst) {
     return IS_STACK_WRITE(MEMACCESS_INFO_TABLE[inst->getOpcode()]);
+}
+
+bool isDoubleRead(const llvm::MCInst* inst) {
+    return IS_DOUBLE_READ(MEMACCESS_INFO_TABLE[inst->getOpcode()]);
 }
 
 unsigned getImmediateSize(const llvm::MCInst* inst, const llvm::MCInstrDesc* desc) {

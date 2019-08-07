@@ -353,28 +353,16 @@ bool VM::recordMemoryAccess(MemoryAccessType type) {
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
     if(type & MEMORY_READ && !(memoryLoggingLevel & MEMORY_READ)) {
         memoryLoggingLevel |= MEMORY_READ;
-        engine->addInstrRule(InstrRuleBasic(
-            DoesReadAccess(),
-            {
-                GetReadAddress(Temp(0)),
-                WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
-                GetReadValue(Temp(0)),
-                WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
-            },
+        engine->addInstrRule(InstrRuleDynamic(
+            DoesReadAccess(), generateReadInstrumentPatch,
             PREINST,
             false
         ), true); // force the rule to be the first of PREINST
     }
     if(type & MEMORY_WRITE && !(memoryLoggingLevel & MEMORY_WRITE)) {
         memoryLoggingLevel |= MEMORY_WRITE;
-        engine->addInstrRule(InstrRuleBasic(
-            DoesWriteAccess(),
-            {
-                GetWriteAddress(Temp(0)),
-                WriteTemp(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
-                GetWriteValue(Temp(0)),
-                WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
-            },
+        engine->addInstrRule(InstrRuleDynamic(
+            DoesWriteAccess(), generateWriteInstrumentPatch,
             POSTINST,
             false
         ), true); // force the rule to be the first of POSTINST

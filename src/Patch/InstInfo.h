@@ -28,6 +28,7 @@ unsigned getReadSize(const llvm::MCInst* inst);
 unsigned getWriteSize(const llvm::MCInst* inst);
 bool isStackRead(const llvm::MCInst* inst);
 bool isStackWrite(const llvm::MCInst* inst);
+bool isDoubleRead(const llvm::MCInst* inst);
 
 unsigned getImmediateSize(const llvm::MCInst* inst, const llvm::MCInstrDesc* desc);
 

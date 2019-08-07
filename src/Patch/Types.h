@@ -63,7 +63,7 @@ struct Shadow {
     uint16_t tag;
 
 public:
-    
+
     /*! Allocate a new shadow variable in the data block with the corresponding tag.
      *
      *  @param[in] tag The tag of the new shadow variable.
@@ -79,6 +79,11 @@ public:
     }
 
 };
+
+/* Some reserved Shadow tag */
+const static uint16_t MEM_READ_ADDRESS_TAG  = 0xfff0;
+const static uint16_t MEM_WRITE_ADDRESS_TAG = 0xfff1;
+const static uint16_t MEM_VALUE_TAG         = 0xfff2;
 
 /*! Structure representing a constant value in PatchDSL.
 */
@@ -138,10 +143,10 @@ struct Temp {
 
 public:
 
-    /*! Represent a temporary register variable idenified by a unique ID. Inside a patch rules 
-     *  or a instrumentation rules, Temp with identical ids point to the same physical register. 
-     *  The id 0xFFFFFFFF is reserved for internal uses. The mapping from id to physical register 
-     *  is determined at generation time and the allocation and deallocation instructions are 
+    /*! Represent a temporary register variable idenified by a unique ID. Inside a patch rules
+     *  or a instrumentation rules, Temp with identical ids point to the same physical register.
+     *  The id 0xFFFFFFFF is reserved for internal uses. The mapping from id to physical register
+     *  is determined at generation time and the allocation and deallocation instructions are
      *  automatically added to the patch.
      *
      *  @param[in] id The id of the temp to represent.
@@ -165,7 +170,7 @@ struct Operand {
 
 public:
 
-    /*! Represent an operand instruction identified by its index in the LLVM MCInst representation 
+    /*! Represent an operand instruction identified by its index in the LLVM MCInst representation
      *  of the instruction.
      *
      *  @param[in] idx The operand index.

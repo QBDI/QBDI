@@ -69,9 +69,22 @@ RelocatableInst::SharedPtrVec GetReadAddress::generate(const llvm::MCInst* inst,
             } else {
                 return {Mov(temp_manager->getRegForTemp(temp), Reg(REG_SP))};
             }
-        }
+        // specific case for instruction type cmpsb and movsb
+        } else if ((TSFlags & llvm::X86II::FormMask) == llvm::X86II::RawFrmDstSrc) {
+            RequireAction("GetReadAddress::generate", index < 2 && "Wrong index", abort());
+            unsigned int reg;
+            if (index == 0) {
+                // (R|E)SI
+                reg = GPR_ID[4];
+                Require("GetReadAddress::generate", reg == llvm::X86::RSI || reg == llvm::X86::ESI);
+            } else {
+                // (R|E)DI
+                reg = GPR_ID[5];
+                Require("GetReadAddress::generate", reg == llvm::X86::RDI || reg == llvm::X86::EDI);
+            }
+            return {NoReloc(movrr(temp_manager->getRegForTemp(temp), reg))};
         // Else replace the instruction with a LEA on the same address
-        else {
+        } else {
             // Scan for LLVM X86 address encoding
             for(unsigned i = 0; i + 4 <= inst->getNumOperands(); i++) {
                 if(inst->getOperand(i + 0).isReg() && inst->getOperand(i + 1).isImm() &&
@@ -177,9 +190,9 @@ RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
         unsigned dst = temp_manager->getRegForTemp(temp);
         if(size < 8) {
             dst = temp_manager->getSizedSubReg(dst, 4);
-        } else if (size > 8) {
+        } else if (size > sizeof(rword)) {
             // read value size greater than 8 bytes isn't implemented
-            return {NoReloc(mov64ri(dst, 0))};
+            return {NoReloc(movri(dst, 0))};
         }
         if(isStackRead(inst)) {
             llvm::MCInst readinst;
@@ -200,8 +213,33 @@ RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
                 readinst = mov32rm8(dst, Reg(stack_register), 1, 0, 0, 0);
             }
             return {NoReloc(readinst)};
-        }
-        else {
+        } else if ((TSFlags & llvm::X86II::FormMask) == llvm::X86II::RawFrmDstSrc) {
+            llvm::MCInst readinst;
+            RequireAction("GetReadAddress::generate", index < 2 && "Wrong index", abort());
+            unsigned int reg;
+            if (index == 0) {
+                // (R|E)SI
+                reg = GPR_ID[4];
+                Require("GetReadAddress::generate", reg == llvm::X86::RSI || reg == llvm::X86::ESI);
+            } else {
+                // (R|E)DI
+                reg = GPR_ID[5];
+                Require("GetReadAddress::generate", reg == llvm::X86::RDI || reg == llvm::X86::EDI);
+            }
+            if(size == 8) {
+                readinst = {mov64rm(dst, reg, 1, 0, 0, 0)};
+            }
+            else if(size == 4) {
+                readinst = {mov32rm(dst, reg, 1, 0, 0, 0)};
+            }
+            else if(size == 2) {
+                readinst = {mov32rm16(dst, reg, 1, 0, 0, 0)};
+            }
+            else if(size == 1) {
+                readinst = {mov32rm8(dst, reg, 1, 0, 0, 0)};
+            }
+            return {NoReloc(readinst)};
+        } else {
             for(unsigned i = 0; i + 4 <= inst->getNumOperands(); i++) {
                 if(inst->getOperand(i + 0).isReg() && inst->getOperand(i + 1).isImm() &&
                    inst->getOperand(i + 2).isReg() && inst->getOperand(i + 3).isImm() &&
@@ -260,9 +298,9 @@ RelocatableInst::SharedPtrVec GetWriteValue::generate(const llvm::MCInst* inst,
         unsigned dst = temp_manager->getRegForTemp(temp);
         if(size < 8) {
             dst = temp_manager->getSizedSubReg(dst, 4);
-        } else if (size > 8) {
+        } else if (size > sizeof(rword)) {
             // write value size greater than 8 bytes isn't implemented
-            return {NoReloc(mov64ri(dst, 0))};
+            return {NoReloc(movri(dst, 0))};
         }
 
         if(isStackWrite(inst)) {
@@ -284,8 +322,7 @@ RelocatableInst::SharedPtrVec GetWriteValue::generate(const llvm::MCInst* inst,
                 readinst = mov32rm8(dst, Reg(stack_register), 1, 0, 0, 0);
             }
             return {NoReloc(readinst)};
-        }
-        else {
+        } else {
             for(unsigned i = 0; i + 4 <= inst->getNumOperands(); i++) {
                 if(inst->getOperand(i + 0).isReg() && inst->getOperand(i + 1).isImm() &&
                    inst->getOperand(i + 2).isReg() && inst->getOperand(i + 3).isImm() &&
@@ -401,6 +438,43 @@ RelocatableInst::SharedPtrVec SimulateRet::generate(const llvm::MCInst* inst,
     append(patch, WriteTemp(temp, Offset(Reg(REG_PC))).generate(inst, address, instSize, temp_manager, nullptr));
 
     return {patch};
+}
+
+PatchGenerator::SharedPtrVec generateReadInstrumentPatch(Patch &patch, llvm::MCInstrInfo* MCII,
+                                                         llvm::MCRegisterInfo* MRI) {
+
+    uint64_t TsFlags = MCII->get(patch.metadata.inst.getOpcode()).TSFlags;
+    if (isDoubleRead(&patch.metadata.inst)) {
+        return {
+                    GetReadAddress(Temp(0), 0, TsFlags),
+                    WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+                    GetReadValue(Temp(0), 0, TsFlags),
+                    WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
+                    GetReadAddress(Temp(0), 1, TsFlags),
+                    WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+                    GetReadValue(Temp(0), 1, TsFlags),
+                    WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
+                };
+    } else {
+        return {
+                    GetReadAddress(Temp(0), 0, TsFlags),
+                    WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+                    GetReadValue(Temp(0), 0, TsFlags),
+                    WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
+                };
+    }
+}
+
+PatchGenerator::SharedPtrVec generateWriteInstrumentPatch(Patch &patch, llvm::MCInstrInfo* MCII,
+                                                         llvm::MCRegisterInfo* MRI) {
+
+    uint64_t TsFlags = MCII->get(patch.metadata.inst.getOpcode()).TSFlags;
+    return {
+                GetWriteAddress(Temp(0), TsFlags),
+                WriteTemp(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
+                GetWriteValue(Temp(0), TsFlags),
+                WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
+            };
 }
 
 }

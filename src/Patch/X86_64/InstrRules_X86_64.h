@@ -33,8 +33,6 @@ class InstrRule;
 
 RelocatableInst::SharedPtrVec getBreakToHost(Reg temp);
 
-std::vector<std::shared_ptr<InstrRule>> getMemAccessInstrRules();
-
 }
 
 #endif
