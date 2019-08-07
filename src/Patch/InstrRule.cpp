@@ -17,14 +17,13 @@
  */
 
 #include "Patch/InstrRule.h"
+#include "Patch/InstrRules.h"
+#include "Utility/InstAnalysis_prive.h"
 
 namespace QBDI {
 
-bool InstrRule::canBeApplied(const Patch &patch, llvm::MCInstrInfo* MCII) {
-    return condition->test(&patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII);
-}
-
-void InstrRule::instrument(Patch &patch, llvm::MCInstrInfo* MCII, llvm::MCRegisterInfo* MRI) {
+void InstrRule::instrument(Patch &patch, llvm::MCInstrInfo* MCII, llvm::MCRegisterInfo* MRI,
+                            PatchGenerator::SharedPtrVec patchGen, bool breakToHost, InstPosition position) {
     /* The instrument function needs to handle several different cases. An instrumentation can
      * be either prepended or appended to the patch and, in each case, can trigger a break to
      * host.
@@ -113,6 +112,31 @@ void InstrRule::instrument(Patch &patch, llvm::MCInstrInfo* MCII, llvm::MCRegist
     else if(position == POSTINST) {
         patch.append(instru);
     }
+}
+
+bool InstrRuleBasic::canBeApplied(const Patch &patch, llvm::MCInstrInfo* MCII) {
+    return condition->test(&patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII);
+}
+
+bool InstrRuleUser::tryInstrument(Patch &patch, llvm::MCInstrInfo* MCII, llvm::MCRegisterInfo* MRI,
+                                     Assembly* assembly) {
+    if (!range.contains(Range<rword>(patch.metadata.address, patch.metadata.address + patch.metadata.instSize))) {
+        return false;
+    }
+
+    InstAnalysis* ana = analyzeInstMetadataUncached(&patch.metadata, analysisType, *MCII, *MRI, *assembly);
+
+    std::vector<InstrumentDataCBK> vec = cbk(vm, ana, cbk_data);
+    freeInstAnalysis(ana);
+
+    if (vec.size() == 0)
+        return false;
+
+    for (InstrumentDataCBK& cbkToAdd : vec) {
+        instrument(patch, MCII, MRI, getCallbackGenerator(cbkToAdd.cbk, cbkToAdd.data), true, cbkToAdd.position);
+    }
+
+    return true;
 }
 
 }

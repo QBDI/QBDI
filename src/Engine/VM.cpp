@@ -198,14 +198,26 @@ bool VM::callV(rword* retval, rword function, uint32_t argNum, va_list ap) {
     return res;
 }
 
-uint32_t VM::addInstrRule(InstrRule rule) {
-    return engine->addInstrRule(rule, false);
+uint32_t VM::addInstrRule(InstrumentCallback cbk, AnalysisType type, void* data) {
+    RangeSet<rword> r;
+    r.add(Range<rword>(0, (rword) -1));
+    return engine->addInstrRule(InstrRuleUser(cbk, type, data, this, r));
+}
+
+uint32_t VM::addInstrRuleRange(rword start, rword end, InstrumentCallback cbk, AnalysisType type, void* data) {
+    RangeSet<rword> r;
+    r.add(Range<rword>(start, end));
+    return engine->addInstrRule(InstrRuleUser(cbk, type, data, this, r));
+}
+
+uint32_t VM::addInstrRuleRangeSet(RangeSet<rword> range, InstrumentCallback cbk, AnalysisType type, void* data) {
+    return engine->addInstrRule(InstrRuleUser(cbk, type, data, this, range));
 }
 
 uint32_t VM::addMnemonicCB(const char* mnemonic, InstPosition pos, InstCallback cbk, void *data) {
     RequireAction("VM::addMnemonicCB", mnemonic != nullptr, return VMError::INVALID_EVENTID);
     RequireAction("VM::addMnemonicCB", cbk != nullptr, return VMError::INVALID_EVENTID);
-    return addInstrRule(InstrRule(
+    return engine->addInstrRule(InstrRuleBasic(
         MnemonicIs(mnemonic),
         getCallbackGenerator(cbk, data),
         pos,
@@ -215,7 +227,7 @@ uint32_t VM::addMnemonicCB(const char* mnemonic, InstPosition pos, InstCallback 
 
 uint32_t VM::addCodeCB(InstPosition pos, InstCallback cbk, void *data) {
     RequireAction("VM::addCodeCB", cbk != nullptr, return VMError::INVALID_EVENTID);
-    return addInstrRule(InstrRule(
+    return engine->addInstrRule(InstrRuleBasic(
         True(),
         getCallbackGenerator(cbk, data),
         pos,
@@ -225,7 +237,7 @@ uint32_t VM::addCodeCB(InstPosition pos, InstCallback cbk, void *data) {
 
 uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk, void *data) {
     RequireAction("VM::addCodeAddrCB", cbk != nullptr, return VMError::INVALID_EVENTID);
-    return addInstrRule(InstrRule(
+    return engine->addInstrRule(InstrRuleBasic(
         AddressIs(address),
         getCallbackGenerator(cbk, data),
         pos,
@@ -236,7 +248,7 @@ uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk, vo
 uint32_t VM::addCodeRangeCB(rword start, rword end, InstPosition pos, InstCallback cbk, void *data) {
     RequireAction("VM::addCodeRangeCB", start < end, return VMError::INVALID_EVENTID);
     RequireAction("VM::addCodeRangeCB", cbk != nullptr, return VMError::INVALID_EVENTID);
-    return addInstrRule(InstrRule(
+    return engine->addInstrRule(InstrRuleBasic(
         InstructionInRange(start, end),
         getCallbackGenerator(cbk, data),
         pos,
@@ -249,21 +261,21 @@ uint32_t VM::addMemAccessCB(MemoryAccessType type, InstCallback cbk, void *data)
     recordMemoryAccess(type);
     switch(type) {
         case MEMORY_READ:
-            return addInstrRule(InstrRule(
+            return engine->addInstrRule(InstrRuleBasic(
                 DoesReadAccess(),
                 getCallbackGenerator(cbk, data),
                 InstPosition::PREINST,
                 true
             ));
         case MEMORY_WRITE:
-            return addInstrRule(InstrRule(
+            return engine->addInstrRule(InstrRuleBasic(
                 DoesWriteAccess(),
                 getCallbackGenerator(cbk, data),
                 InstPosition::POSTINST,
                 true
             ));
         case MEMORY_READ_WRITE:
-            return addInstrRule(InstrRule(
+            return engine->addInstrRule(InstrRuleBasic(
                 Or({
                     DoesReadAccess(),
                     DoesWriteAccess(),
@@ -341,7 +353,7 @@ bool VM::recordMemoryAccess(MemoryAccessType type) {
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
     if(type & MEMORY_READ && !(memoryLoggingLevel & MEMORY_READ)) {
         memoryLoggingLevel |= MEMORY_READ;
-        engine->addInstrRule(InstrRule(
+        engine->addInstrRule(InstrRuleBasic(
             DoesReadAccess(),
             {
                 GetReadAddress(Temp(0)),
@@ -355,7 +367,7 @@ bool VM::recordMemoryAccess(MemoryAccessType type) {
     }
     if(type & MEMORY_WRITE && !(memoryLoggingLevel & MEMORY_WRITE)) {
         memoryLoggingLevel |= MEMORY_WRITE;
-        engine->addInstrRule(InstrRule(
+        engine->addInstrRule(InstrRuleBasic(
             DoesWriteAccess(),
             {
                 GetWriteAddress(Temp(0)),

@@ -28,13 +28,12 @@
 #include "Errors.h"
 #include "State.h"
 #include "InstAnalysis.h"
+#include "Range.h"
 
 namespace QBDI {
 
 // Forward declaration of engine class
 class Engine;
-// Foward declaration of (currently) private InstrRule
-class InstrRule;
 // Forward declaration of private memCBInfo
 struct MemCBInfo;
 
@@ -192,14 +191,41 @@ class QBDI_EXPORT VM {
      */
     bool        callV(rword* retval, rword function, uint32_t argNum, va_list ap);
 
-    /*! Add a custom instrumentation rule to the VM. Requires internal headers
+    /*! Add a custom instrumentation rule to the VM.
      *
-     * @param[in] rule  A custom instrumentation rule.
+     * @param[in] cbk       A function pointer to the callback
+     * @param[in] type      Analyse type needed for this instruction function pointer to the callback
+     * @param[in] data      User defined data passed to the callback.
      *
      * @return The id of the registered instrumentation (or VMError::INVALID_EVENTID
      * in case of failure).
      */
-    uint32_t addInstrRule(InstrRule rule);
+    uint32_t addInstrRule(InstrumentCallback cbk, AnalysisType type, void* data);
+
+    /*! Add a custom instrumentation rule to the VM on a specify range
+     *
+     * @param[in] start     Begin of the range of address where apply the rule
+     * @param[in] end       End of the range of address where apply the rule
+     * @param[in] cbk       A function pointer to the callback
+     * @param[in] type      Analyse type needed for this instruction function pointer to the callback
+     * @param[in] data      User defined data passed to the callback.
+     *
+     * @return The id of the registered instrumentation (or VMError::INVALID_EVENTID
+     * in case of failure).
+     */
+    uint32_t addInstrRuleRange(rword start, rword end, InstrumentCallback cbk, AnalysisType type, void* data);
+
+    /*! Add a custom instrumentation rule to the VM on a specify set of range
+     *
+     * @param[in] range     Range of address where apply the rule
+     * @param[in] cbk       A function pointer to the callback
+     * @param[in] type      Analyse type needed for this instruction function pointer to the callback
+     * @param[in] data      User defined data passed to the callback.
+     *
+     * @return The id of the registered instrumentation (or VMError::INVALID_EVENTID
+     * in case of failure).
+     */
+    uint32_t addInstrRuleRangeSet(RangeSet<rword> range, InstrumentCallback cbk, AnalysisType type, void* data);
 
     /*! Register a callback event if the instruction matches the mnemonic.
      *

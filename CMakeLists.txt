@@ -245,6 +245,7 @@ set(SOURCES
     "src/Patch/${BASE_ARCH}/PatchGenerator_${BASE_ARCH}.cpp"
     "src/Utility/memory_ostream.cpp"
     "src/Utility/Assembly.cpp"
+    "src/Utility/InstAnalysis.cpp"
     "src/Utility/Memory.cpp"
     "src/Utility/Memory_${OS}.cpp"
     "src/Utility/System.cpp"

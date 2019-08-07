@@ -23,7 +23,7 @@
 #include <vector>
 
 #include "Context.h"
-#include "InstAnalysis.h"
+#include "Utility/InstAnalysis_prive.h"
 #include "Range.h"
 #include "Utility/Assembly.h"
 #include "ExecBlock/ExecBlock.h"
@@ -49,7 +49,7 @@ struct SeqLoc {
 
 struct ExecRegion {
     Range<rword>                    covered;
-    unsigned                        translated; 
+    unsigned                        translated;
     unsigned                        available;
     std::vector<ExecBlock*>         blocks;
     std::map<rword, SeqLoc>         sequenceCache;

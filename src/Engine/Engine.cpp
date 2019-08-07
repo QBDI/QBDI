@@ -114,9 +114,9 @@ Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs,
        processTarget->createMCCodeEmitter(*MCII, *MRI, *MCTX)
     );
     // Allocate QBDI classes
-    assembly = new Assembly(*MCTX, std::move(MAB), *MCII, *processTarget, *MSTI);
-    blockManager = new ExecBlockManager(*MCII, *MRI, *assembly, vminstance);
-    execBroker = new ExecBroker(*assembly, vminstance);
+    assembly = std::unique_ptr<Assembly>(new Assembly(*MCTX, std::move(MAB), *MCII, *processTarget, *MSTI));
+    blockManager = std::unique_ptr<ExecBlockManager>(new ExecBlockManager(*MCII, *MRI, *assembly, vminstance));
+    execBroker = std::unique_ptr<ExecBroker>(new ExecBroker(*assembly, vminstance));
 
     // Get default Patch rules for this architecture
     patchRules = getDefaultPatchRules();
@@ -133,9 +133,6 @@ Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs,
 }
 
 Engine::~Engine() {
-    delete assembly;
-    delete blockManager;
-    delete execBroker;
 }
 
 void Engine::initGPRState() {
@@ -284,8 +281,7 @@ void Engine::instrument(std::vector<Patch> &basicBlock) {
         // Instrument
         for (const auto& item: instrRules) {
             const std::shared_ptr<InstrRule>& rule = item.second;
-            if (rule->canBeApplied(patch, MCII.get())) { // Push MCII
-                rule->instrument(patch, MCII.get(), MRI.get());
+            if (rule->tryInstrument(patch, MCII.get(), MRI.get(), assembly.get())) { // Push MCII
                 LogDebug("Engine::instrument", "Instrumentation rule %" PRIu32 " applied", item.first);
             }
         }
@@ -412,23 +408,23 @@ bool Engine::run(rword start, rword stop) {
     return hasRan;
 }
 
-uint32_t Engine::addInstrRule(InstrRule rule, bool top_list) {
+uint32_t Engine::addInstrRule(std::shared_ptr<InstrRule> rule, bool top_list) {
     uint32_t id = instrRulesCounter++;
     RequireAction("Engine::addInstrRule", id < EVENTID_VM_MASK, return VMError::INVALID_EVENTID);
-    blockManager->clearCache(rule.affectedRange());
-    switch(rule.getPosition()) {
+    blockManager->clearCache(rule->affectedRange());
+    switch(rule->getPosition()) {
         case InstPosition::PREINST:
             if (top_list) {
-                instrRules.push_back(std::make_pair(id, (InstrRule::SharedPtr) rule));
+                instrRules.push_back(std::make_pair(id, rule));
             } else {
-                instrRules.insert(instrRules.begin(), std::make_pair(id, (InstrRule::SharedPtr) rule));
+                instrRules.insert(instrRules.begin(), std::make_pair(id, rule));
             }
             break;
         case InstPosition::POSTINST:
             if (top_list) {
-                instrRules.insert(instrRules.begin(), std::make_pair(id, (InstrRule::SharedPtr) rule));
+                instrRules.insert(instrRules.begin(), std::make_pair(id, rule));
             } else {
-                instrRules.push_back(std::make_pair(id, (InstrRule::SharedPtr) rule));
+                instrRules.push_back(std::make_pair(id, rule));
             }
             break;
     }

@@ -77,9 +77,9 @@ private:
     std::vector<std::string>                 mattrs;
     VMInstanceRef                            vminstance;
 
-    Assembly*                                                       assembly;
-    ExecBlockManager*                                               blockManager;
-    ExecBroker*                                                     execBroker;
+    std::unique_ptr<Assembly>                                       assembly;
+    std::unique_ptr<ExecBlockManager>                               blockManager;
+    std::unique_ptr<ExecBroker>                                     execBroker;
     std::vector<std::shared_ptr<PatchRule>>                         patchRules;
     std::vector<std::pair<uint32_t, std::shared_ptr<InstrRule>>>    instrRules;
     uint32_t                                                        instrRulesCounter;
@@ -206,7 +206,7 @@ public:
      * @return The id of the registered instrumentation (or VMError::INVALID_EVENTID
      * in case of failure).
      */
-    uint32_t addInstrRule(InstrRule rule, bool top_list);
+    uint32_t addInstrRule(std::shared_ptr<InstrRule> rule, bool top_list=false);
 
     /*! Register a callback event for a specific VM event.
      *

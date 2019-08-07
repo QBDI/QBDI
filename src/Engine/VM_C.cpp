@@ -242,4 +242,34 @@ void qbdi_clearCache(VMInstanceRef instance, rword start, rword end) {
     static_cast<VM*>(instance)->clearCache(start, end);
 }
 
+typedef struct {
+    QBDI_InstrumentCallback cbk;
+    void* data;
+} VMC_CallbackData;
+
+std::vector<InstrumentDataCBK> VMC_callback(VMInstanceRef vm, const InstAnalysis *inst, void* _data) {
+    VMC_CallbackData* data = static_cast<VMC_CallbackData*>(_data);
+    size_t len = 0;
+    InstrumentDataCBK* instrumentCBK = data->cbk(vm, inst, data->data, &len);
+
+    std::vector<InstrumentDataCBK> result;
+    if (instrumentCBK != nullptr) {
+        for (size_t i = 0; i < len; i++) {
+            result.push_back(instrumentCBK[i]);
+        }
+        free(instrumentCBK);
+    }
+    return result;
+}
+
+uint32_t qbdi_addInstrRule(VMInstanceRef instance, QBDI_InstrumentCallback cbk, AnalysisType type, void* data) {
+    RequireAction("VM_C::addInstrRule", instance, return VMError::INVALID_EVENTID);
+    return static_cast<VM*>(instance)->addInstrRule(VMC_callback, type, new VMC_CallbackData{cbk, data});
+}
+
+uint32_t qbdi_addInstrRuleRange(VMInstanceRef instance, rword start, rword end, QBDI_InstrumentCallback cbk, AnalysisType type, void* data) {
+    RequireAction("VM_C::addInstrRuleRange", instance, return VMError::INVALID_EVENTID);
+    return static_cast<VM*>(instance)->addInstrRuleRange(start, end, VMC_callback, type, new VMC_CallbackData{cbk, data});
+}
+
 }
