@@ -23,7 +23,7 @@ QBDI::VMAction increment(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBDI:
     return QBDI::VMAction::CONTINUE;
 }
 
-TEST_CASE_METHOD(Instr_ARMTest, "Instr_ARMTest, GPRSave_IC") {
+TEST_CASE_METHOD(Instr_ARMTest, "Instr_ARMTest-GPRSave_IC") {
     uint64_t count1 = 0;
     uint64_t count2 = 0;
 
@@ -42,7 +42,7 @@ TEST_CASE_METHOD(Instr_ARMTest, "Instr_ARMTest, GPRSave_IC") {
     INFO("Took " << count1 << " instructions");
 }
 
-TEST_CASE_METHOD(Instr_ARMTest, "Instr_ARMTest, GPRShuffle_IC") {
+TEST_CASE_METHOD(Instr_ARMTest, "Instr_ARMTest-GPRShuffle_IC") {
     uint64_t count1 = 0;
     uint64_t count2 = 0;
 
@@ -63,7 +63,7 @@ TEST_CASE_METHOD(Instr_ARMTest, "Instr_ARMTest, GPRShuffle_IC") {
     INFO("Took " << count1 << " instructions");
 }
 
-TEST_CASE_METHOD(Instr_ARMTest, "Instr_ARMTest, RelativeAddressing_IC") {
+TEST_CASE_METHOD(Instr_ARMTest, "Instr_ARMTest-RelativeAddressing_IC") {
     uint64_t count1 = 0;
     uint64_t count2 = 0;
 
@@ -84,7 +84,7 @@ TEST_CASE_METHOD(Instr_ARMTest, "Instr_ARMTest, RelativeAddressing_IC") {
     INFO("Took " << count1 << " instructions");
 }
 
-TEST_CASE_METHOD(Instr_ARMTest, "Instr_ARMTest, ConditionalBranching_IC") {
+TEST_CASE_METHOD(Instr_ARMTest, "Instr_ARMTest-ConditionalBranching_IC") {
     uint64_t count1 = 0;
     uint64_t count2 = 0;
 

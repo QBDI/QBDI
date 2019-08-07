@@ -392,7 +392,7 @@ QBDI::VMAction writeSnooper(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState, QB
     return QBDI::VMAction::CONTINUE;
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, Read8") {
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Read8") {
     char buffer[] = "p0p30fd0p3";
     size_t buffer_size = sizeof(buffer) / sizeof(char);
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
@@ -408,7 +408,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, Read8") {
     REQUIRE(OFFSET_SUM(buffer_size) == info.i);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, Read16") {
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Read16") {
     uint16_t buffer[] = {44595, 59483, 57377, 31661, 846, 56570, 46925, 62955, 25481, 41095};
     size_t buffer_size = sizeof(buffer) / sizeof(uint16_t);
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
@@ -424,7 +424,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, Read16") {
     REQUIRE(OFFSET_SUM(buffer_size) == info.i);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, Read32") {
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Read32") {
     uint32_t buffer[] = {3531902336, 1974345459, 1037124602, 2572792182, 3451121073, 4105092976, 2050515100, 2786945221, 1496976643, 515521533};
     size_t buffer_size = sizeof(buffer) / sizeof(uint32_t);
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
@@ -440,7 +440,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, Read32") {
     REQUIRE(OFFSET_SUM(buffer_size) == info.i);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, Write8") {
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Write8") {
     const size_t buffer_size = 10;
     uint8_t buffer[buffer_size];
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
@@ -456,7 +456,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, Write8") {
     REQUIRE(OFFSET_SUM(buffer_size) == info.i);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, Write16") {
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Write16") {
     const size_t buffer_size = 10;
     uint16_t buffer[buffer_size];
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
@@ -472,7 +472,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, Write16") {
     REQUIRE(OFFSET_SUM(buffer_size) == info.i);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, Write32") {
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Write32") {
     const size_t buffer_size = 10;
     uint32_t buffer[buffer_size];
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
@@ -488,7 +488,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, Write32") {
     REQUIRE(OFFSET_SUM(buffer_size) == info.i);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, BasicBlockRead") {
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-BasicBlockRead") {
     char buffer[] = "p0p30fd0p3";
     size_t buffer_size = sizeof(buffer) / sizeof(char);
     TestInfo infoInst = {(void*)buffer, sizeof(buffer), 0};
@@ -520,7 +520,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, BasicBlockRead") {
     REQUIRE(infoInst.i == infoBB.i);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, BasicBlockWrite") {
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-BasicBlockWrite") {
     const size_t buffer_size = 11;
     char buffer[buffer_size];
     TestInfo infoInst = {(void*)buffer, sizeof(buffer), 0};
@@ -552,7 +552,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, BasicBlockWrite") {
     REQUIRE(infoInst.i == infoBB.i);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, ReadRange") {
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-ReadRange") {
     uint32_t buffer[] = {3531902336, 1974345459, 1037124602, 2572792182, 3451121073, 4105092976, 2050515100, 2786945221, 1496976643, 515521533};
     size_t buffer_size = sizeof(buffer) / sizeof(uint32_t);
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
@@ -568,7 +568,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, ReadRange") {
     REQUIRE(OFFSET_SUM(buffer_size) == info.i);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, WriteRange") {
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-WriteRange") {
     const size_t buffer_size = 10;
     uint32_t buffer[buffer_size];
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
@@ -584,7 +584,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, WriteRange") {
     REQUIRE(OFFSET_SUM(buffer_size) == info.i);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, ReadWriteRange") {
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-ReadWriteRange") {
     const size_t buffer_size = 10;
     uint32_t buffer[buffer_size];
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
@@ -610,7 +610,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, ReadWriteRange") {
     REQUIRE(OFFSET_SUM(buffer_size) == info.i);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest, MemorySnooping") {
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-MemorySnooping") {
     uint32_t a = 10, b = 42, c = 1337;
     QBDI::rword original = mad(&a, &b, &c);
     vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);

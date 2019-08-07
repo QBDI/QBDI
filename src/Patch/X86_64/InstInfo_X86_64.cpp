@@ -29,12 +29,19 @@
 namespace QBDI {
 /* TODO instruction (no yet supported)
  * MONITOR & MWAIT // ununderstand access of these instructions
- * llvm::X86::MMX_MASKMOVQ64, // 64 bits implicit store to [rdi]
- * MOVS/MOVSB/MOVSW/MOVSD/MOVSQ // implicit move from [rsi] to [rdi] (between 8 and 64 bits r/w)
- * CMPS/CMPSB/CMPSW/CMPSD/CMPSQ // implicit compare betwen [rsi] and [rdi] (two read between 8 and 64 bits)
- * STOS/STOSB/STOSW/STOSD/STOSQ // implicit store to [rdi]
+ * llvm::X86::MMX_MASKMOVQ64,   // 64 bits implicit store to [rdi]
+ * REP/REPE/REPZ/REPNE/REPNZ    // instruction repeted
  */
 namespace {
+
+unsigned DOUBLE_READ[] = {
+    llvm::X86::CMPSB,
+    llvm::X86::CMPSL,
+    llvm::X86::CMPSQ,
+    llvm::X86::CMPSW,
+};
+
+size_t DOUBLE_READ_SIZE = sizeof(DOUBLE_READ)/sizeof(unsigned);
 
 unsigned READ_8[] = {
     llvm::X86::ADC8mi,
@@ -53,6 +60,7 @@ unsigned READ_8[] = {
     llvm::X86::CMP8mi8,
     llvm::X86::CMP8mr,
     llvm::X86::CMP8rm,
+    llvm::X86::CMPSB,
     llvm::X86::CMPXCHG8rm,
     llvm::X86::CRC32r32m8,
     llvm::X86::CRC32r64m8,
@@ -74,8 +82,10 @@ unsigned READ_8[] = {
     llvm::X86::LOCK_SUB8mr,
     llvm::X86::LOCK_XOR8mi,
     llvm::X86::LOCK_XOR8mr,
+    llvm::X86::LODSB,
     llvm::X86::LXADD8,
     llvm::X86::MOV8rm,
+    llvm::X86::MOVSB,
     llvm::X86::MOVSX16rm8,
     llvm::X86::MOVSX32rm8,
     llvm::X86::MOVSX64rm8,
@@ -105,6 +115,7 @@ unsigned READ_8[] = {
     llvm::X86::SBB8mi,
     llvm::X86::SBB8mr,
     llvm::X86::SBB8rm,
+    llvm::X86::SCASB,
     llvm::X86::SHL8m1,
     llvm::X86::SHL8mCL,
     llvm::X86::SHL8mi,
@@ -159,6 +170,7 @@ unsigned READ_16[] = {
     llvm::X86::CMP16mi8,
     llvm::X86::CMP16mr,
     llvm::X86::CMP16rm,
+    llvm::X86::CMPSW,
     llvm::X86::CMPXCHG16rm,
     llvm::X86::CRC32r32m16,
     llvm::X86::DEC16m,
@@ -194,11 +206,13 @@ unsigned READ_16[] = {
     llvm::X86::LOCK_XOR16mi,
     llvm::X86::LOCK_XOR16mi8,
     llvm::X86::LOCK_XOR16mr,
+    llvm::X86::LODSW,
     llvm::X86::LXADD16,
     llvm::X86::LZCNT16rm,
     llvm::X86::MMX_PINSRWrm,
     llvm::X86::MOV16rm,
     llvm::X86::MOVBE16rm,
+    llvm::X86::MOVSW,
     llvm::X86::MOVSX32rm16,
     llvm::X86::MOVSX64rm16,
     llvm::X86::MOVZX32rm16,
@@ -232,6 +246,7 @@ unsigned READ_16[] = {
     llvm::X86::SBB16mi8,
     llvm::X86::SBB16mr,
     llvm::X86::SBB16rm,
+    llvm::X86::SCASW,
     llvm::X86::SHL16m1,
     llvm::X86::SHL16mCL,
     llvm::X86::SHL16mi,
@@ -313,6 +328,7 @@ unsigned READ_32[] = {
     llvm::X86::CMP32mi8,
     llvm::X86::CMP32mr,
     llvm::X86::CMP32rm,
+    llvm::X86::CMPSL,
     llvm::X86::CMPSSrm,
     llvm::X86::CMPXCHG32rm,
     llvm::X86::COMISSrm,
@@ -364,6 +380,7 @@ unsigned READ_32[] = {
     llvm::X86::LOCK_XOR32mi,
     llvm::X86::LOCK_XOR32mi8,
     llvm::X86::LOCK_XOR32mr,
+    llvm::X86::LODSL,
     llvm::X86::LXADD32,
     llvm::X86::LZCNT32rm,
     llvm::X86::MAXSSrm,
@@ -374,6 +391,7 @@ unsigned READ_32[] = {
     llvm::X86::MMX_PUNPCKLWDirm,
     llvm::X86::MOV32rm,
     llvm::X86::MOVDI2PDIrm,
+    llvm::X86::MOVSL,
     llvm::X86::MOVSSrm,
     llvm::X86::MOVSX64rm32,
     llvm::X86::MUL32m,
@@ -421,6 +439,7 @@ unsigned READ_32[] = {
     llvm::X86::SBB32mi8,
     llvm::X86::SBB32mr,
     llvm::X86::SBB32rm,
+    llvm::X86::SCASL,
     llvm::X86::SHL32m1,
     llvm::X86::SHL32mCL,
     llvm::X86::SHL32mi,
@@ -540,6 +559,7 @@ unsigned READ_64[] = {
     llvm::X86::CMP64mr,
     llvm::X86::CMP64rm,
     llvm::X86::CMPSDrm,
+    llvm::X86::CMPSQ,
     llvm::X86::CMPXCHG64rm,
     llvm::X86::CMPXCHG8B,
     llvm::X86::COMISDrm,
@@ -588,6 +608,7 @@ unsigned READ_64[] = {
     llvm::X86::LOCK_XOR64mi32,
     llvm::X86::LOCK_XOR64mi8,
     llvm::X86::LOCK_XOR64mr,
+    llvm::X86::LODSQ,
     llvm::X86::LXADD64,
     llvm::X86::LZCNT64rm,
     llvm::X86::MAXSDrm,
@@ -674,6 +695,7 @@ unsigned READ_64[] = {
     llvm::X86::MOVLPSrm,
     llvm::X86::MOVQI2PQIrm,
     llvm::X86::MOVSDrm,
+    llvm::X86::MOVSQ,
     llvm::X86::MUL64m,
     llvm::X86::MULSDrm,
     llvm::X86::MULX64rm,
@@ -716,6 +738,7 @@ unsigned READ_64[] = {
     llvm::X86::SBB64mi8,
     llvm::X86::SBB64mr,
     llvm::X86::SBB64rm,
+    llvm::X86::SCASQ,
     llvm::X86::SHL64m1,
     llvm::X86::SHL64mCL,
     llvm::X86::SHL64mi,
@@ -1478,6 +1501,7 @@ unsigned WRITE_8[] = {
     llvm::X86::LOCK_XOR8mr,
     llvm::X86::MOV8mi,
     llvm::X86::MOV8mr,
+    llvm::X86::MOVSB,
     llvm::X86::NEG8m,
     llvm::X86::NOT8m,
     llvm::X86::OR8mi,
@@ -1506,6 +1530,7 @@ unsigned WRITE_8[] = {
     llvm::X86::SHR8m1,
     llvm::X86::SHR8mCL,
     llvm::X86::SHR8mi,
+    llvm::X86::STOSB,
     llvm::X86::SUB8mi,
     llvm::X86::SUB8mi8,
     llvm::X86::SUB8mr,
@@ -1565,6 +1590,7 @@ unsigned WRITE_16[] = {
     llvm::X86::MOV16mi,
     llvm::X86::MOV16mr,
     llvm::X86::MOVBE16mr,
+    llvm::X86::MOVSW,
     llvm::X86::NEG16m,
     llvm::X86::NOT16m,
     llvm::X86::OR16mi,
@@ -1598,6 +1624,7 @@ unsigned WRITE_16[] = {
     llvm::X86::SHR16mi,
     llvm::X86::SHRD16mrCL,
     llvm::X86::SHRD16mri8,
+    llvm::X86::STOSW,
     llvm::X86::SUB16mi,
     llvm::X86::SUB16mi8,
     llvm::X86::SUB16mr,
@@ -1651,6 +1678,7 @@ unsigned WRITE_32[] = {
     llvm::X86::MOVBE32mr,
     llvm::X86::MOVNTImr,
     llvm::X86::MOVPDI2DImr,
+    llvm::X86::MOVSL,
     llvm::X86::MOVSSmr,
     llvm::X86::NEG32m,
     llvm::X86::NOT32m,
@@ -1689,6 +1717,7 @@ unsigned WRITE_32[] = {
     llvm::X86::SHRD32mrCL,
     llvm::X86::SHRD32mri8,
     llvm::X86::STMXCSR,
+    llvm::X86::STOSL,
     llvm::X86::ST_F32m,
     llvm::X86::ST_FP32m,
     llvm::X86::SUB32mi,
@@ -1752,6 +1781,7 @@ unsigned WRITE_64[] = {
     llvm::X86::MOVLPSmr,
     llvm::X86::MOVNTI_64mr,
     llvm::X86::MOVPQI2QImr,
+    llvm::X86::MOVSQ,
     llvm::X86::MOVSDmr,
     llvm::X86::NEG64m,
     llvm::X86::NOT64m,
@@ -1788,6 +1818,7 @@ unsigned WRITE_64[] = {
     llvm::X86::SHR64mi,
     llvm::X86::SHRD64mrCL,
     llvm::X86::SHRD64mri8,
+    llvm::X86::STOSQ,
     llvm::X86::ST_F64m,
     llvm::X86::ST_FP64m,
     llvm::X86::SUB64mi32,
@@ -1993,14 +2024,15 @@ size_t STACK_READ_64_SIZE = sizeof(STACK_READ_64)/sizeof(unsigned);
  * | 1 bit stack access flag | 3 bits reserved | 12 bits unsigned access size |
  * ----------------------------------------------------------------------------
  *
- * ----------------------------------------------------------------------------
- * | 0xf                          READ ACCESS                             0x0 |
- * ----------------------------------------------------------------------------
- * | 1 bit stack access flag | 3 bits reserved | 12 bits unsigned access size |
- * ----------------------------------------------------------------------------
+ * ------------------------------------------------------------------------------------------------
+ * | 0xf                                   READ ACCESS                                        0x0 |
+ * ------------------------------------------------------------------------------------------------
+ * | 1 bit stack access flag | 1 bit double read | 2 bits reserved | 12 bits unsigned access size |
+ * ------------------------------------------------------------------------------------------------
 */
 
 constexpr uint32_t STACK_ACCESS_FLAG = 0x8000;
+constexpr uint32_t DOUBLE_READ_FLAG = 0x4000;
 constexpr uint32_t READ(uint32_t s) {return s;}
 constexpr uint32_t WRITE(uint32_t s) {return s<<16;}
 constexpr uint32_t STACK_READ(uint32_t s) {return STACK_ACCESS_FLAG | s;}
@@ -2009,7 +2041,7 @@ constexpr uint32_t GET_READ_SIZE(uint32_t v) {return v & 0xfff;}
 constexpr uint32_t GET_WRITE_SIZE(uint32_t v) {return (v>>16) & 0xfff;}
 constexpr uint32_t IS_STACK_READ(uint32_t v) {return (v & STACK_ACCESS_FLAG) > 0;}
 constexpr uint32_t IS_STACK_WRITE(uint32_t v) {return ((v>>16) & STACK_ACCESS_FLAG) > 0;}
-
+constexpr uint32_t IS_DOUBLE_READ(uint32_t v) {return (v & DOUBLE_READ_FLAG) > 0;}
 
 uint32_t MEMACCESS_INFO_TABLE[llvm::X86::INSTRUCTION_LIST_END] = {0};
 
@@ -2070,6 +2102,9 @@ void initMemAccessInfo() {
     _initMemAccessStackWrite(STACK_WRITE_16, STACK_WRITE_16_SIZE, 2);
     _initMemAccessStackWrite(STACK_WRITE_32, STACK_WRITE_32_SIZE, 4);
     _initMemAccessStackWrite(STACK_WRITE_64, STACK_WRITE_64_SIZE, 8);
+    for (size_t i = 0; i < DOUBLE_READ_SIZE; i++) {
+        MEMACCESS_INFO_TABLE[DOUBLE_READ[i]] |= DOUBLE_READ_FLAG;
+    }
 }
 
 unsigned getReadSize(const llvm::MCInst* inst) {
@@ -2086,6 +2121,10 @@ bool isStackRead(const llvm::MCInst* inst) {
 
 bool isStackWrite(const llvm::MCInst* inst) {
     return IS_STACK_WRITE(MEMACCESS_INFO_TABLE[inst->getOpcode()]);
+}
+
+bool isDoubleRead(const llvm::MCInst* inst) {
+    return IS_DOUBLE_READ(MEMACCESS_INFO_TABLE[inst->getOpcode()]);
 }
 
 unsigned getImmediateSize(const llvm::MCInst* inst, const llvm::MCInstrDesc* desc) {

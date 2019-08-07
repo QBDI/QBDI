@@ -84,7 +84,6 @@ public:
                     const std::vector<std::shared_ptr<PatchGenerator>> patchGen, bool breakToHost, InstPosition position) const;
 };
 
-
 class InstrRuleBasic : public InstrRule {
 
     PatchCondition::SharedPtr                     condition;
@@ -139,6 +138,69 @@ public:
                        const Assembly* assembly) const override {
         if (canBeApplied(patch, MCII)) {
             instrument(patch, MCII, MRI, patchGen, breakToHost, position);
+            return true;
+        }
+        return false;
+    }
+};
+
+typedef std::vector<std::shared_ptr<PatchGenerator>> (*PatchGenMethod)(Patch &patch, const llvm::MCInstrInfo* MCII,
+                                                      const llvm::MCRegisterInfo* MRI);
+
+class InstrRuleDynamic : public InstrRule {
+
+    PatchCondition::SharedPtr     condition;
+    PatchGenMethod                patchGenMethod;
+    InstPosition                  position;
+    bool                          breakToHost;
+
+public:
+
+    /*! Allocate a new instrumentation rule with a condition, a method to generate patch instruction, an
+     *  instrumentation position and a breakToHost request.
+     *
+     * @param[in] condition        A PatchCondition which determine wheter or not this PatchRule
+     *                             applies.
+     * @param[in] patchGenMethod   A Method that will be called to generate the patch.
+     * @param[in] position         An enum indicating wether this instrumentation should be positioned
+     *                             before the instruction or after it.
+     * @param[in] breakToHost      A boolean determining whether this instrumentation should end with
+     *                             a break to host (in the case of a callback for example).
+    */
+    InstrRuleDynamic(PatchCondition::SharedPtr condition, PatchGenMethod patchGenMethod,
+                     InstPosition position, bool breakToHost) : condition(condition),
+        patchGenMethod(patchGenMethod), position(position), breakToHost(breakToHost) {}
+
+    ~InstrRuleDynamic() override = default;
+
+    operator std::unique_ptr<InstrRule>() override {
+        return std::make_unique<InstrRuleDynamic>(*this);
+    }
+
+    std::unique_ptr<InstrRule> clone() const override {
+      return std::make_unique<InstrRuleDynamic>(*this);
+    };
+
+    InstPosition getPosition() const override { return position; }
+
+    RangeSet<rword> affectedRange() const override {
+        return condition->affectedRange();
+    }
+
+    /*! Determine wheter this rule applies by evaluating this rule condition on the current
+     *  context.
+     *
+     * @param[in] patch  A patch containing the current context.
+     * @param[in] MCII   An LLVM MC instruction info context.
+     *
+     * @return True if this instrumentation condition evaluate to true on this patch.
+    */
+    bool canBeApplied(const Patch &patch, const llvm::MCInstrInfo* MCII) const;
+
+    bool tryInstrument(Patch &patch, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI,
+                       const Assembly* assembly) const override {
+        if (canBeApplied(patch, MCII)) {
+            instrument(patch, MCII, MRI, patchGenMethod(patch, MCII, MRI), breakToHost, position);
             return true;
         }
         return false;

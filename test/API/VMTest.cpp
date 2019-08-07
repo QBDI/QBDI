@@ -187,7 +187,7 @@ VMTest::~VMTest() {
 }
 
 
-TEST_CASE_METHOD(VMTest, "VMTest, Call0") {
+TEST_CASE_METHOD(VMTest, "VMTest-Call0") {
     QBDI::simulateCall(state, FAKE_RET_ADDR);
 
     vm->run((QBDI::rword) dummyFun0, (QBDI::rword) FAKE_RET_ADDR);
@@ -198,7 +198,7 @@ TEST_CASE_METHOD(VMTest, "VMTest, Call0") {
 }
 
 
-TEST_CASE_METHOD(VMTest, "VMTest, Call1") {
+TEST_CASE_METHOD(VMTest, "VMTest-Call1") {
     QBDI::simulateCall(state, FAKE_RET_ADDR, {42});
 
     vm->run((QBDI::rword) dummyFun1, (QBDI::rword) FAKE_RET_ADDR);
@@ -209,7 +209,7 @@ TEST_CASE_METHOD(VMTest, "VMTest, Call1") {
 }
 
 
-TEST_CASE_METHOD(VMTest, "VMTest, Call4") {
+TEST_CASE_METHOD(VMTest, "VMTest-Call4") {
     QBDI::simulateCall(state, FAKE_RET_ADDR, {1, 2, 3, 5});
 
     vm->run((QBDI::rword) dummyFun4, (QBDI::rword) FAKE_RET_ADDR);
@@ -220,7 +220,7 @@ TEST_CASE_METHOD(VMTest, "VMTest, Call4") {
 }
 
 
-TEST_CASE_METHOD(VMTest, "VMTest, Call5") {
+TEST_CASE_METHOD(VMTest, "VMTest-Call5") {
     QBDI::simulateCall(state, FAKE_RET_ADDR, {1, 2, 3, 5, 8});
 
     vm->run((QBDI::rword) dummyFun5, (QBDI::rword) FAKE_RET_ADDR);
@@ -230,7 +230,7 @@ TEST_CASE_METHOD(VMTest, "VMTest, Call5") {
     SUCCEED();
 }
 
-TEST_CASE_METHOD(VMTest, "VMTest, Call8") {
+TEST_CASE_METHOD(VMTest, "VMTest-Call8") {
     QBDI::simulateCall(state, FAKE_RET_ADDR, {1, 2, 3, 5, 8, 13, 21, 34});
 
     vm->run((QBDI::rword) dummyFun8, (QBDI::rword) FAKE_RET_ADDR);
@@ -241,7 +241,7 @@ TEST_CASE_METHOD(VMTest, "VMTest, Call8") {
 }
 
 
-TEST_CASE_METHOD(VMTest, "VMTest, ExternalCall") {
+TEST_CASE_METHOD(VMTest, "VMTest-ExternalCall") {
     QBDI::simulateCall(state, FAKE_RET_ADDR, {42});
 
     vm->run((QBDI::rword) dummyFunCall, (QBDI::rword) FAKE_RET_ADDR);
@@ -280,7 +280,7 @@ QBDI::VMAction evilCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBDI::F
 
 
 /* This test is used to ensure that addCodeAddrCB is not broken */
-TEST_CASE_METHOD(VMTest, "VMTest, Breakpoint") {
+TEST_CASE_METHOD(VMTest, "VMTest-Breakpoint") {
     uint32_t counter = 0;
     QBDI::rword retval = 0;
     vm->addCodeAddrCB((QBDI::rword)dummyFun0, QBDI::InstPosition::PREINST, countInstruction, &counter);
@@ -292,7 +292,7 @@ TEST_CASE_METHOD(VMTest, "VMTest, Breakpoint") {
 }
 
 
-TEST_CASE_METHOD(VMTest, "VMTest, InstCallback") {
+TEST_CASE_METHOD(VMTest, "VMTest-InstCallback") {
     QBDI::rword info[2] = {42, 0};
     QBDI::simulateCall(state, FAKE_RET_ADDR, {info[0]});
 
@@ -404,7 +404,7 @@ QBDI::VMAction evilMnemCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBD
 }
 
 
-TEST_CASE_METHOD(VMTest, "VMTest, MnemCallback") {
+TEST_CASE_METHOD(VMTest, "VMTest-MnemCallback") {
     QBDI::rword info[3] = {0, 0, 42};
     QBDI::rword retval = 0;
     const char* noop = MNEM_CMP;
@@ -466,7 +466,7 @@ QBDI::VMAction checkTransfer(QBDI::VMInstanceRef vm, const QBDI::VMState *state,
     return QBDI::VMAction::CONTINUE;
 }
 
-TEST_CASE_METHOD(VMTest, "VMTest, VMEvent_ExecTransfer") {
+TEST_CASE_METHOD(VMTest, "VMTest-VMEvent_ExecTransfer") {
     int s = 0;
     QBDI::simulateCall(state, FAKE_RET_ADDR, {42});
     bool instrumented = vm->addInstrumentedModuleFromAddr((QBDI::rword)&dummyFunCall);
@@ -483,7 +483,7 @@ TEST_CASE_METHOD(VMTest, "VMTest, VMEvent_ExecTransfer") {
     vm->deleteAllInstrumentations();
 }
 
-TEST_CASE_METHOD(VMTest, "VMTest, CacheInvalidation") {
+TEST_CASE_METHOD(VMTest, "VMTest-CacheInvalidation") {
     uint32_t count1 = 0;
     uint32_t count2 = 0;
 
@@ -605,7 +605,7 @@ QBDI::VMAction funkyCountInstruction(QBDI::VMInstanceRef vm, QBDI::GPRState *gpr
     return QBDI::VMAction::BREAK_TO_VM;
 }
 
-TEST_CASE_METHOD(VMTest, "VMTest, DelayedCacheFlush") {
+TEST_CASE_METHOD(VMTest, "VMTest-DelayedCacheFlush") {
     uint32_t count = 0;
     FunkyInfo info = FunkyInfo {0, 0};
 
@@ -669,7 +669,7 @@ static QBDI::VMAction verifyCB2(QBDI::VMInstanceRef vm, QBDI::GPRState*, QBDI::F
     return QBDI::VMAction::CONTINUE;
 }
 
-TEST_CASE("VMTest, MoveConstructor") {
+TEST_CASE("VMTest-MoveConstructor") {
 
     VMTest vm1;
     QBDI::VM* vm = vm1.vm.get();
@@ -720,7 +720,7 @@ TEST_CASE("VMTest, MoveConstructor") {
     REQUIRE(data.reachInstrumentCB);
 }
 
-TEST_CASE("VMTest, CopyConstructor") {
+TEST_CASE("VMTest-CopyConstructor") {
 
     VMTest vm1;
     QBDI::VM* vm = vm1.vm.get();
@@ -771,7 +771,7 @@ TEST_CASE("VMTest, CopyConstructor") {
     REQUIRE(data.reachInstrumentCB);
 }
 
-TEST_CASE("VMTest, MoveAssignmentOperator") {
+TEST_CASE("VMTest-MoveAssignmentOperator") {
 
     VMTest vm1_;
     VMTest vm2_;
@@ -844,7 +844,7 @@ TEST_CASE("VMTest, MoveAssignmentOperator") {
     REQUIRE(data1.reachInstrumentCB);
 }
 
-TEST_CASE("VMTest, CopyAssignmentOperator") {
+TEST_CASE("VMTest-CopyAssignmentOperator") {
 
     VMTest vm1_;
     VMTest vm2_;

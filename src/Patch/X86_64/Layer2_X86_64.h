@@ -80,6 +80,10 @@ llvm::MCInst lea32(unsigned int dst, unsigned int base, rword scale, unsigned in
 
 llvm::MCInst lea64(unsigned int dst, unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg);
 
+llvm::MCInst xchg32rm(unsigned int reg, unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg);
+
+llvm::MCInst xchg64rm(unsigned int reg, unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg);
+
 llvm::MCInst pushf32();
 
 llvm::MCInst pushf64();
@@ -89,6 +93,17 @@ llvm::MCInst popf32();
 llvm::MCInst popf64();
 
 llvm::MCInst ret();
+
+
+// /!\ change flags
+llvm::MCInst and32ri(unsigned int reg, rword imm);
+
+llvm::MCInst and64ri(unsigned int reg, rword imm);
+
+llvm::MCInst shr32ri(unsigned int reg, rword imm);
+
+llvm::MCInst shr64ri(unsigned int reg, rword imm);
+
 
 // low level layer 2 architecture abtraction
 
@@ -108,11 +123,18 @@ llvm::MCInst addri(unsigned int dst, unsigned int src, rword imm);
 
 llvm::MCInst lea(unsigned int dst, unsigned int base, rword scale, unsigned int offset, rword disp, unsigned int seg);
 
+llvm::MCInst xchgrm(unsigned int reg, unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg);
+
 llvm::MCInst popf();
 
 llvm::MCInst pushf();
 
 llvm::MCInst jmpm(unsigned int base, rword offset);
+
+// /!\ change flags
+llvm::MCInst andri(unsigned int reg, rword imm);
+
+llvm::MCInst shrri(unsigned int reg, rword imm);
 
 // high level layer 2
 
@@ -123,6 +145,8 @@ std::shared_ptr<RelocatableInst> Mov(Reg reg, Constant cst);
 std::shared_ptr<RelocatableInst> Mov(Offset offset, Reg reg);
 
 std::shared_ptr<RelocatableInst> Mov(Reg reg, Offset offset);
+
+std::shared_ptr<RelocatableInst> Xchg(Reg reg, Offset offset);
 
 std::shared_ptr<RelocatableInst> JmpM(Offset offset);
 

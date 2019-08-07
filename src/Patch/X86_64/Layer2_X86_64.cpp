@@ -318,6 +318,36 @@ llvm::MCInst lea64(unsigned int dst, unsigned int base, rword scale, unsigned in
     return inst;
 }
 
+llvm::MCInst xchg32rm(unsigned int reg, unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg) {
+    llvm::MCInst inst;
+
+    inst.setOpcode(llvm::X86::XCHG32rm);
+    inst.addOperand(llvm::MCOperand::createReg(reg));
+    inst.addOperand(llvm::MCOperand::createReg(reg));
+    inst.addOperand(llvm::MCOperand::createReg(base));
+    inst.addOperand(llvm::MCOperand::createImm(scale));
+    inst.addOperand(llvm::MCOperand::createReg(offset));
+    inst.addOperand(llvm::MCOperand::createImm(displacement));
+    inst.addOperand(llvm::MCOperand::createReg(seg));
+
+    return inst;
+}
+
+llvm::MCInst xchg64rm(unsigned int reg, unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg) {
+    llvm::MCInst inst;
+
+    inst.setOpcode(llvm::X86::XCHG64rm);
+    inst.addOperand(llvm::MCOperand::createReg(reg));
+    inst.addOperand(llvm::MCOperand::createReg(reg));
+    inst.addOperand(llvm::MCOperand::createReg(base));
+    inst.addOperand(llvm::MCOperand::createImm(scale));
+    inst.addOperand(llvm::MCOperand::createReg(offset));
+    inst.addOperand(llvm::MCOperand::createImm(displacement));
+    inst.addOperand(llvm::MCOperand::createReg(seg));
+
+    return inst;
+}
+
 llvm::MCInst popf32() {
     llvm::MCInst inst;
 
@@ -354,6 +384,56 @@ llvm::MCInst ret() {
     llvm::MCInst inst;
 
     inst.setOpcode(llvm::X86::RETQ);
+
+    return inst;
+}
+
+llvm::MCInst and32ri(unsigned int reg, rword imm) {
+    llvm::MCInst inst;
+
+    if (imm > 255)
+        inst.setOpcode(llvm::X86::AND32ri);
+    else
+        inst.setOpcode(llvm::X86::AND32ri8);
+    inst.addOperand(llvm::MCOperand::createReg(reg));
+    inst.addOperand(llvm::MCOperand::createReg(reg));
+    inst.addOperand(llvm::MCOperand::createImm(imm));
+
+    return inst;
+}
+
+llvm::MCInst and64ri(unsigned int reg, rword imm) {
+    llvm::MCInst inst;
+
+    if (imm > 255)
+        inst.setOpcode(llvm::X86::AND64ri32);
+    else
+        inst.setOpcode(llvm::X86::AND64ri8);
+    inst.addOperand(llvm::MCOperand::createReg(reg));
+    inst.addOperand(llvm::MCOperand::createReg(reg));
+    inst.addOperand(llvm::MCOperand::createImm(imm));
+
+    return inst;
+}
+
+llvm::MCInst shr32ri(unsigned int reg, rword imm) {
+    llvm::MCInst inst;
+
+    inst.setOpcode(llvm::X86::SHR32ri);
+    inst.addOperand(llvm::MCOperand::createReg(reg));
+    inst.addOperand(llvm::MCOperand::createReg(reg));
+    inst.addOperand(llvm::MCOperand::createImm(imm));
+
+    return inst;
+}
+
+llvm::MCInst shr64ri(unsigned int reg, rword imm) {
+    llvm::MCInst inst;
+
+    inst.setOpcode(llvm::X86::SHR64ri);
+    inst.addOperand(llvm::MCOperand::createReg(reg));
+    inst.addOperand(llvm::MCOperand::createReg(reg));
+    inst.addOperand(llvm::MCOperand::createImm(imm));
 
     return inst;
 }
@@ -414,6 +494,13 @@ llvm::MCInst lea(unsigned int dst, unsigned int base, rword scale, unsigned int 
         return lea32(dst, base, scale, offset, disp, seg);
 }
 
+llvm::MCInst xchgrm(unsigned int reg, unsigned int base, rword scale, unsigned int offset, rword disp, unsigned int seg) {
+    if constexpr(is_x86_64)
+        return xchg64rm(reg, base, scale, offset, disp, seg);
+    else
+        return xchg32rm(reg, base, scale, offset, disp, seg);
+}
+
 llvm::MCInst popf() {
     if constexpr(is_x86_64)
         return popf64();
@@ -435,6 +522,20 @@ llvm::MCInst jmpm(unsigned int base, rword offset) {
         return jmp32m(base, offset);
 }
 
+llvm::MCInst andri(unsigned int reg, rword imm) {
+    if constexpr(is_x86_64)
+        return and64ri(reg, imm);
+    else
+        return and32ri(reg, imm);
+}
+
+llvm::MCInst shrri(unsigned int reg, rword imm) {
+    if constexpr(is_x86_64)
+        return shr64ri(reg, imm);
+    else
+        return shr32ri(reg, imm);
+}
+
 RelocatableInst::SharedPtr Mov(Reg dst, Reg src) {
     return NoReloc(movrr(dst, src));
 }
@@ -444,31 +545,35 @@ RelocatableInst::SharedPtr Mov(Reg reg, Constant cst) {
 }
 
 RelocatableInst::SharedPtr Mov(Offset offset, Reg reg) {
-    return DataBlockRelx86(movmr(0, 0, 0, 0, 0, reg), 3, offset, 0, 7);
+    return DataBlockRelx86(movmr(0, 0, 0, 0, 0, reg), 0, offset, 7);
 }
 
 RelocatableInst::SharedPtr Mov(Reg reg, Offset offset) {
-    return DataBlockRelx86(movrm(reg, 0, 0, 0, 0, 0), 4, offset, 1, 7);
+    return DataBlockRelx86(movrm(reg, 0, 0, 0, 0, 0), 1, offset, 7);
+}
+
+RelocatableInst::SharedPtr Xchg(Reg reg, Offset offset) {
+    return DataBlockRelx86(xchgrm(reg, 0, 0, 0, 0, 0), 2, offset, 7);
 }
 
 RelocatableInst::SharedPtr JmpM(Offset offset) {
-    return DataBlockRelx86(jmpm(0, 0), 3, offset, 0, 6);
+    return DataBlockRelx86(jmpm(0, 0), 0, offset, 6);
 }
 
 RelocatableInst::SharedPtr Fxsave(Offset offset) {
-    return DataBlockRelx86(fxsave(0, 0), 3, offset, 0, 7);
+    return DataBlockRelx86(fxsave(0, 0), 0, offset, 7);
 }
 
 RelocatableInst::SharedPtr Fxrstor(Offset offset) {
-    return DataBlockRelx86(fxrstor(0, 0), 3, offset, 0, 7);
+    return DataBlockRelx86(fxrstor(0, 0), 0, offset, 7);
 }
 
 RelocatableInst::SharedPtr Vextractf128(Offset offset, unsigned int src, Constant regoffset) {
-    return DataBlockRelx86(vextractf128(0, 0, src, regoffset), 3, offset, 0, 10);
+    return DataBlockRelx86(vextractf128(0, 0, src, regoffset), 0, offset, 10);
 }
 
 RelocatableInst::SharedPtr Vinsertf128(unsigned int dst, Offset offset, Constant regoffset) {
-    return DataBlockRelx86(vinsertf128(dst, 0, 0, regoffset), 5, offset, 2, 10);
+    return DataBlockRelx86(vinsertf128(dst, 0, 0, regoffset), 2, offset, 10);
 }
 
 RelocatableInst::SharedPtr Pushr(Reg reg) {

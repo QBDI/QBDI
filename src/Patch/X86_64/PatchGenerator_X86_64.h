@@ -65,6 +65,115 @@ public:
         rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
+class GetReadAddress : public PatchGenerator, public AutoAlloc<PatchGenerator, GetReadAddress> {
+
+    Temp temp;
+    size_t index;
+    uint64_t TSFlags;
+
+public:
+
+    /*! Resolve the memory address where the instructions will read its value and copy the address in a
+     * temporary. This PatchGenerator is only guaranteed to work before the instruction has been
+     * executed.
+     *
+     * @param[in] temp      A temporary where the memory address will be copied.
+     * @param[in] index     Index of access to saved when instruction does many read access
+     * @param[in] TSFlags   Instruction architecture dependent flag from MCInstrDesc
+    */
+    GetReadAddress(Temp temp, size_t index, uint64_t TSFlags) : temp(temp), index(index), TSFlags(TSFlags) {}
+
+    /*! Output:
+     *
+     * if stack access:
+     * MOV REG64 temp, REG64 RSP
+     *
+     * else:
+     * LEA REG64 temp, MEM64 addr
+    */
+    std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
+};
+
+class GetWriteAddress : public PatchGenerator, public AutoAlloc<PatchGenerator, GetWriteAddress> {
+
+    Temp temp;
+    uint64_t TSFlags;
+
+public:
+
+    /*! Resolve the memory address where the instructions will write its value and copy the address in a
+     * temporary. This PatchGenerator is only guaranteed to work before the instruction has been
+     * executed.
+     *
+     * @param[in] temp      A temporary where the memory address will be copied.
+     * @param[in] TSFlags   Instruction architecture dependent flag from MCInstrDesc
+    */
+    GetWriteAddress(Temp temp, uint64_t TSFlags) : temp(temp), TSFlags(TSFlags) {}
+
+    /*! Output:
+     *
+     * if stack access:
+     * MOV REG64 temp, REG64 RSP
+     *
+     * else:
+     * LEA REG64 temp, MEM64 addr
+    */
+    std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
+};
+
+class GetReadValue : public PatchGenerator, public AutoAlloc<PatchGenerator, GetReadValue> {
+
+    Temp temp;
+    size_t index;
+    uint64_t TSFlags;
+
+ public:
+
+    /*! Resolve the memory address where the instructions will read its value and copy the value in a
+     * temporary. This PatchGenerator is only guaranteed to work before the instruction has been
+     * executed.
+     *
+     * @param[in] temp      A temporary where the memory value will be copied.
+     * @param[in] index     index of access to saved when instruction does many read access
+     * @param[in] TSFlags   Instruction architecture dependent flag from MCInstrDesc
+    */
+    GetReadValue(Temp temp, size_t index, uint64_t TSFlags) : temp(temp), index(index), TSFlags(TSFlags) {}
+
+    /*! Output:
+     *
+     * MOV REG64 temp, MEM64 val
+    */
+    std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
+         rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
+};
+
+class GetWriteValue : public PatchGenerator, public AutoAlloc<PatchGenerator, GetWriteValue> {
+
+    Temp temp;
+    uint64_t TSFlags;
+
+public:
+
+    /*! Resolve the memory address where the instructions has written its value and copy back the value
+     * in a temporary. This PatchGenerator is only guaranteed to work after the instruction has been
+     * executed.
+     *
+     * @param[in] temp      A temporary where the memory value will be copied. This register must have the
+     *                        result of GetWriteAddress()
+     * @param[in] TSFlags   Instruction architecture dependent flag from MCInstrDesc
+    */
+    GetWriteValue(Temp temp, uint64_t TSFlags) : temp(temp), TSFlags(TSFlags) {}
+
+    /*! Output:
+     *
+     * MOV REG64 temp, MEM64 val
+    */
+    std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
+         rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
+};
+
 class SimulateCall : public PatchGenerator, public AutoAlloc<PatchGenerator, SimulateCall> {
 
     Temp temp;
@@ -121,7 +230,6 @@ public:
 
     bool modifyPC() const override {return true;}
 };
-
 
 }
 

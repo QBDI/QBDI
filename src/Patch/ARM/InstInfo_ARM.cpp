@@ -45,6 +45,11 @@ bool isStackWrite(const llvm::MCInst* inst) {
     return false;
 }
 
+bool isDoubleRead(const llvm::MCInst* inst) {
+    LogWarning("isDoubleRead", "This architecture does not support memory access information");
+    return false;
+}
+
 unsigned getImmediateSize(const llvm::MCInst* inst, const llvm::MCInstrDesc* desc) {
     return sizeof(rword);
 }

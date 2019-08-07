@@ -45,28 +45,27 @@ RelocatableInst::SharedPtrVec GetConstant::generate(const llvm::MCInst *inst,
 RelocatableInst::SharedPtrVec GetPCOffset::generate(const llvm::MCInst *inst,
     rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
 
-    if(type == ConstantType) {
-        return{Ldr(temp_manager->getRegForTemp(temp), Constant(address + 8 + cst))};
+    switch (type) {
+        case ConstantType:
+            return{Ldr(temp_manager->getRegForTemp(temp), Constant(address + 8 + cst))};
+        case OperandType:
+            if(inst->getOperand(op).isImm()) {
+                return {Ldr(
+                    temp_manager->getRegForTemp(temp),
+                    Constant(address + 8 + inst->getOperand(op).getImm()))
+                };
+            }
+            else if(inst->getOperand(op).isReg()) {
+                return {
+                    Ldr(temp_manager->getRegForTemp(temp), Constant(address + 8)),
+                    NoReloc(add(temp_manager->getRegForTemp(temp), inst->getOperand(op).getReg()))
+                };
+            }
+            else {
+                LogError("GePCOffset::generate", "Invalid operand type for GetOperand()");
+                return {};
+            }
     }
-    else if(type == OperandType) {
-        if(inst->getOperand(op).isImm()) {
-            return {Ldr(
-                temp_manager->getRegForTemp(temp),
-                Constant(address + 8 + inst->getOperand(op).getImm()))
-            };
-        }
-        else if(inst->getOperand(op).isReg()) {
-            return {
-                Ldr(temp_manager->getRegForTemp(temp), Constant(address + 8)),
-                NoReloc(add(temp_manager->getRegForTemp(temp), inst->getOperand(op).getReg()))
-            };
-        }
-        else {
-            LogError("GePCOffset::generate", "Invalid operand type for GetOperand()");
-            return {};
-        }
-    }
-    _QBDI_UNREACHABLE();
 }
 
 RelocatableInst::SharedPtrVec GetInstId::generate(const llvm::MCInst *inst,

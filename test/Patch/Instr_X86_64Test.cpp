@@ -23,7 +23,7 @@ QBDI::VMAction increment(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBDI:
     return QBDI::VMAction::CONTINUE;
 }
 
-TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test, GPRSave_IC") {
+TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test-GPRSave_IC") {
     uint64_t count1 = 0;
     uint64_t count2 = 0;
 
@@ -42,7 +42,7 @@ TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test, GPRSave_IC") {
     INFO("Took " << count1 << " instructions");
 }
 
-TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test, GPRShuffle_IC") {
+TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test-GPRShuffle_IC") {
     uint64_t count1 = 0;
     uint64_t count2 = 0;
 
@@ -63,7 +63,7 @@ TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test, GPRShuffle_IC") {
     INFO("Took " << count1 << " instructions");
 }
 
-TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test, RelativeAddressing_IC") {
+TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test-RelativeAddressing_IC") {
     uint64_t count1 = 0;
     uint64_t count2 = 0;
 
@@ -89,7 +89,7 @@ TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test, RelativeAddressing_IC") {
     INFO("Took " << count1 << " instructions");
 }
 
-TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test, ConditionalBranching_IC") {
+TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test-ConditionalBranching_IC") {
     uint64_t count1 = 0;
     uint64_t count2 = 0;
 
@@ -119,7 +119,7 @@ TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test, ConditionalBranching_IC") 
     INFO("Took " << count1 << " instructions");
 }
 
-TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test, FibonacciRecursion_IC") {
+TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test-FibonacciRecursion_IC") {
     uint64_t count1 = 0;
     uint64_t count2 = 0;
 
@@ -143,7 +143,7 @@ TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test, FibonacciRecursion_IC") {
     INFO("Took " << count1 << " instructions");
 }
 
-TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test, StackTricks_IC") {
+TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test-StackTricks_IC") {
 
     uint64_t count1 = 0;
     uint64_t count2 = 0;
@@ -170,7 +170,7 @@ TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test, StackTricks_IC") {
 
 #if defined(QBDI_ARCH_X86_64)
 // not implemented for X86
-TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test, UnalignedCodeForward_IC") {
+TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test-UnalignedCodeForward_IC") {
     uint64_t count1 = 0;
     uint64_t count2 = 0;
 
@@ -189,7 +189,7 @@ TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test, UnalignedCodeForward_IC") 
     INFO("Took " << count1 << " instructions\n");
 }
 
-TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test, UnalignedCodeBackward_IC") {
+TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test-UnalignedCodeBackward_IC") {
     uint64_t count1 = 0;
     uint64_t count2 = 0;
 
