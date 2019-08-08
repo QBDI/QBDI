@@ -14,12 +14,8 @@ environment:
   matrix:
     - platform: X64
       qbdi_plateform: win-X86_64
-      VS_string: "Visual Studio 16 2019"
-      cmake_platform_args: "-Thost=x64"
     - platform: X86
       qbdi_plateform: win-X86
-      VS_string: "Visual Studio 16 2019"
-      cmake_platform_args: "-A Win32"
 
 
 cache:
@@ -42,13 +38,13 @@ install:
 
 build_script:
   - "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat\" %Platform%"
-  - cmd: cmake .. -G "%VS_string%" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DPLATFORM=%qbdi_plateform% -DEXAMPLES=TRUE %cmake_platform_args%
-  - ps: if (-not((Test-Path("../deps/llvm/$env:qbdi_plateform/lib")) -and (Test-Path("../deps/llvm/$env:qbdi_plateform/include")))) { MSbuild deps\llvm.vcxproj /p:Configuration=$env:configuration,Platform=$env:platform /m:3 }
+  - cmd: cmake .. -G "Ninja" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DPLATFORM=%qbdi_plateform% -DEXAMPLES=TRUE
+  - ps: if (-not((Test-Path("../deps/llvm/$env:qbdi_plateform/lib")) -and (Test-Path("../deps/llvm/$env:qbdi_plateform/include")))) { python ..\deps\llvm\build.py prepare "$env:qbdi_plateform" ; python ..\deps\llvm\build.py build "$env:qbdi_plateform" ; python ..\deps\llvm\build.py package "$env:qbdi_plateform" }
   - cmd: python ..\deps\llvm\build.py clean %qbdi_plateform%
-  - ps: if (-not((Test-Path("../deps/gtest/$env:qbdi_plateform/lib")) -and (Test-Path("../deps/gtest/$env:qbdi_plateform/include")))) { MSbuild deps\gtest.vcxproj /p:Configuration=$env:configuration,Platform=$env:platform /m:3 }
+  - ps: if (-not((Test-Path("../deps/gtest/$env:qbdi_plateform/lib")) -and (Test-Path("../deps/gtest/$env:qbdi_plateform/include")))) { ninja -v gtest }
   - cmd: python ..\deps\gtest\%qbdi_plateform%\build.py clean %qbdi_plateform%
-  - cmd: cmake .. -G "%VS_string%" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DPLATFORM=%qbdi_plateform% -DEXAMPLES=TRUE %cmake_platform_args%
-  - cmd: MSbuild /p:Configuration=%configuration%,Platform=%platform% ALL_BUILD.vcxproj /m:3
+  - cmd: cmake .. -G "Ninja" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DPLATFORM=%qbdi_plateform% -DEXAMPLES=TRUE
+  - cmd: ninja
 
 test_script:
   - cmd: c:\projects\qbdi\build\test\Release\QBDItest

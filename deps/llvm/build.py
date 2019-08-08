@@ -70,12 +70,10 @@ def build_llvm(llvm_dir, build_dir, arch, platform, arch_opt=None):
 
     # set platform specific arguments.
     if platform == "win" and arch_opt == "i386":
-        cmake_specific_option = ["-G", "Visual Studio 16 2019",
-                                 "-A", "Win32",
+        cmake_specific_option = ["-G", "Ninja",
                                  "-DLLVM_BUILD_32_BITS=On"]
     elif platform == "win":
-        cmake_specific_option = ["-G", "Visual Studio 16 2019",
-                                 "-Thost=x64"]
+        cmake_specific_option = ["-G", "Ninja"]
     elif platform == "iOS":
         cc = subprocess.check_output(["xcrun", "--sdk", "iphoneos", "-f", "clang"])
         cxx = subprocess.check_output(["xcrun", "--sdk", "iphoneos", "-f", "clang++"])
@@ -163,10 +161,7 @@ def build_llvm(llvm_dir, build_dir, arch, platform, arch_opt=None):
 
     # Compile llvm libraries
     if platform == "win":
-        subprocess.check_call(["MSBuild.exe", "ALL_BUILD.vcxproj",
-                               "/p:Configuration=Release",
-                               "/p:Platform=X86" if arch_opt == "i386" else "/p:Platform=X64",
-                               "/m:4"],
+        subprocess.check_call(["ninja"] + get_libraries(arch, ext=".lib"),
                               cwd=str(build_dir))
     else:
         # FIXME: Not always 4, could be 8 on my computer and 2 on travis)
@@ -199,7 +194,7 @@ def install_header_and_lib(llvm_source, build_dir, dest, arch):
     prefix = Path(build_dir, "lib", "Target", arch)
     extract_file(prefix, dest / "lib" / "Target" / arch, (".inc",))
 
-    lib_path = os.path.join(str(build_dir), "Release" if platform.system() == "Windows" else "", "lib")
+    lib_path = os.path.join(str(build_dir), "lib")
     PREFIX = "lib" if platform.system() != "Windows" else ""
     SUFFIX = ".lib" if platform.system() == "Windows" else ".a"
     for l in get_libraries(arch, prefix=PREFIX, ext=SUFFIX):
