@@ -483,8 +483,7 @@ static void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst
                 opa.type = OPERAND_IMM;
             }
             opa.value = static_cast<rword>(op.getImm());
-            // FIXME: immediate size is architecture dependent (see X86BaseInfo.h for example)
-            opa.size = sizeof(rword); // set it to maximum size
+            opa.size = getImmediateSize(&inst, &desc);
             instAnalysis->numOperands++;
         }
     }

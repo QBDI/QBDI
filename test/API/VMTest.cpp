@@ -95,7 +95,7 @@ struct TestInst TestInsts[MNEM_COUNT] = {
     {3, 2, true, {
            {QBDI::OPERAND_GPR, 0, 1, 8, 3, "DH", QBDI::REGISTER_READ},
            // FIXME: immediate size is not implemented
-           {QBDI::OPERAND_IMM, MNEM_IMM_SHORT_VAL, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
+           {QBDI::OPERAND_IMM, MNEM_IMM_SHORT_VAL, 1, 0, 0, NULL, QBDI::REGISTER_UNUSED},
         }
     },
 #if defined(QBDI_ARCH_X86_64)
@@ -112,7 +112,7 @@ struct TestInst TestInsts[MNEM_COUNT] = {
     },
 #endif
     {5, 2, true, {
-           {QBDI::OPERAND_IMM, MNEM_IMM_VAL, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
+           {QBDI::OPERAND_IMM, MNEM_IMM_VAL, 4, 0, 0, NULL, QBDI::REGISTER_UNUSED},
            {QBDI::OPERAND_GPR, 0, 4, 0, 0, "EAX", QBDI::REGISTER_READ},
         }
     },
