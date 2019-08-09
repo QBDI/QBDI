@@ -383,7 +383,7 @@ install(TARGETS QBDI
         RUNTIME DESTINATION lib)
 
 if(${OS} STREQUAL "win")
-    install(FILES ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/QBDI.exp
+    install(FILES ${CMAKE_BINARY_DIR}/QBDI.exp
             DESTINATION lib)
 endif()
 
