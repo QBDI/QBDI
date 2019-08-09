@@ -46,11 +46,11 @@ build_script:
   - cmd: cmake .. -G "Ninja" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DPLATFORM=%qbdi_plateform% -DEXAMPLES=TRUE
   - cmd: ninja
 
-test_script:
-  - cmd: c:\projects\qbdi\build\test\Release\QBDItest
-
 after_build:
   - cmd: cpack
+
+test_script:
+  - cmd: c:\projects\qbdi\build\test\QBDItest
 
 artifacts:
   - name: Installer
