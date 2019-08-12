@@ -315,6 +315,9 @@ if((${OS} STREQUAL "linux") OR (${OS} STREQUAL "android") OR (${OS} STREQUAL "ma
 else()
     set(HAS_QBDIPRELOAD false)
 endif()
+if(WIN32)
+    set(HAS_QBDIPRELOAD_WIN true)
+endif()
 
 # Configure install
 if(UNIX AND NOT ("${PLATFORM}" STREQUAL "android-ARM" OR "${PLATFORM}" STREQUAL "iOS-ARM"))

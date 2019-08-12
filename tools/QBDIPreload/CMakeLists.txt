@@ -2,6 +2,8 @@ set(SOURCES "")
 
 if((${OS} STREQUAL "linux") OR (${OS} STREQUAL "android"))
     set(SOURCES ${SOURCES} "src/linux_preload.c")
+elseif(WIN32)
+    set(SOURCES ${SOURCES} "src/win_preload.c")
 elseif(${OS} STREQUAL "macOS")
     # Generate MIG interface at config time in the build directory
     execute_process(WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} COMMAND mig /usr/include/mach/mach_exc.defs)

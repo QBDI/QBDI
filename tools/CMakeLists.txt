@@ -7,4 +7,6 @@ if(HAS_QBDIPRELOAD)
 
     # Add pyqbdi
     add_subdirectory(pyqbdi)
+elseif(HAS_QBDIPRELOAD_WIN)
+    add_subdirectory(QBDIPreload)
 endif()
