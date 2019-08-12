@@ -226,6 +226,7 @@ LONG WINAPI QbdiPreloadExceptionFilter(PEXCEPTION_POINTERS exc_info) {
 
         // Continue execution on trampoline to make QBDI runtime
         // execute using a separate stack and not instrumented target one
+         // RSP can't be set here (system seems to validate pointer authenticity)
         x64cpu->Rip = (uint64_t) qbdipreload_trampoline;
     }
 
