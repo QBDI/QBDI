@@ -201,17 +201,17 @@ bool VM::callV(rword* retval, rword function, uint32_t argNum, va_list ap) {
 uint32_t VM::addInstrRule(InstrumentCallback cbk, AnalysisType type, void* data) {
     RangeSet<rword> r;
     r.add(Range<rword>(0, (rword) -1));
-    return engine->addInstrRule(InstrRuleUser(cbk, type, data, this, r));
+    return engine->addInstrRule(InstrRuleUser(cbk, type, data, this, r, MIDDLEPASS));
 }
 
 uint32_t VM::addInstrRuleRange(rword start, rword end, InstrumentCallback cbk, AnalysisType type, void* data) {
     RangeSet<rword> r;
     r.add(Range<rword>(start, end));
-    return engine->addInstrRule(InstrRuleUser(cbk, type, data, this, r));
+    return engine->addInstrRule(InstrRuleUser(cbk, type, data, this, r, MIDDLEPASS));
 }
 
 uint32_t VM::addInstrRuleRangeSet(RangeSet<rword> range, InstrumentCallback cbk, AnalysisType type, void* data) {
-    return engine->addInstrRule(InstrRuleUser(cbk, type, data, this, range));
+    return engine->addInstrRule(InstrRuleUser(cbk, type, data, this, range, MIDDLEPASS));
 }
 
 uint32_t VM::addMnemonicCB(const char* mnemonic, InstPosition pos, InstCallback cbk, void *data) {
@@ -221,7 +221,8 @@ uint32_t VM::addMnemonicCB(const char* mnemonic, InstPosition pos, InstCallback 
         MnemonicIs(mnemonic),
         getCallbackGenerator(cbk, data),
         pos,
-        true
+        true,
+        MIDDLEPASS
     ));
 }
 
@@ -231,7 +232,8 @@ uint32_t VM::addCodeCB(InstPosition pos, InstCallback cbk, void *data) {
         True(),
         getCallbackGenerator(cbk, data),
         pos,
-        true
+        true,
+        MIDDLEPASS
     ));
 }
 
@@ -241,7 +243,8 @@ uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk, vo
         AddressIs(address),
         getCallbackGenerator(cbk, data),
         pos,
-        true
+        true,
+        MIDDLEPASS
     ));
 }
 
@@ -252,7 +255,8 @@ uint32_t VM::addCodeRangeCB(rword start, rword end, InstPosition pos, InstCallba
         InstructionInRange(start, end),
         getCallbackGenerator(cbk, data),
         pos,
-        true
+        true,
+        MIDDLEPASS
     ));
 }
 
@@ -265,14 +269,16 @@ uint32_t VM::addMemAccessCB(MemoryAccessType type, InstCallback cbk, void *data)
                 DoesReadAccess(),
                 getCallbackGenerator(cbk, data),
                 InstPosition::PREINST,
-                true
+                true,
+                MIDDLEPASS
             ));
         case MEMORY_WRITE:
             return engine->addInstrRule(InstrRuleBasic(
                 DoesWriteAccess(),
                 getCallbackGenerator(cbk, data),
                 InstPosition::POSTINST,
-                true
+                true,
+                MIDDLEPASS
             ));
         case MEMORY_READ_WRITE:
             return engine->addInstrRule(InstrRuleBasic(
@@ -282,7 +288,8 @@ uint32_t VM::addMemAccessCB(MemoryAccessType type, InstCallback cbk, void *data)
                 }),
                 getCallbackGenerator(cbk, data),
                 InstPosition::POSTINST,
-                true
+                true,
+                MIDDLEPASS
             ));
         default:
             return VMError::INVALID_EVENTID;
@@ -356,16 +363,18 @@ bool VM::recordMemoryAccess(MemoryAccessType type) {
         engine->addInstrRule(InstrRuleDynamic(
             DoesReadAccess(), generateReadInstrumentPatch,
             PREINST,
-            false
-        ), true); // force the rule to be the first of PREINST
+            false,
+            LASTPASS // need to be before user PREINST callback
+        ));
     }
     if(type & MEMORY_WRITE && !(memoryLoggingLevel & MEMORY_WRITE)) {
         memoryLoggingLevel |= MEMORY_WRITE;
         engine->addInstrRule(InstrRuleDynamic(
             DoesWriteAccess(), generateWriteInstrumentPatch,
             POSTINST,
-            false
-        ), true); // force the rule to be the first of POSTINST
+            false,
+            FIRSTPASS // need to be before user POSTINST callback
+        ));
     }
     return true;
 #else

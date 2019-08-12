@@ -279,10 +279,15 @@ void Engine::instrument(std::vector<Patch> &basicBlock) {
             fprintf(log, "Instrumenting 0x%" PRIRWORD " %s", patch.metadata.address, disass.c_str());
         });
         // Instrument
-        for (const auto& item: instrRules) {
-            const std::shared_ptr<InstrRule>& rule = item.second;
-            if (rule->tryInstrument(patch, MCII.get(), MRI.get(), assembly.get())) { // Push MCII
-                LogDebug("Engine::instrument", "Instrumentation rule %" PRIu32 " applied", item.first);
+        for (uint8_t pass = FIRSTPASS; pass <= LASTPASS; pass++) {
+            for (const auto& item: instrRules) {
+                const std::shared_ptr<InstrRule>& rule = item.second;
+                if (rule->getPass() == pass) {
+                    bool has_instrumented = rule->tryInstrument(patch, MCII.get(), MRI.get(), assembly.get());
+                    if (has_instrumented) {
+                        LogDebug("Engine::instrument", "Instrumentation rule %" PRIu32 " applied (pass %d)", item.first, pass);
+                    }
+                }
             }
         }
     }
@@ -408,26 +413,11 @@ bool Engine::run(rword start, rword stop) {
     return hasRan;
 }
 
-uint32_t Engine::addInstrRule(std::shared_ptr<InstrRule> rule, bool top_list) {
+uint32_t Engine::addInstrRule(std::shared_ptr<InstrRule> rule) {
     uint32_t id = instrRulesCounter++;
     RequireAction("Engine::addInstrRule", id < EVENTID_VM_MASK, return VMError::INVALID_EVENTID);
     blockManager->clearCache(rule->affectedRange());
-    switch(rule->getPosition()) {
-        case InstPosition::PREINST:
-            if (top_list) {
-                instrRules.push_back(std::make_pair(id, rule));
-            } else {
-                instrRules.insert(instrRules.begin(), std::make_pair(id, rule));
-            }
-            break;
-        case InstPosition::POSTINST:
-            if (top_list) {
-                instrRules.insert(instrRules.begin(), std::make_pair(id, rule));
-            } else {
-                instrRules.push_back(std::make_pair(id, rule));
-            }
-            break;
-    }
+    instrRules.push_back(std::make_pair(id, rule));
     return id;
 }
 

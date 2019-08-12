@@ -197,12 +197,11 @@ public:
     /*! Add a custom instrumentation rule to the engine. Requires internal headers
      *
      * @param[in] rule A custom instrumentation rule.
-     * @param[in] top_list Place the rule before all existed rules of it category
      *
      * @return The id of the registered instrumentation (or VMError::INVALID_EVENTID
      * in case of failure).
      */
-    uint32_t addInstrRule(std::shared_ptr<InstrRule> rule, bool top_list=false);
+    uint32_t addInstrRule(std::shared_ptr<InstrRule> rule);
 
     /*! Register a callback event for a specific VM event.
      *
