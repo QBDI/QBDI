@@ -27,17 +27,18 @@ PUBLIC qbdi_runCodeBlockAVX
 
 qbdi_runCodeBlockSSE PROC
     mov eax, [esp+4];
+    mov ecx, [esp+8];
     mov edx, esp;
     sub esp, 512;
     and esp, -512;
-    test ebx, 2;
+    test ecx, 2;
     jz _skip_save_fpu_SSE;
     fxsave [esp];
 _skip_save_fpu_SSE:
     pushad;
     call eax;
     popad;
-    test ebx, 2;
+    test ecx, 2;
     jz _skip_restore_fpu_SSE;
     fxrstor [esp];
 _skip_restore_fpu_SSE:
@@ -47,15 +48,15 @@ qbdi_runCodeBlockSSE ENDP
 
 qbdi_runCodeBlockAVX PROC
     mov eax, [esp+4];
-    mov ebx, [esp+8];
+    mov ecx, [esp+8];
     mov edx, esp;
     sub esp, 1024;
     and esp, -1024;
-    test ebx, 2;
+    test ecx, 2;
     jz _skip_save_fpu;
     fxsave [esp];
 _skip_save_fpu:
-    test ebx, 1;
+    test ecx, 1;
     jz _skip_save_ymm;
     vextractf128 xmmword ptr [esp+512], ymm0, 1;
     vextractf128 xmmword ptr [esp+528], ymm1, 1;
@@ -69,11 +70,11 @@ _skip_save_ymm:
     pushad;
     call eax;
     popad;
-    test rsi, 2;
+    test ecx, 2;
     jz _skip_restore_fpu;
-    fxrstor [rsp];
+    fxrstor [esp];
 _skip_restore_fpu:
-    test ebx, 1;
+    test ecx, 1;
     jz _skip_restore_ymm;
     vinsertf128 ymm0, ymm0, xmmword ptr [esp+512], 1;
     vinsertf128 ymm1, ymm1, xmmword ptr [esp+528], 1;
