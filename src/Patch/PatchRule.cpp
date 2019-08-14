@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#include "Patch/ExecBlockFlags.h"
 #include "Patch/PatchGenerator.h"
 #include "Patch/PatchRule.h"
 
@@ -32,9 +33,11 @@ Patch PatchRule::generate(const llvm::MCInst &inst, rword address,
     rword instSize, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI, Patch* toMerge) const {
 
     Patch patch(inst, address, instSize);
+    patch.metadata.execblockFlags = getExecBlockFlags(inst, MCII, MRI);
     if(toMerge != nullptr) {
         patch.metadata.address = toMerge->metadata.address;
         patch.metadata.instSize += toMerge->metadata.instSize;
+        patch.metadata.execblockFlags |= toMerge->metadata.execblockFlags;
     }
     TempManager temp_manager(inst, MCII, MRI);
     bool modifyPC = false;

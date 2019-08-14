@@ -65,6 +65,8 @@ __qbdi_runCodeBlockAVX:
     sub rsp, 1024;
     and rsp, -1024;
     fxsave [rsp];
+    test rsi, 1;
+    jz _skip_save_ymm;
     vextractf128 [rsp+512], ymm0, 1;
     vextractf128 [rsp+528], ymm1, 1;
     vextractf128 [rsp+544], ymm2, 1;
@@ -81,6 +83,7 @@ __qbdi_runCodeBlockAVX:
     vextractf128 [rsp+720], ymm13, 1;
     vextractf128 [rsp+736], ymm14, 1;
     vextractf128 [rsp+752], ymm15, 1;
+_skip_save_ymm:
     push r15;
     push r14;
     push r13;
@@ -111,6 +114,8 @@ __qbdi_runCodeBlockAVX:
     pop r14;
     pop r15;
     fxrstor [rsp];
+    test rsi, 1;
+    jz _skip_restore_ymm;
     vinsertf128 ymm0, ymm0, [rsp+512], 1;
     vinsertf128 ymm1, ymm1, [rsp+528], 1;
     vinsertf128 ymm2, ymm2, [rsp+544], 1;
@@ -127,5 +132,6 @@ __qbdi_runCodeBlockAVX:
     vinsertf128 ymm13, ymm13, [rsp+720], 1;
     vinsertf128 ymm14, ymm14, [rsp+736], 1;
     vinsertf128 ymm15, ymm15, [rsp+752], 1;
+_skip_restore_ymm:
     mov rsp, rdx;
     ret;
