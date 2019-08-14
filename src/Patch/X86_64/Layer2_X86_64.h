@@ -35,6 +35,7 @@ namespace QBDI {
 #define popf popf64
 #define pushf pushf64
 #define jmpm jmp64m
+#define testri test64ri32
 
 #else /* QBDI_ARCH_X86 */
 #define movrr mov32rr
@@ -48,6 +49,7 @@ namespace QBDI {
 #define popf popf32
 #define pushf pushf32
 #define jmpm jmp32m
+#define testri test32ri
 
 #endif
 
@@ -72,6 +74,14 @@ llvm::MCInst mov32rm16(unsigned int dst, unsigned int base, rword scale, unsigne
 llvm::MCInst mov32rm(unsigned int dst, unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg);
 
 llvm::MCInst mov64rm(unsigned int dst, unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg);
+
+llvm::MCInst test32ri(unsigned int base, uint32_t imm);
+
+llvm::MCInst test64ri32(unsigned int base, uint32_t imm);
+
+llvm::MCInst je(int32_t offset);
+
+llvm::MCInst jne(int32_t offset);
 
 llvm::MCInst jmp32m(unsigned int base, rword offset);
 
@@ -144,6 +154,12 @@ RelocatableInst::SharedPtr Pushf();
 RelocatableInst::SharedPtr Popf();
 
 RelocatableInst::SharedPtr Ret();
+
+RelocatableInst::SharedPtr Test(Reg reg, unsigned int value);
+
+RelocatableInst::SharedPtr Je(int32_t offset);
+
+RelocatableInst::SharedPtr Jne(int32_t offset);
 
 }
 

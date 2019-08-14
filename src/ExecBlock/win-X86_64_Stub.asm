@@ -63,6 +63,8 @@ qbdi_runCodeBlockAVX PROC
     sub rsp, 1024;
     and rsp, -1024;
     fxsave [rsp];
+    test rdx, 1;
+    jz _skip_save_ymm;
     vextractf128 xmmword ptr [rsp+512], ymm0, 1;
     vextractf128 xmmword ptr [rsp+528], ymm1, 1;
     vextractf128 xmmword ptr [rsp+544], ymm2, 1;
@@ -79,6 +81,7 @@ qbdi_runCodeBlockAVX PROC
     vextractf128 xmmword ptr [rsp+720], ymm13, 1;
     vextractf128 xmmword ptr [rsp+736], ymm14, 1;
     vextractf128 xmmword ptr [rsp+752], ymm15, 1;
+_skip_save_ymm:
     push r15;
     push r14;
     push r13;
@@ -109,6 +112,8 @@ qbdi_runCodeBlockAVX PROC
     pop r14;
     pop r15;
     fxrstor [rsp]
+    test rdx, 1;
+    jz _skip_restore_ymm;
     vinsertf128 ymm0, ymm0, xmmword ptr [rsp+512], 1;
     vinsertf128 ymm1, ymm1, xmmword ptr [rsp+528], 1;
     vinsertf128 ymm2, ymm2, xmmword ptr [rsp+544], 1;
@@ -125,6 +130,7 @@ qbdi_runCodeBlockAVX PROC
     vinsertf128 ymm13, ymm13, xmmword ptr [rsp+720], 1;
     vinsertf128 ymm14, ymm14, xmmword ptr [rsp+736], 1;
     vinsertf128 ymm15, ymm15, xmmword ptr [rsp+752], 1;
+_skip_restore_ymm:
     mov rsp, rdx;
     ret;
 qbdi_runCodeBlockAVX ENDP

@@ -41,10 +41,13 @@ qbdi_runCodeBlockSSE ENDP
 
 qbdi_runCodeBlockAVX PROC
     mov eax, [esp+4];
+    mov ebx, [esp+8];
     mov edx, esp;
     sub esp, 1024;
     and esp, -1024;
     fxsave [esp];
+    test ebx, 1;
+    jz _skip_save_ymm;
     vextractf128 xmmword ptr [esp+512], ymm0, 1;
     vextractf128 xmmword ptr [esp+528], ymm1, 1;
     vextractf128 xmmword ptr [esp+544], ymm2, 1;
@@ -53,10 +56,13 @@ qbdi_runCodeBlockAVX PROC
     vextractf128 xmmword ptr [esp+592], ymm5, 1;
     vextractf128 xmmword ptr [esp+608], ymm6, 1;
     vextractf128 xmmword ptr [esp+624], ymm7, 1;
+_skip_save_ymm:
     pushad;
     call eax;
     popad;
     fxrstor [esp];
+    test ebx, 1;
+    jz _skip_restore_ymm;
     vinsertf128 ymm0, ymm0, xmmword ptr [esp+512], 1;
     vinsertf128 ymm1, ymm1, xmmword ptr [esp+528], 1;
     vinsertf128 ymm2, ymm2, xmmword ptr [esp+544], 1;
@@ -65,6 +71,7 @@ qbdi_runCodeBlockAVX PROC
     vinsertf128 ymm5, ymm5, xmmword ptr [esp+592], 1;
     vinsertf128 ymm6, ymm6, xmmword ptr [esp+608], 1;
     vinsertf128 ymm7, ymm7, xmmword ptr [esp+624], 1;
+_skip_restore_ymm:
     mov esp, edx;
     ret;
 qbdi_runCodeBlockAVX ENDP

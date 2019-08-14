@@ -194,6 +194,7 @@ public:
     uint32_t patchSize;
     bool modifyPC;
     bool merge;
+    uint8_t execblockFlags;
 
     inline rword endAddress() const {
         return address + instSize;

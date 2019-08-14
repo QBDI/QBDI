@@ -15,29 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef PATCHRULES_X86_64_H
-#define PATCHRULES_X86_64_H
+#ifndef ExecBlockFlags_X86_64_H
+#define ExecBlockFlags_X86_64_H
 
 #include <memory>
 #include <vector>
 
-#include "Patch/X86_64/PatchGenerator_X86_64.h"
-
 namespace QBDI {
 
-class PatchRule;
-
-static const uint32_t MINIMAL_BLOCK_SIZE = 64;
-
-RelocatableInst::SharedPtrVec getExecBlockPrologue();
-
-RelocatableInst::SharedPtrVec getExecBlockEpilogue();
-
-RelocatableInst::SharedPtrVec getTerminator(rword address);
-
-std::vector<std::shared_ptr<PatchRule>> getDefaultPatchRules();
-
-uint32_t getExecBlockFlags(const llvm::MCInst *inst);
+typedef enum : uint8_t {
+    needAVX = 1<<0
+} ExecBlockFlags;
 
 }
 

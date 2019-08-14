@@ -147,6 +147,26 @@ llvm::MCInst mov32rm(unsigned int dst, unsigned int base, rword scale, unsigned 
     return inst;
 }
 
+llvm::MCInst test32ri(unsigned int base, uint32_t imm) {
+    llvm::MCInst inst;
+
+    inst.setOpcode(llvm::X86::TEST32ri);
+    inst.addOperand(llvm::MCOperand::createReg(base));
+    inst.addOperand(llvm::MCOperand::createImm(imm));
+
+    return inst;
+}
+
+llvm::MCInst test64ri32(unsigned int base, uint32_t imm) {
+    llvm::MCInst inst;
+
+    inst.setOpcode(llvm::X86::TEST64ri32);
+    inst.addOperand(llvm::MCOperand::createReg(base));
+    inst.addOperand(llvm::MCOperand::createImm(imm));
+
+    return inst;
+}
+
 llvm::MCInst jmp32m(unsigned int base, rword offset) {
     llvm::MCInst inst;
 
@@ -172,6 +192,25 @@ llvm::MCInst jmp64m(unsigned int base, rword offset) {
 
     return inst;
 }
+
+llvm::MCInst je(int32_t offset) {
+    llvm::MCInst inst;
+
+    inst.setOpcode(llvm::X86::JE_4);
+    inst.addOperand(llvm::MCOperand::createImm(offset));
+
+    return inst;
+}
+
+llvm::MCInst jne(int32_t offset) {
+    llvm::MCInst inst;
+
+    inst.setOpcode(llvm::X86::JNE_4);
+    inst.addOperand(llvm::MCOperand::createImm(offset));
+
+    return inst;
+}
+
 
 llvm::MCInst jmp(rword offset) {
     llvm::MCInst inst;
@@ -413,6 +452,18 @@ RelocatableInst::SharedPtr Popf() {
 
 RelocatableInst::SharedPtr Ret() {
     return NoReloc(ret());
+}
+
+RelocatableInst::SharedPtr Test(Reg reg, unsigned int value) {
+    return NoReloc(testri(reg, value));
+}
+
+RelocatableInst::SharedPtr Je(int32_t offset) {
+    return NoReloc(je(offset));
+}
+
+RelocatableInst::SharedPtr Jne(int32_t offset) {
+    return NoReloc(jne(offset));
 }
 
 }

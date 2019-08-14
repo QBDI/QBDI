@@ -32,7 +32,7 @@ public:
     RelocatableInst::SharedPtrVec insts;
 
     using Vec = std::vector<Patch>;
-    
+
     Patch() {
         metadata.patchSize = 0;
     }
@@ -64,7 +64,7 @@ public:
     void prepend(const RelocatableInst::SharedPtrVec v) {
         insts.insert(insts.begin(), v.begin(), v.end());
         metadata.patchSize += v.size();
-    } 
+    }
 
     void append(const RelocatableInst::SharedPtr r) {
         insts.push_back(r);
@@ -74,7 +74,7 @@ public:
     void prepend(const RelocatableInst::SharedPtr r) {
         insts.insert(insts.begin(), r);
         metadata.patchSize += 1;
-    } 
+    }
 };
 
 }

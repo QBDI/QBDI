@@ -27,6 +27,7 @@
 #include "Patch/PatchGenerator.h"
 #include "Patch/PatchCondition.h"
 #include "Patch/Patch.h"
+#include "Patch/ExecBlockFlags.h"
 #include "Platform.h"
 
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
@@ -80,16 +81,18 @@ public:
      *                      queries.
      * @param[in] MRI       A LLVM::MCRegisterInfo classes used for internal architecture specific
      *                      queries.
-     * @param[in] toMerge   An eventual previous patch which is to be merged with the current 
+     * @param[in] toMerge   An eventual previous patch which is to be merged with the current
      *                      instruction.
      *
      * @return A Patch which is composed of the input context and a series of RelocatableInst.
     */
     Patch generate(const llvm::MCInst *inst, rword address, rword instSize, llvm::MCInstrInfo* MCII, llvm::MCRegisterInfo* MRI, const Patch* toMerge = nullptr) {
         Patch patch(*inst, address, instSize);
+        patch.metadata.execblockFlags = getExecBlockFlags(inst, MCII, MRI);
         if(toMerge != nullptr) {
             patch.metadata.address = toMerge->metadata.address;
             patch.metadata.instSize += toMerge->metadata.instSize;
+            patch.metadata.execblockFlags |= toMerge->metadata.execblockFlags;
         }
         TempManager temp_manager(inst, MCII, MRI);
         bool modifyPC = false;
