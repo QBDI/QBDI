@@ -33,11 +33,14 @@ RelocatableInst::SharedPtrVec getExecBlockPrologue() {
     append(prologue, SaveReg(Reg(REG_SP), Offset(offsetof(Context, hostState.sp))));
     // Restore FPR
 #ifndef _QBDI_ASAN_ENABLED_ // Disabled if ASAN is enabled as it breaks context alignment
+    append(prologue, LoadReg(Reg(0), Offset(offsetof(Context, hostState.executeFlags))));
+    prologue.push_back(Test(Reg(0), ExecBlockFlags::needFPU));
+    prologue.push_back(Je(7 + 4));
     prologue.push_back(Fxrstor(Offset(offsetof(Context, fprState))));
+    // target je needFPU
     if(isHostCPUFeaturePresent("avx")) {
         LogDebug("getExecBlockPrologue", "AVX support enabled in guest context switches");
         // don't restore if not needed
-        append(prologue, LoadReg(Reg(0), Offset(offsetof(Context, hostState.executeFlags))));
         prologue.push_back(Test(Reg(0), ExecBlockFlags::needAVX));
         #if defined(QBDI_ARCH_X86_64)
         prologue.push_back(Je(16 * 10 + 4));
@@ -93,11 +96,14 @@ RelocatableInst::SharedPtrVec getExecBlockEpilogue() {
     append(epilogue, SaveReg(Reg(0), Offset(offsetof(Context, gprState.eflags))));
     // Save FPR
 #ifndef _QBDI_ASAN_ENABLED_ // Disabled if ASAN is enabled as it breaks context alignment
+    append(epilogue, LoadReg(Reg(0), Offset(offsetof(Context, hostState.executeFlags))));
+    epilogue.push_back(Test(Reg(0), ExecBlockFlags::needFPU));
+    epilogue.push_back(Je(7 + 4));
     epilogue.push_back(Fxsave(Offset(offsetof(Context, fprState))));
+    // target je needFPU
     if(isHostCPUFeaturePresent("avx")) {
         LogDebug("getExecBlockEpilogue", "AVX support enabled in guest context switches");
         // don't save if not needed
-        append(epilogue, LoadReg(Reg(0), Offset(offsetof(Context, hostState.executeFlags))));
         epilogue.push_back(Test(Reg(0), ExecBlockFlags::needAVX));
         #if defined(QBDI_ARCH_X86_64)
         epilogue.push_back(Je(16 * 10 + 4));

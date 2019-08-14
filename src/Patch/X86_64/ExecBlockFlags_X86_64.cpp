@@ -22,13 +22,19 @@
 
 namespace QBDI {
 
-const uint8_t defaultExecuteFlags = ExecBlockFlags::needAVX;
+const uint8_t defaultExecuteFlags = ExecBlockFlags::needAVX | ExecBlockFlags::needFPU;
 
 static inline uint8_t getRegisterFlags(unsigned int op) {
     register uint8_t flags = 0;
 
     if (llvm::X86::YMM0<= op && op <= llvm::X86::YMM15)
-        flags |= ExecBlockFlags::needAVX;
+        flags |= ExecBlockFlags::needAVX | ExecBlockFlags::needFPU;
+
+    if (    (llvm::X86::XMM0<= op && op <= llvm::X86::XMM15) ||
+            (llvm::X86::ST0<= op && op <= llvm::X86::ST7) ||
+            (llvm::X86::MM0<= op && op <= llvm::X86::MM7) ||
+            llvm::X86::FPSW == op || llvm::X86::FPCW == op)
+        flags |= ExecBlockFlags::needFPU;
 
     return flags;
 }
@@ -38,6 +44,7 @@ uint8_t getExecBlockFlags(const llvm::MCInst *inst, llvm::MCInstrInfo* MCII, llv
     const llvm::MCInstrDesc &desc = MCII->get(inst->getOpcode());
     uint8_t flags = 0;
 
+    // register flag
     for (size_t i=0; i < inst->getNumOperands(); i++) {
         const llvm::MCOperand& op = inst->getOperand(i);
         if (op.isReg()) {
@@ -53,6 +60,10 @@ uint8_t getExecBlockFlags(const llvm::MCInst *inst, llvm::MCInstrInfo* MCII, llv
     for (; implicitRegs && *implicitRegs; implicitRegs++) {
         flags |= getRegisterFlags(*implicitRegs);
     }
+
+    // detect implicit FPU instruction
+    if ((desc.TSFlags & llvm::X86II::FPTypeMask) != 0)
+        flags |= ExecBlockFlags::needFPU;
 
     return flags;
 }
