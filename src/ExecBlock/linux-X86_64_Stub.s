@@ -26,7 +26,10 @@ __qbdi_runCodeBlockSSE:
     mov rdx, rsp;
     sub rsp, 512;
     and rsp, -512;
+    test rsi, 2;
+    jz _skip_save_fpu_SSE;
     fxsave [rsp];
+_skip_save_fpu_SSE:
     push r15;
     push r14;
     push r13;
@@ -56,7 +59,10 @@ __qbdi_runCodeBlockSSE:
     pop r13;
     pop r14;
     pop r15;
+    test rsi, 2;
+    jz _skip_restore_fpu_SSE;
     fxrstor [rsp];
+_skip_restore_fpu_SSE:
     mov rsp, rdx;
     ret;
     
@@ -64,6 +70,8 @@ __qbdi_runCodeBlockAVX:
     mov rdx, rsp;
     sub rsp, 1024;
     and rsp, -1024;
+    test rsi, 2;
+    jz _skip_save_ymm;
     fxsave [rsp];
     test rsi, 1;
     jz _skip_save_ymm;
@@ -113,6 +121,8 @@ _skip_save_ymm:
     pop r13;
     pop r14;
     pop r15;
+    test rsi, 2;
+    jz _skip_restore_ymm;
     fxrstor [rsp];
     test rsi, 1;
     jz _skip_restore_ymm;

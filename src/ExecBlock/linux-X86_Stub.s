@@ -24,14 +24,21 @@
 
 __qbdi_runCodeBlockSSE:
     mov eax, [esp+4]
+    mov ecx, [esp+8]
     mov edx, esp;
     sub esp, 512;
     and esp, -512;
+    test ecx, 2;
+    jz _skip_save_fpu_SSE;
     fxsave [esp];
+_skip_save_fpu_SSE:
     pushad;
     call eax;
     popad;
+    test ecx, 2;
+    jz _skip_restore_fpu_SSE;
     fxrstor [esp];
+_skip_restore_fpu_SSE:
     mov esp, edx;
     ret;
     
@@ -41,6 +48,8 @@ __qbdi_runCodeBlockAVX:
     mov edx, esp;
     sub esp, 1024;
     and esp, -1024;
+    test ecx, 2;
+    jz _skip_save_ymm;
     fxsave [esp];
     test ecx, 1;
     jz _skip_save_ymm;
@@ -56,6 +65,8 @@ _skip_save_ymm:
     pusha;
     call eax;
     popa;
+    test ecx, 2;
+    jz _skip_restore_ymm;
     fxrstor [esp];
     test ecx, 1;
     jz _skip_restore_ymm;

@@ -20,10 +20,13 @@ PUBLIC qbdi_runCodeBlockAVX
 .CODE
 
 qbdi_runCodeBlockSSE PROC
-    mov rdx, rsp;
+    mov r10, rsp;
     sub rsp, 512;
     and rsp, -512;
+    test rdx, 2;
+    jz _skip_save_fpu_SSE;
     fxsave [rsp];
+_skip_save_fpu_SSE:
     push r15;
     push r14;
     push r13;
@@ -53,15 +56,20 @@ qbdi_runCodeBlockSSE PROC
     pop r13;
     pop r14;
     pop r15;
-    fxrstor [rsp]
-    mov rsp, rdx;
+    test rdx, 2;
+    jz _skip_restore_fpu_SSE;
+    fxrstor [rsp];
+_skip_restore_fpu_SSE:
+    mov rsp, r10;
     ret;
 qbdi_runCodeBlockSSE ENDP
 
 qbdi_runCodeBlockAVX PROC
-    mov rdx, rsp;
+    mov r10, rsp;
     sub rsp, 1024;
     and rsp, -1024;
+    test rdx, 2;
+    jz _skip_save_ymm;
     fxsave [rsp];
     test rdx, 1;
     jz _skip_save_ymm;
@@ -111,7 +119,9 @@ _skip_save_ymm:
     pop r13;
     pop r14;
     pop r15;
-    fxrstor [rsp]
+    test rdx, 2;
+    jz _skip_restore_ymm;
+    fxrstor [rsp];
     test rdx, 1;
     jz _skip_restore_ymm;
     vinsertf128 ymm0, ymm0, xmmword ptr [rsp+512], 1;
@@ -131,7 +141,7 @@ _skip_save_ymm:
     vinsertf128 ymm14, ymm14, xmmword ptr [rsp+736], 1;
     vinsertf128 ymm15, ymm15, xmmword ptr [rsp+752], 1;
 _skip_restore_ymm:
-    mov rsp, rdx;
+    mov rsp, r10;
     ret;
 qbdi_runCodeBlockAVX ENDP
 
