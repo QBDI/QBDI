@@ -24,7 +24,6 @@ static GPRState g_EntryPointGPRState;   /* QBDI CPU GPR states when EntryPoint h
 static FPRState g_EntryPointFPRState;   /* QBDI CPU FPR states when EntryPoint has been reached */
 
 
-
 /*
  * Conversion from windows CONTEXT ARCH dependent structure 
  * to QBDI GPR state (Global purpose registers)
@@ -245,14 +244,6 @@ void* getMainModuleEntryPoint() {
 }
 
 /*
- * Unused on windows as DllMain() already provides
- * code execution at start
- */
-int qbdipreload_hook_init() {
-    return QBDIPRELOAD_NO_ERROR;
-}
-
-/*
  * Hooking based on int1 instruction + exception handler
  * Return 0 in case of failure
  */
@@ -268,9 +259,10 @@ int qbdipreload_hook(void* va) {
  * QBDI windows preload installation is done automatically
  * through DLLMain() once the QBDI instrumentation module
  * is loaded inside target (e.g. with LoadLibrary)
+ * This function is automatically called when user use
+ * QBDIPRELOAD_INIT macro
  */
-BOOLEAN WINAPI DllMain(IN HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved)
-{
+BOOLEAN qbdipreload_hook_init(DWORD nReason) {
     if(nReason == DLL_PROCESS_ATTACH) {
         void* mainmod_entry_point = getMainModuleEntryPoint();
         // Call user provided callback

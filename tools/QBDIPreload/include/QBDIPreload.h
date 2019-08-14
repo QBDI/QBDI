@@ -34,18 +34,6 @@ extern "C" {
 #define QBDIPRELOAD_ERR_STARTUP_FAILED 2
 
 
-/**
- * A C pre-processor macro declaring a constructor.
- *
- * @warning `QBDIPRELOAD_INIT` must be used once in any project using QBDIPreload.
- * It declares a constructor, so it must be placed like a function declaration on a single line.
- */
-#ifdef __cplusplus
-#define QBDIPRELOAD_INIT __attribute__((constructor)) void init() { QBDI::qbdipreload_hook_init(); }
-#else
-#define QBDIPRELOAD_INIT __attribute__((constructor)) void init() { qbdipreload_hook_init(); }
-#endif
-
 /*
  * Public APIs
  */
@@ -129,11 +117,47 @@ extern int qbdipreload_on_exit(int status);
 /*
  * Private API
  */
-
+#ifdef WIN32
+#include <Windows.h>
+QBDI_EXPORT BOOLEAN qbdipreload_hook_init(DWORD nReason);
+#else
 QBDI_EXPORT int qbdipreload_hook_init();
+#endif
 
 QBDI_EXPORT void* qbdipreload_setup_exception_handler(uint32_t target, uint32_t mask, void* handler);
 
+/**
+ * A C pre-processor macro declaring a constructor.
+ *
+ * @warning `QBDIPRELOAD_INIT` must be used once in any project using QBDIPreload.
+ * It declares a constructor, so it must be placed like a function declaration on a single line.
+ */
+
+#ifdef __cplusplus
+
+#ifdef WIN32
+#define QBDIPRELOAD_INIT BOOLEAN WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved) \
+{ \
+    UNREFERENCED_PARAMETER(hDllHandle); \
+    UNREFERENCED_PARAMETER(Reserved); \
+    return QBDI::qbdipreload_hook_init(nReason); \
+}
+#else
+#define QBDIPRELOAD_INIT __attribute__((constructor)) void init() { QBDI::qbdipreload_hook_init(); }
+#endif
+
+#else
+#ifdef WIN32
+#define QBDIPRELOAD_INIT BOOLEAN WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved) \
+{ \
+    UNREFERENCED_PARAMETER(hDllHandle); \
+    UNREFERENCED_PARAMETER(Reserved); \
+    return qbdipreload_hook_init(nReason); \
+}
+#else
+#define QBDIPRELOAD_INIT __attribute__((constructor)) void init() { qbdipreload_hook_init(); }
+#endif
+#endif
 #ifdef __cplusplus
 } // "C"
 }
