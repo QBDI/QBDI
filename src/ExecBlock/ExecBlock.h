@@ -21,6 +21,7 @@
 #include <iterator>
 #include <memory>
 #include <vector>
+#include <map>
 
 #include "llvm/MC/MCInst.h"
 #include "llvm/Support/Process.h"
@@ -28,6 +29,7 @@
 
 #include "Callback.h"
 #include "Context.h"
+#include "Range.h"
 #include "Patch/Types.h"
 #include "Utility/memory_ostream.h"
 #include "Utility/Assembly.h"
@@ -36,6 +38,7 @@ namespace QBDI {
 
 class RelocatableInst;
 class Patch;
+class ExecBlock;
 
 enum SeqType {
     Entry = 1,
@@ -65,6 +68,11 @@ struct ShadowInfo {
     uint16_t instID;
     uint16_t tag;
     uint16_t shadowID;
+};
+
+struct CachedEdge {
+    ExecBlock* targetExecBlock;
+    uint16_t targetSeqID;
 };
 
 static const uint16_t EXEC_BLOCK_FULL = 0xFFFF;
@@ -99,6 +107,7 @@ private:
     PageState                   pageState;
     uint16_t                    currentSeq;
     uint16_t                    currentInst;
+    std::map<rword, CachedEdge> cacheEdge;
 
     /*! Verify if the code block is in read execute mode.
      *
@@ -364,6 +373,27 @@ public:
      * @return the occupation ratio.
     */
     float occupationRatio() const;
+
+    /* Return next execBlock and SeqID for an address if cached
+     *
+     * @param  addr [in] the target addres
+     *
+     * @return NULL if not cached.
+    */
+    const CachedEdge* getCachedEdge(rword addr);
+
+    /* Set a cached edge
+     *
+     * @param  addr [in] the target addres
+     * @param  edge [in] the target ExecBlock
+    */
+    void setCachedEdge(rword addr, CachedEdge edge);
+
+    /* Clear a range of cached edge
+     *
+     * @param  range [in] the range to clear
+    */
+    void clearCachedEdge(const Range<rword>& range);
 };
 
 }

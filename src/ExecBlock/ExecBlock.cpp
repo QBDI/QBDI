@@ -462,4 +462,27 @@ float ExecBlock::occupationRatio() const {
     return static_cast<float>(codeBlock.size() - getEpilogueOffset()) / static_cast<float>(codeBlock.size());
 }
 
+const CachedEdge* ExecBlock::getCachedEdge(rword addr) {
+    std::map<rword, CachedEdge>::const_iterator it = cacheEdge.find(addr);
+    if (it != cacheEdge.end()) {
+        return &(it->second);
+    }
+    return nullptr;
+}
+
+void ExecBlock::setCachedEdge(rword addr, CachedEdge edge) {
+    cacheEdge[addr] = edge;
+}
+
+void ExecBlock::clearCachedEdge(const Range<rword>& range) {
+    std::map<rword, CachedEdge>::iterator it = cacheEdge.begin();
+    while (it != cacheEdge.end()) {
+        if (range.contains(it->first)) {
+            it = cacheEdge.erase(it);
+        } else {
+            it++;
+        }
+    }
+}
+
 }

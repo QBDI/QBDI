@@ -351,17 +351,34 @@ bool Engine::run(rword start, rword stop) {
                 curFPRState = fprState.get();
                 // Commit the flush
                 blockManager->flushCommit();
+                curExecBlock = nullptr;
             }
 
-            // Test if we have it in cache
-            curExecBlock = blockManager->getProgrammedExecBlock(currentPC);
-            if(curExecBlock == nullptr) {
-                LogDebug("Engine::run", "Cache miss for 0x%" PRIRWORD ", patching & instrumenting new basic block", currentPC);
-                handleNewBasicBlock(currentPC);
-                // Signal a new basic block
-                event |= BASIC_BLOCK_NEW;
-                // Set new basic block as current
+            bool hasedgecache = false;
+            ExecBlock* previousExecBlock = curExecBlock;
+            if (previousExecBlock != nullptr) {
+                const CachedEdge* edge = previousExecBlock->getCachedEdge(currentPC);
+                if (edge != nullptr) {
+                    curExecBlock = edge->targetExecBlock;
+                    curExecBlock->selectSeq(edge->targetSeqID);
+                    hasedgecache = true;
+                }
+            }
+
+            if (!hasedgecache) {
+                // Test if we have it in cache
                 curExecBlock = blockManager->getProgrammedExecBlock(currentPC);
+                if(curExecBlock == nullptr) {
+                    LogDebug("Engine::run", "Cache miss for 0x%" PRIRWORD ", patching & instrumenting new basic block", currentPC);
+                    handleNewBasicBlock(currentPC);
+                    // Signal a new basic block
+                    event |= BASIC_BLOCK_NEW;
+                    // Set new basic block as current
+                    curExecBlock = blockManager->getProgrammedExecBlock(currentPC);
+                }
+                if (previousExecBlock != nullptr) {
+                    previousExecBlock->setCachedEdge(currentPC, {curExecBlock, curExecBlock->getCurrentSeqID()});
+                }
             }
 
             // Set context if necessary
@@ -486,6 +503,7 @@ const InstAnalysis* Engine::analyzeInstMetadata(const InstMetadata* instMetadata
 }
 
 void Engine::clearAllCache() {
+    curExecBlock = nullptr;
     blockManager->clearCache();
 }
 

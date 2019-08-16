@@ -412,6 +412,10 @@ void ExecBlockManager::clearCache(Range<rword> range) {
     for(i = 0; i < regions.size(); i++) {
         if(regions[i].covered.overlaps(range)) {
             flushList.push_back(i);
+        } else {
+            for (ExecBlock* cbk : regions[i].blocks) {
+                cbk->clearCachedEdge(range);
+            }
         }
     }
 }
