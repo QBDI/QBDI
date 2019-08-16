@@ -21,8 +21,6 @@
 #include <iterator>
 #include <memory>
 #include <vector>
-#include <map>
-#include <unordered_set>
 
 #include "llvm/MC/MCInst.h"
 #include "llvm/Support/Process.h"
@@ -72,9 +70,10 @@ struct ShadowInfo {
 };
 
 struct CachedEdge {
-    ExecBlock*                      targetExecBlock;
-    uint16_t                        targetSeqID;
-    std::unordered_set<uint16_t>    previousInstID;
+    ExecBlock*  targetExecBlock;
+    uint16_t    targetSeqID;
+    rword       targetAddr;
+    uint16_t    previousInstID;
 };
 
 static const uint16_t EXEC_BLOCK_FULL = 0xFFFF;
@@ -109,7 +108,7 @@ private:
     PageState                   pageState;
     uint16_t                    currentSeq;
     uint16_t                    currentInst;
-    std::map<rword, CachedEdge> cacheEdge;
+    std::vector<CachedEdge>     cacheEdge;
 
     /*! Verify if the code block is in read execute mode.
      *
@@ -382,7 +381,7 @@ public:
      *
      * @return NULL if not cached.
     */
-    const CachedEdge* getCachedEdge(rword addr);
+    const CachedEdge* getCachedEdge(rword addr, uint16_t previousEndInstID);
 
     /* Set a cached edge
      *

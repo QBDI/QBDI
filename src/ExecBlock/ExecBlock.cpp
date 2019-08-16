@@ -462,27 +462,66 @@ float ExecBlock::occupationRatio() const {
     return static_cast<float>(codeBlock.size() - getEpilogueOffset()) / static_cast<float>(codeBlock.size());
 }
 
-const CachedEdge* ExecBlock::getCachedEdge(rword addr) {
-    std::map<rword, CachedEdge>::const_iterator it = cacheEdge.find(addr);
-    if (it != cacheEdge.end()) {
-        return &(it->second);
+static size_t getIndexCachedEdge(rword addr, uint16_t previousEndInstID, std::vector<CachedEdge>& cacheEdge) {
+    size_t begin = 0;
+    size_t end = cacheEdge.size();
+
+    while (begin != end - 1) {
+        size_t current_idx = (begin + end) >> 1;
+        if (cacheEdge[current_idx].targetAddr < addr ||
+                (cacheEdge[current_idx].targetAddr == addr &&
+                 cacheEdge[current_idx].previousInstID < previousEndInstID)) {
+            begin = current_idx;
+        } else if (cacheEdge[current_idx].targetAddr > addr ||
+                    (cacheEdge[current_idx].targetAddr == addr &&
+                     cacheEdge[current_idx].previousInstID > previousEndInstID)) {
+            end = current_idx;
+        } else {
+            // perfect match
+            return current_idx;
+        }
     }
+
+    return begin;
+}
+
+const CachedEdge* ExecBlock::getCachedEdge(rword addr, uint16_t previousEndInstID) {
+    size_t len = cacheEdge.size();
+    if (len == 0)
+        return nullptr;
+
+    size_t index = getIndexCachedEdge(addr, previousEndInstID, cacheEdge);
+
+    if (cacheEdge[index].targetAddr == addr) {
+        // match
+        return &cacheEdge[index];
+    }
+
     return nullptr;
 }
 
 void ExecBlock::setCachedEdge(rword addr, ExecBlock* nextBlock, uint16_t nextSeqId, uint16_t previousEndInstID) {
-    std::map<rword, CachedEdge>::iterator it = cacheEdge.find(addr);
-    if (it != cacheEdge.end()) {
-        it->second.previousInstID.insert(previousEndInstID);
-    } else {
-        cacheEdge[addr] = {nextBlock, nextSeqId, {previousEndInstID}};
+    size_t len = cacheEdge.size();
+    if (len == 0) {
+        cacheEdge.push_back({nextBlock, nextSeqId, addr, previousEndInstID});
+        return;
+    }
+    size_t index = getIndexCachedEdge(addr, previousEndInstID, cacheEdge);
+    if (cacheEdge[index].targetAddr < addr ||
+            (cacheEdge[index].targetAddr == addr &&
+             cacheEdge[index].previousInstID < previousEndInstID)) {
+        cacheEdge.insert(cacheEdge.begin() + index + 1, {nextBlock, nextSeqId, addr, previousEndInstID});
+    } else if (cacheEdge[index].targetAddr > addr ||
+                (cacheEdge[index].targetAddr == addr &&
+                 cacheEdge[index].previousInstID > previousEndInstID)) {
+        cacheEdge.insert(cacheEdge.begin() + index, {nextBlock, nextSeqId, addr, previousEndInstID});
     }
 }
 
 void ExecBlock::clearCachedEdge(const Range<rword>& range) {
-    std::map<rword, CachedEdge>::iterator it = cacheEdge.begin();
+    std::vector<CachedEdge>::iterator it = cacheEdge.begin();
     while (it != cacheEdge.end()) {
-        if (range.contains(it->first)) {
+        if (range.contains(it->targetAddr)) {
             it = cacheEdge.erase(it);
         } else {
             it++;

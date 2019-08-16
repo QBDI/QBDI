@@ -359,16 +359,17 @@ bool Engine::run(rword start, rword stop) {
             uint16_t previousInstID;
             rword lastBasicBlockEnd = 0;
             if (previousExecBlock != nullptr) {
-                const CachedEdge* edge = previousExecBlock->getCachedEdge(currentPC);
                 previousInstID = previousExecBlock->getCurrentInstID();
+                const CachedEdge* edge = previousExecBlock->getCachedEdge(currentPC, previousInstID);
                 if (edge != nullptr) {
                     curExecBlock = edge->targetExecBlock;
                     curExecBlock->selectSeq(edge->targetSeqID);
                     hasedgecache = true;
-                    //if (edge->previousInstID.find(previousInstID) != edge->previousInstID.end()) {
-                    //    event |= NEW_EDGE;
-                    //    lastBasicBlockEnd = previousExecBlock->getInstAddress(previousInstID);
-                    //}
+                    if (edge->previousInstID != previousInstID) {
+                        previousExecBlock->setCachedEdge(currentPC, curExecBlock, curExecBlock->getCurrentSeqID(), previousInstID);
+                        event |= NEW_EDGE;
+                        lastBasicBlockEnd = previousExecBlock->getInstAddress(previousInstID);
+                    }
                 }
             }
 
