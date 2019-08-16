@@ -356,12 +356,19 @@ bool Engine::run(rword start, rword stop) {
 
             bool hasedgecache = false;
             ExecBlock* previousExecBlock = curExecBlock;
+            uint16_t previousInstID;
+            rword lastBasicBlockEnd = 0;
             if (previousExecBlock != nullptr) {
                 const CachedEdge* edge = previousExecBlock->getCachedEdge(currentPC);
+                previousInstID = previousExecBlock->getCurrentInstID();
                 if (edge != nullptr) {
                     curExecBlock = edge->targetExecBlock;
                     curExecBlock->selectSeq(edge->targetSeqID);
                     hasedgecache = true;
+                    //if (edge->previousInstID.find(previousInstID) != edge->previousInstID.end()) {
+                    //    event |= NEW_EDGE;
+                    //    lastBasicBlockEnd = previousExecBlock->getInstAddress(previousInstID);
+                    //}
                 }
             }
 
@@ -377,7 +384,9 @@ bool Engine::run(rword start, rword stop) {
                     curExecBlock = blockManager->getProgrammedExecBlock(currentPC);
                 }
                 if (previousExecBlock != nullptr) {
-                    previousExecBlock->setCachedEdge(currentPC, {curExecBlock, curExecBlock->getCurrentSeqID()});
+                    previousExecBlock->setCachedEdge(currentPC, curExecBlock, curExecBlock->getCurrentSeqID(), previousInstID);
+                    event |= NEW_EDGE;
+                    lastBasicBlockEnd = previousExecBlock->getInstAddress(previousInstID);
                 }
             }
 
@@ -392,8 +401,11 @@ bool Engine::run(rword start, rword stop) {
             // Signal events
             if ((curExecBlock->getSeqType(curExecBlock->getCurrentSeqID()) & SeqType::Entry) > 0) {
                 event |= BASIC_BLOCK_ENTRY;
+            } else {
+                // only basic bloc edge will send.
+                event = static_cast<VMEvent>(event & ~NEW_EDGE);
             }
-            signalEvent(event, currentPC, curGPRState, curFPRState);
+            signalEvent(event, currentPC, curGPRState, curFPRState, lastBasicBlockEnd);
 
             // Execute
             hasRan = true;
@@ -445,7 +457,7 @@ uint32_t Engine::addVMEventCB(VMEvent mask, VMCallback cbk, void *data) {
     return id | EVENTID_VM_MASK;
 }
 
-void Engine::signalEvent(VMEvent event, rword currentPC, GPRState *gprState, FPRState *fprState) {
+void Engine::signalEvent(VMEvent event, rword currentPC, GPRState *gprState, FPRState *fprState, rword lastBasicBlockEnd) {
     static VMState vmState;
     static rword lastUpdatePC = 0;
 
@@ -462,10 +474,11 @@ void Engine::signalEvent(VMEvent event, rword currentPC, GPRState *gprState, FPR
                     vmState.sequenceEnd     = seqLoc->seqEnd;
                 }
                 else {
-                    vmState = VMState {event, currentPC, currentPC, currentPC, currentPC, 0};
+                    vmState = VMState {event, currentPC, currentPC, currentPC, currentPC, 0, lastBasicBlockEnd};
                 }
             }
             vmState.event = event;
+            vmState.lastBasicBlockEnd = lastBasicBlockEnd;
             r.cbk(vminstance, &vmState, gprState, fprState, r.data);
         }
     }

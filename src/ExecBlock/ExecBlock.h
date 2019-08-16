@@ -22,6 +22,7 @@
 #include <memory>
 #include <vector>
 #include <map>
+#include <unordered_set>
 
 #include "llvm/MC/MCInst.h"
 #include "llvm/Support/Process.h"
@@ -71,8 +72,9 @@ struct ShadowInfo {
 };
 
 struct CachedEdge {
-    ExecBlock* targetExecBlock;
-    uint16_t targetSeqID;
+    ExecBlock*                      targetExecBlock;
+    uint16_t                        targetSeqID;
+    std::unordered_set<uint16_t>    previousInstID;
 };
 
 static const uint16_t EXEC_BLOCK_FULL = 0xFFFF;
@@ -387,7 +389,7 @@ public:
      * @param  addr [in] the target addres
      * @param  edge [in] the target ExecBlock
     */
-    void setCachedEdge(rword addr, CachedEdge edge);
+    void setCachedEdge(rword addr, ExecBlock* nextBlock, uint16_t nextSeqId, uint16_t previousEndInstID);
 
     /* Clear a range of cached edge
      *

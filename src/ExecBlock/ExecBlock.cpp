@@ -470,8 +470,13 @@ const CachedEdge* ExecBlock::getCachedEdge(rword addr) {
     return nullptr;
 }
 
-void ExecBlock::setCachedEdge(rword addr, CachedEdge edge) {
-    cacheEdge[addr] = edge;
+void ExecBlock::setCachedEdge(rword addr, ExecBlock* nextBlock, uint16_t nextSeqId, uint16_t previousEndInstID) {
+    std::map<rword, CachedEdge>::iterator it = cacheEdge.find(addr);
+    if (it != cacheEdge.end()) {
+        it->second.previousInstID.insert(previousEndInstID);
+    } else {
+        cacheEdge[addr] = {nextBlock, nextSeqId, {previousEndInstID}};
+    }
 }
 
 void ExecBlock::clearCachedEdge(const Range<rword>& range) {

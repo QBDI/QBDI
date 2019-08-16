@@ -131,15 +131,20 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock) {
     const Patch& lastPatch = basicBlock.back();
     rword bbStart = firstPatch.metadata.address;
     rword bbEnd = lastPatch.metadata.endAddress();
+    ExecBlock* previousExecBlock = nullptr;
+    uint16_t previousLastInstID = 0;
 
     // Locating an approriate cache region
     size_t r = findRegion(Range<rword>(bbStart, bbEnd));
     ExecRegion& region = regions[r];
 
     // Basic block truncation to prevent dedoubled sequence
+    const SeqLoc* endSequenceCached = nullptr;
     for(size_t i = 0; i < basicBlock.size(); i++) {
-        if(region.sequenceCache.count(basicBlock[i].metadata.address) != 0) {
+        std::map<rword, SeqLoc>::const_iterator it = region.sequenceCache.find(basicBlock[i].metadata.address);
+        if(it != region.sequenceCache.end()) {
             patchEnd = i;
+            endSequenceCached = &(it->second);
             break;
         }
     }
@@ -169,7 +174,7 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock) {
             // Successful write
             if(res.seqID != EXEC_BLOCK_FULL) {
                 // Saving sequence in the sequence cache
-                regions[r].sequenceCache[basicBlock[patchIdx].metadata.address] = SeqLoc {
+                region.sequenceCache[basicBlock[patchIdx].metadata.address] = SeqLoc {
                     (uint16_t) i,
                     res.seqID,
                     bbStart,
@@ -182,6 +187,12 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock) {
                 for(size_t j = 0; j < res.patchWritten; j++) {
                     region.instCache[basicBlock[patchIdx + j].metadata.address] = InstLoc {static_cast<uint16_t>(i), static_cast<uint16_t>(startID + j)};
                 }
+                // generate CachedEdge the basic block is plit
+                if (previousExecBlock != nullptr) {
+                    previousExecBlock->setCachedEdge(basicBlock[patchIdx].metadata.address, region.blocks[i], res.seqID, previousLastInstID);
+                }
+                previousExecBlock = region.blocks[i];
+                previousLastInstID = basicBlock[patchIdx + res.patchWritten - 1].metadata.address;
                 LogDebug("ExecBlockManager::writeBasicBlock",
                          "Sequence 0x%" PRIRWORD "-0x%" PRIRWORD " written in ExecBlock %p as seqID %" PRIu16,
                          basicBlock[patchIdx].metadata.address,
@@ -194,6 +205,13 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock) {
                 break;
             }
         }
+    }
+    if (endSequenceCached && previousExecBlock) {
+        // cached edge to an already existed end
+        previousExecBlock->setCachedEdge(basicBlock[patchEnd].metadata.address,
+                                         region.blocks[endSequenceCached->blockIdx],
+                                         endSequenceCached->seqID,
+                                         previousLastInstID);
     }
     // Updating stats
     total_translation_size += translation;

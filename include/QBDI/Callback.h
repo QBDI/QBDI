@@ -71,16 +71,17 @@ typedef enum {
 } InstPosition;
 
 typedef enum {
-    _QBDI_EI(SEQUENCE_ENTRY)        = 1,    /*!< Triggered when the execution enters a sequence.*/
-    _QBDI_EI(SEQUENCE_EXIT)         = 1<<1, /*!< Triggered when the execution exits from the current sequence.*/
-    _QBDI_EI(BASIC_BLOCK_ENTRY)     = 1<<2, /*!< Triggered when the execution enters a basic block.*/
-    _QBDI_EI(BASIC_BLOCK_EXIT)      = 1<<3, /*!< Triggered when the execution exits from the current basic block.*/
-    _QBDI_EI(BASIC_BLOCK_NEW)       = 1<<4, /*!< Triggered when the execution enters a new (~unknown) basic block.*/
-    _QBDI_EI(EXEC_TRANSFER_CALL)    = 1<<5, /*!< Triggered when the ExecBroker executes an execution transfer.*/
-    _QBDI_EI(EXEC_TRANSFER_RETURN)  = 1<<6, /*!< Triggered when the ExecBroker returns from an execution transfer.*/
-    _QBDI_EI(SYSCALL_ENTRY)         = 1<<7, /*!< Not implemented.*/
-    _QBDI_EI(SYSCALL_EXIT)          = 1<<8, /*!< Not implemented.*/
-    _QBDI_EI(SIGNAL)                = 1<<9, /*!< Not implemented.*/
+    _QBDI_EI(SEQUENCE_ENTRY)        = 1,     /*!< Triggered when the execution enters a sequence.*/
+    _QBDI_EI(SEQUENCE_EXIT)         = 1<<1,  /*!< Triggered when the execution exits from the current sequence.*/
+    _QBDI_EI(BASIC_BLOCK_ENTRY)     = 1<<2,  /*!< Triggered when the execution enters a basic block.*/
+    _QBDI_EI(BASIC_BLOCK_EXIT)      = 1<<3,  /*!< Triggered when the execution exits from the current basic block.*/
+    _QBDI_EI(BASIC_BLOCK_NEW)       = 1<<4,  /*!< Triggered when the execution enters a new (~unknown) basic block.*/
+    _QBDI_EI(EXEC_TRANSFER_CALL)    = 1<<5,  /*!< Triggered when the ExecBroker executes an execution transfer.*/
+    _QBDI_EI(EXEC_TRANSFER_RETURN)  = 1<<6,  /*!< Triggered when the ExecBroker returns from an execution transfer.*/
+    _QBDI_EI(SYSCALL_ENTRY)         = 1<<7,  /*!< Not implemented.*/
+    _QBDI_EI(SYSCALL_EXIT)          = 1<<8,  /*!< Not implemented.*/
+    _QBDI_EI(SIGNAL)                = 1<<9,  /*!< Not implemented.*/
+    _QBDI_EI(NEW_EDGE)              = 1<<10, /*!< Found a new edge between two basic block. */
 } VMEvent;
 
 _QBDI_ENABLE_BITMASK_OPERATORS(VMEvent)
@@ -95,6 +96,7 @@ typedef struct {
     rword sequenceStart;     /*!< The current sequence start address which can also be the execution transfer destination.*/
     rword sequenceEnd;       /*!< The current sequence end address which can also be the execution transfer destination.*/
     rword lastSignal;        /*!< Not implemented.*/
+    rword lastBasicBlockEnd; /*!< The last instruction address in the previous basic block (only when NEW_EDGE). */
 } VMState;
 
 /*! VM callback function type.
