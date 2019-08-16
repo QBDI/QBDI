@@ -313,7 +313,6 @@ bool Engine::precacheBasicBlock(rword pc) {
     return true;
 }
 
-
 bool Engine::run(rword start, rword stop) {
     rword         currentPC = start;
     bool          hasRan = false;
@@ -333,9 +332,9 @@ bool Engine::run(rword start, rword stop) {
             curExecBlock = nullptr;
             LogDebug("Engine::run", "Executing 0x%" PRIRWORD " through execBroker", currentPC);
             // transfer execution
-            signalEvent(EXEC_TRANSFER_CALL, currentPC, curGPRState, curFPRState);
+            if (vmCallbacks.size() != 0) signalEvent(EXEC_TRANSFER_CALL, currentPC, curGPRState, curFPRState);
             execBroker->transferExecution(currentPC, curGPRState, curFPRState);
-            signalEvent(EXEC_TRANSFER_RETURN, currentPC, curGPRState, curFPRState);
+            if (vmCallbacks.size() != 0) signalEvent(EXEC_TRANSFER_RETURN, currentPC, curGPRState, curFPRState);
         }
         // Else execute through DBI
         else {
@@ -395,18 +394,21 @@ bool Engine::run(rword start, rword stop) {
             if(&(curExecBlock->getContext()->gprState) != curGPRState || &(curExecBlock->getContext()->fprState) != curFPRState) {
                 curExecBlock->getContext()->gprState = *curGPRState;
                 curExecBlock->getContext()->fprState = *curFPRState;
+                curGPRState = &(curExecBlock->getContext()->gprState);
+                curFPRState = &(curExecBlock->getContext()->fprState);
             }
-            curGPRState = &(curExecBlock->getContext()->gprState);
-            curFPRState = &(curExecBlock->getContext()->fprState);
 
             // Signal events
-            if ((curExecBlock->getSeqType(curExecBlock->getCurrentSeqID()) & SeqType::Entry) > 0) {
-                event |= BASIC_BLOCK_ENTRY;
-            } else {
-                // only basic bloc edge will send.
-                event = static_cast<VMEvent>(event & ~NEW_EDGE);
+            if (vmCallbacks.size() != 0) {
+                SeqType currentSeqType = curExecBlock->getSeqType(curExecBlock->getCurrentSeqID());
+                if ((currentSeqType & SeqType::Entry) > 0) {
+                    event |= BASIC_BLOCK_ENTRY;
+                } else {
+                    // only basic bloc edge will send.
+                    event = static_cast<VMEvent>(event & ~NEW_EDGE);
+                }
+                signalEvent(event, currentPC, curGPRState, curFPRState, lastBasicBlockEnd);
             }
-            signalEvent(event, currentPC, curGPRState, curFPRState, lastBasicBlockEnd);
 
             // Execute
             hasRan = true;
@@ -423,11 +425,14 @@ bool Engine::run(rword start, rword stop) {
             }
 
             // Signal events
-            event = SEQUENCE_EXIT;
-            if ((curExecBlock->getSeqType(curExecBlock->getCurrentSeqID()) & SeqType::Exit) > 0) {
-                event |= BASIC_BLOCK_EXIT;
+            if (vmCallbacks.size() != 0) {
+                SeqType currentSeqType = curExecBlock->getSeqType(curExecBlock->getCurrentSeqID());
+                event = SEQUENCE_EXIT;
+                if ((currentSeqType & SeqType::Exit) > 0) {
+                    event |= BASIC_BLOCK_EXIT;
+                }
+                signalEvent(event, currentPC, curGPRState, curFPRState);
             }
-            signalEvent(event, currentPC, curGPRState, curFPRState);
         }
         // Get next block PC
         currentPC = QBDI_GPR_GET(curGPRState, REG_PC);
