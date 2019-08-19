@@ -1,3 +1,20 @@
+/*
+ * This file is part of QBDI.
+ *
+ * Copyright 2017 Quarkslab
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #include "QBDIPreload.h"
 #include <Windows.h>
 #include <winnt.h>
@@ -19,7 +36,7 @@ static struct {
 static PVOID g_hExceptionHandler;       /* VEH for QBDI preload internals (break on EntryPoint) */
 static rword g_firstInstructionVA;      /* First instruction that will be executed by QBDI      */
 static rword g_lastInstructionVA;       /* Last instruction that will be executed by QBDI       */
-PVOID g_shadowStackTop;                 /* QBDI shadow stack top pointer(decreasing address)    */
+PVOID g_shadowStackTop = NULL;          /* QBDI shadow stack top pointer(decreasing address)    */
 static GPRState g_EntryPointGPRState;   /* QBDI CPU GPR states when EntryPoint has been reached */
 static FPRState g_EntryPointFPRState;   /* QBDI CPU FPR states when EntryPoint has been reached */
 
@@ -170,6 +187,8 @@ void qbdipreload_trampoline_impl() {
     unsetInt1Exception();
     unsetExceptionHandler(g_hExceptionHandler);
 
+    // On windows only entry point call is catched
+    // but not main function
     int status = qbdipreload_on_main(0, NULL);
     
     if(status == QBDIPRELOAD_NOT_HANDLED) {
@@ -179,10 +198,11 @@ void qbdipreload_trampoline_impl() {
         // Filter some modules to avoid conflicts
         qbdi_removeAllInstrumentedRanges(vm);
 
-        // Set original states
+        // Set original CPU state
         qbdi_setGPRState(vm, &g_EntryPointGPRState);
         qbdi_setFPRState(vm, &g_EntryPointFPRState);
 
+        // User final callback call as QBDIPreload is ready
         status = qbdipreload_on_run(vm, g_firstInstructionVA, g_lastInstructionVA);
     }
 
@@ -265,16 +285,16 @@ int qbdipreload_hook(void* va) {
 BOOLEAN qbdipreload_hook_init(DWORD nReason) {
     if(nReason == DLL_PROCESS_ATTACH) {
         void* mainmod_entry_point = getMainModuleEntryPoint();
-        // Call user provided callback
+        // Call user provided callback on start
         int status = qbdipreload_on_start(mainmod_entry_point);
         if (status == QBDIPRELOAD_NOT_HANDLED) {
             // QBDI preload installation
             qbdipreload_hook(mainmod_entry_point);
         }
     }
+    // Call user provided exit callback on DLL unloading
     else if(nReason == DLL_PROCESS_DETACH) {
         DWORD dwExitCode;
-
         GetExitCodeProcess(GetCurrentProcess(), &dwExitCode);
         qbdipreload_on_exit(dwExitCode);
     }
