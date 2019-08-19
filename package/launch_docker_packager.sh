@@ -48,13 +48,14 @@ build_archlinux () {
 }
 
 
-build_androidarm() {
+build_android () {
+    PLATEFORM="$1"
     docker build "${BASEDIR}" -t qbdi:package \
-                              -f "${GITDIR}/package/android_ARM_docker_packager/Dockerfile" \
+                              -f "${GITDIR}/package/android_${PLATEFORM}_docker_packager/Dockerfile" \
                               --pull
 
     docker create --name package qbdi:package
-    docker cp "package:${DOCKER_BUILD_DIR}/QBDI-${QBDI_VERSION}-android-ARM.tar.gz" "QBDI-${QBDI_VERSION}-android-ARM.tar.gz"
+    docker cp "package:${DOCKER_BUILD_DIR}/QBDI-${QBDI_VERSION}-android-${PLATEFORM}.tar.gz" "QBDI-${QBDI_VERSION}-android-${PLATEFORM}.tar.gz"
     docker rm package
 }
 
@@ -85,7 +86,10 @@ build_archlinux X86_64
 build_archlinux X86
 
 # android-ARM
-build_androidarm
+build_android ARM
+
+# android-x86
+build_android X86
 
 delete_archive
 

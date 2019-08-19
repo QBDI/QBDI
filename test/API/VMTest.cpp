@@ -131,7 +131,7 @@ struct TestInst TestInsts[MNEM_COUNT] = {
 #endif
 
 
-QBDI_NOINLINE QBDI::rword satanicFun(QBDI::rword arg0) {
+QBDI_NOSTACKPROTECTOR QBDI_NOINLINE QBDI::rword satanicFun(QBDI::rword arg0) {
     QBDI::rword volatile res = arg0 + 0x666;
 #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
     QBDI::rword p = 0x42;
