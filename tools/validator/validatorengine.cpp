@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <cstring>
 #include <inttypes.h>
+#include <dlfcn.h>
 
 
 LogEntry::LogEntry(uint64_t execID, QBDI::rword address, const char* disassembly) {
@@ -107,9 +108,18 @@ void ValidatorEngine::outputLogEntry(const LogEntry& entry) {
         }
     }
 
-    fprintf(stderr, "ExecID: %" PRIu64 " \t%25s 0x%016" PRIRWORD ": %s\n", entry.execID,
-            (module != nullptr) ? module->name.c_str() : "",
-            entry.address, entry.disassembly);
+    Dl_info info;
+    int ret = dladdr((void*) entry.address, &info);
+
+    if (ret != 0 && info.dli_sname) {
+        fprintf(stderr, "ExecID: %" PRIu64 " \t%10s %20s+0x%03lx 0x%016" PRIRWORD ": %s\n", entry.execID,
+                (module != nullptr) ? module->name.c_str() : "", info.dli_sname, entry.address - (QBDI::rword) info.dli_saddr,
+                entry.address, entry.disassembly);
+    } else {
+        fprintf(stderr, "ExecID: %" PRIu64 " \t%37s 0x%016" PRIRWORD ": %s\n", entry.execID,
+                (module != nullptr) ? module->name.c_str() : "",
+                entry.address, entry.disassembly);
+    }
     if(entry.transfer != 0) {
         QBDI::MemoryMap *transfer_module = nullptr;
         for (auto &m : memoryModule) {
