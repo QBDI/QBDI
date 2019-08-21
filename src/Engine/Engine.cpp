@@ -474,6 +474,7 @@ void Engine::signalEvent(VMEvent event, rword currentPC, GPRState *gprState, FPR
                 lastUpdatePC = currentPC;
                 if(curExecBlock != nullptr) {
                     const SeqLoc* seqLoc    = blockManager->getSeqLoc(currentPC);
+                    RequireAction("Engine::signalEvent", seqLoc != nullptr, abort());
                     vmState.basicBlockStart = seqLoc->bbStart;
                     vmState.basicBlockEnd   = seqLoc->bbEnd;
                     vmState.sequenceStart   = seqLoc->seqStart;
