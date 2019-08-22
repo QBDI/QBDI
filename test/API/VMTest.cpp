@@ -338,7 +338,7 @@ QBDI::VMAction evilMnemCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBD
     // get instruction metadata
     const QBDI::InstAnalysis* ana = vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION | QBDI::ANALYSIS_OPERANDS);
     // validate mnemonic
-    if (TEST_GUARD(QBDI::String::startsWith(MNEM_CMP, ana->mnemonic))) {
+    if (TEST_GUARD(QBDI::String::startsWith(MNEM_CMP, ana->mnemonic)) && info[0] < MNEM_COUNT) {
         info[0]++; // CMP count
         info[1]++;
         // validate address
