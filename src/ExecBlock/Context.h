@@ -20,6 +20,7 @@
 
 #include <map>
 #include "State.h"
+#include "Callback.h"
 
 // ============================================================================
 // Anonymous definition to catch unimplemented platform.
@@ -77,6 +78,7 @@ public:
     FPRState fprState;
     GPRState gprState;
     HostState hostState;
+    ASMCallbackData asmData;
 
 };
 
@@ -116,6 +118,7 @@ public:
     HostState hostState;
     FPRState fprState;
     GPRState gprState;
+    ASMCallbackData asmData;
 };
 
 }

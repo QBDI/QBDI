@@ -27,10 +27,16 @@
 #include "Patch/PatchUtils.h"
 #include "Patch/ARM/PatchGenerator_ARM.h"
 #include "Patch/ARM/Layer2_ARM.h"
+#include "Utility/LogSys.h"
 
 namespace QBDI {
 
 RelocatableInst::SharedPtrVec getBreakToHost(Reg temp);
+
+RelocatableInst::SharedPtrVec getCallASMCallback(Reg temp) {
+    LogError("getCallASMCallback", "Not implemented for ARM architecture");
+    abort();
+}
 
 }
 

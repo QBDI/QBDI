@@ -14,6 +14,16 @@ add_executable(fibonacci_cpp fibonacci.cpp)
 target_link_libraries(fibonacci_cpp QBDI)
 add_signature(fibonacci_cpp)
 
+add_executable(fibonacci_customrules fibonacci_customrules.cpp)
+target_link_libraries(fibonacci_customrules QBDI)
+add_signature(fibonacci_customrules)
+
+if(("${ARCH}" STREQUAL "X86_64") AND NOT ("${OS}" STREQUAL "win"))
+    add_executable(fibonacci_customrules_asm fibonacci_customrules_asm.cpp fibonacci_customrules_asm.s)
+    target_link_libraries(fibonacci_customrules_asm QBDI)
+    add_signature(fibonacci_customrules_asm)
+endif()
+
 add_executable(fibonacci_c fibonacci.c)
 target_link_libraries(fibonacci_c QBDI)
 add_signature(fibonacci_c)

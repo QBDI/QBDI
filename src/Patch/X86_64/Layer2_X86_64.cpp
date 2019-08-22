@@ -173,6 +173,32 @@ llvm::MCInst jmp64m(unsigned int base, rword offset) {
     return inst;
 }
 
+llvm::MCInst call32m(unsigned int base, rword offset) {
+    llvm::MCInst inst;
+
+    inst.setOpcode(llvm::X86::CALL32m);
+    inst.addOperand(llvm::MCOperand::createReg(base));
+    inst.addOperand(llvm::MCOperand::createImm(1));
+    inst.addOperand(llvm::MCOperand::createReg(0));
+    inst.addOperand(llvm::MCOperand::createImm(offset));
+    inst.addOperand(llvm::MCOperand::createReg(0));
+
+    return inst;
+}
+
+llvm::MCInst call64m(unsigned int base, rword offset) {
+    llvm::MCInst inst;
+
+    inst.setOpcode(llvm::X86::CALL64m);
+    inst.addOperand(llvm::MCOperand::createReg(base));
+    inst.addOperand(llvm::MCOperand::createImm(1));
+    inst.addOperand(llvm::MCOperand::createReg(0));
+    inst.addOperand(llvm::MCOperand::createImm(offset));
+    inst.addOperand(llvm::MCOperand::createReg(0));
+
+    return inst;
+}
+
 llvm::MCInst jmp(rword offset) {
     llvm::MCInst inst;
 
@@ -369,6 +395,10 @@ RelocatableInst::SharedPtr Mov(Offset offset, Reg reg) {
 
 RelocatableInst::SharedPtr Mov(Reg reg, Offset offset) {
     return DataBlockRelx86(movrm(reg, 0, 0, 0, 0, 0), 4, offset, 1, 7);
+}
+
+RelocatableInst::SharedPtr Lea(Reg reg, Offset offset) {
+    return DataBlockRelx86(lea(reg, 0, 0, 0, 0, 0), 4, offset, 1, 7);
 }
 
 RelocatableInst::SharedPtr JmpM(Offset offset) {

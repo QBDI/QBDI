@@ -350,6 +350,29 @@ public:
         rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 };
 
+class LeaPatchDSL : public PatchGenerator, public AutoAlloc<PatchGenerator, LeaPatchDSL>,
+    public PureEval<LeaPatchDSL> {
+
+    Reg   reg;
+    Offset offset;
+
+public:
+
+    /*! Load the address of Context + Offset to the register
+     *
+     * @param[in] reg     A register where the value will be loaded.
+     * @param[in] offset  The offset in the data block
+    */
+    LeaPatchDSL(Reg reg, Offset offset): reg(reg), offset(offset) {}
+
+    /*! Output:
+     *
+     * LEA REG64 reg, MEM64 DataBlock[offset]
+    */
+    RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+};
+
 class JmpEpilogue : public PatchGenerator, public AutoAlloc<PatchGenerator, JmpEpilogue>,
     public PureEval<JmpEpilogue> {
 

@@ -19,11 +19,12 @@
 #include "Patch/InstrRule.h"
 #include "Patch/InstrRules.h"
 #include "Utility/InstAnalysis_prive.h"
+#include "Utility/LogSys.h"
 
 namespace QBDI {
 
 void InstrRule::instrument(Patch &patch, llvm::MCInstrInfo* MCII, llvm::MCRegisterInfo* MRI,
-                            PatchGenerator::SharedPtrVec patchGen, bool breakToHost, InstPosition position) {
+                            PatchGenerator::SharedPtrVec patchGen, BreakType breakType, InstPosition position) {
     /* The instrument function needs to handle several different cases. An instrumentation can
      * be either prepended or appended to the patch and, in each case, can trigger a break to
      * host.
@@ -41,7 +42,7 @@ void InstrRule::instrument(Patch &patch, llvm::MCInstrInfo* MCII, llvm::MCRegist
     // In case we break to the host, we need to ensure the value of PC in the context is
     // correct. This value needs to be set when instrumenting before the instruction or when
     // instrumenting after an instruction which does not set PC.
-    if(breakToHost) {
+    if(breakType != BreakType::NOBREAK) {
         if(position == InstPosition::PREINST || patch.metadata.modifyPC == false) {
             switch(position) {
                 // In PREINST PC is set to the current address
@@ -79,9 +80,9 @@ void InstrRule::instrument(Patch &patch, llvm::MCInstrInfo* MCII, llvm::MCRegist
         }
     }
 
-    // The breakToHost code requires one temporary register. If none were allocated by the
+    // The breakType != BreakType::NOBREAK code requires one temporary register. If none were allocated by the
     // instrumentation we thus need to add one.
-    if(breakToHost && tempManager.getUsedRegisterNumber() == 0) {
+    if(breakType != BreakType::NOBREAK && tempManager.getUsedRegisterNumber() == 0) {
         tempManager.getRegForTemp(Temp(0));
     }
     // Prepend the temporary register saving code to the instrumentation
@@ -92,11 +93,15 @@ void InstrRule::instrument(Patch &patch, llvm::MCInstrInfo* MCII, llvm::MCRegist
 
     // In the break to host case the first used register is not restored and instead given to
     // the break to host code as a scratch. It will later be restored by the break to host code.
-    if(breakToHost) {
+    if(breakType != BreakType::NOBREAK) {
         for(uint32_t i = 1; i < usedRegisters.size(); i++) {
             append(instru, LoadReg(usedRegisters[i], Offset(usedRegisters[i])));
         }
-        append(instru, getBreakToHost(usedRegisters[0]));
+        if (breakType == BreakType::BREAKTOHOST) {
+            append(instru, getBreakToHost(usedRegisters[0]));
+        } else if (breakType == BreakType::CALLASM) {
+            append(instru, getCallASMCallback(usedRegisters[0]));
+        }
     }
     // Normal case where we append the temporary register restoration code to the instrumentation
     else {
@@ -137,7 +142,13 @@ bool InstrRuleUser::tryInstrument(Patch &patch, llvm::MCInstrInfo* MCII, llvm::M
         return false;
 
     for (InstrumentDataCBK& cbkToAdd : vec) {
-        instrument(patch, MCII, MRI, getCallbackGenerator(cbkToAdd.cbk, cbkToAdd.data), true, cbkToAdd.position);
+        if (cbkToAdd.type == TypeCBK::InstCBK) {
+            instrument(patch, MCII, MRI, getCallbackGenerator(cbkToAdd.cbk, cbkToAdd.data), BreakType::BREAKTOHOST, cbkToAdd.position);
+        } else if (cbkToAdd.type == TypeCBK::ASMCBK) {
+            instrument(patch, MCII, MRI, getASMCallbackGenerator(cbkToAdd.asmcbk, cbkToAdd.data), BreakType::CALLASM, cbkToAdd.position);
+        } else {
+            LogWarning("InstrRuleUser::tryInstrument", "Unknown TypeCBK : %d. Ignored", cbkToAdd.type);
+        }
     }
 
     return true;

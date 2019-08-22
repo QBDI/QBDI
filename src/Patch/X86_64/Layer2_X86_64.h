@@ -35,6 +35,7 @@ namespace QBDI {
 #define popf popf64
 #define pushf pushf64
 #define jmpm jmp64m
+#define callm call64m
 
 #else /* QBDI_ARCH_X86 */
 #define movrr mov32rr
@@ -48,6 +49,7 @@ namespace QBDI {
 #define popf popf32
 #define pushf pushf32
 #define jmpm jmp32m
+#define callm call32m
 
 #endif
 
@@ -76,6 +78,10 @@ llvm::MCInst mov64rm(unsigned int dst, unsigned int base, rword scale, unsigned 
 llvm::MCInst jmp32m(unsigned int base, rword offset);
 
 llvm::MCInst jmp64m(unsigned int base, rword offset);
+
+llvm::MCInst call32m(unsigned int base, rword offset);
+
+llvm::MCInst call64m(unsigned int base, rword offset);
 
 llvm::MCInst fxsave(unsigned int base, rword offset);
 
@@ -122,6 +128,8 @@ RelocatableInst::SharedPtr Mov(Reg reg, Constant cst);
 RelocatableInst::SharedPtr Mov(Offset offset, Reg reg);
 
 RelocatableInst::SharedPtr Mov(Reg reg, Offset offset);
+
+RelocatableInst::SharedPtr Lea(Reg reg, Offset offset);
 
 RelocatableInst::SharedPtr JmpM(Offset offset);
 

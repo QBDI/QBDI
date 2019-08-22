@@ -221,7 +221,7 @@ uint32_t VM::addMnemonicCB(const char* mnemonic, InstPosition pos, InstCallback 
         MnemonicIs(mnemonic),
         getCallbackGenerator(cbk, data),
         pos,
-        true,
+        BreakType::BREAKTOHOST,
         MIDDLEPASS
     ));
 }
@@ -232,7 +232,7 @@ uint32_t VM::addCodeCB(InstPosition pos, InstCallback cbk, void *data) {
         True(),
         getCallbackGenerator(cbk, data),
         pos,
-        true,
+        BreakType::BREAKTOHOST,
         MIDDLEPASS
     ));
 }
@@ -243,7 +243,7 @@ uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk, vo
         AddressIs(address),
         getCallbackGenerator(cbk, data),
         pos,
-        true,
+        BreakType::BREAKTOHOST,
         MIDDLEPASS
     ));
 }
@@ -255,7 +255,7 @@ uint32_t VM::addCodeRangeCB(rword start, rword end, InstPosition pos, InstCallba
         InstructionInRange(start, end),
         getCallbackGenerator(cbk, data),
         pos,
-        true,
+        BreakType::BREAKTOHOST,
         MIDDLEPASS
     ));
 }
@@ -269,7 +269,7 @@ uint32_t VM::addMemAccessCB(MemoryAccessType type, InstCallback cbk, void *data)
                 DoesReadAccess(),
                 getCallbackGenerator(cbk, data),
                 InstPosition::PREINST,
-                true,
+                BreakType::BREAKTOHOST,
                 MIDDLEPASS
             ));
         case MEMORY_WRITE:
@@ -277,7 +277,7 @@ uint32_t VM::addMemAccessCB(MemoryAccessType type, InstCallback cbk, void *data)
                 DoesWriteAccess(),
                 getCallbackGenerator(cbk, data),
                 InstPosition::POSTINST,
-                true,
+                BreakType::BREAKTOHOST,
                 MIDDLEPASS
             ));
         case MEMORY_READ_WRITE:
@@ -288,7 +288,7 @@ uint32_t VM::addMemAccessCB(MemoryAccessType type, InstCallback cbk, void *data)
                 }),
                 getCallbackGenerator(cbk, data),
                 InstPosition::POSTINST,
-                true,
+                BreakType::BREAKTOHOST,
                 MIDDLEPASS
             ));
         default:
@@ -363,7 +363,7 @@ bool VM::recordMemoryAccess(MemoryAccessType type) {
         engine->addInstrRule(InstrRuleDynamic(
             DoesReadAccess(), generateReadInstrumentPatch,
             PREINST,
-            false,
+            BreakType::NOBREAK,
             LASTPASS // need to be before user PREINST callback
         ));
     }
@@ -372,7 +372,7 @@ bool VM::recordMemoryAccess(MemoryAccessType type) {
         engine->addInstrRule(InstrRuleDynamic(
             DoesWriteAccess(), generateWriteInstrumentPatch,
             POSTINST,
-            false,
+            BreakType::NOBREAK,
             FIRSTPASS // need to be before user POSTINST callback
         ));
     }

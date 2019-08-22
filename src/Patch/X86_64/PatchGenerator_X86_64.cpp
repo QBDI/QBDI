@@ -410,6 +410,12 @@ RelocatableInst::SharedPtrVec LoadReg::generate(const llvm::MCInst* inst,
     return {Mov(reg, offset)};
 }
 
+RelocatableInst::SharedPtrVec LeaPatchDSL::generate(const llvm::MCInst* inst,
+    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
+
+    return {Lea(reg, offset)};
+}
+
 RelocatableInst::SharedPtrVec JmpEpilogue::generate(const llvm::MCInst* inst,
     rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
 

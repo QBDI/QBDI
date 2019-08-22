@@ -36,6 +36,17 @@ namespace QBDI {
  */
 PatchGenerator::SharedPtrVec getCallbackGenerator(InstCallback cbk, void* data);
 
+/*
+ * Setup a user asm callback in the asmData state
+ *
+ * Created patch generator can be used in any instruction rules.
+ *
+ * @param[in] cbk   Pointer to a user callback
+ * @param[in] data  Opaque pointer to user callback data
+ */
+PatchGenerator::SharedPtrVec getASMCallbackGenerator(ASMCallback cbk, void* data);
+
+
 }
 
 #endif

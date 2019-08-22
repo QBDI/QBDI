@@ -112,6 +112,9 @@ ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(
     for(auto &inst: execBlockPrologue) {
         assembly.writeInstruction(inst->reloc(this), codeStream);
     }
+    // Prepare Context->asmData
+    context->asmData.gprState = &(context->gprState);
+    context->asmData.fprState = &(context->fprState);
 }
 
 ExecBlock::~ExecBlock() {

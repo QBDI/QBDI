@@ -45,6 +45,12 @@ typedef enum : uint8_t {
     LASTPASS, // the instrumentation rule in the last pass will be the first or the last instruction of the Patch
 } InstPass;
 
+typedef enum {
+    NOBREAK = 0,
+    BREAKTOHOST = 1,
+    CALLASM = 2,
+} BreakType;
+
 
 /*! An instrumentation rule written in PatchDSL.
 */
@@ -89,7 +95,7 @@ public:
      *                   queries.
     */
     void instrument(Patch &patch, llvm::MCInstrInfo* MCII, llvm::MCRegisterInfo* MRI,
-                    PatchGenerator::SharedPtrVec patchGen, bool breakToHost, InstPosition position);
+                    PatchGenerator::SharedPtrVec patchGen, BreakType breakType, InstPosition position);
 };
 
 class InstrRuleBasic : public InstrRule {
@@ -97,7 +103,7 @@ class InstrRuleBasic : public InstrRule {
     PatchCondition::SharedPtr     condition;
     PatchGenerator::SharedPtrVec  patchGen;
     InstPosition                  position;
-    bool                          breakToHost;
+    BreakType                     breakType;
 
 public:
 
@@ -117,8 +123,8 @@ public:
      *                         a break to host (in the case of a callback for example).
     */
     InstrRuleBasic(PatchCondition::SharedPtr condition, PatchGenerator::SharedPtrVec patchGen,
-                   InstPosition position, bool breakToHost, InstPass pass) : InstrRule(pass),
-        condition(condition), patchGen(patchGen), position(position), breakToHost(breakToHost) {}
+                   InstPosition position, BreakType breakType, InstPass pass) : InstrRule(pass),
+        condition(condition), patchGen(patchGen), position(position), breakType(breakType) {}
 
     RangeSet<rword> affectedRange() const override {
         return condition->affectedRange();
@@ -137,7 +143,7 @@ public:
     bool tryInstrument(Patch &patch, llvm::MCInstrInfo* MCII, llvm::MCRegisterInfo* MRI,
                        Assembly* assembly) override {
         if (canBeApplied(patch, MCII)) {
-            instrument(patch, MCII, MRI, patchGen, breakToHost, position);
+            instrument(patch, MCII, MRI, patchGen, breakType, position);
             return true;
         }
         return false;
@@ -152,7 +158,7 @@ class InstrRuleDynamic : public InstrRule {
     PatchCondition::SharedPtr     condition;
     PatchGenMethod                patchGenMethod;
     InstPosition                  position;
-    bool                          breakToHost;
+    BreakType                     breakType;
 
 public:
 
@@ -172,8 +178,8 @@ public:
      *                             a break to host (in the case of a callback for example).
     */
     InstrRuleDynamic(PatchCondition::SharedPtr condition, PatchGenMethod patchGenMethod,
-                     InstPosition position, bool breakToHost, InstPass pass) : InstrRule(pass),
-        condition(condition), patchGenMethod(patchGenMethod), position(position), breakToHost(breakToHost) {}
+                     InstPosition position, BreakType breakType, InstPass pass) : InstrRule(pass),
+        condition(condition), patchGenMethod(patchGenMethod), position(position), breakType(breakType) {}
 
     RangeSet<rword> affectedRange() const override {
         return condition->affectedRange();
@@ -193,7 +199,7 @@ public:
                        Assembly* assembly) override {
         if (canBeApplied(patch, MCII)) {
             PatchGenerator::SharedPtrVec patchGen = patchGenMethod(patch, MCII, MRI);
-            instrument(patch, MCII, MRI, patchGen, breakToHost, position);
+            instrument(patch, MCII, MRI, patchGen, breakType, position);
             return true;
         }
         return false;

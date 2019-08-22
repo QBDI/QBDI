@@ -63,6 +63,34 @@ typedef VMInstance* VMInstanceRef;
  */
 typedef VMAction (*InstCallback)(VMInstanceRef vm, GPRState *gprState, FPRState *fprState, void *data);
 
+/*! Parameter of a ASMCallback
+ */
+typedef struct {
+    GPRState* gprState;  /*!< A structure containing the state of the General Purpose Registers.
+                               Only saved register is available. Modifying a saved register affects the VM execution accordingly. */
+    FPRState *fprState;  /*!< A structure containing the state of the General Purpose Registers.
+                               Only saved register is available. Modifying a saved register affects the VM execution accordingly. */
+    void* data;          /*!< User defined data which can be defined when registering the callback. */
+    void* callback;      /*!< Address of the called ASM callback (internal used) */
+} ASMCallbackData;
+
+/*! Assembly Instruction callback function type.
+ *
+ * This Callback must save and restore all the used register (included flags and FPR).
+ * A usable stack is provided but his content greater than stack pointer mustn't be changed.
+ * Only the followed registers are saved in GPRstate:
+ *
+ * - X86/X86-64:
+ *   rax/eax : first parameter asmdata
+ *   rsp/esp : QBDI usable stack
+ *   rip/eip : current instruction pointer is available in GPRState. Change this value has no effect.
+ *
+ * The current method cannot stop the execution.
+ * A change of saved register in asmdata->gprState affects the VM execution accordingly.
+ * A unsaved register not restored at the end of the callback affects the VM execution accordingly.
+ */
+typedef void (*ASMCallback)(const ASMCallbackData* asmdata);
+
 /*! Position relative to an instruction.
  */
 typedef enum {
@@ -135,12 +163,37 @@ typedef struct {
     MemoryAccessType type; /*!< Memory access type (READ / WRITE) */
 } MemoryAccess;
 
+/*! Type de callback
+ */
+typedef enum {
+    InstCBK,    /*!< InstCallback. All register of guest is save in GPRState and FPRState */
+    ASMCBK,     /*!< ASMCallback. Only minimal register is save. All unsaved register must be unchanged */
+} TypeCBK;
 
+#ifdef __cplusplus
+struct InstrumentDataCBK {
+#else
 typedef struct {
-    InstCallback cbk;       /*!< Address of the function to call when the instruction is executed */
-    void* data;             /*!< User defined data which will be forward to cbk */
+#endif
+    TypeCBK type;           /*!< Type of the Callback. */
     InstPosition position;  /*!< Relative position of the event callback (PREINST / POSTINST). */
+    union {
+        InstCallback cbk;   /*!< Address of the function to call when the instruction is executed when type == InstCBK */
+        ASMCallback asmcbk; /*!< Address of the asm function to call when the instruction is executed when type == ASMCBK */
+    };
+    void* data;             /*!< User defined data which will be forward to cbk */
+
+#ifdef __cplusplus
+    InstrumentDataCBK(InstCallback cbk, void* data, InstPosition position) : type(TypeCBK::InstCBK),
+                position(position), cbk(cbk), data(data) {}
+
+    InstrumentDataCBK(ASMCallback cbk, void* data, InstPosition position) : type(TypeCBK::ASMCBK),
+                position(position), asmcbk(cbk), data(data) {}
+
+};
+#else
 } InstrumentDataCBK;
+#endif
 
 /*! Instrument callback function type.
  *

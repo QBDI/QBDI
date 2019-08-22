@@ -44,4 +44,33 @@ RelocatableInst::SharedPtrVec getBreakToHost(Reg temp) {
     return breakToHost;
 }
 
+/* Generate a series of RelocatableInst which when appended to an instrumentation code trigger a
+ * call ASMCallback. It receive in argument a temporary reg that will be restored.
+*/
+RelocatableInst::SharedPtrVec getCallASMCallback(Reg temp) {
+    RelocatableInst::SharedPtrVec callASM;
+
+    // rax and eax are 0. If tmp isn't rax, restore tmp and save rax
+    if (temp != GPR_ID[0]) {
+        append(callASM, LoadReg(temp, Offset(temp)));
+        append(callASM, SaveReg(Reg(0), Offset(Reg(0))));
+    }
+
+    // save SP and set QBDI stack
+    append(callASM, SaveReg(Reg(REG_SP), Offset(Reg(REG_SP))));
+    append(callASM, LoadReg(Reg(REG_SP), Offset(offsetof(Context, hostState.sp))));
+
+    // Set rax to asmData
+    append(callASM, LeaPatchDSL(Reg(0), Offset(offsetof(Context, asmData))));
+
+    // call callback
+    callASM.push_back(NoReloc(callm(Reg(0), Constant(offsetof(ASMCallbackData, callback)))));
+
+    // restore RAX and RSP
+    append(callASM, LoadReg(Reg(0), Offset(Reg(0))));
+    append(callASM, LoadReg(Reg(REG_SP), Offset(Reg(REG_SP))));
+
+    return callASM;
+}
+
 }

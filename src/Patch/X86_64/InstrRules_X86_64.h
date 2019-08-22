@@ -32,6 +32,7 @@ namespace QBDI {
 class InstrRule;
 
 RelocatableInst::SharedPtrVec getBreakToHost(Reg temp);
+RelocatableInst::SharedPtrVec getCallASMCallback(Reg temp);
 
 }
 
