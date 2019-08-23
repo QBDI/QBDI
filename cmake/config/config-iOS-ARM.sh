@@ -12,6 +12,7 @@ cmake .. \
       -DCMAKE_CROSSCOMPILING=True \
       -DCMAKE_C_FLAGS="-arch ${ARM_ARCH} -isysroot ${SDK}" \
       -DCMAKE_CXX_FLAGS="-arch ${ARM_ARCH} -isysroot ${SDK}" \
-      -DPLATFORM=iOS-ARM \
+      -DQBDI_PLATFORM=ios \
+      -DQBDI_ARCH=ARM \
       -DARM_ARCH=${ARM_ARCH} \
       -DAS_BINARY=${AS}

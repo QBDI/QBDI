@@ -3,4 +3,5 @@
 cmake .. \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_CROSSCOMPILING=FALSE \
-      -DPLATFORM=macOS-X86_64
+      -DQBDI_PLATFORM=osx \
+      -DQBDI_ARCH=X86_64

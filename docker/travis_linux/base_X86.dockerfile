@@ -5,7 +5,8 @@ FROM i386/ubuntu:$UBUNTU_TAG
 ENV USER="docker" \
     HOME="/home/docker" \
     PREFIX="/usr" \
-    QBDI_PLATFORM="linux-X86" \
+    QBDI_PLATFORM="linux" \
+    QBDI_ARCH="X86" \
     CLICOLOR_FORCE=1
 
 # Get latest package list, upgrade packages, install required packages 

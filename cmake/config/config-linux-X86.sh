@@ -3,4 +3,5 @@
 cmake .. \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_CROSSCOMPILING=FALSE \
-      -DPLATFORM=linux-X86_64
+      -DQBDI_PLATFORM=linux \
+      -DQBDI_ARCH=X86

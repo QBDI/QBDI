@@ -91,8 +91,6 @@ Miscellaneous
 
     Library load with pyqbdipreload
 
-.. data:: __os__
-
 .. data:: __version__
 
     Version of QBDI

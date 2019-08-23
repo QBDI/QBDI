@@ -6,7 +6,7 @@
 #include <QBDI/Memory.h>
 
 #include <stddef.h>
-#ifdef QBDI_OS_WIN
+#ifdef QBDI_PLATFORM_WINDOWS
 #include <windows.h>
 #define _QBDI_EXPORT_GLOBAL_PROPERTY const
 #else
@@ -146,7 +146,7 @@ struct StructDesc InstAnalysisDesc {
     }
 };
 
-#ifdef QBDI_OS_WIN
+#ifdef QBDI_PLATFORM_WINDOWS
 QBDI_EXPORT BOOLEAN WINAPI DllMain(IN HINSTANCE hDllHandle, IN DWORD nReason, IN LPVOID Reserved) {
     switch (nReason) {
         case DLL_PROCESS_ATTACH:
@@ -158,7 +158,7 @@ QBDI_EXPORT BOOLEAN WINAPI DllMain(IN HINSTANCE hDllHandle, IN DWORD nReason, IN
     }
     return TRUE;
 }
-#endif // QBDI_OS_WIN
+#endif // QBDI_PLATFORM_WINDOWS
 
 QBDI_EXPORT rword qbdi_getGPR(GPRState* state, uint32_t rid) {
     return QBDI_GPR_GET(state, rid);

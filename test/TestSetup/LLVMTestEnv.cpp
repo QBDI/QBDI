@@ -64,7 +64,7 @@ void LLVMTestEnv::SetUp() {
         featuresStr = features.getString();
     }
 
-#ifdef QBDI_OS_IOS
+#ifdef QBDI_PLATFORM_IOS
     // FIXME
     cpu = "swift";
 #endif

@@ -24,7 +24,7 @@ build_ubuntu_debian() {
     docker build "${BASEDIR}" -t qbdi:package \
                               -f "${GITDIR}/docker/ubuntu_debian/Dockerfile" \
                               --build-arg DOCKER_IMG="${DOCKER_IMG}" \
-                              --build-arg QBDI_PLATFORM="linux-$TARGET" \
+                              --build-arg QBDI_ARCH="$TARGET" \
                               --build-arg CMAKE_ARGUMENT="$CMAKE_ARGUMENT" \
                               --pull \
                               --target builder
@@ -41,7 +41,7 @@ build_archlinux () {
 
     docker build "${BASEDIR}" -t qbdi:package \
                               -f "${GITDIR}/docker/archlinux/Dockerfile.${TARGET}" \
-                              --build-arg QBDI_PLATFORM="linux-${TARGET}" \
+                              --build-arg QBDI_ARCH="$TARGET" \
                               --pull
 
     docker create --name package qbdi:package

@@ -1,16 +1,16 @@
 # Maintainer: Charles Hubain <chubain@quarkslab.com>
 
-pkgname=QBDI-X86
+pkgname=QBDI-X86_64
 pkgver=0.7.2_devel
 pkgrel=1
 epoch=
-pkgdesc="QuarkslaB Dynamic binary Instrumentation for linux-X86"
-arch=('x86_64' 'i686')
+pkgdesc="QuarkslaB Dynamic binary Instrumentation for linux-X86_64"
+arch=('x86_64')
 url="https://qbdi.quarkslab.com/"
 license=('apache2')
-depends=('lib32-zlib')
+depends=('zlib')
 options=(staticlibs)
-makedepends=('cmake' 'make' 'gcc' 'python')
+makedepends=('cmake' 'make' 'gcc' 'python2' 'python')
 
 prepare() {
     mkdir "$pkgname-$pkgver"
@@ -20,17 +20,19 @@ build() {
     cd "$pkgname-$pkgver"
     cmake -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_CROSSCOMPILING=FALSE \
-          -DPLATFORM=linux-X86 \
+          -DQBDI_PLATFORM=linux \
+          -DQBDI_ARCH=X86_64 \
           -DCMAKE_INSTALL_PREFIX=/usr \
-          -DTOOLS_PYQBDI=FALSE \
+          -DQBDI_TOOLS_PYQBDI=ON \
           ../../../
-    [[ -d "../../../deps/llvm/linux-X86" ]] || make llvm
-    [[ -d "../../../deps/gtest/linux-X86" ]] || make gtest
+    [[ -d "../../../deps/llvm/linux-X86_64" ]] || make llvm
+    [[ -d "../../../deps/gtest/linux-X86_64" ]] || make gtest
     cmake -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_CROSSCOMPILING=FALSE \
-          -DPLATFORM=linux-X86 \
+          -DQBDI_PLATFORM=linux \
+          -DQBDI_ARCH=X86_64 \
           -DCMAKE_INSTALL_PREFIX=/usr \
-          -DTOOLS_PYQBDI=FALSE \
+          -DQBDI_TOOLS_PYQBDI=ON \
           ../../../
     make -j4
 }

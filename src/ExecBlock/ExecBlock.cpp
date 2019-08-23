@@ -25,14 +25,14 @@
 #include "Patch/PatchRule.h"
 #include "Patch/PatchRules_Target.h"
 #include "Patch/RelocatableInst.h"
-#include "Platform.h"
 #include "Utility/Assembly.h"
 #include "Utility/LogSys.h"
 #include "Utility/System.h"
 
 #include "Memory.hpp"
+#include "Platform.h"
 
-#if defined(QBDI_OS_WIN)
+#if defined(QBDI_PLATFORM_WINDOWS)
     #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
         extern "C" void qbdi_runCodeBlockSSE(void *codeBlock);
         extern "C" void qbdi_runCodeBlockAVX(void *codeBlock);
@@ -58,7 +58,7 @@ void (*ExecBlock::runCodeBlockFct)(void*) = NULL;
 ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(vminstance), assembly(assembly) {
     // Allocate memory blocks
     std::error_code ec;
-#ifdef QBDI_OS_IOS
+#ifdef QBDI_PLATFORM_IOS
     // iOS now use 16k superpages, but as JIT mecanisms are totally differents
     // on this platform, we can enforce a 4k "virtual" page size
     uint64_t pageSize = 4096;
@@ -67,7 +67,7 @@ ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(
       llvm::expectedToOptional(llvm::sys::Process::getPageSize()).getValueOr(4096);
 #endif
     unsigned mflags =  PF::MF_READ | PF::MF_WRITE;
-#ifdef QBDI_OS_IOS
+#ifdef QBDI_PLATFORM_IOS
              mflags |= PF::MF_EXEC;
 #endif
 
@@ -176,11 +176,11 @@ void ExecBlock::selectSeq(uint16_t seqID) {
 
 void ExecBlock::run() {
     // Pages are RWX on iOS
-#ifndef QBDI_OS_IOS
+#ifndef QBDI_PLATFORM_IOS
     makeRX();
 #else
     llvm::sys::Memory::InvalidateInstructionCache(codeBlock.base(), codeBlock.allocatedSize());
-#endif // QBDI_OS_IOS
+#endif // QBDI_PLATFORM_IOS
     runCodeBlockFct(codeBlock.base());
 }
 
@@ -245,10 +245,10 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
     }
     LogDebug("ExecBlock::writeBasicBlock", "Attempting to write %zu patches to ExecBlock %p", std::distance(seqIt, seqEnd), this);
     // Pages are RWX on iOS
-#ifndef QBDI_OS_IOS
+#ifndef QBDI_PLATFORM_IOS
     // Ensure code block is RW
     makeRW();
-#endif // QBDI_OS_IOS
+#endif // QBDI_PLATFORM_IOS
     // JIT the basic block instructions patch per patch
     // A patch correspond to an original instruction and should be written in its entierty
     while(seqIt != seqEnd) {

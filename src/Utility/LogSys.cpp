@@ -74,7 +74,7 @@ bool LogSys::matchFilter(const char* tag, LogPriority priority) {
 }
 
 void LogSys::writeTag(LogPriority priority, const char* tag) {
-#if defined(QBDI_OS_LINUX) || defined(QBDI_OS_ANDROID) || defined(QBDI_OS_DARWIN)
+#if defined(QBDI_PLATFORM_LINUX) || defined(QBDI_PLATFORM_ANDROID) || defined(QBDI_PLATFORM_OSX)
     if(isatty(fileno(output))) {
         switch(priority) {
             case LogPriority::DEBUG:

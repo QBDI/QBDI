@@ -7,19 +7,19 @@ set(SOURCES
     ExecBlock/ExecBlockTest.cpp
     ExecBlock/ExecBlockManagerTest.cpp
     TestSetup/LLVMTestEnv.cpp
-    Patch/ComparedExecutor_${ARCH}.cpp
-    Patch/Instr_${BASE_ARCH}Test.cpp
-    Patch/Patch_${BASE_ARCH}Test.cpp
+    Patch/ComparedExecutor_${QBDI_ARCH}.cpp
+    Patch/Instr_${QBDI_BASE_ARCH}Test.cpp
+    Patch/Patch_${QBDI_BASE_ARCH}Test.cpp
     Miscs/StringTest.cpp
     TestSetup/InMemoryAssembler.cpp
     TestSetup/ShellcodeTester.cpp
 )
 
-if(${PLATFORM} STREQUAL "win-X86_64")
+if(QBDI_PLATFORM_WINDOWS AND QBDI_ARCH_X86_64)
     set(SOURCES ${SOURCES}
         Patch/WIN64_RunRealExec.asm
     )
-elseif (${PLATFORM} STREQUAL "win-X86")
+elseif (QBDI_PLATFORM_WINDOWS AND QBDI_ARCH_X86)
     set(SOURCES ${SOURCES}
         Patch/WIN86_RunRealExec.asm
     )
@@ -30,17 +30,17 @@ add_executable(QBDITest ${SOURCES})
 add_signature(QBDITest)
 
 target_include_directories(QBDITest PRIVATE
+    "${CMAKE_BINARY_DIR}/include"
+    "${CMAKE_BINARY_DIR}/include/QBDI"
     "${CMAKE_CURRENT_SOURCE_DIR}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../include/QBDI"
     "${CMAKE_CURRENT_SOURCE_DIR}/../src"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../deps/llvm/${PLATFORM}/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../deps/llvm/${PLATFORM}/lib/Target/${LLVM_ARCH}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../deps/gtest/${PLATFORM}/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/lib/Target/${QBDI_LLVM_ARCH}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../deps/gtest/${QBDI_PLATFORM}-${QBDI_ARCH}/include"
 )
 
 find_library(GTEST gtest PATHS
-    "${CMAKE_CURRENT_SOURCE_DIR}/../deps/gtest/${PLATFORM}/lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../deps/gtest/${QBDI_PLATFORM}-${QBDI_ARCH}/lib"
     NO_DEFAULT_PATH)
 
 # Generate a new static qbdi archive with additionnal llvm
@@ -56,7 +56,7 @@ set(_TEST_LLVM_LIBS
 
   )
 
-if(${OS} STREQUAL "win")
+if(QBDI_PLATFORM_WINDOWS)
   PREPEND(TEST_LLVM_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/ ".lib" ${_TEST_LLVM_LIBS})
 else()
   PREPEND(TEST_LLVM_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/lib ".a" ${_TEST_LLVM_LIBS})

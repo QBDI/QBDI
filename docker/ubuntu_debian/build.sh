@@ -31,7 +31,7 @@ DOCKER_TAG="qbdi:x${ARCH: -2}_${DOCKER_IMG##*/}_${TAG}"
 prepare_archive
 
 docker build "${BASEDIR}" -t "${DOCKER_TAG}" --build-arg DOCKER_IMG="${DOCKER_IMG}:${TAG}" \
-                                             --build-arg QBDI_PLATFORM="linux-$ARCH" \
+                                             --build-arg QBDI_ARCH="$ARCH" \
                                              --build-arg CMAKE_ARGUMENT="${CMAKE_ARGUMENT}"
 
 delete_archive

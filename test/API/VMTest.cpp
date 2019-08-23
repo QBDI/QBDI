@@ -25,7 +25,7 @@
 #include "Platform.h"
 #include "Memory.hpp"
 
-#ifndef QBDI_OS_WIN
+#ifndef QBDI_PLATFORM_WINDOWS
 // Can be used to log failure on a test (usefull in subroutines)
 #define TEST_GUARD(T) ({    \
     bool res = false;       \
@@ -152,7 +152,7 @@ QBDI_NOSTACKPROTECTOR QBDI_NOINLINE QBDI::rword satanicFun(QBDI::rword arg0) {
 #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
     QBDI::rword p = 0x42;
     QBDI::rword v[2] = {0x67, 0x45};
- #ifndef QBDI_OS_WIN
+ #ifndef QBDI_PLATFORM_WINDOWS
     asm("cmp $" MNEM_IMM_SHORT_STRVAL ", %%dh" ::: "dh");
   #if defined(QBDI_ARCH_X86_64)
     asm("cmp %%rbx, %%rax" ::: "rbx", "rax");
@@ -421,7 +421,7 @@ TEST_F(VMTest, MnemCallback) {
 
     EXPECT_EQ(retval, (QBDI::rword) satanicFun(info[2]));
     // TODO: try to find a way to support windows
-#ifdef QBDI_OS_WIN
+#ifdef QBDI_PLATFORM_WINDOWS
     EXPECT_EQ(info[1], (QBDI::rword) 0);
 #else
     EXPECT_EQ(info[0], MNEM_COUNT);
@@ -437,10 +437,10 @@ TEST_F(VMTest, MnemCallback) {
 
 QBDI::VMAction checkTransfer(QBDI::VMInstanceRef vm, const QBDI::VMState *state, QBDI::GPRState *gprState, QBDI::FPRState *fprState, void *data) {
     int* s = (int*) data;
-#if defined(QBDI_OS_LINUX) || defined(QBDI_OS_ANDROID) || defined(QBDI_OS_DARWIN)
+#if defined(QBDI_PLATFORM_LINUX) || defined(QBDI_PLATFORM_ANDROID) || defined(QBDI_PLATFORM_OSX)
     QBDI::rword allocAPI = (QBDI::rword) &posix_memalign;
     QBDI::rword freeAPI = (QBDI::rword) &free;
-#elif defined(QBDI_OS_WIN)
+#elif defined(QBDI_PLATFORM_WINDOWS)
     QBDI::rword allocAPI = (QBDI::rword) &_aligned_malloc;
     QBDI::rword freeAPI = (QBDI::rword) &_aligned_free;
 #endif

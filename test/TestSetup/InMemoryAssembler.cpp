@@ -118,12 +118,12 @@ InMemoryObject::InMemoryObject(const char* source, const char* cpu, const char**
     delete tap;
     // Copy object into new page and make it executable
     unsigned mFlags = PF::MF_READ | PF::MF_WRITE;
-#if defined(QBDI_OS_IOS)
+#if defined(QBDI_PLATFORM_IOS)
     mFlags |= PF::MF_EXEC;
 #endif
     objectBlock = QBDI::allocateMappedMemory(objectVector.size(), nullptr, mFlags, ec);
     memcpy(objectBlock.base(), objectVector.data(), objectVector.size());
-#if !defined(QBDI_OS_IOS)
+#if !defined(QBDI_PLATFORM_IOS)
     llvm::sys::Memory::protectMappedMemory(objectBlock, PF::MF_READ | PF::MF_EXEC);
 #endif
 

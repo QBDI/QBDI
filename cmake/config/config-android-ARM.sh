@@ -12,10 +12,9 @@ fi
 export NDK_PATH=${QBDI_NDK_PATH}
 
 cmake  .. \
-      -DPLATFORM=android-X86 \
+      -DQBDI_PLATFORM=android \
+      -DQBDI_ARCH=ARM \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_TOOLCHAIN_FILE="${NDK_PATH}/build/cmake/android.toolchain.cmake" \
-      -DANDROID_ABI=x86 \
+      -DANDROID_ABI=armeabi-v7a \
       -DANDROID_PLATFORM=23
-
-

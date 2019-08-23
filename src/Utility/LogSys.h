@@ -28,7 +28,7 @@
 #include "Platform.h"
 #include "Logs.h"
 
-#if defined(QBDI_OS_LINUX) || defined(QBDI_OS_ANDROID) || defined(QBDI_OS_DARWIN)
+#if defined(QBDI_PLATFORM_LINUX) || defined(QBDI_PLATFORM_ANDROID) || defined(QBDI_PLATFORM_OSX)
 #include <unistd.h>
 #endif
 

@@ -15,6 +15,7 @@ cmake .. \
       -DCMAKE_C_FLAGS="-march=${ARM_ARCH} -I${ARM_C_INCLUDE}" \
       -DCMAKE_CXX_FLAGS="-march=${ARM_ARCH} -I${ARM_C_INCLUDE} -I${ARM_CXX_INCLUDE}" \
       -DSTRIP_PATH="${STRIP}" \
-      -DPLATFORM=linux-ARM \
+      -DQBDI_PLATFORM=linux \
+      -DQBDI-ARCH=ARM \
       -DARM_ARCH=${ARM_ARCH} \
       -DAS_BINARY=${AS}

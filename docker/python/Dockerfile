@@ -2,11 +2,12 @@ ARG DOCKER_IMG="quay.io/pypa/manylinux2010_x86_64"
 
 FROM $DOCKER_IMG
 
-ARG QBDI_PLATFORM="linux-X86_64"
+ARG QBDI_ARCH="X86_64"
 
 ENV USER="docker" \
     HOME="/home/docker" \
     PREFIX="/usr" \
+    QBDI_PLATFORM="linux" \
     PYTHON_OPT="/opt/python"
 
 # Get latest package list, upgrade packages, install required packages
@@ -47,11 +48,11 @@ RUN sudo chown -R $USER:$USER .
 
 WORKDIR $HOME/qbdi-deps/deps/llvm/
 
-RUN export PATH=$PYTHON_OPT/cp37-cp37m/bin:$PATH && \
-    python3 build.py prepare $QBDI_PLATFORM && \
-    python3 build.py build $QBDI_PLATFORM && \
-    python3 build.py package $QBDI_PLATFORM && \
-    python3 build.py clean $QBDI_PLATFORM
+RUN export PATH=${PYTHON_OPT}/cp37-cp37m/bin:$PATH && \
+    python3 build.py prepare ${QBDI_PLATFORM}-${QBDI_ARCH} && \
+    python3 build.py build ${QBDI_PLATFORM}-${QBDI_ARCH} && \
+    python3 build.py package ${QBDI_PLATFORM}-${QBDI_ARCH} && \
+    python3 build.py clean ${QBDI_PLATFORM}-${QBDI_ARCH}
 
 # build / test / install QBDI
 ARG CMAKE_ARGUMENT=""

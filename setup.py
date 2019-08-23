@@ -12,9 +12,9 @@ def detect_QBDI_platform():
     os = None
     arch = None
     if platform.system() == 'Darwin':
-        os = 'macOS'
+        os = 'osx'
     elif platform.system() == 'Windows':
-        os = 'win'
+        os = 'windows'
     elif platform.system() == 'Linux':
         os = 'linux'
 
@@ -26,7 +26,7 @@ def detect_QBDI_platform():
             arch = "X86_64"
 
     if os and arch:
-        return '-'.join([os, arch])
+        return (os, arch)
 
     raise RuntimeError("Cannot determine the QBDI platform : system={}, machine={}, architecture={}".format(
                             platform.system(), platform.machine(), platform.architecture()[0]))
@@ -56,19 +56,21 @@ class CMakeBuild(build_ext):
 
     def build_extension(self, ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
+        detected_platform, detected_arch = detect_QBDI_platform()
         cmake_args = ['-DPYQBDI_OUTPUT_DIRECTORY=' + extdir,
                       '-DPYTHON_EXECUTABLE=' + sys.executable,
                       '-DCMAKE_BUILD_TYPE=Release',
-                      '-DPLATFORM=' + detect_QBDI_platform(),
-                      '-DTOOLS_PYQBDI=On',
-                      '-DTEST_QBDI=Off',
+                      '-DQBDI_PLATFORM=' + detected_platform,
+                      '-DQBDI_ARCH=' + detected_arch,
+                      '-DQBDI_TOOLS_PYQBDI=On',
+                      '-DQBDI_TEST=Off',
                      ]
         build_args = ['--config', 'Release']
 
         if platform.system() == "Windows":
             cmake_args += ["-G", "Ninja"]
         else:
-            cmake_args += ['-DTOOLS_QBDIPRELOAD=On']
+            cmake_args += ['-DQBDI_TOOLS_QBDIPRELOAD=On']
             build_args += ['--', '-j4']
 
         env = os.environ.copy()
