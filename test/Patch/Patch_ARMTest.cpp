@@ -15,16 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <catch2/catch.hpp>
 #include "Patch/Patch_ARMTest.h"
 
-TEST_F(Patch_ARMTest, GPRSave) {
+TEST_CASE_METHOD(Patch_ARMTest, "Patch_ARMTest, GPRSave") {
     QBDI::Context inputState;
 
     memset(&inputState, 0, sizeof(QBDI::Context));
     comparedExec(GPRSave_s, inputState, 4096);
 }
 
-TEST_F(Patch_ARMTest, GPRShuffle) {
+TEST_CASE_METHOD(Patch_ARMTest, "Patch_ARMTest, GPRShuffle") {
     QBDI::Context inputState;
 
     memset(&inputState, 0, sizeof(QBDI::Context));
@@ -33,7 +34,7 @@ TEST_F(Patch_ARMTest, GPRShuffle) {
     comparedExec(GPRShuffle_s, inputState, 4096);
 }
 
-TEST_F(Patch_ARMTest, RelativeAddressing) {
+TEST_CASE_METHOD(Patch_ARMTest, "Patch_ARMTest, RelativeAddressing") {
     QBDI::Context inputState;
 
     memset(&inputState, 0, sizeof(QBDI::Context));
@@ -42,7 +43,7 @@ TEST_F(Patch_ARMTest, RelativeAddressing) {
     comparedExec(RelativeAddressing_s, inputState, 4096);
 }
 
-TEST_F(Patch_ARMTest, ConditionalBranching) {
+TEST_CASE_METHOD(Patch_ARMTest, "Patch_ARMTest, ConditionalBranching") {
     QBDI::Context inputState;
 
     memset(&inputState, 0, sizeof(QBDI::Context));

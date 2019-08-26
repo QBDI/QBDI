@@ -18,8 +18,6 @@
 #ifndef LLVMTESTENV_H
 #define LLVMTESTENV_H
 
-#include <gtest/gtest.h>
-
 namespace llvm {
   class MCAsmInfo;
   class MCCodeEmitter;
@@ -35,8 +33,7 @@ namespace QBDI {
   class Assembly;
 }
 
-
-class LLVMTestEnv: public ::testing::Test {
+class LLVMTestEnv {
 protected:
 
     std::unique_ptr<llvm::MCAsmInfo>         MAI;
@@ -51,8 +48,6 @@ protected:
     std::string                              tripleName;
     std::string                              cpu;
     std::vector<std::string>                 mattrs;
-
-    virtual void SetUp();
 
 public:
 

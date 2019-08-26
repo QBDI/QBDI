@@ -53,15 +53,6 @@ ADD qbdi-deps.tar.gz $HOME/
 
 RUN sudo chown -R $USER:$USER qbdi-deps
 
-# Test if off, no need of gtest
-#
-#WORKDIR $HOME/qbdi-deps/deps/gtest/$QBDI_PLATFORM
-#
-#RUN sh build.sh prepare && \
-#    sh build.sh build && \
-#    sh build.sh package && \
-#    sh build.sh clean
-
 WORKDIR $HOME/qbdi-deps/deps/llvm/
 
 RUN python3 build.py prepare $QBDI_PLATFORM-$QBDI_ARCH && \

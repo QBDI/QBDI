@@ -20,14 +20,13 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <gtest/gtest.h>
 
 #include "VM.h"
 #include "ExecBlock/Context.h"
 
 #include "TestSetup/InMemoryAssembler.h"
 
-class ShellcodeTester : public ::testing::Test {
+class ShellcodeTester {
 protected:
 
     using PF = llvm::sys::Memory::ProtectionFlags;

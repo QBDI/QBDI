@@ -48,13 +48,6 @@ WORKDIR $HOME
 
 RUN sudo chown -R $USER:$USER .
 
-WORKDIR $HOME/qbdi-deps/deps/gtest/${QBDI_PLATFORM}-${QBDI_ARCH}
-
-RUN sh build.sh prepare && \
-    sh build.sh build && \
-    sh build.sh package && \
-    sh build.sh clean
-
 WORKDIR $HOME/qbdi-deps/deps/llvm/
 
 RUN python3 build.py prepare ${QBDI_PLATFORM}-${QBDI_ARCH} && \
@@ -84,7 +77,7 @@ ADD qbdi.tar.gz $HOME/
 WORKDIR $HOME/qbdi
 
 RUN sudo chown -R $USER:$USER . && \
-    # link llvm and gtest
+    # link llvm
     rm -rf deps && \
     ln -s $HOME/qbdi-deps/deps deps && \
     # build

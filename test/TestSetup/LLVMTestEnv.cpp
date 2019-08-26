@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <catch2/catch.hpp>
 
 #include "llvm/ADT/Triple.h"
 #include "llvm/ADT/SmallVector.h"
@@ -41,12 +42,10 @@
 
 #include "TestSetup/LLVMTestEnv.h"
 
-LLVMTestEnv::LLVMTestEnv(std::string cpu, std::vector<std::string> mattrs):
-        cpu(cpu), mattrs(mattrs) {}
-
 LLVMTestEnv::~LLVMTestEnv() = default;
 
-void LLVMTestEnv::SetUp() {
+LLVMTestEnv::LLVMTestEnv(std::string cpu, std::vector<std::string> mattrs) :
+        cpu(cpu), mattrs(mattrs) {
     std::string error;
     std::string featuresStr;
 
@@ -76,33 +75,33 @@ void LLVMTestEnv::SetUp() {
     llvm::Triple process_triple(tripleName);
     processTarget = llvm::TargetRegistry::lookupTarget(tripleName, error);
     llvm::MCTargetOptions options;
-    ASSERT_NE(nullptr, processTarget);
+    REQUIRE(nullptr != processTarget);
     // Allocate all LLVM classes
     MRI = std::unique_ptr<llvm::MCRegisterInfo>(
         processTarget->createMCRegInfo(tripleName)
     );
-    ASSERT_TRUE(MRI != nullptr);
+    REQUIRE(MRI != nullptr);
     MAI = std::unique_ptr<llvm::MCAsmInfo>(
         processTarget->createMCAsmInfo(*MRI, tripleName, options)
     );
-    ASSERT_TRUE(MAI != nullptr);
+    REQUIRE(MAI != nullptr);
     MOFI = std::make_unique<llvm::MCObjectFileInfo>();
-    ASSERT_TRUE(MOFI != nullptr);
+    REQUIRE(MOFI != nullptr);
     MCTX = std::make_unique<llvm::MCContext>(MAI.get(), MRI.get(), MOFI.get());
-    ASSERT_TRUE(MCTX != nullptr);
+    REQUIRE(MCTX != nullptr);
     MCII = std::unique_ptr<llvm::MCInstrInfo>(processTarget->createMCInstrInfo());
-    ASSERT_TRUE(MCII != nullptr);
+    REQUIRE(MCII != nullptr);
     MSTI = std::unique_ptr<llvm::MCSubtargetInfo>(
       processTarget->createMCSubtargetInfo(tripleName, cpu, featuresStr)
     );
-    ASSERT_TRUE(MSTI != nullptr);
+    REQUIRE(MSTI != nullptr);
     auto MAB = std::unique_ptr<llvm::MCAsmBackend>(
         processTarget->createMCAsmBackend(*MSTI, *MRI, options)
     );
     MCE = std::unique_ptr<llvm::MCCodeEmitter>(
        processTarget->createMCCodeEmitter(*MCII, *MRI, *MCTX)
     );
-    ASSERT_TRUE(MAB != nullptr);
+    REQUIRE(MAB != nullptr);
     assembly = std::make_unique<QBDI::Assembly>(*MCTX, std::move(MAB), *MCII, *processTarget, *MSTI);
-    ASSERT_TRUE(assembly != nullptr);
+    REQUIRE(assembly != nullptr);
 }

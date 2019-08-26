@@ -15,19 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include <stdlib.h>
 #include <time.h>
-#include <gtest/gtest.h>
 
 #include "Utility/LogSys.h"
+
+#define CATCH_CONFIG_RUNNER
+#include <catch2/catch.hpp>
 
 int main(int argc, char** argv) {
 
     srand(time(nullptr));
-
-    // This allows the user to override the flag on the command line.
-    ::testing::InitGoogleTest(&argc, argv);
+#ifdef _QBDI_LOG_DEBUG
     QBDI::LOGSYS.addFilter("*", QBDI::LogPriority::WARNING);
+#endif
 
-    return RUN_ALL_TESTS();
+    return Catch::Session().run( argc, argv );;
 }

@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <gtest/gtest.h>
+#include <catch2/catch.hpp>
 
 #include "TestSetup/InMemoryAssembler.h"
 
@@ -113,7 +113,7 @@ InMemoryObject::InMemoryObject(const char* source, const char* cpu, const char**
     parser->setTargetParser(*tap);
     // Finally do something we care about
     mcStr->InitSections(false);
-    EXPECT_FALSE(parser->Run(true));
+    CHECK_FALSE(parser->Run(true));
     delete parser;
     delete tap;
     // Copy object into new page and make it executable
@@ -162,6 +162,6 @@ InMemoryObject::InMemoryObject(const char* source, const char* cpu, const char**
             }
         }
     }
-    EXPECT_LT((unsigned int) 0, text_section.size());
+    CHECK((unsigned int) 0 < text_section.size());
     code = llvm::ArrayRef<uint8_t>((const uint8_t*) text_section.data(), text_section.size());
 }

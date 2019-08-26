@@ -26,7 +26,6 @@ build() {
           -DQBDI_TOOLS_PYQBDI=OFF \
           ../../../
     [[ -d "../../../deps/llvm/linux-X86" ]] || make llvm
-    [[ -d "../../../deps/gtest/linux-X86" ]] || make gtest
     cmake -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_CROSSCOMPILING=FALSE \
           -DQBDI_PLATFORM=linux \

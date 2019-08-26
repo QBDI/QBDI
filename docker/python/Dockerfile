@@ -63,13 +63,14 @@ ADD qbdi.tar.gz $HOME/
 WORKDIR $HOME/qbdi
 
 RUN sudo chown -R $USER:$USER . && \
-    # link llvm and gtest
+    # link llvm
     rm -rf deps && \
-    ln -s $HOME/qbdi-deps/deps deps && \
-    # build wheel
-    /opt/python/cp35-cp35m/bin/python setup.py bdist_wheel && \
-    /opt/python/cp36-cp36m/bin/python setup.py bdist_wheel && \
-    /opt/python/cp37-cp37m/bin/python setup.py bdist_wheel && \
-    /opt/python/cp38-cp38/bin/python setup.py bdist_wheel
+    ln -s $HOME/qbdi-deps/deps deps
+
+# build wheel
+RUN /opt/python/cp35-cp35m/bin/python setup.py bdist_wheel
+RUN /opt/python/cp36-cp36m/bin/python setup.py bdist_wheel
+RUN /opt/python/cp37-cp37m/bin/python setup.py bdist_wheel
+RUN /opt/python/cp38-cp38/bin/python setup.py bdist_wheel
 
 RUN for i in dist/*; do auditwheel repair $i -w outwheel; done

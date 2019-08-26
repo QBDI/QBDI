@@ -22,7 +22,6 @@
 #include <string.h>
 #include <string>
 #include <sstream>
-#include <gtest/gtest.h>
 
 #include "Patch/ComparedExecutor_ARM.h"
 
