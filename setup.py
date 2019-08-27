@@ -64,6 +64,7 @@ class CMakeBuild(build_ext):
                       '-DQBDI_ARCH=' + detected_arch,
                       '-DQBDI_TOOLS_PYQBDI=On',
                       '-DQBDI_TEST=Off',
+                      '-DQBDI_BENCHMARK=Off',
                      ]
         build_args = ['--config', 'Release']
 

@@ -447,7 +447,7 @@ if(${DEPENDENCY_SATISFIED})
 
 
     # Add tests
-    if(QBDI_TEST)
+    if(QBDI_TEST OR QBDI_BENCHMARK)
         add_subdirectory(test)
     endif()
 
