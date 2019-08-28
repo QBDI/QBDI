@@ -119,7 +119,13 @@ extern int qbdipreload_on_exit(int status);
  */
 #ifdef WIN32
 #include <Windows.h>
+
+extern BOOL g_bIsAttachMode;            /* TRUE if attach mode is activated */
+
 QBDI_EXPORT BOOLEAN qbdipreload_hook_init(DWORD nReason);
+BOOLEAN qbdipreload_attach_init();
+void qbdipreload_attach_close();
+QBDI_EXPORT BOOLEAN qbdipreload_read_shmem(LPVOID lpData, DWORD dwMaxBytesRead);
 #else
 QBDI_EXPORT int qbdipreload_hook_init();
 #endif
@@ -132,32 +138,33 @@ QBDI_EXPORT void* qbdipreload_setup_exception_handler(uint32_t target, uint32_t 
  * @warning `QBDIPRELOAD_INIT` must be used once in any project using QBDIPreload.
  * It declares a constructor, so it must be placed like a function declaration on a single line.
  */
-
 #ifdef __cplusplus
+  #ifdef WIN32
+    #define QBDIPRELOAD_INIT BOOLEAN WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved) \
+    { \
+        UNREFERENCED_PARAMETER(hDllHandle); \
+        UNREFERENCED_PARAMETER(Reserved); \
+        qbdipreload_attach_init(); \
+        return QBDI::qbdipreload_hook_init(nReason); \
+    }
+  #else
+    #define QBDIPRELOAD_INIT __attribute__((constructor)) void init() { QBDI::qbdipreload_hook_init(); }
+  #endif
+#else
+  #ifdef WIN32
+      #define QBDIPRELOAD_INIT BOOLEAN WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved) \
+      { \
+          UNREFERENCED_PARAMETER(hDllHandle); \
+          UNREFERENCED_PARAMETER(Reserved); \
+          qbdipreload_attach_init(); \
+          return qbdipreload_hook_init(nReason); \
+      }
+  #else
+    #define QBDIPRELOAD_INIT __attribute__((constructor)) void init() { qbdipreload_hook_init(); }
+  #endif
 
-#ifdef WIN32
-#define QBDIPRELOAD_INIT BOOLEAN WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved) \
-{ \
-    UNREFERENCED_PARAMETER(hDllHandle); \
-    UNREFERENCED_PARAMETER(Reserved); \
-    return QBDI::qbdipreload_hook_init(nReason); \
-}
-#else
-#define QBDIPRELOAD_INIT __attribute__((constructor)) void init() { QBDI::qbdipreload_hook_init(); }
 #endif
 
-#else
-#ifdef WIN32
-#define QBDIPRELOAD_INIT BOOLEAN WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved) \
-{ \
-    UNREFERENCED_PARAMETER(hDllHandle); \
-    UNREFERENCED_PARAMETER(Reserved); \
-    return qbdipreload_hook_init(nReason); \
-}
-#else
-#define QBDIPRELOAD_INIT __attribute__((constructor)) void init() { qbdipreload_hook_init(); }
-#endif
-#endif
 #ifdef __cplusplus
 } // "C"
 }

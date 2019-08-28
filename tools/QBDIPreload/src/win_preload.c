@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 Quarkslab
+ * Copyright 2019 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,14 @@
 #include "QBDIPreload.h"
 #include <Windows.h>
 #include <winnt.h>
+#include <tlhelp32.h>
 
 /* Consts */
-static const unsigned long INST_INT1 = 0x01CD;          /* Instruction opcode for "INT 1" */
+static const unsigned long INST_INT1 = 0x01CD;          /* Instruction opcode for "INT 1"        */
 static const unsigned long INST_INT1_MASK = 0xFFFF;
-static const size_t QBDI_RUNTIME_STACK_SIZE = 0x800000; /* QBDI shadow stack size         */
-static const long MEM_PAGE_SIZE = 4096;                 /* Default page size on Windows   */
+static const size_t QBDI_RUNTIME_STACK_SIZE = 0x800000; /* QBDI shadow stack size                */
+static const long MEM_PAGE_SIZE = 4096;                 /* Default page size on Windows          */
+static const unsigned int SH_MEM_SIZE = 4096;           /* Shared memory size (attach mode only) */
 
 /* Trampoline spec (to be called from assembly stub) */
 void qbdipreload_trampoline();
@@ -32,14 +34,17 @@ void qbdipreload_trampoline();
 static struct {
     void* va;
     uint64_t orig_bytes;
-} g_EntryPointInfo;                     /* Main module EntryPoint (PE from host process)        */
-static PVOID g_hExceptionHandler;       /* VEH for QBDI preload internals (break on EntryPoint) */
-static rword g_firstInstructionVA;      /* First instruction that will be executed by QBDI      */
-static rword g_lastInstructionVA;       /* Last instruction that will be executed by QBDI       */
-PVOID g_shadowStackTop = NULL;          /* QBDI shadow stack top pointer(decreasing address)    */
-static GPRState g_EntryPointGPRState;   /* QBDI CPU GPR states when EntryPoint has been reached */
-static FPRState g_EntryPointFPRState;   /* QBDI CPU FPR states when EntryPoint has been reached */
-
+} g_EntryPointInfo;                     /* Main module EntryPoint (PE from host process)                                 */
+static PVOID g_hExceptionHandler;       /* VEH for QBDI preload internals (break on EntryPoint)                          */
+static rword g_firstInstructionVA;      /* First instruction that will be executed by QBDI                               */
+static rword g_lastInstructionVA;       /* Last instruction that will be executed by QBDI                                */
+PVOID g_shadowStackTop = NULL;          /* QBDI shadow stack top pointer(decreasing address)                             */
+static GPRState g_EntryPointGPRState;   /* QBDI CPU GPR states when EntryPoint has been reached                          */
+static FPRState g_EntryPointFPRState;   /* QBDI CPU FPR states when EntryPoint has been reached                          */
+static HANDLE g_hMainThread;            /* Main thread handle (attach mode only)                                         */
+static HANDLE g_hShMemMap;              /* Shared memory object between qbdipreload & external binary (attach mode only) */
+static LPVOID g_pShMem;                 /* Shared memory base pointer (attach mode only)                                 */
+static BOOL g_bIsAttachMode;            /* TRUE if attach mode is activated                                              */
 
 /*
  * Conversion from windows CONTEXT ARCH dependent structure 
@@ -233,9 +238,16 @@ LONG WINAPI QbdiPreloadExceptionFilter(PEXCEPTION_POINTERS exc_info) {
         // First instruction to execute is main module entry point)
         g_firstInstructionVA = QBDI_GPR_GET(&g_EntryPointGPRState, REG_PC);
 
+        // In case if attach mode, it's difficult to guess on which instructoin stopping the instruction
+        if (g_bIsAttachMode) {
+            g_lastInstructionVA = (rword) 0xFFFFFFFFFFFFFFFF;
+        }
+        // If start function has been hooked
         // Last instruction to execute is inside windows PE loader
         // (inside BaseThreadInitThunk() who called PE entry point & set RIP on stack) 
-        g_lastInstructionVA =  *((rword*) QBDI_GPR_GET(&g_EntryPointGPRState, REG_SP));
+        else {
+            g_lastInstructionVA =  *((rword*) QBDI_GPR_GET(&g_EntryPointGPRState, REG_SP));
+        }
 
         if (status == QBDIPRELOAD_NOT_HANDLED) {
             // Allocate shadow stack & keep some space at the end for QBDI runtime
@@ -257,10 +269,100 @@ LONG WINAPI QbdiPreloadExceptionFilter(PEXCEPTION_POINTERS exc_info) {
  */
 void* getMainModuleEntryPoint() {
     PIMAGE_DOS_HEADER mainmod_imgbase = (PIMAGE_DOS_HEADER) GetModuleHandle(NULL);
-    PIMAGE_NT_HEADERS  mainmod_nt = (PIMAGE_NT_HEADERS) ((uint8_t*)mainmod_imgbase + mainmod_imgbase->e_lfanew);
+    PIMAGE_NT_HEADERS mainmod_nt = (PIMAGE_NT_HEADERS) ((uint8_t*)mainmod_imgbase + mainmod_imgbase->e_lfanew);
     
     return (void*) ((uint8_t*) mainmod_imgbase + mainmod_nt->OptionalHeader.AddressOfEntryPoint);
-    
+
+}
+
+/*
+ * Enable DEBUG privilege for current process
+ * Return 0 in case of error, 1 otherwise
+ */
+int enable_debug_privilege() {
+    HANDLE hToken;
+    LUID SeDebugNameValue;
+    TOKEN_PRIVILEGES TokenPrivileges;
+    int result = 0;
+
+    if(OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken)) {
+        if(LookupPrivilegeValue(NULL, SE_DEBUG_NAME, &SeDebugNameValue)) {
+            TokenPrivileges.PrivilegeCount = 1;
+            TokenPrivileges.Privileges[0].Luid = SeDebugNameValue;
+            TokenPrivileges.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+
+            if(AdjustTokenPrivileges(hToken, FALSE, &TokenPrivileges, sizeof(TOKEN_PRIVILEGES), NULL, NULL)) {
+                result = 1;
+            }
+        }
+        CloseHandle(hToken);
+    }
+
+    return result;
+}
+
+/*
+ * Return thread RIP register from main module
+ * Must be called when the main thread is in "suspended" state
+ */
+#ifndef MAKEULONGLONG
+#define MAKEULONGLONG(ldw, hdw) (((ULONGLONG)hdw << 32) | ((ldw) & 0xFFFFFFFF))
+#endif
+
+#ifndef MAXULONGLONG
+#define MAXULONGLONG ((ULONGLONG)~((ULONGLONG)0))
+#endif
+
+void* getMainThreadRip() {
+    CONTEXT x64cpu = {0};
+    DWORD dwMainThreadID = 0, dwProcID = GetCurrentProcessId();
+    ULONGLONG ullMinCreateTime = MAXULONGLONG;
+    THREADENTRY32 th32;
+    FILETIME afTimes[4] = {0};
+    HANDLE hThread;
+    void* result = NULL;
+
+    // Retrieve main thread ID considering that it should be the oldest
+    // created one in address space
+    HANDLE hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+
+    if (hThreadSnap == INVALID_HANDLE_VALUE)
+        return NULL;
+
+    th32.dwSize = sizeof(THREADENTRY32);
+    BOOL bOK = TRUE;
+    for (bOK = Thread32First(hThreadSnap, &th32); bOK; bOK = Thread32Next(hThreadSnap, &th32)) {
+        if (th32.th32OwnerProcessID == dwProcID) {
+            hThread = OpenThread(THREAD_QUERY_INFORMATION, TRUE, th32.th32ThreadID);
+            if (hThread) {
+                if (GetThreadTimes(hThread, &afTimes[0], &afTimes[1], &afTimes[2], &afTimes[3])) {
+                    ULONGLONG ullTest = MAKEULONGLONG(afTimes[0].dwLowDateTime, afTimes[0].dwHighDateTime);
+                    if (ullTest && ullTest < ullMinCreateTime) {
+                        ullMinCreateTime = ullTest;
+                        dwMainThreadID = th32.th32ThreadID;
+                    }
+                }
+                CloseHandle(hThread);
+            }
+        }
+    }
+
+    CloseHandle(hThreadSnap);
+
+    // Enable debug priviliges for current process, open target main thread
+    // and grab CPU context (it is reliable/frozen as the thread should be in suspended state)
+    if (dwMainThreadID && enable_debug_privilege()) {
+        g_hMainThread = OpenThread(THREAD_QUERY_INFORMATION | THREAD_GET_CONTEXT | THREAD_SUSPEND_RESUME, FALSE, dwMainThreadID);
+
+        if (g_hMainThread) {
+            x64cpu.ContextFlags = CONTEXT_ALL;
+            if (GetThreadContext(g_hMainThread, &x64cpu)) {
+                result = (void*) x64cpu.Rip;
+            }
+        }
+    }
+
+    return result;
 }
 
 /*
@@ -276,6 +378,60 @@ int qbdipreload_hook(void* va) {
 }
 
 /*
+ * Attach mode initialization
+ * Shared memory is initialized to make the QBDIPreload
+ * able to access data from host injector
+ */
+BOOLEAN qbdipreload_attach_init() {
+    TCHAR szShMemName[32];
+    BOOL result = FALSE;
+
+    snprintf(szShMemName, sizeof(szShMemName), "qbdi_preload_%u", GetCurrentProcessId());
+    g_hShMemMap = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, FALSE, szShMemName);
+    g_pShMem = NULL;
+
+    if (g_hShMemMap) {
+        g_bIsAttachMode = TRUE;
+
+        g_pShMem = MapViewOfFile(g_hShMemMap, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 0);
+        if (g_pShMem) {
+            result = TRUE;
+        }
+    } else {
+        g_bIsAttachMode = FALSE;
+    }
+    return result;
+}
+
+/*
+ * Read data from shared memory
+ */
+BOOLEAN qbdipreload_read_shmem(LPVOID lpData, DWORD dwMaxBytesRead) {
+
+    if(lpData && dwMaxBytesRead && g_pShMem && (dwMaxBytesRead <= SH_MEM_SIZE)) {
+        memcpy(lpData, g_pShMem, dwMaxBytesRead);
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+/*
+ * Attach mode closing
+ */
+void qbdipreload_attach_close() {
+    if (g_pShMem) {
+        UnmapViewOfFile(g_pShMem);
+        g_pShMem = NULL;
+    }
+
+    if (g_hShMemMap) {
+        CloseHandle(g_hShMemMap);
+        g_hShMemMap = NULL;
+    }
+}
+
+/*
  * QBDI windows preload installation is done automatically
  * through DLLMain() once the QBDI instrumentation module
  * is loaded inside target (e.g. with LoadLibrary)
@@ -284,12 +440,22 @@ int qbdipreload_hook(void* va) {
  */
 BOOLEAN qbdipreload_hook_init(DWORD nReason) {
     if(nReason == DLL_PROCESS_ATTACH) {
-        void* mainmod_entry_point = getMainModuleEntryPoint();
+        void* hook_target_va;
+
+        if (g_bIsAttachMode) {
+            hook_target_va = getMainThreadRip();
+        }
+        else {
+            hook_target_va = getMainModuleEntryPoint();
+        }
         // Call user provided callback on start
-        int status = qbdipreload_on_start(mainmod_entry_point);
+        int status = qbdipreload_on_start(hook_target_va);
         if (status == QBDIPRELOAD_NOT_HANDLED) {
             // QBDI preload installation
-            qbdipreload_hook(mainmod_entry_point);
+            qbdipreload_hook(hook_target_va);
+            if (g_bIsAttachMode && g_hMainThread) {
+                ResumeThread(g_hMainThread);
+            }
         }
     }
     // Call user provided exit callback on DLL unloading
@@ -297,6 +463,9 @@ BOOLEAN qbdipreload_hook_init(DWORD nReason) {
         DWORD dwExitCode;
         GetExitCodeProcess(GetCurrentProcess(), &dwExitCode);
         qbdipreload_on_exit(dwExitCode);
+        if (g_bIsAttachMode) {
+            qbdipreload_attach_close();
+        }
     }
 
     return TRUE;
