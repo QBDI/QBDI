@@ -117,6 +117,10 @@ def build_llvm(llvm_dir, build_dir, arch, platform, arch_opt=None):
                     '-DLLVM_DEFAULT_TARGET_TRIPLE=i386-pc-linux',
                     '-DLLVM_BUILD_32_BITS=On',
                     ]
+        else:
+            cmake_specific_option += [
+                    '-DANDROID_ABI=x86_64',
+                    ]
 
     elif platform == "macOS" and arch_opt == "i386":
         cmake_specific_option = ['-DLLVM_BUILD_32_BITS=On',
@@ -216,7 +220,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     target = sys.argv[2]
-    assert(target in ("android-ARM", "android-X86", "iOS-ARM", "linux-ARM", "linux-X86_64", "linux-X86", "macOS-X86_64", "macOS-X86", "win-X86_64", "win-X86"))
+    assert(target in ("android-ARM", "android-X86", "android-X86_64", "iOS-ARM", "linux-ARM", "linux-X86_64", "linux-X86", "macOS-X86_64", "macOS-X86", "win-X86_64", "win-X86"))
 
     platform = target.split("-")[0]
     arch = target.split("-")[1]

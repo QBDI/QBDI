@@ -91,5 +91,8 @@ build_android ARM
 # android-x86
 build_android X86
 
+# android-x86_64
+build_android X86_64
+
 delete_archive
 

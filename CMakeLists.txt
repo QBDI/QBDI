@@ -7,7 +7,7 @@ set(QBDI_VERSION_MINOR 6)
 set(QBDI_VERSION_PATCH 2)
 
 set(SUPPORTED_PLATFORM linux-X86_64 linux-ARM macOS-X86_64 android-ARM
-    android-X86 win-X86_64 iOS-ARM linux-X86 macOS-X86 win-X86)
+    android-X86 android-X86_64 win-X86_64 iOS-ARM linux-X86 macOS-X86 win-X86)
 
 # Force find system utils (strip)
 include(CMakeFindBinUtils)
@@ -133,7 +133,8 @@ elseif((${PLATFORM} STREQUAL "win-X86_64") OR
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DWIN32 /D_WINDOWS /W3     /MP -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS -D_SCL_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -wd4141 -wd4146 -wd4180 -wd4244 -wd4258 -wd4267 -wd4291 -wd4345 -wd4351 -wd4355 -wd4456 -wd4457 -wd4458 -wd4459 -wd4503 -wd4624 -wd4722 -wd4800 -w14062 -we4238 -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS")
 
 elseif((${PLATFORM} STREQUAL "android-ARM") OR
-       (${PLATFORM} STREQUAL "android-X86"))
+       (${PLATFORM} STREQUAL "android-X86") OR
+       (${PLATFORM} STREQUAL "android-X86_64"))
 
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Wall -ffunction-sections -fdata-sections -fvisibility=hidden")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -fvisibility-inlines-hidden -fvisibility=hidden -std=c++11 -ffunction-sections -fdata-sections -fno-rtti")
@@ -204,7 +205,7 @@ elseif(${PLATFORM} STREQUAL "android-ARM")
     set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMProfileData.a LLVMARMDisassembler.a LLVMARMCodeGen.a LLVMARMAsmParser.a LLVMARMDesc.a LLVMARMInfo.a LLVMARMAsmPrinter.a LLVMARMUtils.a)
     set(LLVM_LIBS -ldl -lz -lm) # -lgnustl_static)
 
-elseif(${PLATFORM} STREQUAL "android-X86")
+elseif((${PLATFORM} STREQUAL "android-X86") OR (${PLATFORM} STREQUAL "android-X86_64"))
 
     set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMProfileData.a LLVMX86Disassembler.a LLVMX86CodeGen.a LLVMX86AsmParser.a LLVMX86Desc.a LLVMX86Info.a LLVMX86AsmPrinter.a LLVMX86Utils.a)
     set(LLVM_LIBS -ldl -lz -lm) # -lgnustl_static)
