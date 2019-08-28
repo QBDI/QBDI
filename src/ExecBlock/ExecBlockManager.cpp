@@ -476,15 +476,19 @@ static void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst
             // fill the operand analysis
             switch (opdesc.OperandType) {
                 case llvm::MCOI::OPERAND_IMMEDIATE:
+                    opa.size = getImmediateSize(&inst, &desc);
                     break;
                 case llvm::MCOI::OPERAND_MEMORY:
                     opa.flag |= OPERANDFLAG_ADDR;
+                    opa.size = sizeof(rword);
                     break;
                 case llvm::MCOI::OPERAND_PCREL:
+                    opa.size = getImmediateSize(&inst, &desc);
                     opa.flag |= OPERANDFLAG_PCREL;
                     break;
                 case llvm::MCOI::OPERAND_UNKNOWN:
                     opa.flag |= OPERANDFLAG_UNDEFINED_EFFECT;
+                    opa.size = sizeof(rword);
                     break;
                 default:
                     LogWarning("ExecBlockManager::analyseOperands",
@@ -497,7 +501,6 @@ static void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst
                 opa.type = OPERAND_IMM;
             }
             opa.value = static_cast<rword>(op.getImm());
-            opa.size = getImmediateSize(&inst, &desc);
             instAnalysis->numOperands++;
         }
     }
