@@ -1,3 +1,12 @@
+2019-xx-xx Next Release
+
+    * Version 0.7.0
+    * Add support for architecture x86
+    * Add platform android-X86 and android-X86_64
+    * Improve MemoryMap structure and add full path when available (#62, #71)
+    * Create docker images for QBDI (available in qbdi/qbdi) (#56)
+    * Fix and improve operands involving memory accesses (#58)
+
 2018-10-19 Cedric TESSIER <ctessier@quarkslab.com>
 
     * Version 0.6.2
