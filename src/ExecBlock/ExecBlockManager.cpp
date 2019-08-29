@@ -333,6 +333,9 @@ static void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm
     opa.size = 0;
     opa.regOff = 0;
     opa.regCtxIdx = 0;
+    opa.type = OPERAND_INVALID;
+    if (regNo == /* llvm::X86|ARM::NoRegister */ 0)
+        return;
     // try to match register in our GPR context
     for (uint16_t j = 0; j < NUM_GPR; j++) {
         if (MRI.isSubRegisterEq(GPR_ID[j], regNo)) {
@@ -344,7 +347,8 @@ static void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm
                 opa.size = sizeof(rword);
             }
             opa.regCtxIdx = j;
-            break;
+            opa.type = OPERAND_GPR;
+            return;
         }
     }
 }
@@ -356,12 +360,12 @@ static void tryMergeCurrentRegister(InstAnalysis* instAnalysis) {
     }
     for (uint16_t j = 0; j < instAnalysis->numOperands - 1; j++) {
         OperandAnalysis& pop = instAnalysis->operands[j];
-        if (pop.type != opa.type) {
+        if (pop.type != opa.type || pop.flag != opa.flag) {
             continue;
         }
         if (pop.regCtxIdx == opa.regCtxIdx &&
-            pop.size == opa.size &&
-            pop.regOff == opa.regOff) {
+                pop.size == opa.size &&
+                pop.regOff == opa.regOff) {
             // merge current one into previous one
             pop.regAccess |= opa.regAccess;
             memset(&opa, 0, sizeof(OperandAnalysis));
@@ -390,11 +394,10 @@ static void analyseImplicitRegisters(InstAnalysis* instAnalysis, const uint16_t*
         analyseRegister(topa, *implicitRegs, MRI);
         // we found a GPR (as size is only known for GPR)
         // TODO: add support for more registers
-        if (topa.size != 0) {
+        if (topa.size != 0 && topa.type != OPERAND_INVALID) {
             // fill a new operand analysis
             OperandAnalysis& opa = instAnalysis->operands[instAnalysis->numOperands];
             opa = topa;
-            opa.type = OPERAND_GPR;
             opa.regAccess = type;
             instAnalysis->numOperands++;
             // try to merge with a previous one
@@ -428,7 +431,6 @@ static void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst
             regWrites.set(i, true);
         }
     }
-    unsigned int numClasses = MRI.getNumRegClasses();
     std::vector<unsigned int> skipRegs;
     // for each instruction operands
     for (uint8_t i = 0; i < numOperands; i++) {
@@ -443,48 +445,62 @@ static void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst
             unsigned int regNo = op.getReg();
             // validate that this is really a register operand, not
             // something else (memory access)
-            if (opdesc.OperandType != llvm::MCOI::OPERAND_REGISTER) {
-                if (regNo != 0) {
-                    skipRegs.push_back(regNo);
-                }
+            if (regNo == 0)
                 continue;
-            }
             // fill the operand analysis
             analyseRegister(opa, regNo, MRI);
             // we have'nt found a GPR (as size is only known for GPR)
-            if (opa.size == 0) {
+            if (opa.size == 0 || opa.type == OPERAND_INVALID) {
                 // TODO: add support for more registers
                 continue;
             }
-            // update register size using class
-            if (!opdesc.isLookupPtrRegClass() &&
-                (static_cast<unsigned int>(opdesc.RegClass) < numClasses)) {
-                const llvm::MCRegisterClass& regclass = MRI.getRegClass(opdesc.RegClass);
-                opa.size = regclass.getSize();
+            switch (opdesc.OperandType) {
+                case llvm::MCOI::OPERAND_REGISTER:
+                    break;
+                case llvm::MCOI::OPERAND_MEMORY:
+                    opa.flag |= OPERANDFLAG_ADDR;
+                    break;
+                case llvm::MCOI::OPERAND_UNKNOWN:
+                    opa.flag |= OPERANDFLAG_UNDEFINED_EFFECT;
+                    break;
+                default:
+                    LogWarning("ExecBlockManager::analyseOperands",
+                            "Not supported operandType %d for register operand", opdesc.OperandType);
+                    continue;
             }
-            opa.type = OPERAND_GPR;
             opa.regAccess = regWrites.test(i) ? REGISTER_WRITE : REGISTER_READ;
             instAnalysis->numOperands++;
             // try to merge with a previous one
             tryMergeCurrentRegister(instAnalysis);
         } else if (op.isImm()) {
-            // FIXME: broken in LLVM 3.7
-#ifndef QBDI_ARCH_ARM
-            // validate that this is really a register operand, not
-            // something else (memory access)
-            if (opdesc.OperandType != llvm::MCOI::OPERAND_IMMEDIATE) {
-                continue;
-            }
-#endif
             // fill the operand analysis
+            switch (opdesc.OperandType) {
+                case llvm::MCOI::OPERAND_IMMEDIATE:
+                    opa.size = getImmediateSize(&inst, &desc);
+                    break;
+                case llvm::MCOI::OPERAND_MEMORY:
+                    opa.flag |= OPERANDFLAG_ADDR;
+                    opa.size = sizeof(rword);
+                    break;
+                case llvm::MCOI::OPERAND_PCREL:
+                    opa.size = getImmediateSize(&inst, &desc);
+                    opa.flag |= OPERANDFLAG_PCREL;
+                    break;
+                case llvm::MCOI::OPERAND_UNKNOWN:
+                    opa.flag |= OPERANDFLAG_UNDEFINED_EFFECT;
+                    opa.size = sizeof(rword);
+                    break;
+                default:
+                    LogWarning("ExecBlockManager::analyseOperands",
+                            "Not supported operandType %d for immediate operand", opdesc.OperandType);
+                    continue;
+            }
             if (opdesc.isPredicate()) {
                 opa.type = OPERAND_PRED;
             } else {
                 opa.type = OPERAND_IMM;
             }
             opa.value = static_cast<rword>(op.getImm());
-            // FIXME: immediate size is architecture dependent (see X86BaseInfo.h for example)
-            opa.size = sizeof(rword); // set it to maximum size
             instAnalysis->numOperands++;
         }
     }

@@ -45,10 +45,10 @@ namespace QBDI {
 
 #if defined(QBDI_ARCH_X86_64)
 static const unsigned int GPR_ID[] = {
-    llvm::X86::RAX, llvm::X86::RBX, llvm::X86::RCX, llvm::X86::RDX, 
+    llvm::X86::RAX, llvm::X86::RBX, llvm::X86::RCX, llvm::X86::RDX,
     llvm::X86::RSI, llvm::X86::RDI, llvm::X86::R8,  llvm::X86::R9,
     llvm::X86::R10, llvm::X86::R11, llvm::X86::R12, llvm::X86::R13,
-    llvm::X86::R14, llvm::X86::R15, llvm::X86::RBP, llvm::X86::RSP, 
+    llvm::X86::R14, llvm::X86::R15, llvm::X86::RBP, llvm::X86::RSP,
     llvm::X86::RIP
 };
 
@@ -100,9 +100,9 @@ public:
 namespace QBDI {
 
 static const unsigned int GPR_ID[] = {
-    llvm::ARM::R0, llvm::ARM::R1, llvm::ARM::R2,  llvm::ARM::R3, 
-    llvm::ARM::R4, llvm::ARM::R5, llvm::ARM::R6,  llvm::ARM::R7, 
-    llvm::ARM::R8, llvm::ARM::R9, llvm::ARM::R10, llvm::ARM::R12, 
+    llvm::ARM::R0, llvm::ARM::R1, llvm::ARM::R2,  llvm::ARM::R3,
+    llvm::ARM::R4, llvm::ARM::R5, llvm::ARM::R6,  llvm::ARM::R7,
+    llvm::ARM::R8, llvm::ARM::R9, llvm::ARM::R10, llvm::ARM::R12,
     llvm::ARM::R11, llvm::ARM::SP, llvm::ARM::LR, llvm::ARM::PC
 };
 

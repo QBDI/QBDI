@@ -29,9 +29,7 @@ int main(int argc, char** argv) {
 
     // This allows the user to override the flag on the command line.
     ::testing::InitGoogleTest(&argc, argv);
-#ifdef _QBDI_LOG_DEBUG
-    QBDI::LOGSYS.addFilter("*", QBDI::LogPriority::DEBUG);
-#endif
+    QBDI::LOGSYS.addFilter("*", QBDI::LogPriority::WARNING);
 
     return RUN_ALL_TESTS();
 }

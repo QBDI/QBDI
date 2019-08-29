@@ -29,6 +29,8 @@ unsigned getWriteSize(const llvm::MCInst* inst);
 bool isStackRead(const llvm::MCInst* inst);
 bool isStackWrite(const llvm::MCInst* inst);
 
+unsigned getImmediateSize(const llvm::MCInst* inst, const llvm::MCInstrDesc* desc);
+
 };
 
 #endif // INSTCLASSES_H

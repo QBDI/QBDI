@@ -1095,4 +1095,24 @@ bool isStackWrite(const llvm::MCInst* inst) {
     return IS_STACK_WRITE(MEMACCESS_INFO_TABLE[inst->getOpcode()]);
 }
 
+unsigned getImmediateSize(const llvm::MCInst* inst, const llvm::MCInstrDesc* desc) {
+    switch (desc->TSFlags & llvm::X86II::ImmMask) {
+        case llvm::X86II::Imm8:
+        case llvm::X86II::Imm8PCRel:
+        case llvm::X86II::Imm8Reg:
+            return 1;
+        case llvm::X86II::Imm16:
+        case llvm::X86II::Imm16PCRel:
+            return 2;
+        case llvm::X86II::Imm32:
+        case llvm::X86II::Imm32PCRel:
+        case llvm::X86II::Imm32S:
+            return 4;
+        case llvm::X86II::Imm64:
+            return 8;
+        default:
+            return sizeof(rword);
+    }
+}
+
 };
