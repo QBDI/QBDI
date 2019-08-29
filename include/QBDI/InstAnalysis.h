@@ -48,10 +48,10 @@ typedef enum {
 } OperandType;
 
 typedef enum {
-    _QBDI_EI(OPERANDFLAG_NONE) = 0,                 /*< No flag */
-    _QBDI_EI(OPERANDFLAG_ADDR) = 1<<0,              /*< The operand is used to compute addr */
-    _QBDI_EI(OPERANDFLAG_PCREL) = 1<<1,             /*< The value of operand is PC relative */
-    _QBDI_EI(OPERANDFLAG_UNDEFINED_EFFECT) = 1<<2,  /*< The operand rols isn't fully defined */
+    _QBDI_EI(OPERANDFLAG_NONE) = 0,                 /*!< No flag */
+    _QBDI_EI(OPERANDFLAG_ADDR) = 1<<0,              /*!< The operand is used to compute an address */
+    _QBDI_EI(OPERANDFLAG_PCREL) = 1<<1,             /*!< The value of the operand is PC relative */
+    _QBDI_EI(OPERANDFLAG_UNDEFINED_EFFECT) = 1<<2,  /*!< The operand role isn't fully defined */
 } OperandFlag;
 
 _QBDI_ENABLE_BITMASK_OPERATORS(OperandFlag)

@@ -460,6 +460,9 @@ fill an array of :c:type:`OperandAnalysis` (of length `numOperands`).
 .. doxygenenum:: OperandType
    :project: QBDI_C
 
+.. doxygenenum:: OperandFlag
+   :project: QBDI_C
+
 .. doxygenenum:: RegisterAccessType
    :project: QBDI_C
 

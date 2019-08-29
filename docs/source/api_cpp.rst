@@ -437,6 +437,9 @@ fill an array of :cpp:type:`QBDI::OperandAnalysis` (of length `numOperands`).
 .. doxygenenum:: OperandType
    :project: QBDI_CPP
 
+.. doxygenenum:: OperandFlag
+   :project: QBDI_CPP
+
 .. doxygenenum:: RegisterAccessType
    :project: QBDI_CPP
 
