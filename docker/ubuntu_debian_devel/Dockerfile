@@ -72,6 +72,7 @@ RUN sudo apt-get update && \
         zip \
         less \
         file \
+        xxd \
         git && \
     sudo apt-get clean  && \
     sudo rm -rf /var/lib/apt/lists/*
@@ -96,6 +97,7 @@ RUN sudo chown -R $USER:$USER . && \
           -DPLATFORM=$QBDI_PLATFORM \
           -DCMAKE_INSTALL_PREFIX=$PREFIX \
           -DLOG_DEBUG=TRUE \
+          -DEXAMPLES=TRUE \
           -DTOOLS_PYQBDI=TRUE \
           -DTOOLS_VALIDATOR=TRUE \
           $CMAKE_ARGUMENT \
