@@ -21,6 +21,7 @@
 #include <tlhelp32.h>
 
 /* Consts */
+#define QBDIPRELOAD_SHARED_MEMORY_NAME_FMT  "qbdi_preload_%u"
 static const unsigned long INST_INT1 = 0x01CD;          /* Instruction opcode for "INT 1"        */
 static const unsigned long INST_INT1_MASK = 0xFFFF;
 static const size_t QBDI_RUNTIME_STACK_SIZE = 0x800000; /* QBDI shadow stack size                */
@@ -78,7 +79,7 @@ void qbdipreload_threadCtxToGPRState(const void* gprCtx, GPRState* gprState) {
  * to QBDI FPR state (Floating point registers)
  */
 void qbdipreload_floatCtxToFPRState(const void* gprCtx, FPRState* fprState) {
-     PCONTEXT x64cpu = (PCONTEXT) gprCtx;
+    PCONTEXT x64cpu = (PCONTEXT) gprCtx;
 
     // FPU STmm(X)
     memcpy(&fprState->stmm0, &x64cpu->FltSave.FloatRegisters[0], sizeof(MMSTReg));
@@ -183,7 +184,7 @@ int setExceptionHandler(LONG (*exception_filter_fn)(PEXCEPTION_POINTERS)) {
 /*
  * Trampoline implementation
  * It removes exception handler, restore entry point bytes and 
- * setup QBDI runtime for host target
+ * setup QBDI runtime for host target before calling user callback "on_run"
  * Its is called from separate qbdipreload_trampoline() assembly stub that
  * makes this function load in a arbitraty allocated stack, then QBDI can
  * safely initialize & instrument main target thread
@@ -257,7 +258,7 @@ LONG WINAPI QbdiPreloadExceptionFilter(PEXCEPTION_POINTERS exc_info) {
 
         // Continue execution on trampoline to make QBDI runtime
         // execute using a separate stack and not instrumented target one
-         // RSP can't be set here (system seems to validate pointer authenticity)
+        // RSP can't be set here (system seems to validate pointer authenticity)
         x64cpu->Rip = (uint64_t) qbdipreload_trampoline;
     }
 
@@ -322,8 +323,7 @@ void* getMainThreadRip() {
     HANDLE hThread;
     void* result = NULL;
 
-    // Retrieve main thread ID considering that it should be the oldest
-    // created one in address space
+    // Loop through current process threads
     HANDLE hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
 
     if (hThreadSnap == INVALID_HANDLE_VALUE)
@@ -339,7 +339,7 @@ void* getMainThreadRip() {
                     ULONGLONG ullTest = MAKEULONGLONG(afTimes[0].dwLowDateTime, afTimes[0].dwHighDateTime);
                     if (ullTest && ullTest < ullMinCreateTime) {
                         ullMinCreateTime = ullTest;
-                        dwMainThreadID = th32.th32ThreadID;
+                        dwMainThreadID = th32.th32ThreadID; // Main thread should be the oldest created one
                     }
                 }
                 CloseHandle(hThread);
@@ -386,7 +386,7 @@ BOOLEAN qbdipreload_attach_init() {
     TCHAR szShMemName[32];
     BOOL result = FALSE;
 
-    snprintf(szShMemName, sizeof(szShMemName), "qbdi_preload_%u", GetCurrentProcessId());
+    snprintf(szShMemName, sizeof(szShMemName), QBDIPRELOAD_SHARED_MEMORY_NAME_FMT, GetCurrentProcessId());
     g_hShMemMap = OpenFileMapping(FILE_MAP_READ | FILE_MAP_WRITE, FALSE, szShMemName);
     g_pShMem = NULL;
 
