@@ -6,7 +6,7 @@ Next Release
 
 * Add support for architecture x86
 * Add platform android-X86 and android-X86_64
-* Improve :c:type:`MemoryMap structure` and add full path when available
+* Improve :c:type:`MemoryMap` structure and add full path when available
   (`#62 <https://github.com/QBDI/QBDI/issues/62>`_, `#71 <https://github.com/QBDI/QBDI/issues/71>`_)
 * Create docker images for QBDI (available in `qbdi/qbdi <https://hub.docker.com/r/qbdi/qbdi>`_)
   (`#56 <https://github.com/QBDI/QBDI/pull/56>`_)
@@ -21,34 +21,34 @@ Next Release
           [0] optype: 1, value : 12345678, size: 8, regOff: 0, regCtxIdx: 0, regName: (null), regaccess : 0
 
   These :c:type:`OperandAnalysis` were now available. To distinct :c:type:`OperandAnalysis` involved in memory access
-  or that have some behavior, :c:type:`OperandAnalysis` contains a new attribute `flags` with the type :c:type:`OperandFlag`.
+  or that have some behavior, :c:type:`OperandAnalysis` contains a new attribute `flag` with the type :c:type:`OperandFlag`.
 
   .. code:: text
 
       cmp dword ptr [rbp + 4*rbx - 4], 12345678
-          [0] optype: 2, flags: 1, value : 48, size: 8, regOff: 0, regCtxIdx: 14, regName: RBP, regaccess : 1
-          [1] optype: 1, flags: 1, value : 4, size: 8, regOff: 0, regCtxIdx: 0, regName: (null), regaccess : 0
-          [2] optype: 2, flags: 1, value : 49, size: 8, regOff: 0, regCtxIdx: 1, regName: RBX, regaccess : 1
-          [3] optype: 1, flags: 1, value : -4, size: 8, regOff: 0, regCtxIdx: 0, regName: (null), regaccess : 0
-          [4] optype: 1, flags: 0, value : 12345678, size: 4, regOff: 0, regCtxIdx: 0, regName: (null), regaccess : 0
+          [0] optype: 2, flag: 1, value : 48, size: 8, regOff: 0, regCtxIdx: 14, regName: RBP, regaccess : 1
+          [1] optype: 1, flag: 1, value : 4, size: 8, regOff: 0, regCtxIdx: 0, regName: (null), regaccess : 0
+          [2] optype: 2, flag: 1, value : 49, size: 8, regOff: 0, regCtxIdx: 1, regName: RBX, regaccess : 1
+          [3] optype: 1, flag: 1, value : -4, size: 8, regOff: 0, regCtxIdx: 0, regName: (null), regaccess : 0
+          [4] optype: 1, flag: 0, value : 12345678, size: 4, regOff: 0, regCtxIdx: 0, regName: (null), regaccess : 0
       mov rax, qword ptr [rbp - 4]
-          [0] optype: 2, flags: 0, value : 47, size: 8, regOff: 0, regCtxIdx: 0, regName: RAX, regaccess : 2
-          [1] optype: 2, flags: 1, value : 48, size: 8, regOff: 0, regCtxIdx: 14, regName: RBP, regaccess : 1
-          [2] optype: 1, flags: 1, value : 1, size: 8, regOff: 0, regCtxIdx: 0, regName: (null), regaccess : 0
-          [3] optype: 1, flags: 1, value : -4, size: 8, regOff: 0, regCtxIdx: 0, regName: (null), regaccess : 0
+          [0] optype: 2, flag: 0, value : 47, size: 8, regOff: 0, regCtxIdx: 0, regName: RAX, regaccess : 2
+          [1] optype: 2, flag: 1, value : 48, size: 8, regOff: 0, regCtxIdx: 14, regName: RBP, regaccess : 1
+          [2] optype: 1, flag: 1, value : 1, size: 8, regOff: 0, regCtxIdx: 0, regName: (null), regaccess : 0
+          [3] optype: 1, flag: 1, value : -4, size: 8, regOff: 0, regCtxIdx: 0, regName: (null), regaccess : 0
       mov rax, qword ptr [4*rbx]
-          [0] optype: 2, flags: 0, value : 47, size: 8, regOff: 0, regCtxIdx: 0, regName: RAX, regaccess : 2
-          [1] optype: 1, flags: 1, value : 4, size: 8, regOff: 0, regCtxIdx: 0, regName: (null), regaccess : 0
-          [2] optype: 2, flags: 1, value : 49, size: 8, regOff: 0, regCtxIdx: 1, regName: RBX, regaccess : 1
-          [3] optype: 1, flags: 1, value : 0, size: 8, regOff: 0, regCtxIdx: 0, regName: (null), regaccess : 0
+          [0] optype: 2, flag: 0, value : 47, size: 8, regOff: 0, regCtxIdx: 0, regName: RAX, regaccess : 2
+          [1] optype: 1, flag: 1, value : 4, size: 8, regOff: 0, regCtxIdx: 0, regName: (null), regaccess : 0
+          [2] optype: 2, flag: 1, value : 49, size: 8, regOff: 0, regCtxIdx: 1, regName: RBX, regaccess : 1
+          [3] optype: 1, flag: 1, value : 0, size: 8, regOff: 0, regCtxIdx: 0, regName: (null), regaccess : 0
       jne -6115
-          [0] optype: 1, flags: 2, value : -6115, size: 4, regOff: 0, regCtxIdx: 0, regName: (null), regaccess : 0
+          [0] optype: 1, flag: 2, value : -6115, size: 4, regOff: 0, regCtxIdx: 0, regName: (null), regaccess : 0
       lea rax, [rbp + 4*rbx - 4]
-          [0] optype: 2, flags: 0, value : 47, size: 8, regOff: 0, regCtxIdx: 0, regName: RAX, regaccess : 2
-          [1] optype: 2, flags: 4, value : 48, size: 8, regOff: 0, regCtxIdx: 14, regName: RBP, regaccess : 1
-          [2] optype: 1, flags: 4, value : 4, size: 8, regOff: 0, regCtxIdx: 0, regName: (null), regaccess : 0
-          [3] optype: 2, flags: 4, value : 49, size: 8, regOff: 0, regCtxIdx: 1, regName: RBX, regaccess : 1
-          [4] optype: 1, flags: 4, value : -4, size: 8, regOff: 0, regCtxIdx: 0, regName: (null), regaccess : 0
+          [0] optype: 2, flag: 0, value : 47, size: 8, regOff: 0, regCtxIdx: 0, regName: RAX, regaccess : 2
+          [1] optype: 2, flag: 4, value : 48, size: 8, regOff: 0, regCtxIdx: 14, regName: RBP, regaccess : 1
+          [2] optype: 1, flag: 4, value : 4, size: 8, regOff: 0, regCtxIdx: 0, regName: (null), regaccess : 0
+          [3] optype: 2, flag: 4, value : 49, size: 8, regOff: 0, regCtxIdx: 1, regName: RBX, regaccess : 1
+          [4] optype: 1, flag: 4, value : -4, size: 8, regOff: 0, regCtxIdx: 0, regName: (null), regaccess : 0
 
 
 Version 0.6.2

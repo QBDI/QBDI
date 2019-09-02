@@ -272,6 +272,9 @@ namespace QBDI {
           if (str_name == "type")
             return PyLong_FromLong(PyOperandAnalysis_AsOperandAnalysis(self)->type);
 
+          else if (str_name == "flag")
+            return PyLong_FromLong(PyOperandAnalysis_AsOperandAnalysis(self)->flag);
+
           else if (str_name == "value")
             return PyLong_FromLong(PyOperandAnalysis_AsOperandAnalysis(self)->value);
 
@@ -3462,6 +3465,10 @@ namespace QBDI {
         PyModule_AddObject(QBDI::Bindings::Python::module, "OPERAND_IMM",           PyInt_FromLong(QBDI::OPERAND_IMM));
         PyModule_AddObject(QBDI::Bindings::Python::module, "OPERAND_INVALID",       PyInt_FromLong(QBDI::OPERAND_INVALID));
         PyModule_AddObject(QBDI::Bindings::Python::module, "OPERAND_PRED",          PyInt_FromLong(QBDI::OPERAND_PRED));
+        PyModule_AddObject(QBDI::Bindings::Python::module, "OPERANDFLAG_NONE",      PyInt_FromLong(QBDI::OPERANDFLAG_NONE));
+        PyModule_AddObject(QBDI::Bindings::Python::module, "OPERANDFLAG_ADDR",      PyInt_FromLong(QBDI::OPERANDFLAG_ADDR));
+        PyModule_AddObject(QBDI::Bindings::Python::module, "OPERANDFLAG_PCREL",     PyInt_FromLong(QBDI::OPERANDFLAG_PCREL));
+        PyModule_AddObject(QBDI::Bindings::Python::module, "OPERANDFLAG_UNDEFINED_EFFECT",      PyInt_FromLong(QBDI::OPERANDFLAG_UNDEFINED_EFFECT));
         PyModule_AddObject(QBDI::Bindings::Python::module, "PF_EXEC",               PyInt_FromLong(QBDI::PF_EXEC));
         PyModule_AddObject(QBDI::Bindings::Python::module, "PF_NONE",               PyInt_FromLong(QBDI::PF_NONE));
         PyModule_AddObject(QBDI::Bindings::Python::module, "PF_READ",               PyInt_FromLong(QBDI::PF_READ));

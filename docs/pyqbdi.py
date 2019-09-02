@@ -327,8 +327,9 @@ def getModuleNames():
     pass
 
 
-def getCurrentProcessMaps():
+def getCurrentProcessMaps(full_path=False):
     """ Get a list of all the memory maps (regions) of the current process.
+        :param full_path: Return the full path of the module in name field
 
         :returns: A list of :py:class:`MemoryMap` object.
     """
@@ -437,6 +438,8 @@ class OperandAnalysis:
     # Common fields
     type = 0
     """ Operand type (pyqbdi.OPERAND_IMM, pyqbdi.OPERAND_REG, pyqbdi.OPERAND_PRED) """
+    flag = 0
+    """ Operand flags (pyqbdi.OPERANDFLAG_ADDR, pyqbdi.OPERANDFLAG_PCREL, pyqbdi.OPERANDFLAG_UNDEFINED_EFFECT) """
     value = 0
     """ Operand value (if immediate), or register Id """
     size = 0
