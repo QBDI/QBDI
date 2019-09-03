@@ -37,9 +37,14 @@ CPU       Operating Systems                Execution                Memory Acces
 =======   ==============================   ======================   =================================
 x86-64    Android, Linux, macOS, Windows   :green:`Supported`       :yellow:`Partial (only non SIMD)`
 x86       Android, Linux, macOS, Windows   :green:`Supported`       :yellow:`Partial (only non SIMD)`
-ARM       Linux, Android, iOS              :orange:`Supported`      :orange:`Supported`
-AArch64   Android                          :orange:`Supported`      :orange:`Supported`
+ARM       Linux, Android, iOS              :orange:`Planned (*)`    :orange:`Planned (*)`
+AArch64   Android                          :orange:`Planned(*)`     :orange:`Planned (*)`
 =======   ==============================   ======================   =================================
+
+.. warning::
+
+   The ARM and AArch64 instruction sets are supported but they still need to be integrated along with x86 and x86-64.
+
 
 **stable**
 
