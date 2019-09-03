@@ -195,6 +195,7 @@ VMAction ExecBlock::execute() {
 
     if (context->hostState.callback != 0) {
       currentInst = context->hostState.origin;
+      rword currentPC = QBDI_GPR_GET(&context->gprState, REG_PC);
 
       QBDI_DEBUG("Callback request by ExecBlock 0x{:x} for callback 0x{:x}",
                  reinterpret_cast<uintptr_t>(this),
@@ -210,6 +211,35 @@ VMAction ExecBlock::execute() {
         case CONTINUE:
           QBDI_DEBUG("Callback 0x{:x} returned CONTINUE",
                      context->hostState.callback);
+          if (QBDI_GPR_GET(&context->gprState, REG_PC) != currentPC) {
+            QBDI_WARN(
+                "Callback returned CONTINUE but change PC: Ignore new value");
+          }
+          break;
+        case SKIP:
+          QBDI_DEBUG("Callback 0x{:x} returned SKIP",
+                     context->hostState.callback);
+          if (not instMetadata[currentInst].modifyPC and
+              QBDI_GPR_GET(&context->gprState, REG_PC) != currentPC) {
+            QBDI_WARN("Callback returned SKIP but change PC: Ignore new value");
+          }
+          if (instMetadata[currentInst].modifyPC) {
+            QBDI_WARN(
+                "Callback returned SKIP on instruction that change PC. Use "
+                "BREAK_TO_VM instead.");
+            return BREAK_TO_VM;
+          } else if (currentInst == seqRegistry[currentSeq].endInstID) {
+            rword next_address = instMetadata[currentInst].address +
+                                 instMetadata[currentInst].instSize;
+            QBDI_GPR_SET(&context->gprState, REG_PC, next_address);
+            return BREAK_TO_VM;
+          } else {
+            // go to currentInst + 1
+            currentInst += 1;
+            context->hostState.selector =
+                reinterpret_cast<rword>(codeBlock.base()) +
+                static_cast<rword>(instRegistry[currentInst].offset);
+          }
           break;
         case BREAK_TO_VM:
           QBDI_DEBUG("Callback 0x{:x} returned BREAK_TO_VM",
