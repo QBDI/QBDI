@@ -170,7 +170,7 @@ Instruction Coverage
 ARM
 ---
 
-The ARM support is currently limited to the ARM instruction set of ARMv6, there is no support for
+The public ARM support is currently limited to the ARM instruction set of ARMv6, there is no support for
 Thumb or Thumb2 yet. While this subset is quite small, it is enough to run pure ARM mode binary
 and demonstrate that complete ARM support is possible.
 
