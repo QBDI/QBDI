@@ -1,27 +1,33 @@
 CHANGELOG
 =========
 
-Next Release
--------------
+Version 0.7.0 - Not released yet
+--------------------------------
 
-* Add support for architecture x86
-* Add platform android-X86 and android-X86_64
-* Improve :c:type:`MemoryMap` structure and add full path when available
+2019-09-YY QBDI Team <qbdi@quarkslab.com>
+
+* Add support for the x86 architecture
+* Add new platforms related to Android: android-X86 and android-X86_64
+* Improve :c:type:`MemoryMap` structure by adding the module's full path if available
   (`#62 <https://github.com/QBDI/QBDI/issues/62>`_, `#71 <https://github.com/QBDI/QBDI/issues/71>`_)
-* Create docker images for QBDI (available in `qbdi/qbdi <https://hub.docker.com/r/qbdi/qbdi>`_)
+* Create docker images for QBDI (available on DockerHub `qbdi/qbdi <https://hub.docker.com/r/qbdi/qbdi>`_)
   (`#56 <https://github.com/QBDI/QBDI/pull/56>`_)
-* Fix and improve operands involving memory accesses (`#58 <https://github.com/QBDI/QBDI/issues/58>`_) :
+* Fix and improve operands analysis involved in memory accesses (`#58 <https://github.com/QBDI/QBDI/issues/58>`_) :
 
-  On x86-64 architecture with QBDI v0.6.2, the :c:type:`InstAnalysis` of some instructions doesn't
-  contain the :c:type:`OperandAnalysis` that was involved in a memory access.
+  In the previous version, the output of the instruction analysis for **some** instructions did not contain the information
+  related to memory accesses.
+
+  For instance, the *operand analysis* of ``cmp MEM, IMM`` misses information about the first operand:
 
   .. code:: text
 
-      cmp dword ptr [rbp + 4*rbx - 4], 12345678
+      cmp dword ptr [rbp + 4 * rbx - 4], 12345678
           [0] optype: 1, value : 12345678, size: 8, regOff: 0, regCtxIdx: 0, regName: (null), regaccess : 0
 
-  These :c:type:`OperandAnalysis` were now available. To distinct :c:type:`OperandAnalysis` involved in memory access
-  or that have some behavior, :c:type:`OperandAnalysis` contains a new attribute `flag` with the type :c:type:`OperandFlag`.
+  This issue has been fixed and the :c:type:`OperandAnalysis` structure contains a new  attribute: ``flag``,
+  which is used to distinct :c:type:`OperandAnalysis` involved in memory accesses from the others.
+
+  Here is an example of output:
 
   .. code:: text
 
