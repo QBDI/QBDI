@@ -38,7 +38,7 @@ CPU       Operating Systems                Execution                Memory Acces
 x86-64    Android, Linux, macOS, Windows   :green:`Supported`       :yellow:`Partial (only non SIMD)`
 x86       Android, Linux, macOS, Windows   :green:`Supported`       :yellow:`Partial (only non SIMD)`
 ARM       Linux, Android, iOS              :orange:`Planned (*)`    :orange:`Planned (*)`
-AArch64   Android                          :orange:`Planned(*)`     :orange:`Planned (*)`
+AArch64   Android                          :orange:`Planned (*)`    :orange:`Planned (*)`
 =======   ==============================   ======================   =================================
 
 .. warning::
