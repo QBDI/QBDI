@@ -95,7 +95,7 @@ Instruction Coverage
 Intel x86
 ---------
 
-The x86 support is based on x86_64.
+The x86 support is based on x86-64.
 
 Memory access information is only provided for general instructions, not for SIMD ones.
 

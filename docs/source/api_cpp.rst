@@ -312,7 +312,7 @@ order they were added to the VM.
 Memory Callback
 ^^^^^^^^^^^^^^^
 
-The memory callbacks (currently only supported under X86_64) allow to trigger callbacks on specific
+The memory callbacks (currently only supported under x86-64 and x86) allow to trigger callbacks on specific
 memory events. They use the same callback prototype, :cpp:type:`QBDI::InstCallback`, than
 instruction callback. They can be registered using the :cpp:func:`QBDI::VM::addMemAccessCB` API.
 The API takes care of enabling the corresponding inline memory access logging instrumentation using

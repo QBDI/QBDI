@@ -193,10 +193,6 @@ Cross-compiling for Android requires the Android NDK and has only been tested un
 and target platform:
 
 * ``NDK_PATH`` should point to your Android NDK
-* ``SDKBIN_PATH`` should be completed to point to the toolchain to use inside the NDK.
-* ``API_LEVEL`` should match the Android API level of your target.
-* The right binaries must be exported in the ``AS``, ``CC``, ``CXX`` and ``STRIP`` environment
-  variables (look at what is inside your ``SDKBIN_PATH``).
 
 From that point on the Linux guide can be followed using this configuration script.
 
