@@ -97,8 +97,14 @@ def build_llvm(llvm_dir, build_dir, arch, platform, arch_opt=None):
             "-DCMAKE_CXX_FLAGS=-fvisibility=hidden -march=" + arch_opt + " -I" + ARM_C_INCLUDE + " -I" + ARM_CXX_INCLUDE,
         ]
     elif platform == "android":
-        ndk_path = str(Path.home() / "android-ndk-r20")
-        api_level = "23"
+        defaul_ndk_path = str(Path.home() / "android-ndk-r20")
+        ndk_path = os.getenv("NDK_PATH", defaul_ndk_path)
+
+        if not Path(ndk_path).is_dir():
+            print("Android NDK path: '{}' is not valid!".format(ndk_path), file=sys.stderr)
+            sys.exit(1)
+
+        api_level = "android-23"
         cmake_specific_option = [
                 '-DCMAKE_TOOLCHAIN_FILE=' + ndk_path + '/build/cmake/android.toolchain.cmake',
                 '-DCMAKE_C_FLAGS=-g0 -fvisibility=hidden -ffunction-sections -fdata-sections -fvisibility-inlines-hidden',

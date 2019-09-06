@@ -1,6 +1,15 @@
 #!/bin/sh
+set -e
 
-export NDK_PATH=${HOME}/android-ndk-r20
+DEFAULT_NDK_PATH=${HOME}/android-ndk-r20
+QBDI_NDK_PATH=${NDK_PATH:-${DEFAULT_NDK_PATH}}
+
+if [ ! -d "$QBDI_NDK_PATH" ]; then
+  echo "'${QBDI_NDK_PATH}' is not valid!"
+  exit 1
+fi
+
+export NDK_PATH=${QBDI_NDK_PATH}
 
 cmake  .. \
       -DPLATFORM=android-X86 \
