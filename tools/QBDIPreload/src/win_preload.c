@@ -40,6 +40,9 @@ static PVOID g_hExceptionHandler;       /* VEH for QBDI preload internals (break
 static rword g_firstInstructionVA;      /* First instruction that will be executed by QBDI                               */
 static rword g_lastInstructionVA;       /* Last instruction that will be executed by QBDI                                */
 PVOID g_shadowStackTop = NULL;          /* QBDI shadow stack top pointer(decreasing address)                             */
+#if defined(QBDI_ARCH_X86)
+PVOID g_shadowStackBase = NULL;         /* QBDI shadow stack base pointer                                                */
+#endif
 static GPRState g_EntryPointGPRState;   /* QBDI CPU GPR states when EntryPoint has been reached                          */
 static FPRState g_EntryPointFPRState;   /* QBDI CPU FPR states when EntryPoint has been reached                          */
 static HANDLE g_hMainThread;            /* Main thread handle (attach mode only)                                         */
@@ -52,26 +55,38 @@ static BOOL g_bIsAttachMode;            /* TRUE if attach mode is activated     
  * to QBDI GPR state (Global purpose registers)
  */
 void qbdipreload_threadCtxToGPRState(const void* gprCtx, GPRState* gprState) {
-    PCONTEXT x64cpu = (PCONTEXT) gprCtx;
+    PCONTEXT osCpuCtx = (PCONTEXT) gprCtx;
 
-    gprState->rax = x64cpu->Rax;
-    gprState->rbx = x64cpu->Rbx;
-    gprState->rcx = x64cpu->Rcx;
-    gprState->rdx = x64cpu->Rdx;
-    gprState->rsi = x64cpu->Rsi;
-    gprState->rdi = x64cpu->Rdi;
-    gprState->rbp = x64cpu->Rbp;
-    gprState->rsp = x64cpu->Rsp;
-    gprState->r8 = x64cpu->R8;
-    gprState->r9 = x64cpu->R9;
-    gprState->r10 = x64cpu->R10;
-    gprState->r11 = x64cpu->R11;
-    gprState->r12 = x64cpu->R12;
-    gprState->r13 = x64cpu->R13;
-    gprState->r14 = x64cpu->R14;
-    gprState->r15 = x64cpu->R15;
-    gprState->rip = x64cpu->Rip;
-    gprState->eflags = x64cpu->EFlags;
+    #if defined(QBDI_ARCH_X86_64)
+    gprState->rax = osCpuCtx->Rax;
+    gprState->rbx = osCpuCtx->Rbx;
+    gprState->rcx = osCpuCtx->Rcx;
+    gprState->rdx = osCpuCtx->Rdx;
+    gprState->rsi = osCpuCtx->Rsi;
+    gprState->rdi = osCpuCtx->Rdi;
+    gprState->rbp = osCpuCtx->Rbp;
+    gprState->rsp = osCpuCtx->Rsp;
+    gprState->r8 = osCpuCtx->R8;
+    gprState->r9 = osCpuCtx->R9;
+    gprState->r10 = osCpuCtx->R10;
+    gprState->r11 = osCpuCtx->R11;
+    gprState->r12 = osCpuCtx->R12;
+    gprState->r13 = osCpuCtx->R13;
+    gprState->r14 = osCpuCtx->R14;
+    gprState->r15 = osCpuCtx->R15;
+    gprState->rip = osCpuCtx->Rip;
+    #else
+    gprState->eax = osCpuCtx->Eax;
+    gprState->ebx = osCpuCtx->Ebx;
+    gprState->ecx = osCpuCtx->Ecx;
+    gprState->edx = osCpuCtx->Edx;
+    gprState->esi = osCpuCtx->Esi;
+    gprState->edi = osCpuCtx->Edi;
+    gprState->ebp = osCpuCtx->Ebp;
+    gprState->esp = osCpuCtx->Esp;
+    gprState->eip = osCpuCtx->Eip;
+    #endif
+    gprState->eflags = osCpuCtx->EFlags;
 }
 
 /*
@@ -79,49 +94,75 @@ void qbdipreload_threadCtxToGPRState(const void* gprCtx, GPRState* gprState) {
  * to QBDI FPR state (Floating point registers)
  */
 void qbdipreload_floatCtxToFPRState(const void* gprCtx, FPRState* fprState) {
-    PCONTEXT x64cpu = (PCONTEXT) gprCtx;
+    PCONTEXT osCpuCtx = (PCONTEXT) gprCtx;
 
     // FPU STmm(X)
-    memcpy(&fprState->stmm0, &x64cpu->FltSave.FloatRegisters[0], sizeof(MMSTReg));
-    memcpy(&fprState->stmm1, &x64cpu->FltSave.FloatRegisters[1], sizeof(MMSTReg));
-    memcpy(&fprState->stmm2, &x64cpu->FltSave.FloatRegisters[2], sizeof(MMSTReg));
-    memcpy(&fprState->stmm3, &x64cpu->FltSave.FloatRegisters[3], sizeof(MMSTReg));
-    memcpy(&fprState->stmm4, &x64cpu->FltSave.FloatRegisters[4], sizeof(MMSTReg));
-    memcpy(&fprState->stmm5, &x64cpu->FltSave.FloatRegisters[5], sizeof(MMSTReg));
-    memcpy(&fprState->stmm6, &x64cpu->FltSave.FloatRegisters[6], sizeof(MMSTReg));
-    memcpy(&fprState->stmm7, &x64cpu->FltSave.FloatRegisters[7], sizeof(MMSTReg));
+    #if defined(QBDI_ARCH_X86_64)
+    memcpy(&fprState->stmm0, &osCpuCtx->FltSave.FloatRegisters[0], sizeof(MMSTReg));
+    memcpy(&fprState->stmm1, &osCpuCtx->FltSave.FloatRegisters[1], sizeof(MMSTReg));
+    memcpy(&fprState->stmm2, &osCpuCtx->FltSave.FloatRegisters[2], sizeof(MMSTReg));
+    memcpy(&fprState->stmm3, &osCpuCtx->FltSave.FloatRegisters[3], sizeof(MMSTReg));
+    memcpy(&fprState->stmm4, &osCpuCtx->FltSave.FloatRegisters[4], sizeof(MMSTReg));
+    memcpy(&fprState->stmm5, &osCpuCtx->FltSave.FloatRegisters[5], sizeof(MMSTReg));
+    memcpy(&fprState->stmm6, &osCpuCtx->FltSave.FloatRegisters[6], sizeof(MMSTReg));
+    memcpy(&fprState->stmm7, &osCpuCtx->FltSave.FloatRegisters[7], sizeof(MMSTReg));
+    #else
+    memcpy(&fprState->stmm0, &osCpuCtx->FloatSave.RegisterArea, sizeof(MMSTReg));
+    memcpy(&fprState->stmm1, (LPBYTE)&osCpuCtx->FloatSave.RegisterArea+sizeof(MMSTReg), sizeof(MMSTReg));
+    memcpy(&fprState->stmm2, (LPBYTE)&osCpuCtx->FloatSave.RegisterArea+2*sizeof(MMSTReg), sizeof(MMSTReg));
+    memcpy(&fprState->stmm3, (LPBYTE)&osCpuCtx->FloatSave.RegisterArea+3*sizeof(MMSTReg), sizeof(MMSTReg));
+    memcpy(&fprState->stmm4, (LPBYTE)&osCpuCtx->FloatSave.RegisterArea+4*sizeof(MMSTReg), sizeof(MMSTReg));
+    memcpy(&fprState->stmm5, (LPBYTE)&osCpuCtx->FloatSave.RegisterArea+5*sizeof(MMSTReg), sizeof(MMSTReg));
+    memcpy(&fprState->stmm6, (LPBYTE)&osCpuCtx->FloatSave.RegisterArea+6*sizeof(MMSTReg), sizeof(MMSTReg));
+    memcpy(&fprState->stmm7, (LPBYTE)&osCpuCtx->FloatSave.RegisterArea+7*sizeof(MMSTReg), sizeof(MMSTReg));
+    #endif
 
+    #if defined(QBDI_ARCH_X86_64)
     // XMM(X) registers
-    memcpy(&fprState->xmm0, &x64cpu->Xmm0, 16);
-    memcpy(&fprState->xmm1, &x64cpu->Xmm1, 16);
-    memcpy(&fprState->xmm2, &x64cpu->Xmm2, 16);
-    memcpy(&fprState->xmm3, &x64cpu->Xmm3, 16);
-    memcpy(&fprState->xmm4, &x64cpu->Xmm4, 16);
-    memcpy(&fprState->xmm5, &x64cpu->Xmm5, 16);
-    memcpy(&fprState->xmm6, &x64cpu->Xmm6, 16);
-    memcpy(&fprState->xmm7, &x64cpu->Xmm7, 16);
-    memcpy(&fprState->xmm8, &x64cpu->Xmm8, 16);
-    memcpy(&fprState->xmm9, &x64cpu->Xmm9, 16);
-    memcpy(&fprState->xmm10, &x64cpu->Xmm10, 16);
-    memcpy(&fprState->xmm11, &x64cpu->Xmm11, 16);
-    memcpy(&fprState->xmm12, &x64cpu->Xmm12, 16);
-    memcpy(&fprState->xmm13, &x64cpu->Xmm13, 16);
-    memcpy(&fprState->xmm14, &x64cpu->Xmm14, 16);
-    memcpy(&fprState->xmm15, &x64cpu->Xmm15, 16);
+    memcpy(&fprState->xmm0, &osCpuCtx->Xmm0, 16);
+    memcpy(&fprState->xmm1, &osCpuCtx->Xmm1, 16);
+    memcpy(&fprState->xmm2, &osCpuCtx->Xmm2, 16);
+    memcpy(&fprState->xmm3, &osCpuCtx->Xmm3, 16);
+    memcpy(&fprState->xmm4, &osCpuCtx->Xmm4, 16);
+    memcpy(&fprState->xmm5, &osCpuCtx->Xmm5, 16);
+    memcpy(&fprState->xmm6, &osCpuCtx->Xmm6, 16);
+    memcpy(&fprState->xmm7, &osCpuCtx->Xmm7, 16);
+    memcpy(&fprState->xmm8, &osCpuCtx->Xmm8, 16);
+    memcpy(&fprState->xmm9, &osCpuCtx->Xmm9, 16);
+    memcpy(&fprState->xmm10, &osCpuCtx->Xmm10, 16);
+    memcpy(&fprState->xmm11, &osCpuCtx->Xmm11, 16);
+    memcpy(&fprState->xmm12, &osCpuCtx->Xmm12, 16);
+    memcpy(&fprState->xmm13, &osCpuCtx->Xmm13, 16);
+    memcpy(&fprState->xmm14, &osCpuCtx->Xmm14, 16);
+    memcpy(&fprState->xmm15, &osCpuCtx->Xmm15, 16);
+    #endif
 
     // Others FPU registers
-    fprState->rfcw = x64cpu->FltSave.ControlWord;
-    fprState->rfsw = x64cpu->FltSave.StatusWord;
-    fprState->ftw  = x64cpu->FltSave.TagWord;
-    fprState->rsrv1 = x64cpu->FltSave.Reserved1;
-    fprState->ip =  x64cpu->FltSave.ErrorOffset;
-    fprState->cs =  x64cpu->FltSave.ErrorSelector;
-    fprState->rsrv2 = x64cpu->FltSave.Reserved2;
-    fprState->dp =  x64cpu->FltSave.DataOffset;
-    fprState->ds =  x64cpu->FltSave.DataSelector;
-    fprState->rsrv3 = x64cpu->FltSave.Reserved3;
-    fprState->mxcsr = x64cpu->FltSave.MxCsr;
-    fprState->mxcsrmask =  x64cpu->FltSave.MxCsr_Mask;
+    #if defined(QBDI_ARCH_X86_64)
+    fprState->rfcw = osCpuCtx->FltSave.ControlWord;
+    fprState->rfsw = osCpuCtx->FltSave.StatusWord;
+    fprState->ftw  = osCpuCtx->FltSave.TagWord;
+    fprState->rsrv1 = osCpuCtx->FltSave.Reserved1;
+    fprState->ip =  osCpuCtx->FltSave.ErrorOffset;
+    fprState->cs =  osCpuCtx->FltSave.ErrorSelector;
+    fprState->rsrv2 = osCpuCtx->FltSave.Reserved2;
+    fprState->dp =  osCpuCtx->FltSave.DataOffset;
+    fprState->ds =  osCpuCtx->FltSave.DataSelector;
+    fprState->rsrv3 = osCpuCtx->FltSave.Reserved3;
+    fprState->mxcsr = osCpuCtx->FltSave.MxCsr;
+    fprState->mxcsrmask =  osCpuCtx->FltSave.MxCsr_Mask;
+    #else
+    fprState->rfcw = osCpuCtx->FloatSave.ControlWord;
+    fprState->rfsw = osCpuCtx->FloatSave.StatusWord;
+    fprState->ftw  = osCpuCtx->FloatSave.TagWord;
+    fprState->ip =  osCpuCtx->FloatSave.ErrorOffset;
+    fprState->cs =  osCpuCtx->FloatSave.ErrorSelector;
+    fprState->dp =  osCpuCtx->FloatSave.DataOffset;
+    fprState->ds =  osCpuCtx->FloatSave.DataSelector;
+    // Those are not available and set with default QBDI value
+    fprState->mxcsr = 0x1f80;
+    fprState->mxcsrmask = 0xffff;
+    #endif
  }
 
 /*
@@ -175,7 +216,7 @@ int unsetExceptionHandler(LONG (*exception_filter_fn)(PEXCEPTION_POINTERS)) {
  * Install a vectored exception handler
  * Return 0 in case of failure
  */
-int setExceptionHandler(LONG (*exception_filter_fn)(PEXCEPTION_POINTERS)) {
+int setExceptionHandler(PVECTORED_EXCEPTION_HANDLER exception_filter_fn) {
     
     g_hExceptionHandler = AddVectoredExceptionHandler(1, exception_filter_fn);
     return g_hExceptionHandler != NULL;
@@ -224,17 +265,21 @@ void qbdipreload_trampoline_impl() {
  * The handler catches the first INT1 exception
  */
 LONG WINAPI QbdiPreloadExceptionFilter(PEXCEPTION_POINTERS exc_info) {
-    PCONTEXT x64cpu = exc_info->ContextRecord;
+    PCONTEXT osCpuCtx = exc_info->ContextRecord;
 
     // Sanity check on exception
     if((exc_info->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) &&
-        (x64cpu->Rip == (DWORD64) g_EntryPointInfo.va)) {
+        #if defined(QBDI_ARCH_X86_64)
+        (osCpuCtx->Rip == (DWORD64) g_EntryPointInfo.va)) {
+        #else
+        (osCpuCtx->Eip == (DWORD) g_EntryPointInfo.va)) {
+        #endif
         // Call user provided callback with x64 cpu state (specific to windows)
-        int status = qbdipreload_on_premain((void*) x64cpu, (void*) x64cpu);
+        int status = qbdipreload_on_premain((void*) osCpuCtx, (void*) osCpuCtx);
 
         // Convert windows CPU context to QBDIGPR/FPR states
-        qbdipreload_threadCtxToGPRState(x64cpu, &g_EntryPointGPRState);
-        qbdipreload_floatCtxToFPRState(x64cpu, &g_EntryPointFPRState);
+        qbdipreload_threadCtxToGPRState(osCpuCtx, &g_EntryPointGPRState);
+        qbdipreload_floatCtxToFPRState(osCpuCtx, &g_EntryPointFPRState);
 
         // First instruction to execute is main module entry point)
         g_firstInstructionVA = QBDI_GPR_GET(&g_EntryPointGPRState, REG_PC);
@@ -254,12 +299,19 @@ LONG WINAPI QbdiPreloadExceptionFilter(PEXCEPTION_POINTERS exc_info) {
             // Allocate shadow stack & keep some space at the end for QBDI runtime
             g_shadowStackTop = VirtualAlloc(NULL, QBDI_RUNTIME_STACK_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
             g_shadowStackTop = (PVOID) ((uint64_t) g_shadowStackTop + QBDI_RUNTIME_STACK_SIZE - 0x1008);
+            #if defined(QBDI_ARCH_X86)
+            g_shadowStackBase = g_shadowStackTop;
+            #endif
         }
 
         // Continue execution on trampoline to make QBDI runtime
         // execute using a separate stack and not instrumented target one
         // RSP can't be set here (system seems to validate pointer authenticity)
-        x64cpu->Rip = (uint64_t) qbdipreload_trampoline;
+        #if defined(QBDI_ARCH_X86_64)
+        osCpuCtx->Rip = (uint64_t) qbdipreload_trampoline;
+        #else
+        osCpuCtx->Eip = (uint32_t) qbdipreload_trampoline;
+        #endif
     }
 
     return EXCEPTION_CONTINUE_EXECUTION;
@@ -315,7 +367,7 @@ int enable_debug_privilege() {
 #endif
 
 void* getMainThreadRip() {
-    CONTEXT x64cpu = {0};
+    CONTEXT osCpuCtx = {0};
     DWORD dwMainThreadID = 0, dwProcID = GetCurrentProcessId();
     ULONGLONG ullMinCreateTime = MAXULONGLONG;
     THREADENTRY32 th32;
@@ -355,9 +407,13 @@ void* getMainThreadRip() {
         g_hMainThread = OpenThread(THREAD_QUERY_INFORMATION | THREAD_GET_CONTEXT | THREAD_SUSPEND_RESUME, FALSE, dwMainThreadID);
 
         if (g_hMainThread) {
-            x64cpu.ContextFlags = CONTEXT_ALL;
-            if (GetThreadContext(g_hMainThread, &x64cpu)) {
-                result = (void*) x64cpu.Rip;
+            osCpuCtx.ContextFlags = CONTEXT_ALL;
+            if (GetThreadContext(g_hMainThread, &osCpuCtx)) {
+                #if defined(QBDI_ARCH_X86_64)
+                result = (void*) osCpuCtx.Rip;
+                #else
+                result = (void*) osCpuCtx.Eip;
+                #endif
             }
         }
     }
@@ -406,7 +462,7 @@ BOOLEAN qbdipreload_attach_init() {
 /*
  * Read data from shared memory
  */
-BOOLEAN qbdipreload_read_shmem(LPVOID lpData, DWORD dwMaxBytesRead) {
+BOOLEAN qbdipreload_read_shmem(LPVOID lpData, SIZE_T dwMaxBytesRead) {
 
     if(lpData && dwMaxBytesRead && g_pShMem && (dwMaxBytesRead <= SH_MEM_SIZE)) {
         memcpy(lpData, g_pShMem, dwMaxBytesRead);
