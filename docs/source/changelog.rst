@@ -1,6 +1,10 @@
 CHANGELOG
 =========
 
+Next Version
+------------
+
+
 Version 0.7.0
 -------------
 
