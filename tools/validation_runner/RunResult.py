@@ -130,15 +130,21 @@ class RunResult:
 
         if regression == 0:
             print('[+] No regression')
-        else: 
+        else:
             print('[+] ERROR: {} regressions encountered'.format(regression))
         return regression
-                    
-            
+
+
     def get_branch_commit(self):
-        out = subprocess.check_output(['git', 'status', '-b', '-uno', '--porcelain=2'], universal_newlines=True)
-        self.commit = scan_for_pattern(out, '# branch.oid ([0-9a-fA-F]+)')[0]
-        self.branch = scan_for_pattern(out, '# branch.head (\S+)')[0]
+        try:
+            out = subprocess.check_output(['git', 'status', '-b', '-uno', '--porcelain=2'], universal_newlines=True)
+        except Exception as e:
+            print('[!] git command error : {}'.format(e))
+            self.commit = 'UNKNOWN'
+            self.branch = 'UNKNOWN'
+        else:
+            self.commit = scan_for_pattern(out, '# branch.oid ([0-9a-fA-F]+)')[0]
+            self.branch = scan_for_pattern(out, '# branch.head (\S+)')[0]
 
     def write_to_db(self, db):
         run_id = db.insert_run_result(self)

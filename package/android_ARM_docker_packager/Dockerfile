@@ -1,69 +1,34 @@
-FROM debian:stretch
+FROM debian:10
 MAINTAINER Charles Hubain <chubain@quarkslab.com>
 
-ARG QBDI_BUILD_TYPE=Release
-
-ENV USER docker
-ENV HOME /home/$USER
-ENV PREFIX /usr
-ENV QBDI_PLATFORM android-ARM
-ENV LLVM_VERSION 5.0
-ENV CMAKE_MAJOR 3.11
-ENV CMAKE_VERSION 3.11.4
-ENV NDK_VERSION r13b
-
-# Install base tools
-RUN apt-get update \
-    && apt-get install -y \
-    bash \
-    gpg \
-    wget
-
-# Add LLVM debian repository
-RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key| apt-key add - && \
-    echo "deb http://apt.llvm.org/stretch/ llvm-toolchain-stretch main" >> /etc/apt/sources.list && \
-    echo "deb-src http://apt.llvm.org/stretch/ llvm-toolchain-stretch main" >> /etc/apt/sources.list && \
-    echo "deb http://apt.llvm.org/stretch/ llvm-toolchain-stretch-4.0 main" >> /etc/apt/sources.list && \
-    echo "deb-src http://apt.llvm.org/stretch/ llvm-toolchain-stretch-4.0 main" >> /etc/apt/sources.list && \
-    echo "deb http://apt.llvm.org/stretch/ llvm-toolchain-stretch-5.0 main" >> /etc/apt/sources.list && \
-    echo "deb-src http://apt.llvm.org/stretch/ llvm-toolchain-stretch-5.0 main" >> /etc/apt/sources.list
+ENV USER="docker" \
+    HOME="/home/docker" \
+    PREFIX="/usr" \
+    QBDI_PLATFORM="android-ARM" \
+    NDK_VERSION="r20" \
+    ANDROID_PLATFORM="23"
 
 # Get latest package list, upgrade packages, install required packages 
 # and cleanup to keep container as small as possible
-RUN apt-get update \
-    && apt-get install -y \
-    bash \
-    sudo \
-    unzip \
-    build-essential \
-    cmake \
-    ninja-build \
-    g++ \
-    gcc-arm-linux-gnueabi \
-    g++-arm-linux-gnueabi \
-    libncurses5-dev \
-    libstdc++-6-dev \
-    make \
-    pkg-config \
-    python \
-    python-dev \
-    wget \
-    zlib1g-dev \
-    llvm-$LLVM_VERSION \
-    qemu-user \
-    vim \
-    && ln -s /usr/bin/llvm-tblgen-$LLVM_VERSION /usr/bin/llvm-tblgen \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN wget "https://cmake.org/files/v$CMAKE_MAJOR/cmake-$CMAKE_VERSION.tar.gz" && \
-    tar xf cmake-$CMAKE_VERSION.tar.gz && \
-    cd cmake-$CMAKE_VERSION/ && \
-    ./configure --prefix=$PREFIX && \
-    make && \
-    make install && \
-    cd .. && \
-    rm -rf cmake-*
+RUN apt-get update && \
+    apt-get install -y \
+        bash \
+        sudo \
+        unzip \
+        build-essential \
+        cmake \
+        ninja-build \
+        g++ \
+        libncurses-dev \
+        libstdc++-8-dev \
+        make \
+        pkg-config \
+        python3 \
+        wget \
+        zlib1g-dev \
+        qemu-user && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # create a user
 RUN adduser --disabled-password --gecos '' $USER && \
@@ -88,19 +53,21 @@ ADD qbdi-deps.tar.gz $HOME/
 
 RUN sudo chown -R $USER:$USER qbdi-deps
 
-WORKDIR $HOME/qbdi-deps/deps/gtest/$QBDI_PLATFORM
+# Test if off, no need of gtest
+#
+#WORKDIR $HOME/qbdi-deps/deps/gtest/$QBDI_PLATFORM
+#
+#RUN sh build.sh prepare && \
+#    sh build.sh build && \
+#    sh build.sh package && \
+#    sh build.sh clean
 
-RUN sh build.sh prepare && \
-    sh build.sh build && \
-    sh build.sh package && \
-    sh build.sh clean
+WORKDIR $HOME/qbdi-deps/deps/llvm/
 
-WORKDIR $HOME/qbdi-deps/deps/llvm/$QBDI_PLATFORM
-
-RUN sh build.sh prepare && \
-    sh build.sh build && \
-    sh build.sh package && \
-    sh build.sh clean
+RUN python3 build.py prepare $QBDI_PLATFORM && \
+    python3 build.py build $QBDI_PLATFORM && \
+    python3 build.py package $QBDI_PLATFORM && \
+    python3 build.py clean $QBDI_PLATFORM
 
 # build / test / install QBDI
 
@@ -114,7 +81,13 @@ RUN sudo chown -R $USER:$USER . && \
     ln -s $HOME/qbdi-deps/deps deps && \
     mkdir build && \
     cd build && \
-    sh ../cmake/config-$QBDI_PLATFORM.sh && \
+    cmake -DPLATFORM=$QBDI_PLATFORM \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_TOOLCHAIN_FILE=$HOME/android-ndk-$NDK_VERSION/build/cmake/android.toolchain.cmake \
+          -DANDROID_ABI=armeabi-v7a \
+          -DANDROID_PLATFORM=$ANDROID_PLATFORM \
+          -DTEST_QBDI=off \
+          .. && \
     make -j2 && \
     rm -f QBDI-*-$QBDI_PLATFORM.tar.gz && \
     cpack

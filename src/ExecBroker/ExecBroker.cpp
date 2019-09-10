@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "ExecBroker/ExecBroker.h" 
+#include "ExecBroker/ExecBroker.h"
 
 namespace QBDI {
 
@@ -25,13 +25,13 @@ ExecBroker::ExecBroker(Assembly& assembly, VMInstanceRef vminstance) :
 }
 
 void ExecBroker::addInstrumentedRange(const Range<rword>& r) {
-    LogDebug("ExecBroker::addInstrumentedRange", "Adding instrumented range [%" PRIRWORD ", %" PRIRWORD "]", 
+    LogDebug("ExecBroker::addInstrumentedRange", "Adding instrumented range [%" PRIRWORD ", %" PRIRWORD "]",
              r.start, r.end);
     instrumented.add(r);
 }
 
 void ExecBroker::removeInstrumentedRange(const Range<rword>& r) {
-    LogDebug("ExecBroker::removeInstrumentedRange", "Removing instrumented range [%" PRIRWORD ", %" PRIRWORD "]", 
+    LogDebug("ExecBroker::removeInstrumentedRange", "Removing instrumented range [%" PRIRWORD ", %" PRIRWORD "]",
              r.start, r.end);
     instrumented.remove(r);
 }
@@ -120,7 +120,7 @@ bool ExecBroker::transferExecution(rword addr, GPRState *gprState, FPRState *fpr
     hookedAddress = *ptr;
     hook = transferBlock.getCurrentPC() + transferBlock.getEpilogueOffset();
     *ptr = hook;
-    LogDebug("ExecBroker::transferExecution", "Patched %p hooking return address 0x%" PRIRWORD " with 0x%" PRIRWORD, 
+    LogDebug("ExecBroker::transferExecution", "Patched %p hooking return address 0x%" PRIRWORD " with 0x%" PRIRWORD,
              ptr, hookedAddress, *ptr);
 
     // Write transfer state
@@ -145,11 +145,11 @@ bool ExecBroker::transferExecution(rword addr, GPRState *gprState, FPRState *fpr
     return true;
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 
 rword *ExecBroker::getReturnPoint(GPRState *gprState) const {
     static int SCAN_DISTANCE = 3;
-    rword *ptr = (rword*) gprState->rsp;
+    rword *ptr = (rword*) QBDI_GPR_GET(gprState, REG_SP);
 
     for(int i = 0; i < SCAN_DISTANCE; i++) {
         if(isInstrumented(ptr[i])) {

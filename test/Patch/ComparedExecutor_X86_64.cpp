@@ -44,8 +44,8 @@ InMemoryObject ComparedExecutor_X86_64::compileWithContextSwitch(const char* sou
                    "mov " << offsetof(QBDI::Context, gprState.r13) << "(%rdi), %r13\n"
                    "mov " << offsetof(QBDI::Context, gprState.r14) << "(%rdi), %r14\n"
                    "mov " << offsetof(QBDI::Context, gprState.r15) << "(%rdi), %r15\n"
-                   "mov %rbp, " << offsetof(QBDI::Context, hostState.rbp) << "(%rdi)\n"
-                   "mov %rsp, " << offsetof(QBDI::Context, hostState.rsp) << "(%rdi)\n"
+                   "mov %rbp, " << offsetof(QBDI::Context, hostState.bp) << "(%rdi)\n"
+                   "mov %rsp, " << offsetof(QBDI::Context, hostState.sp) << "(%rdi)\n"
                    "mov " << offsetof(QBDI::Context, gprState.rbp) << "(%rdi), %rbp\n"
                    "mov " << offsetof(QBDI::Context, gprState.rsp) << "(%rdi), %rsp\n"
                    "push %rdi\n"
@@ -67,9 +67,9 @@ InMemoryObject ComparedExecutor_X86_64::compileWithContextSwitch(const char* sou
                    "mov %r14, " << offsetof(QBDI::Context, gprState.r14) << "(%rsp)\n"
                    "mov %r15, " << offsetof(QBDI::Context, gprState.r15) << "(%rsp)\n"
                    "mov %rbp, " << offsetof(QBDI::Context, gprState.rbp) << "(%rsp)\n"
-                   "mov " << offsetof(QBDI::Context, hostState.rbp) << "(%rsp), %rbp\n"
+                   "mov " << offsetof(QBDI::Context, hostState.bp) << "(%rsp), %rbp\n"
                    "mov %rsp, %rdi\n"
-                   "mov " << offsetof(QBDI::Context, hostState.rsp) << "(%rsp), %rsp\n"
+                   "mov " << offsetof(QBDI::Context, hostState.sp) << "(%rsp), %rsp\n"
                    "pushfq\n"
                    "pop %rax\n"
                    "mov %rax, " << offsetof(QBDI::Context, gprState.eflags) << "(%rdi)\n"
@@ -78,7 +78,7 @@ InMemoryObject ComparedExecutor_X86_64::compileWithContextSwitch(const char* sou
     return InMemoryObject(finalSource.str().c_str());
 }
 
-QBDI::Context ComparedExecutor_X86_64::jitExec(llvm::ArrayRef<uint8_t> code, QBDI::Context &inputState, 
+QBDI::Context ComparedExecutor_X86_64::jitExec(llvm::ArrayRef<uint8_t> code, QBDI::Context &inputState,
                        llvm::sys::MemoryBlock &stack) {
     QBDI::Context           outputState;
     QBDI::Context           outerState;
@@ -86,9 +86,9 @@ QBDI::Context ComparedExecutor_X86_64::jitExec(llvm::ArrayRef<uint8_t> code, QBD
     llvm::sys::MemoryBlock  outerStack;
     std::error_code         ec;
 
-    ctxBlock = llvm::sys::Memory::allocateMappedMemory(4096, nullptr, 
+    ctxBlock = llvm::sys::Memory::allocateMappedMemory(4096, nullptr,
                                                        PF::MF_READ | PF::MF_WRITE, ec);
-    outerStack = llvm::sys::Memory::allocateMappedMemory(4096, nullptr, 
+    outerStack = llvm::sys::Memory::allocateMappedMemory(4096, nullptr,
                                                          PF::MF_READ | PF::MF_WRITE, ec);
     memset((void*)&outerState, 0, sizeof(QBDI::Context));
     // Put the inputState on the stack
@@ -116,15 +116,15 @@ QBDI::Context ComparedExecutor_X86_64::jitExec(llvm::ArrayRef<uint8_t> code, QBD
     return outputState;
 }
 
-QBDI::Context ComparedExecutor_X86_64::realExec(llvm::ArrayRef<uint8_t> code, 
-                                                    QBDI::Context &inputState, 
+QBDI::Context ComparedExecutor_X86_64::realExec(llvm::ArrayRef<uint8_t> code,
+                                                    QBDI::Context &inputState,
                                                     llvm::sys::MemoryBlock &stack) {
 
     QBDI::Context           outputState;
     std::error_code         ec;
     llvm::sys::MemoryBlock  ctxBlock;
 
-    ctxBlock = llvm::sys::Memory::allocateMappedMemory(4096, nullptr, 
+    ctxBlock = llvm::sys::Memory::allocateMappedMemory(4096, nullptr,
                                                        PF::MF_READ | PF::MF_WRITE, ec);
 
     // Put the inputState on the stack
@@ -245,7 +245,7 @@ const char* ConditionalBranching_s =
         "    .quad 0x32253676ffe8dd7f\n"
         "end:\n";
 
-const char* FibonacciRecursion_s = 
+const char* FibonacciRecursion_s =
         "   lea fibo(%rip), %rbx\n"
         "   push %rbx\n"
         "   call *0x0(%rsp)\n"
@@ -287,7 +287,7 @@ const char* StackTricks_s =
         "   cmp $2, %rax\n"
         "   cmova %rcx, %rdx\n"
         "   push %rdx\n"
-        "   ret\n"   
+        "   ret\n"
         "f2:\n"
         "   dec %rax\n"
         "   lea f4(%rip), %rcx\n"

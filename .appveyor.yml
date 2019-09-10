@@ -2,20 +2,31 @@ version: 0.1.{build}
 
 clone_folder: c:\projects\qbdi
 
+shallow_clone: true
+
 configuration:
   - Release
 
 environment:
   PYTHON: "C:\\Python35-x64"
-  platform: X64
   APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
   CMAKE_TEMPLATE: Visual Studio 14 2015
+  matrix:
+    - platform: X64
+      qbdi_plateform: win-X86_64
+      VS_string: "Visual Studio 14 2015 Win64"
+      cmake_platform_args: "-Thost=x64"
+    - platform: X86
+      qbdi_plateform: win-X86
+      VS_string: "Visual Studio 14 2015"
+      cmake_platform_args: ""
+
 
 cache:
-  - deps\llvm\win-X86_64\lib -> deps\llvm\win-X86_64\build.py
-  - deps\llvm\win-X86_64\include -> deps\llvm\win-X86_64\build.py
-  - deps\gtest\win-X86_64\lib -> deps\gtest\win-X86_64\build.py
-  - deps\gtest\win-X86_64\include -> deps\gtest\win-X86_64\build.py
+  - deps\llvm\%qbdi_plateform%\lib -> deps\llvm\build.py
+  - deps\llvm\%qbdi_plateform%\include -> deps\llvm\build.py
+  - deps\gtest\%qbdi_plateform%\lib -> deps\gtest\%qbdi_plateform%\build.py
+  - deps\gtest\%qbdi_plateform%\include -> deps\gtest\%qbdi_plateform%\build.py
 
 install:
   # Install Python (from the official .msi of https://python.org) and pip when
@@ -31,16 +42,20 @@ install:
 
 build_script:
   - "\"C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\vcvarsall.bat\" %Platform%"
-  - cmd: cmake .. -G "Visual Studio 14 2015 Win64" -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=win-X86_64
-  - ps: if (-not((Test-Path("../deps/llvm/win-X86_64/lib")) -and (Test-Path("../deps/llvm/win-X86_64/include")))) { MSbuild deps\llvm.vcxproj /m:3 }
-  - cmd: python ..\deps\llvm\win-X86_64\build.py clean
-  - ps: if (-not((Test-Path("../deps/gtest/win-X86_64/lib")) -and (Test-Path("../deps/gtest/win-X86_64/include")))) { MSbuild deps\gtest.vcxproj /m:3 }
-  - cmd: python ..\deps\gtest\win-X86_64\build.py clean
-  - cmd: cmake .. -G "Visual Studio 14 2015 Win64" -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=win-X86_64
-  - cmd: MSbuild /p:Configuration=%configuration% ALL_BUILD.vcxproj /m:3
+  - cmd: cmake .. -G "%VS_string%" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DPLATFORM=%qbdi_plateform% -DEXAMPLES=TRUE %cmake_platform_args%
+  - ps: if (-not((Test-Path("../deps/llvm/$env:qbdi_plateform/lib")) -and (Test-Path("../deps/llvm/$env:qbdi_plateform/include")))) { MSbuild deps\llvm.vcxproj /p:Configuration=$env:configuration,Platform=$env:platform /m:3 }
+  - cmd: python ..\deps\llvm\build.py clean %qbdi_plateform%
+  - ps: if (-not((Test-Path("../deps/gtest/$env:qbdi_plateform/lib")) -and (Test-Path("../deps/gtest/$env:qbdi_plateform/include")))) { MSbuild deps\gtest.vcxproj /p:Configuration=$env:configuration,Platform=$env:platform /m:3 }
+  - cmd: python ..\deps\gtest\%qbdi_plateform%\build.py clean %qbdi_plateform%
+  - cmd: cmake .. -G "%VS_string%" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DPLATFORM=%qbdi_plateform% -DEXAMPLES=TRUE %cmake_platform_args%
+  - cmd: MSbuild /p:Configuration=%configuration%,Platform=%platform% ALL_BUILD.vcxproj /m:3
 
 test_script:
-  - cmd: ls c:\projects\qbdi\build\
-  - cmd: ls c:\projects\qbdi\build\test
-  - cmd: ls c:\projects\qbdi\build\test\Release
   - cmd: c:\projects\qbdi\build\test\Release\QBDItest
+
+after_build:
+  - cmd: cpack
+
+artifacts:
+  - name: Installer
+    path: 'build\QBDI-*.exe'

@@ -23,20 +23,14 @@
 
 #include "Platform.h"
 
-// ============================================================================
-// X86_64 Context
-// ============================================================================
-
-#if defined(QBDI_ARCH_X86_64)
-
-#define PRIRWORD PRIx64
-
 #ifdef __cplusplus
 namespace QBDI {
 #endif // __cplusplus
 
-typedef uint64_t rword;
-
+// ============================================================================
+// X86 Common
+// ============================================================================
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 typedef struct {
     uint16_t invalid :1,
              denorm  :1,
@@ -72,6 +66,119 @@ typedef struct {
     char    reg[10];
     char    rsrv[6];
 } MMSTReg;
+#endif
+
+// ============================================================================
+// X86 Context
+// ============================================================================
+
+#if defined(QBDI_ARCH_X86)
+
+#define PRIRWORD PRIx32
+
+typedef uint32_t rword;
+
+// SPHINX_X86_FPRSTATE_BEGIN
+/*! X86 Floating Point Register context.
+ */
+typedef struct {
+    union {
+        FPControl     fcw;      /* x87 FPU control word */
+        uint16_t      rfcw;
+    };
+    union {
+        FPStatus      fsw;      /* x87 FPU status word */
+        uint16_t      rfsw;
+    };
+    uint8_t           ftw;          /* x87 FPU tag word */
+    uint8_t           rsrv1;        /* reserved */
+    uint16_t          fop;          /* x87 FPU Opcode */
+    uint32_t          ip;           /* x87 FPU Instruction Pointer offset */
+    uint16_t          cs;           /* x87 FPU Instruction Pointer Selector */
+    uint16_t          rsrv2;        /* reserved */
+    uint32_t          dp;           /* x87 FPU Instruction Operand(Data) Pointer offset */
+    uint16_t          ds;           /* x87 FPU Instruction Operand(Data) Pointer Selector */
+    uint16_t          rsrv3;        /* reserved */
+    uint32_t          mxcsr;        /* MXCSR Register state */
+    uint32_t          mxcsrmask;    /* MXCSR mask */
+    MMSTReg           stmm0;        /* ST0/MM0   */
+    MMSTReg           stmm1;        /* ST1/MM1  */
+    MMSTReg           stmm2;        /* ST2/MM2  */
+    MMSTReg           stmm3;        /* ST3/MM3  */
+    MMSTReg           stmm4;        /* ST4/MM4  */
+    MMSTReg           stmm5;        /* ST5/MM5  */
+    MMSTReg           stmm6;        /* ST6/MM6  */
+    MMSTReg           stmm7;        /* ST7/MM7  */
+    char              xmm0[16];     /* XMM 0  */
+    char              xmm1[16];     /* XMM 1  */
+    char              xmm2[16];     /* XMM 2  */
+    char              xmm3[16];     /* XMM 3  */
+    char              xmm4[16];     /* XMM 4  */
+    char              xmm5[16];     /* XMM 5  */
+    char              xmm6[16];     /* XMM 6  */
+    char              xmm7[16];     /* XMM 7  */
+    char              reserved[14*16];
+    char              ymm0[16];     /* YMM0[255:128] */
+    char              ymm1[16];     /* YMM1[255:128] */
+    char              ymm2[16];     /* YMM2[255:128] */
+    char              ymm3[16];     /* YMM3[255:128] */
+    char              ymm4[16];     /* YMM4[255:128] */
+    char              ymm5[16];     /* YMM5[255:128] */
+    char              ymm6[16];     /* YMM6[255:128] */
+    char              ymm7[16];     /* YMM7[255:128] */
+} FPRState;
+// SPHINX_X86_FPRSTATE_END
+typedef char __compile_check_01__[sizeof(FPRState) == 640 ? 1 : -1];
+
+// SPHINX_X86_GPRSTATE_BEGIN
+/*! X86 General Purpose Register context.
+ */
+typedef struct {
+    rword eax;
+    rword ebx;
+    rword ecx;
+    rword edx;
+    rword esi;
+    rword edi;
+    rword ebp;
+    rword esp;
+    rword eip;
+    rword eflags;
+} GPRState;
+// SPHINX_X86_GPRSTATE_END
+
+static const char* const GPR_NAMES[] = {
+    "EAX",
+    "EBX",
+    "ECX",
+    "EDX",
+    "ESI",
+    "EDI",
+    "EBP",
+    "ESP",
+    "EIP",
+    "EFLAGS"
+};
+
+static const unsigned int NUM_GPR = 9;
+static const unsigned int AVAILABLE_GPR = 6;
+static const unsigned int REG_RETURN = 0;
+static const unsigned int REG_BP = 6;
+static const unsigned int REG_SP = 7;
+static const unsigned int REG_PC = 8;
+
+#endif // QBDI_ARCH_X86
+
+
+// ============================================================================
+// X86_64 Context
+// ============================================================================
+
+#if defined(QBDI_ARCH_X86_64)
+
+#define PRIRWORD PRIx64
+
+typedef uint64_t rword;
 
 // SPHINX_X86_64_FPRSTATE_BEGIN
 /*! X86_64 Floating Point Register context.
@@ -195,10 +302,6 @@ static const unsigned int REG_BP = 14;
 static const unsigned int REG_SP = 15;
 static const unsigned int REG_PC = 16;
 
-#ifdef __cplusplus
-}
-#endif // __cplusplus
-
 #endif // QBDI_ARCH_X86_64
 
 // ============================================================================
@@ -208,10 +311,6 @@ static const unsigned int REG_PC = 16;
 #if defined(QBDI_ARCH_ARM)
 
 #define PRIRWORD "x"
-
-#ifdef __cplusplus
-namespace QBDI {
-#endif // __cplusplus
 
 #define QBDI_NUM_FPR 32
 
@@ -278,17 +377,18 @@ static const unsigned int REG_SP = 13;
 static const unsigned int REG_LR = 14;
 static const unsigned int REG_PC = 15;
 
+#endif // QBDI_ARCH_ARM
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
 
-#endif // QBDI_ARCH_ARM
 
 #ifdef __cplusplus
 
-#define QBDI_GPR_GET(state, i) (((QBDI::rword*)state)[i])
+#define QBDI_GPR_GET(state, i) (reinterpret_cast<QBDI::rword*>(state)[i])
 
-#define QBDI_GPR_SET(state, i, v) (((QBDI::rword*)state)[i] = v)
+#define QBDI_GPR_SET(state, i, v) (reinterpret_cast<QBDI::rword*>(state)[i] = v)
 
 #else
 

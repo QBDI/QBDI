@@ -2,4 +2,4 @@ QuarkslaB Dynamic binary Instrumentation (QBDI) is a custom, tailored, cross pla
 
 QBDI is still in an early stage of its development. It provides an engine able to execute arbitrary assembly code, and to insert instrumentation before and after instructions.
 
-Even if young, X86_64 support is quite good. ARM support is in progress but already sufficient to execute simple CLI program like ls or cat. X86 and AArch64 are planned, but currently unsupported.
+Even if young, x86-64 and x86 support is quite good. ARM support is in progress but already sufficient to execute simple CLI program like ls or cat. Thumb2 and AArch64 are planned.

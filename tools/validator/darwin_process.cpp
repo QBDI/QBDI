@@ -55,25 +55,25 @@ kern_return_t onBreakpoint(
 ) {
     kern_return_t kr;
     mach_msg_type_number_t count;
-    x86_thread_state64_t threadState;
+    THREAD_STATE threadState;
 
     pthread_mutex_lock(&STATUS_LOCK);
 
     if(exception == EXC_BREAKPOINT) {
         // Getting thread state
-        count = x86_THREAD_STATE64_COUNT;
-        kr = thread_get_state(thread, x86_THREAD_STATE64, (thread_state_t) &threadState, &count);
+        count = THREAD_STATE_COUNT;
+        kr = thread_get_state(thread, THREAD_STATE_ID, (thread_state_t) &threadState, &count);
         if(kr != KERN_SUCCESS) {
             LogError("DarwinProcess::onBreakpoint", "Failed to get thread state\n");
             exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
         }
 
         // x86 breakpoint quirk
-        threadState.__rip -= 1;
+        threadState.THREAD_STATE_PC -= 1;
 
         // Setting thread state
-        count = x86_THREAD_STATE64_COUNT;
-        kr = thread_set_state(thread, x86_THREAD_STATE64, (thread_state_t) &threadState, count);
+        count = THREAD_STATE_COUNT;
+        kr = thread_set_state(thread, THREAD_STATE_ID, (thread_state_t) &threadState, count);
         if(kr != KERN_SUCCESS) {
             LogError("DarwinProcess::onBreakpoint", "Failed to set thread state\n");
             exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
@@ -274,12 +274,12 @@ int DarwinProcess::waitForStatus() {
 
 void DarwinProcess::getProcessGPR(QBDI::GPRState *gprState) {
     kern_return_t kr;
-    x86_thread_state64_t threadState;
+    THREAD_STATE threadState;
     mach_msg_type_number_t count;
 
 
-    count = x86_THREAD_STATE64_COUNT;
-    kr = thread_get_state(this->mainThread, x86_THREAD_STATE64, (thread_state_t) &threadState, &count);
+    count = THREAD_STATE_COUNT;
+    kr = thread_get_state(this->mainThread, THREAD_STATE_ID, (thread_state_t) &threadState, &count);
     if(kr != KERN_SUCCESS) {
         LogError("DarwinProcess::getProcessGPR", "Failed to get GPR thread state: %s", mach_error_string(kr));
         exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
@@ -290,11 +290,11 @@ void DarwinProcess::getProcessGPR(QBDI::GPRState *gprState) {
 
 void DarwinProcess::getProcessFPR(QBDI::FPRState *fprState) {
     kern_return_t kr;
-    x86_float_state64_t floatState;
+    THREAD_STATE_FP floatState;
     mach_msg_type_number_t count;
 
-    count = x86_FLOAT_STATE64_COUNT;
-    kr = thread_get_state(this->mainThread, x86_FLOAT_STATE64, (thread_state_t) &floatState, &count);
+    count = THREAD_STATE_FP_COUNT;
+    kr = thread_get_state(this->mainThread, THREAD_STATE_FP_ID, (thread_state_t) &floatState, &count);
     if(kr != KERN_SUCCESS) {
         LogError("DarwinProcess::getProcessFPR", "Failed to get FPR thread state: %s", mach_error_string(kr));
         exit(QBDIPRELOAD_ERR_STARTUP_FAILED);
@@ -315,10 +315,10 @@ bool hasCrashed(int status) {
    return status == Status::Crashed;
 }
 
-void threadStateToGPRState(x86_thread_state64_t* ts, QBDI::GPRState* gprState) {
+void threadStateToGPRState(THREAD_STATE* ts, QBDI::GPRState* gprState) {
     return qbdipreload_threadCtxToGPRState((void*) ts, gprState);
 }
 
-void floatStateToFPRState(x86_float_state64_t* fs, QBDI::FPRState* fprState) {
+void floatStateToFPRState(THREAD_STATE_FP* fs, QBDI::FPRState* fprState) {
     return qbdipreload_floatCtxToFPRState((void*) fs, fprState);
 }

@@ -23,7 +23,7 @@
     #define QBDI_OS_WIN
     #define _QBDI_UNREACHABLE() __assume(0)
 
-    #if defined(_M_X86)
+    #if defined(_M_IX86)
         #define QBDI_ARCH_X86
         #define QBDI_BITS_32
     #elif defined(_M_X64)
@@ -71,10 +71,12 @@
 #if defined(_MSC_VER)
 # define QBDI_NOINLINE __declspec(noinline)
 # define QBDI_EXPORT __declspec(dllexport)
+# define QBDI_NOSTACKPROTECTOR
 # define _QBDI_FORCE_USE
 #else  // _MSC_VER
 # define QBDI_NOINLINE __attribute__((noinline))
 # define QBDI_EXPORT __attribute__ ((visibility ("default")))
+# define QBDI_NOSTACKPROTECTOR __attribute__((no_stack_protector))
 # define _QBDI_FORCE_USE __attribute__((__used__))
 #endif
 

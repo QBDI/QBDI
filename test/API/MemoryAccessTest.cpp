@@ -21,7 +21,7 @@
 #include "inttypes.h"
 
 #include "Platform.h"
-#include "Memory.h"
+#include "Memory.hpp"
 #include "Range.h"
 
 
@@ -167,7 +167,7 @@ void MemoryAccessTest::TearDown() {
 
 
 QBDI::VMAction checkArrayRead8(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* data) {
-    
+
     TestInfo* info = (TestInfo*) data;
     std::vector<QBDI::MemoryAccess> memaccesses = vm->getInstMemoryAccess();
     QBDI::Range<QBDI::rword> brange((QBDI::rword) info->buffer, ((QBDI::rword) info->buffer) + info->buffer_size);
@@ -185,7 +185,7 @@ QBDI::VMAction checkArrayRead8(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState,
 }
 
 QBDI::VMAction checkArrayRead16(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* data) {
-    
+
     TestInfo* info = (TestInfo*) data;
     std::vector<QBDI::MemoryAccess> memaccesses = vm->getInstMemoryAccess();
     QBDI::Range<QBDI::rword> brange((QBDI::rword) info->buffer, ((QBDI::rword) info->buffer) + info->buffer_size);
@@ -203,7 +203,7 @@ QBDI::VMAction checkArrayRead16(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState
 }
 
 QBDI::VMAction checkArrayRead32(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* data) {
-    
+
     TestInfo* info = (TestInfo*) data;
     std::vector<QBDI::MemoryAccess> memaccesses = vm->getInstMemoryAccess();
     QBDI::Range<QBDI::rword> brange((QBDI::rword) info->buffer, ((QBDI::rword) info->buffer) + info->buffer_size);
@@ -221,7 +221,7 @@ QBDI::VMAction checkArrayRead32(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState
 }
 
 QBDI::VMAction checkArrayWrite8(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* data) {
-    
+
     TestInfo* info = (TestInfo*) data;
     std::vector<QBDI::MemoryAccess> memaccesses = vm->getInstMemoryAccess();
     QBDI::Range<QBDI::rword> brange((QBDI::rword) info->buffer, ((QBDI::rword) info->buffer) + info->buffer_size);
@@ -239,7 +239,7 @@ QBDI::VMAction checkArrayWrite8(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState
 }
 
 QBDI::VMAction checkArrayWrite16(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* data) {
-    
+
     TestInfo* info = (TestInfo*) data;
     std::vector<QBDI::MemoryAccess> memaccesses = vm->getInstMemoryAccess();
     QBDI::Range<QBDI::rword> brange((QBDI::rword) info->buffer, ((QBDI::rword) info->buffer) + info->buffer_size);
@@ -257,7 +257,7 @@ QBDI::VMAction checkArrayWrite16(QBDI::VMInstanceRef vm, QBDI::GPRState* gprStat
 }
 
 QBDI::VMAction checkArrayWrite32(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* data) {
-    
+
     TestInfo* info = (TestInfo*) data;
     std::vector<QBDI::MemoryAccess> memaccesses = vm->getInstMemoryAccess();
     QBDI::Range<QBDI::rword> brange((QBDI::rword) info->buffer, ((QBDI::rword) info->buffer) + info->buffer_size);
@@ -275,7 +275,7 @@ QBDI::VMAction checkArrayWrite32(QBDI::VMInstanceRef vm, QBDI::GPRState* gprStat
 }
 
 QBDI::VMAction checkUnrolledRead(QBDI::VMInstanceRef vm, const QBDI::VMState* vmState, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* data) {
-    
+
     TestInfo* info = (TestInfo*) data;
     std::vector<QBDI::MemoryAccess> memaccesses = vm->getBBMemoryAccess();
     QBDI::Range<QBDI::rword> brange((QBDI::rword) info->buffer, ((QBDI::rword) info->buffer) + info->buffer_size);
@@ -293,7 +293,7 @@ QBDI::VMAction checkUnrolledRead(QBDI::VMInstanceRef vm, const QBDI::VMState* vm
 }
 
 QBDI::VMAction checkUnrolledWrite(QBDI::VMInstanceRef vm, const QBDI::VMState* vmState, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* data) {
-    
+
     TestInfo* info = (TestInfo*) data;
     std::vector<QBDI::MemoryAccess> memaccesses = vm->getBBMemoryAccess();
     QBDI::Range<QBDI::rword> brange((QBDI::rword) info->buffer, ((QBDI::rword) info->buffer) + info->buffer_size);
@@ -311,7 +311,7 @@ QBDI::VMAction checkUnrolledWrite(QBDI::VMInstanceRef vm, const QBDI::VMState* v
 }
 
 QBDI::VMAction readSnooper(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* data) {
-    
+
     std::vector<QBDI::MemoryAccess> memaccesses = vm->getInstMemoryAccess();
     for(const QBDI::MemoryAccess& memaccess : memaccesses) {
         if(memaccess.type == QBDI::MEMORY_READ) {
@@ -340,7 +340,7 @@ QBDI::VMAction writeSnooper(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState, QB
 }
 
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, Read8) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_Read8) {
@@ -348,7 +348,7 @@ TEST_F(MemoryAccessTest, DISABLED_Read8) {
     char buffer[] = "p0p30fd0p3";
     size_t buffer_size = sizeof(buffer) / sizeof(char);
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
-    
+
     vm->addMemAccessCB(QBDI::MEMORY_READ, checkArrayRead8, &info);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer, (QBDI::rword) buffer_size});
@@ -360,7 +360,7 @@ TEST_F(MemoryAccessTest, DISABLED_Read8) {
     ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, Read16) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_Read16) {
@@ -368,7 +368,7 @@ TEST_F(MemoryAccessTest, DISABLED_Read16) {
     uint16_t buffer[] = {44595, 59483, 57377, 31661, 846, 56570, 46925, 62955, 25481, 41095};
     size_t buffer_size = sizeof(buffer) / sizeof(uint16_t);
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
-    
+
     vm->addMemAccessCB(QBDI::MEMORY_READ, checkArrayRead16, &info);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer, (QBDI::rword) buffer_size});
@@ -380,7 +380,7 @@ TEST_F(MemoryAccessTest, DISABLED_Read16) {
     ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, Read32) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_Read32) {
@@ -388,7 +388,7 @@ TEST_F(MemoryAccessTest, DISABLED_Read32) {
     uint32_t buffer[] = {3531902336, 1974345459, 1037124602, 2572792182, 3451121073, 4105092976, 2050515100, 2786945221, 1496976643, 515521533};
     size_t buffer_size = sizeof(buffer) / sizeof(uint32_t);
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
-    
+
     vm->addMemAccessCB(QBDI::MEMORY_READ, checkArrayRead32, &info);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer, (QBDI::rword) buffer_size});
@@ -400,7 +400,7 @@ TEST_F(MemoryAccessTest, DISABLED_Read32) {
     ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, Write8) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_Write8) {
@@ -408,7 +408,7 @@ TEST_F(MemoryAccessTest, DISABLED_Write8) {
     const size_t buffer_size = 10;
     uint8_t buffer[buffer_size];
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
-    
+
     vm->addMemAccessCB(QBDI::MEMORY_WRITE, checkArrayWrite8, &info);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer, (QBDI::rword) buffer_size});
@@ -420,7 +420,7 @@ TEST_F(MemoryAccessTest, DISABLED_Write8) {
     ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, Write16) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_Write16) {
@@ -428,7 +428,7 @@ TEST_F(MemoryAccessTest, DISABLED_Write16) {
     const size_t buffer_size = 10;
     uint16_t buffer[buffer_size];
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
-    
+
     vm->addMemAccessCB(QBDI::MEMORY_WRITE, checkArrayWrite16, &info);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer, (QBDI::rword) buffer_size});
@@ -440,7 +440,7 @@ TEST_F(MemoryAccessTest, DISABLED_Write16) {
     ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, Write32) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_Write32) {
@@ -448,7 +448,7 @@ TEST_F(MemoryAccessTest, DISABLED_Write32) {
     const size_t buffer_size = 10;
     uint32_t buffer[buffer_size];
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
-    
+
     vm->addMemAccessCB(QBDI::MEMORY_WRITE, checkArrayWrite32, &info);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer, (QBDI::rword) buffer_size});
@@ -460,7 +460,7 @@ TEST_F(MemoryAccessTest, DISABLED_Write32) {
     ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, BasicBlockRead) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_BasicBlockRead) {
@@ -468,7 +468,7 @@ TEST_F(MemoryAccessTest, DISABLED_BasicBlockRead) {
     char buffer[] = "p0p30fd0p3";
     size_t buffer_size = sizeof(buffer) / sizeof(char);
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
-    
+
     vm->recordMemoryAccess(QBDI::MEMORY_READ);
     vm->addVMEventCB(QBDI::VMEvent::BASIC_BLOCK_EXIT, checkUnrolledRead, &info);
 
@@ -481,7 +481,7 @@ TEST_F(MemoryAccessTest, DISABLED_BasicBlockRead) {
     ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, BasicBlockWrite) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_BasicBlockWrite) {
@@ -489,7 +489,7 @@ TEST_F(MemoryAccessTest, DISABLED_BasicBlockWrite) {
     const size_t buffer_size = 11;
     char buffer[buffer_size];
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
-    
+
     vm->recordMemoryAccess(QBDI::MEMORY_WRITE);
     vm->addVMEventCB(QBDI::VMEvent::BASIC_BLOCK_EXIT, checkUnrolledWrite, &info);
 
@@ -502,7 +502,7 @@ TEST_F(MemoryAccessTest, DISABLED_BasicBlockWrite) {
     ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, ReadRange) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_ReadRange) {
@@ -510,7 +510,7 @@ TEST_F(MemoryAccessTest, DISABLED_ReadRange) {
     uint32_t buffer[] = {3531902336, 1974345459, 1037124602, 2572792182, 3451121073, 4105092976, 2050515100, 2786945221, 1496976643, 515521533};
     size_t buffer_size = sizeof(buffer) / sizeof(uint32_t);
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
-    
+
     vm->addMemRangeCB((QBDI::rword) buffer, (QBDI::rword) (buffer + buffer_size), QBDI::MEMORY_READ, checkArrayRead32, &info);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer, (QBDI::rword) buffer_size});
@@ -522,7 +522,7 @@ TEST_F(MemoryAccessTest, DISABLED_ReadRange) {
     ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, WriteRange) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_WriteRange) {
@@ -530,7 +530,7 @@ TEST_F(MemoryAccessTest, DISABLED_WriteRange) {
     const size_t buffer_size = 10;
     uint32_t buffer[buffer_size];
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
-    
+
     vm->addMemRangeCB((QBDI::rword) buffer, (QBDI::rword) (buffer + buffer_size), QBDI::MEMORY_WRITE, checkArrayWrite32, &info);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer, (QBDI::rword) buffer_size});
@@ -542,7 +542,7 @@ TEST_F(MemoryAccessTest, DISABLED_WriteRange) {
     ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, ReadWriteRange) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_ReadWriteRange) {
@@ -572,7 +572,7 @@ TEST_F(MemoryAccessTest, DISABLED_ReadWriteRange) {
     ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
 }
 
-#if defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 TEST_F(MemoryAccessTest, MemorySnooping) {
 #else
 TEST_F(MemoryAccessTest, DISABLED_MemorySnooping) {

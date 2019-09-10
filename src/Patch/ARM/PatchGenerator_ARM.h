@@ -33,11 +33,11 @@ class GetOperand : public PatchGenerator, public AutoAlloc<PatchGenerator, GetOp
 
 public:
 
-    /*! Obtain the value of the operand op and copy it's value in a temporary. If op is an immediate 
+    /*! Obtain the value of the operand op and copy it's value in a temporary. If op is an immediate
      * the immediate value is copied, if op is a register the register value is copied.
-     * 
+     *
      * @param[in] temp   A temporary where the value will be copied.
-     * @param[in] op     The operand index (relative to the instruction LLVM MCInst representation) 
+     * @param[in] op     The operand index (relative to the instruction LLVM MCInst representation)
      *                   to be copied.
     */
     GetOperand(Temp temp, Operand op): temp(temp), op(op) {}
@@ -49,21 +49,7 @@ public:
      * LDR REG32 temp, MEM32 Shadow(IMM32 op)
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-
-        if(inst->getOperand(op).isImm()) {
-            return {Ldr(temp_manager->getRegForTemp(temp), 
-                       Constant(inst->getOperand(op).getImm()))
-            };
-        }
-        else if(inst->getOperand(op).isReg()) {
-            return {NoReloc(mov(temp_manager->getRegForTemp(temp), inst->getOperand(op).getReg()))};
-        }
-        else {
-            LogError("GetOperand::generate", "Invalid operand type for GetOperand()");
-            return {};
-        }
-    }
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 };
 
 class GetConstant : public PatchGenerator, public AutoAlloc<PatchGenerator, GetConstant> {
@@ -85,10 +71,7 @@ public:
      * LDR REG32 temp, MEM32 Shadow(IMM32 op)
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-
-        return{Ldr(temp_manager->getRegForTemp(temp), Constant(cst))};
-    }
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 };
 
 class GetPCOffset : public PatchGenerator, public AutoAlloc<PatchGenerator, GetPCOffset> {
@@ -103,7 +86,7 @@ class GetPCOffset : public PatchGenerator, public AutoAlloc<PatchGenerator, GetP
 
 public:
 
-    /*! Interpret a constant as a PC relative offset and copy it in a temporary. It can be used to 
+    /*! Interpret a constant as a PC relative offset and copy it in a temporary. It can be used to
      * obtain the current value of PC by using a constant of 0.
      *
      * @param[in] temp     A temporary where the value will be copied.
@@ -111,11 +94,11 @@ public:
     */
     GetPCOffset(Temp temp, Constant cst): temp(temp), cst(cst), op(0), type(ConstantType) {}
 
-    /*! Interpret an operand as a PC relative offset and copy it in a temporary. It can be used to 
+    /*! Interpret an operand as a PC relative offset and copy it in a temporary. It can be used to
      * obtain jump/call targets or relative memory access addresses.
      *
      * @param[in] temp     A temporary where the value will be copied.
-     * @param[in] op       The  operand index (relative to the instruction LLVM MCInst 
+     * @param[in] op       The  operand index (relative to the instruction LLVM MCInst
      *                     representation) to be used.
     */
     GetPCOffset(Temp temp, Operand op): temp(temp), cst(0), op(op), type(OperandType) {}
@@ -134,31 +117,7 @@ public:
      *
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-
-        if(type == ConstantType) {
-            return{Ldr(temp_manager->getRegForTemp(temp), Constant(address + 8 + cst))};
-        }
-        else if(type == OperandType) {
-            if(inst->getOperand(op).isImm()) {
-                return {Ldr(
-                    temp_manager->getRegForTemp(temp), 
-                    Constant(address + 8 + inst->getOperand(op).getImm()))
-                };
-            }
-            else if(inst->getOperand(op).isReg()) {
-                return {
-                    Ldr(temp_manager->getRegForTemp(temp), Constant(address + 8)),
-                    NoReloc(add(temp_manager->getRegForTemp(temp), inst->getOperand(op).getReg()))
-                };
-            }
-            else {
-                LogError("GePCOffset::generate", "Invalid operand type for GetOperand()");
-                return {};
-            }
-        }
-        _QBDI_UNREACHABLE();
-    }
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 };
 
 
@@ -181,10 +140,7 @@ public:
      * LDR REG32 temp, MEM32 Shadow(IMM32 instID)
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-
-        return {InstId(ldri12(temp_manager->getRegForTemp(temp), Reg(REG_PC), 0), 2)};
-    }
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 };
 
 class CopyReg : public PatchGenerator, public AutoAlloc<PatchGenerator, CopyReg> {
@@ -205,10 +161,7 @@ public:
      * MOV REG32 temp, REG32 reg
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-
-        return {NoReloc(mov(temp_manager->getRegForTemp(temp), reg))};
-    }
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 };
 
 class WriteTemp: public PatchGenerator, public AutoAlloc<PatchGenerator, WriteTemp> {
@@ -230,14 +183,9 @@ public:
      * STR MEM32 DataBlock[offset], REG32 temp
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 
-        return {Str(temp_manager->getRegForTemp(temp), offset)};
-    }
-
-    bool modifyPC() {
-        return offset == Offset(Reg(REG_PC));
-    }
+    bool modifyPC() {return offset == Offset(Reg(REG_PC));}
 };
 
 class SaveReg: public PatchGenerator, public AutoAlloc<PatchGenerator, SaveReg>,
@@ -261,10 +209,7 @@ public:
      * STR MEM32 DataBlock[offset], REG32 reg
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-
-        return {Str(reg, offset)};
-    }
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 };
 
 class LoadReg: public PatchGenerator, public AutoAlloc<PatchGenerator, LoadReg>,
@@ -288,17 +233,14 @@ public:
      * LDR REG32 reg, MEM32 DataBlock[offset]
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-
-        return {Ldr(reg, offset)};
-    }
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 };
 
-class JmpEpilogue : public PatchGenerator, public AutoAlloc<PatchGenerator, JmpEpilogue>, 
+class JmpEpilogue : public PatchGenerator, public AutoAlloc<PatchGenerator, JmpEpilogue>,
     public PureEval<JmpEpilogue> {
 
 public:
-    
+
     /*! Generate a jump instruction which target the epilogue of the ExecBlock.
     */
     JmpEpilogue() {}
@@ -308,10 +250,7 @@ public:
      * B Offset(Epilogue)
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-
-        return {EpilogueRel(b(0), 0, -8)};
-    }
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 };
 
 class SimulateLink : public PatchGenerator, public AutoAlloc<PatchGenerator, SimulateLink> {
@@ -333,14 +272,7 @@ public:
      * MOV REG32 LR, REG32 temp
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-        RelocatableInst::SharedPtrVec patch;
-
-        append(patch, GetPCOffset(Temp(0), Constant(-4)).generate(inst, address, instSize, temp_manager, nullptr));
-        patch.push_back(NoReloc(mov(Reg(REG_LR), temp_manager->getRegForTemp(temp))));
-
-        return patch;
-    }
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 };
 
 class SimulatePopPC : public PatchGenerator, public AutoAlloc<PatchGenerator, SimulatePopPC> {
@@ -364,22 +296,9 @@ public:
      *
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-        RelocatableInst::SharedPtrVec patch;
-        int64_t cond = inst->getOperand(2).getImm();
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
 
-        append(patch, GetPCOffset(temp, Constant(-4)).generate(inst, address, instSize, temp_manager, nullptr));
-        patch.push_back(NoReloc(
-            pop(temp_manager->getRegForTemp(temp), cond)
-        ));
-        append(patch, WriteTemp(temp, Offset(Reg(REG_PC))).generate(inst, address, instSize, temp_manager, nullptr));
-
-        return patch;
-    }
-
-    bool modifyPC() {
-        return true;
-    }
+    bool modifyPC() {return true;}
 };
 
 }

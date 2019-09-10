@@ -367,6 +367,11 @@ if (Process.arch === 'x64') {
     var REG_RETURN = "R0";
     var REG_PC = "PC";
     var REG_SP = "SP";
+} else if (Process.arch === 'ia32'){
+    var GPR_NAMES = ["EAX","EBX","ECX","EDX","ESI","EDI","EBP","ESP","EIP","EFLAGS"];
+    var REG_RETURN = "EAX";
+    var REG_PC = "EIP";
+    var REG_SP = "ESP";
 }
 
 /**data:VMError

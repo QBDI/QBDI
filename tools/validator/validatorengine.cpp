@@ -50,7 +50,7 @@ LogEntry::~LogEntry() {
 std::pair<QBDI::rword, QBDI::rword> getValidOffsetRange(QBDI::rword address, pid_t pid) {
     std::vector<QBDI::MemoryMap> maps = QBDI::getRemoteProcessMaps(pid);
     for(QBDI::MemoryMap &m : maps) {
-        if(m.range.start <= address && m.range.end > address) {
+        if(m.range.contains(address)) {
             return std::make_pair(address - m.range.start, m.range.end - address - 1);
         }
     }
@@ -76,9 +76,51 @@ ssize_t ValidatorEngine::logEntryLookup(uint64_t execID) {
 }
 
 void ValidatorEngine::outputLogEntry(const LogEntry& entry) {
-    fprintf(stderr, "ExecID: %" PRIu64 " \t%016" PRIRWORD ": %s\n", entry.execID, entry.address, entry.disassembly);
-    if(entry.transfer != 0)
-        fprintf(stderr, "\tCaused a transfer to address 0x%" PRIRWORD "\n", entry.transfer);
+    static QBDI::MemoryMap *module = nullptr;
+    static std::vector<QBDI::MemoryMap> memoryModule;
+
+    // try to find module name of current address
+    if (module != nullptr)
+        if (!module->range.contains(entry.address))
+            module = nullptr;
+
+    if (module == nullptr)
+        for (auto &m : memoryModule) {
+            if (m.range.contains(entry.address)) {
+                module = &m;
+                break;
+            }
+        }
+
+    if (module == nullptr) {
+        memoryModule.clear();
+        for (auto &m : QBDI::getRemoteProcessMaps(instrumented)) {
+            if (m.permission & QBDI::PF_EXEC) {
+                memoryModule.push_back(m);
+            }
+        }
+        for (auto &m : memoryModule) {
+            if (m.range.contains(entry.address)) {
+                module = &m;
+                break;
+            }
+        }
+    }
+
+    fprintf(stderr, "ExecID: %" PRIu64 " \t%25s 0x%016" PRIRWORD ": %s\n", entry.execID,
+            (module != nullptr) ? module->name.c_str() : "",
+            entry.address, entry.disassembly);
+    if(entry.transfer != 0) {
+        QBDI::MemoryMap *transfer_module = nullptr;
+        for (auto &m : memoryModule) {
+            if (m.range.contains(entry.transfer)) {
+                transfer_module = &m;
+                break;
+            }
+        }
+        fprintf(stderr, "\tCaused a transfer to address 0x%" PRIRWORD " %s\n", entry.transfer,
+                (transfer_module != nullptr) ? transfer_module->name.c_str() : "");
+    }
     for(ssize_t eID : entry.errorIDs) {
         if(errors[eID].severity == ErrorSeverity::NoImpact)
             fprintf(stderr, "\tError with no impact ");
@@ -211,8 +253,8 @@ template<typename T> ssize_t ValidatorEngine::diffSPR(const char* regName, T rea
     return diff<QBDI::rword>(regName, real, qbdi);
 }
 
-void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, const char* disassembly, 
-                        const QBDI::GPRState *gprStateDbg, const QBDI::FPRState *fprStateDbg, 
+void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, const char* disassembly,
+                        const QBDI::GPRState *gprStateDbg, const QBDI::FPRState *fprStateDbg,
                         const QBDI::GPRState *gprStateInstr, const QBDI::FPRState *fprStateInstr) {
     ssize_t e;
 
@@ -277,7 +319,18 @@ void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, 
         DIFF_S("s30", fprStateDbg->s[30], fprStateInstr->s[30]);
         DIFF_S("s31", fprStateDbg->s[31], fprStateInstr->s[31]);
         #undef DIFF_S
-        #elif defined(QBDI_ARCH_X86_64)
+        #elif defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+        #if defined(QBDI_ARCH_X86)
+        // GPR
+        if((e = diffGPR(0, gprStateDbg->eax, gprStateInstr->eax))       != -1) curLogEntry->errorIDs.push_back(e);
+        if((e = diffGPR(1, gprStateDbg->ebx, gprStateInstr->ebx))       != -1) curLogEntry->errorIDs.push_back(e);
+        if((e = diffGPR(2, gprStateDbg->ecx, gprStateInstr->ecx))       != -1) curLogEntry->errorIDs.push_back(e);
+        if((e = diffGPR(3, gprStateDbg->edx, gprStateInstr->edx))       != -1) curLogEntry->errorIDs.push_back(e);
+        if((e = diffGPR(4, gprStateDbg->esi, gprStateInstr->esi))       != -1) curLogEntry->errorIDs.push_back(e);
+        if((e = diffGPR(5, gprStateDbg->edi, gprStateInstr->edi))       != -1) curLogEntry->errorIDs.push_back(e);
+        if((e = diffGPR(6, gprStateDbg->ebp, gprStateInstr->ebp))       != -1) curLogEntry->errorIDs.push_back(e);
+        if((e = diffGPR(7, gprStateDbg->esp, gprStateInstr->esp))       != -1) curLogEntry->errorIDs.push_back(e);
+        #else
         // GPR
         if((e = diffGPR(0,  gprStateDbg->rax, gprStateInstr->rax))       != -1) curLogEntry->errorIDs.push_back(e);
         if((e = diffGPR(1,  gprStateDbg->rbx, gprStateInstr->rbx))       != -1) curLogEntry->errorIDs.push_back(e);
@@ -295,6 +348,7 @@ void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, 
         if((e = diffGPR(13, gprStateDbg->r15, gprStateInstr->r15))       != -1) curLogEntry->errorIDs.push_back(e);
         if((e = diffGPR(14, gprStateDbg->rbp, gprStateInstr->rbp))       != -1) curLogEntry->errorIDs.push_back(e);
         if((e = diffGPR(15, gprStateDbg->rsp, gprStateInstr->rsp))       != -1) curLogEntry->errorIDs.push_back(e);
+        #endif // QBDI_ARCH_X86
         // FPR
         union {
             QBDI::MMSTReg st;
@@ -334,7 +388,7 @@ void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, 
             if((e = diffSPR(name "[0:32]",   xmmreg1.m0, xmmreg2.m0))  != -1) curLogEntry->errorIDs.push_back(e); \
             if((e = diffSPR(name "[32:64]",  xmmreg1.m1, xmmreg2.m1))  != -1) curLogEntry->errorIDs.push_back(e); \
             if((e = diffSPR(name "[64:96]",  xmmreg1.m2, xmmreg2.m2))  != -1) curLogEntry->errorIDs.push_back(e); \
-            if((e = diffSPR(name "[96:128]", xmmreg1.m3, xmmreg2.m3))  != -1) curLogEntry->errorIDs.push_back(e); 
+            if((e = diffSPR(name "[96:128]", xmmreg1.m3, xmmreg2.m3))  != -1) curLogEntry->errorIDs.push_back(e);
         DIFF_XMM("xmm0", fprStateDbg->xmm0, fprStateInstr->xmm0);
         DIFF_XMM("xmm1", fprStateDbg->xmm1, fprStateInstr->xmm1);
         DIFF_XMM("xmm2", fprStateDbg->xmm2, fprStateInstr->xmm2);
@@ -343,6 +397,7 @@ void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, 
         DIFF_XMM("xmm5", fprStateDbg->xmm5, fprStateInstr->xmm5);
         DIFF_XMM("xmm6", fprStateDbg->xmm6, fprStateInstr->xmm6);
         DIFF_XMM("xmm7", fprStateDbg->xmm7, fprStateInstr->xmm7);
+        #if defined(QBDI_ARCH_X86_64)
         DIFF_XMM("xmm8", fprStateDbg->xmm8, fprStateInstr->xmm8);
         DIFF_XMM("xmm9", fprStateDbg->xmm9, fprStateInstr->xmm9);
         DIFF_XMM("xmm10", fprStateDbg->xmm10, fprStateInstr->xmm10);
@@ -351,6 +406,7 @@ void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, 
         DIFF_XMM("xmm13", fprStateDbg->xmm13, fprStateInstr->xmm13);
         DIFF_XMM("xmm14", fprStateDbg->xmm14, fprStateInstr->xmm14);
         DIFF_XMM("xmm15", fprStateDbg->xmm15, fprStateInstr->xmm15);
+        #endif // QBDI_ARCH_X86_64
         // FIXME
 #if 0
         DIFF_XMM("ymm0", fprStateDbg->ymm0, fprStateInstr->ymm0);
@@ -392,7 +448,7 @@ void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, 
             }
         }
     }
-    
+
     if(lastLogEntry != nullptr) {
         if(verbosity == LogVerbosity::Full) {
             outputLogEntry(*lastLogEntry);

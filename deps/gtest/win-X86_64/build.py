@@ -38,7 +38,9 @@ elif sys.argv[1] == "build":
     os.mkdir("build")
     subprocess.check_call(["cmake", "../googletest-release-" + VERSION,
                            "-G", "Visual Studio 14 2015 Win64",
+                           "-Thost=x64",
                            "-DCMAKE_BUILD_TYPE=Release",
+                           "-DCMAKE_CXX_FLAGS=/D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING",
                            "-Dgtest_force_shared_crt=On"], cwd="build")
     subprocess.check_call(["MSBuild.exe", "ALL_BUILD.vcxproj",
                            "/p:Configuration=Release,Platform=X64"],

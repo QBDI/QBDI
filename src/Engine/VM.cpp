@@ -18,7 +18,7 @@
 #include "VM.h"
 #include "Range.h"
 #include "Errors.h"
-#include "Memory.h"
+#include "Memory.hpp"
 
 #include "Engine/Engine.h"
 #include "Patch/InstrRules.h"
@@ -37,7 +37,7 @@ struct MemCBInfo {
 };
 
 VMAction memReadGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
-    std::vector<std::pair<uint32_t, MemCBInfo>>* memCBInfos = (std::vector<std::pair<uint32_t, MemCBInfo>>*) data;
+    std::vector<std::pair<uint32_t, MemCBInfo>>* memCBInfos = static_cast<std::vector<std::pair<uint32_t, MemCBInfo>>*>(data);
     std::vector<MemoryAccess> memAccesses = vm->getInstMemoryAccess();
     VMAction action = VMAction::CONTINUE;
     for(const MemoryAccess& memAccess : memAccesses) {
@@ -61,7 +61,7 @@ VMAction memReadGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, v
 }
 
 VMAction memWriteGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
-    std::vector<std::pair<uint32_t, MemCBInfo>>* memCBInfos = (std::vector<std::pair<uint32_t, MemCBInfo>>*) data;
+    std::vector<std::pair<uint32_t, MemCBInfo>>* memCBInfos = static_cast<std::vector<std::pair<uint32_t, MemCBInfo>>*>(data);
     std::vector<MemoryAccess> memAccesses = vm->getInstMemoryAccess();
     VMAction action = VMAction::CONTINUE;
     for(const MemoryAccess& memAccess : memAccesses) {
@@ -172,9 +172,9 @@ bool VM::callA(rword* retval, rword function, uint32_t argNum, const rword* args
         return false;
     }
     // push arguments in current context
-    qbdi_simulateCallA(state, FAKE_RET_ADDR, argNum, args);
+    simulateCallA(state, FAKE_RET_ADDR, argNum, args);
     // call function
-    bool res = run(function, (rword) FAKE_RET_ADDR);
+    bool res = run(function, FAKE_RET_ADDR);
     // get return value from current state
     if (retval != nullptr) {
         *retval = QBDI_GPR_GET(state, REG_RETURN);
@@ -183,7 +183,7 @@ bool VM::callA(rword* retval, rword function, uint32_t argNum, const rword* args
 }
 
 bool VM::call(rword* retval, rword function, const std::vector<rword>& args) {
-    return this->callA(retval, function, args.size(), args.data()); 
+    return this->callA(retval, function, args.size(), args.data());
 }
 
 bool VM::callV(rword* retval, rword function, uint32_t argNum, va_list ap) {
@@ -191,7 +191,7 @@ bool VM::callV(rword* retval, rword function, uint32_t argNum, va_list ap) {
     for(uint32_t i = 0; i < argNum; i++) {
         args[i] = va_arg(ap, rword);
     }
-    
+
     bool res = this->callA(retval, function, argNum, args);
 
     delete[] args;
@@ -338,7 +338,7 @@ const InstAnalysis* VM::getInstAnalysis(AnalysisType type) {
 }
 
 bool VM::recordMemoryAccess(MemoryAccessType type) {
-#ifdef QBDI_ARCH_X86_64
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
     if(type & MEMORY_READ && !(memoryLoggingLevel & MEMORY_READ)) {
         memoryLoggingLevel |= MEMORY_READ;
         addInstrRule(InstrRule(

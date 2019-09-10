@@ -284,7 +284,7 @@ def alignedAlloc(size, align):
     """Allocate a block of memory of a specified sized with an aligned base address.
 
         :param size: Allocation size in bytes.
-        :param align: Base address alignement in bytes.
+        :param align: Base address alignment in bytes.
 
         :returns: Pointer to the allocated memory (as a long) or NULL in case an error was encountered.
     """
@@ -304,7 +304,7 @@ def allocateVirtualStack(ctx, stackSize):
         :param ctx: GPRState which will be setup to use the new stack.
         :param stackSize: Size of the stack to be allocated.
 
-        :returns: A tuple (bool, stack) where 'bool' is true if stack allocation was successfull. And 'stack' the newly allocated stack pointer.
+        :returns: A tuple (bool, stack) where 'bool' is true if stack allocation was successful. And 'stack' the newly allocated stack pointer.
     """
     pass
 
@@ -327,8 +327,9 @@ def getModuleNames():
     pass
 
 
-def getCurrentProcessMaps():
+def getCurrentProcessMaps(full_path=False):
     """ Get a list of all the memory maps (regions) of the current process.
+        :param full_path: Return the full path of the module in name field
 
         :returns: A list of :py:class:`MemoryMap` object.
     """
@@ -437,6 +438,8 @@ class OperandAnalysis:
     # Common fields
     type = 0
     """ Operand type (pyqbdi.OPERAND_IMM, pyqbdi.OPERAND_REG, pyqbdi.OPERAND_PRED) """
+    flag = 0
+    """ Operand flags (pyqbdi.OPERANDFLAG_ADDR, pyqbdi.OPERANDFLAG_PCREL, pyqbdi.OPERANDFLAG_UNDEFINED_EFFECT) """
     value = 0
     """ Operand value (if immediate), or register Id """
     size = 0

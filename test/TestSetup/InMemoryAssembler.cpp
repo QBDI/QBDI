@@ -17,13 +17,12 @@
  */
 #include "Platform.h"
 #include "Utility/System.h"
+#include "llvm/MC/MCObjectWriter.h"
 
 #include "TestSetup/InMemoryAssembler.h"
 
 InMemoryObject::InMemoryObject(const char* source, const char* cpu, const char** mattrs) {
-    llvm::MCAsmBackend*                      MAB;
     std::unique_ptr<llvm::MCAsmInfo>         MAI;
-    llvm::MCCodeEmitter*                     MCE;
     std::unique_ptr<llvm::MCContext>         MCTX;
     std::unique_ptr<llvm::MCInstrInfo>       MCII;
     std::unique_ptr<llvm::MCObjectFileInfo>  MOFI;
@@ -64,25 +63,29 @@ InMemoryObject::InMemoryObject(const char* source, const char* cpu, const char**
     MCTX = std::unique_ptr<llvm::MCContext>(
         new llvm::MCContext(MAI.get(), MRI.get(), MOFI.get(), &SrcMgr)
     );
-    MOFI->InitMCObjectFileInfo(processTriple, llvm::Reloc::Static, llvm::CodeModel::Default, *MCTX);
+    MOFI->InitMCObjectFileInfo(processTriple, false, *MCTX);
     MCII = std::unique_ptr<llvm::MCInstrInfo>(processTarget->createMCInstrInfo());
     MSTI = std::unique_ptr<llvm::MCSubtargetInfo>(
       processTarget->createMCSubtargetInfo(tripleName, cpu, featuresStr)
     );
-    MAB = processTarget->createMCAsmBackend(*MRI, tripleName, cpu, llvm::MCTargetOptions());
-    MCE = processTarget->createMCCodeEmitter(*MCII, *MRI, *MCTX);
+    auto MAB = std::unique_ptr<llvm::MCAsmBackend>(processTarget->createMCAsmBackend(*MSTI, *MRI, llvm::MCTargetOptions()));
+    auto MCE = std::unique_ptr<llvm::MCCodeEmitter>(processTarget->createMCCodeEmitter(*MCII, *MRI, *MCTX));
    
     // Wrap output object into raw_ostream
     //raw_pwrite_string_ostream rpsos(objectStr);
     llvm::raw_svector_ostream rsos(objectVector);
+    auto objectWriter = std::unique_ptr<llvm::MCObjectWriter>(
+        MAB->createObjectWriter(rsos)
+     );
+
     // Add input to the SourceMgr
     SrcMgr.AddNewSourceBuffer(
         llvm::MemoryBuffer::getMemBuffer(llvm::StringRef(source)),
         llvm::SMLoc()
     );
     // Set MCStreamer as a MCObjectStreamer
-    mcStr.reset(processTarget->createMCObjectStreamer(MSTI->getTargetTriple(), *MCTX, *MAB, 
-                                                      rsos, MCE, *MSTI, true, false, false));
+    mcStr.reset(processTarget->createMCObjectStreamer(MSTI->getTargetTriple(), *MCTX, std::move(MAB), 
+                                                      std::move(objectWriter), std::move(MCE), *MSTI, true, false, false));
     // Create the assembly parsers
     llvm::MCAsmParser* parser = llvm::createMCAsmParser(SrcMgr, *MCTX, *mcStr, *MAI);
     llvm::MCTargetAsmParser* tap = 

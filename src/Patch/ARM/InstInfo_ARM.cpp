@@ -45,4 +45,8 @@ bool isStackWrite(const llvm::MCInst* inst) {
     return false;
 }
 
+unsigned getImmediateSize(const llvm::MCInst* inst, const llvm::MCInstrDesc* desc) {
+    return sizeof(rword);
+}
+
 };

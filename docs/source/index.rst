@@ -18,11 +18,7 @@ Contents
 
    User Documentation <user>
    Developer Documentation <dev>
-
-Changelog
----------
-
-.. include:: ../../CHANGELOG
+   Changelog <changelog>
 
 Indices and Tables
 ==================

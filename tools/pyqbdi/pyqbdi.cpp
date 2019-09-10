@@ -268,22 +268,26 @@ namespace QBDI {
       /* OperandAnalysis attributes */
       static PyObject* OperandAnalysis_getattro(PyObject* self, PyObject* name) {
         try {
-          if (std::string(PyString_AsString(name)) == "type")
+          std::string str_name = std::string(PyString_AsString(name));
+          if (str_name == "type")
             return PyLong_FromLong(PyOperandAnalysis_AsOperandAnalysis(self)->type);
 
-          else if (std::string(PyString_AsString(name)) == "value")
+          else if (str_name == "flag")
+            return PyLong_FromLong(PyOperandAnalysis_AsOperandAnalysis(self)->flag);
+
+          else if (str_name == "value")
             return PyLong_FromLong(PyOperandAnalysis_AsOperandAnalysis(self)->value);
 
-          else if (std::string(PyString_AsString(name)) == "size")
+          else if (str_name == "size")
             return PyLong_FromLong(PyOperandAnalysis_AsOperandAnalysis(self)->size);
 
-          else if (std::string(PyString_AsString(name)) == "regOff")
+          else if (str_name == "regOff")
             return PyLong_FromLong(PyOperandAnalysis_AsOperandAnalysis(self)->regOff);
 
-          else if (std::string(PyString_AsString(name)) == "regCtxIdx")
+          else if (str_name == "regCtxIdx")
             return PyLong_FromLong(PyOperandAnalysis_AsOperandAnalysis(self)->regCtxIdx);
 
-          else if (std::string(PyString_AsString(name)) == "regName") {
+          else if (str_name == "regName") {
             const OperandAnalysis* operand = PyOperandAnalysis_AsOperandAnalysis(self);
 
             if (operand->regName)
@@ -292,7 +296,7 @@ namespace QBDI {
             Py_RETURN_NONE;
           }
 
-          else if (std::string(PyString_AsString(name)) == "regAccess")
+          else if (str_name == "regAccess")
             return PyLong_FromLong(PyOperandAnalysis_AsOperandAnalysis(self)->regAccess);
         }
         catch (const std::exception& e) {
@@ -381,7 +385,8 @@ namespace QBDI {
       /* InstAnalysis attributes */
       static PyObject* InstAnalysis_getattro(PyObject* self, PyObject* name) {
         try {
-          if (std::string(PyString_AsString(name)) == "mnemonic") {
+          std::string str_name = std::string(PyString_AsString(name));
+          if (str_name == "mnemonic") {
             const InstAnalysis* inst = PyInstAnalysis_AsInstAnalysis(self);
 
             if (inst->mnemonic)
@@ -390,37 +395,37 @@ namespace QBDI {
             Py_RETURN_NONE;
           }
 
-          else if (std::string(PyString_AsString(name)) == "address")
+          else if (str_name == "address")
             return PyLong_FromLong(PyInstAnalysis_AsInstAnalysis(self)->address);
 
-          else if (std::string(PyString_AsString(name)) == "instSize")
+          else if (str_name == "instSize")
             return PyLong_FromLong(PyInstAnalysis_AsInstAnalysis(self)->instSize);
 
-          else if (std::string(PyString_AsString(name)) == "affectControlFlow")
+          else if (str_name == "affectControlFlow")
             return PyBool_FromLong(PyInstAnalysis_AsInstAnalysis(self)->affectControlFlow);
 
-          else if (std::string(PyString_AsString(name)) == "isBranch")
+          else if (str_name == "isBranch")
             return PyBool_FromLong(PyInstAnalysis_AsInstAnalysis(self)->isBranch);
 
-          else if (std::string(PyString_AsString(name)) == "isCall")
+          else if (str_name == "isCall")
             return PyBool_FromLong(PyInstAnalysis_AsInstAnalysis(self)->isCall);
 
-          else if (std::string(PyString_AsString(name)) == "isReturn")
+          else if (str_name == "isReturn")
             return PyBool_FromLong(PyInstAnalysis_AsInstAnalysis(self)->isReturn);
 
-          else if (std::string(PyString_AsString(name)) == "isCompare")
+          else if (str_name == "isCompare")
             return PyBool_FromLong(PyInstAnalysis_AsInstAnalysis(self)->isCompare);
 
-          else if (std::string(PyString_AsString(name)) == "isPredicable")
+          else if (str_name == "isPredicable")
             return PyBool_FromLong(PyInstAnalysis_AsInstAnalysis(self)->isPredicable);
 
-          else if (std::string(PyString_AsString(name)) == "mayLoad")
+          else if (str_name == "mayLoad")
             return PyBool_FromLong(PyInstAnalysis_AsInstAnalysis(self)->mayLoad);
 
-          else if (std::string(PyString_AsString(name)) == "mayStore")
+          else if (str_name == "mayStore")
             return PyBool_FromLong(PyInstAnalysis_AsInstAnalysis(self)->mayStore);
 
-          else if (std::string(PyString_AsString(name)) == "disassembly") {
+          else if (str_name == "disassembly") {
             const InstAnalysis* inst = PyInstAnalysis_AsInstAnalysis(self);
 
             if (inst->disassembly)
@@ -429,10 +434,10 @@ namespace QBDI {
             Py_RETURN_NONE;
           }
 
-          else if (std::string(PyString_AsString(name)) == "numOperands")
+          else if (str_name == "numOperands")
             return PyLong_FromLong(PyInstAnalysis_AsInstAnalysis(self)->numOperands);
 
-          else if (std::string(PyString_AsString(name)) == "operands") {
+          else if (str_name == "operands") {
             const InstAnalysis* inst = PyInstAnalysis_AsInstAnalysis(self);
             PyObject* ret = PyList_New(inst->numOperands);
 
@@ -443,7 +448,7 @@ namespace QBDI {
             return ret;
           }
 
-          else if (std::string(PyString_AsString(name)) == "symbol") {
+          else if (str_name == "symbol") {
             const InstAnalysis* inst = PyInstAnalysis_AsInstAnalysis(self);
 
             if (inst->symbol)
@@ -452,10 +457,10 @@ namespace QBDI {
             Py_RETURN_NONE;
           }
 
-          else if (std::string(PyString_AsString(name)) == "symbolOffset")
+          else if (str_name == "symbolOffset")
             return PyLong_FromLong(PyInstAnalysis_AsInstAnalysis(self)->symbolOffset);
 
-          else if (std::string(PyString_AsString(name)) == "module") {
+          else if (str_name == "module") {
             const InstAnalysis* inst = PyInstAnalysis_AsInstAnalysis(self);
 
             if (inst->module)
@@ -550,112 +555,146 @@ namespace QBDI {
       /* PyGPRState get attributes */
       static PyObject* GPRState_getattro(PyObject* self, PyObject* name) {
         try {
+          std::string str_name = std::string(PyString_AsString(name));
           #if defined(QBDI_ARCH_X86_64)
-          if (std::string(PyString_AsString(name)) == "rax")
+          if (str_name == "rax")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->rax);
 
-          else if (std::string(PyString_AsString(name)) == "rbx")
+          else if (str_name == "rbx")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->rbx);
 
-          else if (std::string(PyString_AsString(name)) == "rcx")
+          else if (str_name == "rcx")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->rcx);
 
-          else if (std::string(PyString_AsString(name)) == "rdx")
+          else if (str_name == "rdx")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->rdx);
 
-          else if (std::string(PyString_AsString(name)) == "rsi")
+          else if (str_name == "rsi")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->rsi);
 
-          else if (std::string(PyString_AsString(name)) == "rdi")
+          else if (str_name == "rdi")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->rdi);
 
-          else if (std::string(PyString_AsString(name)) == "r8")
+          else if (str_name == "r8")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->r8);
 
-          else if (std::string(PyString_AsString(name)) == "r9")
+          else if (str_name == "r9")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->r9);
 
-          else if (std::string(PyString_AsString(name)) == "r10")
+          else if (str_name == "r10")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->r10);
 
-          else if (std::string(PyString_AsString(name)) == "r11")
+          else if (str_name == "r11")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->r11);
 
-          else if (std::string(PyString_AsString(name)) == "r12")
+          else if (str_name == "r12")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->r12);
 
-          else if (std::string(PyString_AsString(name)) == "r13")
+          else if (str_name == "r13")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->r13);
 
-          else if (std::string(PyString_AsString(name)) == "r14")
+          else if (str_name == "r14")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->r14);
 
-          else if (std::string(PyString_AsString(name)) == "r15")
+          else if (str_name == "r15")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->r15);
 
-          else if (std::string(PyString_AsString(name)) == "rbp")
+          else if (str_name == "rbp")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->rbp);
 
-          else if (std::string(PyString_AsString(name)) == "rsp")
+          else if (str_name == "rsp")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->rsp);
 
-          else if (std::string(PyString_AsString(name)) == "rip")
+          else if (str_name == "rip")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->rip);
 
-          else if (std::string(PyString_AsString(name)) == "eflags")
+          else if (str_name == "eflags")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->eflags);
           #endif
 
+          #if defined(QBDI_ARCH_X86)
+          if (str_name == "eax")
+            return PyLong_FromLong(PyGPRState_AsGPRState(self)->eax);
+
+          else if (str_name == "ebx")
+            return PyLong_FromLong(PyGPRState_AsGPRState(self)->ebx);
+
+          else if (str_name == "ecx")
+            return PyLong_FromLong(PyGPRState_AsGPRState(self)->ecx);
+
+          else if (str_name == "edx")
+            return PyLong_FromLong(PyGPRState_AsGPRState(self)->edx);
+
+          else if (str_name == "esi")
+            return PyLong_FromLong(PyGPRState_AsGPRState(self)->esi);
+
+          else if (str_name == "edi")
+            return PyLong_FromLong(PyGPRState_AsGPRState(self)->edi);
+
+          else if (str_name == "ebp")
+            return PyLong_FromLong(PyGPRState_AsGPRState(self)->ebp);
+
+          else if (str_name == "esp")
+            return PyLong_FromLong(PyGPRState_AsGPRState(self)->esp);
+
+          else if (str_name == "eip")
+            return PyLong_FromLong(PyGPRState_AsGPRState(self)->eip);
+
+          else if (str_name == "eflags")
+            return PyLong_FromLong(PyGPRState_AsGPRState(self)->eflags);
+          #endif
+
+
           #if defined(QBDI_ARCH_ARM)
-          if (std::string(PyString_AsString(name)) == "r0")
+          if (str_name == "r0")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->r0);
 
-          else if (std::string(PyString_AsString(name)) == "r1")
+          else if (str_name == "r1")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->r1);
 
-          else if (std::string(PyString_AsString(name)) == "r2")
+          else if (str_name == "r2")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->r2);
 
-          else if (std::string(PyString_AsString(name)) == "r3")
+          else if (str_name == "r3")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->r3);
 
-          else if (std::string(PyString_AsString(name)) == "r4")
+          else if (str_name == "r4")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->r4);
 
-          else if (std::string(PyString_AsString(name)) == "r5")
+          else if (str_name == "r5")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->r5);
 
-          else if (std::string(PyString_AsString(name)) == "r6")
+          else if (str_name == "r6")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->r6);
 
-          else if (std::string(PyString_AsString(name)) == "r7")
+          else if (str_name == "r7")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->r7);
 
-          else if (std::string(PyString_AsString(name)) == "r8")
+          else if (str_name == "r8")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->r8);
 
-          else if (std::string(PyString_AsString(name)) == "r9")
+          else if (str_name == "r9")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->r9);
 
-          else if (std::string(PyString_AsString(name)) == "r10")
+          else if (str_name == "r10")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->r10);
 
-          else if (std::string(PyString_AsString(name)) == "r12")
+          else if (str_name == "r12")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->r12);
 
-          else if (std::string(PyString_AsString(name)) == "fp")
+          else if (str_name == "fp")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->fp);
 
-          else if (std::string(PyString_AsString(name)) == "sp")
+          else if (str_name == "sp")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->sp);
 
-          else if (std::string(PyString_AsString(name)) == "lr")
+          else if (str_name == "lr")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->lr);
 
-          else if (std::string(PyString_AsString(name)) == "pc")
+          else if (str_name == "pc")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->pc);
 
-          else if (std::string(PyString_AsString(name)) == "cpsr")
+          else if (str_name == "cpsr")
             return PyLong_FromLong(PyGPRState_AsGPRState(self)->cpsr);
           #endif
         }
@@ -680,59 +719,95 @@ namespace QBDI {
         }
 
         try {
+          std::string str_name = std::string(PyString_AsString(name));
           #if defined(QBDI_ARCH_X86_64)
-            if (std::string(PyString_AsString(name)) == "rax")
+            if (str_name == "rax")
               PyGPRState_AsGPRState(self)->rax = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "rbx")
+            else if (str_name == "rbx")
               PyGPRState_AsGPRState(self)->rbx = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "rcx")
+            else if (str_name == "rcx")
               PyGPRState_AsGPRState(self)->rcx = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "rdx")
+            else if (str_name == "rdx")
               PyGPRState_AsGPRState(self)->rdx = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "rsi")
+            else if (str_name == "rsi")
               PyGPRState_AsGPRState(self)->rsi = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "rdi")
+            else if (str_name == "rdi")
               PyGPRState_AsGPRState(self)->rdi = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "r8")
+            else if (str_name == "r8")
               PyGPRState_AsGPRState(self)->r8 = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "r9")
+            else if (str_name == "r9")
               PyGPRState_AsGPRState(self)->r9 = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "r10")
+            else if (str_name == "r10")
               PyGPRState_AsGPRState(self)->r10 = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "r11")
+            else if (str_name == "r11")
               PyGPRState_AsGPRState(self)->r11 = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "r12")
+            else if (str_name == "r12")
               PyGPRState_AsGPRState(self)->r12 = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "r13")
+            else if (str_name == "r13")
               PyGPRState_AsGPRState(self)->r13 = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "r14")
+            else if (str_name == "r14")
               PyGPRState_AsGPRState(self)->r14 = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "r15")
+            else if (str_name == "r15")
               PyGPRState_AsGPRState(self)->r15 = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "rbp")
+            else if (str_name == "rbp")
               PyGPRState_AsGPRState(self)->rbp = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "rsp")
+            else if (str_name == "rsp")
               PyGPRState_AsGPRState(self)->rsp = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "rip")
+            else if (str_name == "rip")
               PyGPRState_AsGPRState(self)->rip = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "eflags")
+            else if (str_name == "eflags")
+              PyGPRState_AsGPRState(self)->eflags = PyLong_AsRword(item);
+
+            else
+              return PyObject_GenericSetAttr(self, name, item);
+          #endif
+
+          #if defined(QBDI_ARCH_X86)
+            if (str_name == "eax")
+              PyGPRState_AsGPRState(self)->eax = PyLong_AsRword(item);
+
+            else if (str_name == "ebx")
+              PyGPRState_AsGPRState(self)->ebx = PyLong_AsRword(item);
+
+            else if (str_name == "ecx")
+              PyGPRState_AsGPRState(self)->ecx = PyLong_AsRword(item);
+
+            else if (str_name == "edx")
+              PyGPRState_AsGPRState(self)->edx = PyLong_AsRword(item);
+
+            else if (str_name == "esi")
+              PyGPRState_AsGPRState(self)->esi = PyLong_AsRword(item);
+
+            else if (str_name == "edi")
+              PyGPRState_AsGPRState(self)->edi = PyLong_AsRword(item);
+
+            else if (str_name == "ebp")
+              PyGPRState_AsGPRState(self)->ebp = PyLong_AsRword(item);
+
+            else if (str_name == "esp")
+              PyGPRState_AsGPRState(self)->esp = PyLong_AsRword(item);
+
+            else if (str_name == "eip")
+              PyGPRState_AsGPRState(self)->eip = PyLong_AsRword(item);
+
+            else if (str_name == "eflags")
               PyGPRState_AsGPRState(self)->eflags = PyLong_AsRword(item);
 
             else
@@ -740,55 +815,55 @@ namespace QBDI {
           #endif
 
           #if defined(QBDI_ARCH_ARM)
-            if (std::string(PyString_AsString(name)) == "r0")
+            if (str_name == "r0")
               PyGPRState_AsGPRState(self)->r0 = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "r1")
+            else if (str_name == "r1")
               PyGPRState_AsGPRState(self)->r1 = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "r2")
+            else if (str_name == "r2")
               PyGPRState_AsGPRState(self)->r2 = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "r3")
+            else if (str_name == "r3")
               PyGPRState_AsGPRState(self)->r3 = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "r4")
+            else if (str_name == "r4")
               PyGPRState_AsGPRState(self)->r4 = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "r5")
+            else if (str_name == "r5")
               PyGPRState_AsGPRState(self)->r5 = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "r6")
+            else if (str_name == "r6")
               PyGPRState_AsGPRState(self)->r6 = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "r7")
+            else if (str_name == "r7")
               PyGPRState_AsGPRState(self)->r7 = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "r8")
+            else if (str_name == "r8")
               PyGPRState_AsGPRState(self)->r8 = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "r9")
+            else if (str_name == "r9")
               PyGPRState_AsGPRState(self)->r9 = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "r10")
+            else if (str_name == "r10")
               PyGPRState_AsGPRState(self)->r10 = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "r12")
+            else if (str_name == "r12")
               PyGPRState_AsGPRState(self)->r12 = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "fp")
+            else if (str_name == "fp")
               PyGPRState_AsGPRState(self)->fp = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "sp")
+            else if (str_name == "sp")
               PyGPRState_AsGPRState(self)->sp = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "lr")
+            else if (str_name == "lr")
               PyGPRState_AsGPRState(self)->lr = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "pc")
+            else if (str_name == "pc")
               PyGPRState_AsGPRState(self)->pc = PyLong_AsRword(item);
 
-            else if (std::string(PyString_AsString(name)) == "cpsr")
+            else if (str_name == "cpsr")
               PyGPRState_AsGPRState(self)->cpsr = PyLong_AsRword(item);
 
             else
@@ -896,247 +971,253 @@ namespace QBDI {
       /* PyFPRState attributes */
       static PyObject* FPRState_getattro(PyObject* self, PyObject* name) {
         try {
-          #if defined(QBDI_ARCH_X86_64)
-          if (std::string(PyString_AsString(name)) == "ftw")
+          std::string str_name = std::string(PyString_AsString(name));
+          #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+          if (str_name == "ftw")
             return PyLong_FromLong(PyFPRState_AsFPRState(self)->ftw);
 
-          else if (std::string(PyString_AsString(name)) == "fop")
+          else if (str_name == "fop")
             return PyLong_FromLong(PyFPRState_AsFPRState(self)->fop);
 
-          else if (std::string(PyString_AsString(name)) == "ip")
+          else if (str_name == "ip")
             return PyLong_FromLong(PyFPRState_AsFPRState(self)->ip);
 
-          else if (std::string(PyString_AsString(name)) == "cs")
+          else if (str_name == "cs")
             return PyLong_FromLong(PyFPRState_AsFPRState(self)->cs);
 
-          else if (std::string(PyString_AsString(name)) == "dp")
+          else if (str_name == "dp")
             return PyLong_FromLong(PyFPRState_AsFPRState(self)->dp);
 
-          else if (std::string(PyString_AsString(name)) == "ds")
+          else if (str_name == "ds")
             return PyLong_FromLong(PyFPRState_AsFPRState(self)->ds);
 
-          else if (std::string(PyString_AsString(name)) == "mxcsr")
+          else if (str_name == "mxcsr")
             return PyLong_FromLong(PyFPRState_AsFPRState(self)->mxcsr);
 
-          else if (std::string(PyString_AsString(name)) == "mxcsrmask")
+          else if (str_name == "mxcsrmask")
             return PyLong_FromLong(PyFPRState_AsFPRState(self)->mxcsrmask);
 
-          else if (std::string(PyString_AsString(name)) == "stmm0")
+          else if (str_name == "stmm0")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->stmm0.reg), 10, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "stmm1")
+          else if (str_name == "stmm1")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->stmm1.reg), 10, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "stmm2")
+          else if (str_name == "stmm2")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->stmm2.reg), 10, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "stmm3")
+          else if (str_name == "stmm3")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->stmm3.reg), 10, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "stmm4")
+          else if (str_name == "stmm4")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->stmm4.reg), 10, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "stmm5")
+          else if (str_name == "stmm5")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->stmm5.reg), 10, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "stmm6")
+          else if (str_name == "stmm6")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->stmm6.reg), 10, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "stmm7")
+          else if (str_name == "stmm7")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->stmm7.reg), 10, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "xmm0")
+          else if (str_name == "xmm0")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->xmm0), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "xmm1")
+          else if (str_name == "xmm1")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->xmm1), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "xmm2")
+          else if (str_name == "xmm2")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->xmm2), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "xmm3")
+          else if (str_name == "xmm3")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->xmm3), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "xmm4")
+          else if (str_name == "xmm4")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->xmm4), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "xmm5")
+          else if (str_name == "xmm5")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->xmm5), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "xmm6")
+          else if (str_name == "xmm6")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->xmm6), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "xmm7")
+          else if (str_name == "xmm7")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->xmm7), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "xmm8")
+          #if defined(QBDI_ARCH_X86_64)
+          else if (str_name == "xmm8")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->xmm8), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "xmm9")
+          else if (str_name == "xmm9")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->xmm9), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "xmm10")
+          else if (str_name == "xmm10")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->xmm10), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "xmm11")
+          else if (str_name == "xmm11")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->xmm11), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "xmm12")
+          else if (str_name == "xmm12")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->xmm12), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "xmm13")
+          else if (str_name == "xmm13")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->xmm13), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "xmm14")
+          else if (str_name == "xmm14")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->xmm14), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "xmm15")
+          else if (str_name == "xmm15")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->xmm15), 16, true, false);
+          #endif // X86-64
 
-          else if (std::string(PyString_AsString(name)) == "ymm0")
+          else if (str_name == "ymm0")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->ymm0), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "ymm1")
+          else if (str_name == "ymm1")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->ymm1), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "ymm2")
+          else if (str_name == "ymm2")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->ymm2), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "ymm3")
+          else if (str_name == "ymm3")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->ymm3), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "ymm4")
+          else if (str_name == "ymm4")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->ymm4), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "ymm5")
+          else if (str_name == "ymm5")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->ymm5), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "ymm6")
+          else if (str_name == "ymm6")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->ymm6), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "ymm7")
+          else if (str_name == "ymm7")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->ymm7), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "ymm8")
+          #if defined(QBDI_ARCH_X86_64)
+          else if (str_name == "ymm8")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->ymm8), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "ymm9")
+          else if (str_name == "ymm9")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->ymm9), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "ymm10")
+          else if (str_name == "ymm10")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->ymm10), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "ymm11")
+          else if (str_name == "ymm11")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->ymm11), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "ymm12")
+          else if (str_name == "ymm12")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->ymm12), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "ymm13")
+          else if (str_name == "ymm13")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->ymm13), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "ymm14")
+          else if (str_name == "ymm14")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->ymm14), 16, true, false);
 
-          else if (std::string(PyString_AsString(name)) == "ymm15")
+          else if (str_name == "ymm15")
             return _PyLong_FromByteArray(reinterpret_cast<const unsigned char*>(PyFPRState_AsFPRState(self)->ymm15), 16, true, false);
-          #endif
+          #endif // X86-64
+          #endif // X86-64 || X86
+
 
           #if defined(QBDI_ARCH_ARM)
-          if (std::string(PyString_AsString(name)) == "s0")
+          if (str_name == "s0")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[0]);
 
-          else if (std::string(PyString_AsString(name)) == "s1")
+          else if (str_name == "s1")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[1]);
 
-          else if (std::string(PyString_AsString(name)) == "s2")
+          else if (str_name == "s2")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[2]);
 
-          else if (std::string(PyString_AsString(name)) == "s3")
+          else if (str_name == "s3")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[3]);
 
-          else if (std::string(PyString_AsString(name)) == "s4")
+          else if (str_name == "s4")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[4]);
 
-          else if (std::string(PyString_AsString(name)) == "s5")
+          else if (str_name == "s5")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[5]);
 
-          else if (std::string(PyString_AsString(name)) == "s6")
+          else if (str_name == "s6")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[6]);
 
-          else if (std::string(PyString_AsString(name)) == "s7")
+          else if (str_name == "s7")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[7]);
 
-          else if (std::string(PyString_AsString(name)) == "s8")
+          else if (str_name == "s8")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[8]);
 
-          else if (std::string(PyString_AsString(name)) == "s9")
+          else if (str_name == "s9")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[9]);
 
-          else if (std::string(PyString_AsString(name)) == "s10")
+          else if (str_name == "s10")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[10]);
 
-          else if (std::string(PyString_AsString(name)) == "s11")
+          else if (str_name == "s11")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[11]);
 
-          else if (std::string(PyString_AsString(name)) == "s12")
+          else if (str_name == "s12")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[12]);
 
-          else if (std::string(PyString_AsString(name)) == "s13")
+          else if (str_name == "s13")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[13]);
 
-          else if (std::string(PyString_AsString(name)) == "s14")
+          else if (str_name == "s14")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[14]);
 
-          else if (std::string(PyString_AsString(name)) == "s15")
+          else if (str_name == "s15")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[15]);
 
-          else if (std::string(PyString_AsString(name)) == "s16")
+          else if (str_name == "s16")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[16]);
 
-          else if (std::string(PyString_AsString(name)) == "s17")
+          else if (str_name == "s17")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[17]);
 
-          else if (std::string(PyString_AsString(name)) == "s18")
+          else if (str_name == "s18")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[18]);
 
-          else if (std::string(PyString_AsString(name)) == "s19")
+          else if (str_name == "s19")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[19]);
 
-          else if (std::string(PyString_AsString(name)) == "s20")
+          else if (str_name == "s20")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[20]);
 
-          else if (std::string(PyString_AsString(name)) == "s21")
+          else if (str_name == "s21")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[21]);
 
-          else if (std::string(PyString_AsString(name)) == "s22")
+          else if (str_name == "s22")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[22]);
 
-          else if (std::string(PyString_AsString(name)) == "s23")
+          else if (str_name == "s23")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[23]);
 
-          else if (std::string(PyString_AsString(name)) == "s24")
+          else if (str_name == "s24")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[24]);
 
-          else if (std::string(PyString_AsString(name)) == "s25")
+          else if (str_name == "s25")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[25]);
 
-          else if (std::string(PyString_AsString(name)) == "s26")
+          else if (str_name == "s26")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[26]);
 
-          else if (std::string(PyString_AsString(name)) == "s27")
+          else if (str_name == "s27")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[27]);
 
-          else if (std::string(PyString_AsString(name)) == "s28")
+          else if (str_name == "s28")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[28]);
 
-          else if (std::string(PyString_AsString(name)) == "s29")
+          else if (str_name == "s29")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[29]);
 
-          else if (std::string(PyString_AsString(name)) == "s30")
+          else if (str_name == "s30")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[30]);
 
-          else if (std::string(PyString_AsString(name)) == "s31")
+          else if (str_name == "s31")
             return PyFloat_FromDouble(PyFPRState_AsFPRState(self)->s[31]);
           #endif
         }
@@ -1148,7 +1229,7 @@ namespace QBDI {
       }
 
 
-      #if defined(QBDI_ARCH_X86_64)
+      #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
       /* Convert a Py{Int,Long} to a bytes array */
       static void qbdi_PyLong_AsByteArray(void* bytes, PyObject* o, size_t size) {
         unsigned long long value = 0;
@@ -1168,7 +1249,7 @@ namespace QBDI {
 
       /* PyFPRState set attributes */
       static int FPRState_setattro(PyObject* self, PyObject* name, PyObject* item) {
-        #if defined(QBDI_ARCH_X86_64)
+        #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
         unsigned char bytes[16] = {0};
         #endif
 
@@ -1177,7 +1258,7 @@ namespace QBDI {
           return -1;
         }
 
-        #if defined(QBDI_ARCH_X86_64)
+        #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
         if (!PyLong_Check(item) && !PyInt_Check(item)) {
           PyErr_Format(PyExc_TypeError, "QBDI::Bindings::Python::FPRState::setattro(): Assignment must be an integer, not '%.200s'", item->ob_type->tp_name);
           return -1;
@@ -1195,253 +1276,258 @@ namespace QBDI {
         #endif
 
         try {
-          #if defined(QBDI_ARCH_X86_64)
-            if (std::string(PyString_AsString(name)) == "ftw")
+          std::string str_name = std::string(PyString_AsString(name));
+          #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+            if (str_name == "ftw")
               PyFPRState_AsFPRState(self)->ftw = PyLong_AsRword(item) & 0xff;
 
-            else if (std::string(PyString_AsString(name)) == "fop")
+            else if (str_name == "fop")
               PyFPRState_AsFPRState(self)->fop = PyLong_AsRword(item) & 0xffff;
 
-            else if (std::string(PyString_AsString(name)) == "ip")
+            else if (str_name == "ip")
               PyFPRState_AsFPRState(self)->ip = PyLong_AsRword(item) & 0xffffffff;
 
-            else if (std::string(PyString_AsString(name)) == "cs")
+            else if (str_name == "cs")
               PyFPRState_AsFPRState(self)->cs = PyLong_AsRword(item) & 0xffff;
 
-            else if (std::string(PyString_AsString(name)) == "dp")
+            else if (str_name == "dp")
               PyFPRState_AsFPRState(self)->dp = PyLong_AsRword(item) & 0xffffffff;
 
-            else if (std::string(PyString_AsString(name)) == "ds")
+            else if (str_name == "ds")
               PyFPRState_AsFPRState(self)->ds = PyLong_AsRword(item) & 0xffff;
 
-            else if (std::string(PyString_AsString(name)) == "mxcsr")
+            else if (str_name == "mxcsr")
               PyFPRState_AsFPRState(self)->mxcsr = PyLong_AsRword(item) & 0xffffffff;
 
-            else if (std::string(PyString_AsString(name)) == "mxcsrmask")
+            else if (str_name == "mxcsrmask")
               PyFPRState_AsFPRState(self)->mxcsrmask = PyLong_AsRword(item) & 0xffffffff;
 
-            else if (std::string(PyString_AsString(name)) == "stmm0")
+            else if (str_name == "stmm0")
               std::memcpy(PyFPRState_AsFPRState(self)->stmm0.reg, bytes, sizeof(PyFPRState_AsFPRState(self)->stmm0.reg));
 
-            else if (std::string(PyString_AsString(name)) == "stmm1")
+            else if (str_name == "stmm1")
               std::memcpy(PyFPRState_AsFPRState(self)->stmm1.reg, bytes, sizeof(PyFPRState_AsFPRState(self)->stmm1.reg));
 
-            else if (std::string(PyString_AsString(name)) == "stmm2")
+            else if (str_name == "stmm2")
               std::memcpy(PyFPRState_AsFPRState(self)->stmm2.reg, bytes, sizeof(PyFPRState_AsFPRState(self)->stmm2.reg));
 
-            else if (std::string(PyString_AsString(name)) == "stmm3")
+            else if (str_name == "stmm3")
               std::memcpy(PyFPRState_AsFPRState(self)->stmm3.reg, bytes, sizeof(PyFPRState_AsFPRState(self)->stmm3.reg));
 
-            else if (std::string(PyString_AsString(name)) == "stmm4")
+            else if (str_name == "stmm4")
               std::memcpy(PyFPRState_AsFPRState(self)->stmm4.reg, bytes, sizeof(PyFPRState_AsFPRState(self)->stmm4.reg));
 
-            else if (std::string(PyString_AsString(name)) == "stmm5")
+            else if (str_name == "stmm5")
               std::memcpy(PyFPRState_AsFPRState(self)->stmm5.reg, bytes, sizeof(PyFPRState_AsFPRState(self)->stmm5.reg));
 
-            else if (std::string(PyString_AsString(name)) == "stmm6")
+            else if (str_name == "stmm6")
               std::memcpy(PyFPRState_AsFPRState(self)->stmm6.reg, bytes, sizeof(PyFPRState_AsFPRState(self)->stmm6.reg));
 
-            else if (std::string(PyString_AsString(name)) == "stmm7")
+            else if (str_name == "stmm7")
               std::memcpy(PyFPRState_AsFPRState(self)->stmm7.reg, bytes, sizeof(PyFPRState_AsFPRState(self)->stmm7.reg));
 
-            else if (std::string(PyString_AsString(name)) == "stmm2")
+            else if (str_name == "stmm2")
               std::memcpy(PyFPRState_AsFPRState(self)->stmm2.reg, bytes, sizeof(PyFPRState_AsFPRState(self)->stmm2.reg));
 
-            else if (std::string(PyString_AsString(name)) == "xmm0")
+            else if (str_name == "xmm0")
               std::memcpy(PyFPRState_AsFPRState(self)->xmm0, bytes, sizeof(PyFPRState_AsFPRState(self)->xmm0));
 
-            else if (std::string(PyString_AsString(name)) == "xmm1")
+            else if (str_name == "xmm1")
               std::memcpy(PyFPRState_AsFPRState(self)->xmm1, bytes, sizeof(PyFPRState_AsFPRState(self)->xmm1));
 
-            else if (std::string(PyString_AsString(name)) == "xmm2")
+            else if (str_name == "xmm2")
               std::memcpy(PyFPRState_AsFPRState(self)->xmm2, bytes, sizeof(PyFPRState_AsFPRState(self)->xmm2));
 
-            else if (std::string(PyString_AsString(name)) == "xmm3")
+            else if (str_name == "xmm3")
               std::memcpy(PyFPRState_AsFPRState(self)->xmm3, bytes, sizeof(PyFPRState_AsFPRState(self)->xmm3));
 
-            else if (std::string(PyString_AsString(name)) == "xmm4")
+            else if (str_name == "xmm4")
               std::memcpy(PyFPRState_AsFPRState(self)->xmm4, bytes, sizeof(PyFPRState_AsFPRState(self)->xmm4));
 
-            else if (std::string(PyString_AsString(name)) == "xmm5")
+            else if (str_name == "xmm5")
               std::memcpy(PyFPRState_AsFPRState(self)->xmm5, bytes, sizeof(PyFPRState_AsFPRState(self)->xmm5));
 
-            else if (std::string(PyString_AsString(name)) == "xmm6")
+            else if (str_name == "xmm6")
               std::memcpy(PyFPRState_AsFPRState(self)->xmm6, bytes, sizeof(PyFPRState_AsFPRState(self)->xmm6));
 
-            else if (std::string(PyString_AsString(name)) == "xmm7")
+            else if (str_name == "xmm7")
               std::memcpy(PyFPRState_AsFPRState(self)->xmm7, bytes, sizeof(PyFPRState_AsFPRState(self)->xmm7));
 
-            else if (std::string(PyString_AsString(name)) == "xmm8")
+          #if defined(QBDI_ARCH_X86_64)
+            else if (str_name == "xmm8")
               std::memcpy(PyFPRState_AsFPRState(self)->xmm8, bytes, sizeof(PyFPRState_AsFPRState(self)->xmm8));
 
-            else if (std::string(PyString_AsString(name)) == "xmm9")
+            else if (str_name == "xmm9")
               std::memcpy(PyFPRState_AsFPRState(self)->xmm9, bytes, sizeof(PyFPRState_AsFPRState(self)->xmm9));
 
-            else if (std::string(PyString_AsString(name)) == "xmm10")
+            else if (str_name == "xmm10")
               std::memcpy(PyFPRState_AsFPRState(self)->xmm10, bytes, sizeof(PyFPRState_AsFPRState(self)->xmm10));
 
-            else if (std::string(PyString_AsString(name)) == "xmm11")
+            else if (str_name == "xmm11")
               std::memcpy(PyFPRState_AsFPRState(self)->xmm11, bytes, sizeof(PyFPRState_AsFPRState(self)->xmm11));
 
-            else if (std::string(PyString_AsString(name)) == "xmm12")
+            else if (str_name == "xmm12")
               std::memcpy(PyFPRState_AsFPRState(self)->xmm12, bytes, sizeof(PyFPRState_AsFPRState(self)->xmm12));
 
-            else if (std::string(PyString_AsString(name)) == "xmm13")
+            else if (str_name == "xmm13")
               std::memcpy(PyFPRState_AsFPRState(self)->xmm13, bytes, sizeof(PyFPRState_AsFPRState(self)->xmm13));
 
-            else if (std::string(PyString_AsString(name)) == "xmm14")
+            else if (str_name == "xmm14")
               std::memcpy(PyFPRState_AsFPRState(self)->xmm14, bytes, sizeof(PyFPRState_AsFPRState(self)->xmm14));
 
-            else if (std::string(PyString_AsString(name)) == "xmm15")
+            else if (str_name == "xmm15")
               std::memcpy(PyFPRState_AsFPRState(self)->xmm15, bytes, sizeof(PyFPRState_AsFPRState(self)->xmm15));
+          #endif // X86-64
 
-            else if (std::string(PyString_AsString(name)) == "ymm0")
+            else if (str_name == "ymm0")
               std::memcpy(PyFPRState_AsFPRState(self)->ymm0, bytes, sizeof(PyFPRState_AsFPRState(self)->ymm0));
 
-            else if (std::string(PyString_AsString(name)) == "ymm1")
+            else if (str_name == "ymm1")
               std::memcpy(PyFPRState_AsFPRState(self)->ymm1, bytes, sizeof(PyFPRState_AsFPRState(self)->ymm1));
 
-            else if (std::string(PyString_AsString(name)) == "ymm2")
+            else if (str_name == "ymm2")
               std::memcpy(PyFPRState_AsFPRState(self)->ymm2, bytes, sizeof(PyFPRState_AsFPRState(self)->ymm2));
 
-            else if (std::string(PyString_AsString(name)) == "ymm3")
+            else if (str_name == "ymm3")
               std::memcpy(PyFPRState_AsFPRState(self)->ymm3, bytes, sizeof(PyFPRState_AsFPRState(self)->ymm3));
 
-            else if (std::string(PyString_AsString(name)) == "ymm4")
+            else if (str_name == "ymm4")
               std::memcpy(PyFPRState_AsFPRState(self)->ymm4, bytes, sizeof(PyFPRState_AsFPRState(self)->ymm4));
 
-            else if (std::string(PyString_AsString(name)) == "ymm5")
+            else if (str_name == "ymm5")
               std::memcpy(PyFPRState_AsFPRState(self)->ymm5, bytes, sizeof(PyFPRState_AsFPRState(self)->ymm5));
 
-            else if (std::string(PyString_AsString(name)) == "ymm6")
+            else if (str_name == "ymm6")
               std::memcpy(PyFPRState_AsFPRState(self)->ymm6, bytes, sizeof(PyFPRState_AsFPRState(self)->ymm6));
 
-            else if (std::string(PyString_AsString(name)) == "ymm7")
+            else if (str_name == "ymm7")
               std::memcpy(PyFPRState_AsFPRState(self)->ymm7, bytes, sizeof(PyFPRState_AsFPRState(self)->ymm7));
 
-            else if (std::string(PyString_AsString(name)) == "ymm8")
+          #if defined(QBDI_ARCH_X86_64)
+            else if (str_name == "ymm8")
               std::memcpy(PyFPRState_AsFPRState(self)->ymm8, bytes, sizeof(PyFPRState_AsFPRState(self)->ymm8));
 
-            else if (std::string(PyString_AsString(name)) == "ymm9")
+            else if (str_name == "ymm9")
               std::memcpy(PyFPRState_AsFPRState(self)->ymm9, bytes, sizeof(PyFPRState_AsFPRState(self)->ymm9));
 
-            else if (std::string(PyString_AsString(name)) == "ymm10")
+            else if (str_name == "ymm10")
               std::memcpy(PyFPRState_AsFPRState(self)->ymm10, bytes, sizeof(PyFPRState_AsFPRState(self)->ymm10));
 
-            else if (std::string(PyString_AsString(name)) == "ymm11")
+            else if (str_name == "ymm11")
               std::memcpy(PyFPRState_AsFPRState(self)->ymm11, bytes, sizeof(PyFPRState_AsFPRState(self)->ymm11));
 
-            else if (std::string(PyString_AsString(name)) == "ymm12")
+            else if (str_name == "ymm12")
               std::memcpy(PyFPRState_AsFPRState(self)->ymm12, bytes, sizeof(PyFPRState_AsFPRState(self)->ymm12));
 
-            else if (std::string(PyString_AsString(name)) == "ymm13")
+            else if (str_name == "ymm13")
               std::memcpy(PyFPRState_AsFPRState(self)->ymm13, bytes, sizeof(PyFPRState_AsFPRState(self)->ymm13));
 
-            else if (std::string(PyString_AsString(name)) == "ymm14")
+            else if (str_name == "ymm14")
               std::memcpy(PyFPRState_AsFPRState(self)->ymm14, bytes, sizeof(PyFPRState_AsFPRState(self)->ymm14));
 
-            else if (std::string(PyString_AsString(name)) == "ymm15")
+            else if (str_name == "ymm15")
               std::memcpy(PyFPRState_AsFPRState(self)->ymm15, bytes, sizeof(PyFPRState_AsFPRState(self)->ymm15));
 
             else
               return PyObject_GenericSetAttr(self, name, item);
-          #endif
+          #endif // X86-64
+          #endif // X86-64 || X86
 
           #if defined(QBDI_ARCH_ARM)
-            if (std::string(PyString_AsString(name)) == "s0")
+            if (str_name == "s0")
               PyFPRState_AsFPRState(self)->s[0] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s1")
+            else if (str_name == "s1")
               PyFPRState_AsFPRState(self)->s[1] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s2")
+            else if (str_name == "s2")
               PyFPRState_AsFPRState(self)->s[2] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s3")
+            else if (str_name == "s3")
               PyFPRState_AsFPRState(self)->s[3] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s4")
+            else if (str_name == "s4")
               PyFPRState_AsFPRState(self)->s[4] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s5")
+            else if (str_name == "s5")
               PyFPRState_AsFPRState(self)->s[5] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s6")
+            else if (str_name == "s6")
               PyFPRState_AsFPRState(self)->s[6] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s7")
+            else if (str_name == "s7")
               PyFPRState_AsFPRState(self)->s[7] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s8")
+            else if (str_name == "s8")
               PyFPRState_AsFPRState(self)->s[8] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s9")
+            else if (str_name == "s9")
               PyFPRState_AsFPRState(self)->s[9] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s10")
+            else if (str_name == "s10")
               PyFPRState_AsFPRState(self)->s[10] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s11")
+            else if (str_name == "s11")
               PyFPRState_AsFPRState(self)->s[11] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s12")
+            else if (str_name == "s12")
               PyFPRState_AsFPRState(self)->s[12] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s13")
+            else if (str_name == "s13")
               PyFPRState_AsFPRState(self)->s[13] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s14")
+            else if (str_name == "s14")
               PyFPRState_AsFPRState(self)->s[14] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s15")
+            else if (str_name == "s15")
               PyFPRState_AsFPRState(self)->s[15] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s16")
+            else if (str_name == "s16")
               PyFPRState_AsFPRState(self)->s[16] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s17")
+            else if (str_name == "s17")
               PyFPRState_AsFPRState(self)->s[17] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s18")
+            else if (str_name == "s18")
               PyFPRState_AsFPRState(self)->s[18] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s19")
+            else if (str_name == "s19")
               PyFPRState_AsFPRState(self)->s[19] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s20")
+            else if (str_name == "s20")
               PyFPRState_AsFPRState(self)->s[20] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s21")
+            else if (str_name == "s21")
               PyFPRState_AsFPRState(self)->s[21] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s22")
+            else if (str_name == "s22")
               PyFPRState_AsFPRState(self)->s[22] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s23")
+            else if (str_name == "s23")
               PyFPRState_AsFPRState(self)->s[23] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s24")
+            else if (str_name == "s24")
               PyFPRState_AsFPRState(self)->s[24] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s25")
+            else if (str_name == "s25")
               PyFPRState_AsFPRState(self)->s[25] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s26")
+            else if (str_name == "s26")
               PyFPRState_AsFPRState(self)->s[26] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s27")
+            else if (str_name == "s27")
               PyFPRState_AsFPRState(self)->s[27] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s28")
+            else if (str_name == "s28")
               PyFPRState_AsFPRState(self)->s[28] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s29")
+            else if (str_name == "s29")
               PyFPRState_AsFPRState(self)->s[29] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s30")
+            else if (str_name == "s30")
               PyFPRState_AsFPRState(self)->s[30] = PyFloat_AsDouble(item);
 
-            else if (std::string(PyString_AsString(name)) == "s31")
+            else if (str_name == "s31")
               PyFPRState_AsFPRState(self)->s[31] = PyFloat_AsDouble(item);
 
             else
@@ -1549,19 +1635,20 @@ namespace QBDI {
       /* MemoryAccess attributes */
       static PyObject* MemoryAccess_getattro(PyObject* self, PyObject* name) {
         try {
-          if (std::string(PyString_AsString(name)) == "instAddress")
+          std::string str_name = std::string(PyString_AsString(name));
+          if (str_name == "instAddress")
             return PyLong_FromLong(PyMemoryAccess_AsMemoryAccess(self)->instAddress);
 
-          else if (std::string(PyString_AsString(name)) == "accessAddress")
+          else if (str_name == "accessAddress")
             return PyLong_FromLong(PyMemoryAccess_AsMemoryAccess(self)->accessAddress);
 
-          else if (std::string(PyString_AsString(name)) == "value")
+          else if (str_name == "value")
             return PyLong_FromLong(PyMemoryAccess_AsMemoryAccess(self)->value);
 
-          else if (std::string(PyString_AsString(name)) == "size")
+          else if (str_name == "size")
             return PyLong_FromLong(PyMemoryAccess_AsMemoryAccess(self)->size);
 
-          else if (std::string(PyString_AsString(name)) == "type")
+          else if (str_name == "type")
             return PyLong_FromLong(PyMemoryAccess_AsMemoryAccess(self)->type);
         }
         catch (const std::exception& e) {
@@ -1655,7 +1742,8 @@ namespace QBDI {
       /* PyMemoryMap attributes */
       static PyObject* MemoryMap_getattro(PyObject* self, PyObject* name) {
         try {
-          if (std::string(PyString_AsString(name)) == "range") {
+          std::string str_name = std::string(PyString_AsString(name));
+          if (str_name == "range") {
             Range<rword> range = PyMemoryMap_AsMemoryMap(self)->range;
             /* Create function arguments */
             PyObject* res = PyTuple_New(2);
@@ -1663,10 +1751,10 @@ namespace QBDI {
             PyTuple_SetItem(res, 1, PyLong_FromLong(range.end));
             return res;
           }
-          else if (std::string(PyString_AsString(name)) == "permission")
+          else if (str_name == "permission")
             return PyLong_FromLong(PyMemoryMap_AsMemoryMap(self)->permission);
 
-          else if (std::string(PyString_AsString(name)) == "name")
+          else if (str_name == "name")
             return PyString_FromString(PyMemoryMap_AsMemoryMap(self)->name.c_str());
         }
         catch (const std::exception& e) {
@@ -2078,7 +2166,7 @@ namespace QBDI {
       }
 
 
-      /*! Add a virtual callback which is triggered for any memory access at a specific address 
+      /*! Add a virtual callback which is triggered for any memory access at a specific address
        *  matching the access type. Virtual callbacks are called via callback forwarding by a
        *  gate callback triggered on every memory access. This incurs a high performance cost.
        *
@@ -2862,22 +2950,23 @@ namespace QBDI {
       /* VMState attributes */
       static PyObject* VMState_getattro(PyObject* self, PyObject* name) {
         try {
-          if (std::string(PyString_AsString(name)) == "event")
+          std::string str_name = std::string(PyString_AsString(name));
+          if (str_name == "event")
             return PyLong_FromLong(PyVMState_AsVMState(self)->event);
 
-          else if (std::string(PyString_AsString(name)) == "sequenceStart")
+          else if (str_name == "sequenceStart")
             return PyLong_FromLong(PyVMState_AsVMState(self)->sequenceStart);
 
-          else if (std::string(PyString_AsString(name)) == "sequenceEnd")
+          else if (str_name == "sequenceEnd")
             return PyLong_FromLong(PyVMState_AsVMState(self)->sequenceEnd);
 
-          else if (std::string(PyString_AsString(name)) == "basicBlockStart")
+          else if (str_name == "basicBlockStart")
             return PyLong_FromLong(PyVMState_AsVMState(self)->basicBlockStart);
 
-          else if (std::string(PyString_AsString(name)) == "basicBlockEnd")
+          else if (str_name == "basicBlockEnd")
             return PyLong_FromLong(PyVMState_AsVMState(self)->basicBlockEnd);
 
-          else if (std::string(PyString_AsString(name)) == "lastSignal")
+          else if (str_name == "lastSignal")
             return PyLong_FromLong(PyVMState_AsVMState(self)->lastSignal);
         }
         catch (const std::exception& e) {
@@ -3151,19 +3240,17 @@ namespace QBDI {
        */
       static PyObject* pyqbdi_getModuleNames(PyObject* self, PyObject* noarg) {
         PyObject* ret  = nullptr;
-        char** modules = nullptr;
         size_t size    = 0;
 
         try {
-          modules = QBDI::getModuleNames(&size);
+          std::vector<std::string> modules = QBDI::getModuleNames();
+          size = modules.size();
 
           ret = PyList_New(size);
           if (size) {
             for (unsigned int i = 0; i < size; i++) {
-              PyList_SetItem(ret, i, PyString_FromString(modules[i]));
-              free(modules[i]);
+              PyList_SetItem(ret, i, PyString_FromString(modules[i].c_str()));
             }
-            free(modules);
           }
         }
         catch (const std::exception& e) {
@@ -3176,12 +3263,22 @@ namespace QBDI {
 
       /*! Get a list of all the memory maps (regions) of the current process.
        *
+       * @param[in]  full_path  Return the full path of the module in name field.
+       *
        * @return  A list of MemoryMap, each one containing the metadata of a region.
        */
-      static PyObject* pyqbdi_getCurrentProcessMaps(PyObject* self, PyObject* noarg) {
+      static PyObject* pyqbdi_getCurrentProcessMaps(PyObject* self, PyObject* args) {
+        PyObject* full_path_args = nullptr;
+        bool full_path = false;
         PyObject* ret  = nullptr;
+
+        /* Extract arguments */
+        PyArg_ParseTuple(args, "|O", &full_path_args);
+        if (full_path_args != nullptr)
+            full_path = PyObject_IsTrue(full_path_args);
+
         try {
-          std::vector<MemoryMap> maps = QBDI::getCurrentProcessMaps();
+          std::vector<MemoryMap> maps = QBDI::getCurrentProcessMaps(full_path);
           size_t size = maps.size();
           uint32_t i = 0;
           ret = PyList_New(size);
@@ -3323,7 +3420,7 @@ namespace QBDI {
         {"decodeFloat",          (PyCFunction)pyqbdi_decodeFloat,          METH_O,        "Decode a float encoded as a long."},
         {"encodeFloat",          (PyCFunction)pyqbdi_encodeFloat,          METH_O,        "Encode a float as a long."},
         {"getModuleNames",       (PyCFunction)pyqbdi_getModuleNames,       METH_NOARGS,   "Get a list of all the module names loaded in the process memory."},
-        {"getCurrentProcessMaps",(PyCFunction)pyqbdi_getCurrentProcessMaps,METH_NOARGS,   "Get a list of all the memory maps (regions) of the current process."},
+        {"getCurrentProcessMaps",(PyCFunction)pyqbdi_getCurrentProcessMaps,METH_VARARGS,  "Get a list of all the memory maps (regions) of the current process."},
         {"readMemory",           (PyCFunction)pyqbdi_readMemory,           METH_VARARGS,  "Read a memory content from a base address."},
         {"simulateCall",         (PyCFunction)pyqbdi_simulateCall,         METH_VARARGS,  "Simulate a call by modifying the stack and registers accordingly."},
         {"writeMemory",          (PyCFunction)pyqbdi_writeMemory,          METH_VARARGS,  "Write a memory content to a base address."},
@@ -3368,6 +3465,10 @@ namespace QBDI {
         PyModule_AddObject(QBDI::Bindings::Python::module, "OPERAND_IMM",           PyInt_FromLong(QBDI::OPERAND_IMM));
         PyModule_AddObject(QBDI::Bindings::Python::module, "OPERAND_INVALID",       PyInt_FromLong(QBDI::OPERAND_INVALID));
         PyModule_AddObject(QBDI::Bindings::Python::module, "OPERAND_PRED",          PyInt_FromLong(QBDI::OPERAND_PRED));
+        PyModule_AddObject(QBDI::Bindings::Python::module, "OPERANDFLAG_NONE",      PyInt_FromLong(QBDI::OPERANDFLAG_NONE));
+        PyModule_AddObject(QBDI::Bindings::Python::module, "OPERANDFLAG_ADDR",      PyInt_FromLong(QBDI::OPERANDFLAG_ADDR));
+        PyModule_AddObject(QBDI::Bindings::Python::module, "OPERANDFLAG_PCREL",     PyInt_FromLong(QBDI::OPERANDFLAG_PCREL));
+        PyModule_AddObject(QBDI::Bindings::Python::module, "OPERANDFLAG_UNDEFINED_EFFECT",      PyInt_FromLong(QBDI::OPERANDFLAG_UNDEFINED_EFFECT));
         PyModule_AddObject(QBDI::Bindings::Python::module, "PF_EXEC",               PyInt_FromLong(QBDI::PF_EXEC));
         PyModule_AddObject(QBDI::Bindings::Python::module, "PF_NONE",               PyInt_FromLong(QBDI::PF_NONE));
         PyModule_AddObject(QBDI::Bindings::Python::module, "PF_READ",               PyInt_FromLong(QBDI::PF_READ));
@@ -3421,8 +3522,8 @@ namespace QBDI {
             /* Create function arguments */
             PyObject* args = PyTuple_New(3);
             PyTuple_SetItem(args, 0, QBDI::Bindings::Python::PyVMInstance(vm));
-            PyTuple_SetItem(args, 1, PyLong_FromLong(start));
-            PyTuple_SetItem(args, 2, PyLong_FromLong(stop));
+            PyTuple_SetItem(args, 1, PyLong_FromUnsignedLong(start));
+            PyTuple_SetItem(args, 2, PyLong_FromUnsignedLong(stop));
 
             /* Call the function and check the return value */
             PyObject* ret = PyObject_CallObject(pyqbdipreload_on_run, args);

@@ -22,7 +22,7 @@ registers with an address offset up to 4096 bytes.
 .. note::
 
     By default, AVX registers are also saved, one may want to disable this in case where it is not
-    necessary, thus improving perfomances. It can be achieved using the environnement flag 
+    necessary, thus improving perfomances. It can be achieved using the environment flag 
     **QBDI_FORCE_DISABLE_AVX**.
 
 

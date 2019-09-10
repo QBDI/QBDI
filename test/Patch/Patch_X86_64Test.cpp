@@ -44,8 +44,13 @@ TEST_F(Patch_X86_64Test, RelativeAddressing) {
     QBDI::Context inputState;
 
     memset(&inputState, 0, sizeof(QBDI::Context));
+#if defined(QBDI_ARCH_X86)
+    inputState.gprState.eax = (QBDI::rword)rand();
+    inputState.gprState.ebx = (QBDI::rword)rand();
+#else
     inputState.gprState.rax = ((QBDI::rword)rand() << 32) | rand();
     inputState.gprState.rbx = ((QBDI::rword)rand() << 32) | rand();
+#endif
     comparedExec(RelativeAddressing_s, inputState, 4096);
 }
 
@@ -53,10 +58,17 @@ TEST_F(Patch_X86_64Test, ConditionalBranching) {
     QBDI::Context inputState;
 
     memset(&inputState, 0, sizeof(QBDI::Context));
+#if defined(QBDI_ARCH_X86)
+    inputState.gprState.eax = (QBDI::rword)rand();
+    inputState.gprState.ebx = (QBDI::rword)rand();
+    inputState.gprState.ecx = (QBDI::rword)rand();
+    inputState.gprState.edx = (QBDI::rword)rand();
+#else
     inputState.gprState.rax = ((QBDI::rword)rand() << 32) | rand();
     inputState.gprState.rbx = ((QBDI::rword)rand() << 32) | rand();
     inputState.gprState.rcx = ((QBDI::rword)rand() << 32) | rand();
     inputState.gprState.rdx = ((QBDI::rword)rand() << 32) | rand();
+#endif
     comparedExec(ConditionalBranching_s, inputState, 4096);
 }
 
@@ -64,7 +76,11 @@ TEST_F(Patch_X86_64Test, FibonacciRecursion) {
     QBDI::Context inputState;
 
     memset(&inputState, 0, sizeof(QBDI::Context));
+#if defined(QBDI_ARCH_X86)
+    inputState.gprState.eax = (QBDI::rword) (rand() % 20) + 2;
+#else
     inputState.gprState.rax = (QBDI::rword) (rand() % 20) + 2;
+#endif
     comparedExec(FibonacciRecursion_s, inputState, 4096);
 }
 
@@ -72,6 +88,10 @@ TEST_F(Patch_X86_64Test, StackTricks) {
     QBDI::Context inputState;
 
     memset(&inputState, 0, sizeof(QBDI::Context));
+#if defined(QBDI_ARCH_X86)
+    inputState.gprState.eax = (QBDI::rword) (rand() % 20) + 2;
+#else
     inputState.gprState.rax = (QBDI::rword) (rand() % 20) + 2;
+#endif
     comparedExec(StackTricks_s, inputState, 4096);
 }

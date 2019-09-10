@@ -19,10 +19,10 @@
 
 namespace QBDI {
 
-unsigned READ_8[] = { 
+unsigned READ_8[] = {
 	llvm::X86::CMP8rm,
 	llvm::X86::CMP8mr,
-	llvm::X86::TEST8rm,
+	llvm::X86::TEST8mr,
 	llvm::X86::MOV8rm,
 	llvm::X86::ADC8rm,
 	llvm::X86::ADD8rm,
@@ -116,11 +116,11 @@ unsigned READ_8[] = {
 
 size_t READ_8_SIZE = sizeof(READ_8)/sizeof(unsigned);
 
-unsigned READ_16[] = { 
+unsigned READ_16[] = {
 	llvm::X86::MOV16rm,
 	llvm::X86::MOVBE16rm,
 	llvm::X86::CMP16rm,
-	llvm::X86::TEST16rm,
+	llvm::X86::TEST16mr,
 	llvm::X86::ADD_FI16m,
 	llvm::X86::CALL16m,
 	llvm::X86::DIV16m,
@@ -264,10 +264,10 @@ unsigned READ_16[] = {
 
 size_t READ_16_SIZE = sizeof(READ_16)/sizeof(unsigned);
 
-unsigned READ_32[] = { 
+unsigned READ_32[] = {
 	llvm::X86::MOV32rm,
 	llvm::X86::CMP32rm,
-	llvm::X86::TEST32rm,
+	llvm::X86::TEST32mr,
 	llvm::X86::ADD_FI32m,
 	llvm::X86::CALL32m,
 	llvm::X86::DIV32m,
@@ -436,10 +436,10 @@ unsigned READ_32[] = {
 
 size_t READ_32_SIZE = sizeof(READ_32)/sizeof(unsigned);
 
-unsigned READ_64[] = { 
+unsigned READ_64[] = {
 	llvm::X86::MOV64rm,
 	llvm::X86::CMP64rm,
-	llvm::X86::TEST64rm,
+	llvm::X86::TEST64mr,
 	llvm::X86::CALL64m,
 	llvm::X86::DIV64m,
 	llvm::X86::IDIV64m,
@@ -590,7 +590,7 @@ unsigned READ_64[] = {
 
 size_t READ_64_SIZE = sizeof(READ_64)/sizeof(unsigned);
 
-unsigned WRITE_8[] = { 
+unsigned WRITE_8[] = {
 	llvm::X86::MOV8mr,
 	llvm::X86::SETAEm,
 	llvm::X86::SETAm,
@@ -676,7 +676,7 @@ unsigned WRITE_8[] = {
 
 size_t WRITE_8_SIZE = sizeof(WRITE_8)/sizeof(unsigned);
 
-unsigned WRITE_16[] = { 
+unsigned WRITE_16[] = {
 	llvm::X86::MOV16mr,
 	llvm::X86::ISTT_FP16m,
 	llvm::X86::IST_F16m,
@@ -766,7 +766,7 @@ unsigned WRITE_16[] = {
 
 size_t WRITE_16_SIZE = sizeof(WRITE_16)/sizeof(unsigned);
 
-unsigned WRITE_32[] = { 
+unsigned WRITE_32[] = {
 	llvm::X86::MOV32mr,
 	llvm::X86::ISTT_FP32m,
 	llvm::X86::IST_F32m,
@@ -855,7 +855,7 @@ unsigned WRITE_32[] = {
 
 size_t WRITE_32_SIZE = sizeof(WRITE_32)/sizeof(unsigned);
 
-unsigned WRITE_64[] = { 
+unsigned WRITE_64[] = {
 	llvm::X86::MOV64mr,
 	llvm::X86::ILD_F64m,
 	llvm::X86::ISTT_FP64m,
@@ -953,7 +953,19 @@ unsigned STACK_WRITE_32[] = {
 	llvm::X86::PUSH32rmr,
 	llvm::X86::PUSH32r,
 	llvm::X86::PUSH32i8,
-	llvm::X86::PUSHi32
+	llvm::X86::PUSHi32,
+#ifdef QBDI_ARCH_X86
+	llvm::X86::ENTER,
+	llvm::X86::CALL16m,
+	llvm::X86::CALL32m,
+	llvm::X86::CALL64m,
+	llvm::X86::CALL16r,
+	llvm::X86::CALL32r,
+	llvm::X86::CALL64r,
+	llvm::X86::CALL64pcrel32,
+	llvm::X86::CALLpcrel16,
+	llvm::X86::CALLpcrel32
+#endif
 };
 
 size_t STACK_WRITE_32_SIZE = sizeof(STACK_WRITE_32)/sizeof(unsigned);
@@ -964,6 +976,8 @@ unsigned STACK_WRITE_64[] = {
 	llvm::X86::PUSH64r,
 	llvm::X86::PUSH64i8,
 	llvm::X86::PUSH64i32,
+#ifdef QBDI_ARCH_X86_64
+	llvm::X86::ENTER,
 	llvm::X86::CALL16m,
 	llvm::X86::CALL32m,
 	llvm::X86::CALL64m,
@@ -973,6 +987,7 @@ unsigned STACK_WRITE_64[] = {
 	llvm::X86::CALL64pcrel32,
 	llvm::X86::CALLpcrel16,
 	llvm::X86::CALLpcrel32
+#endif
 };
 
 size_t STACK_WRITE_64_SIZE = sizeof(STACK_WRITE_64)/sizeof(unsigned);
@@ -987,6 +1002,15 @@ size_t STACK_READ_16_SIZE = sizeof(STACK_READ_16)/sizeof(unsigned);
 unsigned STACK_READ_32[] = {
 	llvm::X86::POP32rmm,
 	llvm::X86::POP32r,
+#ifdef QBDI_ARCH_X86
+	llvm::X86::LEAVE,
+	llvm::X86::RETL,
+	llvm::X86::RETQ,
+	llvm::X86::RETW,
+	llvm::X86::RETIL,
+	llvm::X86::RETIQ,
+	llvm::X86::RETIW
+#endif
 };
 
 size_t STACK_READ_32_SIZE = sizeof(STACK_READ_32)/sizeof(unsigned);
@@ -994,12 +1018,16 @@ size_t STACK_READ_32_SIZE = sizeof(STACK_READ_32)/sizeof(unsigned);
 unsigned STACK_READ_64[] = {
 	llvm::X86::POP64rmm,
 	llvm::X86::POP64r,
+	llvm::X86::LEAVE64,
+#ifdef QBDI_ARCH_X86_64
+	llvm::X86::LEAVE,
 	llvm::X86::RETL,
 	llvm::X86::RETQ,
 	llvm::X86::RETW,
 	llvm::X86::RETIL,
 	llvm::X86::RETIQ,
 	llvm::X86::RETIW
+#endif
 };
 
 size_t STACK_READ_64_SIZE = sizeof(STACK_READ_64)/sizeof(unsigned);
@@ -1065,6 +1093,26 @@ bool isStackRead(const llvm::MCInst* inst) {
 
 bool isStackWrite(const llvm::MCInst* inst) {
     return IS_STACK_WRITE(MEMACCESS_INFO_TABLE[inst->getOpcode()]);
+}
+
+unsigned getImmediateSize(const llvm::MCInst* inst, const llvm::MCInstrDesc* desc) {
+    switch (desc->TSFlags & llvm::X86II::ImmMask) {
+        case llvm::X86II::Imm8:
+        case llvm::X86II::Imm8PCRel:
+        case llvm::X86II::Imm8Reg:
+            return 1;
+        case llvm::X86II::Imm16:
+        case llvm::X86II::Imm16PCRel:
+            return 2;
+        case llvm::X86II::Imm32:
+        case llvm::X86II::Imm32PCRel:
+        case llvm::X86II::Imm32S:
+            return 4;
+        case llvm::X86II::Imm64:
+            return 8;
+        default:
+            return sizeof(rword);
+    }
 }
 
 };
