@@ -1,10 +1,10 @@
 CHANGELOG
 =========
 
-Version 0.7.0 - Not released yet
---------------------------------
+Version 0.7.0
+-------------
 
-2019-09-YY QBDI Team <qbdi@quarkslab.com>
+2019-09-10 QBDI Team <qbdi@quarkslab.com>
 
 * Add support for the x86 architecture
 * Add new platforms related to Android: android-X86 and android-X86_64
