@@ -27,7 +27,6 @@ GITDIR=$(cd "${BASEDIR}/../.." && pwd -P)
 # ubuntu x64 => qbdi:x64_ubuntu_19.04
 "${BASEDIR}/ubuntu_debian/build.sh" "X64" "ubuntu:19.04"
 
-exit
 
 # push image
 
@@ -62,10 +61,10 @@ push_image "qbdi:x64_ubuntu_18.04" \
     "x64_ubuntu" \
     "x64"
 
-push_image "qbdi:x86_ubuntu_18.04" \
+push_image "qbdi:x86_ubuntu_19.04" \
     "x86_ubuntu_19.04"
 
-push_image "qbdi:x64_ubuntu_18.04" \
+push_image "qbdi:x64_ubuntu_19.04" \
     "x64_ubuntu_19.04"
 
 docker tag "qbdi:x64_ubuntu_18.04" "${DOCKERHUB_REPO}:latest"
