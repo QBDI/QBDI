@@ -26,6 +26,7 @@ namespace pyQBDI {
 PYBIND11_MODULE(pyqbdi, m) {
     m.attr("__version__") = QBDI_VERSION_STRING;
     m.attr("__debug__") = PYQBDI_DEBUG;
+    m.attr("__preload__") = false;
 
     init_utils_Float(m);
     init_utils_Memory(m);

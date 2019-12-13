@@ -8,6 +8,7 @@ All you need to add to your script be able to use the bindings is:
 
     import pyqbdi
 
+    # if used as a preload library
     def pyqbdipreload_on_run(vm, start, stop):
         pass
 
@@ -15,6 +16,8 @@ PyQBDI API
 ----------
 
 The PyQBDI API is almost the same as the :ref:`C++ API <ref_api_cpp>`.
+
+When the library is load as a preload library, the variable ``pyqbdi.__preload__`` is set to ``True``.
 
 PyQBDI Helpers
 --------------

@@ -29,6 +29,7 @@ PYBIND11_MODULE(pyqbdi, m) {
     m.attr("__debug__") = PYQBDI_DEBUG;
     m.attr("__arch__") = QBDI_ARCH_STR;
     m.attr("__platform__") = QBDI_PLATFORM_STR;
+    m.attr("__preload__") = false;
 
     init_binding_Range(m);
     init_binding_State(m);

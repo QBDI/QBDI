@@ -17,7 +17,7 @@ PyQBDI can be used as a preloaded library to instrument a whole binary, as QBDIP
 The follow action are performed with the API of QBDIPreload :
 
 - :cpp:func:`QBDI::qbdipreload_on_main`:
-  The scipt specified in ``PYQBDI_TOOL`` is loaded with ``__name__`` set to ``pyqbdi.preload_script``. The program argument can be found in ``sys.argv``.
+  The scipt specified in ``PYQBDI_TOOL`` is loaded. The program argument can be found in ``sys.argv``.
   To avoid infinite loop with some python library, the environment variable ``LD_PRELOAD`` or ``DYLD_INSERT_LIBRARIES`` is removed from ``os.environ``
   before the loading of the script.
 

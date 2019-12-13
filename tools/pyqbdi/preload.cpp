@@ -65,11 +65,13 @@ int QBDI::qbdipreload_on_main(int argc, char** argv) {
 #elif defined(QBDI_OS_LINUX) || defined(QBDI_OS_ANDROID)
         os.attr("environ").attr("__delitem__")("LD_PRELOAD");
 #endif
+        py::module pyqbdi = py::module::import("pyqbdi");
+        pyqbdi.attr("__preload__") = true;
+
         // load file before create VM object
         try {
-            py::module pyqbdi = py::module::import("pyqbdi");
-            py::module pyqbdi_preload = pyqbdi.def_submodule("preload_script");
-            py::object scope = pyqbdi_preload.attr("__dict__");
+            py::module main = py::module::import("__main__");
+            py::object scope = main.attr("__dict__");
             py::eval_file(fileTool, scope);
         } catch (const std::exception& e) {
             std::cerr << e.what() << std::endl;
@@ -83,8 +85,8 @@ int QBDI::qbdipreload_on_main(int argc, char** argv) {
 
 int QBDI::qbdipreload_on_run(QBDI::VMInstanceRef vm, QBDI::rword start, QBDI::rword stop) {
     try {
-        py::module pyqbdi_preload =  py::module::import("pyqbdi.preload_script");
-        pyqbdi_preload.attr("pyqbdipreload_on_run")(vm, start, stop);
+        py::module main = py::module::import("__main__");
+        main.attr("pyqbdipreload_on_run")(vm, start, stop);
     }
     catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
