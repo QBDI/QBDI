@@ -36,7 +36,7 @@ if(NOT (${ARCH} STREQUAL "ARM" ))
     set(PYBIND11_SOURCE_DIR "${SOURCE_DIR}")
 
     execute_process(
-        COMMAND "${PYTHON_EXECUTABLE}" -c "from distutils import sysconfig as sc; print(sc.get_python_lib(prefix='', plat_specific=True))"
+        COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/find_pyqbdi_install_path.py" "${CMAKE_INSTALL_PREFIX}"
         OUTPUT_VARIABLE PYTHON_SITE
         OUTPUT_STRIP_TRAILING_WHITESPACE)
 
