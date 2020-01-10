@@ -76,6 +76,11 @@ class ExecBlockManager {
     VMInstanceRef                    vminstance;
     const Assembly&                  assembly;
 
+    // cache ExecBlock prologue and epilogue
+    uint32_t                                            epilogueSize;
+    const std::vector<std::unique_ptr<RelocatableInst>> execBlockPrologue;
+    const std::vector<std::unique_ptr<RelocatableInst>> execBlockEpilogue;
+
     size_t searchRegion(rword start) const;
 
     void mergeRegion(size_t i);

@@ -19,7 +19,7 @@ VMAction countRecursion(VMInstanceRef vm, GPRState *gprState, FPRState *fprState
     *((unsigned*) data) += 1;
     return QBDI_CONTINUE;
 }
-    
+
 VMAction countInstruction(VMInstanceRef vm, GPRState *gprState, FPRState *fprState, void *data) {
     // Cast data to our counter
     uint32_t* counter = (uint32_t *) data;
@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
 
     printf("Initializing VM ...\n");
     // Constructing a new QBDI VM
-    qbdi_initVM(&vm, NULL, NULL);
+    qbdi_initVM(&vm, NULL, NULL, 0);
     // Registering countInstruction() callback to be called after every instruction
     qbdi_addCodeCB(vm, QBDI_POSTINST, countInstruction, &counter);
     qbdi_addCodeAddrCB(vm, (rword) &fibonacci, QBDI_PREINST, countRecursion, &recursions);

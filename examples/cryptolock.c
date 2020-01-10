@@ -43,7 +43,7 @@ QBDI_NOINLINE const char* cryptolock(const char* password) {
             good = false;
         }
     }
-    
+
     if(good) {
         return getSecret(password);
     }
@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
 
     printf("Initializing VM ...\n");
     // Constructing a new QBDI vm
-    qbdi_initVM(&vm, NULL, NULL);
+    qbdi_initVM(&vm, NULL, NULL, 0);
     // Registering a callback on every memory write to our onwrite() function
     qbdi_addMemAccessCB(vm, QBDI_MEMORY_WRITE, onwrite, NULL);
     // Instrument this module

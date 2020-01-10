@@ -25,6 +25,7 @@
 #include "Callback.h"
 #include "Errors.h"
 #include "State.h"
+#include "Options.h"
 #include "InstAnalysis.h"
 
 #ifdef __cplusplus
@@ -41,7 +42,7 @@ extern "C" {
  * @param[in]  mattrs   A NULL terminated array of C strings specifying the attributes of the cpu
  *                      model. If NULL, no additional features are specified.
  */
-QBDI_EXPORT void qbdi_initVM(VMInstanceRef* instance, const char* cpu, const char** mattrs);
+QBDI_EXPORT void qbdi_initVM(VMInstanceRef* instance, const char* cpu, const char** mattrs, Options opts);
 
 /*! Destroy an instance of VM.
  *
@@ -199,12 +200,27 @@ QBDI_EXPORT FPRState* qbdi_getFPRState(VMInstanceRef instance);
  */
 QBDI_EXPORT void qbdi_setGPRState(VMInstanceRef instance, GPRState* gprState);
 
-/*! Set the GPR state
+/*! Set the FPR state
  *
  * @param[in] instance  VM instance.
  * @param[in] fprState  A structure containing the Floating Point Registers state.
  */
 QBDI_EXPORT void qbdi_setFPRState(VMInstanceRef instance, FPRState* fprState);
+
+/*! Get the current Options
+ *
+ * @param[in] instance  VM instance.
+ *
+ * @return              The current options of the VM
+ */
+QBDI_EXPORT Options qbdi_getOptions(VMInstanceRef instance);
+
+/*! Set the Options
+ *
+ * @param[in] instance  VM instance.
+ * @param[in] options   The new options of the VM.
+ */
+QBDI_EXPORT void qbdi_setOptions(VMInstanceRef instance, Options options);
 
 /*! Add a custom instrumentation rule to the VM.
  *

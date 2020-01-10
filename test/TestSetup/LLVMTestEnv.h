@@ -18,6 +18,12 @@
 #ifndef LLVMTESTENV_H
 #define LLVMTESTENV_H
 
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "Options.h"
+
 namespace llvm {
   class MCAsmInfo;
   class MCCodeEmitter;
@@ -51,7 +57,7 @@ protected:
 
 public:
 
-    LLVMTestEnv(std::string cpu = "", std::vector<std::string> mattrs = {});
+    LLVMTestEnv(std::string cpu = "", std::vector<std::string> mattrs = {}, QBDI::Options opts = QBDI::Options::NO_OPT);
     ~LLVMTestEnv();
 };
 

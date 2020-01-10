@@ -9,12 +9,23 @@ Initialization
 --------------
 
 The :c:func:`qbdi_initVM` function is used to create a new VM instance, using host
-CPU as a reference::
+CPU as a reference and with default QBDI options::
 
     VMInstanceRef vm;
-    qbdi_initVM(&vm, NULL, NULL);
+    qbdi_initVM(&vm, NULL, NULL, 0);
 
 .. doxygenfunction:: qbdi_initVM
+   :project: QBDI_C
+
+The options can be changed later if needed.
+
+.. doxygenenum:: Options
+   :project: QBDI_C
+
+.. doxygenfunction:: qbdi_getOptions
+   :project: QBDI_C
+
+.. doxygenfunction:: qbdi_setOptions
    :project: QBDI_C
 
 State Management

@@ -22,7 +22,7 @@
 
 namespace QBDI {
 
-RelocatableInst::SharedPtrVec getExecBlockPrologue() {
+RelocatableInst::SharedPtrVec getExecBlockPrologue(Options opts) {
     RelocatableInst::SharedPtrVec prologue;
 
     // save return address on host stack
@@ -52,7 +52,7 @@ RelocatableInst::SharedPtrVec getExecBlockPrologue() {
     return prologue;
 }
 
-RelocatableInst::SharedPtrVec getExecBlockEpilogue() {
+RelocatableInst::SharedPtrVec getExecBlockEpilogue(Options opts) {
     RelocatableInst::SharedPtrVec epilogue;
 
     // Save guest state
@@ -256,7 +256,7 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
 // Patch allowing to terminate a basic block early by writing address into DataBlock[Offset(PC)]
 RelocatableInst::SharedPtrVec getTerminator(rword address) {
     RelocatableInst::SharedPtrVec terminator;
-    
+
     append(terminator, SaveReg(Reg(2), Offset(Reg(2))));
     terminator.push_back(Ldr(Reg(2), Constant(address)));
     append(terminator, SaveReg(Reg(2), Offset(Reg(REG_PC))));

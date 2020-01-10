@@ -21,6 +21,8 @@
 #include "ExecBlock/ExecBlock.h"
 #include "ExecBlock/ExecBlockManager.h"
 #include "Patch/Patch.h"
+#include "Patch/PatchRules.h"
+#include "Utility/Assembly.h"
 #include "Utility/LogSys.h"
 
 #include "State.h"
@@ -28,7 +30,9 @@
 namespace QBDI {
 
 ExecBlockManager::ExecBlockManager(const Assembly& assembly, VMInstanceRef vminstance) :
-   total_translated_size(1), total_translation_size(1), vminstance(vminstance), assembly(assembly) {
+   total_translated_size(1), total_translation_size(1), vminstance(vminstance), assembly(assembly),
+   epilogueSize(0), execBlockPrologue(getExecBlockPrologue(assembly.getOptions())),
+   execBlockEpilogue(getExecBlockEpilogue(assembly.getOptions())) {
 }
 
 ExecBlockManager::~ExecBlockManager() {
@@ -221,7 +225,9 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock, siz
             // basic blocks can cause overflows.
             if(i >= region.blocks.size()) {
                 RequireAction("ExecBlockManager::writeBasicBlock", i < (1<<16), abort());
-                region.blocks.emplace_back(std::make_unique<ExecBlock>(assembly, vminstance));
+                region.blocks.emplace_back(std::make_unique<ExecBlock>(assembly, vminstance, &execBlockPrologue, &execBlockEpilogue, epilogueSize));
+                if (epilogueSize == 0)
+                    epilogueSize = region.blocks[i]->getEpilogueSize();
             }
             // Write sequence
             SeqWriteResult res = region.blocks[i]->writeSequence(basicBlock.begin() + patchIdx, basicBlock.begin() + patchEnd);

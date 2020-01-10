@@ -25,6 +25,7 @@
 #include "llvm/MC/MCRegisterInfo.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include "Options.h"
 #include "Utility/memory_ostream.h"
 
 namespace llvm {
@@ -44,6 +45,7 @@ namespace QBDI {
 class Assembly {
 protected:
 
+    const llvm::Target                       *target;
     llvm::MCInstrInfo                        &MCII;
     const llvm::MCRegisterInfo               &MRI;
     const llvm::MCAsmInfo                    &MAI;
@@ -53,9 +55,11 @@ protected:
     std::unique_ptr<llvm::MCInstPrinter>     asmPrinter;
     std::unique_ptr<llvm::raw_pwrite_stream> null_ostream;
 
+    Options                                  options;
+
 public:
     Assembly(llvm::MCContext &context, std::unique_ptr<llvm::MCAsmBackend> MAB, llvm::MCInstrInfo &MCII,
-             const llvm::Target &target, llvm::MCSubtargetInfo &MSTI);
+             const llvm::Target *target, llvm::MCSubtargetInfo &MSTI, Options options);
 
     ~Assembly();
 
@@ -71,6 +75,9 @@ public:
     inline const llvm::MCInstrInfo& getMCII() const { return MCII; }
 
     inline const llvm::MCRegisterInfo& getMRI() const { return MRI; }
+
+    Options getOptions() const {return options;}
+    void setOptions(Options opts);
 };
 
 }

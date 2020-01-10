@@ -187,7 +187,7 @@ void catchEntrypoint(int argc, char** argv) {
 
     if (DEFAULT_HANDLER && (status == QBDIPRELOAD_NOT_HANDLED)) {
         VMInstanceRef vm;
-        qbdi_initVM(&vm, NULL, NULL);
+        qbdi_initVM(&vm, NULL, NULL, 0);
         qbdi_instrumentAllExecutableMaps(vm);
 
         size_t size = 0, i = 0;

@@ -29,50 +29,52 @@
 
 namespace QBDI {
 
-RelocatableInst::UniquePtrVec getExecBlockPrologue() {
+RelocatableInst::UniquePtrVec getExecBlockPrologue(Options opts) {
     RelocatableInst::UniquePtrVec prologue;
-
 
     // Save host BP, SP
     append(prologue, SaveReg(Reg(REG_BP), Offset(offsetof(Context, hostState.bp))));
     append(prologue, SaveReg(Reg(REG_SP), Offset(offsetof(Context, hostState.sp))));
     // Restore FPR
-#ifndef _QBDI_ASAN_ENABLED_ // Disabled if ASAN is enabled as it breaks context alignment
-    append(prologue, LoadReg(Reg(0), Offset(offsetof(Context, hostState.executeFlags))));
-    prologue.push_back(Test(Reg(0), ExecBlockFlags::needFPU));
-    prologue.push_back(Je(7 + 4));
-    prologue.push_back(Fxrstor(Offset(offsetof(Context, fprState))));
-    // target je needFPU
-    if(isHostCPUFeaturePresent("avx")) {
-        LogDebug("getExecBlockPrologue", "AVX support enabled in guest context switches");
-        // don't restore if not needed
-        prologue.push_back(Test(Reg(0), ExecBlockFlags::needAVX));
-        #if defined(QBDI_ARCH_X86_64)
-        prologue.push_back(Je(16 * 10 + 4));
-        #else // QBDI_ARCH_X86
-        prologue.push_back(Je(8 * 10 + 4));
-        #endif
-        prologue.push_back(Vinsertf128(llvm::X86::YMM0, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm0)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM1, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm1)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM2, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm2)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM3, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm3)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM4, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm4)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM5, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm5)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM6, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm6)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM7, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm7)), 1));
-        #if defined(QBDI_ARCH_X86_64)
-        prologue.push_back(Vinsertf128(llvm::X86::YMM8, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm8)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM9, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm9)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM10, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm10)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM11, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm11)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM12, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm12)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM13, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm13)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM14, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm14)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM15, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm15)), 1));
-        #endif // QBDI_ARCH_X86_64
-        // target je needAVX
+    if ((opts & Options::OPT_DISABLE_FPR) == 0) {
+        if ((opts & Options::OPT_DISABLE_OPTIONAL_FPR) == 0) {
+            append(prologue, LoadReg(Reg(0), Offset(offsetof(Context, hostState.executeFlags))));
+            prologue.push_back(Test(Reg(0), ExecBlockFlags::needFPU));
+            prologue.push_back(Je(7 + 4));
+        }
+        prologue.push_back(Fxrstor(Offset(offsetof(Context, fprState))));
+        // target je needFPU
+        if(isHostCPUFeaturePresent("avx")) {
+            LogDebug("getExecBlockPrologue", "AVX support enabled in guest context switches");
+            // don't restore if not needed
+            if ((opts & Options::OPT_DISABLE_OPTIONAL_FPR) == 0) {
+                prologue.push_back(Test(Reg(0), ExecBlockFlags::needAVX));
+                if constexpr(is_x86_64)
+                    prologue.push_back(Je(16 * 10 + 4));
+                else
+                    prologue.push_back(Je(8 * 10 + 4));
+            }
+            prologue.push_back(Vinsertf128(llvm::X86::YMM0, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm0)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM1, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm1)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM2, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm2)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM3, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm3)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM4, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm4)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM5, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm5)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM6, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm6)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM7, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm7)), 1));
+            #if defined(QBDI_ARCH_X86_64)
+            prologue.push_back(Vinsertf128(llvm::X86::YMM8, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm8)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM9, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm9)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM10, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm10)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM11, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm11)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM12, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm12)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM13, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm13)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM14, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm14)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM15, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm15)), 1));
+            #endif // QBDI_ARCH_X86_64
+            // target je needAVX
+        }
     }
-#endif
     // Restore EFLAGS
     append(prologue, LoadReg(Reg(0), Offset(offsetof(Context, gprState.eflags))));
     prologue.push_back(Pushr(Reg(0)));
@@ -86,7 +88,7 @@ RelocatableInst::UniquePtrVec getExecBlockPrologue() {
     return prologue;
 }
 
-RelocatableInst::UniquePtrVec getExecBlockEpilogue() {
+RelocatableInst::UniquePtrVec getExecBlockEpilogue(Options opts) {
     RelocatableInst::UniquePtrVec epilogue;
 
     // Save GPR
@@ -100,42 +102,45 @@ RelocatableInst::UniquePtrVec getExecBlockEpilogue() {
     epilogue.push_back(Popr(Reg(0)));
     append(epilogue, SaveReg(Reg(0), Offset(offsetof(Context, gprState.eflags))));
     // Save FPR
-#ifndef _QBDI_ASAN_ENABLED_ // Disabled if ASAN is enabled as it breaks context alignment
-    append(epilogue, LoadReg(Reg(0), Offset(offsetof(Context, hostState.executeFlags))));
-    epilogue.push_back(Test(Reg(0), ExecBlockFlags::needFPU));
-    epilogue.push_back(Je(7 + 4));
-    epilogue.push_back(Fxsave(Offset(offsetof(Context, fprState))));
-    // target je needFPU
-    if(isHostCPUFeaturePresent("avx")) {
-        LogDebug("getExecBlockEpilogue", "AVX support enabled in guest context switches");
-        // don't save if not needed
-        epilogue.push_back(Test(Reg(0), ExecBlockFlags::needAVX));
-        #if defined(QBDI_ARCH_X86_64)
-        epilogue.push_back(Je(16 * 10 + 4));
-        #else // QBDI_ARCH_X86
-        epilogue.push_back(Je(8 * 10 + 4));
-        #endif
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm0)), llvm::X86::YMM0, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm1)), llvm::X86::YMM1, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm2)), llvm::X86::YMM2, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm3)), llvm::X86::YMM3, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm4)), llvm::X86::YMM4, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm5)), llvm::X86::YMM5, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm6)), llvm::X86::YMM6, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm7)), llvm::X86::YMM7, 1));
-        #if defined(QBDI_ARCH_X86_64)
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm8)), llvm::X86::YMM8, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm9)), llvm::X86::YMM9, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm10)), llvm::X86::YMM10, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm11)), llvm::X86::YMM11, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm12)), llvm::X86::YMM12, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm13)), llvm::X86::YMM13, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm14)), llvm::X86::YMM14, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm15)), llvm::X86::YMM15, 1));
-        #endif // QBDI_ARCH_X86_64
-        // target je needAVX
+    if ((opts & Options::OPT_DISABLE_FPR) == 0) {
+        if ((opts & Options::OPT_DISABLE_OPTIONAL_FPR) == 0) {
+            append(epilogue, LoadReg(Reg(0), Offset(offsetof(Context, hostState.executeFlags))));
+            epilogue.push_back(Test(Reg(0), ExecBlockFlags::needFPU));
+            epilogue.push_back(Je(7 + 4));
+        }
+        epilogue.push_back(Fxsave(Offset(offsetof(Context, fprState))));
+        // target je needFPU
+        if(isHostCPUFeaturePresent("avx")) {
+            LogDebug("getExecBlockEpilogue", "AVX support enabled in guest context switches");
+            // don't save if not needed
+            if ((opts & Options::OPT_DISABLE_OPTIONAL_FPR) == 0) {
+                epilogue.push_back(Test(Reg(0), ExecBlockFlags::needAVX));
+                if constexpr(is_x86_64)
+                    epilogue.push_back(Je(16 * 10 + 4));
+                else
+                    epilogue.push_back(Je(8 * 10 + 4));
+            }
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm0)), llvm::X86::YMM0, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm1)), llvm::X86::YMM1, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm2)), llvm::X86::YMM2, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm3)), llvm::X86::YMM3, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm4)), llvm::X86::YMM4, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm5)), llvm::X86::YMM5, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm6)), llvm::X86::YMM6, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm7)), llvm::X86::YMM7, 1));
+            #if defined(QBDI_ARCH_X86_64)
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm8)), llvm::X86::YMM8, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm9)), llvm::X86::YMM9, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm10)), llvm::X86::YMM10, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm11)), llvm::X86::YMM11, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm12)), llvm::X86::YMM12, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm13)), llvm::X86::YMM13, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm14)), llvm::X86::YMM14, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm15)), llvm::X86::YMM15, 1));
+            #endif // QBDI_ARCH_X86_64
+            // target je needAVX
+        }
     }
-#endif
     // return to host
     epilogue.push_back(Ret());
 

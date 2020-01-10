@@ -82,9 +82,6 @@ private:
 
     enum PageState {RX, RW};
 
-    static uint32_t                                      epilogueSize;
-    static std::vector<std::unique_ptr<RelocatableInst>> execBlockPrologue;
-    static std::vector<std::unique_ptr<RelocatableInst>> execBlockEpilogue;
     static void (*runCodeBlockFct)(void*, rword);
 
     VMInstanceRef                     vminstance;
@@ -102,6 +99,7 @@ private:
     PageState                         pageState;
     uint16_t                          currentSeq;
     uint16_t                          currentInst;
+    uint32_t                          epilogueSize;
 
     /*! Verify if the code block is in read execute mode.
      *
@@ -127,10 +125,16 @@ public:
 
     /*! Construct a new ExecBlock
      *
-     * @param[in] assembly    Assembly used to assemble instructions in the ExecBlock.
-     * @param[in] vminstance  Pointer to public engine interface
+     * @param[in] assembly           Assembly used to assemble instructions in the ExecBlock.
+     * @param[in] vminstance         Pointer to public engine interface
+     * @param[in] execBlockPrologue  cached prologue of ExecManager
+     * @param[in] execBlockEpilogue  cached epilogue of ExecManager
+     * @param[in] epilogueSize       size in bytes of the epilogue (0 is not know)
      */
-    ExecBlock(const Assembly& assembly, VMInstanceRef vminstance = nullptr);
+    ExecBlock(const Assembly& assembly, VMInstanceRef vminstance = nullptr,
+              const std::vector<std::unique_ptr<RelocatableInst>>* execBlockPrologue = nullptr,
+              const std::vector<std::unique_ptr<RelocatableInst>>* execBlockEpilogue = nullptr,
+              uint32_t epilogueSize = 0);
 
     ~ExecBlock();
 
@@ -196,6 +200,12 @@ public:
     rword getEpilogueOffset() const {
         return codeBlock.allocatedSize() - epilogueSize - codeStream->current_pos();
     }
+
+    /*! Get the size of the epilogue
+     *
+     * @return The size of the epilogue.
+     */
+    uint32_t getEpilogueSize() const { return epilogueSize; }
 
     /*! Obtain the value of the PC where the ExecBlock is currently writing instructions.
      *

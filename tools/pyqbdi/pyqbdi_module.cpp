@@ -33,6 +33,7 @@ PYBIND11_MODULE(pyqbdi, m) {
 
     init_binding_Range(m);
     init_binding_State(m);
+    init_binding_Options(m);
     init_binding_Memory(m);
     init_binding_InstAnalysis(m);
     init_binding_Callback(m);

@@ -44,7 +44,7 @@
 
 LLVMTestEnv::~LLVMTestEnv() = default;
 
-LLVMTestEnv::LLVMTestEnv(std::string cpu, std::vector<std::string> mattrs) :
+LLVMTestEnv::LLVMTestEnv(std::string cpu, std::vector<std::string> mattrs, QBDI::Options opts) :
         cpu(cpu), mattrs(mattrs) {
     std::string error;
     std::string featuresStr;
@@ -102,6 +102,6 @@ LLVMTestEnv::LLVMTestEnv(std::string cpu, std::vector<std::string> mattrs) :
        processTarget->createMCCodeEmitter(*MCII, *MRI, *MCTX)
     );
     REQUIRE(MAB != nullptr);
-    assembly = std::make_unique<QBDI::Assembly>(*MCTX, std::move(MAB), *MCII, *processTarget, *MSTI);
+    assembly = std::make_unique<QBDI::Assembly>(*MCTX, std::move(MAB), *MCII, processTarget, *MSTI, opts);
     REQUIRE(assembly != nullptr);
 }

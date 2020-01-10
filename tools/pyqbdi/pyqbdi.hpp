@@ -41,14 +41,15 @@ using namespace pybind11::literals;
 namespace QBDI {
 namespace pyQBDI {
 
+void init_binding_Callback(py::module_& m);
+void init_binding_Errors(py::module_& m);
+void init_binding_InstAnalysis(py::module_& m);
+void init_binding_Logs(py::module_& m);
 void init_binding_Memory(py::module_& m);
+void init_binding_Options(py::module_& m);
 void init_binding_Range(py::module_& m);
 void init_binding_State(py::module_& m);
-void init_binding_InstAnalysis(py::module_& m);
-void init_binding_Callback(py::module_& m);
 void init_binding_VM(py::module_& m);
-void init_binding_Logs(py::module_& m);
-void init_binding_Errors(py::module_& m);
 
 void init_utils_Memory(py::module_& m);
 void init_utils_Float(py::module_& m);
