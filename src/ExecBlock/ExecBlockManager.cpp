@@ -253,6 +253,21 @@ size_t ExecBlockManager::findRegion(Range<rword> codeRange) {
             );
             return i;
         }
+        // Medium case: the code start is in the range but not the end of codeRange.
+        // This case may append when instrument unaligned code
+        // To avoid error with getProgrammedExecBlock, the existing region is used and extend
+        if (regions[i].covered.contains(codeRange.start)) {
+            LogDebug(
+                    "ExecBlockManager::findRegion",
+                    "Region %zu covered a part of basic block [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
+                    i,
+                    codeRange.start,
+                    codeRange.end
+            );
+            best_region = i;
+            break;
+        }
+
         // Hard case: it's in the available budget of one the region. Keep the lowest cost.
         // First compute the required cost for the region to cover this extended range.
         if(regions[i].covered.end < codeRange.end) {
