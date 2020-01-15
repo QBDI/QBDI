@@ -359,6 +359,7 @@ bool Engine::run(rword start, rword stop) {
                 event |= BASIC_BLOCK_NEW;
                 // Set new basic block as current
                 curExecBlock = blockManager->getProgrammedExecBlock(currentPC);
+                RequireAction("Engine::run", curExecBlock != nullptr, abort());
             }
 
             // Set context if necessary
