@@ -19,47 +19,30 @@
 
 .text
 
-.globl __qbdi_runCodeBlockSSE
-.globl __qbdi_runCodeBlockAVX
+.globl __qbdi_runCodeBlock
 
-__qbdi_runCodeBlockSSE:
+__qbdi_runCodeBlock:
     mov eax, [esp+4]
     mov edx, esp;
-    sub esp, 512;
-    and esp, -512;
-    fxsave [esp];
-    pushad;
+    sub esp, 8;
+    stmxcsr [rsp];
+    fnstcw [rsp+4];
+    push ebx;
+    push esi;
+    push edi;
+    push ebp;
+    push edx;
     call eax;
-    popad;
-    fxrstor [esp];
+    pop edx;
+    pop ebp;
+    pop edi;
+    pop esi;
+    pop ebx;
+    fninit;
+    fldcw [rsp+8];
+    ldmxcsr [rsp];
+    emms;
     mov esp, edx;
+    cld;
     ret;
     
-__qbdi_runCodeBlockAVX:
-    mov eax, [esp+4]
-    mov edx, esp;
-    sub esp, 1024;
-    and esp, -1024;
-    fxsave [esp];
-    vextractf128 [esp+512], ymm0, 1;
-    vextractf128 [esp+528], ymm1, 1;
-    vextractf128 [esp+544], ymm2, 1;
-    vextractf128 [esp+560], ymm3, 1;
-    vextractf128 [esp+576], ymm4, 1;
-    vextractf128 [esp+592], ymm5, 1;
-    vextractf128 [esp+608], ymm6, 1;
-    vextractf128 [esp+624], ymm7, 1;
-    pusha;
-    call eax;
-    popa;
-    fxrstor [esp];
-    vinsertf128 ymm0, ymm0, [esp+512], 1;
-    vinsertf128 ymm1, ymm1, [esp+528], 1;
-    vinsertf128 ymm2, ymm2, [esp+544], 1;
-    vinsertf128 ymm3, ymm3, [esp+560], 1;
-    vinsertf128 ymm4, ymm4, [esp+576], 1;
-    vinsertf128 ymm5, ymm5, [esp+592], 1;
-    vinsertf128 ymm6, ymm6, [esp+608], 1;
-    vinsertf128 ymm7, ymm7, [esp+624], 1;
-    mov esp, edx;
-    ret;

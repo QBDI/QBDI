@@ -25,19 +25,9 @@
 #include "Utility/System.h"
 
 #if defined(QBDI_OS_WIN)
-    #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
-        extern "C" void qbdi_runCodeBlockSSE(void *codeBlock);
-        extern "C" void qbdi_runCodeBlockAVX(void *codeBlock);
-    #else
-        extern "C" void qbdi_runCodeBlock(void *codeBlock);
-    #endif
+    extern "C" void qbdi_runCodeBlock(void *codeBlock);
 #else
-    #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
-        extern void qbdi_runCodeBlockSSE(void *codeBlock) asm ("__qbdi_runCodeBlockSSE");
-        extern void qbdi_runCodeBlockAVX(void *codeBlock) asm ("__qbdi_runCodeBlockAVX");
-    #else
-        extern void qbdi_runCodeBlock(void *codeBlock) asm ("__qbdi_runCodeBlock");
-    #endif
+    extern void qbdi_runCodeBlock(void *codeBlock) asm ("__qbdi_runCodeBlock");
 #endif
 
 namespace QBDI {
@@ -45,7 +35,6 @@ namespace QBDI {
 uint32_t ExecBlock::epilogueSize = 0;
 RelocatableInst::SharedPtrVec ExecBlock::execBlockPrologue = RelocatableInst::SharedPtrVec();
 RelocatableInst::SharedPtrVec ExecBlock::execBlockEpilogue = RelocatableInst::SharedPtrVec();
-void (*ExecBlock::runCodeBlockFct)(void*) = NULL;
 
 ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(vminstance), assembly(assembly) {
     // Allocate memory blocks
@@ -90,18 +79,6 @@ ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(
         }
         epilogueSize = codeStream->current_pos();
         codeStream->seek(0);
-        // runCodeBlock variant selection
-        #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
-        if(isHostCPUFeaturePresent("avx")) {
-            LogDebug("ExecBlock::ExecBlock", "AVX support enabled in host context switches");
-            runCodeBlockFct = qbdi_runCodeBlockAVX;
-        }
-        else {
-            runCodeBlockFct = qbdi_runCodeBlockSSE;
-        }
-        #else
-        runCodeBlockFct = qbdi_runCodeBlock;
-        #endif
     }
     // JIT prologue and epilogue
     codeStream->seek(codeBlock.size() - epilogueSize);
@@ -173,7 +150,7 @@ void ExecBlock::run() {
 #else
     llvm::sys::Memory::InvalidateInstructionCache(codeBlock.base(), codeBlock.size());
 #endif // QBDI_OS_IOS
-    runCodeBlockFct(codeBlock.base());
+    qbdi_runCodeBlock(codeBlock.base());
 }
 
 VMAction ExecBlock::execute() {

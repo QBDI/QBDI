@@ -81,7 +81,6 @@ private:
     static uint32_t                                      epilogueSize;
     static std::vector<std::shared_ptr<RelocatableInst>> execBlockPrologue;
     static std::vector<std::shared_ptr<RelocatableInst>> execBlockEpilogue;
-    static void (*runCodeBlockFct)(void*);
 
     VMInstanceRef               vminstance;
     llvm::sys::MemoryBlock      codeBlock;
