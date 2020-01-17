@@ -350,9 +350,9 @@ if(DEFINED CMAKE_STRIP AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     elseif(UNIX)
         set(STRIP_ARGS ${STRIP_ARGS} -x)
     endif()
-    add_custom_command(TARGET QBDI
-        POST_BUILD
-        COMMAND ${CMAKE_STRIP} ${STRIP_ARGS} "$<TARGET_FILE:QBDI>")
+    #add_custom_command(TARGET QBDI
+    #    POST_BUILD
+    #    COMMAND ${CMAKE_STRIP} ${STRIP_ARGS} "$<TARGET_FILE:QBDI>")
 endif()
 
 # Configure QBDIPreload

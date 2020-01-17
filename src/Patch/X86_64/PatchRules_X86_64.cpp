@@ -23,6 +23,39 @@
 
 namespace QBDI {
 
+static bool usedXsave() {
+    if (!isHostCPUFeaturePresent("xsave"))
+        return false;
+
+    uint32_t res;
+
+    // check CPUID.1:ECX.OSXSAVE == 1 (xsave is enable in CR4.OSXSAVE)
+    #if defined(QBDI_OS_WIN)
+    __asm {
+        mov eax, 1
+        cpuid
+        mov res, ecx
+    };
+    #else
+    __asm__ volatile("cpuid;" : "=c"(res) : "a"(0x1): "ebx", "edx");
+    #endif
+    if (((res >> 27) & 1) == 0)
+        return false;
+
+    // check XCR0 register
+    #if defined(QBDI_OS_WIN)
+    __asm {
+        xor ecx, ecx
+        xgetbv
+        mov res, eax
+    };
+    #else
+    __asm__ volatile("xgetbv;" : "=a"(res) : "c"(0) : "edx");
+    #endif
+
+    return ((res & 0x7) == 0x7);
+}
+
 RelocatableInst::SharedPtrVec getExecBlockPrologue() {
     RelocatableInst::SharedPtrVec prologue;
 
@@ -32,27 +65,34 @@ RelocatableInst::SharedPtrVec getExecBlockPrologue() {
     append(prologue, SaveReg(Reg(REG_SP), Offset(offsetof(Context, hostState.sp))));
     // Restore FPR
 #ifndef _QBDI_ASAN_ENABLED_ // Disabled if ASAN is enabled as it breaks context alignment
-    prologue.push_back(Fxrstor(Offset(offsetof(Context, fprState))));
-    if(isHostCPUFeaturePresent("avx")) {
-        LogDebug("getExecBlockPrologue", "AVX support enabled in guest context switches");
-        prologue.push_back(Vinsertf128(llvm::X86::YMM0, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm0)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM1, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm1)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM2, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm2)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM3, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm3)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM4, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm4)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM5, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm5)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM6, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm6)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM7, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm7)), 1));
-#if defined(QBDI_ARCH_X86_64)
-        prologue.push_back(Vinsertf128(llvm::X86::YMM8, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm8)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM9, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm9)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM10, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm10)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM11, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm11)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM12, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm12)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM13, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm13)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM14, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm14)), 1));
-        prologue.push_back(Vinsertf128(llvm::X86::YMM15, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm15)), 1));
-#endif // QBDI_ARCH_X86_64
+    if(usedXsave()) {
+        LogDebug("getExecBlockPrologue", "XSAVE support enabled in guest context switches");
+        prologue.push_back(Mov(Reg(/* EAX */ 0), Constant(0x7)));
+        prologue.push_back(Mov(Reg(/* EDX */ 3), Constant(0)));
+        prologue.push_back(Xrstor(Offset(offsetof(Context, fprState))));
+    } else {
+        prologue.push_back(Fxrstor(Offset(offsetof(Context, fprState))));
+        if(isHostCPUFeaturePresent("avx")) {
+            LogDebug("getExecBlockPrologue", "AVX support enabled in guest context switches");
+            prologue.push_back(Vinsertf128(llvm::X86::YMM0, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm0)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM1, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm1)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM2, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm2)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM3, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm3)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM4, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm4)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM5, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm5)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM6, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm6)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM7, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm7)), 1));
+            #if defined(QBDI_ARCH_X86_64)
+            prologue.push_back(Vinsertf128(llvm::X86::YMM8, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm8)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM9, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm9)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM10, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm10)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM11, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm11)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM12, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm12)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM13, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm13)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM14, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm14)), 1));
+            prologue.push_back(Vinsertf128(llvm::X86::YMM15, Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm15)), 1));
+            #endif // QBDI_ARCH_X86_64
+        }
     }
 #endif
     // Restore EFLAGS
@@ -76,27 +116,34 @@ RelocatableInst::SharedPtrVec getExecBlockEpilogue() {
         append(epilogue, SaveReg(Reg(i), Offset(Reg(i))));
     // Save FPR
 #ifndef _QBDI_ASAN_ENABLED_ // Disabled if ASAN is enabled as it breaks context alignment
-    epilogue.push_back(Fxsave(Offset(offsetof(Context, fprState))));
-    if(isHostCPUFeaturePresent("avx")) {
-        LogDebug("getExecBlockEpilogue", "AVX support enabled in guest context switches");
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm0)), llvm::X86::YMM0, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm1)), llvm::X86::YMM1, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm2)), llvm::X86::YMM2, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm3)), llvm::X86::YMM3, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm4)), llvm::X86::YMM4, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm5)), llvm::X86::YMM5, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm6)), llvm::X86::YMM6, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm7)), llvm::X86::YMM7, 1));
-#if defined(QBDI_ARCH_X86_64)
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm8)), llvm::X86::YMM8, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm9)), llvm::X86::YMM9, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm10)), llvm::X86::YMM10, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm11)), llvm::X86::YMM11, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm12)), llvm::X86::YMM12, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm13)), llvm::X86::YMM13, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm14)), llvm::X86::YMM14, 1));
-        epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm15)), llvm::X86::YMM15, 1));
-#endif // QBDI_ARCH_X86_64
+    if(usedXsave()) {
+        LogDebug("getExecBlockPrologue", "XSAVE support enabled in guest context switches");
+        epilogue.push_back(Mov(Reg(/* EAX */ 0), Constant(0x7)));
+        epilogue.push_back(Mov(Reg(/* EDX */ 3), Constant(0)));
+        epilogue.push_back(Xsave(Offset(offsetof(Context, fprState))));
+    } else {
+        epilogue.push_back(Fxsave(Offset(offsetof(Context, fprState))));
+        if(isHostCPUFeaturePresent("avx")) {
+            LogDebug("getExecBlockEpilogue", "AVX support enabled in guest context switches");
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm0)), llvm::X86::YMM0, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm1)), llvm::X86::YMM1, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm2)), llvm::X86::YMM2, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm3)), llvm::X86::YMM3, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm4)), llvm::X86::YMM4, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm5)), llvm::X86::YMM5, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm6)), llvm::X86::YMM6, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm7)), llvm::X86::YMM7, 1));
+            #if defined(QBDI_ARCH_X86_64)
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm8)), llvm::X86::YMM8, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm9)), llvm::X86::YMM9, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm10)), llvm::X86::YMM10, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm11)), llvm::X86::YMM11, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm12)), llvm::X86::YMM12, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm13)), llvm::X86::YMM13, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm14)), llvm::X86::YMM14, 1));
+            epilogue.push_back(Vextractf128(Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm15)), llvm::X86::YMM15, 1));
+            #endif // QBDI_ARCH_X86_64
+        }
     }
 #endif
     // Restore host BP, SP

@@ -117,7 +117,7 @@ typedef struct {
     char              xmm5[16];     /* XMM 5  */
     char              xmm6[16];     /* XMM 6  */
     char              xmm7[16];     /* XMM 7  */
-    char              reserved[14*16];
+    char              reserved[14*16 + 64];
     char              ymm0[16];     /* YMM0[255:128] */
     char              ymm1[16];     /* YMM1[255:128] */
     char              ymm2[16];     /* YMM2[255:128] */
@@ -128,7 +128,7 @@ typedef struct {
     char              ymm7[16];     /* YMM7[255:128] */
 } FPRState;
 // SPHINX_X86_FPRSTATE_END
-typedef char __compile_check_01__[sizeof(FPRState) == 640 ? 1 : -1];
+typedef char __compile_check_01__[sizeof(FPRState) == 704 ? 1 : -1];
 
 // SPHINX_X86_GPRSTATE_BEGIN
 /*! X86 General Purpose Register context.
@@ -227,7 +227,7 @@ typedef struct {
     char              xmm13[16];    /* XMM 13  */
     char              xmm14[16];    /* XMM 14  */
     char              xmm15[16];    /* XMM 15  */
-    char              reserved[6*16];
+    char              reserved[6*16 + 64];
     char              ymm0[16];     /* YMM0[255:128] */
     char              ymm1[16];     /* YMM1[255:128] */
     char              ymm2[16];     /* YMM2[255:128] */
@@ -246,7 +246,7 @@ typedef struct {
     char              ymm15[16];    /* YMM15[255:128] */
 } FPRState;
 // SPHINX_X86_64_FPRSTATE_END
-typedef char __compile_check_01__[sizeof(FPRState) == 768 ? 1 : -1];
+typedef char __compile_check_01__[sizeof(FPRState) == 832 ? 1 : -1];
 
 // SPHINX_X86_64_GPRSTATE_BEGIN
 /*! X86_64 General Purpose Register context.

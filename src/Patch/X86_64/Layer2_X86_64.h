@@ -81,6 +81,10 @@ llvm::MCInst fxsave(unsigned int base, rword offset);
 
 llvm::MCInst fxrstor(unsigned int base, rword offset);
 
+llvm::MCInst xsave(unsigned int base, rword offset);
+
+llvm::MCInst xrstor(unsigned int base, rword offset);
+
 llvm::MCInst vextractf128(unsigned int base, rword offset, unsigned int src, uint8_t regoffset);
 
 llvm::MCInst vinsertf128(unsigned int dst, unsigned int base, rword offset, uint8_t regoffset);
@@ -128,6 +132,10 @@ RelocatableInst::SharedPtr JmpM(Offset offset);
 RelocatableInst::SharedPtr Fxsave(Offset offset);
 
 RelocatableInst::SharedPtr Fxrstor(Offset offset);
+
+RelocatableInst::SharedPtr Xsave(Offset offset);
+
+RelocatableInst::SharedPtr Xrstor(Offset offset);
 
 RelocatableInst::SharedPtr Vextractf128(Offset offset, unsigned int src, Constant regoffset);
 
