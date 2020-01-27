@@ -4,7 +4,7 @@ PyQBDI Usage
 Limitations
 -----------
 
-To avoid error when use PyQBDI, the binding must be use with the follow restriction:
+pyQBDI has some limitations that need to be considered before using those bindings :
 
 - The library can handle only one VM at time.
 - The VM must not be used in atexit module.
@@ -14,18 +14,19 @@ PyQBDI as a preloaded library
 
 PyQBDI can be used as a preloaded library to instrument a whole binary, as QBDIPreload.
 
-The follow action are performed with the API of QBDIPreload :
+The following actions are performed with the API of QBDIPreload :
 
 - :cpp:func:`QBDI::qbdipreload_on_main`:
-  The scipt specified in ``PYQBDI_TOOL`` is loaded. The program argument can be found in ``sys.argv``.
-  To avoid infinite loop with some python library, the environment variable ``LD_PRELOAD`` or ``DYLD_INSERT_LIBRARIES`` is removed from ``os.environ``
+  The script specified in ``PYQBDI_TOOL`` is loaded. The program arguments can be found in ``sys.argv``.
+  To avoid infinite loops with some python library, the environment variable ``LD_PRELOAD`` or ``DYLD_INSERT_LIBRARIES`` is removed from ``os.environ``
   before the loading of the script.
 
-- :cpp:func:`QBDI::qbdipreload_on_run`: The method ``pyqbdipreload_on_run`` is called. This method must be implemented in the specified script.
+- :cpp:func:`QBDI::qbdipreload_on_run`: The method ``pyqbdipreload_on_run`` is called.
+This method must be implemented in the specified script.
 
-- :cpp:func:`QBDI::qbdipreload_on_exit`: The module ``atexit`` is trigger once.
+- :cpp:func:`QBDI::qbdipreload_on_exit`: The module ``atexit`` is triggered once.
 
-Exemple
+Example
 ~~~~~~~
 
 Here is a simple example, where we define a callback set on all instructions that displays
@@ -74,18 +75,19 @@ The location of **pyqbdi** library can be found with the command:
     python3 -c 'import pyqbdi; print(pyqbdi.__file__)'
 
 
-.. note:: We will soon provide a loader script, making the use of pyQBDI easier.
-
 
 PyQBDI as a python library
 --------------------------
 
-When PyQBDI is used as a python library, the code to instrument can be load in the process with ``ctypes`` python module.
+When PyQBDI is used as a python library, the instrumentation code can be loaded
+in the process with ``ctypes`` python module.
 
-Exemple
+Example
 ~~~~~~~
 
-This example define multiple callbacks, based on events, instructions, and mnemonic. Those are instrumenting the **sin()** native function and its result is being compared with the python result.
+This example defines multiple callbacks, based on events, instructions, and mnemonics.
+Those are instrumenting the **sin()** native function and its result is
+being compared with the python result.
 
 .. literalinclude:: ../../examples/pyqbdi/trace_sin.py
     :language: python
