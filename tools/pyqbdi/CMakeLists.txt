@@ -23,7 +23,6 @@ if(NOT (${ARCH} STREQUAL "ARM" ))
     message(STATUS "Python include: ${PYTHON_INCLUDE_DIR}")
     message(STATUS "Python interpreter: ${PYTHON_EXECUTABLE}")
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s -frtti -DQBDI_PLATFORM_STR='\"${QBDI_PLATFORM}\"' -DQBDI_ARCH_STR='\"${QBDI_ARCH}\"'")
 
     ExternalProject_Add(pyqbdi_pybind11
         GIT_REPOSITORY      "https://github.com/pybind/pybind11.git"
@@ -42,9 +41,11 @@ if(NOT (${ARCH} STREQUAL "ARM" ))
 
     add_library(pyqbdi_utils INTERFACE)
     add_dependencies(pyqbdi_utils pyqbdi_pybind11)
+    target_compile_options(pyqbdi_utils INTERFACE "-s" "-frtti" "-DQBDI_PLATFORM_STR=\"${PLATFORM}\"" "-DQBDI_ARCH_STR=\"${ARCH}\"")
 
     add_library(pyqbdi_module INTERFACE)
     add_dependencies(pyqbdi_module pyqbdi_pybind11)
+    target_compile_options(pyqbdi_module INTERFACE "-s" "-frtti" "-DQBDI_PLATFORM_STR=\"${PLATFORM}\"" "-DQBDI_ARCH_STR=\"${ARCH}\"")
 
     include("${CMAKE_CURRENT_SOURCE_DIR}/utils/CMakeLists.txt")
     include("${CMAKE_CURRENT_SOURCE_DIR}/binding/CMakeLists.txt")

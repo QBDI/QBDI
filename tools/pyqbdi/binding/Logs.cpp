@@ -23,15 +23,15 @@ namespace pyQBDI {
 
 void init_binding_Logs(py::module& m) {
 
-    py::enum_<QBDI::LogPriority>(m, "LogPriority",
+    py::enum_<LogPriority>(m, "LogPriority",
             "Each log has a priority (or level) which can be used to control verbosity\n"
             "In production builds, only Warning and Error logs are kept.")
-        .value("DEBUG", QBDI::LogPriority::DEBUG, "Debug logs")
-        .value("WARNING", QBDI::LogPriority::WARNING, "Warning logs")
-        .value("ERROR", QBDI::LogPriority::ERROR, "Error logs")
+        .value("DEBUG", LogPriority::DEBUG, "Debug logs")
+        .value("WARNING", LogPriority::WARNING, "Warning logs")
+        .value("ERROR", LogPriority::ERROR, "Error logs")
         .export_values();
 
-    m.def("addLogFilter", &QBDI::addLogFilter,
+    m.def("addLogFilter", &addLogFilter,
             "Enable logs matching tag and priority.",
             "tag"_a, "priority"_a);
 

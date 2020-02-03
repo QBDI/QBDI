@@ -22,58 +22,58 @@ namespace QBDI {
 namespace pyQBDI {
 
 void init_binding_Range(py::module& m) {
-    py::class_<QBDI::Range<rword>>(m, "Range")
+    py::class_<Range<rword>>(m, "Range")
         .def(py::init<rword, rword>(),
                 "Create a new range",
                 "start"_a, "end"_a)
 
-        .def_readwrite("start", &QBDI::Range<rword>::start,
+        .def_readwrite("start", &Range<rword>::start,
                 "Range start value.")
 
-        .def_readwrite("end", &QBDI::Range<rword>::end,
+        .def_readwrite("end", &Range<rword>::end,
                 "Range end value (always excluded).")
 
-        .def("size", &QBDI::Range<rword>::size,
+        .def("size", &Range<rword>::size,
                 "Return the total length of a range.")
 
         .def(py::self == py::self,
                 "Return True if two ranges are equal (same boundaries).",
                 "r"_a)
 
-        .def("contains", (bool (QBDI::Range<rword>::*)(rword) const) &QBDI::Range<rword>::contains,
+        .def("contains", (bool (Range<rword>::*)(rword) const) &Range<rword>::contains,
                 "Return True if an value is inside current range boundaries.",
                 "t"_a)
 
-        .def("contains", (bool (QBDI::Range<rword>::*)(Range<rword>) const) &QBDI::Range<rword>::contains,
+        .def("contains", (bool (Range<rword>::*)(Range<rword>) const) &Range<rword>::contains,
                 "Return True if a range is inside current range boundaries.",
                 "r"_a)
 
-        .def("__contains__", (bool (QBDI::Range<rword>::*)(rword) const) &QBDI::Range<rword>::contains,
+        .def("__contains__", (bool (Range<rword>::*)(rword) const) &Range<rword>::contains,
                 "Return True if an value is inside current range boundaries.",
                 "t"_a)
 
-        .def("__contains__", (bool (QBDI::Range<rword>::*)(Range<rword>) const) &QBDI::Range<rword>::contains,
+        .def("__contains__", (bool (Range<rword>::*)(Range<rword>) const) &Range<rword>::contains,
                 "Return True if a range is inside current range boundaries.",
                 "r"_a)
 
-        .def("overlaps", &QBDI::Range<rword>::overlaps,
+        .def("overlaps", &Range<rword>::overlaps,
                 "Return True if a range is overlapping current range lower or/and upper boundary.",
                 "r"_a)
 
-        .def("__str__", [](const QBDI::Range<rword> &r) {
+        .def("__str__", [](const Range<rword> &r) {
                                std::ostringstream oss;
                                r.display(oss);
                                return oss.str();
                            })
-        .def("__repr__", [](const QBDI::Range<rword> &r) {
+        .def("__repr__", [](const Range<rword> &r) {
                                std::ostringstream oss;
                                r.display(oss);
                                return "<Range " + oss.str() + ">";
                            })
-        .def("intersect", &QBDI::Range<rword>::intersect,
+        .def("intersect", &Range<rword>::intersect,
                 "Return the intersection of two ranges.",
                 "r"_a)
-        .def("__getitem__", [](const QBDI::Range<rword> &r, int index) {
+        .def("__getitem__", [](const Range<rword> &r, int index) {
                                 switch (index) {
                                     case 0:
                                         return r.start;
@@ -83,7 +83,7 @@ void init_binding_Range(py::module& m) {
                                         throw std::out_of_range("Only two elements");
                                 }
                             })
-        .def("__setitem__", [](QBDI::Range<rword> &r, int index, rword value) {
+        .def("__setitem__", [](Range<rword> &r, int index, rword value) {
                                 switch (index) {
                                     case 0:
                                         r.start = value;

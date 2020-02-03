@@ -23,84 +23,74 @@ namespace pyQBDI {
 
 void init_binding_Memory(py::module& m) {
 
-    py::enum_<QBDI::Permission>(m, "Permission", py::arithmetic(), "Memory access rights.")
-        .value("PF_NONE", QBDI::Permission::PF_NONE, "No access")
-        .value("PF_READ", QBDI::Permission::PF_READ, "Read access")
-        .value("PF_WRITE", QBDI::Permission::PF_WRITE, "Write access")
-        .value("PF_EXEC", QBDI::Permission::PF_EXEC, "Execution access")
+    py::enum_<Permission>(m, "Permission", py::arithmetic(), "Memory access rights.")
+        .value("PF_NONE", Permission::PF_NONE, "No access")
+        .value("PF_READ", Permission::PF_READ, "Read access")
+        .value("PF_WRITE", Permission::PF_WRITE, "Write access")
+        .value("PF_EXEC", Permission::PF_EXEC, "Execution access")
         .export_values()
         .def("__str__",
-                [](const QBDI::Permission p) {
-                    if (!(p & (QBDI::Permission::PF_READ|QBDI::Permission::PF_WRITE|QBDI::Permission::PF_EXEC)))
+                [](const Permission p) {
+                    if (!(p & (Permission::PF_READ|Permission::PF_WRITE|Permission::PF_EXEC)))
                         return std::string("Permission.PF_NONE");
                     std::string res;
-                    if (p & QBDI::Permission::PF_READ)
+                    if (p & Permission::PF_READ)
                         res += "|Permission.PF_READ";
-                    if (p & QBDI::Permission::PF_WRITE)
+                    if (p & Permission::PF_WRITE)
                         res += "|Permission.PF_WRITE";
-                    if (p & QBDI::Permission::PF_EXEC)
+                    if (p & Permission::PF_EXEC)
                         res += "|Permission.PF_EXEC";
                     res.erase(0, 1);
                     return res;
                 });
 
 
-    py::class_<QBDI::MemoryMap>(m, "MemoryMap")
-        .def(py::init<>(),
-                "Construct a new (empty) MemoryMap.")
-
-        .def(py::init(
-                [](QBDI::Range<rword>& range, int permission, std::string name) {
-                    return QBDI::MemoryMap(range, static_cast<QBDI::Permission>(permission), name);
-                }),
-                "Construct a new MemoryMap (given some properties).",
-                "range"_a, "permission"_a, "name"_a)
-
-        .def_readwrite("range", &QBDI::MemoryMap::range,
+    py::class_<MemoryMap>(m, "MemoryMap")
+        .def_readwrite("range", &MemoryMap::range,
                 "A range of memory (region), delimited between a start and an (excluded) end address.")
         .def_property("permission",
-                [](const QBDI::MemoryMap& map) {
+                [](const MemoryMap& map) {
                     return map.permission;
                 },
-                [](QBDI::MemoryMap& map, int permission) {
-                    map.permission = static_cast<QBDI::Permission>(permission);
+                [](MemoryMap& map, int permission) {
+                    map.permission = static_cast<Permission>(permission);
                 },
                 "Region access rights (PF_READ, PF_WRITE, PF_EXEC).")
-        .def_readwrite("name", &QBDI::MemoryMap::name,
+        .def_readwrite("name", &MemoryMap::name,
                 "Region name (useful when a region is mapping a module).");
 
     m.def("getRemoteProcessMaps",
-            &QBDI::getRemoteProcessMaps,
+            &getRemoteProcessMaps,
             "Get a list of all the memory maps (regions) of a process.",
             "pid"_a, "full_path"_a = false);
 
     m.def("getCurrentProcessMaps",
-            &QBDI::getCurrentProcessMaps,
+            &getCurrentProcessMaps,
             "Get a list of all the memory maps (regions) of the current process.",
             "full_path"_a = false);
 
     m.def("getModuleNames",
-            static_cast<std::vector<std::string> (*)()>(&QBDI::getModuleNames),
+            static_cast<std::vector<std::string> (*)()>(&getModuleNames),
             "Get a list of all the module names loaded in the process memory.");
 
     m.def("alignedAlloc",
             [](size_t size, size_t align) {
-                return reinterpret_cast<rword>(QBDI::alignedAlloc(size, align));
+                return reinterpret_cast<rword>(alignedAlloc(size, align));
             },
             "Allocate a block of memory of a specified sized with an aligned base address.",
             "size"_a, "align"_a);
 
     m.def("alignedFree",
             [](rword ptr) {
-                QBDI::alignedFree(reinterpret_cast<void*>(ptr));
+                alignedFree(reinterpret_cast<void*>(ptr));
             },
             "Free a block of aligned memory allocated with alignedAlloc.",
             "ptr"_a);
 
     m.def("allocateVirtualStack",
-            [](QBDI::GPRState* gprstate, uint32_t size) {
+            [](GPRState* gprstate, uint32_t size) {
                 uint8_t* a = NULL;
-                if (QBDI::allocateVirtualStack(gprstate, size, &a)) {
+                if (allocateVirtualStack(gprstate, size, &a)) {
                     return static_cast<py::object>(py::int_(reinterpret_cast<rword>(a)));
                 } else {
                     return static_cast<py::object>(py::none());
@@ -112,9 +102,9 @@ void init_binding_Memory(py::module& m) {
             "gprstate"_a, "size"_a);
 
     m.def("simulateCall",
-            &QBDI::simulateCall,
+            &simulateCall,
             "Simulate a call by modifying the stack and registers accordingly.",
-            "ctx"_a, "returnAddress"_a, "args"_a = std::vector<QBDI::rword>());
+            "ctx"_a, "returnAddress"_a, "args"_a = std::vector<rword>());
 }
 
 }
