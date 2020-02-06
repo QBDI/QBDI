@@ -11,6 +11,7 @@ class CovModule:
     def __init__(self, module):
         self.name = module.name
         self.range = pyqbdi.Range(module.range.start, module.range.end)
+        self.executable = module.permission & pyqbdi.PF_EXEC
 
     def append(self, module):
         assert module.name == self.name
@@ -18,6 +19,7 @@ class CovModule:
             self.range.start = module.range.start
         if self.range.end < module.range.end:
             self.range.end = module.range.end
+        self.executable |= module.permission & pyqbdi.PF_EXEC
 
 def get_modules():
     _modules = {}
@@ -26,6 +28,8 @@ def get_modules():
             _modules[m.name].append(m)
         elif '/' in m.name:
             _modules[m.name] = CovModule(m)
+
+    _modules = {k: v for k, v in _modules.items() if v.executable}
 
     modules = []
     for (_, m) in _modules.items():
