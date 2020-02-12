@@ -25,9 +25,8 @@ if(NOT (${ARCH} STREQUAL "ARM" ))
 
 
     ExternalProject_Add(pyqbdi_pybind11
-        GIT_REPOSITORY      "https://github.com/pybind/pybind11.git"
-        GIT_PROGRESS        "true"
-        GIT_TAG             "25abf7efba0b2990f5a6dfb0a31bc65c0f2f4d17"
+        URL                 "https://github.com/pybind/pybind11/archive/v2.4.3.zip"
+        URL_HASH            SHA256=f1cc1e9c2836f9873aefdaf76a3280a55aae51068c759b27499a9cf34090d364
         CONFIGURE_COMMAND   ""
         BUILD_COMMAND       ""
         INSTALL_COMMAND     "")
