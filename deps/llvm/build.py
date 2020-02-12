@@ -153,7 +153,9 @@ def build_llvm(llvm_dir, build_dir, arch, platform, arch_opt=None):
                            "-DLLVM_INCLUDE_TOOLS=Off"
                            "-DLLVM_INCLUDE_UTILS=Off"
                            "-DLLVM_INCLUDE_TESTS=Off"
-                           "-DLLVM_INCLUDE_EXAMPLES=Off"] +
+                           "-DLLVM_INCLUDE_EXAMPLES=Off",
+                           "-DLLVM_ENABLE_TERMINFO=Off",
+                           "-DLLVM_ENABLE_BINDINGS=Off"] +
                           cmake_specific_option,
                           cwd=str(build_dir))
 

@@ -21,7 +21,6 @@ RUN echo "[multilib]" >> /etc/pacman.conf && \
         python3 \
         wget \
         multilib-devel \
-        lib32-ncurses \
         lib32-zlib && \
     (pacman -Sc --noconfirm || true)
 
