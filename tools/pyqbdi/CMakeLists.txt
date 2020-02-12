@@ -40,11 +40,19 @@ if(NOT (${ARCH} STREQUAL "ARM" ))
 
     add_library(pyqbdi_utils INTERFACE)
     add_dependencies(pyqbdi_utils pyqbdi_pybind11)
-    target_compile_options(pyqbdi_utils INTERFACE "-s" "-frtti" "-DQBDI_PLATFORM_STR=\"${PLATFORM}\"" "-DQBDI_ARCH_STR=\"${ARCH}\"")
+    target_compile_options(pyqbdi_utils INTERFACE "-DQBDI_PLATFORM_STR=\"${PLATFORM}\"" "-DQBDI_ARCH_STR=\"${ARCH}\"")
 
     add_library(pyqbdi_module INTERFACE)
     add_dependencies(pyqbdi_module pyqbdi_pybind11)
-    target_compile_options(pyqbdi_module INTERFACE "-s" "-frtti" "-DQBDI_PLATFORM_STR=\"${PLATFORM}\"" "-DQBDI_ARCH_STR=\"${ARCH}\"")
+    target_compile_options(pyqbdi_module INTERFACE "-DQBDI_PLATFORM_STR=\"${PLATFORM}\"" "-DQBDI_ARCH_STR=\"${ARCH}\"")
+
+    if(${OS} STREQUAL "win")
+        target_compile_options(pyqbdi_utils INTERFACE "/GR" "/EHsc")
+        target_compile_options(pyqbdi_module INTERFACE "/GR" "/EHsc")
+    else()
+        target_compile_options(pyqbdi_utils INTERFACE "-s" "-frtti")
+        target_compile_options(pyqbdi_module INTERFACE "-s" "-frtti")
+    endif()
 
     include("${CMAKE_CURRENT_SOURCE_DIR}/utils/CMakeLists.txt")
     include("${CMAKE_CURRENT_SOURCE_DIR}/binding/CMakeLists.txt")
@@ -64,7 +72,7 @@ if(NOT (${ARCH} STREQUAL "ARM" ))
         ${PYTHON_INCLUDE_DIRS}
     )
 
-    if (HAS_QBDIPRELOAD)
+    if ((HAS_QBDIPRELOAD) AND (TOOLS_QBDIPRELOAD))
         target_sources(pyqbdi PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/preload.cpp")
         target_include_directories(pyqbdi PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../QBDIPreload/include")
         target_link_libraries(pyqbdi PRIVATE QBDIPreload)
