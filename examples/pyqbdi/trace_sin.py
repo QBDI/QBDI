@@ -40,7 +40,12 @@ def cmpCB(vm, gpr, fpr, data):
 
 def run():
     # get sin function ptr
-    libmname = 'libSystem.dylib' if sys.platform == 'darwin' else 'libm.so.6'
+    if sys.platform == 'darwin':
+        libmname = 'libSystem.dylib'
+    elif sys.platform == 'win32':
+        libmname = 'api-ms-win-crt-math-l1-1-0.dll'
+    else:
+        libmname = 'libm.so.6'
     libm = ctypes.cdll.LoadLibrary(libmname)
     funcPtr = ctypes.cast(libm.sin, ctypes.c_void_p).value
 
