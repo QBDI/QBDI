@@ -19,10 +19,22 @@ if(NOT (${ARCH} STREQUAL "ARM" ))
         message(FATAL_ERROR "Inconsistent PYTHON_INCLUDE_DIRS and PYTHON_LIBRARIES")
     endif()
 
+    execute_process(
+        COMMAND "${PYTHON_EXECUTABLE}" -c "import platform; print(platform.architecture()[0])"
+        OUTPUT_VARIABLE PYTHON_BIT
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+
     message(STATUS "Python lib:     ${PYTHON_LIBRARY}")
     message(STATUS "Python include: ${PYTHON_INCLUDE_DIR}")
     message(STATUS "Python interpreter: ${PYTHON_EXECUTABLE}")
+    message(STATUS "Python ${PYTHON_BIT}")
 
+    # verify we compile pyqbdi tools with the good version of python
+    if ((${PYTHON_BIT} STREQUAL "64bit") AND NOT (${ARCH} STREQUAL "X86_64"))
+        message(FATAL_ERROR "PyQBDI with Python ${PYTHON_BIT} is not compatible with the architecture ${ARCH}")
+    elseif ((${PYTHON_BIT} STREQUAL "32bit") AND NOT (${ARCH} STREQUAL "X86"))
+        message(FATAL_ERROR "PyQBDI with Python ${PYTHON_BIT} is not compatible with the architecture ${ARCH}")
+    endif()
 
     ExternalProject_Add(pyqbdi_pybind11
         URL                 "https://github.com/pybind/pybind11/archive/v2.4.3.zip"
@@ -33,18 +45,11 @@ if(NOT (${ARCH} STREQUAL "ARM" ))
     ExternalProject_get_property(pyqbdi_pybind11 SOURCE_DIR)
     set(PYBIND11_SOURCE_DIR "${SOURCE_DIR}")
 
-    execute_process(
-        COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/find_pyqbdi_install_path.py" "${CMAKE_INSTALL_PREFIX}"
-        OUTPUT_VARIABLE PYTHON_SITE
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
-
     add_library(pyqbdi_utils INTERFACE)
     add_dependencies(pyqbdi_utils pyqbdi_pybind11)
-    target_compile_options(pyqbdi_utils INTERFACE "-DQBDI_PLATFORM_STR=\"${PLATFORM}\"" "-DQBDI_ARCH_STR=\"${ARCH}\"")
 
     add_library(pyqbdi_module INTERFACE)
     add_dependencies(pyqbdi_module pyqbdi_pybind11)
-    target_compile_options(pyqbdi_module INTERFACE "-DQBDI_PLATFORM_STR=\"${PLATFORM}\"" "-DQBDI_ARCH_STR=\"${ARCH}\"")
 
     if(${OS} STREQUAL "win")
         target_compile_options(pyqbdi_utils INTERFACE "/GR" "/EHsc")
@@ -80,7 +85,6 @@ if(NOT (${ARCH} STREQUAL "ARM" ))
 
     target_link_libraries(pyqbdi PRIVATE pyqbdi_module pyqbdi_utils QBDI_static ${PYTHON_LIBRARIES})
     set_target_properties(pyqbdi PROPERTIES PREFIX "")
-    install(TARGETS pyqbdi LIBRARY DESTINATION "${PYTHON_SITE}")
 
     if(${OS} STREQUAL "macOS")
         set_target_properties(pyqbdi PROPERTIES MACOSX_RPATH ".")
@@ -90,6 +94,13 @@ if(NOT (${ARCH} STREQUAL "ARM" ))
         set_target_properties(pyqbdi PROPERTIES SUFFIX ".so")
     elseif(${OS} STREQUAL "win")
         set_target_properties(pyqbdi PROPERTIES SUFFIX ".pyd")
+    endif()
+
+    if (PYQBDI_OUTPUT_DIRECTORY)
+        message(STATUS "export PYQBDI to ${PYQBDI_OUTPUT_DIRECTORY}/")
+        add_custom_command(TARGET pyqbdi POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pyqbdi> ${PYQBDI_OUTPUT_DIRECTORY}/$<TARGET_FILE_NAME:pyqbdi>
+        )
     endif()
 
     ##

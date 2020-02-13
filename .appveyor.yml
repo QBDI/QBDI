@@ -7,20 +7,41 @@ shallow_clone: true
 configuration:
   - Release
 
+platform:
+  - X64
+  - X86
+
 environment:
-  PYTHON: "C:\\Python35-x64"
   APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
   CMAKE_TEMPLATE: Visual Studio 14 2015
+  VS_string: "Visual Studio 14 2015"
+  cmake_platform_args: ""
   matrix:
-    - platform: X64
-      qbdi_plateform: win-X86_64
-      VS_string: "Visual Studio 14 2015 Win64"
-      cmake_platform_args: "-Thost=x64"
-    - platform: X86
-      qbdi_plateform: win-X86
-      VS_string: "Visual Studio 14 2015"
-      cmake_platform_args: ""
+    - python_version: "3.5"
+      PYTHON32: "C:\\Python35"
+      PYTHON64: "C:\\Python35-x64"
+    - python_version: "3.6"
+      PYTHON32: "C:\\Python36"
+      PYTHON64: "C:\\Python36-x64"
+    - python_version: "3.7"
+      PYTHON32: "C:\\Python37"
+      PYTHON64: "C:\\Python37-x64"
+    - python_version: "3.8"
+      PYTHON32: "C:\\Python38"
+      PYTHON64: "C:\\Python38-x64"
 
+for:
+-
+  matrix:
+    only:
+      # build python 3.5, 3.6 and 3.7 only on master
+      - python_version: "3.5"
+      - python_version: "3.6"
+      - python_version: "3.7"
+
+  branches:
+    only:
+      - master
 
 cache:
   - deps\llvm\%qbdi_plateform%\lib -> deps\llvm\build.py
@@ -36,18 +57,27 @@ install:
   # Prepend newly installed Python to the PATH of this build (this cannot be
   # done from inside the powershell script as it would require to restart
   # the parent CMD process).
+  - ps: if ($env:PLATFORM -eq "X64") { $env:VS_string = $env:VS_string + " Win64" }
+  - ps: if ($env:PLATFORM -eq "X64") { $env:cmake_platform_args = $env:cmake_platform_args + " -Thost=x64" }
+  - ps: if ($env:PLATFORM -eq "X64") { $env:qbdi_plateform = "win-X86_64" }
+  - ps: if ($env:PLATFORM -eq "X64") { $env:PYTHON = $env:PYTHON64 }
+
+  - ps: if ($env:PLATFORM -eq "X86") { $env:qbdi_plateform = "win-X86" }
+  - ps: if ($env:PLATFORM -eq "X86") { $env:PYTHON = $env:PYTHON32 }
+
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+  - cmd: "%PYTHON%\\python.exe -m pip install setuptools wheel"
   - cmd: mkdir build
   - cmd: cd build
 
 build_script:
   - "\"C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\vcvarsall.bat\" %Platform%"
-  - cmd: cmake .. -G "%VS_string%" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DPLATFORM=%qbdi_plateform% -DEXAMPLES=TRUE %cmake_platform_args%
+  - cmd: cmake .. -G "%VS_string%" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DPLATFORM=%qbdi_plateform% -DTOOLS_PYQBDI=Off -DEXAMPLES=On %cmake_platform_args%
   - ps: if (-not((Test-Path("../deps/llvm/$env:qbdi_plateform/lib")) -and (Test-Path("../deps/llvm/$env:qbdi_plateform/include")))) { MSbuild deps\llvm.vcxproj /p:Configuration=$env:configuration,Platform=$env:platform /m:3 }
   - cmd: python ..\deps\llvm\build.py clean %qbdi_plateform%
   - ps: if (-not((Test-Path("../deps/gtest/$env:qbdi_plateform/lib")) -and (Test-Path("../deps/gtest/$env:qbdi_plateform/include")))) { MSbuild deps\gtest.vcxproj /p:Configuration=$env:configuration,Platform=$env:platform /m:3 }
   - cmd: python ..\deps\gtest\%qbdi_plateform%\build.py clean %qbdi_plateform%
-  - cmd: cmake .. -G "%VS_string%" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DPLATFORM=%qbdi_plateform% -DEXAMPLES=TRUE %cmake_platform_args%
+  - cmd: cmake .. -G "%VS_string%" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DPLATFORM=%qbdi_plateform% -DTOOLS_PYQBDI=Off -DEXAMPLES=On %cmake_platform_args%
   - cmd: MSbuild /p:Configuration=%configuration%,Platform=%platform% ALL_BUILD.vcxproj /m:3
 
 test_script:
@@ -55,7 +85,11 @@ test_script:
 
 after_build:
   - cmd: cpack
+  - cmd: cd ..
+  - cmd: "%PYTHON%\\python.exe setup.py bdist_wheel"
 
 artifacts:
   - name: Installer
     path: 'build\QBDI-*.exe'
+  - name: Python package
+    path: 'dist\PyQBDI-*.whl'
