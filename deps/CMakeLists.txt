@@ -2,7 +2,6 @@ set(DEPENDENCY_SATISFIED On PARENT_SCOPE)
 
 # LLVM
 
-unset(PYTHON_EXECUTABLE CACHE)
 find_package(PythonInterp 3 REQUIRED)
 
 add_custom_target(llvm
