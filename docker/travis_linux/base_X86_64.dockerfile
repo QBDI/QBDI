@@ -19,7 +19,6 @@ RUN apt-get update \
     cmake \
     g++ \
     g++-multilib \
-    libncurses5-dev \
     libstdc++-6-dev \
     make \
     pkg-config \

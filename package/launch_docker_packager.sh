@@ -62,10 +62,10 @@ build_android () {
 prepare_archive
 
 # debian10 x86
-build_ubuntu_debian debian 10 X86 " -DPACKAGE_LIBNCURSE6=TRUE"
+build_ubuntu_debian debian 10 X86
 
 # debian10 x64
-build_ubuntu_debian debian 10 X86_64 " -DPACKAGE_LIBNCURSE6=TRUE"
+build_ubuntu_debian debian 10 X86_64
 
 # ubuntu lts x86
 build_ubuntu_debian ubuntu 18.04 X86
@@ -74,10 +74,10 @@ build_ubuntu_debian ubuntu 18.04 X86
 build_ubuntu_debian ubuntu 18.04 X86_64
 
 # ubuntu 19.04 x86
-build_ubuntu_debian ubuntu 19.04 X86 " -DPACKAGE_LIBNCURSE6=TRUE"
+build_ubuntu_debian ubuntu 19.10 X86
 
 # ubuntu 19.04 x64
-build_ubuntu_debian ubuntu 19.04 X86_64 " -DPACKAGE_LIBNCURSE6=TRUE"
+build_ubuntu_debian ubuntu 19.10 X86_64
 
 # archlinux x64
 build_archlinux X86_64
