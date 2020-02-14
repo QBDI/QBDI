@@ -68,8 +68,7 @@ class CMakeBuild(build_ext):
         if platform.system() == "Windows":
             build_args += ['--', '/m']
             if sys.maxsize > 2**32:
-                #cmake_args += ['-G', 'Visual Studio 14 2015 Win64', '-Thost=x64']
-                cmake_args += ['-G', 'Visual Studio 16 2019', "-A", 'x64', '-Thost=x64']
+                cmake_args += ['-G', 'Visual Studio 14 2015 Win64', '-Thost=x64']
                 build_args += ["/p:Platform=X64"]
             else:
                 cmake_args += ['-G', 'Visual Studio 14 2015']
