@@ -184,7 +184,7 @@ set(_LLVM_STATIC_LIBS LLVMBinaryFormat.a LLVMMCDisassembler.a LLVMSelectionDAG.a
 if(${PLATFORM} STREQUAL "linux-X86" OR ${PLATFORM} STREQUAL "linux-X86_64")
 
     set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMProfileData.a LLVMX86Disassembler.a LLVMX86AsmParser.a LLVMX86CodeGen.a LLVMX86Desc.a LLVMX86Info.a LLVMX86AsmPrinter.a LLVMX86Utils.a)
-    set(LLVM_LIBS -lrt -ldl -latomic -lpthread -lz -lm -lstdc++)
+    set(LLVM_LIBS -lrt -ldl -lpthread -lz -lm -lstdc++)
 
 elseif((${PLATFORM} STREQUAL "win-X86_64") OR (${PLATFORM} STREQUAL "win-X86"))
 

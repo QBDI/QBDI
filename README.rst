@@ -48,6 +48,10 @@ AArch64   Android                          :orange:`Planned (*)`    :orange:`Pla
 
 **stable**
 
+.. image:: https://readthedocs.org/projects/qbdi/badge/?version=stable
+    :target: https://qbdi.readthedocs.io/en/stable/?badge=stable
+    :alt: Documentation Status
+
 .. image:: https://travis-ci.com/QBDI/QBDI.svg?branch=master
     :target: https://travis-ci.com/QBDI/QBDI
 
@@ -55,6 +59,10 @@ AArch64   Android                          :orange:`Planned (*)`    :orange:`Pla
     :target: https://ci.appveyor.com/project/QBDI/qbdi/branch/master
 
 **dev**
+
+.. image:: https://readthedocs.org/projects/qbdi/badge/?version=dev-next
+    :target: https://qbdi.readthedocs.io/en/stable/?badge=dev-next
+    :alt: Documentation Status
 
 .. image:: https://travis-ci.com/QBDI/QBDI.svg?branch=dev-next
     :target: https://travis-ci.com/QBDI/QBDI/branches

@@ -75,7 +75,7 @@ class CMakeBuild(build_ext):
                 build_args += ["/p:Platform=X86"]
         else:
             cmake_args += ['-DTOOLS_QBDIPRELOAD=On']
-            build_args += ['--', '-j2']
+            build_args += ['--', '-j4']
 
         env = os.environ.copy()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
@@ -85,12 +85,15 @@ class CMakeBuild(build_ext):
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
         subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 
-with open("README.rst", "r") as f:
+        if not os.path.isdir(extdir):
+            raise RuntimeError("Compile Error : No library available.")
+
+with open("README-pypi.rst", "r") as f:
     long_description = f.read()
 
 setup(
     name='PyQBDI',
-    version='0.7.1b0',
+    version='0.7.1b1',
     author='Nicolas Surbayrole',
     license = "apache2",
     author_email='qbdi@quarkslab.com',
@@ -112,7 +115,7 @@ setup(
         "Topic :: Software Development :: Debuggers",
     ],
     python_requires='>=3.5',
-    url="https://github.com/QBDI/QBDI",
+    url="https://qbdi.quarkslab.com/",
     ext_modules=[CMakeExtension('pyqbdi')],
     cmdclass=dict(build_ext=CMakeBuild),
     zip_safe=False,

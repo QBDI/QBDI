@@ -7,16 +7,18 @@ if(NOT (${ARCH} STREQUAL "ARM" ))
     endif()
     message(STATUS "Python version: ${PYTHON_VERSION}")
     find_package(PythonInterp "${PYTHON_VERSION}" EXACT REQUIRED)
-    if(NOT PYTHON_INCLUDE_DIRS)
-        set(PYTHON_INCLUDE_DIRS "$ENV{PYTHON_INCLUDE_DIRS}")
-    endif()
     if(NOT PYTHON_LIBRARIES)
         set(PYTHON_LIBRARIES "$ENV{PYTHON_LIBRARIES}")
     endif()
-    if(NOT PYTHON_INCLUDE_DIRS AND NOT PYTHON_LIBRARIES)
-        find_package(PythonLibs "${PYTHON_VERSION}" EXACT REQUIRED)
-    elseif(NOT (PYTHON_INCLUDE_DIRS AND PYTHON_LIBRARIES))
-        message(FATAL_ERROR "Inconsistent PYTHON_INCLUDE_DIRS and PYTHON_LIBRARIES")
+    if(NOT PYTHON_LIBRARIES)
+        find_package(PythonLibs "${PYTHON_VERSION}" EXACT)
+    endif()
+
+    if(NOT PYTHON_INCLUDE_DIRS)
+        execute_process(
+            COMMAND "${PYTHON_EXECUTABLE}" -c "from sysconfig import get_paths; print(get_paths()['include'])"
+            OUTPUT_VARIABLE PYTHON_INCLUDE_DIRS
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
     endif()
 
     execute_process(
@@ -24,8 +26,8 @@ if(NOT (${ARCH} STREQUAL "ARM" ))
         OUTPUT_VARIABLE PYTHON_BIT
         OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-    message(STATUS "Python lib:     ${PYTHON_LIBRARY}")
-    message(STATUS "Python include: ${PYTHON_INCLUDE_DIR}")
+    message(STATUS "Python lib:     ${PYTHON_LIBRARIES}")
+    message(STATUS "Python include: ${PYTHON_INCLUDE_DIRS}")
     message(STATUS "Python interpreter: ${PYTHON_EXECUTABLE}")
     message(STATUS "Python ${PYTHON_BIT}")
 
@@ -69,13 +71,18 @@ if(NOT (${ARCH} STREQUAL "ARM" ))
       "${CMAKE_CURRENT_SOURCE_DIR}/pyqbdi_module.cpp"
     )
     add_library(pyqbdi SHARED ${PYQBDI_SRC_MODULE})
-    set_target_properties(pyqbdi PROPERTIES COMPILE_DEFINITIONS "PYTHON_LIBRARIES=\"${PYTHON_LIBRARIES}\"")
     target_include_directories(pyqbdi PRIVATE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
         "${PYBIND11_SOURCE_DIR}/include"
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${PYTHON_INCLUDE_DIRS}
     )
+    target_link_libraries(pyqbdi PRIVATE pyqbdi_module pyqbdi_utils QBDI_static)
+
+    if (PYTHON_LIBRARIES)
+        set_target_properties(pyqbdi PROPERTIES COMPILE_DEFINITIONS "PYTHON_LIBRARIES=\"${PYTHON_LIBRARIES}\"")
+        target_link_libraries(pyqbdi PRIVATE ${PYTHON_LIBRARIES})
+    endif()
 
     if ((HAS_QBDIPRELOAD) AND (TOOLS_QBDIPRELOAD))
         target_sources(pyqbdi PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/preload.cpp")
@@ -83,7 +90,6 @@ if(NOT (${ARCH} STREQUAL "ARM" ))
         target_link_libraries(pyqbdi PRIVATE QBDIPreload)
     endif()
 
-    target_link_libraries(pyqbdi PRIVATE pyqbdi_module pyqbdi_utils QBDI_static ${PYTHON_LIBRARIES})
     set_target_properties(pyqbdi PROPERTIES PREFIX "")
 
     if(${OS} STREQUAL "macOS")
@@ -107,14 +113,13 @@ if(NOT (${ARCH} STREQUAL "ARM" ))
     # Library for doc
     ##
     add_library(pyqbdi_docs SHARED EXCLUDE_FROM_ALL "${CMAKE_CURRENT_SOURCE_DIR}/pyqbdi_docs.cpp")
-    set_target_properties(pyqbdi_docs PROPERTIES COMPILE_DEFINITIONS "PYTHON_LIBRARIES=\"${PYTHON_LIBRARIES}\"")
     target_include_directories(pyqbdi_docs PRIVATE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
         "${PYBIND11_SOURCE_DIR}/include"
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${PYTHON_INCLUDE_DIRS}
     )
-    target_link_libraries(pyqbdi_docs PRIVATE pyqbdi_utils ${PYTHON_LIBRARIES})
+    target_link_libraries(pyqbdi_docs PRIVATE pyqbdi_utils)
 
     add_custom_command(TARGET pyqbdi_docs POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pyqbdi_docs> ${PROJECT_BINARY_DIR}/docs/pyqbdi.so
