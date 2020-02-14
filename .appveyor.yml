@@ -7,64 +7,30 @@ shallow_clone: true
 configuration:
   - Release
 
-platform:
-  - X64
-  - X86
-
 environment:
   APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
   CMAKE_TEMPLATE: Visual Studio 14 2015
+  PYTHON35LIB: "libs/python35.lib"
+  PYTHON36LIB: "libs/python36.lib"
+  PYTHON37LIB: "libs/python37.lib"
+  PYTHON38LIB: "libs/python38.lib"
   matrix:
-    - python_version: "3.5"
-      PYTHON32: "C:\\Python35"
-      PYTHON64: "C:\\Python35-x64"
-      PYTHONLIB: "libs/python35.lib"
-    - python_version: "3.6"
-      PYTHON32: "C:\\Python36"
-      PYTHON64: "C:\\Python36-x64"
-      PYTHONLIB: "libs/python36.lib"
-    - python_version: "3.7"
-      PYTHON32: "C:\\Python37"
-      PYTHON64: "C:\\Python37-x64"
-      PYTHONLIB: "libs/python37.lib"
-    - python_version: "3.8"
-      PYTHON32: "C:\\Python38"
-      PYTHON64: "C:\\Python38-x64"
-      PYTHONLIB: "libs/python38.lib"
-
-for:
--
-  matrix:
-    only:
-      # build python 3.5, 3.6 and 3.7 only on master
-      - python_version: "3.5"
-      - python_version: "3.6"
-      - python_version: "3.7"
-
-  branches:
-    only:
-      - master
-
--
-  matrix:
-    only:
-      - platform: X64
-
-  environment:
-    VS_string: "Visual Studio 14 2015 Win64"
-    cmake_platform_args: "-Thost=x64"
-    qbdi_plateform: "win-X86_64"
-
--
-  matrix:
-    only:
-      - platform: X86
-
-  environment:
-    VS_string: "Visual Studio 14 2015"
-    cmake_platform_args: ""
-    qbdi_plateform: "win-X86"
-
+    - platform: X86
+      VS_string: "Visual Studio 14 2015 Win64"
+      cmake_platform_args: "-Thost=x64"
+      qbdi_plateform: "win-X86_64"
+      PYTHON35: "C:\\Python35"
+      PYTHON36: "C:\\Python36"
+      PYTHON37: "C:\\Python37"
+      PYTHON38: "C:\\Python38"
+    - platform: X86
+      VS_string: "Visual Studio 14 2015"
+      cmake_platform_args: ""
+      qbdi_plateform: "win-X86"
+      PYTHON35: "C:\\Python35-x64"
+      PYTHON36: "C:\\Python36-x64"
+      PYTHON37: "C:\\Python37-x64"
+      PYTHON38: "C:\\Python38-x64"
 
 cache:
   - deps\llvm\%qbdi_plateform%\lib -> deps\llvm\build.py
@@ -80,14 +46,9 @@ install:
   # Prepend newly installed Python to the PATH of this build (this cannot be
   # done from inside the powershell script as it would require to restart
   # the parent CMD process).
-  - ps: if ($env:PLATFORM -eq "X64") { $env:PYTHON = $env:PYTHON64 }
 
-  - ps: if ($env:PLATFORM -eq "X86") { $env:PYTHON = $env:PYTHON32 }
-
-  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
-  - "SET PYTHON_LIBRARIES=%PYTHON%\\%PYTHONLIB%"
-  - "SET PYTHON_INCLUDE_DIRS=%PYTHON%\\include"
-  - cmd: "%PYTHON%\\python.exe -m pip install setuptools wheel"
+  - "SET OLDPATH=%PATH%"
+  - "SET PATH=%PYTHON35%;%PYTHON35%\\Scripts;%OLDPATH%"
   - cmd: mkdir build
   - cmd: cd build
 
@@ -104,7 +65,30 @@ build_script:
 after_build:
   - cmd: cpack
   - cmd: cd ..
-  - cmd: "%PYTHON%\\python.exe setup.py bdist_wheel"
+  # build 3.5
+  - "SET PATH=%PYTHON35%;%PYTHON35%\\Scripts;%OLDPATH%"
+  - "SET PYTHON_LIBRARIES=%PYTHON35%\\%PYTHONLIB%"
+  - "SET PYTHON_INCLUDE_DIRS=%PYTHON35%\\include"
+  - cmd: "%PYTHON35%\\python.exe -m pip install setuptools wheel"
+  - cmd: "%PYTHON35%\\python.exe setup.py bdist_wheel"
+  # build 3.6
+  - "SET PATH=%PYTHON36%;%PYTHON36%\\Scripts;%OLDPATH%"
+  - "SET PYTHON_LIBRARIES=%PYTHON36%\\%PYTHONLIB%"
+  - "SET PYTHON_INCLUDE_DIRS=%PYTHON36%\\include"
+  - cmd: "%PYTHON36%\\python.exe -m pip install setuptools wheel"
+  - cmd: "%PYTHON36%\\python.exe setup.py bdist_wheel"
+  # build 3.7
+  - "SET PATH=%PYTHON37%;%PYTHON37%\\Scripts;%OLDPATH%"
+  - "SET PYTHON_LIBRARIES=%PYTHON37%\\%PYTHONLIB%"
+  - "SET PYTHON_INCLUDE_DIRS=%PYTHON37%\\include"
+  - cmd: "%PYTHON37%\\python.exe -m pip install setuptools wheel"
+  - cmd: "%PYTHON37%\\python.exe setup.py bdist_wheel"
+  # build 3.8
+  - "SET PATH=%PYTHON38%;%PYTHON38%\\Scripts;%OLDPATH%"
+  - "SET PYTHON_LIBRARIES=%PYTHON38%\\%PYTHONLIB%"
+  - "SET PYTHON_INCLUDE_DIRS=%PYTHON38%\\include"
+  - cmd: "%PYTHON38%\\python.exe -m pip install setuptools wheel"
+  - cmd: "%PYTHON38%\\python.exe setup.py bdist_wheel"
 
 test_script:
   - cmd: c:\projects\qbdi\build\test\Release\QBDItest
