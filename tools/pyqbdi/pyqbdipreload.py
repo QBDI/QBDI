@@ -58,7 +58,7 @@ def run():
                     break
 
     if not binarypath or not os.path.isfile(binarypath):
-        print("Cannot find binary {}".format(script))
+        print("Cannot find binary {}".format(binary))
         exit(1)
 
     os.execve(binarypath, args, environ)
