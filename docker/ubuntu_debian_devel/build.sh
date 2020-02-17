@@ -3,7 +3,7 @@
 set -e
 
 BASEDIR=$(cd $(dirname "$0") && pwd -P)
-GITDIR=$(cd "${BASEDIR}/../.." && pwd -P)
+GITDIR=$(git rev-parse --show-toplevel)
 
 . "${BASEDIR}/../common.sh"
 

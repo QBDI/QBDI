@@ -77,17 +77,18 @@ if(NOT (${ARCH} STREQUAL "ARM" ))
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${PYTHON_INCLUDE_DIRS}
     )
-    target_link_libraries(pyqbdi PRIVATE pyqbdi_module pyqbdi_utils QBDI_static)
-
-    if (PYTHON_LIBRARIES)
-        set_target_properties(pyqbdi PROPERTIES COMPILE_DEFINITIONS "PYTHON_LIBRARIES=\"${PYTHON_LIBRARIES}\"")
-        target_link_libraries(pyqbdi PRIVATE ${PYTHON_LIBRARIES})
-    endif()
 
     if ((HAS_QBDIPRELOAD) AND (TOOLS_QBDIPRELOAD))
         target_sources(pyqbdi PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/preload.cpp")
         target_include_directories(pyqbdi PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../QBDIPreload/include")
         target_link_libraries(pyqbdi PRIVATE QBDIPreload)
+    endif()
+
+    target_link_libraries(pyqbdi PRIVATE pyqbdi_module pyqbdi_utils QBDI_static)
+
+    if (PYTHON_LIBRARIES)
+        set_target_properties(pyqbdi PROPERTIES COMPILE_DEFINITIONS "PYTHON_LIBRARIES=\"${PYTHON_LIBRARIES}\"")
+        target_link_libraries(pyqbdi PRIVATE ${PYTHON_LIBRARIES})
     endif()
 
     set_target_properties(pyqbdi PROPERTIES PREFIX "")
@@ -106,6 +107,9 @@ if(NOT (${ARCH} STREQUAL "ARM" ))
         message(STATUS "export PYQBDI to ${PYQBDI_OUTPUT_DIRECTORY}/")
         add_custom_command(TARGET pyqbdi POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pyqbdi> ${PYQBDI_OUTPUT_DIRECTORY}/$<TARGET_FILE_NAME:pyqbdi>
+        )
+        add_custom_command(TARGET pyqbdi POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/pyqbdipreload.py" "${PYQBDI_OUTPUT_DIRECTORY}/pyqbdipreload.py"
         )
     endif()
 

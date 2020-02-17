@@ -8,9 +8,16 @@ PyQBDI offers you a way to script your instrumentation, allowing a fast and easy
 It also lets you interact with python environment, so you can, for example, post process any data
 you collected during the instrumentation.
 
+PyQBDI is available on `Pypi <https://pypi.org/project/PyQBDI/>` and can be install with the followed command:
+
+.. code-block:: bash
+
+    pip install --user PyQBDI
+
 .. note::
    If you use PyQBDI like a preloaded library, the library has the same limitations as QBDIPreload
    which are describred in :ref:`qbdipreload`.
+   Additionnaly, the shared library libpython3.x.so must be install (not include with python package in some linux distribution).
 
 .. note::
    It is not possible to instrument a python process using PyQBDI because there will be a conflict

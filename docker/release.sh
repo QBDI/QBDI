@@ -5,7 +5,7 @@ set -e
 HASHFILE="image.hash"
 
 BASEDIR=$(cd $(dirname "$0") && pwd -P)
-GITDIR=$(cd "${BASEDIR}/../.." && pwd -P)
+GITDIR=$(git rev-parse --show-toplevel)
 
 . "${BASEDIR}/common.sh"
 
@@ -46,7 +46,7 @@ push_image() {
 push_image "qbdi:x86_debian_buster" \
     "x86_debian_buster" \
     "x86_debian"
-                
+
 push_image "qbdi:x64_debian_buster" \
     "x64_debian_buster" \
     "x64_debian"
