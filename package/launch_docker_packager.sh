@@ -80,7 +80,7 @@ build_python () {
                               --pull
 
     docker create --name package qbdi:package
-    docker cp "package:${DOCKER_BUILD_DIR}/dist" "${BASEDIR}/package-${QBDI_VERSION}/python"
+    docker cp "package:${DOCKER_BUILD_DIR}/outwheel" "${BASEDIR}/package-${QBDI_VERSION}/python"
     docker rm package
 
 }

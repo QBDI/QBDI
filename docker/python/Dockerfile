@@ -71,3 +71,4 @@ RUN sudo chown -R $USER:$USER . && \
     /opt/python/cp37-cp37m/bin/python setup.py bdist_wheel && \
     /opt/python/cp38-cp38/bin/python setup.py bdist_wheel
 
+RUN for i in dist/*; do auditwheel repair $i -w outwheel; done
