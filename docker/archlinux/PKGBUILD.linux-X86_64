@@ -1,7 +1,7 @@
 # Maintainer: Charles Hubain <chubain@quarkslab.com>
 
 pkgname=QBDI-X86_64
-pkgver=0.7.0
+pkgver=0.7.1_devel
 pkgrel=1
 epoch=
 pkgdesc="QuarkslaB Dynamic binary Instrumentation for linux-X86_64"
@@ -22,7 +22,7 @@ build() {
           -DCMAKE_CROSSCOMPILING=FALSE \
           -DPLATFORM=linux-X86_64 \
           -DCMAKE_INSTALL_PREFIX=/usr \
-          -DTOOLS_PYQBDI=TRUE \
+          -DTOOLS_PYQBDI=FALSE \
           ../../../
     [[ -d "../../../deps/llvm/linux-X86_64" ]] || make llvm
     [[ -d "../../../deps/gtest/linux-X86_64" ]] || make gtest
@@ -30,7 +30,7 @@ build() {
           -DCMAKE_CROSSCOMPILING=FALSE \
           -DPLATFORM=linux-X86_64 \
           -DCMAKE_INSTALL_PREFIX=/usr \
-          -DTOOLS_PYQBDI=TRUE \
+          -DTOOLS_PYQBDI=FALSE \
           ../../../
     make -j4
 }
