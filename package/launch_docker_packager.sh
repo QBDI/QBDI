@@ -62,9 +62,8 @@ build_android () {
 }
 
 build_python () {
-    PLATEFORM="$1"
-    PYTHON_VERSION="$2"
-    CMAKE_ARGUMENT="$3"
+    TARGET="$1"
+    CMAKE_ARGUMENT="$2"
 
     if [[ "$TARGET" = "X86" ]]; then
         DOCKER_IMG="quay.io/pypa/manylinux2010_i686"

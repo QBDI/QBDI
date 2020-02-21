@@ -25,8 +25,11 @@ def run():
         libpythonname = "python{}.{}".format(sys.version_info.major, sys.version_info.minor)
         libpython = ctypesutil.find_library(libpythonname)
         if not libpython:
-            print("PyQBDI in PRELOAD mode need lib{}.so".format(libpythonname))
-            exit(1)
+            libpythonname = "python{}.{}{}".format(sys.version_info.major, sys.version_info.minor, sys.abiflags)
+            libpython = ctypesutil.find_library(libpythonname)
+            if not libpython:
+                print("PyQBDI in PRELOAD mode need lib{}.so".format(libpythonname))
+                exit(1)
 
         environ["LD_PRELOAD"] = os.pathsep.join([libpython, pyqbdi.__file__])
         environ["LD_BIND_NOW"] = "1"
