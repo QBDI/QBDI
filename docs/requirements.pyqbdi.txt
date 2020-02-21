@@ -1,0 +1,2 @@
+# Only use this file in readthedocs, where PyQBDI cannot be install
+PyQBDI

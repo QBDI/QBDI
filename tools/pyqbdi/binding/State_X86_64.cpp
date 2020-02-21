@@ -442,13 +442,17 @@ void init_binding_State(py::module& m) {
                         throw pybind11::index_error("Out of range of GPRState");
                     }
                     return QBDI_GPR_GET(&obj, index);
-                })
+                },
+                "Get a register like QBDI_GPR_GET",
+                "index"_a)
         .def("__setitem__", [](GPRState& obj, unsigned int index, rword value) {
                     if (index >= (sizeof(GPRState) / sizeof(rword))) {
                         throw pybind11::index_error("Out of range of GPRState");
                     }
                     return QBDI_GPR_SET(&obj, index, value);
-                });
+                },
+                "Set a register like QBDI_GPR_SET",
+                "index"_a, "value"_a);
 
 
 

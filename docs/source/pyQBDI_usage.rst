@@ -14,12 +14,17 @@ PyQBDI as a preloaded library
 
 PyQBDI can be used as a preloaded library to instrument a whole binary, as QBDIPreload.
 
+PyQBDI provided the helper script ``pyqbdipreload`` that preload the library in the new process.
+``pyqbdipreload`` is currently supported on Linux and macOS.
+
+.. code-block:: bash
+
+    $ python3 -m pyqbdipreload ./example.py cat anyfile
+
 The following actions are performed with the API of QBDIPreload :
 
 - :cpp:func:`QBDI::qbdipreload_on_main`:
   The python script is loaded. The program arguments can be found in ``sys.argv``.
-  To avoid infinite loops with some python library, the environment variable ``LD_PRELOAD`` or ``DYLD_INSERT_LIBRARIES`` is removed from ``os.environ``
-  before the loading of the script.
 
 - :cpp:func:`QBDI::qbdipreload_on_run`: The method ``pyqbdipreload_on_run`` is called.
   This method must be implemented in the specified script.
@@ -47,19 +52,6 @@ their address and disassembly.
     def pyqbdipreload_on_run(vm, start, stop):
         vm.addCodeCB(pyqbdi.PREINST, mycb, None)
         vm.run(start, stop)
-
-How to run it?
-~~~~~~~~~~~~~~
-
-PyQBDI as a preload library
---------------------------
-
-PyQBDI provided the helper script ``pyqbdipreload`` that preload the library in the new process.
-``pyqbdipreload`` is currently supported on Linux and macOS.
-
-.. code-block:: bash
-
-    python3 -m pyqbdipreload ./example.py cat anyfile
 
 PyQBDI as a python library
 --------------------------

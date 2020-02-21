@@ -116,17 +116,8 @@ if(NOT (${ARCH} STREQUAL "ARM" ))
     ##
     # Library for doc
     ##
-    add_library(pyqbdi_docs SHARED EXCLUDE_FROM_ALL "${CMAKE_CURRENT_SOURCE_DIR}/pyqbdi_docs.cpp")
-    target_include_directories(pyqbdi_docs PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-        "${PYBIND11_SOURCE_DIR}/include"
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${PYTHON_INCLUDE_DIRS}
-    )
-    target_link_libraries(pyqbdi_docs PRIVATE pyqbdi_utils)
-
-    add_custom_command(TARGET pyqbdi_docs POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pyqbdi_docs> ${PROJECT_BINARY_DIR}/docs/pyqbdi.so
+    add_custom_command(TARGET pyqbdi POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pyqbdi> ${PROJECT_BINARY_DIR}/docs/$<TARGET_FILE_NAME:pyqbdi>
     )
 
 endif()
