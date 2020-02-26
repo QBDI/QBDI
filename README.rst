@@ -1,3 +1,22 @@
+.. image:: https://readthedocs.org/projects/qbdi/badge/?version=stable
+    :target: https://qbdi.readthedocs.io/en/stable/?badge=stable
+    :alt: Documentation Status
+
+.. image:: https://travis-ci.com/QBDI/QBDI.svg?branch=master
+    :target: https://travis-ci.com/QBDI/QBDI
+
+.. image:: https://ci.appveyor.com/api/projects/status/s2qvpu8k8yiau647/branch/master?svg=true
+    :target: https://ci.appveyor.com/project/QBDI/qbdi/branch/master
+
+.. image:: https://img.shields.io/github/v/release/QBDI/QBDI
+    :target: https://github.com/QBDI/QBDI/releases
+
+.. image:: https://img.shields.io/pypi/pyversions/PyQBDI
+    :target: https://pypi.org/project/PyQBDI/
+
+.. image:: https://img.shields.io/pypi/v/PyQBDI
+    :target: https://pypi.org/project/PyQBDI/
+
 Introduction
 ============
 .. intro
@@ -71,6 +90,23 @@ AArch64   Android                          :orange:`Planned (*)`    :orange:`Pla
     :target: https://ci.appveyor.com/project/QBDI/qbdi/branch/dev-next
 
 .. intro-end
+
+Installation
+============
+
+C/C++/Frida API
+---------------
+
+Each new version of QBDI is compiled and available on Github release page (https://github.com/QBDI/QBDI/releases).
+
+Python API (PyQBDI)
+-------------------
+
+PyQBDI is available on Pypi. The wheel package can be downloaded (https://pypi.org/project/PyQBDI/#files) or installed with pip command.::
+
+    pip install PyQBDI
+
+PyQBDI package is independent of C/C++ package.
 
 Compilation
 ===========
