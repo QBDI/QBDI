@@ -1,95 +1,49 @@
-PyQBDI Bindings
-===============
+.. currentmodule:: pyqbdi
 
-PyQBDI bindings are quite close to the original C/C++ API.
-All you need to add to your script be able to use the bindings is:
+PyQBDI Bindings API
+===================
 
-.. code-block:: python
+The PyQBDI API is almost the same as the :ref:`C++ API <ref_api_cpp>`.
 
-    import pyqbdi
+When the library is loaded as a preload library, the variable ``pyqbdi.__preload__`` is set to ``True``.
 
-    def pyqbdipreload_on_run(vm, start, stop):
-        pass
+State
+-----
 
+The state available depend of the architecture (X86 or X86-64).
 
-API
----
-
-State Management
-^^^^^^^^^^^^^^^^
-
-.. autoclass:: pyqbdi.vm
-   :members: getGPRState, getFPRState, setGPRState, setFPRState
-
-
-State Initialization
-^^^^^^^^^^^^^^^^^^^^
-
-.. automodule:: pyqbdi
-   :members: alignedAlloc, allocateVirtualStack, simulateCall
-   :member-order: bysource
-
-
-Execution
-^^^^^^^^^
-
-.. autoclass:: pyqbdi.vm
-   :members: run, call
-
-
-Instrumentation
-^^^^^^^^^^^^^^^
-
-.. autoclass:: pyqbdi.vm
-   :members: addCodeCB, addCodeAddrCB, addCodeRangeCB, addMnemonicCB, deleteInstrumentation, deleteAllInstrumentations,
-             addInstrumentedRange, addInstrumentedModule, addInstrumentedModuleFromAddr, removeInstrumentedRange,
-             removeInstrumentedModule, removeInstrumentedModuleFromAddr
-
-.. automodule:: pyqbdi
-   :members: getModuleNames, getCurrentProcessMaps
-
-
-Memory Callback
-^^^^^^^^^^^^^^^
-
-.. autoclass:: pyqbdi.vm
-   :members: addMemAddrCB, addMemRangeCB, addMemAccessCB, recordMemoryAccess
-
-
-Analysis
-^^^^^^^^
-
-.. autoclass:: pyqbdi.vm
-   :members: getInstAnalysis, getInstMemoryAccess, getBBMemoryAccess
-   :member-order: bysource
-
-
-Cache management
-^^^^^^^^^^^^^^^^
-
-.. autoclass:: pyqbdi.vm
-   :members: precacheBasicBlock, clearCache, clearAllCache
-   :member-order: bysource
-
-
-VM Events
-^^^^^^^^^
-
-.. autoclass:: pyqbdi.vm
-   :members: addVMEventCB
-
-
-Helpers
-^^^^^^^
-
-.. automodule:: pyqbdi
-   :members: readMemory, writeMemory, decodeFloat, encodeFloat
-
-Objects
-^^^^^^^
-
-.. autoclass:: pyqbdi.MemoryMap
+.. autoclass:: pyqbdi.GPRState
     :members:
+    :undoc-members:
+    :special-members: __getitem__, __setitem__
+
+.. autoclass:: pyqbdi.FPRState
+    :members:
+    :undoc-members:
+
+VM
+--
+
+.. autoclass:: pyqbdi.VM
+    :members:
+
+
+Callback
+--------
+
+.. autodata:: pyqbdi.InstPosition
+.. autoclass:: pyqbdi.MemoryAccess
+    :members:
+.. autodata:: pyqbdi.MemoryAccessType
+.. autodata:: pyqbdi.VMAction
+.. autodata:: pyqbdi.VMEvent
+.. autoclass:: pyqbdi.VMState
+    :members:
+
+InstAnalysis
+------------
+
+.. autodata:: pyqbdi.AnalysisType
 
 .. autoclass:: pyqbdi.InstAnalysis
     :members:
@@ -97,12 +51,79 @@ Objects
 .. autoclass:: pyqbdi.OperandAnalysis
     :members:
 
-.. autoclass:: pyqbdi.VMState
+
+.. autodata:: pyqbdi.RegisterAccessType
+.. autodata:: pyqbdi.OperandType
+.. autodata:: pyqbdi.OperandFlag
+
+Memory and process map
+----------------------
+
+.. autofunction:: getModuleNames
+
+.. autofunction:: getCurrentProcessMaps
+.. autofunction:: getRemoteProcessMaps
+
+.. autodata:: pyqbdi.Permission
+
+.. autoclass:: pyqbdi.MemoryMap
     :members:
 
-.. autoclass:: pyqbdi.MemoryAccess
+.. autofunction:: alignedAlloc
+.. autofunction:: alignedFree
+.. autofunction:: allocateVirtualStack
+.. autofunction:: simulateCall
+
+Range
+-----
+
+.. autoclass:: pyqbdi.Range
     :members:
 
-.. autodata:: pyqbdi.GPRState
+Miscellaneous
+-------------
 
-.. autodata:: pyqbdi.FPRState
+.. data:: __arch__
+
+.. data:: __platform__
+
+.. data:: __preload__
+
+    Library load with pyqbdipreload
+
+.. data:: __os__
+
+.. data:: __version__
+
+    Version of QBDI
+
+
+PyQBDI Bindings Helpers
+=======================
+
+In addition of C++ API, some helper are available:
+
+Memory helpers
+--------------
+
+.. autofunction:: readMemory
+.. autofunction:: readRword
+.. autofunction:: writeMemory
+.. autofunction:: writeRword
+.. autofunction:: allocateRword
+.. autofunction:: allocateMemory
+.. autofunction:: freeMemory
+
+Float helpers
+-------------
+
+.. autofunction:: encodeFloat
+.. autofunction:: decodeFloat
+.. autofunction:: encodeFloatU
+.. autofunction:: decodeFloatU
+.. autofunction:: encodeDouble
+.. autofunction:: decodeDouble
+.. autofunction:: encodeDoubleU
+.. autofunction:: decodeDoubleU
+
+For more conversion, you may want to use the `struct library <https://docs.python.org/3/library/struct.html>`_ of Python.

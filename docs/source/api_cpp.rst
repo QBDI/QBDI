@@ -1,5 +1,7 @@
 .. highlight:: c++
 
+.. _ref_api_cpp:
+
 VM C++
 ======
 

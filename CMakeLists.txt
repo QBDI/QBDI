@@ -182,14 +182,9 @@ ENDFUNCTION(PREPEND)
 set(_LLVM_STATIC_LIBS LLVMBinaryFormat.a LLVMMCDisassembler.a LLVMSelectionDAG.a LLVMAsmPrinter.a LLVMCodeGen.a LLVMScalarOpts.a LLVMInstCombine.a LLVMTransformUtils.a LLVMAnalysis.a LLVMTarget.a LLVMObject.a LLVMMCParser.a LLVMBitReader.a LLVMCore.a LLVMMC.a LLVMSupport.a)
 
 if(${PLATFORM} STREQUAL "linux-X86" OR ${PLATFORM} STREQUAL "linux-X86_64")
-    find_package(Curses REQUIRED)
-    set(NCURSES_LDFLAGS "-lncurses")
-    if(CURSES_EXTRA_LIBRARY)
-        set(NCURSES_LDFLAGS "${NCURSES_LDFLAGS} -ltinfo")
-    endif()
 
     set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMProfileData.a LLVMX86Disassembler.a LLVMX86AsmParser.a LLVMX86CodeGen.a LLVMX86Desc.a LLVMX86Info.a LLVMX86AsmPrinter.a LLVMX86Utils.a)
-    set(LLVM_LIBS -lrt -ldl ${NCURSES_LDFLAGS} -latomic -lpthread -lz -lm -lstdc++)
+    set(LLVM_LIBS -lrt -ldl -lpthread -lz -lm -lstdc++)
 
 elseif((${PLATFORM} STREQUAL "win-X86_64") OR (${PLATFORM} STREQUAL "win-X86"))
 
@@ -204,7 +199,7 @@ elseif(${PLATFORM} STREQUAL "linux-ARM")
 elseif(${PLATFORM} STREQUAL "macOS-X86" OR ${PLATFORM} STREQUAL "macOS-X86_64")
 
     set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMDemangle.a LLVMX86Disassembler.a LLVMX86AsmParser.a LLVMX86CodeGen.a LLVMX86Desc.a LLVMX86Info.a LLVMX86AsmPrinter.a LLVMX86Utils.a)
-    set(LLVM_LIBS -lz -lpthread -lffi -ledit -lcurses -lm -lc++)
+    set(LLVM_LIBS -lz -lpthread -lffi -ledit -lm -lc++)
 
 elseif(${PLATFORM} STREQUAL "android-ARM")
 
@@ -219,7 +214,7 @@ elseif((${PLATFORM} STREQUAL "android-X86") OR (${PLATFORM} STREQUAL "android-X8
 elseif(${PLATFORM} STREQUAL "iOS-ARM")
 
     set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMDemangle.a LLVMProfileData.a LLVMARMDisassembler.a LLVMARMCodeGen.a LLVMARMAsmParser.a LLVMARMDesc.a LLVMARMInfo.a LLVMARMAsmPrinter.a LLVMARMUtils.a)
-    set(LLVM_LIBS -lz -lpthread -ledit -lcurses -lm -lc++)
+    set(LLVM_LIBS -lz -lpthread -ledit -lm -lc++)
 
 endif()
 

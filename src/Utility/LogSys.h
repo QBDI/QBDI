@@ -18,6 +18,7 @@
 #ifndef LOGSYS_H
 #define LOGSYS_H
 
+#include <cstring>
 #include <cstdio>
 #include <cstdarg>
 #include <vector>

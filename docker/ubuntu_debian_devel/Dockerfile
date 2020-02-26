@@ -18,17 +18,15 @@ RUN apt-get update && \
         cmake \
         g++ \
         g++-multilib \
-        libncurses-dev \
         libstdc++-8-dev \
         make \
         pkg-config \
-        python \
-        python-dev \
         wget \
         ca-certificates \
         zlib1g-dev \
         python-pathlib \
-        python3 && \
+        python3 \
+        python3-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

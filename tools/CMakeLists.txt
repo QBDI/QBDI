@@ -9,9 +9,10 @@ if((HAS_QBDIPRELOAD) AND (TOOLS_QBDIPRELOAD))
         add_subdirectory(validator)
     endif()
 
-    if(TOOLS_PYQBDI)
-        message(STATUS "Compile PyQBDI")
-        # Add pyqbdi
-        add_subdirectory(pyqbdi)
-    endif()
+endif()
+
+if(TOOLS_PYQBDI)
+    message(STATUS "Compile PyQBDI")
+    # Add pyqbdi
+    add_subdirectory(pyqbdi)
 endif()

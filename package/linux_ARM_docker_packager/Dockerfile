@@ -39,7 +39,6 @@ RUN apt-get update \
     g++ \
     gcc-arm-linux-gnueabi \
     g++-arm-linux-gnueabi \
-    libncurses5-dev \
     libstdc++-6-dev \
     make \
     pkg-config \

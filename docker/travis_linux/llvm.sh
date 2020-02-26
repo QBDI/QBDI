@@ -4,7 +4,7 @@ set -e
 set -x
 
 BASEDIR=$(cd $(dirname "$0") && pwd -P)
-GITDIR=$(cd "${BASEDIR}/../.." && pwd -P)
+GITDIR=$(git rev-parse --show-toplevel)
 
 if [[ -n "$(find "${GITDIR}/deps/llvm/${QBDI_PLATFORM}/lib" -type f -print -quit)" &&
       -n "$(find "${GITDIR}/deps/llvm/${QBDI_PLATFORM}/include" -type f -print -quit)" ]]; then

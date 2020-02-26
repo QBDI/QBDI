@@ -1,14 +1,14 @@
 # Maintainer: Charles Hubain <chubain@quarkslab.com>
 
 pkgname=QBDI-X86
-pkgver=0.7.0
+pkgver=0.7.1_devel
 pkgrel=1
 epoch=
 pkgdesc="QuarkslaB Dynamic binary Instrumentation for linux-X86"
 arch=('x86_64' 'i686')
 url="https://qbdi.quarkslab.com/"
 license=('apache2')
-depends=('lib32-ncurses' 'lib32-zlib')
+depends=('lib32-zlib')
 options=(staticlibs)
 makedepends=('cmake' 'make' 'gcc' 'python')
 

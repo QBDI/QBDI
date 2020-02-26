@@ -5,7 +5,8 @@ FROM ubuntu:$UBUNTU_TAG
 ENV USER="docker" \
     HOME="/home/docker" \
     PREFIX="/usr" \
-    QBDI_PLATFORM="linux-X86_64"
+    QBDI_PLATFORM="linux-X86_64" \
+    CLICOLOR_FORCE=1
 
 # Get latest package list, upgrade packages, install required packages 
 # and cleanup to keep container as small as possible
@@ -13,11 +14,11 @@ RUN apt-get update \
     && apt-get install -y \
     bash \
     sudo \
+    git \
     build-essential \
     cmake \
     g++ \
     g++-multilib \
-    libncurses5-dev \
     libstdc++-6-dev \
     make \
     pkg-config \
@@ -26,7 +27,8 @@ RUN apt-get update \
     wget \
     zlib1g-dev \
     python-pathlib \
-    python3
+    python3 \
+    python3-dev
 
 # create a user
 RUN adduser --disabled-password --gecos '' $USER && \

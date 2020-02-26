@@ -15,11 +15,12 @@ add_custom_target(docs-doxygen
 
 add_custom_target(docs-sphinx
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/docs/source
-    DEPENDS docs-doxygen
-    COMMAND sphinx-build -a -b html . ../build
+    DEPENDS docs-doxygen pyqbdi
+    COMMAND ${CMAKE_COMMAND} -E env "PYTHONPATH=${PROJECT_BINARY_DIR}/docs:$ENV{PYTHONPATH}" sphinx-build -a -b html . ../build
 )
 
 add_custom_target(docs-sphinx-fast
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/docs/source
-    COMMAND sphinx-build -a -b html . ../build
+    DEPENDS pyqbdi
+    COMMAND ${CMAKE_COMMAND} -E env "PYTHONPATH=${PROJECT_BINARY_DIR}/docs:$ENV{PYTHONPATH}" sphinx-build -a -b html . ../build
 )

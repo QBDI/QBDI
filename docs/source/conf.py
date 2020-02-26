@@ -22,7 +22,7 @@ RE_VERSION = re.compile('.*QBDI_VERSION_(\S*)\s*(\d*).*')
 
 # Parse version
 def extract_version(cmakefile):
-    major = minor = -1
+    major = minor = patch = dev = -1
     with open(cmakefile) as fp:
         for line in fp.readlines():
             m = RE_VERSION.match(line)
@@ -33,23 +33,29 @@ def extract_version(cmakefile):
                 major = int (version)
             elif cat == 'MINOR':
                 minor = int (version)
-            if major != -1 and minor != -1:
+            elif cat == 'PATCH':
+                patch = int (version)
+            elif cat == 'DEV':
+                dev = bool(int (version))
+            if major != -1 and minor != -1 and patch != -1 and dev != -1:
                 break
-    return (major, minor)
+    return (major, minor, patch, dev)
 
 # Extract version from CMakeLists.txt
 # We cannot use cmake configure_file because documentation is built without cmake on readthedocs
 current_dir = os.path.dirname(os.path.realpath(__file__))
 cmake_path = os.path.join(current_dir, '..', '..', 'CMakeLists.txt')
-VERSION_MAJOR, VERSION_MINOR = extract_version(cmake_path)
-VERSION_FULL = "%u.%u" % (VERSION_MAJOR, VERSION_MINOR)
+VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_DEV = extract_version(cmake_path)
+VERSION_FULL = "%u.%u.%u" % (VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH)
+if VERSION_DEV:
+    VERSION_FULL = VERSION_FULL + '-devel'
 
 # Handle "read the docs" builds
 read_the_docs_build = os.environ.get('READTHEDOCS', None) == 'True'
 
 if read_the_docs_build:
     # Update documentation in doxygen config file (what is normally done by cmake)
-    sedcmd = "sed 's/${QBDI_VERSION_MAJOR}/%u/;s/${QBDI_VERSION_MINOR}/%u/'" % (VERSION_MAJOR, VERSION_MINOR)
+    sedcmd = "sed 's/${QBDI_VERSION_MAJOR}/%u/;s/${QBDI_VERSION_MINOR}/%u/;s/${QBDI_VERSION_PATCH}/%u/'" % (VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH)
     # Call doxygen
     subprocess.call("cd ../; %s qbdi_cpp.doxygen.in > qbdi_cpp.doxygen" % sedcmd, shell=True)
     subprocess.call("cd ../; %s qbdi_c.doxygen.in > qbdi_c.doxygen" % sedcmd, shell=True)
@@ -91,7 +97,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'QBDI'
-copyright = '2015-2017, Quarkslab'
+copyright = '2015-2020, Quarkslab'
 author = 'Quarkslab'
 
 # The version info for the project you're documenting, acts as replacement for

@@ -34,6 +34,10 @@ extern "C" {
 #define QBDI_VERSION_PATCH @QBDI_VERSION_PATCH@
 #define QBDI_VERSION_DEV @QBDI_VERSION_DEV@
 
+#define QBDI_ARCHITECTURE_STRING "@ARCH@"
+#define QBDI_OS_STRING "@OS@"
+#define QBDI_PLATFORM_STRING "@PLATFORM@"
+
 /*! Return QBDI version.
  *
  * @param[in] version    QBDI version encoded as an unsigned integer (0xMmp).

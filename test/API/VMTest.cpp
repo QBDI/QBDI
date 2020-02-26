@@ -343,7 +343,7 @@ QBDI::VMAction evilMnemCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBD
         info[1]++;
         // validate address
         if (TEST_GUARD(ana->address >= (QBDI::rword) &satanicFun &&
-            ana->address < (((QBDI::rword) &satanicFun) + 100))) {
+            ana->address < (((QBDI::rword) &satanicFun) + 0x100))) {
             info[1]++;
         }
         // validate inst size
