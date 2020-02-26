@@ -8,7 +8,7 @@ PyQBDI offers you a way to script your instrumentation, allowing a fast and easy
 It also lets you interact with python environment, so you can, for example, post process any data
 you collected during the instrumentation.
 
-PyQBDI is available on `Pypi <https://pypi.org/project/PyQBDI/>` and can be install with the followed command:
+PyQBDI is available on `Pypi <https://pypi.org/project/PyQBDI/>`_ and can be install with the followed command:
 
 .. code-block:: bash
 
