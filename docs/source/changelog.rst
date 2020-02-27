@@ -7,7 +7,7 @@ Next Version
 Version 0.7.1
 -------------
 
-2020-0x-xx QBDI Team <qbdi@quarkslab.com>
+2020-02-27 QBDI Team <qbdi@quarkslab.com>
 
 * Refactor PyQBDI, support python3, PyQBDI without Preload (`#67 <https://github.com/QBDI/QBDI/issues/67>`_,
   `#121 <https://github.com/QBDI/QBDI/pull/121>`_)
