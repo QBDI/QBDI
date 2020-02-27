@@ -93,7 +93,7 @@ with open("README-pypi.rst", "r") as f:
 
 setup(
     name='PyQBDI',
-    version='0.7.1',
+    version='0.7.2b0',
     author='Nicolas Surbayrole',
     license = "apache2",
     author_email='qbdi@quarkslab.com',
