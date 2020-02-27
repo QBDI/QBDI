@@ -14,7 +14,7 @@ PyQBDI as a preloaded library
 
 PyQBDI can be used as a preloaded library to instrument a whole binary, as QBDIPreload.
 
-PyQBDI provided the helper script ``pyqbdipreload`` that preload the library in the new process.
+PyQBDI provide the helper script ``pyqbdipreload`` that preloads the library in the new process.
 ``pyqbdipreload`` is currently supported on Linux and macOS.
 
 .. code-block:: bash
@@ -56,7 +56,7 @@ their address and disassembly.
 PyQBDI as a python library
 --------------------------
 
-When PyQBDI is used as a python library, the instrumentation code can be loaded
+When PyQBDI is used as a python library, the target code can be loaded
 in the process with ``ctypes`` python module.
 
 Example
@@ -68,7 +68,3 @@ being compared with the python result.
 
 .. literalinclude:: ../../examples/pyqbdi/trace_sin.py
     :language: python
-
-
-
-

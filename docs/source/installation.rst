@@ -3,7 +3,7 @@ Installation
 
 QBDI can be installed using our prebuilt packages, docker images or from the source. For a more relaxing experience, we
 recommend using the stable release’s prebuilt packages, following per-platform steps detailed on this page. The docker images
-is recommanded for the x86 to have a full environment in 32bits. In order to install
+is recommended for the x86 to have a full environment in 32bits. In order to install
 from source please refer to the developer documentation: :ref:`developer-compilation`.
 
 Using Pre-Built Packages
@@ -59,13 +59,13 @@ Docker
 ------
 
 The docker image is available in `Docker Hub <https://hub.docker.com/r/qbdi/qbdi>`_. The image is
-minimal and doesn't containt any compiler. You need to install your needed application or adapt the
+minimal and does not contain any compiler. You need to install the needed application or adapt the
 following dockerfile.
 
 .. literalinclude:: ../../examples/Dockerfile
    :language: dockerfile
 
-To run the container, we recommend to allow the usage of PTRACE that was needed to use QBDIPreload.
+To run the container, we recommend allowing the usage of PTRACE that is necessary to use QBDIPreload.
 
 .. code-block:: bash
 

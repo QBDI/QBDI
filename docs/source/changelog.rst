@@ -168,7 +168,7 @@ Version 0.4
 * C and C++ API stabilization
 * Out-of-tree build and SDK
 * Overhaul of the entire documentation with a complete PatchDSL explanation and a split
-  between user and developper documentation.
+  between user and developer documentation.
 
 Version 0.3
 -----------
