@@ -8,19 +8,29 @@ configuration:
   - Release
 
 environment:
-  PYTHON: "C:\\Python35-x64"
   APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
   CMAKE_TEMPLATE: Visual Studio 14 2015
+  PYTHON35LIB: "libs\\python35.lib"
+  PYTHON36LIB: "libs\\python36.lib"
+  PYTHON37LIB: "libs\\python37.lib"
+  PYTHON38LIB: "libs\\python38.lib"
   matrix:
     - platform: X64
-      qbdi_plateform: win-X86_64
       VS_string: "Visual Studio 14 2015 Win64"
       cmake_platform_args: "-Thost=x64"
+      qbdi_plateform: "win-X86_64"
+      PYTHON35: "C:\\Python35-x64"
+      PYTHON36: "C:\\Python36-x64"
+      PYTHON37: "C:\\Python37-x64"
+      PYTHON38: "C:\\Python38-x64"
     - platform: X86
-      qbdi_plateform: win-X86
       VS_string: "Visual Studio 14 2015"
       cmake_platform_args: ""
-
+      qbdi_plateform: "win-X86"
+      PYTHON35: "C:\\Python35"
+      PYTHON36: "C:\\Python36"
+      PYTHON37: "C:\\Python37"
+      PYTHON38: "C:\\Python38"
 
 cache:
   - deps\llvm\%qbdi_plateform%\lib -> deps\llvm\build.py
@@ -36,26 +46,55 @@ install:
   # Prepend newly installed Python to the PATH of this build (this cannot be
   # done from inside the powershell script as it would require to restart
   # the parent CMD process).
-  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+
+  - "SET OLDPATH=%PATH%"
+  - "SET PATH=%PYTHON35%;%PYTHON35%\\Scripts;%OLDPATH%"
   - cmd: mkdir build
   - cmd: cd build
 
 build_script:
   - "\"C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\vcvarsall.bat\" %Platform%"
-  - cmd: cmake .. -G "%VS_string%" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DPLATFORM=%qbdi_plateform% -DEXAMPLES=TRUE %cmake_platform_args%
+  - cmd: cmake .. -G "%VS_string%" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DPLATFORM=%qbdi_plateform% -DTOOLS_PYQBDI=Off -DEXAMPLES=On %cmake_platform_args%
   - ps: if (-not((Test-Path("../deps/llvm/$env:qbdi_plateform/lib")) -and (Test-Path("../deps/llvm/$env:qbdi_plateform/include")))) { MSbuild deps\llvm.vcxproj /p:Configuration=$env:configuration,Platform=$env:platform /m:3 }
   - cmd: python ..\deps\llvm\build.py clean %qbdi_plateform%
   - ps: if (-not((Test-Path("../deps/gtest/$env:qbdi_plateform/lib")) -and (Test-Path("../deps/gtest/$env:qbdi_plateform/include")))) { MSbuild deps\gtest.vcxproj /p:Configuration=$env:configuration,Platform=$env:platform /m:3 }
   - cmd: python ..\deps\gtest\%qbdi_plateform%\build.py clean %qbdi_plateform%
-  - cmd: cmake .. -G "%VS_string%" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DPLATFORM=%qbdi_plateform% -DEXAMPLES=TRUE %cmake_platform_args%
+  - cmd: cmake .. -G "%VS_string%" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DPLATFORM=%qbdi_plateform% -DTOOLS_PYQBDI=Off -DEXAMPLES=On %cmake_platform_args%
   - cmd: MSbuild /p:Configuration=%configuration%,Platform=%platform% ALL_BUILD.vcxproj /m:3
+
+after_build:
+  - cmd: cpack
+  - cmd: cd ..
+  # build 3.5
+  - "SET PATH=%PYTHON35%;%PYTHON35%\\Scripts;%OLDPATH%"
+  - "SET PYTHON_LIBRARIES=%PYTHON35%\\%PYTHON35LIB%"
+  - "SET PYTHON_INCLUDE_DIRS=%PYTHON35%\\include"
+  - cmd: "%PYTHON35%\\python.exe -m pip install setuptools wheel"
+  - cmd: "%PYTHON35%\\python.exe setup.py bdist_wheel"
+  # build 3.6
+  - "SET PATH=%PYTHON36%;%PYTHON36%\\Scripts;%OLDPATH%"
+  - "SET PYTHON_LIBRARIES=%PYTHON36%\\%PYTHON36LIB%"
+  - "SET PYTHON_INCLUDE_DIRS=%PYTHON36%\\include"
+  - cmd: "%PYTHON36%\\python.exe -m pip install setuptools wheel"
+  - cmd: "%PYTHON36%\\python.exe setup.py bdist_wheel"
+  # build 3.7
+  - "SET PATH=%PYTHON37%;%PYTHON37%\\Scripts;%OLDPATH%"
+  - "SET PYTHON_LIBRARIES=%PYTHON37%\\%PYTHON37LIB%"
+  - "SET PYTHON_INCLUDE_DIRS=%PYTHON37%\\include"
+  - cmd: "%PYTHON37%\\python.exe -m pip install setuptools wheel"
+  - cmd: "%PYTHON37%\\python.exe setup.py bdist_wheel"
+  # build 3.8
+  - "SET PATH=%PYTHON38%;%PYTHON38%\\Scripts;%OLDPATH%"
+  - "SET PYTHON_LIBRARIES=%PYTHON38%\\%PYTHON38LIB%"
+  - "SET PYTHON_INCLUDE_DIRS=%PYTHON38%\\include"
+  - cmd: "%PYTHON38%\\python.exe -m pip install setuptools wheel"
+  - cmd: "%PYTHON38%\\python.exe setup.py bdist_wheel"
 
 test_script:
   - cmd: c:\projects\qbdi\build\test\Release\QBDItest
 
-after_build:
-  - cmd: cpack
-
 artifacts:
   - name: Installer
     path: 'build\QBDI-*.exe'
+  - name: Python package
+    path: 'dist\PyQBDI-*.whl'

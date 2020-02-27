@@ -76,7 +76,7 @@ class QBDI_EXPORT VM {
      */
     void        setGPRState(GPRState* gprState);
 
-    /*! Set the GPR state
+    /*! Set the FPR state
      *
      * @param[in] fprState A structure containing the FPR state.
      */

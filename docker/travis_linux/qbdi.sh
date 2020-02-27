@@ -4,7 +4,7 @@ set -e
 set -x
 
 BASEDIR=$(cd $(dirname "$0") && pwd -P)
-GITDIR=$(cd "${BASEDIR}/../.." && pwd -P)
+GITDIR=$(git rev-parse --show-toplevel)
 
 if [[ "linux-X86_64" = "${QBDI_PLATFORM}" ]]; then
     docker build "${GITDIR}" -t qbdi_build:base -f "${BASEDIR}/base_X86_64.dockerfile"

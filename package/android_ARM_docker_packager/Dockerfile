@@ -19,7 +19,6 @@ RUN apt-get update && \
         cmake \
         ninja-build \
         g++ \
-        libncurses-dev \
         libstdc++-8-dev \
         make \
         pkg-config \

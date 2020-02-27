@@ -3,7 +3,7 @@
 set -e
 
 BASEDIR=$(cd $(dirname "$0") && pwd -P)
-GITDIR=$(cd "${BASEDIR}/../.." && pwd -P)
+GITDIR=$(git rev-parse --show-toplevel)
 
 . "${BASEDIR}/../common.sh"
 
@@ -24,16 +24,6 @@ fi
 CMAKE_ARGUMENT="$3"
 
 DISTRIB="${DOCKER_IMG##*/}"
-
-if [[ "$DISTRIB" = "ubuntu" ]]; then
-    if [[ "${TAG}" = "18.10" || "${TAG:0:2}" -gt "18" ]]; then
-        CMAKE_ARGUMENT="${CMAKE_ARGUMENT} -DPACKAGE_LIBNCURSE6=TRUE"
-    fi
-elif [[ "$DISTRIB" = "debian" ]]; then
-    if [[ "${TAG}" = "buster" || "${TAG:0:2}" = "10" ]]; then
-        CMAKE_ARGUMENT="${CMAKE_ARGUMENT} -DPACKAGE_LIBNCURSE6=TRUE"
-    fi
-fi
 
 DOCKER_TAG="qbdi:x${ARCH: -2}_${DOCKER_IMG##*/}_${TAG}_devel"
 

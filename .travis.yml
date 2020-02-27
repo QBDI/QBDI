@@ -1,45 +1,41 @@
 language: cpp 
 
 addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-  packages:
-    - g++
-    - ccache
   homebrew:
     packages:
       - ccache
+      - g++
+      - python3
 
-linux_target: &linux_target
+_linux_target: &linux_target
   os: linux
   dist: xenial
   compiler: gcc
   env:
     QBDI_PLATFORM="linux-X86_64"
 
-linux_target32: &linux_target32
+_linux_target32: &linux_target32
   os: linux
   dist: xenial
   compiler: gcc
   env:
     QBDI_PLATFORM="linux-X86"
 
-osx_target: &osx_target
+_osx_target: &osx_target
   os: osx
   osx_image: xcode9.4
   env:
     - QBDI_PLATFORM="macOS-X86_64"
     - CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=${QBDI_PLATFORM} -DTOOLS_VALIDATOR=TRUE -DEXAMPLES=TRUE"
 
-osx_target32: &osx_target32
+_osx_target32: &osx_target32
   os: osx
   osx_image: xcode9.4
   env:
     - QBDI_PLATFORM="macOS-X86"
     - CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=${QBDI_PLATFORM} -DTOOLS_VALIDATOR=TRUE -DEXAMPLES=TRUE"
 
-install_llvm: &install_llvm
+_install_llvm: &install_llvm
   script:
     - mkdir build && cd build
     - cmake .. ${CMAKE_ARGS}
@@ -48,7 +44,7 @@ install_llvm: &install_llvm
     # Reduce cache size
     - python3 ../deps/llvm/build.py clean ${QBDI_PLATFORM}
 
-install_gtest: &install_gtest
+_install_gtest: &install_gtest
   script:
     - mkdir build && cd build
     - cmake .. ${CMAKE_ARGS}
@@ -57,36 +53,34 @@ install_gtest: &install_gtest
     # Reduce cache size
     - sh ../deps/gtest/${QBDI_PLATFORM}/build.sh clean
 
-docker_llvm: &docker_llvm
+_docker_llvm: &docker_llvm
   services:
     - docker
   script:
     - bash ./docker/travis_linux/llvm.sh
 
-install_gtest: &docker_gtest
+_docker_gtest: &docker_gtest
   services:
     - docker
   script:
     - bash ./docker/travis_linux/gtest.sh
 
-compile_and_test: &compile_and_test
+_compile_and_test: &compile_and_test
   script:
     - mkdir build && cd build
     - cmake .. ${CMAKE_ARGS}
     - make -j2
     - ./test/QBDITest
 
-docker_compile_and_test: &docker_compile_and_test
+_docker_compile_and_test: &docker_compile_and_test
   services:
     - docker
   script:
     - bash ./docker/travis_linux/qbdi.sh
 
 cache:
-  - apt
-  - ccache
-
-cache:
+  apt: TRUE
+  ccache: TRUE
   directories:
     - deps/llvm/linux-X86_64/include
     - deps/llvm/linux-X86_64/lib
@@ -105,8 +99,6 @@ cache:
     - deps/gtest/macOS-X86/include
     - deps/gtest/macOS-X86/lib
     - tools/validation_runner/travis_db
-
-sudo: required
 
 jobs:
   include:

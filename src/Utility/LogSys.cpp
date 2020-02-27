@@ -124,6 +124,8 @@ void qbdi_setLogOutput(FILE* output) {
 void qbdi_addLogFilter(const char *tag, LogPriority priority) {
     if (tag == nullptr) {
         tag = "*";
+    } else {
+        tag = strdup(tag);
     }
     LOGSYS.addFilter(tag, priority);
 }

@@ -9,7 +9,6 @@ RUN apt-get update && \
     apt-get install -y \
         build-essential \
         cmake \
-        libncurses-dev \
         libstdc++-8-dev \
         zlib1g-dev \
         python \

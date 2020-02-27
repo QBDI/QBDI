@@ -1,6 +1,20 @@
 CHANGELOG
 =========
 
+Next Version
+------------
+
+Version 0.7.1
+-------------
+
+2020-0x-xx QBDI Team <qbdi@quarkslab.com>
+
+* Refactor PyQBDI, support python3, PyQBDI without Preload (`#67 <https://github.com/QBDI/QBDI/issues/67>`_,
+  `#121 <https://github.com/QBDI/QBDI/pull/121>`_)
+* Remove ncurses dependency (`#123 <https://github.com/QBDI/QBDI/pull/123>`_)
+* Fix initFPRState (`#114 <https://github.com/QBDI/QBDI/issues/114>`_)
+
+
 Version 0.7.0
 -------------
 
@@ -154,7 +168,7 @@ Version 0.4
 * C and C++ API stabilization
 * Out-of-tree build and SDK
 * Overhaul of the entire documentation with a complete PatchDSL explanation and a split
-  between user and developper documentation.
+  between user and developer documentation.
 
 Version 0.3
 -----------

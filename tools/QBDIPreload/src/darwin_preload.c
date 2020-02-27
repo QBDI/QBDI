@@ -45,6 +45,7 @@ static const uint8_t BRK_INS = 0xCC;
 static const size_t STACK_SIZE = 8388608;
 
 static bool HAS_EXITED = false;
+static bool HAS_PRELOAD = false;
 static bool DEFAULT_HANDLER = false;
 static GPRState ENTRY_GPR;
 static FPRState ENTRY_FPR;
@@ -343,7 +344,7 @@ kern_return_t redirectExec(
 
         // Allocating fake stack
         void* newStack = NULL;
-        kr = mach_vm_map(task, (mach_vm_address_t*) &newStack, STACK_SIZE, 0, VM_FLAGS_ANYWHERE, 
+        kr = mach_vm_map(task, (mach_vm_address_t*) &newStack, STACK_SIZE, 0, VM_FLAGS_ANYWHERE,
                          MEMORY_OBJECT_NULL, 0, false, VM_PROT_READ|VM_PROT_WRITE, VM_PROT_ALL, VM_INHERIT_COPY);
         if(kr != KERN_SUCCESS) {
             fprintf(stderr, "Failed to allocate fake stack: %s\n", mach_error_string(kr));
@@ -383,7 +384,7 @@ int qbdipreload_hook_main(void *main) {
 }
 
 QBDI_EXPORT void intercept_exit(int status) {
-    if (!HAS_EXITED) {
+    if (!HAS_EXITED && HAS_PRELOAD) {
         HAS_EXITED = true;
         qbdipreload_on_exit(status);
     }
@@ -392,7 +393,7 @@ QBDI_EXPORT void intercept_exit(int status) {
 DYLD_INTERPOSE(intercept_exit, exit)
 
 QBDI_EXPORT void intercept__exit(int status) {
-    if (!HAS_EXITED) {
+    if (!HAS_EXITED && HAS_PRELOAD) {
         HAS_EXITED = true;
         qbdipreload_on_exit(status);
     }
@@ -401,8 +402,13 @@ QBDI_EXPORT void intercept__exit(int status) {
 DYLD_INTERPOSE(intercept__exit, _exit)
 
 int qbdipreload_hook_init() {
+    // do nothing if the library isn't preload
+    if (getenv("DYLD_INSERT_LIBRARIES") == NULL)
+        return QBDIPRELOAD_NO_ERROR;
+
+    HAS_PRELOAD = true;
     rword entrypoint = getEntrypointAddress();
-    
+
     int status = qbdipreload_on_start((void*)entrypoint);
     if (status == QBDIPRELOAD_NOT_HANDLED) {
         status = qbdipreload_hook_main((void*)entrypoint);

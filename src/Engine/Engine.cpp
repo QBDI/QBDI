@@ -145,8 +145,8 @@ void Engine::initFPRState() {
 
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
     fprState->rfcw = 0x37F;
-    fprState->ftw = 0xFF;
-    fprState->rsrv1 = 0xFF;
+    fprState->ftw = 0x0;
+    fprState->rsrv1 = 0x0;
     fprState->mxcsr = 0x1F80;
     fprState->mxcsrmask = 0xFFFF;
 #endif
