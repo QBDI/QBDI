@@ -88,6 +88,22 @@ Reg TempManager::getRegForTemp(unsigned int id) {
             return Reg(i);
         }
     }
+
+    // bypass for pusha and popa. MemoryAccess will not work on theses instruction
+    if(allowInstRegister) {
+        LogWarning("TempManager::getRegForTemp", "No free registers found, reuse one used by the instruction");
+        if(temps.size() > 0) {
+            i = temps.back().second + 1;
+        }
+        else {
+            i = _QBDI_FIRST_FREE_REGISTER;
+        }
+        // store it and return it
+        if (i < AVAILABLE_GPR) {
+            temps.push_back(std::make_pair(id, i));
+            return Reg(i);
+        }
+    }
     LogError("TempManager::getRegForTemp", "No free registers found");
     abort();
 }

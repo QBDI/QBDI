@@ -30,7 +30,7 @@ void InstrRule::instrument(Patch &patch, llvm::MCInstrInfo* MCII, llvm::MCRegist
      * host.
     */
     RelocatableInst::SharedPtrVec instru;
-    TempManager tempManager(&patch.metadata.inst, MCII, MRI);
+    TempManager tempManager(&patch.metadata.inst, MCII, MRI, true);
 
     // Generate the instrumentation code from the original instruction context
     for(PatchGenerator::SharedPtr& g : patchGen) {

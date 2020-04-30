@@ -73,10 +73,12 @@ class TempManager {
     const llvm::MCInst* inst;
     llvm::MCInstrInfo* MCII;
     llvm::MCRegisterInfo* MRI;
+    bool allowInstRegister;
 
 public:
 
-    TempManager(const llvm::MCInst *inst, llvm::MCInstrInfo* MCII, llvm::MCRegisterInfo *MRI) : inst(inst), MCII(MCII), MRI(MRI) {};
+    TempManager(const llvm::MCInst *inst, llvm::MCInstrInfo* MCII, llvm::MCRegisterInfo *MRI, bool allowInstRegister=false)
+        : inst(inst), MCII(MCII), MRI(MRI), allowInstRegister(allowInstRegister) {};
 
     Reg getRegForTemp(unsigned int id);
 
