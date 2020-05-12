@@ -1,4 +1,4 @@
-ARG DOCKER_IMG="ubuntu:18.04"
+ARG DOCKER_IMG="ubuntu:latest"
 
 FROM $DOCKER_IMG
 
@@ -11,6 +11,7 @@ ENV USER="docker" \
 # Get latest package list, upgrade packages, install required packages
 # and cleanup to keep container as small as possible
 RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
         bash \
         sudo \
@@ -24,7 +25,6 @@ RUN apt-get update && \
         wget \
         ca-certificates \
         zlib1g-dev \
-        python-pathlib \
         python3 \
         python3-dev && \
     apt-get clean && \
@@ -39,7 +39,6 @@ RUN adduser --disabled-password --gecos '' $USER && \
 USER $USER
 
 # install QBDI compilation dependencies
-ARG CMAKE_ARGUMENT=""
 
 # git archive -o qbdi-deps.tar.gz --prefix=qbdi-deps/ HEAD deps
 ADD qbdi-deps.tar.gz $HOME/
@@ -65,7 +64,7 @@ RUN python3 build.py prepare $QBDI_PLATFORM && \
 # install validator dependency after build llvm to use the same cache between devel and release image
 RUN sudo apt-get update && \
     sudo apt-get install -y --no-install-recommends \
-        python-yaml \
+        python3-yaml \
         imagemagick \
         zip \
         less \

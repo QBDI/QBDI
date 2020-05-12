@@ -9,7 +9,7 @@ GITDIR=$(git rev-parse --show-toplevel)
 
 ARCH="X86_64"
 DOCKER_IMG="ubuntu"
-TAG="18.04"
+TAG="latest"
 
 if [[ -n "$2" ]]; then
     TAG="${2##*:}"

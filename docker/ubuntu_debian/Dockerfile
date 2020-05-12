@@ -1,4 +1,4 @@
-ARG DOCKER_IMG="ubuntu:18.04"
+ARG DOCKER_IMG="ubuntu:latest"
 
 FROM $DOCKER_IMG as builder
 
@@ -11,6 +11,7 @@ ENV USER="docker" \
 # Get latest package list, upgrade packages, install required packages
 # and cleanup to keep container as small as possible
 RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
         bash \
         sudo \
@@ -24,7 +25,6 @@ RUN apt-get update && \
         wget \
         ca-certificates \
         zlib1g-dev \
-        python-pathlib \
         python3 \
         python3-dev && \
     apt-get clean && \
