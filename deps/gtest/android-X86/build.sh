@@ -23,7 +23,6 @@ case "$1" in
     build)
         mkdir -p build
         cd build
-        # NDK_PATH=${HOME}/android-ndk-r20
         cmake "../googletest-release-${VERSION}" \
               -DCMAKE_TOOLCHAIN_FILE="${NDK_PATH}/build/cmake/android.toolchain.cmake" \
               -DANDROID_ABI=x86 \
