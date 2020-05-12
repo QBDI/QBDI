@@ -1115,4 +1115,23 @@ unsigned getImmediateSize(const llvm::MCInst* inst, const llvm::MCInstrDesc* des
     }
 }
 
+bool useAllRegisters(const llvm::MCInst* inst) {
+    const unsigned InstAllRegisters[] = {
+#ifdef QBDI_ARCH_X86
+        llvm::X86::PUSHA16,
+        llvm::X86::PUSHA32,
+        llvm::X86::POPA16,
+        llvm::X86::POPA32
+#endif
+    };
+    unsigned opcode = inst->getOpcode();
+
+    for (unsigned op : InstAllRegisters) {
+        if (op == opcode)
+            return true;
+    }
+
+    return false;
+}
+
 };

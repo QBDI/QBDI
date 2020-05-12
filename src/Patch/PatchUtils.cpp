@@ -18,6 +18,7 @@
 
 #include "Platform.h"
 #include "Patch/PatchUtils.h"
+#include "Patch/InstInfo.h"
 #include "Utility/LogSys.h"
 
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
@@ -90,8 +91,7 @@ Reg TempManager::getRegForTemp(unsigned int id) {
     }
 
     // bypass for pusha and popa. MemoryAccess will not work on theses instruction
-    if(allowInstRegister) {
-        LogWarning("TempManager::getRegForTemp", "No free registers found, reuse one used by the instruction");
+    if(allowInstRegister and useAllRegisters(inst)) {
         if(temps.size() > 0) {
             i = temps.back().second + 1;
         }

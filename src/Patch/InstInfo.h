@@ -31,6 +31,10 @@ bool isStackWrite(const llvm::MCInst* inst);
 
 unsigned getImmediateSize(const llvm::MCInst* inst, const llvm::MCInstrDesc* desc);
 
+// The TempManager will allow to reuse some register
+// when the method return True.
+bool useAllRegisters(const llvm::MCInst* inst);
+
 };
 
 #endif // INSTCLASSES_H

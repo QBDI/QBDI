@@ -146,6 +146,8 @@ const char* GPRSave_s =
         "    mov $0x6, %edi\n";
 
 const char* GPRShuffle_s =
+        "    pushal\n"
+        "    popal\n"
         "    push %eax\n"
         "    push %ebx\n"
         "    push %ecx\n"
