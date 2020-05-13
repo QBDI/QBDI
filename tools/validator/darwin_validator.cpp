@@ -64,7 +64,7 @@ int QBDI::qbdipreload_on_main(int argc, char** argv) {
                 m.name.compare(0, 7, "libdyld") == 0 ||
                 m.name.compare(0, 7, "libobjc") == 0 ||
                 m.name.compare(0, 13, "libvalidator2") == 0)) {
-                vm->removeInstrumentedRange(m.range.start, m.range.end);
+                vm->removeInstrumentedRange(m.range.start(), m.range.end());
             }
         }
 

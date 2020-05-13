@@ -239,8 +239,8 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path) {
 
                                 // Create a map entry
                                 MemoryMap m;
-                                m.range.start = seg->vmaddr + slide;
-                                m.range.end = m.range.start + seg->vmsize;
+                                m.range.setStart(seg->vmaddr + slide);
+                                m.range.setEnd(m.range.start() + seg->vmsize);
                                 m.name = (full_path)? path : name;
 
                                 modMaps.push_back(m);
@@ -266,7 +266,7 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path) {
         for (const MemoryMap& mod: modMaps) {
             if (mem.range.overlaps(mod.range)) {
                 // skip if already inserted (due to previous overlap)
-                if (inserted.count(mod.range.start))
+                if (inserted.count(mod.range.start()))
                     continue;
                 // add new entry in map
                 MemoryMap m;
@@ -280,7 +280,7 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path) {
                 }
                 omaps.push_back(m);
                 // mark range as inserted
-                inserted.insert(m.range.start);
+                inserted.insert(m.range.start());
                 // remove module range from memory range
                 rs.remove(mod.range);
             }
@@ -297,7 +297,7 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path) {
     // sort the probably unordered map
     std::sort(omaps.begin(), omaps.end(),
             [](const MemoryMap& a, const MemoryMap& b) -> bool {
-                return a.range.start < b.range.start;
+                return a.range.start() < b.range.start();
             });
 
     return omaps;

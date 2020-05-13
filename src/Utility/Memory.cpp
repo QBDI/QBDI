@@ -153,8 +153,8 @@ qbdi_MemoryMap* convert_MemoryMap_to_C(std::vector<MemoryMap> maps, size_t* size
     qbdi_MemoryMap* cmaps = (qbdi_MemoryMap*) malloc(*size * sizeof(qbdi_MemoryMap));
     RequireAction("convert_MemoryMap_to_C", cmaps != NULL, abort());
     for(size_t i = 0; i < *size; i++) {
-        cmaps[i].start = maps[i].range.start;
-        cmaps[i].end = maps[i].range.end;
+        cmaps[i].start = maps[i].range.start();
+        cmaps[i].end = maps[i].range.end();
         cmaps[i].permission = static_cast<qbdi_Permission>(maps[i].permission);
         cmaps[i].name = strdup(maps[i].name.c_str());
     }

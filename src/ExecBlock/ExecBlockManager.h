@@ -49,7 +49,7 @@ struct SeqLoc {
 
 struct ExecRegion {
     Range<rword>                    covered;
-    unsigned                        translated; 
+    unsigned                        translated;
     unsigned                        available;
     std::vector<ExecBlock*>         blocks;
     std::map<rword, SeqLoc>         sequenceCache;
@@ -75,7 +75,7 @@ private:
 
     size_t searchRegion(rword start) const;
 
-    size_t findRegion(Range<rword> codeRange);
+    size_t findRegion(const Range<rword>& codeRange);
 
     void updateRegionStat(size_t r, rword translated);
 

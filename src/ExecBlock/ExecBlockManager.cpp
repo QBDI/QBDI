@@ -64,7 +64,11 @@ void ExecBlockManager::printCacheStatistics(FILE* output) const {
             occupation /= regions[i].blocks.size();
         }
         mean_occupation += occupation;
-        fprintf(output, "\t\t[0x%" PRIRWORD ", 0x%" PRIRWORD "]: %zu blocks, %f occupation ratio\n", regions[i].covered.start, regions[i].covered.end, regions[i].blocks.size(), occupation);
+        fprintf(output, "\t\t[0x%" PRIRWORD ", 0x%" PRIRWORD "]: %zu blocks, %f occupation ratio\n",
+                regions[i].covered.start(),
+                regions[i].covered.end(),
+                regions[i].blocks.size(),
+                occupation);
     }
     if(regions.size() > 0) {
         mean_occupation /= regions.size();
@@ -139,7 +143,8 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock) {
     rword bbEnd = lastPatch.metadata.endAddress();
 
     // Locating an approriate cache region
-    size_t r = findRegion(Range<rword>(bbStart, bbEnd));
+    const Range<rword> bbRange {bbStart, bbEnd};
+    size_t r = findRegion(bbRange);
     ExecRegion& region = regions[r];
 
     // Basic block truncation to prevent dedoubled sequence
@@ -217,26 +222,26 @@ size_t ExecBlockManager::searchRegion(rword address) const {
     // Binary search of the first region to look at
     while(low + 1 != high) {
         size_t idx = (low + high) / 2;
-        if(regions[idx].covered.start > address) {
+        if(regions[idx].covered.start() > address) {
             high = idx;
         }
-        else if(regions[idx].covered.end <= address) {
+        else if(regions[idx].covered.end() <= address) {
             low = idx;
         }
         else {
             LogDebug("ExecBlockManager::searchRegion", "Exact match for region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
-                     idx, regions[idx].covered.start, regions[idx].covered.end);
+                     idx, regions[idx].covered.start(), regions[idx].covered.end());
             return idx;
         }
     }
     LogDebug("ExecBlockManager::searchRegion", "Low match for region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
-             low, regions[low].covered.start, regions[low].covered.end);
+             low, regions[low].covered.start(), regions[low].covered.end());
     return low;
 }
 
-size_t ExecBlockManager::findRegion(Range<rword> codeRange) {
+size_t ExecBlockManager::findRegion(const Range<rword>& codeRange) {
     size_t best_region = regions.size();
-    size_t low = searchRegion(codeRange.start);
+    size_t low = searchRegion(codeRange.start());
     unsigned best_cost = 0xFFFFFFFF;
     for(size_t i = low; i < low + 2 && i < regions.size(); i++) {
         unsigned cost = 0;
@@ -245,11 +250,11 @@ size_t ExecBlockManager::findRegion(Range<rword> codeRange) {
             LogDebug(
                 "ExecBlockManager::findRegion",
                 "Basic block [0x%" PRIRWORD ", 0x%" PRIRWORD "] assigned to region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
-                codeRange.start,
-                codeRange.end,
+                codeRange.start(),
+                codeRange.end(),
                 i,
-                regions[i].covered.start,
-                regions[i].covered.end
+                regions[i].covered.start(),
+                regions[i].covered.end()
             );
             return i;
         }
@@ -261,8 +266,8 @@ size_t ExecBlockManager::findRegion(Range<rword> codeRange) {
                     "ExecBlockManager::findRegion",
                     "Region %zu covered a part of basic block [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
                     i,
-                    codeRange.start,
-                    codeRange.end
+                    codeRange.start(),
+                    codeRange.end()
             );
             best_region = i;
             break;
@@ -270,11 +275,11 @@ size_t ExecBlockManager::findRegion(Range<rword> codeRange) {
 
         // Hard case: it's in the available budget of one the region. Keep the lowest cost.
         // First compute the required cost for the region to cover this extended range.
-        if(regions[i].covered.end < codeRange.end) {
-            cost += (codeRange.end - regions[i].covered.end);
+        if(regions[i].covered.end() < codeRange.end()) {
+            cost += (codeRange.end() - regions[i].covered.end());
         }
-        if(regions[i].covered.start > codeRange.start) {
-            cost += (regions[i].covered.start - codeRange.start);
+        if(regions[i].covered.start() > codeRange.start()) {
+            cost += (regions[i].covered.start() - codeRange.start());
         }
         // Make sure that such cost is available and that it's better than previous candidates
         if(static_cast<unsigned>(cost * getExpansionRatio()) < regions[i].available && cost < best_cost) {
@@ -288,16 +293,16 @@ size_t ExecBlockManager::findRegion(Range<rword> codeRange) {
             "ExecBlockManager::findRegion",
             "Extending region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "] to cover basic block [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
             best_region,
-            regions[best_region].covered.start,
-            regions[best_region].covered.end,
-            codeRange.start,
-            codeRange.end
+            regions[best_region].covered.start(),
+            regions[best_region].covered.end(),
+            codeRange.start(),
+            codeRange.end()
         );
-        if(regions[best_region].covered.end < codeRange.end) {
-            regions[best_region].covered.end = codeRange.end;
+        if(regions[best_region].covered.end() < codeRange.end()) {
+            regions[best_region].covered.setEnd(codeRange.end());
         }
-        if(regions[best_region].covered.start > codeRange.start) {
-            regions[best_region].covered.start = codeRange.start;
+        if(regions[best_region].covered.start() > codeRange.start()) {
+            regions[best_region].covered.setStart(codeRange.start());
         }
         return best_region;
     }
@@ -305,7 +310,7 @@ size_t ExecBlockManager::findRegion(Range<rword> codeRange) {
     // Find a place to insert it
     size_t insert = low;
     for(; insert < regions.size(); insert++) {
-        if(regions[insert].covered.start > codeRange.start) {
+        if(regions[insert].covered.start() > codeRange.start()) {
             break;
         }
     }
@@ -313,8 +318,8 @@ size_t ExecBlockManager::findRegion(Range<rword> codeRange) {
         "ExecBlockManager::findRegion",
         "Creating new region %zu to cover basic block [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
         insert,
-        codeRange.start,
-        codeRange.end
+        codeRange.start(),
+        codeRange.end()
     );
     regions.insert(regions.begin() + insert, ExecRegion {codeRange, 0, 0, std::vector<ExecBlock*>()});
     return insert;
@@ -639,7 +644,7 @@ const InstAnalysis* ExecBlockManager::analyzeInstMetadata(const InstMetadata* in
 
 void ExecBlockManager::eraseRegion(size_t r) {
     LogDebug("ExecBlockManager::eraseRegion", "Erasing region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
-             r, regions[r].covered.start, regions[r].covered.end);
+             r, regions[r].covered.start(), regions[r].covered.end());
     // Delete cached blocks
     for(ExecBlock* block: regions[r].blocks) {
         LogDebug("ExecBlockManager::eraseRegion", "Dropping ExecBlock %p", block);
@@ -683,7 +688,7 @@ void ExecBlockManager::flushCommit() {
 
 void ExecBlockManager::clearCache(Range<rword> range) {
     size_t i = 0;
-    LogDebug("ExecBlockManager::clearCache", "Erasing range [0x%" PRIRWORD ", 0x%" PRIRWORD "]", range.start, range.end);
+    LogDebug("ExecBlockManager::clearCache", "Erasing range [0x%" PRIRWORD ", 0x%" PRIRWORD "]", range.start(), range.end());
     for(i = 0; i < regions.size(); i++) {
         if(regions[i].covered.overlaps(range)) {
             flushList.push_back(i);

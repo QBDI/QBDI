@@ -51,7 +51,7 @@ std::pair<QBDI::rword, QBDI::rword> getValidOffsetRange(QBDI::rword address, pid
     std::vector<QBDI::MemoryMap> maps = QBDI::getRemoteProcessMaps(pid);
     for(QBDI::MemoryMap &m : maps) {
         if(m.range.contains(address)) {
-            return std::make_pair(address - m.range.start, m.range.end - address - 1);
+            return std::make_pair(address - m.range.start(), m.range.end() - address - 1);
         }
     }
     return std::make_pair(0, 0);

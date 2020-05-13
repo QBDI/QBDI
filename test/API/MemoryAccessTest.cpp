@@ -191,7 +191,7 @@ QBDI::VMAction checkArrayRead8(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState,
     for(const QBDI::MemoryAccess& memaccess : memaccesses) {
         if(memaccess.type == QBDI::MEMORY_READ) {
             if(brange.contains(memaccess.accessAddress)) {
-                size_t offset = memaccess.accessAddress - brange.start;
+                size_t offset = memaccess.accessAddress - brange.start();
                 if((QBDI::rword) ((uint8_t*)info->buffer)[offset] == memaccess.value) {
                     info->i += offset;
                 }
@@ -209,7 +209,7 @@ QBDI::VMAction checkArrayRead16(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState
     for(const QBDI::MemoryAccess& memaccess : memaccesses) {
         if(memaccess.type == QBDI::MEMORY_READ) {
             if(brange.contains(memaccess.accessAddress)) {
-                size_t offset = (memaccess.accessAddress - brange.start) >> 1;
+                size_t offset = (memaccess.accessAddress - brange.start()) >> 1;
                 if ((QBDI::rword) ((uint16_t*)info->buffer)[offset] == memaccess.value) {
                     info->i += offset;
                 }
@@ -227,7 +227,7 @@ QBDI::VMAction checkArrayRead32(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState
     for(const QBDI::MemoryAccess& memaccess : memaccesses) {
         if(memaccess.type == QBDI::MEMORY_READ) {
             if(brange.contains(memaccess.accessAddress)) {
-                size_t offset = (memaccess.accessAddress - brange.start) >> 2;
+                size_t offset = (memaccess.accessAddress - brange.start()) >> 2;
                 if ((QBDI::rword) ((uint32_t*)info->buffer)[offset] == memaccess.value) {
                     info->i += offset;
                 }
@@ -245,7 +245,7 @@ QBDI::VMAction checkArrayWrite8(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState
     for(const QBDI::MemoryAccess& memaccess : memaccesses) {
         if(memaccess.type == QBDI::MEMORY_WRITE) {
             if(brange.contains(memaccess.accessAddress)) {
-                size_t offset = memaccess.accessAddress - brange.start;
+                size_t offset = memaccess.accessAddress - brange.start();
                 if ((QBDI::rword) ((uint8_t*)info->buffer)[offset] == memaccess.value) {
                     info->i += offset;
                 }
@@ -263,7 +263,7 @@ QBDI::VMAction checkArrayWrite16(QBDI::VMInstanceRef vm, QBDI::GPRState* gprStat
     for(const QBDI::MemoryAccess& memaccess : memaccesses) {
         if(memaccess.type == QBDI::MEMORY_WRITE) {
             if(brange.contains(memaccess.accessAddress)) {
-                size_t offset = (memaccess.accessAddress - brange.start) >> 1;
+                size_t offset = (memaccess.accessAddress - brange.start()) >> 1;
                 if ((QBDI::rword) ((uint16_t*)info->buffer)[offset] == memaccess.value) {
                     info->i += offset;
                 }
@@ -281,7 +281,7 @@ QBDI::VMAction checkArrayWrite32(QBDI::VMInstanceRef vm, QBDI::GPRState* gprStat
     for(const QBDI::MemoryAccess& memaccess : memaccesses) {
         if(memaccess.type == QBDI::MEMORY_WRITE) {
             if(brange.contains(memaccess.accessAddress)) {
-                size_t offset = (memaccess.accessAddress - brange.start) >> 2;
+                size_t offset = (memaccess.accessAddress - brange.start()) >> 2;
                 if ((QBDI::rword) ((uint32_t*)info->buffer)[offset] == memaccess.value) {
                     info->i += offset;
                 }
@@ -299,7 +299,7 @@ QBDI::VMAction checkUnrolledReadInst(QBDI::VMInstanceRef vm, QBDI::GPRState* gpr
     for(const QBDI::MemoryAccess& memaccess : memaccesses) {
         if(memaccess.type == QBDI::MEMORY_READ) {
             if(brange.contains(memaccess.accessAddress)) {
-                size_t offset = memaccess.accessAddress - brange.start;
+                size_t offset = memaccess.accessAddress - brange.start();
                 if((QBDI::rword) ((uint8_t*)info->buffer)[offset] == memaccess.value) {
                     info->i += offset;
                 }
@@ -317,7 +317,7 @@ QBDI::VMAction checkUnrolledWriteInst(QBDI::VMInstanceRef vm, QBDI::GPRState* gp
     for(const QBDI::MemoryAccess& memaccess : memaccesses) {
         if(memaccess.type == QBDI::MEMORY_WRITE) {
             if(brange.contains(memaccess.accessAddress)) {
-                size_t offset = memaccess.accessAddress - brange.start;
+                size_t offset = memaccess.accessAddress - brange.start();
                 if((QBDI::rword) ((uint8_t*)info->buffer)[offset] == memaccess.value) {
                     info->i += offset;
                 }
@@ -335,7 +335,7 @@ QBDI::VMAction checkUnrolledReadBB(QBDI::VMInstanceRef vm, const QBDI::VMState* 
     for(const QBDI::MemoryAccess& memaccess : memaccesses) {
         if(memaccess.type == QBDI::MEMORY_READ) {
             if(brange.contains(memaccess.accessAddress)) {
-                size_t offset = memaccess.accessAddress - brange.start;
+                size_t offset = memaccess.accessAddress - brange.start();
                 if((QBDI::rword) ((uint8_t*)info->buffer)[offset] == memaccess.value) {
                     info->i += offset;
                 }
@@ -353,7 +353,7 @@ QBDI::VMAction checkUnrolledWriteBB(QBDI::VMInstanceRef vm, const QBDI::VMState*
     for(const QBDI::MemoryAccess& memaccess : memaccesses) {
         if(memaccess.type == QBDI::MEMORY_WRITE) {
             if(brange.contains(memaccess.accessAddress)) {
-                size_t offset = memaccess.accessAddress - brange.start;
+                size_t offset = memaccess.accessAddress - brange.start();
                 if((QBDI::rword) ((uint8_t*)info->buffer)[offset] == memaccess.value) {
                     info->i += offset;
                 }

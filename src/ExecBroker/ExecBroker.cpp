@@ -26,13 +26,13 @@ ExecBroker::ExecBroker(Assembly& assembly, VMInstanceRef vminstance) :
 
 void ExecBroker::addInstrumentedRange(const Range<rword>& r) {
     LogDebug("ExecBroker::addInstrumentedRange", "Adding instrumented range [%" PRIRWORD ", %" PRIRWORD "]",
-             r.start, r.end);
+             r.start(), r.end());
     instrumented.add(r);
 }
 
 void ExecBroker::removeInstrumentedRange(const Range<rword>& r) {
     LogDebug("ExecBroker::removeInstrumentedRange", "Removing instrumented range [%" PRIRWORD ", %" PRIRWORD "]",
-             r.start, r.end);
+             r.start(), r.end());
     instrumented.remove(r);
 }
 

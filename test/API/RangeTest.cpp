@@ -38,8 +38,8 @@ TEST(Range, StateIntegrity) {
 
         EXPECT_GE(r.size(), delta);
         EXPECT_TRUE(rangeSet.contains(r));
-        EXPECT_TRUE(rangeSet.contains(r.start));
-        EXPECT_TRUE(rangeSet.contains(r.end - 1));
+        EXPECT_TRUE(rangeSet.contains(r.start()));
+        EXPECT_TRUE(rangeSet.contains(r.end() - 1));
     }
 
     for(int i = 0; i < N; i++) {
@@ -52,8 +52,8 @@ TEST(Range, StateIntegrity) {
 
         EXPECT_GE(r.size(), delta);
         EXPECT_FALSE(rangeSet.contains(r));
-        EXPECT_FALSE(rangeSet.contains(r.start));
-        EXPECT_FALSE(rangeSet.contains(r.end - 1));
+        EXPECT_FALSE(rangeSet.contains(r.start()));
+        EXPECT_FALSE(rangeSet.contains(r.end() - 1));
     }
     EXPECT_EQ(0, rangeSet.size());
 }
@@ -83,15 +83,15 @@ TEST(Range, Commutativity) {
 
     for(int c = 0; c < N; c++) {
         QBDI::RangeSet<int> permutedRangeSet;
-         
+
         randomPermutation(testRanges);
         for(int i = 0; i < N; i++) {
             permutedRangeSet.add(testRanges[i]);
         }
         ASSERT_EQ(rangeSet.size(), permutedRangeSet.size());
         for(size_t i = 0; i < rangeSet.getRanges().size(); i++) {
-            ASSERT_EQ(rangeSet.getRanges()[i].start, permutedRangeSet.getRanges()[i].start);
-            ASSERT_EQ(rangeSet.getRanges()[i].end, permutedRangeSet.getRanges()[i].end);
+            ASSERT_EQ(rangeSet.getRanges()[i].start(), permutedRangeSet.getRanges()[i].start());
+            ASSERT_EQ(rangeSet.getRanges()[i].end(), permutedRangeSet.getRanges()[i].end());
         }
     }
 }
@@ -125,5 +125,34 @@ TEST(Range, Intersection) {
     for(QBDI::Range<int> r: intersection1.getRanges()) {
         ASSERT_EQ(true, rangeSet1.contains(r));
         ASSERT_EQ(true, rangeSet2.contains(r));
+    }
+}
+
+TEST(Range, IntersectionAndOverlaps) {
+    static const int N = 100;
+    std::vector<QBDI::Range<int>> testRanges;
+
+    for(int i = 0; i < N; i++) {
+        int start = rand()%900;
+        int end = start + rand()%100 + 1;
+        QBDI::Range<int> newRange {start, end};
+
+        for (const QBDI::Range<int>& r : testRanges) {
+            QBDI::RangeSet<int> set;
+            set.add(newRange);
+            set.add(r);
+
+            // if the two range overlaps, the
+            // size of set must be lesser than the sum of the size
+            ASSERT_EQ(
+                    set.size() < newRange.size() + r.size(),
+                    newRange.overlaps(r)
+                );
+            ASSERT_EQ(
+                    r.overlaps(newRange),
+                    newRange.overlaps(r)
+                );
+        }
+        testRanges.push_back(newRange);
     }
 }
