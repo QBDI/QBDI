@@ -34,7 +34,7 @@ TEST_F(Instr_X86_64Test, GPRSave_IC) {
     vm.addCodeCB(QBDI::POSTINST, increment, (void*) &count2);
 
     comparedExec(GPRSave_s, inputState, 4096);
-    
+
     ASSERT_LT((uint64_t) 0, count1);
     ASSERT_EQ(count1, count2);
 
@@ -166,3 +166,44 @@ TEST_F(Instr_X86_64Test, StackTricks_IC) {
 
     printf("Took %" PRIu64 " instructions\n", count1);
 }
+
+#if defined(QBDI_ARCH_X86_64)
+// not implemented for X86
+TEST_F(Instr_X86_64Test, UnalignedCodeForward_IC) {
+    uint64_t count1 = 0;
+    uint64_t count2 = 0;
+
+    QBDI::Context inputState;
+    memset(&inputState, 0, sizeof(QBDI::Context));
+
+    vm.deleteAllInstrumentations();
+    vm.addCodeCB(QBDI::PREINST, increment, (void*) &count1);
+    vm.addCodeCB(QBDI::POSTINST, increment, (void*) &count2);
+
+    comparedExec(UnalignedCodeForward_s, inputState, 4096);
+
+    ASSERT_LT((uint64_t) 0, count1);
+    ASSERT_EQ(count1, count2);
+
+    printf("Took %" PRIu64 " instructions\n", count1);
+}
+
+TEST_F(Instr_X86_64Test, UnalignedCodeBackward_IC) {
+    uint64_t count1 = 0;
+    uint64_t count2 = 0;
+
+    QBDI::Context inputState;
+    memset(&inputState, 0, sizeof(QBDI::Context));
+
+    vm.deleteAllInstrumentations();
+    vm.addCodeCB(QBDI::PREINST, increment, (void*) &count1);
+    vm.addCodeCB(QBDI::POSTINST, increment, (void*) &count2);
+
+    comparedExec(UnalignedCodeBackward_s, inputState, 4096);
+
+    ASSERT_LT((uint64_t) 0, count1);
+    ASSERT_EQ(count1, count2);
+
+    printf("Took %" PRIu64 " instructions\n", count1);
+}
+#endif

@@ -239,11 +239,70 @@ size_t ExecBlockManager::searchRegion(rword address) const {
     return low;
 }
 
+void ExecBlockManager::mergeRegion(size_t i) {
+
+    RequireAction("ExecBlockManager::mergeRegion", i + 1 < regions.size(), return);
+
+    LogDebug(
+            "ExecBlockManager::mergeRegion",
+            "Merge region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "] and region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
+            i,
+            regions[i].covered.start(),
+            regions[i].covered.end(),
+            i+1,
+            regions[i+1].covered.start(),
+            regions[i+1].covered.end()
+            );
+    // SeqLoc
+    for (const auto& it: regions[i+1].sequenceCache) {
+        regions[i].sequenceCache[it.first] = SeqLoc {
+                it.second.blockIdx + regions[i].blocks.size(),
+                it.second.seqID,
+                it.second.bbStart,
+                it.second.bbEnd,
+                it.second.seqStart,
+                it.second.seqEnd
+            };
+    }
+    // InstLoc
+    for (const auto& it: regions[i+1].instCache) {
+        regions[i].instCache[it.first] = InstLoc {
+                it.second.blockIdx + regions[i].blocks.size(),
+                it.second.instID,
+            };
+    }
+
+    // range
+    regions[i].covered.setEnd(regions[i+1].covered.end());
+
+    // ExecBlock
+    regions[i].blocks.insert(regions[i].blocks.end(),
+            regions[i+1].blocks.begin(),
+            regions[i+1].blocks.end());
+    // InstAnalysis
+    regions[i].analysisCache.insert(
+            regions[i+1].analysisCache.begin(),
+            regions[i+1].analysisCache.end());
+
+    regions.erase(regions.begin() + i + 1);
+}
+
 size_t ExecBlockManager::findRegion(const Range<rword>& codeRange) {
     size_t best_region = regions.size();
     size_t low = searchRegion(codeRange.start());
     unsigned best_cost = 0xFFFFFFFF;
-    for(size_t i = low; i < low + 2 && i < regions.size(); i++) {
+
+    // when low == 0, three cases:
+    //  - no regions => no loop
+    //  - codeRange.start is before the first region => 1 round of the loop to
+    //      determine if we create a region or create a new one
+    //  - codeRange.start is in or after the first region => 2 rounds to
+    //      determine if we create a region or use the first or the second one
+    size_t limit = 2;
+    if(low == 0 and regions.size() != 0 and codeRange.start() < regions[0].covered.start())
+        limit = 1;
+
+    for(size_t i = low; i < low + limit && i < regions.size(); i++) {
         unsigned cost = 0;
         // Easy case: the code range is inside one of the region, we can return immediately
         if(regions[i].covered.contains(codeRange)) {
@@ -258,19 +317,51 @@ size_t ExecBlockManager::findRegion(const Range<rword>& codeRange) {
             );
             return i;
         }
-        // Medium case: the code start is in the range but not the end of codeRange.
+
+        // Medium case: the code range overlaps.
         // This case may append when instrument unaligned code
-        // To avoid error with getProgrammedExecBlock, the existing region is used and extend
-        if (regions[i].covered.contains(codeRange.start)) {
+        // In order to avoid two regions to overlaps,
+        //  we must use the first region that overlaps
+        if(regions[i].covered.overlaps(codeRange)) {
             LogDebug(
                     "ExecBlockManager::findRegion",
-                    "Region %zu covered a part of basic block [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
+                    "Region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "] overlaps a part of basic block [0x%" PRIRWORD ", 0x%" PRIRWORD "], Try extend",
                     i,
+                    regions[i].covered.start(),
+                    regions[i].covered.end(),
                     codeRange.start(),
                     codeRange.end()
             );
-            best_region = i;
-            break;
+            // part 1, codeRange.start() must be on the regions[i] to avoid error with searchRegion
+            if(codeRange.start() < regions[i].covered.start()) {
+                // the previous region mustn't containt codeRange.start
+                // (should never happend as the iteration test the previous block first)
+                RequireAction("ExecBlockManager::findRegion",
+                        i == 0 or regions[i-1].covered.end() <= codeRange.start(),
+                        abort());
+                regions[i].covered.setStart(codeRange.start());
+            }
+
+            // part 2, codeRange.end() SHOULD be in the region.
+            if(regions[i].covered.end() < codeRange.end()) {
+                if(     i + 1 == regions.size() or
+                        codeRange.end() <= regions[i+1].covered.start()) {
+                    // extend the current region if no overlaps the next region
+                    regions[i].covered.setEnd(codeRange.end());
+                } else {
+                    // the range overlaps two region, merge them
+                    mergeRegion(i);
+                }
+            }
+            LogDebug(
+                    "ExecBlockManager::findRegion",
+                    "New Region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
+                    i,
+                    regions[i].covered.start(),
+                    regions[i].covered.end()
+            );
+
+            return i;
         }
 
         // Hard case: it's in the available budget of one the region. Keep the lowest cost.

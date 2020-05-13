@@ -311,3 +311,60 @@ const char* StackTricks_s =
         "   mov 0x8(%rsp), %rax\n"
         "   ret $0x8\n"
         "end:\n";
+
+
+#define UF1 \
+        "leaq 0x2(%rip), %rax\n" \
+        "movabsq    $0x11234bb48, %rbx\n" \
+        "jmp *%rax\n"
+
+#define UF16 UF1 UF1 UF1 UF1 UF1 UF1 UF1 UF1 UF1 UF1 UF1 UF1 UF1 UF1 UF1 UF1
+#define UF256 UF16 UF16 UF16 UF16 UF16 UF16 UF16 UF16 UF16 UF16 UF16 UF16 UF16 UF16 UF16 UF16
+
+const char* UnalignedCodeForward_s =
+    "    call f2\n"
+    "    call f1\n"
+    "    jmp end\n"
+    "f1:\n"
+    UF256
+    "f2:\n"
+    UF16
+    "    ret\n"
+    "end:\n";
+
+#undef UF1
+#undef UF16
+#undef UF256
+
+
+#define UB \
+        "movabsq    $0xc3c7489090909090, %rbx\n" \
+        "movabsq    $0xbbeb909090909090, %rbx\n" \
+        "leaq -0x2f(%rip), %rax\n" \
+        "movabsq    $0xc3c7489090909090, %rbx\n" \
+        "movabsq    $0xc3c7489090909090, %rbx\n"
+#define UB1 UB "jmp *%rax\n"
+#define UB16 UB1 UB1 UB1 UB1 UB1 UB1 UB1 UB1 UB1 UB1 UB1 UB1 UB1 UB1 UB1 UB1
+#define UB256 UB16 UB16 UB16 UB16 UB16 UB16 UB16 UB16 UB16 UB16 UB16 UB16 UB16 UB16 UB16 UB16
+
+const char* UnalignedCodeBackward_s =
+    "    leaq endret(%rip), %rdx\n"
+    "    call f1\n"
+    "    call f2\n"
+    "    jmp end\n"
+    UB
+    "jmp *%rdx\n"
+    UB16
+    "f1:\n"
+    UB256
+    "f2:\n"
+    UB1
+    "endret:\n"
+    "    ret\n"
+    "end:\n";
+
+#undef UB
+#undef UB1
+#undef UB16
+#undef UB256
+

@@ -75,12 +75,13 @@ private:
 
     size_t searchRegion(rword start) const;
 
+    void mergeRegion(size_t i);
+
     size_t findRegion(const Range<rword>& codeRange);
 
     void updateRegionStat(size_t r, rword translated);
 
     float getExpansionRatio() const;
-
 
 public:
 

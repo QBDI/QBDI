@@ -95,3 +95,20 @@ TEST_F(Patch_X86_64Test, StackTricks) {
 #endif
     comparedExec(StackTricks_s, inputState, 4096);
 }
+
+#if defined(QBDI_ARCH_X86_64)
+// not implemented for X86
+TEST_F(Patch_X86_64Test, UnalignedCodeForward) {
+    QBDI::Context inputState;
+
+    memset(&inputState, 0, sizeof(QBDI::Context));
+    comparedExec(UnalignedCodeForward_s, inputState, 4096);
+}
+
+TEST_F(Patch_X86_64Test, UnalignedCodeBackward) {
+    QBDI::Context inputState;
+
+    memset(&inputState, 0, sizeof(QBDI::Context));
+    comparedExec(UnalignedCodeBackward_s, inputState, 4096);
+}
+#endif
