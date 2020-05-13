@@ -60,7 +60,6 @@ struct SeqWriteResult {
 };
 
 struct ShadowInfo {
-    uint16_t seqID;
     uint16_t instID;
     uint16_t tag;
     uint16_t shadowID;

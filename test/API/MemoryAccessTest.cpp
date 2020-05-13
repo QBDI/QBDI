@@ -133,6 +133,23 @@ QBDI::rword unrolledWrite(volatile char* buffer) {
     return sum;
 }
 
+QBDI::rword unrolledReadLoop(volatile char* buffer, size_t len) {
+    size_t sum = 0, i = 0;
+    for (i = 0; i < len; i++) {
+        sum += buffer[i];
+    }
+    return sum;
+}
+
+QBDI::rword unrolledWriteLoop(volatile char* buffer, size_t len) {
+    size_t sum = 1, i = 0;
+    for (i = 0; i < len; i++) {
+        buffer[i] = sum;
+        sum += buffer[i];
+    }
+    return sum;
+}
+
 QBDI::rword mad(volatile uint32_t* a, volatile uint32_t* b, volatile uint32_t* c) {
     uint32_t av = *a;
     uint32_t bv = *b;
@@ -274,7 +291,43 @@ QBDI::VMAction checkArrayWrite32(QBDI::VMInstanceRef vm, QBDI::GPRState* gprStat
     return QBDI::VMAction::CONTINUE;
 }
 
-QBDI::VMAction checkUnrolledRead(QBDI::VMInstanceRef vm, const QBDI::VMState* vmState, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* data) {
+QBDI::VMAction checkUnrolledReadInst(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* data) {
+
+    TestInfo* info = (TestInfo*) data;
+    std::vector<QBDI::MemoryAccess> memaccesses = vm->getInstMemoryAccess();
+    QBDI::Range<QBDI::rword> brange((QBDI::rword) info->buffer, ((QBDI::rword) info->buffer) + info->buffer_size);
+    for(const QBDI::MemoryAccess& memaccess : memaccesses) {
+        if(memaccess.type == QBDI::MEMORY_READ) {
+            if(brange.contains(memaccess.accessAddress)) {
+                size_t offset = memaccess.accessAddress - brange.start;
+                if((QBDI::rword) ((uint8_t*)info->buffer)[offset] == memaccess.value) {
+                    info->i += offset;
+                }
+            }
+        }
+    }
+    return QBDI::VMAction::CONTINUE;
+}
+
+QBDI::VMAction checkUnrolledWriteInst(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* data) {
+
+    TestInfo* info = (TestInfo*) data;
+    std::vector<QBDI::MemoryAccess> memaccesses = vm->getInstMemoryAccess();
+    QBDI::Range<QBDI::rword> brange((QBDI::rword) info->buffer, ((QBDI::rword) info->buffer) + info->buffer_size);
+    for(const QBDI::MemoryAccess& memaccess : memaccesses) {
+        if(memaccess.type == QBDI::MEMORY_WRITE) {
+            if(brange.contains(memaccess.accessAddress)) {
+                size_t offset = memaccess.accessAddress - brange.start;
+                if((QBDI::rword) ((uint8_t*)info->buffer)[offset] == memaccess.value) {
+                    info->i += offset;
+                }
+            }
+        }
+    }
+    return QBDI::VMAction::CONTINUE;
+}
+
+QBDI::VMAction checkUnrolledReadBB(QBDI::VMInstanceRef vm, const QBDI::VMState* vmState, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* data) {
 
     TestInfo* info = (TestInfo*) data;
     std::vector<QBDI::MemoryAccess> memaccesses = vm->getBBMemoryAccess();
@@ -292,7 +345,7 @@ QBDI::VMAction checkUnrolledRead(QBDI::VMInstanceRef vm, const QBDI::VMState* vm
     return QBDI::VMAction::CONTINUE;
 }
 
-QBDI::VMAction checkUnrolledWrite(QBDI::VMInstanceRef vm, const QBDI::VMState* vmState, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* data) {
+QBDI::VMAction checkUnrolledWriteBB(QBDI::VMInstanceRef vm, const QBDI::VMState* vmState, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* data) {
 
     TestInfo* info = (TestInfo*) data;
     std::vector<QBDI::MemoryAccess> memaccesses = vm->getBBMemoryAccess();
@@ -467,10 +520,12 @@ TEST_F(MemoryAccessTest, DISABLED_BasicBlockRead) {
 #endif
     char buffer[] = "p0p30fd0p3";
     size_t buffer_size = sizeof(buffer) / sizeof(char);
-    TestInfo info = {(void*)buffer, sizeof(buffer), 0};
+    TestInfo infoInst = {(void*)buffer, sizeof(buffer), 0};
+    TestInfo infoBB = {(void*)buffer, sizeof(buffer), 0};
 
     vm->recordMemoryAccess(QBDI::MEMORY_READ);
-    vm->addVMEventCB(QBDI::VMEvent::BASIC_BLOCK_EXIT, checkUnrolledRead, &info);
+    vm->addVMEventCB(QBDI::VMEvent::SEQUENCE_EXIT, checkUnrolledReadBB, &infoBB);
+    vm->addMemAccessCB(QBDI::MEMORY_READ, checkUnrolledReadInst, &infoInst);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer});
     bool ran = vm->run((QBDI::rword) unrolledRead, (QBDI::rword) FAKE_RET_ADDR);
@@ -478,7 +533,20 @@ TEST_F(MemoryAccessTest, DISABLED_BasicBlockRead) {
     ASSERT_EQ(true, ran);
     QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
     ASSERT_EQ(ret, (QBDI::rword) unrolledRead(buffer));
-    ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
+    ASSERT_EQ(OFFSET_SUM(buffer_size), infoBB.i);
+    ASSERT_EQ(infoInst.i, infoBB.i);
+
+    infoInst.i = 0;
+    infoBB.i = 0;
+
+    QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer, buffer_size});
+    ran = vm->run((QBDI::rword) unrolledReadLoop, (QBDI::rword) FAKE_RET_ADDR);
+
+    ASSERT_EQ(true, ran);
+    ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
+    ASSERT_EQ(ret, (QBDI::rword) unrolledReadLoop(buffer, buffer_size));
+    ASSERT_EQ(OFFSET_SUM(buffer_size), infoBB.i);
+    ASSERT_EQ(infoInst.i, infoBB.i);
 }
 
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
@@ -488,10 +556,12 @@ TEST_F(MemoryAccessTest, DISABLED_BasicBlockWrite) {
 #endif
     const size_t buffer_size = 11;
     char buffer[buffer_size];
-    TestInfo info = {(void*)buffer, sizeof(buffer), 0};
+    TestInfo infoInst = {(void*)buffer, sizeof(buffer), 0};
+    TestInfo infoBB = {(void*)buffer, sizeof(buffer), 0};
 
     vm->recordMemoryAccess(QBDI::MEMORY_WRITE);
-    vm->addVMEventCB(QBDI::VMEvent::BASIC_BLOCK_EXIT, checkUnrolledWrite, &info);
+    vm->addVMEventCB(QBDI::VMEvent::SEQUENCE_EXIT, checkUnrolledWriteBB, &infoBB);
+    vm->addMemAccessCB(QBDI::MEMORY_WRITE, checkUnrolledWriteInst, &infoInst);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer});
     bool ran = vm->run((QBDI::rword) unrolledWrite, (QBDI::rword) FAKE_RET_ADDR);
@@ -499,7 +569,20 @@ TEST_F(MemoryAccessTest, DISABLED_BasicBlockWrite) {
     ASSERT_EQ(true, ran);
     QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
     ASSERT_EQ(ret, (QBDI::rword) unrolledWrite(buffer));
-    ASSERT_EQ(OFFSET_SUM(buffer_size), info.i);
+    ASSERT_EQ(OFFSET_SUM(buffer_size), infoBB.i);
+    ASSERT_EQ(infoInst.i, infoBB.i);
+
+    infoInst.i = 0;
+    infoBB.i = 0;
+
+    QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer, buffer_size});
+    ran = vm->run((QBDI::rword) unrolledWriteLoop, (QBDI::rword) FAKE_RET_ADDR);
+
+    ASSERT_EQ(true, ran);
+    ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
+    ASSERT_EQ(ret, (QBDI::rword) unrolledWriteLoop(buffer, buffer_size));
+    ASSERT_EQ(OFFSET_SUM(buffer_size), infoBB.i);
+    ASSERT_EQ(infoInst.i, infoBB.i);
 }
 
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)

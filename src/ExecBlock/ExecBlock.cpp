@@ -350,7 +350,6 @@ uint16_t ExecBlock::newShadow(uint16_t tag) {
     if(tag != NO_REGISTRATION) {
         LogDebug("ExecBlock::newShadow", "Registering new tagged shadow %" PRIu16 " for instID %" PRIu16 " wih tag %" PRIu16, id, getNextInstID(), tag);
         shadowRegistry.push_back({
-            getNextSeqID(),
             getNextInstID(),
             tag,
             id
@@ -444,11 +443,22 @@ std::vector<ShadowInfo> ExecBlock::queryShadowByInst(uint16_t instID, uint16_t t
 std::vector<ShadowInfo> ExecBlock::queryShadowBySeq(uint16_t seqID, uint16_t tag) const {
     std::vector<ShadowInfo> result;
 
-    for(const auto& reg: shadowRegistry) {
-        if((seqID == ANY || reg.seqID  == seqID)  &&
-           (tag   == ANY || reg.tag   == tag)) {
-            result.push_back(reg);
+    if (seqID == ANY) {
+        for(const auto& reg: shadowRegistry) {
+            if(tag == ANY || reg.tag == tag) {
+                result.push_back(reg);
+            }
         }
+    } else {
+        uint16_t firstInstID = getSeqStart(seqID);
+        uint16_t lastInstID = getSeqEnd(seqID);
+        for(const auto& reg: shadowRegistry) {
+            if(firstInstID <= reg.instID && reg.instID <= lastInstID &&
+               (tag == ANY || reg.tag == tag)) {
+                result.push_back(reg);
+            }
+        }
+
     }
 
     return result;
