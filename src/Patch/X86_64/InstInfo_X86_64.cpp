@@ -1116,13 +1116,14 @@ unsigned getImmediateSize(const llvm::MCInst* inst, const llvm::MCInstrDesc* des
 }
 
 bool useAllRegisters(const llvm::MCInst* inst) {
-    const unsigned InstAllRegisters[] = {
+// cannot allocate an array of constant size 0 on windows, just
+// skip the check on x64
 #ifdef QBDI_ARCH_X86
+    static const unsigned InstAllRegisters[] = {
         llvm::X86::PUSHA16,
         llvm::X86::PUSHA32,
         llvm::X86::POPA16,
         llvm::X86::POPA32
-#endif
     };
     unsigned opcode = inst->getOpcode();
 
@@ -1130,6 +1131,7 @@ bool useAllRegisters(const llvm::MCInst* inst) {
         if (op == opcode)
             return true;
     }
+#endif
 
     return false;
 }
