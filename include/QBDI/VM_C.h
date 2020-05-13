@@ -76,7 +76,7 @@ QBDI_EXPORT bool qbdi_addInstrumentedModule(VMInstanceRef instance, const char* 
  */
 QBDI_EXPORT bool qbdi_addInstrumentedModuleFromAddr(VMInstanceRef instance, rword addr);
 
-/*! Adds all the executable memory maps to the instrumented range set. 
+/*! Adds all the executable memory maps to the instrumented range set.
  *
  * @param[in] instance VM instance.
  *
@@ -218,8 +218,8 @@ QBDI_EXPORT void qbdi_setFPRState(VMInstanceRef instance, FPRState* fprState);
  */
 QBDI_EXPORT uint32_t qbdi_addMemAccessCB(VMInstanceRef instance, MemoryAccessType type, InstCallback cbk, void *data);
 
-/*! Add a virtual callback which is triggered for any memory access at a specific address 
- *  matching the access type. Virtual callbacks are called via callback forwarding by a 
+/*! Add a virtual callback which is triggered for any memory access at a specific address
+ *  matching the access type. Virtual callbacks are called via callback forwarding by a
  *  gate callback triggered on every memory access. This incurs a high performance cost.
  *
  * @param[in] instance  VM instance.
@@ -233,8 +233,8 @@ QBDI_EXPORT uint32_t qbdi_addMemAccessCB(VMInstanceRef instance, MemoryAccessTyp
  */
 QBDI_EXPORT uint32_t qbdi_addMemAddrCB(VMInstanceRef instance, rword address, MemoryAccessType type, InstCallback cbk, void *data);
 
-/*! Add a virtual callback which is triggered for any memory access in a specific address range 
- *  matching the access type. Virtual callbacks are called via callback forwarding by a 
+/*! Add a virtual callback which is triggered for any memory access in a specific address range
+ *  matching the access type. Virtual callbacks are called via callback forwarding by a
  *  gate callback triggered on every memory access. This incurs a high performance cost.
  *
  * @param[in] instance  VM instance.
@@ -329,7 +329,7 @@ QBDI_EXPORT bool qbdi_deleteInstrumentation(VMInstanceRef instance, uint32_t id)
 QBDI_EXPORT void qbdi_deleteAllInstrumentations(VMInstanceRef instance);
 
  /*! Obtain the analysis of an instruction metadata. Analysis results are cached in the VM.
- *  The validity of the returned pointer is only guaranteed until the end of the callback, else 
+ *  The validity of the returned pointer is only guaranteed until the end of the callback, else
  *  a deepcopy of the structure is required.
  *
  * @param[in] instance     VM instance.
@@ -339,11 +339,11 @@ QBDI_EXPORT void qbdi_deleteAllInstrumentations(VMInstanceRef instance);
  */
 QBDI_EXPORT const InstAnalysis* qbdi_getInstAnalysis(VMInstanceRef instance, AnalysisType type);
 
-/*! Add instrumentation rules to log memory access using inline instrumentation and 
+/*! Add instrumentation rules to log memory access using inline instrumentation and
  *  instruction shadows.
 
  * @param[in] instance  VM instance.
- * @param[in] type      Memory mode bitfield to activate the logging for: either QBDI_MEMORY_READ, 
+ * @param[in] type      Memory mode bitfield to activate the logging for: either QBDI_MEMORY_READ,
  *                      QBDI_MEMORY_WRITE or both (QBDI_MEMORY_READ_WRITE).
  *
  * @return True if inline memory logging is supported, False if not or in case of error.
@@ -351,6 +351,7 @@ QBDI_EXPORT const InstAnalysis* qbdi_getInstAnalysis(VMInstanceRef instance, Ana
 QBDI_EXPORT bool qbdi_recordMemoryAccess(VMInstanceRef instance, MemoryAccessType type);
 
 /*! Obtain the memory accesses made by the last executed instruction.
+ *  The method should be called in an InstCallback.
  *  Return NULL and a size of 0 if the instruction made no memory access.
  *
  *  @param[in]  instance     VM instance.
@@ -361,6 +362,7 @@ QBDI_EXPORT bool qbdi_recordMemoryAccess(VMInstanceRef instance, MemoryAccessTyp
 QBDI_EXPORT MemoryAccess* qbdi_getInstMemoryAccess(VMInstanceRef instance, size_t* size);
 
 /*! Obtain the memory accesses made by the last executed basic block.
+ *  The method should be called in a VMCallback with QBDI_SEQUENCE_EXIT.
  *  Return NULL and a size of 0 if the basic block made no memory access.
  *
  *  @param[in]  instance     VM instance.
