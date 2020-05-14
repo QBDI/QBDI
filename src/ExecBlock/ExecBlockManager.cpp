@@ -169,6 +169,7 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock) {
             // Optimally, a region should only have one ExecBlocks but misspredictions or oversized
             // basic blocks can cause overflows.
             if(i >= region.blocks.size()) {
+                RequireAction("ExecBlockManager::writeBasicBlock", i < (1<<16), abort());
                 region.blocks.push_back(new ExecBlock(assembly, vminstance));
             }
             // Determine sequence type
@@ -181,7 +182,7 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock) {
             if(res.seqID != EXEC_BLOCK_FULL) {
                 // Saving sequence in the sequence cache
                 regions[r].sequenceCache[basicBlock[patchIdx].metadata.address] = SeqLoc {
-                    (uint16_t) i,
+                    static_cast<uint16_t>(i),
                     res.seqID,
                     bbStart,
                     bbEnd,
@@ -242,6 +243,8 @@ size_t ExecBlockManager::searchRegion(rword address) const {
 void ExecBlockManager::mergeRegion(size_t i) {
 
     RequireAction("ExecBlockManager::mergeRegion", i + 1 < regions.size(), return);
+    RequireAction("ExecBlockManager::mergeRegion",
+            regions[i].blocks.size() + regions[i+1].blocks.size() < (1<<16), abort());
 
     LogDebug(
             "ExecBlockManager::mergeRegion",
@@ -256,7 +259,7 @@ void ExecBlockManager::mergeRegion(size_t i) {
     // SeqLoc
     for (const auto& it: regions[i+1].sequenceCache) {
         regions[i].sequenceCache[it.first] = SeqLoc {
-                it.second.blockIdx + regions[i].blocks.size(),
+                static_cast<uint16_t>(it.second.blockIdx + regions[i].blocks.size()),
                 it.second.seqID,
                 it.second.bbStart,
                 it.second.bbEnd,
@@ -267,7 +270,7 @@ void ExecBlockManager::mergeRegion(size_t i) {
     // InstLoc
     for (const auto& it: regions[i+1].instCache) {
         regions[i].instCache[it.first] = InstLoc {
-                it.second.blockIdx + regions[i].blocks.size(),
+                static_cast<uint16_t>(it.second.blockIdx + regions[i].blocks.size()),
                 it.second.instID,
             };
     }
