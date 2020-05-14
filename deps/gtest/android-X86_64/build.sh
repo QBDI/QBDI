@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION="1.7.0"
+VERSION="1.8.1"
 SOURCE_URL="https://github.com/google/googletest/archive/release-${VERSION}.tar.gz"
 
 DEFAULT_NDK_PATH=${HOME}/android-ndk-r20
@@ -23,7 +23,7 @@ case "$1" in
     build)
         mkdir -p build
         cd build
-        cmake "../googletest-release-${VERSION}" \
+        cmake "../googletest-release-${VERSION}/googletest" \
               -DCMAKE_TOOLCHAIN_FILE="${NDK_PATH}/build/cmake/android.toolchain.cmake" \
               -DANDROID_ABI=x86_64 \
               -DANDROID_PLATFORM=23
@@ -32,7 +32,7 @@ case "$1" in
     package)
         mkdir -p lib
         cp build/libgtest.a build/libgtest_main.a lib/
-        cp -r "googletest-release-${VERSION}/include" .
+        cp -r "googletest-release-${VERSION}/googletest/include" .
     ;;
     clean)
         rm -rf "googletest-release-${VERSION}" build "release-${VERSION}.tar.gz"

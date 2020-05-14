@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION="1.7.0"
+VERSION="1.8.1"
 SOURCE_URL="https://github.com/google/googletest/archive/release-${VERSION}.tar.gz"
 
 case "$1" in
@@ -14,13 +14,13 @@ case "$1" in
         rm -rf build
         mkdir -p build
         cd build
-        cmake "../googletest-release-${VERSION}"
+        cmake "../googletest-release-${VERSION}/googletest"
         make -j4
     ;;
     package)
         mkdir -p lib
         cp build/libgtest.a build/libgtest_main.a lib/
-        cp -r "googletest-release-${VERSION}/include" .
+        cp -r "googletest-release-${VERSION}/googletest/include" .
     ;;
     clean)
         rm -rf "googletest-release-${VERSION}" build "release-${VERSION}.tar.gz"

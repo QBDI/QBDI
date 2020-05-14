@@ -2,7 +2,7 @@
 
 ARM_ARCH=armv7
 
-VERSION="1.7.0"
+VERSION="1.8.1"
 SOURCE_URL="https://github.com/google/googletest/archive/release-${VERSION}.tar.gz"
 
 case "$1" in
@@ -18,7 +18,7 @@ case "$1" in
         export CXX=`xcrun --sdk iphoneos -f clang++`
         export SDK=`xcrun --sdk iphoneos --show-sdk-path`
 
-        cmake "../googletest-release-${VERSION}" \
+        cmake "../googletest-release-${VERSION}/googletest" \
               -DCMAKE_CROSSCOMPILING=True \
               -DCMAKE_C_FLAGS="-arch ${ARM_ARCH} -isysroot ${SDK}" \
               -DCMAKE_CXX_FLAGS="-arch ${ARM_ARCH} -isysroot ${SDK}"
@@ -27,7 +27,7 @@ case "$1" in
     package)
         mkdir -p lib
         cp build/libgtest.a build/libgtest_main.a lib/
-        cp -r "googletest-release-${VERSION}/include" .
+        cp -r "googletest-release-${VERSION}/googletest/include" .
     ;;
     clean)
         rm -rf "googletest-release-${VERSION}" build "release-${VERSION}.tar.gz"

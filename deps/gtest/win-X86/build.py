@@ -9,7 +9,7 @@ try:
 except ImportError:
     raise Exception("Must be using Python 3")
 
-VERSION = "1.7.0"
+VERSION = "1.8.1"
 SOURCE_URL = "https://github.com/google/googletest/archive/release-" + \
     VERSION + ".tar.gz"
 
@@ -36,12 +36,13 @@ elif sys.argv[1] == "build":
     if os.path.exists("build"):
         shutil.rmtree("build")
     os.mkdir("build")
-    subprocess.check_call(["cmake", "../googletest-release-" + VERSION,
+    subprocess.check_call(["cmake", "../googletest-release-" + VERSION + '/googletest',
                            "-G", "Ninja",
                            "-DCMAKE_BUILD_TYPE=Release",
                            "-DCMAKE_CXX_FLAGS=/D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING",
                            "-Dgtest_force_shared_crt=On"], cwd="build")
     subprocess.check_call(["ninja"], cwd="build")
+
 elif sys.argv[1] == "package":
     if os.path.exists("lib"):
         shutil.rmtree("lib")
@@ -50,8 +51,10 @@ elif sys.argv[1] == "package":
     os.makedirs("lib")
     for file_ in ("gtest.lib", "gtest_main.lib"):
         shutil.copy(os.path.join("build", file_), "lib")
-    shutil.copytree(os.path.join("googletest-release-" + VERSION, "include"),
+    shutil.copytree(os.path.join("googletest-release-" + VERSION,
+                                 "googletest", "include"),
                     "include")
+
 elif sys.argv[1] == "clean":
     if os.path.exists("googletest-release-" + VERSION):
         shutil.rmtree("googletest-release-" + VERSION)
