@@ -220,7 +220,7 @@ public:
      * @return The id of the registered instrumentation (or VMError::INVALID_EVENTID
      * in case of failure).
      */
-    uint32_t addInstrRule(std::unique_ptr<InstrRule>&& rule, bool top_list=false);
+    uint32_t addInstrRule(std::unique_ptr<InstrRule>&& rule);
 
     /*! Register a callback event for a specific VM event.
      *
