@@ -410,16 +410,24 @@ bool Engine::run(rword start, rword stop) {
     return hasRan;
 }
 
-uint32_t Engine::addInstrRule(InstrRule rule) {
+uint32_t Engine::addInstrRule(InstrRule rule, bool top_list) {
     uint32_t id = instrRulesCounter++;
     RequireAction("Engine::addInstrRule", id < EVENTID_VM_MASK, return VMError::INVALID_EVENTID);
     blockManager->clearCache(rule.affectedRange());
     switch(rule.getPosition()) {
         case InstPosition::PREINST:
-            instrRules.insert(instrRules.begin(), std::make_pair(id, (InstrRule::SharedPtr) rule));
+            if (top_list) {
+                instrRules.emplace_back(id, static_cast<InstrRule::SharedPtr>(rule));
+            } else {
+                instrRules.insert(instrRules.begin(), std::make_pair(id, static_cast<InstrRule::SharedPtr>(rule)));
+            }
             break;
         case InstPosition::POSTINST:
-            instrRules.push_back(std::make_pair(id, (InstrRule::SharedPtr) rule));
+            if (top_list) {
+                instrRules.insert(instrRules.begin(), std::make_pair(id, static_cast<InstrRule::SharedPtr>(rule)));
+            } else {
+                instrRules.emplace_back(id, static_cast<InstrRule::SharedPtr>(rule));
+            }
             break;
     }
     return id;
