@@ -4,6 +4,13 @@ CHANGELOG
 Next Version
 ------------
 
+* Fix android compilation (`#126 <https://github.com/QBDI/QBDI/pull/126>`_)
+* Fix instrumentation of Pusha and Popa on X86 (`#127 <https://github.com/QBDI/QBDI/pull/127>`_)
+* Fix getBBMemoryAccess (`#128 <https://github.com/QBDI/QBDI/pull/128>`_)
+  * Improve the documentation of getBBMemoryAccess
+  * Add recordMemoryAccess callback before any InstCallback
+* Refactor ExecBlockManager to work with unaligned instruction on X86 and X86-64 (`#129 <https://github.com/QBDI/QBDI/pull/129>`_)
+
 Version 0.7.1
 -------------
 
