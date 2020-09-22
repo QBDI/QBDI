@@ -93,11 +93,12 @@ Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs,
     LogDebug("Engine::Engine", "Initialized LLVM for target %s", tripleName.c_str());
 
     // Allocate all LLVM classes
+    llvm::MCTargetOptions MCOptions;
     MRI = std::unique_ptr<llvm::MCRegisterInfo>(
         processTarget->createMCRegInfo(tripleName)
     );
     MAI = std::unique_ptr<llvm::MCAsmInfo>(
-        processTarget->createMCAsmInfo(*MRI, tripleName)
+        processTarget->createMCAsmInfo(*MRI, tripleName, MCOptions)
     );
     MOFI = std::unique_ptr<llvm::MCObjectFileInfo>(new llvm::MCObjectFileInfo());
     MCTX = std::unique_ptr<llvm::MCContext>(new llvm::MCContext(MAI.get(), MRI.get(), MOFI.get()));
@@ -108,7 +109,7 @@ Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs,
     );
     LogDebug("Engine::Engine", "Initialized LLVM subtarget with cpu %s and features %s", cpu.c_str(), featuresStr.c_str());
     auto MAB = std::unique_ptr<llvm::MCAsmBackend>(
-        processTarget->createMCAsmBackend(*MSTI, *MRI, llvm::MCTargetOptions())
+        processTarget->createMCAsmBackend(*MSTI, *MRI, MCOptions)
     );
     MCE = std::unique_ptr<llvm::MCCodeEmitter>(
        processTarget->createMCCodeEmitter(*MCII, *MRI, *MCTX)
@@ -237,7 +238,7 @@ std::vector<Patch> Engine::patch(rword start) {
             LogCallback(LogPriority::DEBUG, "Engine::patch", [&] (FILE *log) -> void {
                 std::string disass;
                 llvm::raw_string_ostream disassOs(disass);
-                assembly->printDisasm(inst, disassOs);
+                assembly->printDisasm(inst, address, disassOs);
                 disassOs.flush();
                 fprintf(log, "Patching 0x%" PRIRWORD " %s", address, disass.c_str());
             });
@@ -277,7 +278,7 @@ void Engine::instrument(std::vector<Patch> &basicBlock) {
         LogCallback(LogPriority::DEBUG, "Engine::instrument", [&] (FILE *log) -> void {
             std::string disass;
             llvm::raw_string_ostream disassOs(disass);
-            assembly->printDisasm(patch.metadata.inst, disassOs);
+            assembly->printDisasm(patch.metadata.inst, patch.metadata.address, disassOs);
             disassOs.flush();
             fprintf(log, "Instrumenting 0x%" PRIRWORD " %s", patch.metadata.address, disass.c_str());
         });

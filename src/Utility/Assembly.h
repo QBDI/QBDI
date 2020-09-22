@@ -61,7 +61,7 @@ public:
     llvm::MCDisassembler::DecodeStatus getInstruction(llvm::MCInst &inst, uint64_t &size,
                                             llvm::ArrayRef<uint8_t> bytes, uint64_t address) const;
 
-    void printDisasm(const llvm::MCInst &inst, llvm::raw_ostream &out = llvm::errs()) const;
+    void printDisasm(const llvm::MCInst &inst, uint64_t address, llvm::raw_ostream &out = llvm::errs()) const;
 
     const char* getRegisterName(unsigned int id) const {return MRI.getName(id); }
 };

@@ -43,19 +43,40 @@ find_library(GTEST gtest PATHS
     "${CMAKE_CURRENT_SOURCE_DIR}/../deps/gtest/${PLATFORM}/lib"
     NO_DEFAULT_PATH)
 
+# Generate a new static qbdi archive with additionnal llvm
+# needed for the test. The new library allows to remove the llvm library only
+# used by QBDITest for libQBDI.a and avoid error when link QBDItest
+set(_TEST_LLVM_LIBS
+    LLVMObject
+    LLVMTextAPI
+    LLVMCore
+    LLVMBitReader
+    LLVMBitstreamReader
+    LLVMRemarks
+
+  )
+
+if(${OS} STREQUAL "win")
+  PREPEND(TEST_LLVM_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/ ".lib" ${_TEST_LLVM_LIBS})
+else()
+  PREPEND(TEST_LLVM_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/lib ".a" ${_TEST_LLVM_LIBS})
+endif()
+
+MERGE_STATIC_LIBS(QBDI_static_test QBDI_static \${TEST_LLVM_LIBS})
 
 if (${GTEST} STREQUAL "GTEST-NOTFOUND")
     target_link_libraries(QBDITest
-        QBDI_static
+        QBDI_static_test
         "${CMAKE_CURRENT_SOURCE_DIR}/../deps/gtest/${PLATFORM}/lib/libgtest.a"
+        ${LLVM_LIBS}
     )
 else()
     target_link_libraries(QBDITest
-        QBDI_static
+        QBDI_static_test
         ${GTEST}
+        ${LLVM_LIBS}
     )
 endif()
 
-
-set_property(TARGET QBDITest PROPERTY CXX_STANDARD 11)
+set_property(TARGET QBDITest PROPERTY CXX_STANDARD 14)
 set_property(TARGET QBDITest PROPERTY CXX_STANDARD_REQUIRED ON)

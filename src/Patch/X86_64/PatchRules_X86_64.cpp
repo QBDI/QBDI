@@ -324,24 +324,7 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
     */
     rules.push_back(
         PatchRule(
-            Or({
-                OpIs(llvm::X86::JNE_1),
-                OpIs(llvm::X86::JE_1),
-                OpIs(llvm::X86::JG_1),
-                OpIs(llvm::X86::JGE_1),
-                OpIs(llvm::X86::JA_1),
-                OpIs(llvm::X86::JAE_1),
-                OpIs(llvm::X86::JL_1),
-                OpIs(llvm::X86::JLE_1),
-                OpIs(llvm::X86::JB_1),
-                OpIs(llvm::X86::JBE_1),
-                OpIs(llvm::X86::JP_1),
-                OpIs(llvm::X86::JNP_1),
-                OpIs(llvm::X86::JO_1),
-                OpIs(llvm::X86::JNO_1),
-                OpIs(llvm::X86::JS_1),
-                OpIs(llvm::X86::JNS_1)
-            }),
+            OpIs(llvm::X86::JCC_1),
             {
                 GetPCOffset(Temp(0), Operand(0)),
                 ModifyInstruction({
@@ -366,24 +349,7 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
     */
     rules.push_back(
         PatchRule(
-            Or({
-                OpIs(llvm::X86::JNE_2),
-                OpIs(llvm::X86::JE_2),
-                OpIs(llvm::X86::JG_2),
-                OpIs(llvm::X86::JGE_2),
-                OpIs(llvm::X86::JA_2),
-                OpIs(llvm::X86::JAE_2),
-                OpIs(llvm::X86::JL_2),
-                OpIs(llvm::X86::JLE_2),
-                OpIs(llvm::X86::JB_2),
-                OpIs(llvm::X86::JBE_2),
-                OpIs(llvm::X86::JP_2),
-                OpIs(llvm::X86::JNP_2),
-                OpIs(llvm::X86::JO_2),
-                OpIs(llvm::X86::JNO_2),
-                OpIs(llvm::X86::JS_2),
-                OpIs(llvm::X86::JNS_2)
-            }),
+            OpIs(llvm::X86::JCC_2),
             {
                 GetPCOffset(Temp(0), Operand(0)),
                 ModifyInstruction({
@@ -408,24 +374,7 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
     */
     rules.push_back(
         PatchRule(
-            Or({
-                OpIs(llvm::X86::JNE_4),
-                OpIs(llvm::X86::JE_4),
-                OpIs(llvm::X86::JG_4),
-                OpIs(llvm::X86::JGE_4),
-                OpIs(llvm::X86::JA_4),
-                OpIs(llvm::X86::JAE_4),
-                OpIs(llvm::X86::JL_4),
-                OpIs(llvm::X86::JLE_4),
-                OpIs(llvm::X86::JB_4),
-                OpIs(llvm::X86::JBE_4),
-                OpIs(llvm::X86::JP_4),
-                OpIs(llvm::X86::JNP_4),
-                OpIs(llvm::X86::JO_4),
-                OpIs(llvm::X86::JNO_4),
-                OpIs(llvm::X86::JS_4),
-                OpIs(llvm::X86::JNS_4)
-            }),
+            OpIs(llvm::X86::JCC_4),
             {
                 GetPCOffset(Temp(0), Operand(0)),
                 ModifyInstruction({

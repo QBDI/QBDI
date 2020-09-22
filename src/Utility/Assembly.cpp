@@ -23,8 +23,8 @@
 
 namespace QBDI {
 
-Assembly::Assembly(llvm::MCContext &MCTX, std::unique_ptr<llvm::MCAsmBackend> MAB, llvm::MCInstrInfo &MCII, 
-                   const llvm::Target &target, llvm::MCSubtargetInfo &MSTI) 
+Assembly::Assembly(llvm::MCContext &MCTX, std::unique_ptr<llvm::MCAsmBackend> MAB, llvm::MCInstrInfo &MCII,
+                   const llvm::Target &target, llvm::MCSubtargetInfo &MSTI)
     : MCII(MCII), MRI(*MCTX.getRegisterInfo()), MAI(*MCTX.getAsmInfo()), MSTI(MSTI) {
 
     unsigned int variant = 0;
@@ -64,9 +64,9 @@ Assembly::Assembly(llvm::MCContext &MCTX, std::unique_ptr<llvm::MCAsmBackend> MA
 }
 
 
-llvm::MCDisassembler::DecodeStatus Assembly::getInstruction(llvm::MCInst &instr, uint64_t &size, 
+llvm::MCDisassembler::DecodeStatus Assembly::getInstruction(llvm::MCInst &instr, uint64_t &size,
                                          llvm::ArrayRef< uint8_t > bytes, uint64_t address) const {
-    return disassembler->getInstruction(instr, size, bytes, address, llvm::nulls(), llvm::nulls());
+    return disassembler->getInstruction(instr, size, bytes, address, llvm::nulls());
 }
 
 
@@ -78,9 +78,10 @@ void Assembly::writeInstruction(const llvm::MCInst inst, memory_ostream *stream)
     LogCallback(LogPriority::DEBUG, "Assembly::writeInstruction", [&] (FILE *log) -> void {
         std::string disass;
         llvm::raw_string_ostream disassOs(disass);
-        printDisasm(inst, disassOs);
+        uint64_t address = reinterpret_cast<uint64_t>(stream->get_ptr()) + pos;
+        printDisasm(inst, address, disassOs);
         disassOs.flush();
-        fprintf(log, "Assembling %s at 0x%" PRIRWORD, disass.c_str(), (rword) stream->get_ptr() + (rword) pos);
+        fprintf(log, "Assembling %s at 0x%" PRIRWORD, disass.c_str(), address);
     });
     assembler->getEmitter().encodeInstruction(inst, *stream, fixups, MSTI);
     uint64_t size = stream->current_pos() - pos;
@@ -107,9 +108,9 @@ void Assembly::writeInstruction(const llvm::MCInst inst, memory_ostream *stream)
 }
 
 
-void Assembly::printDisasm(const llvm::MCInst &inst, llvm::raw_ostream &out) const {
+void Assembly::printDisasm(const llvm::MCInst &inst, uint64_t address, llvm::raw_ostream &out) const {
     llvm::StringRef   unusedAnnotations;
-    asmPrinter->printInst(&inst, out, unusedAnnotations, MSTI);
+    asmPrinter->printInst(&inst, address, unusedAnnotations, MSTI, out);
 }
 
 }

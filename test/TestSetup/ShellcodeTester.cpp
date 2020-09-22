@@ -22,10 +22,10 @@ llvm::sys::MemoryBlock ShellcodeTester::allocateStack(QBDI::rword size) {
     std::error_code  ec;
     llvm::sys::MemoryBlock stackBlock;
 
-    stackBlock = llvm::sys::Memory::allocateMappedMemory(size, nullptr, 
+    stackBlock = llvm::sys::Memory::allocateMappedMemory(size, nullptr,
                                                          PF::MF_READ | PF::MF_WRITE, ec);
     EXPECT_EQ(0, ec.value());
-    memset(stackBlock.base(), 0, stackBlock.size());
+    memset(stackBlock.base(), 0, stackBlock.allocatedSize());
     return stackBlock;
 }
 
@@ -33,14 +33,14 @@ void ShellcodeTester::freeStack(llvm::sys::MemoryBlock &memoryBlock) {
     EXPECT_EQ(0, llvm::sys::Memory::releaseMappedMemory(memoryBlock).value());
 }
 
-void ShellcodeTester::comparedExec(const char* source, QBDI::Context &inputCtx, 
+void ShellcodeTester::comparedExec(const char* source, QBDI::Context &inputCtx,
                                    QBDI::rword stackSize) {
     InMemoryObject object = compileWithContextSwitch(source);
 
     QBDI::Context realCtx, jitCtx;
     llvm::sys::MemoryBlock realStack = allocateStack(stackSize);
     llvm::sys::MemoryBlock jitStack = allocateStack(stackSize);
-    ASSERT_EQ(realStack.size(), jitStack.size());
+    ASSERT_EQ(realStack.allocatedSize(), jitStack.allocatedSize());
 
     const llvm::ArrayRef<uint8_t>& code = object.getCode();
     llvm::sys::Memory::InvalidateInstructionCache(code.data(), code.size());
@@ -57,7 +57,7 @@ void ShellcodeTester::comparedExec(const char* source, QBDI::Context &inputCtx,
         EXPECT_EQ(((char*)&realCtx.fprState)[i], ((char*)&jitCtx.fprState)[i]);
     }
 #endif
-    for(uint32_t i = 0; i < realStack.size() - sizeof(QBDI::rword); i++) {
+    for(uint32_t i = 0; i < realStack.allocatedSize() - sizeof(QBDI::rword); i++) {
         EXPECT_EQ(((char*)realStack.base())[i], ((char*)jitStack.base())[i]);
     }
 
