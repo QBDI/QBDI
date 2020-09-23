@@ -16,12 +16,13 @@
  * limitations under the License.
  */
 #include <gtest/gtest.h>
+#include <memory>
 
 #include "VM.h"
 
 class MemoryAccessTest : public ::testing::Test {
     protected:
-        QBDI::VM* vm;
+        std::unique_ptr<QBDI::VM> vm;
         QBDI::GPRState* state;
         uint8_t* fakestack;
 

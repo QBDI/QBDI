@@ -58,9 +58,9 @@ void LLVMTestEnv::SetUp() {
         processTarget->createMCAsmInfo(*MRI, tripleName, options)
     );
     ASSERT_TRUE(MAI != nullptr);
-    MOFI = std::unique_ptr<llvm::MCObjectFileInfo>(new llvm::MCObjectFileInfo());
+    MOFI = std::make_unique<llvm::MCObjectFileInfo>();
     ASSERT_TRUE(MOFI != nullptr);
-    MCTX = std::unique_ptr<llvm::MCContext>(new llvm::MCContext(MAI.get(), MRI.get(), MOFI.get()));
+    MCTX = std::make_unique<llvm::MCContext>(MAI.get(), MRI.get(), MOFI.get());
     ASSERT_TRUE(MCTX != nullptr);
     MCII = std::unique_ptr<llvm::MCInstrInfo>(processTarget->createMCInstrInfo());
     ASSERT_TRUE(MCII != nullptr);
@@ -75,8 +75,6 @@ void LLVMTestEnv::SetUp() {
        processTarget->createMCCodeEmitter(*MCII, *MRI, *MCTX)
     );
     ASSERT_TRUE(MAB != nullptr);
-    assembly = std::unique_ptr<QBDI::Assembly>(
-        new QBDI::Assembly(*MCTX, std::move(MAB), *MCII, *processTarget, *MSTI)
-    );
+    assembly = std::make_unique<QBDI::Assembly>(*MCTX, std::move(MAB), *MCII, *processTarget, *MSTI);
     ASSERT_TRUE(assembly != nullptr);
 }

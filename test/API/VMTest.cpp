@@ -175,7 +175,7 @@ QBDI_NOSTACKPROTECTOR QBDI_NOINLINE QBDI::rword satanicFun(QBDI::rword arg0) {
 
 void VMTest::SetUp() {
     // Constructing a new QBDI vm
-    vm = new QBDI::VM();
+    vm = std::make_unique<QBDI::VM>();
     ASSERT_NE(vm, nullptr);
 
     bool instrumented = vm->addInstrumentedModuleFromAddr((QBDI::rword) &dummyFun0);
@@ -193,7 +193,7 @@ void VMTest::SetUp() {
 
 void VMTest::TearDown() {
     QBDI::alignedFree(fakestack);
-    delete vm;
+    vm.reset();
 }
 
 

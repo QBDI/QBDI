@@ -161,7 +161,7 @@ QBDI::rword mad(volatile uint32_t* a, volatile uint32_t* b, volatile uint32_t* c
 
 void MemoryAccessTest::SetUp() {
     // Constructing a new QBDI vm
-    vm = new QBDI::VM();
+    vm = std::make_unique<QBDI::VM>();
     ASSERT_NE(vm, nullptr);
 
     bool instrumented = vm->addInstrumentedModuleFromAddr((QBDI::rword) &arrayRead8);
@@ -179,7 +179,7 @@ void MemoryAccessTest::SetUp() {
 
 void MemoryAccessTest::TearDown() {
     QBDI::alignedFree(fakestack);
-    delete vm;
+    vm.reset();
 }
 
 

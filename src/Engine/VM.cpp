@@ -90,14 +90,11 @@ VMAction stopCallback(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, 
 
 VM::VM(const std::string& cpu, const std::vector<std::string>& mattrs) :
     memoryLoggingLevel(0), memCBID(0), memReadGateCBID(VMError::INVALID_EVENTID), memWriteGateCBID(VMError::INVALID_EVENTID) {
-    engine = new Engine(cpu, mattrs, this);
-    memCBInfos = new std::vector<std::pair<uint32_t, MemCBInfo>>;
+    engine = std::make_unique<Engine>(cpu, mattrs, this);
+    memCBInfos = std::make_unique<std::vector<std::pair<uint32_t, MemCBInfo>>>();
 }
 
-VM::~VM() {
-    delete memCBInfos;
-    delete engine;
-}
+VM::~VM() = default;
 
 GPRState* VM::getGPRState() const {
     return engine->getGPRState();
@@ -187,14 +184,13 @@ bool VM::call(rword* retval, rword function, const std::vector<rword>& args) {
 }
 
 bool VM::callV(rword* retval, rword function, uint32_t argNum, va_list ap) {
-    rword* args = new rword[argNum];
+  std::vector<rword> args (argNum);
     for(uint32_t i = 0; i < argNum; i++) {
         args[i] = va_arg(ap, rword);
     }
 
-    bool res = this->callA(retval, function, argNum, args);
+    bool res = this->callA(retval, function, argNum, args.data());
 
-    delete[] args;
     return res;
 }
 
@@ -288,10 +284,10 @@ uint32_t VM::addMemRangeCB(rword start, rword end, MemoryAccessType type, InstCa
     RequireAction("VM::addMemRangeCB", type & MEMORY_READ_WRITE, return VMError::INVALID_EVENTID);
     RequireAction("VM::addMemRangeCB", cbk != nullptr, return VMError::INVALID_EVENTID);
     if((type == MEMORY_READ) && memReadGateCBID == VMError::INVALID_EVENTID) {
-        memReadGateCBID = addMemAccessCB(MEMORY_READ, memReadGate, memCBInfos);
+        memReadGateCBID = addMemAccessCB(MEMORY_READ, memReadGate, memCBInfos.get());
     }
     if((type & MEMORY_WRITE) && memWriteGateCBID == VMError::INVALID_EVENTID) {
-        memWriteGateCBID = addMemAccessCB(MEMORY_READ_WRITE, memWriteGate, memCBInfos);
+        memWriteGateCBID = addMemAccessCB(MEMORY_READ_WRITE, memWriteGate, memCBInfos.get());
     }
     uint32_t id = memCBID++;
     RequireAction("VM::addMemRangeCB", id < EVENTID_VIRTCB_MASK, return VMError::INVALID_EVENTID);

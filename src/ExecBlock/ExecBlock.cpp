@@ -77,7 +77,7 @@ ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(
     shadowIdx = 0;
     currentSeq = 0;
     currentInst = 0;
-    codeStream = new memory_ostream(codeBlock);
+    codeStream = std::make_unique<memory_ostream>(codeBlock);
     pageState = RW;
 
     // Epilogue and prologue management.
@@ -87,7 +87,7 @@ ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(
         execBlockEpilogue = getExecBlockEpilogue();
         // Only way to know the epilogue size is to JIT is somewhere
         for(auto &inst: execBlockEpilogue) {
-            assembly.writeInstruction(inst->reloc(this), codeStream);
+            assembly.writeInstruction(inst->reloc(this), codeStream.get());
         }
         epilogueSize = codeStream->current_pos();
         codeStream->seek(0);
@@ -107,11 +107,11 @@ ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(
     // JIT prologue and epilogue
     codeStream->seek(codeBlock.allocatedSize() - epilogueSize);
     for(auto &inst: execBlockEpilogue) {
-        assembly.writeInstruction(inst->reloc(this), codeStream);
+        assembly.writeInstruction(inst->reloc(this), codeStream.get());
     }
     codeStream->seek(0);
     for(auto &inst: execBlockPrologue) {
-        assembly.writeInstruction(inst->reloc(this), codeStream);
+        assembly.writeInstruction(inst->reloc(this), codeStream.get());
     }
 }
 
@@ -119,7 +119,6 @@ ExecBlock::~ExecBlock() {
     // Reunite the 2 blocks before freeing them
     codeBlock = llvm::sys::MemoryBlock(codeBlock.base(), codeBlock.allocatedSize() + dataBlock.allocatedSize());
     QBDI::releaseMappedMemory(codeBlock);
-    delete codeStream;
 }
 
 void ExecBlock::show() const {
@@ -254,7 +253,7 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
         // Attempt to write a complete patch. If not, rollback to the last complete patch written
         for(const RelocatableInst::SharedPtr& inst : seqIt->insts) {
             if(getEpilogueOffset() > MINIMAL_BLOCK_SIZE) {
-                assembly.writeInstruction(inst->reloc(this), codeStream);
+                assembly.writeInstruction(inst->reloc(this), codeStream.get());
             }
             else {
                 // Not enough space left, rollback
@@ -294,13 +293,13 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
         LogDebug("ExecBlock::writeBasicBlock", "Writting terminator to ExecBlock %p to finish non-exit sequence", this);
         RelocatableInst::SharedPtrVec terminator = getTerminator(seqIt->metadata.address);
         for(RelocatableInst::SharedPtr &inst : terminator) {
-            assembly.writeInstruction(inst->reloc(this), codeStream);
+            assembly.writeInstruction(inst->reloc(this), codeStream.get());
         }
     }
     // JIT the jump to epilogue
     RelocatableInst::SharedPtrVec jmpEpilogue = JmpEpilogue();
     for(RelocatableInst::SharedPtr &inst : jmpEpilogue) {
-        assembly.writeInstruction(inst->reloc(this), codeStream);
+        assembly.writeInstruction(inst->reloc(this), codeStream.get());
     }
     // Register sequence
     uint16_t endInstID = getNextInstID() - 1;

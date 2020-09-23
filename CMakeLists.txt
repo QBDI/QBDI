@@ -20,6 +20,9 @@ endif()
 set(SUPPORTED_PLATFORM linux-X86_64 linux-ARM macOS-X86_64 android-ARM
     android-X86 android-X86_64 win-X86_64 iOS-ARM linux-X86 macOS-X86 win-X86)
 
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # Force find system utils (strip)
 include(CMakeFindBinUtils)
 
@@ -135,7 +138,7 @@ if((${PLATFORM} STREQUAL "linux-X86_64") OR
    (${PLATFORM} STREQUAL "iOS-ARM"))
 
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Wall -ffunction-sections -fdata-sections -fvisibility=hidden -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -fvisibility-inlines-hidden  -fvisibility=hidden -std=c++14 -ffunction-sections -fdata-sections -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -fno-rtti")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -fvisibility-inlines-hidden  -fvisibility=hidden -ffunction-sections -fdata-sections -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -fno-rtti")
 
 elseif((${PLATFORM} STREQUAL "win-X86_64") OR
         (${PLATFORM} STREQUAL "win-X86"))
@@ -148,7 +151,7 @@ elseif((${PLATFORM} STREQUAL "android-ARM") OR
        (${PLATFORM} STREQUAL "android-X86_64"))
 
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Wall -ffunction-sections -fdata-sections -fvisibility=hidden")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -fvisibility-inlines-hidden -fvisibility=hidden -std=c++14 -ffunction-sections -fdata-sections -fno-rtti")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -fvisibility-inlines-hidden -fvisibility=hidden -ffunction-sections -fdata-sections -fno-rtti")
 
 endif()
 

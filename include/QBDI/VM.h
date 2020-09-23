@@ -22,6 +22,7 @@
 #include <utility>
 #include <vector>
 #include <cstdarg>
+#include <memory>
 
 #include "Platform.h"
 #include "Callback.h"
@@ -39,16 +40,16 @@ class InstrRule;
 struct MemCBInfo;
 
 class QBDI_EXPORT VM {
-    private:
+private:
     // Private internal engine
-    Engine*     engine;
+    std::unique_ptr<Engine> engine;
     uint8_t  memoryLoggingLevel;
-    std::vector<std::pair<uint32_t, MemCBInfo>>* memCBInfos;
+    std::unique_ptr<std::vector<std::pair<uint32_t, MemCBInfo>>> memCBInfos;
     uint32_t memCBID;
     uint32_t memReadGateCBID;
     uint32_t memWriteGateCBID;
 
-    public:
+public:
     /*! Construct a new VM for a given CPU with specific attributes
      *
      * @param[in] cpu    The name of the CPU

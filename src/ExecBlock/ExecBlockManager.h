@@ -33,6 +33,11 @@ namespace QBDI {
 
 class RelocatableInst;
 
+struct InstAnalysisDestructor {
+  void operator()(InstAnalysis* ptr) const;
+};
+
+
 struct InstLoc {
     uint16_t blockIdx;
     uint16_t instID;
@@ -48,30 +53,34 @@ struct SeqLoc {
 };
 
 struct ExecRegion {
-    Range<rword>                    covered;
-    unsigned                        translated;
-    unsigned                        available;
-    std::vector<ExecBlock*>         blocks;
-    std::map<rword, SeqLoc>         sequenceCache;
-    std::map<rword, InstLoc>        instCache;
-    std::map<rword, InstAnalysis*>  analysisCache;
+    using InstAnalysisPtr = std::unique_ptr<InstAnalysis, InstAnalysisDestructor>;
+
+    Range<rword>                             covered;
+    unsigned                                 translated;
+    unsigned                                 available;
+    std::vector<std::unique_ptr<ExecBlock>>  blocks;
+    std::map<rword, SeqLoc>                  sequenceCache;
+    std::map<rword, InstLoc>                 instCache;
+    std::map<rword, InstAnalysisPtr>         analysisCache;
+
+    ExecRegion(ExecRegion&&) = default;
+    ExecRegion& operator=(ExecRegion&&) = default;
 };
 
 class ExecBlockManager {
 private:
+    using InstAnalysisPtr = std::unique_ptr<InstAnalysis, InstAnalysisDestructor>;
 
-    std::vector<ExecRegion>         regions;
-    std::map<rword, InstAnalysis*>  analysisCache;
-    std::vector<size_t>             flushList;
-    rword                           total_translated_size;
-    rword                           total_translation_size;
+    std::vector<ExecRegion>            regions;
+    std::map<rword, InstAnalysisPtr>   analysisCache;
+    std::vector<size_t>                flushList;
+    rword                              total_translated_size;
+    rword                              total_translation_size;
 
     VMInstanceRef              vminstance;
     llvm::MCInstrInfo&         MCII;
     llvm::MCRegisterInfo&      MRI;
     Assembly&                  assembly;
-
-    void eraseRegion(size_t r);
 
     size_t searchRegion(rword start) const;
 
@@ -88,6 +97,8 @@ public:
     ExecBlockManager(llvm::MCInstrInfo& MCII, llvm::MCRegisterInfo& MRI, Assembly& assembly, VMInstanceRef vminstance = nullptr);
 
     ~ExecBlockManager();
+
+    ExecBlockManager(const ExecBlockManager&) = delete;
 
     void printCacheStatistics(FILE* output) const;
 

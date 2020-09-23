@@ -78,5 +78,3 @@ else()
     )
 endif()
 
-set_property(TARGET QBDITest PROPERTY CXX_STANDARD 14)
-set_property(TARGET QBDITest PROPERTY CXX_STANDARD_REQUIRED ON)

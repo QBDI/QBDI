@@ -29,19 +29,19 @@ std::vector<MemoryMap> getCurrentProcessMaps(bool full_path) {
 }
 
 std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path) {
-    static int BUFFER_SIZE = 256;
-    char* line = new char[BUFFER_SIZE];
+    static const int BUFFER_SIZE = 256;
+    char line[BUFFER_SIZE] = {0};
     FILE* mapfile = nullptr;
     std::vector<MemoryMap> maps;
 
     snprintf(line, BUFFER_SIZE, "/proc/%llu/maps", (unsigned long long) pid);
     mapfile = fopen(line, "r");
     LogDebug("getRemoteProcessMaps", "Querying memory maps from %s", line);
-    RequireAction("getRemoteProcessMaps", mapfile != nullptr, delete[] line; return maps);
+    RequireAction("getRemoteProcessMaps", mapfile != nullptr, return maps);
 
     // Process a memory map line in the form of
     // 00400000-0063c000 r-xp 00000000 fe:01 675628    /usr/bin/vim
-    while((line = fgets(line, BUFFER_SIZE, mapfile)) != nullptr) {
+    while(fgets(line, BUFFER_SIZE, mapfile) != nullptr) {
         char* ptr = nullptr;
         MemoryMap m;
 
@@ -114,7 +114,6 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path) {
         maps.push_back(m);
     }
     fclose(mapfile);
-    delete[] line;
     return maps;
 }
 

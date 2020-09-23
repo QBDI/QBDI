@@ -77,9 +77,9 @@ private:
     std::vector<std::string>                 mattrs;
     VMInstanceRef                            vminstance;
 
-    Assembly*                                                       assembly;
-    ExecBlockManager*                                               blockManager;
-    ExecBroker*                                                     execBroker;
+    std::unique_ptr<Assembly>                                       assembly;
+    std::unique_ptr<ExecBlockManager>                               blockManager;
+    std::unique_ptr<ExecBroker>                                     execBroker;
     std::vector<std::shared_ptr<PatchRule>>                         patchRules;
     std::vector<std::pair<uint32_t, std::shared_ptr<InstrRule>>>    instrRules;
     uint32_t                                                        instrRulesCounter;

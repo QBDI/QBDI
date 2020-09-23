@@ -80,12 +80,11 @@ void simulateCall(GPRState *ctx, rword returnAddress, const std::vector<rword>& 
 }
 
 void simulateCallV(GPRState *ctx, rword returnAddress, uint32_t argNum, va_list ap) {
-    rword* args = new rword[argNum];
+    std::vector<rword> args (argNum);
     for(uint32_t i = 0; i < argNum; i++) {
         args[i] = va_arg(ap, rword);
     }
-    simulateCallA(ctx, returnAddress, argNum, args);
-    delete[] args;
+    simulateCallA(ctx, returnAddress, argNum, args.data());
 }
 
 void simulateCallA(GPRState *ctx, rword returnAddress, uint32_t argNum, const rword* args) {

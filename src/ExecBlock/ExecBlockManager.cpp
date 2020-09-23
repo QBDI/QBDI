@@ -90,17 +90,17 @@ ExecBlock* ExecBlockManager::getProgrammedExecBlock(rword address) {
         const std::map<rword, SeqLoc>::const_iterator seqLoc = region.sequenceCache.find(address);
         if(seqLoc != region.sequenceCache.end()) {
             LogDebug("ExecBlockManager::getProgrammedExecBlock", "Found sequence 0x%" PRIRWORD " in ExecBlock %p as seqID %" PRIu16,
-                     address, region.blocks[seqLoc->second.blockIdx], seqLoc->second.seqID);
+                     address, region.blocks[seqLoc->second.blockIdx].get(), seqLoc->second.seqID);
             // Select sequence and return execBlock
             region.blocks[seqLoc->second.blockIdx]->selectSeq(seqLoc->second.seqID);
-            return region.blocks[seqLoc->second.blockIdx];
+            return region.blocks[seqLoc->second.blockIdx].get();
         }
 
         // Attempting instCache resolution
         const std::map<rword, InstLoc>::const_iterator instLoc = region.instCache.find(address);
         if(instLoc != region.instCache.end()) {
             // Retrieving corresponding block and seqLoc
-            ExecBlock* block = region.blocks[instLoc->second.blockIdx];
+            ExecBlock* block = region.blocks[instLoc->second.blockIdx].get();
             uint16_t existingSeqId = block->getSeqID(instLoc->second.instID);
             const SeqLoc& existingSeqLoc = region.sequenceCache[block->getInstMetadata(block->getSeqStart(existingSeqId))->address];
             // Creating a new sequence at that instruction and saving it in the sequenceCache
@@ -171,7 +171,7 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock) {
             // basic blocks can cause overflows.
             if(i >= region.blocks.size()) {
                 RequireAction("ExecBlockManager::writeBasicBlock", i < (1<<16), abort());
-                region.blocks.push_back(new ExecBlock(assembly, vminstance));
+                region.blocks.emplace_back(std::make_unique<ExecBlock>(assembly, vminstance));
             }
             // Determine sequence type
             SeqType seqType = (SeqType) 0;
@@ -199,7 +199,7 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock) {
                          "Sequence 0x%" PRIRWORD "-0x%" PRIRWORD " written in ExecBlock %p as seqID %" PRIu16,
                          basicBlock[patchIdx].metadata.address,
                          basicBlock[patchIdx + res.patchWritten - 1].metadata.endAddress(),
-                         region.blocks[i], res.seqID);
+                         region.blocks[i].get(), res.seqID);
                 // Updating counters
                 translated += basicBlock[patchIdx + res.patchWritten - 1].metadata.endAddress() - basicBlock[patchIdx].metadata.address;
                 translation += res.bytesWritten;
@@ -280,13 +280,12 @@ void ExecBlockManager::mergeRegion(size_t i) {
     regions[i].covered.setEnd(regions[i+1].covered.end());
 
     // ExecBlock
-    regions[i].blocks.insert(regions[i].blocks.end(),
-            regions[i+1].blocks.begin(),
-            regions[i+1].blocks.end());
+    std::move(regions[i+1].blocks.begin(), regions[i+1].blocks.end(),
+              std::back_inserter(regions[i].blocks));
     // InstAnalysis
-    regions[i].analysisCache.insert(
-            regions[i+1].analysisCache.begin(),
-            regions[i+1].analysisCache.end());
+    std::move(regions[i+1].analysisCache.begin(), regions[i+1].analysisCache.end(),
+              std::insert_iterator<std::map<rword, InstAnalysisPtr>>(regions[i].analysisCache,
+                                                                     regions[i].analysisCache.end()));
 
     regions.erase(regions.begin() + i + 1);
 }
@@ -416,7 +415,7 @@ size_t ExecBlockManager::findRegion(const Range<rword>& codeRange) {
         codeRange.start(),
         codeRange.end()
     );
-    regions.insert(regions.begin() + insert, ExecRegion {codeRange, 0, 0, std::vector<ExecBlock*>()});
+    regions.insert(regions.begin() + insert, {codeRange, 0, 0, {}});
     return insert;
 }
 
@@ -626,13 +625,13 @@ static void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst
 }
 
 
-static void freeInstAnalysis(InstAnalysis* analysis) {
-    if (analysis == nullptr) {
+void InstAnalysisDestructor::operator()(InstAnalysis* ptr) const {
+    if (ptr == nullptr) {
         return;
     }
-    delete[] analysis->operands;
-    delete[] analysis->disassembly;
-    delete analysis;
+    delete[] ptr->operands;
+    delete[] ptr->disassembly;
+    delete ptr;
 }
 
 
@@ -646,14 +645,12 @@ const InstAnalysis* ExecBlockManager::analyzeInstMetadata(const InstMetadata* in
     if(r < regions.size() && regions[r].covered.contains(instMetadata->address) &&
        regions[r].analysisCache.count(instMetadata->address) == 1) {
         LogDebug("ExecBlockManager::analyzeInstMetadata", "Analysis of instruction 0x%" PRIRWORD " found in sequenceCache of region %zu", instMetadata->address, r);
-        instAnalysis = regions[r].analysisCache[instMetadata->address];
+        instAnalysis = regions[r].analysisCache[instMetadata->address].get();
     }
-    // Do we have anything we want inside the cache ?
-    if ((instAnalysis != nullptr) &&
+    if (instAnalysis != nullptr &&
         ((instAnalysis->analysisType & type) != type)) {
         LogDebug("ExecBlockManager::analyzeInstMetadata", "Analysis of instruction 0x%" PRIRWORD " need to be rebuilt", instMetadata->address);
         // Free current cache because we want more data
-        freeInstAnalysis(instAnalysis);
         instAnalysis = nullptr;
     }
     // We have a usable cached analysis
@@ -663,6 +660,7 @@ const InstAnalysis* ExecBlockManager::analyzeInstMetadata(const InstMetadata* in
     // Cache miss
     const llvm::MCInst &inst = instMetadata->inst;
     const llvm::MCInstrDesc &desc = MCII.get(inst.getOpcode());
+
 
     instAnalysis = new InstAnalysis;
     // set all values to NULL/0/false
@@ -726,31 +724,16 @@ const InstAnalysis* ExecBlockManager::analyzeInstMetadata(const InstMetadata* in
     // If its part of a region, put in in the region cache
     if(r < regions.size() && regions[r].covered.contains(instMetadata->address)) {
         LogDebug("ExecBlockManager::analyzeInstMetadata", "Analysis of instruction 0x%" PRIRWORD " cached in region %zu", instMetadata->address, r);
-        regions[r].analysisCache[instMetadata->address] = instAnalysis;
+        regions[r].analysisCache[instMetadata->address] = InstAnalysisPtr(instAnalysis);
     }
     // Put it in the global cache. Should never happen under normal usage
     else {
         LogDebug("ExecBlockManager::analyzeInstMetadata", "Analysis of instruction 0x%" PRIRWORD " cached in global cache", instMetadata->address);
-        analysisCache[instMetadata->address] = instAnalysis;
+        analysisCache[instMetadata->address] = InstAnalysisPtr(instAnalysis);
     }
     return instAnalysis;
 }
 
-
-void ExecBlockManager::eraseRegion(size_t r) {
-    LogDebug("ExecBlockManager::eraseRegion", "Erasing region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
-             r, regions[r].covered.start(), regions[r].covered.end());
-    // Delete cached blocks
-    for(ExecBlock* block: regions[r].blocks) {
-        LogDebug("ExecBlockManager::eraseRegion", "Dropping ExecBlock %p", block);
-        delete block;
-    }
-    // Delete cached analysis
-    for(std::pair<rword, InstAnalysis*> analysis: regions[r].analysisCache) {
-        freeInstAnalysis(analysis.second);
-    }
-    regions.erase(regions.begin() + r);
-}
 
 void ExecBlockManager::clearCache(RangeSet<rword> rangeSet) {
     const std::vector<Range<rword>>& ranges = rangeSet.getRanges();
@@ -770,13 +753,11 @@ void ExecBlockManager::flushCommit() {
         // Remove duplicates
         flushList.erase(std::unique(flushList.begin(), flushList.end()), flushList.end());
         for(size_t r: flushList) {
-            eraseRegion(r);
+            LogDebug("ExecBlockManager::flushCommit", "Erasing region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
+                     r, regions[r].covered.start(), regions[r].covered.end());
+            regions.erase(regions.begin() + r);
         }
         flushList.clear();
-        // Clear global cache
-        for(std::pair<rword, InstAnalysis*> analysis: analysisCache) {
-            freeInstAnalysis(analysis.second);
-        }
         analysisCache.clear();
     }
 }
@@ -793,9 +774,11 @@ void ExecBlockManager::clearCache(Range<rword> range) {
 
 void ExecBlockManager::clearCache() {
     LogDebug("ExecBlockManager::clearCache", "Erasing all cache");
-    while(regions.size() > 0) {
-        eraseRegion(regions.size() - 1);
-    }
+    regions.clear();
+    flushList.clear();
+    analysisCache.clear();
+    total_translated_size = 1;
+    total_translation_size = 1;
 }
 
 }

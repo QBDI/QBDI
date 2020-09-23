@@ -100,8 +100,8 @@ Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs,
     MAI = std::unique_ptr<llvm::MCAsmInfo>(
         processTarget->createMCAsmInfo(*MRI, tripleName, MCOptions)
     );
-    MOFI = std::unique_ptr<llvm::MCObjectFileInfo>(new llvm::MCObjectFileInfo());
-    MCTX = std::unique_ptr<llvm::MCContext>(new llvm::MCContext(MAI.get(), MRI.get(), MOFI.get()));
+    MOFI = std::make_unique<llvm::MCObjectFileInfo>();
+    MCTX = std::make_unique<llvm::MCContext>(MAI.get(), MRI.get(), MOFI.get());
     MOFI->InitMCObjectFileInfo(processTriple, false, *MCTX);
     MCII = std::unique_ptr<llvm::MCInstrInfo>(processTarget->createMCInstrInfo());
     MSTI = std::unique_ptr<llvm::MCSubtargetInfo>(
@@ -115,15 +115,15 @@ Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs,
        processTarget->createMCCodeEmitter(*MCII, *MRI, *MCTX)
     );
     // Allocate QBDI classes
-    assembly = new Assembly(*MCTX, std::move(MAB), *MCII, *processTarget, *MSTI);
-    blockManager = new ExecBlockManager(*MCII, *MRI, *assembly, vminstance);
-    execBroker = new ExecBroker(*assembly, vminstance);
+    assembly = std::make_unique<Assembly>(*MCTX, std::move(MAB), *MCII, *processTarget, *MSTI);
+    blockManager = std::make_unique<ExecBlockManager>(*MCII, *MRI, *assembly, vminstance);
+    execBroker = std::make_unique<ExecBroker>(*assembly, vminstance);
 
     // Get default Patch rules for this architecture
     patchRules = getDefaultPatchRules();
 
-    gprState = std::unique_ptr<GPRState>(new GPRState);
-    fprState = std::unique_ptr<FPRState>(new FPRState);
+    gprState = std::make_unique<GPRState>();
+    fprState = std::make_unique<FPRState>();
     curGPRState = gprState.get();
     curFPRState = fprState.get();
 
@@ -133,11 +133,7 @@ Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs,
     curExecBlock = nullptr;
 }
 
-Engine::~Engine() {
-    delete assembly;
-    delete blockManager;
-    delete execBroker;
-}
+Engine::~Engine() = default;
 
 void Engine::initGPRState() {
     memset(gprState.get(), 0, sizeof(GPRState));

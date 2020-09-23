@@ -82,21 +82,21 @@ private:
     static std::vector<std::shared_ptr<RelocatableInst>> execBlockEpilogue;
     static void (*runCodeBlockFct)(void*);
 
-    VMInstanceRef               vminstance;
-    llvm::sys::MemoryBlock      codeBlock;
-    llvm::sys::MemoryBlock      dataBlock;
-    memory_ostream*             codeStream;
-    Assembly&                   assembly;
-    Context*                    context;
-    rword*                      shadows;
-    std::vector<ShadowInfo>     shadowRegistry;
-    uint16_t                    shadowIdx;
-    std::vector<InstMetadata>   instMetadata;
-    std::vector<InstInfo>       instRegistry;
-    std::vector<SeqInfo>        seqRegistry;
-    PageState                   pageState;
-    uint16_t                    currentSeq;
-    uint16_t                    currentInst;
+    VMInstanceRef                     vminstance;
+    llvm::sys::MemoryBlock            codeBlock;
+    llvm::sys::MemoryBlock            dataBlock;
+    std::unique_ptr<memory_ostream>   codeStream;
+    Assembly&                         assembly;
+    Context*                          context;
+    rword*                            shadows;
+    std::vector<ShadowInfo>           shadowRegistry;
+    uint16_t                          shadowIdx;
+    std::vector<InstMetadata>         instMetadata;
+    std::vector<InstInfo>             instRegistry;
+    std::vector<SeqInfo>              seqRegistry;
+    PageState                         pageState;
+    uint16_t                          currentSeq;
+    uint16_t                          currentInst;
 
     /*! Verify if the code block is in read execute mode.
      *
@@ -128,6 +128,8 @@ public:
     ExecBlock(Assembly& assembly, VMInstanceRef vminstance = nullptr);
 
     ~ExecBlock();
+
+    ExecBlock(const ExecBlock&) = delete;
 
     /*! Display the content of an exec block to stderr.
      */

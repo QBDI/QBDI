@@ -29,9 +29,7 @@ Assembly::Assembly(llvm::MCContext &MCTX, std::unique_ptr<llvm::MCAsmBackend> MA
 
     unsigned int variant = 0;
 
-    null_ostream = std::unique_ptr<llvm::raw_pwrite_stream>(
-        new llvm::raw_null_ostream()
-    );
+    null_ostream = std::make_unique<llvm::raw_null_ostream>();
 
     disassembler = std::unique_ptr<llvm::MCDisassembler>(
         target.createMCDisassembler(MSTI, MCTX)
@@ -45,8 +43,8 @@ Assembly::Assembly(llvm::MCContext &MCTX, std::unique_ptr<llvm::MCAsmBackend> MA
         MAB->createObjectWriter(*null_ostream)
     );
 
-    assembler = std::unique_ptr<llvm::MCAssembler>(
-        new llvm::MCAssembler(MCTX, std::move(MAB), std::move(codeEmitter), std::move(objectWriter))
+    assembler = std::make_unique<llvm::MCAssembler>(
+        MCTX, std::move(MAB), std::move(codeEmitter), std::move(objectWriter)
     );
 
     // TODO: find better way to handle variant
