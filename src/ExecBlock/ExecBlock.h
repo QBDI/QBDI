@@ -183,7 +183,7 @@ public:
      * @return The computed offset.
      */
     rword getEpilogueOffset() const {
-        return codeBlock.size() - epilogueSize - codeStream->current_pos();
+        return codeBlock.allocatedSize() - epilogueSize - codeStream->current_pos();
     }
 
     /*! Obtain the value of the PC where the ExecBlock is currently writing instructions.

@@ -674,7 +674,7 @@ const InstAnalysis* ExecBlockManager::analyzeInstMetadata(const InstMetadata* in
         int len = 0;
         std::string buffer;
         llvm::raw_string_ostream bufferOs(buffer);
-        assembly.printDisasm(inst, bufferOs);
+        assembly.printDisasm(inst, instMetadata->address, bufferOs);
         bufferOs.flush();
         len = buffer.size() + 1;
         instAnalysis->disassembly = new char[len];

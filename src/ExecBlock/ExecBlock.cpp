@@ -55,7 +55,8 @@ ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(
     // on this platform, we can enforce a 4k "virtual" page size
     uint64_t pageSize = 4096;
 #else
-    uint64_t pageSize = llvm::sys::Process::getPageSize();
+    uint64_t pageSize =
+      llvm::expectedToOptional(llvm::sys::Process::getPageSize()).getValueOr(4096);
 #endif
     unsigned mflags =  PF::MF_READ | PF::MF_WRITE;
 #ifdef QBDI_OS_IOS
@@ -104,7 +105,7 @@ ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(
         #endif
     }
     // JIT prologue and epilogue
-    codeStream->seek(codeBlock.size() - epilogueSize);
+    codeStream->seek(codeBlock.allocatedSize() - epilogueSize);
     for(auto &inst: execBlockEpilogue) {
         assembly.writeInstruction(inst->reloc(this), codeStream);
     }
@@ -116,7 +117,7 @@ ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(
 
 ExecBlock::~ExecBlock() {
     // Reunite the 2 blocks before freeing them
-    codeBlock = llvm::sys::MemoryBlock(codeBlock.base(), codeBlock.size() + dataBlock.size());
+    codeBlock = llvm::sys::MemoryBlock(codeBlock.base(), codeBlock.allocatedSize() + dataBlock.allocatedSize());
     QBDI::releaseMappedMemory(codeBlock);
     delete codeStream;
 }
@@ -139,7 +140,7 @@ void ExecBlock::show() const {
         );
 
         llvm::raw_string_ostream disassOs(disass);
-        assembly.printDisasm(inst, disassOs);
+        assembly.printDisasm(inst, reinterpret_cast<uint64_t>(codeBlock.base()) + i, disassOs);
         disassOs.flush();
         fprintf(stderr, "%s\n", disass.c_str());
     }
@@ -171,7 +172,7 @@ void ExecBlock::run() {
 #ifndef QBDI_OS_IOS
     makeRX();
 #else
-    llvm::sys::Memory::InvalidateInstructionCache(codeBlock.base(), codeBlock.size());
+    llvm::sys::Memory::InvalidateInstructionCache(codeBlock.base(), codeBlock.allocatedSize());
 #endif // QBDI_OS_IOS
     runCodeBlockFct(codeBlock.base());
 }
@@ -346,7 +347,7 @@ void ExecBlock::makeRW() {
 
 uint16_t ExecBlock::newShadow(uint16_t tag) {
     uint16_t id = shadowIdx++;
-    RequireAction("ExecBlock::newShadow", id * sizeof(rword) < dataBlock.size() - sizeof(Context), abort());
+    RequireAction("ExecBlock::newShadow", id * sizeof(rword) < dataBlock.allocatedSize() - sizeof(Context), abort());
     if(tag != NO_REGISTRATION) {
         LogDebug("ExecBlock::newShadow", "Registering new tagged shadow %" PRIu16 " for instID %" PRIu16 " wih tag %" PRIu16, id, getNextInstID(), tag);
         shadowRegistry.push_back({
@@ -359,18 +360,18 @@ uint16_t ExecBlock::newShadow(uint16_t tag) {
 }
 
 void ExecBlock::setShadow(uint16_t id, rword v) {
-    RequireAction("ExecBlock::setShadow", id * sizeof(rword) < dataBlock.size() - sizeof(Context), abort());
+    RequireAction("ExecBlock::setShadow", id * sizeof(rword) < dataBlock.allocatedSize() - sizeof(Context), abort());
     shadows[id] = v;
 }
 
 rword ExecBlock::getShadow(uint16_t id) const {
-    RequireAction("ExecBlock::getShadow", id * sizeof(rword) < dataBlock.size() - sizeof(Context), abort());
+    RequireAction("ExecBlock::getShadow", id * sizeof(rword) < dataBlock.allocatedSize() - sizeof(Context), abort());
     return shadows[id];
 }
 
 rword ExecBlock::getShadowOffset(uint16_t id) const {
     rword offset = sizeof(Context) + id*sizeof(rword);
-    RequireAction("ExecBlock::getShadowOffset", offset < dataBlock.size(), abort());
+    RequireAction("ExecBlock::getShadowOffset", offset < dataBlock.allocatedSize(), abort());
     return offset;
 }
 
@@ -465,7 +466,7 @@ std::vector<ShadowInfo> ExecBlock::queryShadowBySeq(uint16_t seqID, uint16_t tag
 }
 
 float ExecBlock::occupationRatio() const {
-    return static_cast<float>(codeBlock.size() - getEpilogueOffset()) / static_cast<float>(codeBlock.size());
+    return static_cast<float>(codeBlock.allocatedSize() - getEpilogueOffset()) / static_cast<float>(codeBlock.allocatedSize());
 }
 
 }

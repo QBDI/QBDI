@@ -92,13 +92,13 @@ QBDI::Context ComparedExecutor_X86_64::jitExec(llvm::ArrayRef<uint8_t> code, QBD
                                                          PF::MF_READ | PF::MF_WRITE, ec);
     memset((void*)&outerState, 0, sizeof(QBDI::Context));
     // Put the inputState on the stack
-    inputState.gprState.rbp = (QBDI::rword) stack.base() + stack.size();
-    inputState.gprState.rsp = (QBDI::rword) stack.base() + stack.size();
+    inputState.gprState.rbp = (QBDI::rword) stack.base() + stack.allocatedSize();
+    inputState.gprState.rsp = (QBDI::rword) stack.base() + stack.allocatedSize();
 
     memcpy((void*)ctxBlock.base(), (void*)&inputState, sizeof(QBDI::Context));
     // Prepare the outerState to fake the realExec() action
-    outerState.gprState.rbp = (QBDI::rword) outerStack.base() + outerStack.size();
-    outerState.gprState.rsp = (QBDI::rword) outerStack.base() + outerStack.size() - sizeof(QBDI::rword);
+    outerState.gprState.rbp = (QBDI::rword) outerStack.base() + outerStack.allocatedSize();
+    outerState.gprState.rsp = (QBDI::rword) outerStack.base() + outerStack.allocatedSize() - sizeof(QBDI::rword);
     *((QBDI::rword*)outerState.gprState.rsp) = (QBDI::rword) 0;
     outerState.gprState.rdi = (QBDI::rword) ctxBlock.base();
 
@@ -128,8 +128,8 @@ QBDI::Context ComparedExecutor_X86_64::realExec(llvm::ArrayRef<uint8_t> code,
                                                        PF::MF_READ | PF::MF_WRITE, ec);
 
     // Put the inputState on the stack
-    QBDI_GPR_SET(&inputState.gprState, QBDI::REG_BP, (QBDI::rword) stack.base() + stack.size());
-    QBDI_GPR_SET(&inputState.gprState, QBDI::REG_SP, (QBDI::rword) stack.base() + stack.size());
+    QBDI_GPR_SET(&inputState.gprState, QBDI::REG_BP, (QBDI::rword) stack.base() + stack.allocatedSize());
+    QBDI_GPR_SET(&inputState.gprState, QBDI::REG_SP, (QBDI::rword) stack.base() + stack.allocatedSize());
 
     // Copy the input context
     memcpy(ctxBlock.base(), (void*) &inputState, sizeof(QBDI::Context));

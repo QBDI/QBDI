@@ -35,7 +35,7 @@ InMemoryObject::InMemoryObject(const char* source, const char* cpu, const char**
     std::string                              featuresStr;
     std::error_code                          ec;
     llvm::SmallVector<char, 1024>            objectVector;
- 
+
     if(mattrs != nullptr) {
         llvm::SubtargetFeatures features;
         for (unsigned i = 0; mattrs[i] != nullptr; i++) {
@@ -52,12 +52,13 @@ InMemoryObject::InMemoryObject(const char* source, const char* cpu, const char**
     processTriple.setOS(llvm::Triple::OSType::Linux);
     tripleName = llvm::Triple::normalize(processTriple.str());
     processTarget = llvm::TargetRegistry::lookupTarget(tripleName, error);
+    llvm::MCTargetOptions options;
     // Allocate all LLVM classes
     MRI = std::unique_ptr<llvm::MCRegisterInfo>(
         processTarget->createMCRegInfo(tripleName)
     );
     MAI = std::unique_ptr<llvm::MCAsmInfo>(
-        processTarget->createMCAsmInfo(*MRI, tripleName)
+        processTarget->createMCAsmInfo(*MRI, tripleName, options)
     );
     MOFI = std::unique_ptr<llvm::MCObjectFileInfo>(new llvm::MCObjectFileInfo());
     MCTX = std::unique_ptr<llvm::MCContext>(
@@ -68,9 +69,9 @@ InMemoryObject::InMemoryObject(const char* source, const char* cpu, const char**
     MSTI = std::unique_ptr<llvm::MCSubtargetInfo>(
       processTarget->createMCSubtargetInfo(tripleName, cpu, featuresStr)
     );
-    auto MAB = std::unique_ptr<llvm::MCAsmBackend>(processTarget->createMCAsmBackend(*MSTI, *MRI, llvm::MCTargetOptions()));
+    auto MAB = std::unique_ptr<llvm::MCAsmBackend>(processTarget->createMCAsmBackend(*MSTI, *MRI, options));
     auto MCE = std::unique_ptr<llvm::MCCodeEmitter>(processTarget->createMCCodeEmitter(*MCII, *MRI, *MCTX));
-   
+
     // Wrap output object into raw_ostream
     //raw_pwrite_string_ostream rpsos(objectStr);
     llvm::raw_svector_ostream rsos(objectVector);
@@ -84,11 +85,11 @@ InMemoryObject::InMemoryObject(const char* source, const char* cpu, const char**
         llvm::SMLoc()
     );
     // Set MCStreamer as a MCObjectStreamer
-    mcStr.reset(processTarget->createMCObjectStreamer(MSTI->getTargetTriple(), *MCTX, std::move(MAB), 
+    mcStr.reset(processTarget->createMCObjectStreamer(MSTI->getTargetTriple(), *MCTX, std::move(MAB),
                                                       std::move(objectWriter), std::move(MCE), *MSTI, true, false, false));
     // Create the assembly parsers
     llvm::MCAsmParser* parser = llvm::createMCAsmParser(SrcMgr, *MCTX, *mcStr, *MAI);
-    llvm::MCTargetAsmParser* tap = 
+    llvm::MCTargetAsmParser* tap =
         processTarget->createMCAsmParser(*MSTI, *parser, *MCII, llvm::MCTargetOptions());
     parser->setTargetParser(*tap);
     // Finally do something we care about
@@ -108,12 +109,12 @@ InMemoryObject::InMemoryObject(const char* source, const char* cpu, const char**
 #endif
 
     // LLVM Insanity Oriented Programming
-    llvm::Expected<std::unique_ptr<llvm::object::ObjectFile>> obj_ptr = 
+    llvm::Expected<std::unique_ptr<llvm::object::ObjectFile>> obj_ptr =
         llvm::object::ObjectFile::createObjectFile(
             llvm::MemoryBufferRef(
                 llvm::StringRef(
                     (const char*) objectBlock.base(),
-                    objectBlock.size()
+                    objectBlock.allocatedSize()
                 ),
                 ""
             )
@@ -129,12 +130,16 @@ InMemoryObject::InMemoryObject(const char* source, const char* cpu, const char**
     for(auto sit = object->sections().begin(); sit != object->sections().end(); ++sit)
     {
         if(sit->isText()) {
-            if((ec = sit->getContents(text_section))) {
-                llvm::errs() << "Failed to load text section: " << ec.message() << "\n";
-                return;
-            }
-            else {
+            if (llvm::Expected<llvm::StringRef> E  = sit->getContents()) {
+                text_section = *E;
                 break;
+            } else {
+                llvm::handleAllErrors(E.takeError(), [](const llvm::ErrorInfoBase &EIB) {
+                    llvm::errs() << "Failed to load text section: ";
+                    EIB.log(llvm::errs());
+                    llvm::errs() << "\n";
+                });
+                return;
             }
         }
     }

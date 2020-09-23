@@ -11,6 +11,12 @@ Next Version
   * Add recordMemoryAccess callback before any InstCallback
 * Refactor ExecBlockManager to work with unaligned instruction on X86 and X86-64 (`#129 <https://github.com/QBDI/QBDI/pull/129>`_)
 
+Internal update:
+
+* Update LLVM to LLVM 10.0.1 (`#104 <https://github.com/QBDI/QBDI/pull/104>`_ and `#139 <https://github.com/QBDI/QBDI/pull/139>`_)
+* Reduce LLVM library included in QBDI static library and reduce QBDI package size (`#139 <https://github.com/QBDI/QBDI/pull/139>`_ and `#70 <https://github.com/QBDI/QBDI/issues/70>`_)
+* Update GTest to 1.8.1 (`#104 <https://github.com/QBDI/QBDI/pull/104>`_)
+
 Version 0.7.1
 -------------
 

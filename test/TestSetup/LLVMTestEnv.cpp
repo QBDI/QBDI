@@ -47,6 +47,7 @@ void LLVMTestEnv::SetUp() {
     );
     llvm::Triple process_triple(tripleName);
     processTarget = llvm::TargetRegistry::lookupTarget(tripleName, error);
+    llvm::MCTargetOptions options;
     ASSERT_NE(nullptr, processTarget);
     // Allocate all LLVM classes
     MRI = std::unique_ptr<llvm::MCRegisterInfo>(
@@ -54,7 +55,7 @@ void LLVMTestEnv::SetUp() {
     );
     ASSERT_TRUE(MRI != nullptr);
     MAI = std::unique_ptr<llvm::MCAsmInfo>(
-        processTarget->createMCAsmInfo(*MRI, tripleName)
+        processTarget->createMCAsmInfo(*MRI, tripleName, options)
     );
     ASSERT_TRUE(MAI != nullptr);
     MOFI = std::unique_ptr<llvm::MCObjectFileInfo>(new llvm::MCObjectFileInfo());
@@ -68,7 +69,7 @@ void LLVMTestEnv::SetUp() {
     );
     ASSERT_TRUE(MSTI != nullptr);
     auto MAB = std::unique_ptr<llvm::MCAsmBackend>(
-        processTarget->createMCAsmBackend(*MSTI, *MRI, llvm::MCTargetOptions())
+        processTarget->createMCAsmBackend(*MSTI, *MRI, options)
     );
     MCE = std::unique_ptr<llvm::MCCodeEmitter>(
        processTarget->createMCCodeEmitter(*MCII, *MRI, *MCTX)

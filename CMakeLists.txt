@@ -130,7 +130,7 @@ if((${PLATFORM} STREQUAL "linux-X86_64") OR
    (${PLATFORM} STREQUAL "iOS-ARM"))
 
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Wall -ffunction-sections -fdata-sections -fvisibility=hidden -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -fvisibility-inlines-hidden  -fvisibility=hidden -std=c++11 -ffunction-sections -fdata-sections -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -fno-rtti")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -fvisibility-inlines-hidden  -fvisibility=hidden -std=c++14 -ffunction-sections -fdata-sections -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -fno-rtti")
 
 elseif((${PLATFORM} STREQUAL "win-X86_64") OR
         (${PLATFORM} STREQUAL "win-X86"))
@@ -143,7 +143,7 @@ elseif((${PLATFORM} STREQUAL "android-ARM") OR
        (${PLATFORM} STREQUAL "android-X86_64"))
 
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Wall -ffunction-sections -fdata-sections -fvisibility=hidden")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -fvisibility-inlines-hidden -fvisibility=hidden -std=c++11 -ffunction-sections -fdata-sections -fno-rtti")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -fvisibility-inlines-hidden -fvisibility=hidden -std=c++14 -ffunction-sections -fdata-sections -fno-rtti")
 
 endif()
 
@@ -166,10 +166,10 @@ if(${ARCH} STREQUAL "ARM")
     endif()
 endif()
 
-FUNCTION(PREPEND var prefix)
+FUNCTION(PREPEND var prefix suffix)
    SET(listVar "")
    FOREACH(f ${ARGN})
-      LIST(APPEND listVar "${prefix}${f}")
+      LIST(APPEND listVar "${prefix}${f}${suffix}")
    ENDFOREACH(f)
    SET(${var} "${listVar}" PARENT_SCOPE)
 ENDFUNCTION(PREPEND)
@@ -179,41 +179,46 @@ ENDFUNCTION(PREPEND)
 # TODO: use ExternalProject for llvm
 
 # Common static LLVM objects
-set(_LLVM_STATIC_LIBS LLVMBinaryFormat.a LLVMMCDisassembler.a LLVMSelectionDAG.a LLVMAsmPrinter.a LLVMCodeGen.a LLVMScalarOpts.a LLVMInstCombine.a LLVMTransformUtils.a LLVMAnalysis.a LLVMTarget.a LLVMObject.a LLVMMCParser.a LLVMBitReader.a LLVMCore.a LLVMMC.a LLVMSupport.a)
+set(_LLVM_STATIC_LIBS
+  LLVMBinaryFormat
+  LLVMMCDisassembler
+  LLVMMCParser
+  LLVMMC
+  LLVMSupport
+  LLVM${LLVM_ARCH}Disassembler
+  LLVM${LLVM_ARCH}AsmParser
+  LLVM${LLVM_ARCH}Desc
+  LLVM${LLVM_ARCH}Info
+  LLVM${LLVM_ARCH}Utils)
 
 if(${PLATFORM} STREQUAL "linux-X86" OR ${PLATFORM} STREQUAL "linux-X86_64")
 
-    set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMProfileData.a LLVMX86Disassembler.a LLVMX86AsmParser.a LLVMX86CodeGen.a LLVMX86Desc.a LLVMX86Info.a LLVMX86AsmPrinter.a LLVMX86Utils.a)
     set(LLVM_LIBS -lrt -ldl -lpthread -lz -lm -lstdc++)
 
 elseif((${PLATFORM} STREQUAL "win-X86_64") OR (${PLATFORM} STREQUAL "win-X86"))
 
-    set(_LLVM_STATIC_LIBS LLVMAnalysis.lib LLVMBinaryFormat.lib LLVMCore.lib LLVMMCDisassembler.lib LLVMScalarOpts.lib LLVMTransformUtils.lib LLVMX86Desc.lib LLVMAsmPrinter.lib LLVMInstCombine.lib LLVMMCParser.lib LLVMSelectionDAG.lib LLVMX86AsmParser.lib LLVMX86Disassembler.lib LLVMBitReader.lib LLVMObject.lib LLVMSupport.lib LLVMX86AsmPrinter.lib LLVMX86Info.lib LLVMCodeGen.lib LLVMMC.lib LLVMProfileData.lib LLVMTarget.lib LLVMX86CodeGen.lib LLVMX86Utils.lib)
     set(LLVM_LIBS "")
 
 elseif(${PLATFORM} STREQUAL "linux-ARM")
 
-    set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMProfileData.a LLVMARMDisassembler.a LLVMARMCodeGen.a LLVMARMAsmParser.a LLVMARMDesc.a LLVMARMInfo.a LLVMARMAsmPrinter.a LLVMARMUtils.a)
     set(LLVM_LIBS -ldl -lpthread -lm -lstdc++)
 
 elseif(${PLATFORM} STREQUAL "macOS-X86" OR ${PLATFORM} STREQUAL "macOS-X86_64")
 
-    set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMDemangle.a LLVMX86Disassembler.a LLVMX86AsmParser.a LLVMX86CodeGen.a LLVMX86Desc.a LLVMX86Info.a LLVMX86AsmPrinter.a LLVMX86Utils.a)
+    set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMDemangle)
     set(LLVM_LIBS -lz -lpthread -lffi -ledit -lm -lc++)
 
 elseif(${PLATFORM} STREQUAL "android-ARM")
 
-    set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMProfileData.a LLVMARMDisassembler.a LLVMARMCodeGen.a LLVMARMAsmParser.a LLVMARMDesc.a LLVMARMInfo.a LLVMARMAsmPrinter.a LLVMARMUtils.a)
     set(LLVM_LIBS -ldl -lz -lm) # -lgnustl_static)
 
 elseif((${PLATFORM} STREQUAL "android-X86") OR (${PLATFORM} STREQUAL "android-X86_64"))
 
-    set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMProfileData.a LLVMX86Disassembler.a LLVMX86CodeGen.a LLVMX86AsmParser.a LLVMX86Desc.a LLVMX86Info.a LLVMX86AsmPrinter.a LLVMX86Utils.a)
     set(LLVM_LIBS -ldl -lz -lm) # -lgnustl_static)
 
 elseif(${PLATFORM} STREQUAL "iOS-ARM")
 
-    set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMDemangle.a LLVMProfileData.a LLVMARMDisassembler.a LLVMARMCodeGen.a LLVMARMAsmParser.a LLVMARMDesc.a LLVMARMInfo.a LLVMARMAsmPrinter.a LLVMARMUtils.a)
+    set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMDemangle)
     set(LLVM_LIBS -lz -lpthread -ledit -lm -lc++)
 
 endif()
@@ -288,9 +293,9 @@ endif()
 # Create a list of static LLVM objects
 
 if(${OS} STREQUAL "win")
-    PREPEND(LLVM_STATIC_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/ ${_LLVM_STATIC_LIBS})
+    PREPEND(LLVM_STATIC_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/ ".lib" ${_LLVM_STATIC_LIBS})
 else()
-    PREPEND(LLVM_STATIC_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/lib ${_LLVM_STATIC_LIBS})
+    PREPEND(LLVM_STATIC_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/lib ".a" ${_LLVM_STATIC_LIBS})
 endif()
 
 # Final QBDI static library is a merge of static libraries
