@@ -2,6 +2,11 @@ cmake_minimum_required (VERSION 3.5)
 project(QBDI)
 
 # QBDI version
+# note: the version should also be changed in the followed files:
+# - docker/archlinux/PKGBUILD.linux-{X86|X86_64}
+# - docker/common.sh
+# - setup.py
+# - tools/frida-qbdi.js
 set(QBDI_VERSION_MAJOR 0)
 set(QBDI_VERSION_MINOR 7)
 set(QBDI_VERSION_PATCH 1)
