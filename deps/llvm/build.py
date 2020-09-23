@@ -241,7 +241,6 @@ def install_header_and_lib(llvm_source, build_dir, dest, arch, target_plateform)
     if platform.system() == "Darwin":
         # Fix libtool warning
         import rename_object
-        rename_object.rename_object(str(dest / "lib/libLLVMAnalysis.a"), "Analysis.cpp.o")
         rename_object.rename_object(str(dest / "lib/libLLVMSupport.a"), "Memory.cpp.o")
         rename_object.rename_object(str(dest / "lib/libLLVMSupport.a"), "Error.cpp.o")
         rename_object.rename_object(str(dest / "lib/libLLVMSupport.a"), "LowLevelType.cpp.o")
