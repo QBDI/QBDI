@@ -112,34 +112,32 @@ RelocatableInst::SharedPtrVec getExecBlockEpilogue() {
     return epilogue;
 }
 
-PatchRule::SharedPtrVec getDefaultPatchRules() {
-    PatchRule::SharedPtrVec rules;
+std::vector<PatchRule> getDefaultPatchRules() {
+    std::vector<PatchRule> rules;
 
     /* Rule #0: Avoid instrumenting instruction prefixes.
      * Target:  X86 prefixes (LOCK, REP and other REX prefixes).
      * Patch:   Output the unmodified MCInst but flag the patch as "do not instrument".
     */
-    rules.push_back(
-        PatchRule(
-            Or({
-                OpIs(llvm::X86::LOCK_PREFIX),
-                OpIs(llvm::X86::REX64_PREFIX),
-                OpIs(llvm::X86::REP_PREFIX),
-                OpIs(llvm::X86::REPNE_PREFIX),
-                OpIs(llvm::X86::DATA16_PREFIX),
-                OpIs(llvm::X86::CS_PREFIX),
-                OpIs(llvm::X86::SS_PREFIX),
-                OpIs(llvm::X86::DS_PREFIX),
-                OpIs(llvm::X86::ES_PREFIX),
-                OpIs(llvm::X86::FS_PREFIX),
-                OpIs(llvm::X86::GS_PREFIX),
-                OpIs(llvm::X86::XACQUIRE_PREFIX),
-                OpIs(llvm::X86::XRELEASE_PREFIX)
-            }),
-            {
-                DoNotInstrument(),
-                ModifyInstruction({})
-            }
+    rules.emplace_back(
+        Or({
+            OpIs(llvm::X86::LOCK_PREFIX),
+            OpIs(llvm::X86::REX64_PREFIX),
+            OpIs(llvm::X86::REP_PREFIX),
+            OpIs(llvm::X86::REPNE_PREFIX),
+            OpIs(llvm::X86::DATA16_PREFIX),
+            OpIs(llvm::X86::CS_PREFIX),
+            OpIs(llvm::X86::SS_PREFIX),
+            OpIs(llvm::X86::DS_PREFIX),
+            OpIs(llvm::X86::ES_PREFIX),
+            OpIs(llvm::X86::FS_PREFIX),
+            OpIs(llvm::X86::GS_PREFIX),
+            OpIs(llvm::X86::XACQUIRE_PREFIX),
+            OpIs(llvm::X86::XRELEASE_PREFIX)
+        }),
+        conv_unique<PatchGenerator>(
+            DoNotInstrument(),
+            ModifyInstruction({})
         )
     );
 
@@ -149,21 +147,19 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
      *          JMP *[RIP + IMM] --> MOV Temp(1), [Temp(0) + IMM]
      *          DataBlock[Offset(RIP)] := Temp(1)
     */
-    rules.push_back(
-        PatchRule(
-            And({
-                OpIs(llvm::X86::JMP64m),
-                UseReg(Reg(REG_PC))
+    rules.emplace_back(
+        And({
+            OpIs(llvm::X86::JMP64m),
+            UseReg(Reg(REG_PC))
+        }),
+        conv_unique<PatchGenerator>(
+            GetPCOffset(Temp(0), Constant(0)),
+            ModifyInstruction({
+                SubstituteWithTemp(Reg(REG_PC), Temp(0)),
+                SetOpcode(llvm::X86::MOV64rm),
+                AddOperand(Operand(0), Temp(1))
             }),
-            {
-                GetPCOffset(Temp(0), Constant(0)),
-                ModifyInstruction({
-                    SubstituteWithTemp(Reg(REG_PC), Temp(0)),
-                    SetOpcode(llvm::X86::MOV64rm),
-                    AddOperand(Operand(0), Temp(1))
-                }),
-                WriteTemp(Temp(1), Offset(Reg(REG_PC)))
-            }
+            WriteTemp(Temp(1), Offset(Reg(REG_PC)))
         )
     );
 
@@ -173,21 +169,19 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
      *          CALL *[RIP + IMM] --> MOV Temp(1), [Temp(0) + IMM]
      *          SimulateCall(Temp(1))
     */
-    rules.push_back(
-        PatchRule(
-            And({
-                OpIs(llvm::X86::CALL64m),
-                UseReg(Reg(REG_PC))
+    rules.emplace_back(
+        And({
+            OpIs(llvm::X86::CALL64m),
+            UseReg(Reg(REG_PC))
+        }),
+        conv_unique<PatchGenerator>(
+            GetPCOffset(Temp(0), Constant(0)),
+            ModifyInstruction({
+                SubstituteWithTemp(Reg(REG_PC), Temp(0)),
+                SetOpcode(llvm::X86::MOV64rm),
+                AddOperand(Operand(0), Temp(1))
             }),
-            {
-                GetPCOffset(Temp(0), Constant(0)),
-                ModifyInstruction({
-                    SubstituteWithTemp(Reg(REG_PC), Temp(0)),
-                    SetOpcode(llvm::X86::MOV64rm),
-                    AddOperand(Operand(0), Temp(1))
-                }),
-                SimulateCall(Temp(1))
-            }
+            SimulateCall(Temp(1))
         )
     );
 
@@ -196,15 +190,13 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
      * Patch:   Temp(0) := rip
      *          LEA RAX, [RIP + IMM] --> LEA RAX, [Temp(0) + IMM]
     */
-    rules.push_back(
-        PatchRule(
-            UseReg(Reg(REG_PC)),
-            {
-                GetPCOffset(Temp(0), Constant(0)),
-                ModifyInstruction({
-                    SubstituteWithTemp(Reg(REG_PC), Temp(0))
-                })
-            }
+    rules.emplace_back(
+        UseReg(Reg(REG_PC)),
+        conv_unique<PatchGenerator>(
+            GetPCOffset(Temp(0), Constant(0)),
+            ModifyInstruction({
+                SubstituteWithTemp(Reg(REG_PC), Temp(0))
+            })
         )
     );
 
@@ -213,23 +205,21 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
      * Patch:   JMP *MEM --> MOV Temp(0), MEM
      *          DataBlock[Offset(RIP)] := Temp(0)
     */
-    rules.push_back(
-        PatchRule(
-            Or({
-                OpIs(llvm::X86::JMP32m),
-                OpIs(llvm::X86::JMP64m)
-            }),
-            {
-                ModifyInstruction({
+    rules.emplace_back(
+        Or({
+            OpIs(llvm::X86::JMP32m),
+            OpIs(llvm::X86::JMP64m)
+        }),
+        conv_unique<PatchGenerator>(
+            ModifyInstruction({
 #if defined(QBDI_ARCH_X86)
-                    SetOpcode(llvm::X86::MOV32rm),
+                SetOpcode(llvm::X86::MOV32rm),
 #else
-                    SetOpcode(llvm::X86::MOV64rm),
+                SetOpcode(llvm::X86::MOV64rm),
 #endif
-                    AddOperand(Operand(0), Temp(0))
-                }),
-                WriteTemp(Temp(0), Offset(Reg(REG_PC)))
-            }
+                AddOperand(Operand(0), Temp(0))
+            }),
+            WriteTemp(Temp(0), Offset(Reg(REG_PC)))
         )
     );
 
@@ -238,23 +228,21 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
      * Patch:   CALL MEM --> MOV Temp(0), MEM
      *          SimulateCall(Temp(1))
     */
-    rules.push_back(
-        PatchRule(
-            Or({
-                OpIs(llvm::X86::CALL32m),
-                OpIs(llvm::X86::CALL64m)
-            }),
-            {
-                ModifyInstruction({
+    rules.emplace_back(
+        Or({
+            OpIs(llvm::X86::CALL32m),
+            OpIs(llvm::X86::CALL64m)
+        }),
+        conv_unique<PatchGenerator>(
+            ModifyInstruction({
 #if defined(QBDI_ARCH_X86)
-                    SetOpcode(llvm::X86::MOV32rm),
+                SetOpcode(llvm::X86::MOV32rm),
 #else
-                    SetOpcode(llvm::X86::MOV64rm),
+                SetOpcode(llvm::X86::MOV64rm),
 #endif
-                    AddOperand(Operand(0), Temp(0))
-                }),
-                SimulateCall(Temp(0))
-            }
+                AddOperand(Operand(0), Temp(0))
+            }),
+            SimulateCall(Temp(0))
         )
     );
 
@@ -263,17 +251,15 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
      * Patch:   Temp(0) := RIP + Operand(0)
      *          DataBlock[Offset(RIP)] := Temp(0)
     */
-    rules.push_back(
-        PatchRule(
-            Or({
-                OpIs(llvm::X86::JMP_1),
-                OpIs(llvm::X86::JMP_2),
-                OpIs(llvm::X86::JMP_4)
-            }),
-            {
-                GetPCOffset(Temp(0), Operand(0)),
-                WriteTemp(Temp(0), Offset(Reg(REG_PC)))
-            }
+    rules.emplace_back(
+        Or({
+            OpIs(llvm::X86::JMP_1),
+            OpIs(llvm::X86::JMP_2),
+            OpIs(llvm::X86::JMP_4)
+        }),
+        conv_unique<PatchGenerator>(
+            GetPCOffset(Temp(0), Operand(0)),
+            WriteTemp(Temp(0), Offset(Reg(REG_PC)))
         )
     );
 
@@ -282,16 +268,14 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
      * Patch:   Temp(0) := Operand(0)
      *          DataBlock[Offset(RIP)] := Temp(0)
     */
-    rules.push_back(
-        PatchRule(
-            Or({
-                OpIs(llvm::X86::JMP32r),
-                OpIs(llvm::X86::JMP64r)
-            }),
-            {
-                GetOperand(Temp(0), Operand(0)),
-                WriteTemp(Temp(0), Offset(Reg(REG_PC)))
-            }
+    rules.emplace_back(
+        Or({
+            OpIs(llvm::X86::JMP32r),
+            OpIs(llvm::X86::JMP64r)
+        }),
+        conv_unique<PatchGenerator>(
+            GetOperand(Temp(0), Operand(0)),
+            WriteTemp(Temp(0), Offset(Reg(REG_PC)))
         )
     );
 
@@ -301,16 +285,14 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
      * Patch:   Temp(0) := Operand(0)
      *          SimulateCall(Temp(0))
     */
-    rules.push_back(
-        PatchRule(
-            Or({
-                OpIs(llvm::X86::CALL32r),
-                OpIs(llvm::X86::CALL64r),
-            }),
-            {
-                GetOperand(Temp(0), Operand(0)),
-                SimulateCall(Temp(0))
-            }
+    rules.emplace_back(
+        Or({
+            OpIs(llvm::X86::CALL32r),
+            OpIs(llvm::X86::CALL64r),
+        }),
+        conv_unique<PatchGenerator>(
+            GetOperand(Temp(0), Operand(0)),
+            SimulateCall(Temp(0))
         )
     );
 
@@ -322,21 +304,19 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
      *         |  Temp(0) := RIP + Constant(0)
      *         -->END: DataBlock[Offset(RIP)] := Temp(0)
     */
-    rules.push_back(
-        PatchRule(
-            OpIs(llvm::X86::JCC_1),
-            {
-                GetPCOffset(Temp(0), Operand(0)),
-                ModifyInstruction({
+    rules.emplace_back(
+        OpIs(llvm::X86::JCC_1),
+        conv_unique<PatchGenerator>(
+            GetPCOffset(Temp(0), Operand(0)),
+            ModifyInstruction({
 #if defined(QBDI_ARCH_X86)
-                    SetOperand(Operand(0), Constant(6)) // Offset to jump the next load.
+                SetOperand(Operand(0), Constant(6)) // Offset to jump the next load.
 #else
-                    SetOperand(Operand(0), Constant(11)) // Offset to jump the next load.
+                SetOperand(Operand(0), Constant(11)) // Offset to jump the next load.
 #endif
-                }),
-                GetPCOffset(Temp(0), Constant(0)),
-                WriteTemp(Temp(0), Offset(Reg(REG_PC)))
-            }
+            }),
+            GetPCOffset(Temp(0), Constant(0)),
+            WriteTemp(Temp(0), Offset(Reg(REG_PC)))
         )
     );
 
@@ -347,21 +327,19 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
      *         |  Temp(0) := RIP + Constant(0)
      *         -->END: DataBlock[Offset(RIP)] := Temp(0)
     */
-    rules.push_back(
-        PatchRule(
-            OpIs(llvm::X86::JCC_2),
-            {
-                GetPCOffset(Temp(0), Operand(0)),
-                ModifyInstruction({
+    rules.emplace_back(
+        OpIs(llvm::X86::JCC_2),
+        conv_unique<PatchGenerator>(
+            GetPCOffset(Temp(0), Operand(0)),
+            ModifyInstruction({
 #if defined(QBDI_ARCH_X86)
-                    SetOperand(Operand(0), Constant(7))
+                SetOperand(Operand(0), Constant(7))
 #else
-                    SetOperand(Operand(0), Constant(12))
+                SetOperand(Operand(0), Constant(12))
 #endif
-                }),
-                GetPCOffset(Temp(0), Constant(0)),
-                WriteTemp(Temp(0), Offset(Reg(REG_PC)))
-            }
+            }),
+            GetPCOffset(Temp(0), Constant(0)),
+            WriteTemp(Temp(0), Offset(Reg(REG_PC)))
         )
     );
 
@@ -372,21 +350,19 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
      *         |  Temp(0) := RIP + Constant(0)
      *         -->END: DataBlock[Offset(RIP)] := Temp(0)
     */
-    rules.push_back(
-        PatchRule(
-            OpIs(llvm::X86::JCC_4),
-            {
-                GetPCOffset(Temp(0), Operand(0)),
-                ModifyInstruction({
+    rules.emplace_back(
+        OpIs(llvm::X86::JCC_4),
+        conv_unique<PatchGenerator>(
+            GetPCOffset(Temp(0), Operand(0)),
+            ModifyInstruction({
 #if defined(QBDI_ARCH_X86)
-                    SetOperand(Operand(0), Constant(9))
+                SetOperand(Operand(0), Constant(9))
 #else
-                    SetOperand(Operand(0), Constant(14))
+                SetOperand(Operand(0), Constant(14))
 #endif
-                }),
-                GetPCOffset(Temp(0), Constant(0)),
-                WriteTemp(Temp(0), Offset(Reg(REG_PC)))
-            }
+            }),
+            GetPCOffset(Temp(0), Constant(0)),
+            WriteTemp(Temp(0), Offset(Reg(REG_PC)))
         )
     );
 
@@ -395,17 +371,15 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
      * Patch:    Temp(0) := RIP + Operand(0)
      *           SimulateCall(Temp(0))
     */
-    rules.push_back(
-        PatchRule(
-            Or({
-                OpIs(llvm::X86::CALL64pcrel32),
-                OpIs(llvm::X86::CALLpcrel16),
-                OpIs(llvm::X86::CALLpcrel32),
-            }),
-            {
-                GetPCOffset(Temp(0), Operand(0)),
-                SimulateCall(Temp(0))
-            }
+    rules.emplace_back(
+        Or({
+            OpIs(llvm::X86::CALL64pcrel32),
+            OpIs(llvm::X86::CALLpcrel16),
+            OpIs(llvm::X86::CALLpcrel32),
+        }),
+        conv_unique<PatchGenerator>(
+            GetPCOffset(Temp(0), Operand(0)),
+            SimulateCall(Temp(0))
         )
     );
 
@@ -413,19 +387,17 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
      * Target:   RET
      * Patch:    SimulateRet(Temp(0))
     */
-    rules.push_back(
-        PatchRule(
-            Or({
-                OpIs(llvm::X86::RETL),
-                OpIs(llvm::X86::RETQ),
-                OpIs(llvm::X86::RETW),
-                OpIs(llvm::X86::RETIL),
-                OpIs(llvm::X86::RETIQ),
-                OpIs(llvm::X86::RETIW)
-            }),
-            {
-                SimulateRet(Temp(0))
-            }
+    rules.emplace_back(
+        Or({
+            OpIs(llvm::X86::RETL),
+            OpIs(llvm::X86::RETQ),
+            OpIs(llvm::X86::RETW),
+            OpIs(llvm::X86::RETIL),
+            OpIs(llvm::X86::RETIQ),
+            OpIs(llvm::X86::RETIW)
+        }),
+        conv_unique<PatchGenerator>(
+            SimulateRet(Temp(0))
         )
     );
 
@@ -433,7 +405,7 @@ PatchRule::SharedPtrVec getDefaultPatchRules() {
      * Target:   *
      * Patch:    Output original unmodified instructions.
     */
-    rules.push_back(PatchRule(True(), {ModifyInstruction({})}));
+    rules.emplace_back(True(), conv_unique<PatchGenerator>( ModifyInstruction({}) ));
 
     return rules;
 }

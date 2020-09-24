@@ -39,7 +39,29 @@ public:
     operator std::shared_ptr<T>() {
         return std::shared_ptr<T>(new U(*static_cast<U*>(this)));
     }
+
+    operator std::unique_ptr<T>() {
+        return std::make_unique<U>(*static_cast<U*>(this));
+    }
 };
+
+template<class T, class U>
+void _conv_unique(std::vector<std::unique_ptr<T>>& vec, U&& u) {
+    vec.push_back(std::make_unique<U>(std::forward<U>(u)));
+}
+
+template<class T, class U, class ... Args>
+void _conv_unique(std::vector<std::unique_ptr<T>>& vec, U&& u, Args... args) {
+    vec.push_back(std::make_unique<U>(std::forward<U>(u)));
+    _conv_unique<T>(vec, std::forward<Args>(args)...);
+}
+
+template<class T, class ... Args>
+std::vector<std::unique_ptr<T>> conv_unique(Args... args) {
+    std::vector<std::unique_ptr<T>> vec;
+    _conv_unique<T>(vec, std::forward<Args>(args)...);
+    return vec;
+}
 
 void inline append(std::vector<std::shared_ptr<RelocatableInst>> &u, const std::vector<std::shared_ptr<RelocatableInst>> v) {
     u.insert(u.end(), v.begin(), v.end());

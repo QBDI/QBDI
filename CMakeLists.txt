@@ -244,6 +244,7 @@ set(SOURCES
     "src/Patch/InstrRules.cpp"
     "src/Patch/InstTransform.cpp"
     "src/Patch/PatchUtils.cpp"
+    "src/Patch/PatchRule.cpp"
     "src/Patch/${BASE_ARCH}/InstInfo_${BASE_ARCH}.cpp"
     "src/Patch/${BASE_ARCH}/RegisterSize_${BASE_ARCH}.cpp"
     "src/Patch/${BASE_ARCH}/PatchRules_${BASE_ARCH}.cpp"

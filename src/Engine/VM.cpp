@@ -291,7 +291,7 @@ uint32_t VM::addMemRangeCB(rword start, rword end, MemoryAccessType type, InstCa
     }
     uint32_t id = memCBID++;
     RequireAction("VM::addMemRangeCB", id < EVENTID_VIRTCB_MASK, return VMError::INVALID_EVENTID);
-    memCBInfos->push_back(std::make_pair(id, MemCBInfo {type, Range<rword>(start, end), cbk, data}));
+    memCBInfos->emplace_back(id, MemCBInfo {type, {start, end}, cbk, data});
     return id | EVENTID_VIRTCB_MASK;
 }
 

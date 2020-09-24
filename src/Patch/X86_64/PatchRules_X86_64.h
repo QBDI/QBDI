@@ -35,7 +35,7 @@ RelocatableInst::SharedPtrVec getExecBlockEpilogue();
 
 RelocatableInst::SharedPtrVec getTerminator(rword address);
 
-std::vector<std::shared_ptr<PatchRule>> getDefaultPatchRules();
+std::vector<PatchRule> getDefaultPatchRules();
 
 }
 

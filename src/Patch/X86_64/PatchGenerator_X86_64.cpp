@@ -24,7 +24,7 @@
 namespace QBDI {
 
 RelocatableInst::SharedPtrVec GetOperand::generate(const llvm::MCInst* inst,
-    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
+    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
     if(inst->getOperand(op).isReg()) {
         return {NoReloc(movrr(temp_manager->getRegForTemp(temp), inst->getOperand(op).getReg()))};
     }
@@ -38,13 +38,13 @@ RelocatableInst::SharedPtrVec GetOperand::generate(const llvm::MCInst* inst,
 }
 
 RelocatableInst::SharedPtrVec GetConstant::generate(const llvm::MCInst* inst,
-    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
+    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
 
     return {Mov(temp_manager->getRegForTemp(temp), cst)};
 }
 
 RelocatableInst::SharedPtrVec GetPCOffset::generate(const llvm::MCInst* inst,
-    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
+    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
     if(type == ConstantType) {
         return{Mov(temp_manager->getRegForTemp(temp), Constant(address + instSize + cst))};
     }
@@ -59,7 +59,7 @@ RelocatableInst::SharedPtrVec GetPCOffset::generate(const llvm::MCInst* inst,
 }
 
 RelocatableInst::SharedPtrVec GetReadAddress::generate(const llvm::MCInst* inst,
-    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
+    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
     // Check if this instruction does indeed read something
     if(getReadSize(inst) > 0) {
         // If it is a stack read, return RSP value
@@ -115,7 +115,7 @@ RelocatableInst::SharedPtrVec GetReadAddress::generate(const llvm::MCInst* inst,
 }
 
 RelocatableInst::SharedPtrVec GetWriteAddress::generate(const llvm::MCInst* inst,
-    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
+    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
     // Check if this instruction does indeed read something
     if(getWriteSize(inst) > 0) {
         // If it is a stack read, return RSP value
@@ -171,7 +171,7 @@ RelocatableInst::SharedPtrVec GetWriteAddress::generate(const llvm::MCInst* inst
 }
 
 RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
-     rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
+     rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
     if(getReadSize(inst) > 0) {
         unsigned size = getReadSize(inst);
         unsigned dst = temp_manager->getRegForTemp(temp);
@@ -251,7 +251,7 @@ RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
 }
 
 RelocatableInst::SharedPtrVec GetWriteValue::generate(const llvm::MCInst* inst,
-     rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
+     rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
     if(getWriteSize(inst) > 0) {
         unsigned size = getWriteSize(inst);
         unsigned dst = temp_manager->getRegForTemp(temp);
@@ -332,13 +332,13 @@ RelocatableInst::SharedPtrVec GetWriteValue::generate(const llvm::MCInst* inst,
 }
 
 RelocatableInst::SharedPtrVec GetInstId::generate(const llvm::MCInst* inst,
-    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
+    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
 
     return {InstId(movri(temp_manager->getRegForTemp(temp), 0), 1)};
 }
 
 RelocatableInst::SharedPtrVec WriteTemp::generate(const llvm::MCInst* inst,
-    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
+    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
 
     if(type == OffsetType) {
         return {Mov(offset, temp_manager->getRegForTemp(temp))};
@@ -356,25 +356,25 @@ RelocatableInst::SharedPtrVec WriteTemp::generate(const llvm::MCInst* inst,
 }
 
 RelocatableInst::SharedPtrVec SaveReg::generate(const llvm::MCInst* inst,
-    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
+    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
 
     return {Mov(offset, reg)};
 }
 
 RelocatableInst::SharedPtrVec LoadReg::generate(const llvm::MCInst* inst,
-    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
+    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
 
     return {Mov(reg, offset)};
 }
 
 RelocatableInst::SharedPtrVec JmpEpilogue::generate(const llvm::MCInst* inst,
-    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
+    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
 
     return {EpilogueRel(jmp(0), 0, -1)};
 }
 
 RelocatableInst::SharedPtrVec SimulateCall::generate(const llvm::MCInst* inst,
-    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
+    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
     RelocatableInst::SharedPtrVec patch;
 
     append(patch, WriteTemp(temp, Offset(Reg(REG_PC))).generate(inst, address, instSize, temp_manager, nullptr));
@@ -385,7 +385,7 @@ RelocatableInst::SharedPtrVec SimulateCall::generate(const llvm::MCInst* inst,
 }
 
 RelocatableInst::SharedPtrVec SimulateRet::generate(const llvm::MCInst* inst,
-    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
+    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
     RelocatableInst::SharedPtrVec patch;
 
     patch.push_back(Popr(temp_manager->getRegForTemp(temp)));

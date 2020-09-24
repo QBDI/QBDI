@@ -36,7 +36,7 @@ void qbdi_initVM(VMInstanceRef* instance, const char* cpu, const char** mattrs) 
 
     if(mattrs != nullptr) {
         for(unsigned i = 0; mattrs[i] != nullptr; i++) {
-            mattrsStr.push_back(std::string(mattrs[i]));
+            mattrsStr.emplace_back(mattrs[i]);
         }
     }
 

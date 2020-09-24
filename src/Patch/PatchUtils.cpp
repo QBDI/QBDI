@@ -86,7 +86,7 @@ Reg TempManager::getRegForTemp(unsigned int id) {
         }
         if(free) {
             // store it and return it
-            temps.push_back(std::make_pair(id, i));
+            temps.emplace_back(id, i);
             return Reg(i);
         }
     }
@@ -101,7 +101,7 @@ Reg TempManager::getRegForTemp(unsigned int id) {
         }
         // store it and return it
         if (i < AVAILABLE_GPR) {
-            temps.push_back(std::make_pair(id, i));
+            temps.emplace_back(id, i);
             return Reg(i);
         }
     }

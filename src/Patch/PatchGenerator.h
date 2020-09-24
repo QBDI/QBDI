@@ -44,15 +44,17 @@ public:
 
     using SharedPtr    = std::shared_ptr<PatchGenerator>;
     using SharedPtrVec = std::vector<std::shared_ptr<PatchGenerator>>;
+    using UniqPtr      = std::unique_ptr<PatchGenerator>;
+    using UniqPtrVec   = std::vector<std::unique_ptr<PatchGenerator>>;
 
     virtual RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) = 0;
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const = 0;
 
     virtual ~PatchGenerator() {};
 
-    virtual bool modifyPC() { return false; }
+    virtual bool modifyPC() const { return false; }
 
-    virtual bool doNotInstrument() { return false; }
+    virtual bool doNotInstrument() const { return false; }
 };
 
 class ModifyInstruction : public PatchGenerator, public AutoAlloc<PatchGenerator, ModifyInstruction>
@@ -72,7 +74,7 @@ public:
      *   (depends on the current instructions and transforms)
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override {
 
         llvm::MCInst a(*inst);
         for(auto t: transforms) {
@@ -103,11 +105,11 @@ public:
      *   (none)
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override {
         return {};
     }
 
-    bool doNotInstrument() { return true; }
+    bool doNotInstrument() const override { return true; }
 };
 
 }

@@ -29,7 +29,7 @@ void LogSys::setOutput(FILE* output) {
 }
 
 void LogSys::addFilter(const char *tag, LogPriority priority) {
-    filter.push_back(std::make_pair(tag, priority));
+    filter.emplace_back(tag, priority);
 }
 
 bool LogSys::matchFilter(const char* tag, LogPriority priority) {

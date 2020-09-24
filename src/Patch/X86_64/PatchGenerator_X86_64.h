@@ -44,7 +44,7 @@ public:
      *   MOV REG64 temp, IMM64/REG64 op
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 
@@ -66,7 +66,7 @@ public:
      * MOV REG64 temp, IMM64 cst
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 class GetPCOffset : public PatchGenerator, public AutoAlloc<PatchGenerator, GetPCOffset> {
@@ -108,7 +108,7 @@ public:
      *
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 class GetReadAddress : public PatchGenerator, public AutoAlloc<PatchGenerator, GetReadAddress> {
@@ -134,7 +134,7 @@ public:
      * LEA REG64 temp, MEM64 addr
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 class GetWriteAddress : public PatchGenerator, public AutoAlloc<PatchGenerator, GetWriteAddress> {
@@ -160,7 +160,7 @@ public:
      * LEA REG64 temp, MEM64 addr
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 class GetReadValue : public PatchGenerator, public AutoAlloc<PatchGenerator, GetReadValue> {
@@ -182,7 +182,7 @@ class GetReadValue : public PatchGenerator, public AutoAlloc<PatchGenerator, Get
      * MOV REG64 temp, MEM64 val
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-         rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+         rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 class GetWriteValue : public PatchGenerator, public AutoAlloc<PatchGenerator, GetWriteValue> {
@@ -204,7 +204,7 @@ public:
      * MOV REG64 temp, MEM64 val
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-         rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+         rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 class CopyReg : public PatchGenerator, public AutoAlloc<PatchGenerator, CopyReg> {
@@ -225,7 +225,7 @@ public:
      * MOV REG64 temp, REG64 reg
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 class GetInstId : public PatchGenerator, public AutoAlloc<PatchGenerator, GetInstId> {
@@ -247,7 +247,7 @@ public:
      * MOV REG64 temp, IMM64 instID
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 class WriteTemp : public PatchGenerator, public AutoAlloc<PatchGenerator, WriteTemp> {
@@ -285,9 +285,9 @@ public:
      * MOV MEM64 DataBlock[offset], REG64 temp
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
 
-    bool modifyPC() {return offset == Offset(Reg(REG_PC));}
+    bool modifyPC() const override {return offset == Offset(Reg(REG_PC));}
 };
 
 class SaveReg : public PatchGenerator, public AutoAlloc<PatchGenerator, SaveReg>,
@@ -311,7 +311,7 @@ public:
      * MOV MEM64 DataBlock[offset], REG64 reg
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 class LoadReg : public PatchGenerator, public AutoAlloc<PatchGenerator, LoadReg>,
@@ -335,7 +335,7 @@ public:
      * MOV REG64 reg, MEM64 DataBlock[offset]
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 class JmpEpilogue : public PatchGenerator, public AutoAlloc<PatchGenerator, JmpEpilogue>,
@@ -352,7 +352,7 @@ public:
      * JMP Offset(Epilogue)
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 class SimulateCall : public PatchGenerator, public AutoAlloc<PatchGenerator, SimulateCall> {
@@ -377,9 +377,9 @@ public:
      * PUSH REG64 temp
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
 
-    bool modifyPC() {return true;}
+    bool modifyPC() const override {return true;}
 };
 
 class SimulateRet : public PatchGenerator, public AutoAlloc<PatchGenerator, SimulateRet> {
@@ -407,9 +407,9 @@ public:
      * MOV MEM64 DataBlock[Offset(RIP)], REG64 temp
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
 
-    bool modifyPC() {return true;}
+    bool modifyPC() const override {return true;}
 };
 
 

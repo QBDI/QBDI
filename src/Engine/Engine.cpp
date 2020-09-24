@@ -240,14 +240,14 @@ std::vector<Patch> Engine::patch(rword start) {
             });
             // Patch & merge
             for(uint32_t j = 0; j < patchRules.size(); j++) {
-                if(patchRules[j]->canBeApplied(&inst, address, instSize, MCII.get())) {
+                if(patchRules[j].canBeApplied(&inst, address, instSize, MCII.get())) {
                     LogDebug("Engine::patch", "Patch rule %" PRIu32 " applied", j);
                     if(patch.insts.size() == 0) {
-                        patch = patchRules[j]->generate(&inst, address, instSize, MCII.get(), MRI.get());
+                        patch = patchRules[j].generate(&inst, address, instSize, MCII.get(), MRI.get());
                     }
                     else {
                         LogDebug("Engine::patch", "Previous instruction merged");
-                        patch = patchRules[j]->generate(&inst, address, instSize, MCII.get(), MRI.get(), &patch);
+                        patch = patchRules[j].generate(&inst, address, instSize, MCII.get(), MRI.get(), &patch);
                     }
                     break;
                 }
@@ -436,7 +436,7 @@ uint32_t Engine::addInstrRule(InstrRule rule, bool top_list) {
 uint32_t Engine::addVMEventCB(VMEvent mask, VMCallback cbk, void *data) {
     uint32_t id = vmCallbacksCounter++;
     RequireAction("Engine::addVMEventCB", id < EVENTID_VM_MASK, return VMError::INVALID_EVENTID);
-    vmCallbacks.push_back(std::make_pair(id, CallbackRegistration {mask, cbk, data}));
+    vmCallbacks.emplace_back(id, CallbackRegistration {mask, cbk, data});
     return id | EVENTID_VM_MASK;
 }
 

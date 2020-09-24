@@ -43,6 +43,8 @@ public:
 
     using SharedPtr    = std::shared_ptr<PatchCondition>;
     using SharedPtrVec = std::vector<std::shared_ptr<PatchCondition>>;
+    using UniqPtr      = std::unique_ptr<PatchCondition>;
+    using UniqPtrVec   = std::vector<std::unique_ptr<PatchCondition>>;
 
     virtual bool test(const llvm::MCInst* inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) = 0;
 
@@ -157,7 +159,7 @@ public:
 
 class AddressIs : public PatchCondition, public AutoAlloc<PatchCondition, AddressIs> {
     rword breakpoint;
-     
+
 public:
 
     /*! Return true if on specified address

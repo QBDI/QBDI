@@ -33,6 +33,8 @@ public:
 
     using SharedPtr    = std::shared_ptr<InstTransform>;
     using SharedPtrVec = std::vector<std::shared_ptr<InstTransform>>;
+    using UniqPtr      = std::unique_ptr<PatchGenerator>;
+    using UniqPtrVec   = std::vector<std::unique_ptr<PatchGenerator>>;
 
     virtual void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) = 0;
 

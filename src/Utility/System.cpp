@@ -49,22 +49,22 @@ const std::vector<std::string> getHostCPUFeatures() {
             }
         }
     }
-        
-    #if defined(QBDI_ARCH_ARM)
-	// set default ARM CPU
-	if(features.size() == 0) {
-		features.insert({"fp16", true});
-		features.insert({"d16", true});
-	}
-    #endif
+
+#if defined(QBDI_ARCH_ARM)
+    // set default ARM CPU
+    if(features.size() == 0) {
+        features.insert({"fp16", true});
+        features.insert({"d16", true});
+    }
+#endif
     // Fixing awfull LLVM API
     if(features.count("fp16") && features["fp16"]) {
-        mattrs.push_back(std::string("vfp2"));
+        mattrs.emplace_back("vfp2");
     }
     if(features.count("d16") && features["d16"]) {
-        mattrs.push_back(std::string("vfp3"));
+        mattrs.emplace_back("vfp3");
     }
-    return mattrs; 
+    return mattrs;
 }
 
 
