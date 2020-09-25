@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 #include "ExecBlockTest.h"
+#include "Patch/PatchRules.h"
 
 TEST_F(ExecBlockTest, EmptyBasicBlock) {
     // Allocate ExecBlock
@@ -29,7 +30,7 @@ TEST_F(ExecBlockTest, EmptyBasicBlock) {
 TEST_F(ExecBlockTest, MultipleBasicBlock) {
     // Allocate ExecBlock
     QBDI::ExecBlock execBlock(*assembly);
-    // Jit two different terminators 
+    // Jit two different terminators
     QBDI::Patch::Vec terminator1;
     QBDI::Patch::Vec terminator2;
     terminator1.push_back(QBDI::Patch());

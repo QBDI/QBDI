@@ -21,31 +21,29 @@
 #include <memory>
 #include <vector>
 
-#include "llvm/MC/MCInst.h"
-#include "llvm/MC/MCRegisterInfo.h"
-
 #include "Patch/PatchUtils.h"
-#include "Patch/PatchGenerator.h"
 #include "Patch/PatchCondition.h"
-#include "Patch/Patch.h"
-#include "Platform.h"
 
-#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
-#include "Patch/X86_64/InstrRules_X86_64.h"
-#elif defined(QBDI_ARCH_ARM)
-#include "Patch/ARM/InstrRules_ARM.h"
-#endif
+#include "Callback.h"
+
+namespace llvm {
+  class MCInstrInfo;
+  class MCRegisterInfo;
+}
 
 namespace QBDI {
+
+class Patch;
+class PatchGenerator;
 
 /*! An instrumentation rule written in PatchDSL.
 */
 class InstrRule : public AutoAlloc<InstrRule, InstrRule> {
 
-    PatchCondition::SharedPtr     condition;
-    PatchGenerator::SharedPtrVec  patchGen;
-    InstPosition                  position;
-    bool                          breakToHost;
+    PatchCondition::SharedPtr                     condition;
+    std::vector<std::shared_ptr<PatchGenerator>>  patchGen;
+    InstPosition    position;
+    bool            breakToHost;
 
 public:
 
@@ -64,11 +62,11 @@ public:
      * @param[in] breakToHost  A boolean determining whether this instrumentation should end with
      *                         a break to host (in the case of a callback for example).
     */
-    InstrRule(PatchCondition::SharedPtr condition, PatchGenerator::SharedPtrVec patchGen,
+    InstrRule(PatchCondition::SharedPtr condition, std::vector<std::shared_ptr<PatchGenerator>> patchGen,
               InstPosition position, bool breakToHost) : condition(condition),
               patchGen(patchGen), position(position), breakToHost(breakToHost) {}
 
-    InstPosition getPosition() { return position; }
+    InstPosition getPosition() const { return position; }
 
     RangeSet<rword> affectedRange() const {
         return condition->affectedRange();
@@ -82,7 +80,7 @@ public:
      *
      * @return True if this instrumentation condition evaluate to true on this patch.
     */
-    bool canBeApplied(const Patch &patch, llvm::MCInstrInfo* MCII);
+    bool canBeApplied(const Patch &patch, const llvm::MCInstrInfo* MCII) const;
 
     /*! Instrument a patch by evaluating its generators on the current context. Also handles the
      *  temporary register management for this patch.
@@ -93,7 +91,7 @@ public:
      * @param[in] MRI    A LLVM::MCRegisterInfo classes used for internal architecture specific
      *                   queries.
     */
-    void instrument(Patch &patch, llvm::MCInstrInfo* MCII, llvm::MCRegisterInfo* MRI);
+    void instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI) const;
 };
 
 }

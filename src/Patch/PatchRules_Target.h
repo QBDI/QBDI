@@ -15,32 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef INSTRRULES_H
-#define INSTRRULES_H
+#ifndef PATCHRULES_TARGET_H
+#define PATCHRULES_TARGET_H
 
-#include <memory>
-#include <vector>
+#include "Platform.h"
 
-#include "Patch/Types.h"
+#include "PatchRules.h"
 
-#include "Callback.h"
-
-namespace QBDI {
-
-class PatchGenerator;
-class RelocatableInst;
-
-/*
- * Setup a user callback in the host state
- *
- * Created patch generator can be used in any instruction rules.
- *
- * @param[in] cbk   Pointer to a user callback
- * @param[in] data  Opaque pointer to user callback data
- */
-std::vector<std::shared_ptr<PatchGenerator>> getCallbackGenerator(InstCallback cbk, void* data);
-
-std::vector<std::shared_ptr<RelocatableInst>> getBreakToHost(Reg temp);
-}
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+#include "Patch/X86_64/PatchRules_X86_64.h"
+#elif defined(QBDI_ARCH_ARM)
+#include "Patch/ARM/PatchRules_ARM.h"
+#endif
 
 #endif

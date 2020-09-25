@@ -18,9 +18,11 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-#include "llvm/MC/MCInst.h"
+#include <vector>
 
 #include "ExecBlock/Context.h"
+
+#include "State.h"
 
 namespace QBDI {
 
@@ -43,7 +45,7 @@ public:
      *
      * @return LLVM register id.
     */
-    inline operator unsigned int() {
+    inline operator unsigned int() const {
         return GPR_ID[id];
     }
 
@@ -174,20 +176,6 @@ public:
     */
     inline operator unsigned int() const {
         return idx;
-    }
-};
-
-class InstMetadata {
-public:
-    llvm::MCInst inst;
-    rword address;
-    uint32_t instSize;
-    uint32_t patchSize;
-    bool modifyPC;
-    bool merge;
-
-    inline rword endAddress() const {
-        return address + instSize;
     }
 };
 

@@ -15,33 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef PATCHRULES_H
-#define PATCHRULES_H
+#ifndef PATCHRULE_H
+#define PATCHRULE_H
 
 #include <memory>
 #include <vector>
 
-#include "llvm/MC/MCInst.h"
-#include "llvm/MC/MCRegisterInfo.h"
-
-#include "Patch/PatchGenerator.h"
 #include "Patch/PatchCondition.h"
 #include "Patch/Patch.h"
-#include "Platform.h"
 
-#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
-#include "Patch/X86_64/PatchRules_X86_64.h"
-#elif defined(QBDI_ARCH_ARM)
-#include "Patch/ARM/PatchRules_ARM.h"
-#endif
+namespace llvm {
+  class MCInst;
+  class MCInstrInfo;
+  class MCRegisterInfo;
+}
 
 namespace QBDI {
+class PatchGenerator;
 
 /*! A patch rule written in PatchDSL.
 */
 class PatchRule {
-    PatchCondition::UniqPtr       condition;
-    PatchGenerator::UniqPtrVec  generators;
+    PatchCondition::UniqPtr                       condition;
+    std::vector<std::unique_ptr<PatchGenerator>>  generators;
 
 public:
 
@@ -50,8 +46,11 @@ public:
      * @param[in] condition   A PatchCondition which determine wheter or not this PatchRule applies.
      * @param[in] generators  A vector of PatchGenerator which will produce the patch instructions.
     */
-    PatchRule(PatchCondition::UniqPtr&& condition, PatchGenerator::UniqPtrVec&& generators)
-        : condition(std::move(condition)), generators(std::move(generators)) {};
+    PatchRule(PatchCondition::UniqPtr&& condition, std::vector<std::unique_ptr<PatchGenerator>>&& generators);
+
+    PatchRule(PatchRule&&);
+
+    ~PatchRule();
 
     /*! Determine wheter this rule applies by evaluating this rule condition on the current
      *  context.
@@ -63,7 +62,7 @@ public:
      *
      * @return True if this patch condition evaluate to true on this context.
     */
-    bool canBeApplied(const llvm::MCInst *inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) const {
+    bool canBeApplied(const llvm::MCInst *inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const {
         return condition->test(inst, address, instSize, MCII);
     }
 
@@ -83,9 +82,9 @@ public:
      * @return A Patch which is composed of the input context and a series of RelocatableInst.
     */
     Patch generate(const llvm::MCInst *inst, rword address, rword instSize,
-        llvm::MCInstrInfo* MCII, llvm::MCRegisterInfo* MRI, const Patch* toMerge = nullptr) const;
+        const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI, const Patch* toMerge = nullptr) const;
 };
 
 }
 
-#endif //PATCHRULES_H
+#endif //PATCHRULE_H

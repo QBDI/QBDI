@@ -15,16 +15,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <stdint.h>
-#include "Patch/Types.h"
-#include "Patch/InstInfo.h"
+#ifndef PATCHRULES_H
+#define PATCHRULES_H
 
-#ifndef INSTINFO_ARM_H
-#define INSTINFO_ARM_H
+#include <memory>
+#include <vector>
+
+#include "State.h"
 
 namespace QBDI {
 
+class PatchRule;
+class RelocatableInst;
 
-};
+std::vector<std::shared_ptr<RelocatableInst>> getExecBlockPrologue();
 
-#endif // INSTINFO_ARM_H
+std::vector<std::shared_ptr<RelocatableInst>> getExecBlockEpilogue();
+
+std::vector<std::shared_ptr<RelocatableInst>> getTerminator(rword address);
+
+std::vector<PatchRule> getDefaultPatchRules();
+
+}
+
+#endif
+

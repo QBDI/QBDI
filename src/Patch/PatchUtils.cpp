@@ -16,6 +16,9 @@
  * limitations under the License.
  */
 
+#include "llvm/MC/MCInst.h"
+#include "llvm/MC/MCInstrInfo.h"
+
 #include "Platform.h"
 #include "Patch/PatchUtils.h"
 #include "Patch/InstInfo.h"
@@ -109,18 +112,18 @@ Reg TempManager::getRegForTemp(unsigned int id) {
     abort();
 }
 
-Reg::Vec TempManager::getUsedRegisters() {
+Reg::Vec TempManager::getUsedRegisters() const {
     Reg::Vec list;
     for(auto p: temps)
         list.push_back(Reg(p.second));
     return list;
 }
 
-size_t TempManager::getUsedRegisterNumber() {
+size_t TempManager::getUsedRegisterNumber() const {
     return temps.size();
 }
 
-unsigned TempManager::getSizedSubReg(unsigned reg, unsigned size) {
+unsigned TempManager::getSizedSubReg(unsigned reg, unsigned size) const {
     if(getRegisterSize(reg) == size) {
         return reg;
     }

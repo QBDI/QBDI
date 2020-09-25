@@ -22,15 +22,22 @@
 #include <map>
 #include <vector>
 
-#include "Context.h"
+#include "Callback.h"
 #include "InstAnalysis.h"
 #include "Range.h"
-#include "Utility/Assembly.h"
-#include "ExecBlock/ExecBlock.h"
+#include "State.h"
 
+namespace llvm {
+  class MCInstrInfo;
+  class MCRegisterInfo;
+}
 
 namespace QBDI {
 
+class Assembly;
+class ExecBlock;
+class InstMetadata;
+class Patch;
 class RelocatableInst;
 
 struct InstAnalysisDestructor {

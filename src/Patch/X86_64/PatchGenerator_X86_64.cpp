@@ -15,7 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <vector>
+#include <memory>
 
+#include "X86InstrInfo.h"
+
+#include "Patch/X86_64/Layer2_X86_64.h"
 #include "Patch/X86_64/PatchGenerator_X86_64.h"
 #include "Patch/X86_64/RelocatableInst_X86_64.h"
 #include "Utility/LogSys.h"
@@ -196,7 +201,7 @@ RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
             else if(size == 1) {
                 readinst = mov32rm8(dst, Reg(stack_register), 1, 0, 0, 0);
             }
-            return {NoReloc(readinst)};
+            return {NoReloc(std::move(readinst))};
         }
         else {
             for(unsigned i = 0; i + 4 <= inst->getNumOperands(); i++) {
@@ -234,12 +239,12 @@ RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
                                 temp_manager->getRegForTemp(0xFFFFFFFF),
                                 Constant(address + instSize)
                             ),
-                            NoReloc(readinst)
+                            NoReloc(std::move(readinst))
                         };
                     }
                     else {
                         return {
-                            NoReloc(readinst)
+                            NoReloc(std::move(readinst))
                         };
                     }
                 }
@@ -277,7 +282,7 @@ RelocatableInst::SharedPtrVec GetWriteValue::generate(const llvm::MCInst* inst,
             else if(size == 1) {
                 readinst = mov32rm8(dst, Reg(stack_register), 1, 0, 0, 0);
             }
-            return {NoReloc(readinst)};
+            return {NoReloc(std::move(readinst))};
         }
         else {
             for(unsigned i = 0; i + 4 <= inst->getNumOperands(); i++) {
@@ -315,12 +320,12 @@ RelocatableInst::SharedPtrVec GetWriteValue::generate(const llvm::MCInst* inst,
                                 temp_manager->getRegForTemp(0xFFFFFFFF),
                                 Constant(address + instSize)
                             ),
-                            NoReloc(readinst)
+                            NoReloc(std::move(readinst))
                         };
                     }
                     else {
                         return {
-                            NoReloc(readinst)
+                            NoReloc(std::move(readinst))
                         };
                     }
                 }

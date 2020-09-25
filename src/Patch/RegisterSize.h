@@ -15,11 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <stdint.h>
-#include "Patch/Types.h"
-
 #ifndef REGISTERSIZE_H
 #define REGISTERSIZE_H
+
+#include <stdint.h>
 
 namespace QBDI {
 

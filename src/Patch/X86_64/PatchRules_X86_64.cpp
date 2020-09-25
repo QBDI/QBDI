@@ -15,9 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "X86InstrInfo.h"
+
+#include "Patch/InstTransform.h"
 #include "Patch/PatchRule.h"
+#include "Patch/X86_64/PatchGenerator_X86_64.h"
 #include "Patch/X86_64/PatchRules_X86_64.h"
 #include "Patch/X86_64/Layer2_X86_64.h"
+
 #include "Utility/LogSys.h"
 #include "Utility/System.h"
 

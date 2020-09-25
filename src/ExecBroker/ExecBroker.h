@@ -26,10 +26,9 @@
 #include "Range.h"
 #include "State.h"
 #include "ExecBlock/ExecBlock.h"
-#include "Utility/Assembly.h"
-#include "Utility/LogSys.h"
 
 namespace QBDI {
+class Assembly;
 
 class ExecBroker {
 

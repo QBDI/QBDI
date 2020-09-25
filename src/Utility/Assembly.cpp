@@ -15,11 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#include "llvm/MC/MCAsmBackend.h"
+#include "llvm/MC/MCAsmInfo.h"
+#include "llvm/MC/MCAssembler.h"
+#include "llvm/MC/MCCodeEmitter.h"
+#include "llvm/MC/MCContext.h"
+#include "llvm/MC/MCInst.h"
+#include "llvm/MC/MCInstPrinter.h"
+#include "llvm/MC/MCObjectWriter.h"
+#include "llvm/MC/MCSubtargetInfo.h"
+#include "llvm/MC/MCValue.h"
+#include "llvm/Support/TargetRegistry.h"
+
 #include "Utility/Assembly.h"
 #include "Utility/LogSys.h"
-#include "Platform.h"
 
-#include "ExecBlock/ExecBlock.h"
+#include "Platform.h"
+#include "State.h"
 
 namespace QBDI {
 
@@ -61,6 +74,7 @@ Assembly::Assembly(llvm::MCContext &MCTX, std::unique_ptr<llvm::MCAsmBackend> MA
     asmPrinter->setPrintImmHex(llvm::HexStyle::C);
 }
 
+Assembly::~Assembly() = default;
 
 llvm::MCDisassembler::DecodeStatus Assembly::getInstruction(llvm::MCInst &instr, uint64_t &size,
                                          llvm::ArrayRef< uint8_t > bytes, uint64_t address) const {
@@ -79,7 +93,7 @@ void Assembly::writeInstruction(const llvm::MCInst inst, memory_ostream *stream)
         uint64_t address = reinterpret_cast<uint64_t>(stream->get_ptr()) + pos;
         printDisasm(inst, address, disassOs);
         disassOs.flush();
-        fprintf(log, "Assembling %s at 0x%" PRIRWORD, disass.c_str(), address);
+        fprintf(log, "Assembling %s at 0x%" PRIx64, disass.c_str(), address);
     });
     assembler->getEmitter().encodeInstruction(inst, *stream, fixups, MSTI);
     uint64_t size = stream->current_pos() - pos;

@@ -15,32 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef INSTRRULES_H
-#define INSTRRULES_H
 
-#include <memory>
-#include <vector>
+#include "llvm/MC/MCInst.h"
 
-#include "Patch/Types.h"
-
-#include "Callback.h"
+#include "Patch/InstTransform.h"
+#include "Patch/Patch.h"
+#include "Patch/PatchGenerator.h"
+#include "Patch/RelocatableInst.h"
 
 namespace QBDI {
 
-class PatchGenerator;
-class RelocatableInst;
+RelocatableInst::SharedPtrVec ModifyInstruction::generate(const llvm::MCInst *inst,
+    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
 
-/*
- * Setup a user callback in the host state
- *
- * Created patch generator can be used in any instruction rules.
- *
- * @param[in] cbk   Pointer to a user callback
- * @param[in] data  Opaque pointer to user callback data
- */
-std::vector<std::shared_ptr<PatchGenerator>> getCallbackGenerator(InstCallback cbk, void* data);
+    llvm::MCInst a(*inst);
+    for(auto t: transforms) {
+        t->transform(a, address, instSize, temp_manager);
+    }
 
-std::vector<std::shared_ptr<RelocatableInst>> getBreakToHost(Reg temp);
+    RelocatableInst::SharedPtrVec out;
+    if(toMerge != nullptr) {
+        append(out, toMerge->insts);
+    }
+    out.push_back(NoReloc(std::move(a)));
+    return out;
 }
-
-#endif
+}

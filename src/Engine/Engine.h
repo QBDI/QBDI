@@ -28,19 +28,19 @@
 #include <malloc.h>
 #endif
 
-#include "llvm/MC/MCAsmBackend.h"
-#include "llvm/MC/MCAsmInfo.h"
-#include "llvm/MC/MCContext.h"
-#include "llvm/MC/MCCodeEmitter.h"
-#include "llvm/MC/MCInstrInfo.h"
-#include "llvm/MC/MCObjectFileInfo.h"
-#include "llvm/MC/MCRegisterInfo.h"
-#include "llvm/MC/MCSubtargetInfo.h"
-
 #include "Callback.h"
 #include "InstAnalysis.h"
 #include "State.h"
-#include "Patch/Types.h"
+
+namespace llvm {
+    class MCAsmInfo;
+    class MCCodeEmitter;
+    class MCContext;
+    class MCInstrInfo;
+    class MCObjectFileInfo;
+    class MCRegisterInfo;
+    class MCSubtargetInfo;
+}
 
 namespace QBDI {
 
@@ -51,6 +51,7 @@ class ExecBroker;
 class PatchRule;
 class InstrRule;
 class Patch;
+class InstMetadata;
 
 const static uint16_t MEM_READ_ADDRESS_TAG  = 0xfff0;
 const static uint16_t MEM_WRITE_ADDRESS_TAG = 0xfff1;

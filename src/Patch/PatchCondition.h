@@ -18,23 +18,21 @@
 #ifndef PATCHCONDITION_H
 #define PATCHCONDITION_H
 
+#include <algorithm>
 #include <memory>
-#include <vector>
 #include <string>
+#include <vector>
 
-#include "llvm/MC/MCInst.h"
-
-#include "Range.h"
 #include "Patch/Types.h"
 #include "Patch/PatchUtils.h"
 
-#include "Utility/String.h"
+#include "Range.h"
+#include "State.h"
 
-#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
-#include "Patch/X86_64/InstInfo_X86_64.h"
-#elif defined(QBDI_ARCH_ARM)
-#include "Patch/ARM/InstInfo_ARM.h"
-#endif
+namespace llvm {
+  class MCInst;
+  class MCInstrInfo;
+}
 
 namespace QBDI {
 
@@ -46,9 +44,9 @@ public:
     using UniqPtr      = std::unique_ptr<PatchCondition>;
     using UniqPtrVec   = std::vector<std::unique_ptr<PatchCondition>>;
 
-    virtual bool test(const llvm::MCInst* inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) = 0;
+    virtual bool test(const llvm::MCInst* inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const = 0;
 
-    virtual RangeSet<rword> affectedRange() {
+    virtual RangeSet<rword> affectedRange() const {
         RangeSet<rword> r;
         r.add(Range<rword>(0, (rword) -1));
         return r;
@@ -68,9 +66,7 @@ public:
     */
     MnemonicIs(const char *mnemonic) : mnemonic(mnemonic) {};
 
-    bool test(const llvm::MCInst* inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) {
-        return QBDI::String::startsWith(mnemonic.c_str(), MCII->getName(inst->getOpcode()).data());
-    }
+    bool test(const llvm::MCInst* inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
 class OpIs : public PatchCondition, public AutoAlloc<PatchCondition, OpIs> {
@@ -84,9 +80,7 @@ public:
     */
     OpIs(unsigned int op) : op(op) {};
 
-    bool test(const llvm::MCInst* inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) { // refactor all test() add MCII
-        return inst->getOpcode() == op;
-    }
+    bool test(const llvm::MCInst* inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
 class RegIs : public PatchCondition, public AutoAlloc<PatchCondition, RegIs> {
@@ -102,9 +96,7 @@ public:
     */
     RegIs(Operand opn, Reg reg) : opn(opn), reg(reg) {};
 
-    bool test(const llvm::MCInst* inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) {
-        return inst->getOperand(opn).isReg() && inst->getOperand(opn).getReg() == (unsigned int) reg;
-    }
+    bool test(const llvm::MCInst* inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
 class UseReg : public PatchCondition, public AutoAlloc<PatchCondition, UseReg> {
@@ -118,15 +110,7 @@ public:
     */
     UseReg(Reg reg) : reg(reg) {};
 
-    bool test(const llvm::MCInst* inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) {
-        for(unsigned int i  = 0; i < inst->getNumOperands(); i++) {
-            const llvm::MCOperand &op = inst->getOperand(i);
-            if(op.isReg() && op.getReg() == (unsigned int) reg) {
-                return true;
-            }
-        }
-        return false;
-    }
+    bool test(const llvm::MCInst* inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
 class InstructionInRange : public PatchCondition, public AutoAlloc<PatchCondition, InstructionInRange> {
@@ -141,16 +125,11 @@ public:
     */
     InstructionInRange(Constant start, Constant end) : range(start, end) {};
 
-    bool test(const llvm::MCInst* inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) {
-        if(range.contains(Range<rword>(address, address + instSize))) {
-            return true;
-        }
-        else {
-            return false;
-        }
+    bool test(const llvm::MCInst* inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override {
+        return range.contains(Range<rword>(address, address + instSize));
     }
 
-    RangeSet<rword> affectedRange() {
+    RangeSet<rword> affectedRange() const override {
         RangeSet<rword> r;
         r.add(range);
         return r;
@@ -165,11 +144,12 @@ public:
     /*! Return true if on specified address
     */
     AddressIs(rword breakpoint) : breakpoint(breakpoint) {};
-    bool test(const llvm::MCInst* inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) {
+
+    bool test(const llvm::MCInst* inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override {
         return address == breakpoint;
     }
 
-    RangeSet<rword> affectedRange() {
+    RangeSet<rword> affectedRange() const override {
         RangeSet<rword> r;
         r.add(Range<rword>(breakpoint, breakpoint + 1));
         return r;
@@ -187,8 +167,7 @@ public:
     */
     OperandIsReg(Operand opn) : opn(opn) {};
 
-    bool test(const llvm::MCInst* inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) {
-        return inst->getOperand(opn).isReg(); }
+    bool test(const llvm::MCInst* inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
 class OperandIsImm : public PatchCondition, public AutoAlloc<PatchCondition, OperandIsImm> {
@@ -202,9 +181,7 @@ public:
     */
     OperandIsImm(Operand opn) : opn(opn) {};
 
-    bool test(const llvm::MCInst* inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) {
-        return inst->getOperand(opn).isImm();
-    }
+    bool test(const llvm::MCInst* inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
 class And : public PatchCondition, public AutoAlloc<PatchCondition, And> {
@@ -218,16 +195,14 @@ public:
     */
     And(PatchCondition::SharedPtrVec conditions) : conditions(conditions) {};
 
-    bool test(const llvm::MCInst* inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) {
-        for(unsigned int i = 0; i < conditions.size(); i++) {
-            if(conditions[i]->test(inst, address, instSize, MCII) == false) {
-                return false;
-            }
-        }
-        return true;
+    bool test(const llvm::MCInst* inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override {
+        return std::all_of(conditions.begin(), conditions.end(),
+                            [&](const PatchCondition::SharedPtr& cond) {
+                                return cond->test(inst, address, instSize, MCII);
+                            });
     }
 
-    RangeSet<rword> affectedRange() {
+    RangeSet<rword> affectedRange() const override {
         RangeSet<rword> r;
         r.add(Range<rword>(0, (rword)-1));
         for(unsigned int i = 0; i < conditions.size(); i++) {
@@ -248,16 +223,14 @@ public:
     */
     Or(PatchCondition::SharedPtrVec conditions) : conditions(conditions) {};
 
-    bool test(const llvm::MCInst* inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) {
-        for(unsigned int i = 0; i < conditions.size(); i++) {
-            if(conditions[i]->test(inst, address, instSize, MCII) == true) {
-                return true;
-            }
-        }
-        return false;
+    bool test(const llvm::MCInst* inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override {
+        return std::any_of(conditions.begin(), conditions.end(),
+                            [&](const PatchCondition::SharedPtr& cond) {
+                                return cond->test(inst, address, instSize, MCII);
+                            });
     }
 
-    RangeSet<rword> affectedRange() {
+    RangeSet<rword> affectedRange() const override {
         RangeSet<rword> r;
         for(unsigned int i = 0; i < conditions.size(); i++) {
             r.add(conditions[i]->affectedRange());
@@ -277,7 +250,7 @@ public:
     */
     Not(PatchCondition::SharedPtr condition) : condition(condition) {};
 
-    bool test(const llvm::MCInst* inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) {
+    bool test(const llvm::MCInst* inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override {
         return !condition->test(inst, address, instSize, MCII);
     }
 };
@@ -289,7 +262,7 @@ public:
     */
     True() {};
 
-    bool test(const llvm::MCInst* inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) {
+    bool test(const llvm::MCInst* inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override {
         return true;
     }
 };
@@ -301,9 +274,7 @@ public:
     */
     DoesReadAccess() {};
 
-    bool test(const llvm::MCInst* inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) {
-        return getReadSize(inst) > 0;
-    }
+    bool test(const llvm::MCInst* inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
 class DoesWriteAccess : public PatchCondition, public AutoAlloc<PatchCondition, DoesWriteAccess> {
@@ -313,9 +284,7 @@ public:
     */
     DoesWriteAccess() {};
 
-    bool test(const llvm::MCInst* inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) {
-        return getWriteSize(inst) > 0;
-    }
+    bool test(const llvm::MCInst* inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
 class ReadAccessSizeIs : public PatchCondition, public AutoAlloc<PatchCondition, ReadAccessSizeIs> {
@@ -329,9 +298,7 @@ public:
     */
     ReadAccessSizeIs(Constant size) : size(size) {};
 
-    bool test(const llvm::MCInst* inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) {
-        return getReadSize(inst) == (rword) size;
-    }
+    bool test(const llvm::MCInst* inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
 class WriteAccessSizeIs : public PatchCondition, public AutoAlloc<PatchCondition, WriteAccessSizeIs> {
@@ -345,9 +312,7 @@ public:
     */
     WriteAccessSizeIs(Constant size) : size(size) {};
 
-    bool test(const llvm::MCInst* inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) {
-        return getWriteSize(inst) == (rword) size;
-    }
+    bool test(const llvm::MCInst* inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
 class IsStackRead : public PatchCondition, public AutoAlloc<PatchCondition, IsStackRead> {
@@ -357,9 +322,7 @@ public:
     */
     IsStackRead() {};
 
-    bool test(const llvm::MCInst* inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) {
-        return isStackRead(inst);
-    }
+    bool test(const llvm::MCInst* inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
 class IsStackWrite : public PatchCondition, public AutoAlloc<PatchCondition, IsStackWrite> {
@@ -369,9 +332,7 @@ public:
     */
     IsStackWrite() {};
 
-    bool test(const llvm::MCInst* inst, rword address, rword instSize, llvm::MCInstrInfo* MCII) {
-        return isStackWrite(inst);
-    }
+    bool test(const llvm::MCInst* inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
 }

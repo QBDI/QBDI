@@ -15,26 +15,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef INSTRRULES_X86_64_H
-#define INSTRRULES_X86_64_H
-
-#include <memory>
-#include <vector>
+#ifndef INSTMETADATA_H
+#define INSTMETADATA_H
 
 #include "llvm/MC/MCInst.h"
-
-#include "Callback.h"
-#include "Patch/PatchUtils.h"
-#include "Patch/X86_64/PatchGenerator_X86_64.h"
+#include "State.h"
 
 namespace QBDI {
 
-class InstrRule;
+class InstMetadata {
+public:
+    llvm::MCInst inst;
+    rword address;
+    uint32_t instSize;
+    uint32_t patchSize;
+    bool modifyPC;
+    bool merge;
 
-RelocatableInst::SharedPtrVec getBreakToHost(Reg temp);
-
-std::vector<std::shared_ptr<InstrRule>> getMemAccessInstrRules();
+    inline rword endAddress() const {
+        return address + instSize;
+    }
+};
 
 }
 
-#endif
+#endif // INSTMETADATA_H

@@ -21,7 +21,12 @@
 #include "Memory.hpp"
 
 #include "Engine/Engine.h"
+#include "ExecBlock/ExecBlock.h"
+#include "Patch/InstInfo.h"
+#include "Patch/InstrRule.h"
 #include "Patch/InstrRules.h"
+#include "Patch/PatchCondition.h"
+#include "Patch/PatchGenerator.h"
 #include "Utility/LogSys.h"
 
 // Mask to identify Virtual Callback events

@@ -22,9 +22,13 @@
 #include <utility>
 #include <vector>
 
-#include "llvm/MC/MCInst.h"
-#include "llvm/MC/MCRegisterInfo.h"
 #include "Patch/Types.h"
+
+namespace llvm {
+  class MCInst;
+  class MCInstrInfo;
+  class MCRegisterInfo;
+}
 
 namespace QBDI {
 
@@ -93,22 +97,23 @@ class TempManager {
 
     std::vector<std::pair<unsigned int, unsigned int>> temps;
     const llvm::MCInst* inst;
-    llvm::MCInstrInfo* MCII;
-    llvm::MCRegisterInfo* MRI;
+    const llvm::MCInstrInfo* MCII;
+    const llvm::MCRegisterInfo* MRI;
     bool allowInstRegister;
 
 public:
 
-    TempManager(const llvm::MCInst *inst, llvm::MCInstrInfo* MCII, llvm::MCRegisterInfo *MRI, bool allowInstRegister=false)
+    TempManager(const llvm::MCInst * inst, const llvm::MCInstrInfo * MCII,
+        const llvm::MCRegisterInfo * MRI, bool allowInstRegister=false)
         : inst(inst), MCII(MCII), MRI(MRI), allowInstRegister(allowInstRegister) {};
 
     Reg getRegForTemp(unsigned int id);
 
-    Reg::Vec getUsedRegisters();
+    Reg::Vec getUsedRegisters() const;
 
-    size_t getUsedRegisterNumber();
+    size_t getUsedRegisterNumber() const;
 
-    unsigned getSizedSubReg(unsigned reg, unsigned size);
+    unsigned getSizedSubReg(unsigned reg, unsigned size) const;
 };
 
 }

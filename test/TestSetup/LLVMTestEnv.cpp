@@ -15,8 +15,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "TestSetup/LLVMTestEnv.h"
+
+#include "llvm/ADT/Triple.h"
+#include "llvm/ADT/SmallVector.h"
+#include "llvm/MC/MCAsmBackend.h"
+#include "llvm/MC/MCAsmInfo.h"
+#include "llvm/MC/MCContext.h"
+#include "llvm/MC/MCCodeEmitter.h"
+#include "llvm/MC/MCDisassembler/MCDisassembler.h"
+#include "llvm/MC/MCInstrInfo.h"
+#include "llvm/MC/MCObjectFileInfo.h"
+#include "llvm/MC/MCTargetOptions.h"
+#include "llvm/Object/ObjectFile.h"
+#include "llvm/Support/CommandLine.h"
+#include "llvm/Support/FileUtilities.h"
+#include "llvm/Support/ManagedStatic.h"
+#include "llvm/Support/Process.h"
+#include "llvm/Support/SourceMgr.h"
+#include "llvm/Support/TargetRegistry.h"
+#include "llvm/Support/TargetSelect.h"
+
+#include "Utility/Assembly.h"
+
 #include "Platform.h"
+
+#include "TestSetup/LLVMTestEnv.h"
+
+LLVMTestEnv::LLVMTestEnv(std::string cpu, std::vector<std::string> mattrs):
+        cpu(cpu), mattrs(mattrs) {}
+
+LLVMTestEnv::~LLVMTestEnv() = default;
 
 void LLVMTestEnv::SetUp() {
     std::string error;

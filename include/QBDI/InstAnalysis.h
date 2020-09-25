@@ -22,6 +22,7 @@
 
 #include "Platform.h"
 #include "Bitmask.h"
+#include "State.h"
 
 #ifdef __cplusplus
 namespace QBDI {

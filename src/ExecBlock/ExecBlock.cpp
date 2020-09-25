@@ -15,14 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#include "llvm/MC/MCInst.h"
 #include "llvm/Support/Format.h"
-#include "Patch/PatchRule.h"
+
 #include "ExecBlock.h"
 #include "Patch/Patch.h"
+#include "Patch/PatchGenerator.h"
+#include "Patch/PatchRule.h"
+#include "Patch/PatchRules_Target.h"
+#include "Patch/RelocatableInst.h"
 #include "Platform.h"
-#include "Memory.hpp"
+#include "Utility/Assembly.h"
 #include "Utility/LogSys.h"
 #include "Utility/System.h"
+
+#include "Memory.hpp"
 
 #if defined(QBDI_OS_WIN)
     #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)

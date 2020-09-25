@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 #include "ExecBlockManagerTest.h"
+#include "Patch/PatchRules.h"
 
 QBDI::Patch::Vec getEmptyBB(QBDI::rword address) {
     QBDI::Patch::Vec bb;
@@ -27,7 +28,7 @@ QBDI::Patch::Vec getEmptyBB(QBDI::rword address) {
 
 TEST_F(ExecBlockManagerTest, BasicBlockLookup) {
     QBDI::ExecBlockManager execBlockManager(*MCII, *MRI, *assembly);
-    
+
     execBlockManager.writeBasicBlock(getEmptyBB(0x42424242));
     ASSERT_EQ(nullptr, execBlockManager.getProgrammedExecBlock(0x13371337));
     ASSERT_NE(nullptr, execBlockManager.getProgrammedExecBlock(0x42424242));
@@ -89,7 +90,7 @@ TEST_F(ExecBlockManagerTest, CacheRewrite) {
 TEST_F(ExecBlockManagerTest, MultipleBasicBlockExecution) {
     QBDI::ExecBlockManager execBlockManager(*MCII, *MRI, *assembly);
     QBDI::ExecBlock *block = nullptr;
-    // Jit two different terminators 
+    // Jit two different terminators
     QBDI::Patch::Vec terminator1 = getEmptyBB(0x42424242);
     QBDI::Patch::Vec terminator2 = getEmptyBB(0x13371337);
     terminator1[0].append(QBDI::getTerminator(0x42424242));

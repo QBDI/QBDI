@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 #include "ExecBroker/ExecBroker.h"
+#include "Utility/LogSys.h"
 
 namespace QBDI {
 

@@ -15,11 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <stdint.h>
-#include "Patch/Types.h"
-
 #ifndef INSTINFO_H
 #define INSTINFO_H
+
+#include <stdint.h>
+
+namespace llvm {
+  class MCInst;
+  class MCInstrDesc;
+}
 
 namespace QBDI {
 

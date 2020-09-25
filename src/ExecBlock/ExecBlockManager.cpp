@@ -15,14 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "Platform.h"
+#include <algorithm>
+#include <bitset>
+#include <cstdint>
+
+#include "llvm/MC/MCInst.h"
+#include "llvm/MC/MCInstrInfo.h"
+#include "llvm/MC/MCInstrDesc.h"
+
+#include "ExecBlock/ExecBlock.h"
 #include "ExecBlock/ExecBlockManager.h"
+#include "Patch/InstInfo.h"
 #include "Patch/PatchRule.h"
 #include "Patch/RegisterSize.h"
+#include "Utility/Assembly.h"
 #include "Utility/LogSys.h"
 
-#include <cstdint>
-#include <algorithm>
+#include "Platform.h"
+#include "State.h"
 
 #ifndef QBDI_OS_WIN
 #if defined(QBDI_OS_LINUX) && !defined(__USE_GNU)

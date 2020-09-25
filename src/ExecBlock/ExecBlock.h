@@ -22,20 +22,27 @@
 #include <memory>
 #include <vector>
 
-#include "llvm/MC/MCInst.h"
 #include "llvm/Support/Process.h"
 #include "llvm/Support/Memory.h"
 
-#include "Callback.h"
-#include "Context.h"
+#include "Patch/InstMetadata.h"
 #include "Patch/Types.h"
 #include "Utility/memory_ostream.h"
-#include "Utility/Assembly.h"
+
+#include "Callback.h"
+#include "State.h"
+
+namespace llvm {
+  class MCInst;
+}
 
 namespace QBDI {
 
+class Assembly;
 class RelocatableInst;
 class Patch;
+
+struct Context;
 
 enum SeqType {
     Entry = 1,
