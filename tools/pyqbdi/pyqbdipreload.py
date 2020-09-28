@@ -65,9 +65,7 @@ def run():
     # "execve will not use the PATH variable to locate the executable; path must contain an appropriate absolute or relative path."
     # seach the binary path in PATH if needed
     binarypath = None
-    if (    binary.startswith('/') or
-            binary.startswith('./') or
-            binary.startswith('../')):
+    if '/' in binary:
         # absolute or relative path
         binarypath = binary
     else:
