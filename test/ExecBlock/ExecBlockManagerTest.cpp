@@ -15,8 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <stdio.h>
+#include <gtest/gtest.h>
+
 #include "ExecBlockManagerTest.h"
+
+#include "ExecBlock/ExecBlockManager.h"
+#include "Patch/Patch.h"
+#include "Patch/PatchRule.h"
 #include "Patch/PatchRules.h"
+#include "Utility/Assembly.h"
+
 
 QBDI::Patch::Vec getEmptyBB(QBDI::rword address) {
     QBDI::Patch::Vec bb;

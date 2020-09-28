@@ -19,8 +19,6 @@
 #include <time.h>
 #include <gtest/gtest.h>
 
-#include "ExecBlock/ExecBlockTest.h"
-#include "ExecBlock/ExecBlockManagerTest.h"
 #include "Utility/LogSys.h"
 
 int main(int argc, char** argv) {
