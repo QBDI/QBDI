@@ -26,7 +26,7 @@ State Management
 .. autojs:: ../../tools/frida-qbdi.js
     :members: QBDI.prototype.dumpGPRs, QBDI.prototype.ppGPRs, QBDI.prototype.synchronizeRegister, QBDI.prototype.synchronizeContext,
               QBDI.prototype.getGPR, QBDI.prototype.setGPR, QBDI.prototype.getGPRs, QBDI.prototype.setGPRS
-    :member-order: bysource    
+    :member-order: bysource
 
 State Initialization
 ^^^^^^^^^^^^^^^^^^^^
@@ -35,7 +35,7 @@ State Initialization
     :members: QBDI.prototype.alignedAlloc, QBDI.prototype.allocateVirtualStack, QBDI.prototype.simulateCall,
               QBDI.prototype.getGPRState(state), QBDI.prototype.getFPRState(state), QBDI.prototype.setGPRState, QBDI.prototype.setFPRState
     :member-order: alphabetical
-    
+
 Execution
 ^^^^^^^^^
 
@@ -44,7 +44,7 @@ Execution
               QBDI.prototype.addInstrumentedModule, QBDI.prototype.addInstrumentedRange, QBDI.prototype.addInstrumentedModuleFromAddr, QBDI.prototype.instrumentAllExecutableMaps
               QBDI.prototype.removeInstrumentedModule, QBDI.prototype.removeInstrumentedRange, removeInstrumentedModuleFromAddr, removeAllInstrumentedRanges
     :member-order: alphabetical
-    
+
 Instrumentation
 ^^^^^^^^^^^^^^^
 
@@ -66,6 +66,98 @@ Analysis
 .. autojs:: ../../tools/frida-qbdi.js
     :members: QBDI.prototype.getInstAnalysis, QBDI.prototype.getInstMemoryAccess, QBDI.prototype.getBBMemoryAccess
     :member-order: alphabetical
+
+.. js:class:: InstAnalysis
+
+  Object that describes the analysis of an instruction
+
+  .. js:attribute:: address
+
+      Instruction address (if ANALYSIS_INSTRUCTION)
+
+  .. js:attribute:: affectControlFlow
+
+      True if instruction affects control flow (if ANALYSIS_INSTRUCTION)
+
+  .. js:attribute:: disassembly
+
+      Instruction disassembly (if ANALYSIS_DISASSEMBLY)
+
+  .. js:attribute:: instSize
+
+      Instruction size (in bytes) (if ANALYSIS_INSTRUCTION)
+
+  .. js:attribute:: isBranch
+
+    True if instruction acts like a ‘jump’ (if ANALYSIS_INSTRUCTION)
+
+  .. js:attribute:: isCall
+
+    True if instruction acts like a ‘call’ (if ANALYSIS_INSTRUCTION)
+
+  .. js:attribute:: isCompare
+
+    True if instruction is a comparison (if ANALYSIS_INSTRUCTION)
+
+  .. js:attribute:: isPredicable
+
+    True if instruction contains a predicate (~is conditional) (if ANALYSIS_INSTRUCTION)
+
+  .. js:attribute:: isReturn
+
+    True if instruction acts like a ‘return’ (if ANALYSIS_INSTRUCTION)
+
+  .. js:attribute:: mayLoad
+
+    True if instruction ‘may’ load data from memory (if ANALYSIS_INSTRUCTION)
+
+  .. js:attribute:: mayStore
+
+    True if instruction ‘may’ store data to memory (if ANALYSIS_INSTRUCTION)
+
+  .. js:attribute:: mnemonic
+
+    LLVM mnemonic (if ANALYSIS_INSTRUCTION)
+
+  .. js:attribute:: module
+
+    Instruction module name (if ANALYSIS_SYMBOL and found)
+
+  .. js:attribute:: operands
+
+    Structure containing analysis results of an operand provided by the VM (if ANALYSIS_OPERANDS)
+
+  .. js:attribute:: symbol
+
+    Instruction symbol (if ANALYSIS_SYMBOL and found)
+
+
+.. js:class:: MemoryAccess
+
+  Object that describes a memory access
+
+  .. js:attribute:: accessAddress
+
+      Address of accessed memory
+
+  .. js:attribute:: instAddress
+
+      Address of instruction making the access
+
+  .. js:attribute:: size
+
+      Size of memory access (in bytes)
+
+  .. js:attribute:: type
+
+      Memory access type (READ / WRITE)
+
+  .. js:attribute:: value
+
+      Value read from / written to memory
+
+
+
 
 Cache management
 ^^^^^^^^^^^^^^^^
