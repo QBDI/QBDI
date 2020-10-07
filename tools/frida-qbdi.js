@@ -933,7 +933,7 @@ function QBDI() {
     }
 
     this.getGPRState = function() {
-        /**:QBDI.prototype.getGPRState(state)
+        /**:QBDI.prototype.getGPRState()
             Obtain the current general register state.
 
             :returns:   An object containing the General Purpose Registers state.
@@ -943,7 +943,7 @@ function QBDI() {
     }
 
     this.getFPRState = function() {
-        /**:QBDI.prototype.getFPRState(state)
+        /**:QBDI.prototype.getFPRState()
             Obtain the current floating point register state.
 
             :returns:   An object containing the Floating point Purpose Registers state.
@@ -973,7 +973,7 @@ function QBDI() {
     }
 
     this.precacheBasicBlock = function(pc) {
-        /**:QBDI.prototype.precacheBasicBlock(state)
+        /**:QBDI.prototype.precacheBasicBlock(pc)
             Pre-cache a known basic block.
 
             :param pc:  Start address of a basic block
@@ -985,7 +985,7 @@ function QBDI() {
     }
 
     this.clearCache = function(start, end) {
-        /**:QBDI.prototype.precacheBasicBlock(state)
+        /**:QBDI.prototype.clearCache(start, end)
             Clear a specific address range from the translation cache.
 
             :param start:  Start of the address range to clear from the cache.
@@ -995,7 +995,7 @@ function QBDI() {
     }
 
     this.clearAllCache = function() {
-        /**:QBDI.prototype.precacheBasicBlock(state)
+        /**:QBDI.prototype.clearAllCache()
             Clear the entire translation cache.
         */
         QBDI_C.clearAllCache(vm)
@@ -1309,14 +1309,14 @@ function QBDI() {
     }
 
     this.getInstAnalysis = function(type) {
-        /**:QBDI.prototype.getInstAnalysis()
+        /**:QBDI.prototype.getInstAnalysis(type)
           Obtain the analysis of an instruction metadata. Analysis results are cached in the VM.
           The validity of the returned pointer is only guaranteed until the end of the callback, else a deepcopy of the structure is required.
 
           :param [type]: Properties to retrieve during analysis (default to ANALYSIS_INSTRUCTION | ANALYSIS_DISASSEMBLY).
 
           :returns: A InstAnalysis object containing the analysis result.
-          :rtype:   Object
+          :rtype:   InstAnalysis
         */
         type = type || (AnalysisType.ANALYSIS_INSTRUCTION | AnalysisType.ANALYSIS_DISASSEMBLY);
         var analysis = QBDI_C.getInstAnalysis(vm, type);
@@ -1375,7 +1375,7 @@ function QBDI() {
           Obtain the memory accesses made by the last executed instruction. Return NULL and a size of 0 if the instruction made no memory access.
 
           :returns: An array of memory accesses made by the instruction.
-          :rtype:   Array
+          :rtype:   Array of MemoryAccess
         */
         return getMemoryAccess(QBDI_C.getInstMemoryAccess);
     }
@@ -1385,7 +1385,7 @@ function QBDI() {
           Obtain the memory accesses made by the last executed basic block. Return NULL and a size of 0 if the basic block made no memory access.
 
         :returns:   An array of memory accesses made by the basic block.
-        :rtype:     Array
+        :rtype:     Array of MemoryAccess
         */
         return getMemoryAccess(QBDI_C.getBBMemoryAccess);
     }
@@ -1593,7 +1593,7 @@ function QBDI() {
     /**:QBDI.version
      QBDI version (major, minor, patch).
 
-     {string:String,integer:Number,major:Number,minor:Number,patch:Number}
+     {string:String, integer:Number, major:Number, minor:Number, patch:Number}
     */
     Object.defineProperty(this, 'version', {
         enumerable: true,
