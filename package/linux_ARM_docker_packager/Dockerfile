@@ -82,7 +82,7 @@ RUN sudo chown -R $USER:$USER .
 WORKDIR $HOME/qbdi-deps/deps/llvm/
 
 RUN python build.py prepare $QBDI_PLATFORM && \
-    python build.py build $QBDI_PLATFORM && \
+    python build.py build $QBDI_PLATFORM OFF && \
     python build.py package $QBDI_PLATFORM && \
     python build.py clean $QBDI_PLATFORM
 

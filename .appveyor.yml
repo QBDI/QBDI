@@ -62,11 +62,11 @@ install:
   - cmd: cd build
 
 build_script:
-  - cmd: cmake .. -G "Ninja" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DQBDI_PLATFORM=%qbdi_plateform% -DQBDI_ARCH=%qbdi_arch% -DQBDI_TOOLS_PYQBDI=Off -DQBDI_EXAMPLES=On
+  - cmd: cmake .. -G "Ninja" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DQBDI_PLATFORM=%qbdi_plateform% -DQBDI_ARCH=%qbdi_arch% -DQBDI_TOOLS_PYQBDI=Off -DQBDI_EXAMPLES=On -DQBDI_CCACHE=Off
 
-  - ps: if (-not((Test-Path("../deps/llvm/$env:qbdi_plateform-$env:qbdi_arch/lib")) -and (Test-Path("../deps/llvm/$env:qbdi_plateform-$env:qbdi_arch/include")))) { python ..\deps\llvm\build.py prepare "$env:qbdi_plateform-$env:qbdi_arch" ; python ..\deps\llvm\build.py build "$env:qbdi_plateform-$env:qbdi_arch" ; python ..\deps\llvm\build.py package "$env:qbdi_plateform-$env:qbdi_arch" }
+  - ps: if (-not((Test-Path("../deps/llvm/$env:qbdi_plateform-$env:qbdi_arch/lib")) -and (Test-Path("../deps/llvm/$env:qbdi_plateform-$env:qbdi_arch/include")))) { python ..\deps\llvm\build.py prepare "$env:qbdi_plateform-$env:qbdi_arch" ; python ..\deps\llvm\build.py build "$env:qbdi_plateform-$env:qbdi_arch" OFF; python ..\deps\llvm\build.py package "$env:qbdi_plateform-$env:qbdi_arch" }
   - cmd: python ..\deps\llvm\build.py clean %qbdi_plateform%-%qbdi_arch%
-  - cmd: cmake .. -G "Ninja" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DQBDI_PLATFORM=%qbdi_plateform% -DQBDI_ARCH=%qbdi_arch% -DQBDI_TOOLS_PYQBDI=Off -DQBDI_EXAMPLES=On
+  - cmd: cmake .. -G "Ninja" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DQBDI_PLATFORM=%qbdi_plateform% -DQBDI_ARCH=%qbdi_arch% -DQBDI_TOOLS_PYQBDI=Off -DQBDI_EXAMPLES=On -DQBDI_CCACHE=Off
   - cmd: ninja
 
 after_build:

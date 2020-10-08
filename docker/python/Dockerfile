@@ -17,6 +17,7 @@ RUN yum update -y && \
         bash \
         sudo \
         cmake3 \
+        ccache \
         make \
         wget \
         zlib-devel \
@@ -50,7 +51,7 @@ WORKDIR $HOME/qbdi-deps/deps/llvm/
 
 RUN export PATH=${PYTHON_OPT}/cp37-cp37m/bin:$PATH && \
     python3 build.py prepare ${QBDI_PLATFORM}-${QBDI_ARCH} && \
-    python3 build.py build ${QBDI_PLATFORM}-${QBDI_ARCH} && \
+    python3 build.py build ${QBDI_PLATFORM}-${QBDI_ARCH} OFF && \
     python3 build.py package ${QBDI_PLATFORM}-${QBDI_ARCH} && \
     python3 build.py clean ${QBDI_PLATFORM}-${QBDI_ARCH}
 

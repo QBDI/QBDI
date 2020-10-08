@@ -1,9 +1,9 @@
 #!/usr/bin/bash
 
-set -e
-set -x
+set -ex
 
-BASEDIR=$(cd $(dirname "$0") && pwd -P)
+cd $(dirname "$0")
+BASEDIR=$(pwd -P)
 GITDIR=$(git rev-parse --show-toplevel)
 
 if [[ -n "$(find "${GITDIR}/deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/lib" -type f -print -quit)" &&
@@ -11,23 +11,20 @@ if [[ -n "$(find "${GITDIR}/deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/lib" -type f
     exit 0;
 fi
 
-mkdir -p "${GITDIR}/deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/"
-mkdir -p "${GITDIR}/deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/"
-
 if [[ "X86_64" = "${QBDI_ARCH}" ]]; then
-    docker build "${GITDIR}" -t qbdi_build:base -f "${BASEDIR}/base_X86_64.dockerfile"
+    docker build "${BASEDIR}" -t qbdi_build:base --build-arg USER_ID="$(id -u)" -f "${BASEDIR}/base_X86_64.dockerfile"
 elif [[ "X86" = "${QBDI_ARCH}" ]]; then
-    docker build "${GITDIR}" -t qbdi_build:base -f "${BASEDIR}/base_X86.dockerfile"
+    docker build "${BASEDIR}" -t qbdi_build:base --build-arg USER_ID="$(id -u)" -f "${BASEDIR}/base_X86.dockerfile"
 else
     echo "Unknown QBDI_ARCH : ${QBDI_ARCH}"
     exit 1
 fi
 
-docker build "${GITDIR}" -t qbdi_build:llvm -f "${BASEDIR}/llvm.dockerfile"
-docker create --name llvm qbdi_build:llvm
-
-docker cp "llvm:/home/docker/qbdi/deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/include" "${GITDIR}/deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/"
-docker cp "llvm:/home/docker/qbdi/deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/lib" "${GITDIR}/deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/"
-
-docker rm llvm
+docker run --rm -it \
+    -e QBDI_PLATFORM="${QBDI_PLATFORM}" \
+    -e QBDI_ARCH="${QBDI_ARCH}" \
+    --mount type=bind,source="${GITDIR}",target=/home/docker/qbdi \
+    --mount type=bind,source="${HOME}/.ccache",target=/home/docker/.ccache \
+    qbdi_build:base \
+    /bin/bash /home/docker/qbdi/docker/travis_linux/build-llvm.sh
 

@@ -51,7 +51,7 @@ RUN sudo chown -R $USER:$USER .
 WORKDIR $HOME/qbdi-deps/deps/llvm/
 
 RUN python3 build.py prepare ${QBDI_PLATFORM}-${QBDI_ARCH} && \
-    python3 build.py build ${QBDI_PLATFORM}-${QBDI_ARCH} && \
+    python3 build.py build ${QBDI_PLATFORM}-${QBDI_ARCH} OFF && \
     python3 build.py package ${QBDI_PLATFORM}-${QBDI_ARCH} && \
     python3 build.py clean ${QBDI_PLATFORM}-${QBDI_ARCH}
 
@@ -88,6 +88,7 @@ RUN sudo chown -R $USER:$USER . && \
           -DQBDI_PLATFORM=$QBDI_PLATFORM \
           -DQBDI_ARCH=$QBDI_ARCH \
           -DCMAKE_INSTALL_PREFIX=$PREFIX \
+          -DQBDI_CCACHE=OFF \
           -DQBDI_LOG_DEBUG=ON \
           -DQBDI_EXAMPLES=ON \
           -DQBDI_TOOLS_PYQBDI=ON \

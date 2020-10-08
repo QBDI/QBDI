@@ -95,7 +95,7 @@ def get_llvm(url, source_hash, dest):
         tar.extractall(str(dest))
 
 
-def build_llvm(llvm_dir, build_dir, arch, target_plateform, arch_opt=None):
+def build_llvm(llvm_dir, build_dir, arch, target_plateform, arch_opt=None, ccache="On"):
 
     if not build_dir.exists():
         build_dir.mkdir()
@@ -195,6 +195,7 @@ def build_llvm(llvm_dir, build_dir, arch, target_plateform, arch_opt=None):
                            "-DLLVM_ENABLE_Z3_SOLVER=Off",
                            "-DLLVM_APPEND_VC_REV=Off",
                            "-DLLVM_ENABLE_RTTI=Off",
+                           "-DLLVM_CCACHE_BUILD=" + ccache,
                            ] + cmake_specific_option,
                           cwd=str(build_dir))
 
@@ -294,8 +295,11 @@ if __name__ == "__main__":
         get_llvm(SOURCE_URL, SOURCE_SHA256, TARGET_DIR / target)
 
     elif sys.argv[1] == "build":
+        ccache = "On"
+        if len(sys.argv) >= 4:
+            ccache = sys.argv[3]
         build_llvm(extracted_llvm_dir,
-                   build_dir, arch, target_plateform, arch_opt)
+                   build_dir, arch, target_plateform, arch_opt, ccache)
 
     elif sys.argv[1] == "package":
         install_header_and_lib(extracted_llvm_dir,

@@ -1,12 +1,5 @@
 language: cpp 
 
-addons:
-  homebrew:
-    packages:
-      - ccache
-      - g++
-      - python3
-
 _linux_target: &linux_target
   os: linux
   dist: xenial
@@ -30,6 +23,8 @@ _osx_target: &osx_target
     - QBDI_PLATFORM="osx"
     - QBDI_ARCH="X86_64"
     - CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DQBDI_PLATFORM=${QBDI_PLATFORM} -DQBDI_ARCH=${QBDI_ARCH} -DQBDI_TOOLS_VALIDATOR=ON -DQBDI_EXAMPLES=ON"
+  before_script:
+    - HOMEBREW_NO_AUTO_UPDATE=1 brew install ccache python3
 
 _osx_target32: &osx_target32
   os: osx
@@ -38,6 +33,8 @@ _osx_target32: &osx_target32
     - QBDI_PLATFORM="osx"
     - QBDI_ARCH="X86"
     - CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DQBDI_PLATFORM=${QBDI_PLATFORM} -DQBDI_ARCH=${QBDI_ARCH} -DQBDI_TOOLS_VALIDATOR=ON -DQBDI_EXAMPLES=ON"
+  before_script:
+    - HOMEBREW_NO_AUTO_UPDATE=1 brew install ccache python3
 
 _install_llvm: &install_llvm
   script:
