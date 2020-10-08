@@ -48,7 +48,7 @@ set(QBDI_SUPPORTED_PLATFORMS
     "ios")
 
 set(QBDI_SUPPORTED_ARCH
-    "ARM"
+#    "ARM" # no maintained since 0.7.0
 #    "AARCH64" # not supported yet
     "X86"
     "X86_64"

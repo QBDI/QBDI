@@ -87,10 +87,6 @@ add_subdirectory(deps)
 
 if(${DEPENDENCY_SATISFIED})
 
-    # Add includes
-
-    set(LLVM_LIBS_DIR deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/lib)
-
     # Resolve LLVM options
 
     if( (QBDI_PLATFORM_LINUX    AND (QBDI_ARCH_X86 OR QBDI_ARCH_X86_64 OR QBDI_ARCH_ARM)) OR
@@ -110,6 +106,23 @@ if(${DEPENDENCY_SATISFIED})
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -Wall -ffunction-sections -fdata-sections -fvisibility=hidden")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -fvisibility-inlines-hidden -fvisibility=hidden -ffunction-sections -fdata-sections -fno-rtti")
 
+    endif()
+
+    # Setup assembly compile
+    if(QBDI_PLATFORM_WINDOWS)
+        enable_language(ASM_MASM)
+        set(ASM_EXT "asm")
+    else()
+        set(CMAKE_ASM-ATT_COMPILER ${AS_BINARY})
+        enable_language(ASM-ATT)
+        set(ASM_EXT "s")
+        if(QBDI_PLATFORM_IOS)
+            set(CMAKE_ASM-ATT_FLAGS "-arch ${ARM_ARCH}")
+        elseif(QBDI_PLATFORM_OSX AND QBDI_ARCH_X86)
+            set(CMAKE_ASM-ATT_FLAGS "-arch i386")
+        elseif(QBDI_PLATFORM_LINUX AND QBDI_ARCH_X86)
+            set(CMAKE_ASM-ATT_FLAGS "--32")
+        endif()
     endif()
 
     # Force 32bit
@@ -188,75 +201,7 @@ if(${DEPENDENCY_SATISFIED})
 
     endif()
 
-    # Add QBDI target
-    set(SOURCES
-        "src/Engine/Engine.cpp"
-        "src/Engine/VM.cpp"
-        "src/Engine/VM_C.cpp"
-        "src/ExecBlock/Context.cpp"
-        "src/ExecBlock/ExecBlock.cpp"
-        "src/ExecBlock/ExecBlockManager.cpp"
-        "src/ExecBroker/ExecBroker.cpp"
-        "src/Patch/InstrRule.cpp"
-        "src/Patch/InstrRules.cpp"
-        "src/Patch/InstTransform.cpp"
-        "src/Patch/PatchCondition.cpp"
-        "src/Patch/PatchGenerator.cpp"
-        "src/Patch/PatchUtils.cpp"
-        "src/Patch/PatchRule.cpp"
-        "src/Patch/${QBDI_BASE_ARCH}/InstInfo_${QBDI_BASE_ARCH}.cpp"
-        "src/Patch/${QBDI_BASE_ARCH}/RegisterSize_${QBDI_BASE_ARCH}.cpp"
-        "src/Patch/${QBDI_BASE_ARCH}/PatchRules_${QBDI_BASE_ARCH}.cpp"
-        "src/Patch/${QBDI_BASE_ARCH}/Layer2_${QBDI_BASE_ARCH}.cpp"
-        "src/Patch/${QBDI_BASE_ARCH}/InstrRules_${QBDI_BASE_ARCH}.cpp"
-        "src/Patch/${QBDI_BASE_ARCH}/PatchGenerator_${QBDI_BASE_ARCH}.cpp"
-        "src/Utility/memory_ostream.cpp"
-        "src/Utility/Assembly.cpp"
-        "src/Utility/Memory.cpp"
-        "src/Utility/Memory_${QBDI_PLATFORM}.cpp"
-        "src/Utility/System.cpp"
-        "src/Utility/LogSys.cpp"
-        "src/Utility/Version.cpp"
-        "src/Utility/String.cpp"
-        )
-
-    if(QBDI_PLATFORM_IOS)
-        set(SOURCES
-            ${SOURCES}
-            "src/Utility/System_iOS.cpp"
-            "src/Utility/server-iOS-jit-user.c"
-            )
-    else()
-        set(SOURCES
-            ${SOURCES}
-            "src/Utility/System_generic.cpp"
-            )
-    endif()
-
-    # Assembly stubs
-
-    if(QBDI_PLATFORM_WINDOWS)
-        enable_language(ASM_MASM)
-        set(ASM_EXT "asm")
-    else()
-        set(CMAKE_ASM-ATT_COMPILER ${AS_BINARY})
-        enable_language(ASM-ATT)
-        set(ASM_EXT "s")
-        if(QBDI_PLATFORM_IOS)
-            set(CMAKE_ASM-ATT_FLAGS "-arch ${ARM_ARCH}")
-        elseif(QBDI_PLATFORM_OSX AND QBDI_ARCH_X86)
-            set(CMAKE_ASM-ATT_FLAGS "-arch i386")
-        elseif(QBDI_PLATFORM_LINUX AND QBDI_ARCH_X86)
-            set(CMAKE_ASM-ATT_FLAGS "--32")
-        endif()
-    endif()
-
-    set(SOURCES ${SOURCES} "src/ExecBlock/${QBDI_PLATFORM}-${QBDI_ARCH}_Stub.${ASM_EXT}")
-
-    if (QBDI_PLATFORM_WINDOWS AND QBDI_BITS_32)
-        set_source_files_properties("src/ExecBlock/${QBDI_PLATFORM}-${QBDI_ARCH}_Stub.${ASM_EXT}" PROPERTIES COMPILE_FLAGS "/safeseh")
-    endif()
-
+    set(LLVM_LIBS_DIR deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/lib)
 
     if(QBDI_PLATFORM_WINDOWS)
         PREPEND(LLVM_STATIC_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/ ".lib" ${_LLVM_STATIC_LIBS})
@@ -264,10 +209,12 @@ if(${DEPENDENCY_SATISFIED})
         PREPEND(LLVM_STATIC_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/lib ".a" ${_LLVM_STATIC_LIBS})
     endif()
 
-    # Final QBDI static library is a merge of static libraries
-    add_library(QBDI_obj STATIC ${SOURCES})
+    # Add QBDI source file in QBDI_obj
+    add_library(QBDI_src INTERFACE)
 
-    target_include_directories(QBDI_obj PRIVATE
+    include("${CMAKE_CURRENT_SOURCE_DIR}/src/CMakeLists.txt")
+
+    target_include_directories(QBDI_src INTERFACE
         "${CMAKE_CURRENT_BINARY_DIR}/include"
         "${CMAKE_CURRENT_BINARY_DIR}/include/QBDI"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI"
@@ -275,6 +222,8 @@ if(${DEPENDENCY_SATISFIED})
         "${CMAKE_CURRENT_SOURCE_DIR}/deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/include"
         "${CMAKE_CURRENT_SOURCE_DIR}/deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/lib/Target/${QBDI_LLVM_ARCH}"
         )
+    add_library(QBDI_obj STATIC)
+    target_link_libraries(QBDI_obj PRIVATE QBDI_src)
 
     # Hack because generators expressions don't work properly under visual studio ...
     if(QBDI_PLATFORM_WINDOWS)
@@ -296,8 +245,12 @@ if(${DEPENDENCY_SATISFIED})
     add_dependencies(QBDI_static QBDI_obj)
 
     # QBDI as a shared library
-    add_library(QBDI SHARED cmake/stub.cpp)
+    add_library(QBDI SHARED)
     add_library(QBDI::QBDI ALIAS QBDI)
+
+    target_link_libraries(QBDI PRIVATE QBDI_src)
+    target_link_libraries(QBDI PRIVATE ${LLVM_STATIC_LIBS})
+
     target_include_directories(QBDI PUBLIC
         $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -306,8 +259,7 @@ if(${DEPENDENCY_SATISFIED})
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/QBDI>
         )
 
-    target_link_libraries(QBDI PUBLIC ${LLVM_LIBS} PRIVATE QBDI_static)
-    add_dependencies(QBDI QBDI_obj)
+    target_link_libraries(QBDI PUBLIC ${LLVM_LIBS} PRIVATE ${LLVM_STATIC_LIBS})
     set_target_properties(QBDI PROPERTIES OUTPUT_NAME QBDI)
     # Hack: output stub not in the same directory than static to avoid conflicts
     if(QBDI_PLATFORM_WINDOWS)
@@ -318,7 +270,7 @@ if(${DEPENDENCY_SATISFIED})
         # Force a strip cmd
         set(CMAKE_STRIP ${STRIP_PATH})
     endif()
-    if(DEFINED CMAKE_STRIP AND NOT CMAKE_STRIP STREQUAL "CMAKE_STRIP-NOTFOUND" AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    if(DEFINED CMAKE_STRIP AND NOT CMAKE_STRIP STREQUAL "CMAKE_STRIP-NOTFOUND" AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT QBDI_ENABLE_LOG_DEBUG)
         set(STRIP_ARGS "")
         if(APPLE)
             set(STRIP_ARGS ${STRIP_ARGS} -un)
@@ -330,14 +282,7 @@ if(${DEPENDENCY_SATISFIED})
             COMMAND ${CMAKE_STRIP} ${STRIP_ARGS} "$<TARGET_FILE:QBDI>")
     endif()
 
-    # Configure install
-    if(UNIX AND NOT (QBDI_ARCH_ARM AND (QBDI_PLATFORM_IOS OR QBDI_PLATFORM_ANDROID)))
-        set(FULL_PACKAGE true)
-    else()
-        set(FULL_PACKAGE false)
-    endif()
-
-    # Install targets
+    # Install QBDI targets
     set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME "QBDI")
     install(TARGETS QBDI_static
         EXPORT QBDI_targets
@@ -359,6 +304,12 @@ if(${DEPENDENCY_SATISFIED})
 
     install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI.h" DESTINATION include/)
 
+    # Configure install
+    if(UNIX AND NOT (QBDI_ARCH_ARM AND (QBDI_PLATFORM_IOS OR QBDI_PLATFORM_ANDROID)))
+        set(FULL_PACKAGE true)
+    else()
+        set(FULL_PACKAGE false)
+    endif()
 
     if(FULL_PACKAGE)
         string(REPLACE ";" " " LLVM_LIBS_STR "${LLVM_LIBS}")
@@ -413,15 +364,12 @@ if(${DEPENDENCY_SATISFIED})
 
         if(QBDI_TOOLS_FRIDAQBDI)
             install(DIRECTORY templates/qbdi_frida_template DESTINATION templates/qbdi_frida_template)
+            install(FILES tools/frida-qbdi.js DESTINATION .)
         endif()
 
         install(FILES LICENSE.txt package/Readme.txt DESTINATION .)
 
         set(PRELOAD_RESOURCES_PREFIX qbdipreload)
-
-        if(QBDI_TOOLS_FRIDAQBDI)
-            install(FILES tools/frida-qbdi.js DESTINATION .)
-        endif()
     endif()
 
     # Configure iOS code signature

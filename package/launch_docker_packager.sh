@@ -110,9 +110,6 @@ build_archlinux X86_64
 # archlinux x86
 build_archlinux X86
 
-# android-ARM
-build_android ARM
-
 # android-x86
 build_android X86
 

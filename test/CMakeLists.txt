@@ -36,39 +36,14 @@ if (QBDI_TEST)
 
     MERGE_STATIC_LIBS(QBDI_static_test QBDI_static \${TEST_LLVM_LIBS})
 
-    set(SOURCES
-        QBDITest.cpp
-        API/AllocTest.cpp
-        API/RangeTest.cpp
-        API/VMTest.cpp
-        ExecBlock/ExecBlockTest.cpp
-        ExecBlock/ExecBlockManagerTest.cpp
-        TestSetup/LLVMTestEnv.cpp
-        Patch/ComparedExecutor_${QBDI_ARCH}.cpp
-        Patch/Instr_${QBDI_BASE_ARCH}Test.cpp
-        Patch/Patch_${QBDI_BASE_ARCH}Test.cpp
-        Miscs/StringTest.cpp
-        TestSetup/InMemoryAssembler.cpp
-        TestSetup/ShellcodeTester.cpp
-    )
-
-    if (QBDI_ARCH_X86_64 OR QBDI_ARCH_X86)
-        set(SOURCES ${SOURCES} "API/MemoryAccessTest.cpp")
-    endif()
-
-    if(QBDI_PLATFORM_WINDOWS AND QBDI_ARCH_X86_64)
-        set(SOURCES ${SOURCES}
-            Patch/WIN64_RunRealExec.asm
-        )
-    elseif (QBDI_PLATFORM_WINDOWS AND QBDI_ARCH_X86)
-        set(SOURCES ${SOURCES}
-            Patch/WIN86_RunRealExec.asm
-        )
-        set_source_files_properties("Patch/WIN86_RunRealExec.asm" PROPERTIES COMPILE_FLAGS "/safeseh")
-    endif()
-
-    add_executable(QBDITest ${SOURCES})
+    add_executable(QBDITest "${CMAKE_CURRENT_LIST_DIR}/QBDITest.cpp")
     add_signature(QBDITest)
+
+    include("${CMAKE_CURRENT_LIST_DIR}/API/CMakeLists.txt")
+    include("${CMAKE_CURRENT_LIST_DIR}/ExecBlock/CMakeLists.txt")
+    include("${CMAKE_CURRENT_LIST_DIR}/Patch/CMakeLists.txt")
+    include("${CMAKE_CURRENT_LIST_DIR}/Miscs/CMakeLists.txt")
+    include("${CMAKE_CURRENT_LIST_DIR}/TestSetup/CMakeLists.txt")
 
     target_include_directories(QBDITest PRIVATE
         "${CMAKE_BINARY_DIR}/include"
@@ -92,32 +67,12 @@ if (QBDI_TEST)
     set_property(TARGET QBDITest PROPERTY CXX_STANDARD_REQUIRED ON)
 endif()
 
-
 # Benchmark
 if(QBDI_BENCHMARK)
-    ExternalProject_Add(SHA256_lib
-        GIT_REPOSITORY      "https://github.com/aguinet/sha256_literal.git"
-        GIT_PROGRESS        "true"
-        GIT_TAG             "d7017a7b4bbc30bc93fb8bd4cf54555986d25ef0"
-        CONFIGURE_COMMAND   ""
-        BUILD_COMMAND       ""
-        INSTALL_COMMAND     "")
-
-    ExternalProject_get_property(SHA256_lib SOURCE_DIR)
-    set(SHA256_lib_SOURCE_DIR "${SOURCE_DIR}")
-
-    add_custom_command(OUTPUT "${SHA256_lib_SOURCE_DIR}/sha256_impl.cpp" DEPENDS SHA256_lib
-        COMMAND ${CMAKE_COMMAND} -E create_symlink "${SHA256_lib_SOURCE_DIR}/sha256.cpp" "${SHA256_lib_SOURCE_DIR}/sha256_impl.cpp")
-
-    set(SOURCES_BENCHMARK
-        QBDIBenchmark.cpp
-        Benchmark/Fibonacci.cpp
-        Benchmark/SHA256.cpp
-        "${SHA256_lib_SOURCE_DIR}/sha256_impl.cpp"
-    )
-
-    add_executable(QBDIBenchmark ${SOURCES_BENCHMARK})
+    add_executable(QBDIBenchmark "${CMAKE_CURRENT_LIST_DIR}/QBDIBenchmark.cpp")
     add_signature(QBDIBenchmark)
+
+    include("${CMAKE_CURRENT_LIST_DIR}/Benchmark/CMakeLists.txt")
 
     target_include_directories(QBDIBenchmark PRIVATE
         "${CMAKE_BINARY_DIR}/include"
@@ -126,10 +81,9 @@ if(QBDI_BENCHMARK)
         "${CMAKE_SOURCE_DIR}/include/QBDI"
         "${CMAKE_CURRENT_SOURCE_DIR}"
         "${Catch2_SOURCE_DIR}/single_include"
-        "${SHA256_lib_SOURCE_DIR}"
     )
 
-    add_dependencies(QBDIBenchmark Catch2 SHA256_lib)
+    add_dependencies(QBDIBenchmark Catch2)
     target_link_libraries(QBDIBenchmark
         QBDI_static
         ${LLVM_LIBS}
