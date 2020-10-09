@@ -41,7 +41,7 @@ struct MemCBInfo {
     void* data;
 };
 
-VMAction memReadGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
+static VMAction memReadGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
     std::vector<std::pair<uint32_t, MemCBInfo>>* memCBInfos = static_cast<std::vector<std::pair<uint32_t, MemCBInfo>>*>(data);
     std::vector<MemoryAccess> memAccesses = vm->getInstMemoryAccess();
     VMAction action = VMAction::CONTINUE;
@@ -65,7 +65,7 @@ VMAction memReadGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, v
     return action;
 }
 
-VMAction memWriteGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
+static VMAction memWriteGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
     std::vector<std::pair<uint32_t, MemCBInfo>>* memCBInfos = static_cast<std::vector<std::pair<uint32_t, MemCBInfo>>*>(data);
     std::vector<MemoryAccess> memAccesses = vm->getInstMemoryAccess();
     VMAction action = VMAction::CONTINUE;
@@ -89,7 +89,7 @@ VMAction memWriteGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, 
     return action;
 }
 
-VMAction stopCallback(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
+static VMAction stopCallback(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
     return VMAction::STOP;
 }
 
@@ -125,6 +125,32 @@ VM& VM::operator=(VM&& vm) {
     return *this;
 }
 
+VM::VM(const VM& vm) :
+        engine(std::make_unique<Engine>(*vm.engine)),
+        memoryLoggingLevel(vm.memoryLoggingLevel),
+        memCBInfos(std::make_unique<std::vector<std::pair<uint32_t, MemCBInfo>>>(*vm.memCBInfos)),
+        memCBID(vm.memCBID),
+        memReadGateCBID(vm.memReadGateCBID),
+        memWriteGateCBID(vm.memWriteGateCBID) {
+
+    engine->changeVMInstanceRef(this);
+}
+
+
+VM& VM::operator=(const VM& vm) {
+    *engine = *vm.engine;
+    *memCBInfos = *vm.memCBInfos;
+
+    memoryLoggingLevel = vm.memoryLoggingLevel;
+    memCBID = vm.memCBID;
+    memReadGateCBID = vm.memReadGateCBID;
+    memWriteGateCBID = vm.memWriteGateCBID;
+
+    engine->changeVMInstanceRef(this);
+
+    return *this;
+}
+
 GPRState* VM::getGPRState() const {
     return engine->getGPRState();
 }
@@ -134,12 +160,12 @@ FPRState* VM::getFPRState() const {
 }
 
 
-void VM::setGPRState(GPRState* gprState) {
+void VM::setGPRState(const GPRState* gprState) {
     RequireAction("VM::setGPRState", gprState != nullptr, return);
     engine->setGPRState(gprState);
 }
 
-void VM::setFPRState(FPRState* fprState) {
+void VM::setFPRState(const FPRState* fprState) {
     RequireAction("VM::setFPRState", fprState != nullptr, return);
     engine->setFPRState(fprState);
 }

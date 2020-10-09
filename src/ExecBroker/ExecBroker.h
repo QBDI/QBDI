@@ -51,6 +51,14 @@ public:
 
     bool isInstrumented(rword addr) const { return instrumented.contains(addr);}
 
+    void setInstrumentedRange(const RangeSet<rword>& r) {
+      instrumented = r;
+    }
+
+    const RangeSet<rword>& getInstrumentedRange() const {
+      return instrumented;
+    }
+
     void addInstrumentedRange(const Range<rword>& r);
     bool addInstrumentedModule(const std::string& name);
     bool addInstrumentedModuleFromAddr(rword addr);

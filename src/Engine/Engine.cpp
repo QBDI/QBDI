@@ -57,17 +57,29 @@ namespace QBDI {
 
 Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs, VMInstanceRef vminstance)
     : cpu(_cpu), mattrs(_mattrs), vminstance(vminstance), instrRulesCounter(0), vmCallbacksCounter(0) {
+    init();
+}
+
+Engine::~Engine() = default;
+
+
+// may need to reinit the Engine during a copy
+void Engine::init() {
+    static bool firstInit = true;
 
     std::string          error;
     std::string          featuresStr;
     const llvm::Target*  processTarget;
 
-    llvm::InitializeAllTargetInfos();
-    llvm::InitializeAllTargetMCs();
-    llvm::InitializeAllAsmParsers();
-    llvm::InitializeAllDisassemblers();
-    initMemAccessInfo();
-    initRegisterSize();
+    if (firstInit) {
+        firstInit = false;
+        llvm::InitializeAllTargetInfos();
+        llvm::InitializeAllTargetMCs();
+        llvm::InitializeAllAsmParsers();
+        llvm::InitializeAllDisassemblers();
+        initMemAccessInfo();
+        initRegisterSize();
+    }
 
     // Build features string
     if (cpu.empty()) {
@@ -94,7 +106,7 @@ Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs,
     );
     llvm::Triple processTriple(tripleName);
     processTarget = llvm::TargetRegistry::lookupTarget(tripleName, error);
-    LogDebug("Engine::Engine", "Initialized LLVM for target %s", tripleName.c_str());
+    LogDebug("Engine::init", "Initialized LLVM for target %s", tripleName.c_str());
 
     // Allocate all LLVM classes
     llvm::MCTargetOptions MCOptions;
@@ -111,7 +123,7 @@ Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs,
     MSTI = std::unique_ptr<llvm::MCSubtargetInfo>(
       processTarget->createMCSubtargetInfo(tripleName, cpu, featuresStr)
     );
-    LogDebug("Engine::Engine", "Initialized LLVM subtarget with cpu %s and features %s", cpu.c_str(), featuresStr.c_str());
+    LogDebug("Engine::init", "Initialized LLVM subtarget with cpu %s and features %s", cpu.c_str(), featuresStr.c_str());
     auto MAB = std::unique_ptr<llvm::MCAsmBackend>(
         processTarget->createMCAsmBackend(*MSTI, *MRI, MCOptions)
     );
@@ -137,8 +149,70 @@ Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs,
     curExecBlock = nullptr;
 }
 
-Engine::~Engine() = default;
+void Engine::reinit(const std::string& cpu_, const std::vector<std::string>& mattrs_) {
+    RequireAction("Engine::reinit", curExecBlock == nullptr && "Cannot reInit a running Engine", abort());
 
+    // clear callbacks
+    instrRules.clear();
+    vmCallbacks.clear();
+    instrRulesCounter = 0;
+    vmCallbacksCounter = 0;
+
+    // clear state
+    gprState.reset();
+    curGPRState = nullptr;
+    fprState.reset();
+    curFPRState = nullptr;
+    patchRules.clear();
+
+    // close internal object
+    execBroker.reset();
+    blockManager.reset();
+    assembly.reset();
+
+    // close all llvm references
+    MCE.reset();
+    MSTI.reset();
+    MCII.reset();
+    MCTX.reset();
+    MOFI.reset();
+    MAI.reset();
+    MRI.reset();
+
+    cpu = cpu_;
+    mattrs = mattrs_;
+    tripleName = "";
+
+    init();
+}
+
+Engine::Engine(const Engine& other)
+    : cpu(other.cpu), mattrs(other.mattrs), vminstance(nullptr) {
+    this->init();
+    *this = other;
+}
+
+Engine& Engine::operator=(const Engine& other) {
+    this->clearAllCache();
+
+    if (cpu != other.cpu || mattrs != other.mattrs)
+      reinit(other.cpu, other.mattrs);
+
+    // copy the configuration
+    instrRules = other.instrRules;
+    vmCallbacks = other.vmCallbacks;
+    instrRulesCounter = other.instrRulesCounter;
+    vmCallbacksCounter = other.vmCallbacksCounter;
+
+    // copy instrumentation range
+    execBroker->setInstrumentedRange(other.execBroker->getInstrumentedRange());
+
+    // copy state
+    setGPRState(other.getGPRState());
+    setFPRState(other.getFPRState());
+
+    return *this;
+}
 
 void Engine::changeVMInstanceRef(VMInstanceRef vminstance) {
     this->vminstance = vminstance;
@@ -170,12 +244,12 @@ FPRState* Engine::getFPRState() const {
    return curFPRState;
 }
 
-void Engine::setGPRState(GPRState* gprState) {
+void Engine::setGPRState(const GPRState* gprState) {
     RequireAction("Engine::setGPRState", gprState, return);
     *(this->curGPRState) = *gprState;
 }
 
-void Engine::setFPRState(FPRState* fprState) {
+void Engine::setFPRState(const FPRState* fprState) {
     RequireAction("Engine::setFPRState", fprState, return);
     *(this->curFPRState) = *fprState;
 }

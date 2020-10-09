@@ -92,6 +92,9 @@ private:
     FPRState*                                                       curFPRState;
     ExecBlock*                                                      curExecBlock;
 
+    void init();
+    void reinit(const std::string& cpu, const std::vector<std::string>& mattrs);
+
     std::vector<Patch> patch(rword start);
 
     void initGPRState();
@@ -113,6 +116,12 @@ public:
     Engine(const std::string& cpu = "", const std::vector<std::string>& mattrs = {}, VMInstanceRef vminstance = nullptr);
 
     ~Engine();
+
+    Engine(const Engine&&) = delete;
+    Engine& operator=(const Engine&&) = delete;
+
+    Engine(const Engine&);
+    Engine& operator=(const Engine&);
 
     /*! Change the pointer to vminstance. The new pointer will be used for
      * future callback
@@ -137,13 +146,13 @@ public:
      *
      * @param[in] gprState A structure containing the GPR state.
      */
-    void        setGPRState(GPRState* gprState);
+    void        setGPRState(const GPRState* gprState);
 
     /*! Set the GPR state
      *
      * @param[in] fprState A structure containing the FPR state.
      */
-    void        setFPRState(FPRState* fprState);
+    void        setFPRState(const FPRState* fprState);
 
     /*! Add an address range to the set of instrumented address ranges.
      *

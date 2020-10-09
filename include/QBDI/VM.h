@@ -75,14 +75,25 @@ public:
      */
     VM& operator=(VM&& vm);
 
+    /*! Copy constructors
+     *  The state and the configuration is copied. The cache isn't duplicate.
+     *  The assigned VM begin with an empty cache.
+     *
+     * @param[in] vm     The VM to copy
+     */
+    VM(const VM& vm);
+
+    /*! Copy assignment operator
+     *  The state and the configuration is copied. The cache isn't duplicate.
+     *  The assigned VM begin with an empty cache.
+     *
+     * @param[in] vm     The VM to copy
+     */
+    VM& operator=(const VM& vm);
+
     // delete const move constructor and const move assignment operator
     VM(const VM&& vm) = delete;
     VM& operator=(const VM&& vm) = delete;
-
-    // delete const copy constructor and copy assignment operator
-    VM(const VM& vm) = delete;
-    VM& operator=(const VM& vm) = delete;
-
 
     /*! Obtain the current general purpose register state.
      *
@@ -100,13 +111,13 @@ public:
      *
      * @param[in] gprState A structure containing the GPR state.
      */
-    void        setGPRState(GPRState* gprState);
+    void        setGPRState(const GPRState* gprState);
 
     /*! Set the FPR state
      *
      * @param[in] fprState A structure containing the FPR state.
      */
-    void        setFPRState(FPRState* fprState);
+    void        setFPRState(const FPRState* fprState);
 
     /*! Add an address range to the set of instrumented address ranges.
      *
