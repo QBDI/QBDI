@@ -114,6 +114,13 @@ public:
 
     ~Engine();
 
+    /*! Change the pointer to vminstance. The new pointer will be used for
+     * future callback
+     *
+     * @param[in] vminstance   The new vminstance
+     */
+    void changeVMInstanceRef(VMInstanceRef vminstance);
+
     /*! Obtain the current general purpose register state.
      *
      * @return A structure containing the GPR state.

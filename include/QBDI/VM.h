@@ -59,6 +59,31 @@ public:
 
     ~VM();
 
+    /*! Move constructors.
+     *  All the cache is keep.
+     *  All registered callbacks will be called with the new pointer of the VM.
+     *
+     * @param[in] vm     The VM to move
+     */
+    VM(VM&& vm);
+
+    /*! Move assignment operator
+     *  All the cache is keep.
+     *  All registered callbacks will be called with the new pointer of the VM.
+     *
+     * @param[in] vm     The VM to move
+     */
+    VM& operator=(VM&& vm);
+
+    // delete const move constructor and const move assignment operator
+    VM(const VM&& vm) = delete;
+    VM& operator=(const VM&& vm) = delete;
+
+    // delete const copy constructor and copy assignment operator
+    VM(const VM& vm) = delete;
+    VM& operator=(const VM& vm) = delete;
+
+
     /*! Obtain the current general purpose register state.
      *
      * @return A structure containing the GPR state.

@@ -129,6 +129,10 @@ ExecBlock::~ExecBlock() {
     QBDI::releaseMappedMemory(codeBlock);
 }
 
+void ExecBlock::changeVMInstanceRef(VMInstanceRef vminstance) {
+    this->vminstance = vminstance;
+}
+
 void ExecBlock::show() const {
     rword i;
     uint64_t instSize;

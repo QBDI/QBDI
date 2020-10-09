@@ -20,7 +20,7 @@
 #include "VM.h"
 
 class VMTest {
-    protected:
+    public:
         VMTest();
         ~VMTest();
 

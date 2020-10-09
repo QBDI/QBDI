@@ -138,6 +138,10 @@ public:
 
     ExecBlock(const ExecBlock&) = delete;
 
+    /*! Change vminstance when VM object is moved
+     */
+    void changeVMInstanceRef(VMInstanceRef vminstance);
+
     /*! Display the content of an exec block to stderr.
      */
     void show() const;

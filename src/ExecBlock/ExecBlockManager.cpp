@@ -54,6 +54,13 @@ ExecBlockManager::~ExecBlockManager() {
     clearCache();
 }
 
+void ExecBlockManager::changeVMInstanceRef(VMInstanceRef vminstance) {
+    this->vminstance = vminstance;
+    for (auto &reg : regions)
+        for (auto &block : reg.blocks)
+            block->changeVMInstanceRef(vminstance);
+}
+
 float ExecBlockManager::getExpansionRatio() const {
     LogDebug("ExecBlockManager::getExpansionRatio", "%zu / %zu", total_translation_size, total_translated_size);
     return static_cast<float>(total_translation_size) / static_cast<float>(total_translated_size);

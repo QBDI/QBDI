@@ -101,6 +101,30 @@ VM::VM(const std::string& cpu, const std::vector<std::string>& mattrs) :
 
 VM::~VM() = default;
 
+VM::VM(VM&& vm) :
+        engine(std::move(vm.engine)),
+        memoryLoggingLevel(vm.memoryLoggingLevel),
+        memCBInfos(std::move(vm.memCBInfos)),
+        memCBID(vm.memCBID),
+        memReadGateCBID(vm.memReadGateCBID),
+        memWriteGateCBID(vm.memWriteGateCBID) {
+
+    engine->changeVMInstanceRef(this);
+}
+
+VM& VM::operator=(VM&& vm) {
+    engine = std::move(vm.engine);
+    memoryLoggingLevel = vm.memoryLoggingLevel;
+    memCBInfos = std::move(vm.memCBInfos);
+    memCBID = vm.memCBID;
+    memReadGateCBID = vm.memReadGateCBID;
+    memWriteGateCBID = vm.memWriteGateCBID;
+
+    engine->changeVMInstanceRef(this);
+
+    return *this;
+}
+
 GPRState* VM::getGPRState() const {
     return engine->getGPRState();
 }

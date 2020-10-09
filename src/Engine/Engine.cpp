@@ -139,6 +139,13 @@ Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs,
 
 Engine::~Engine() = default;
 
+
+void Engine::changeVMInstanceRef(VMInstanceRef vminstance) {
+    this->vminstance = vminstance;
+    blockManager->changeVMInstanceRef(vminstance);
+    execBroker->changeVMInstanceRef(vminstance);
+}
+
 void Engine::initGPRState() {
     memset(gprState.get(), 0, sizeof(GPRState));
 }

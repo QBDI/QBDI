@@ -26,6 +26,10 @@ ExecBroker::ExecBroker(Assembly& assembly, VMInstanceRef vminstance) :
       llvm::expectedToOptional(llvm::sys::Process::getPageSize()).getValueOr(4096);
 }
 
+void ExecBroker::changeVMInstanceRef(VMInstanceRef vminstance) {
+    transferBlock.changeVMInstanceRef(vminstance);
+}
+
 void ExecBroker::addInstrumentedRange(const Range<rword>& r) {
     LogDebug("ExecBroker::addInstrumentedRange", "Adding instrumented range [%" PRIRWORD ", %" PRIRWORD "]",
              r.start(), r.end());

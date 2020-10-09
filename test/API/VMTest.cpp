@@ -619,3 +619,128 @@ TEST_CASE_METHOD(VMTest, "VMTest, DelayedCacheFlush") {
     REQUIRE(count == info.count);
 }
 
+// Test Move constructor and move assignment operator
+
+struct MoveCallbackStruct {
+    QBDI::VMInstanceRef expectedRef;
+    bool allowedNewBlock;
+
+    bool reachEventCB;
+    bool reachInstCB;
+};
+
+static QBDI::VMAction allowedNewBlock(QBDI::VMInstanceRef vm, const QBDI::VMState* state, QBDI::GPRState*, QBDI::FPRState*, void *data_) {
+    MoveCallbackStruct* data = static_cast<MoveCallbackStruct*>(data_);
+    CHECK(data->expectedRef == vm);
+    CHECK(( data->allowedNewBlock or ( (state->event & QBDI::BASIC_BLOCK_NEW) == 0 ) ));
+
+    data->reachEventCB = true;
+    return QBDI::VMAction::CONTINUE;
+}
+
+static QBDI::VMAction verifyVMRef(QBDI::VMInstanceRef vm, QBDI::GPRState*, QBDI::FPRState*, void *data_) {
+    MoveCallbackStruct* data = static_cast<MoveCallbackStruct*>(data_);
+    CHECK(data->expectedRef == vm);
+
+    data->reachInstCB = true;
+    return QBDI::VMAction::CONTINUE;
+}
+
+TEST_CASE("VMTest, MoveConstructor") {
+
+    VMTest vm1;
+    QBDI::VM* vm = vm1.vm.get();
+
+    MoveCallbackStruct data {vm, true, false, false};
+
+    bool instrumented = vm->addInstrumentedModuleFromAddr((QBDI::rword)&dummyFunCall);
+    REQUIRE(instrumented);
+
+    vm->addCodeCB(QBDI::InstPosition::POSTINST, verifyVMRef, &data);
+    vm->addVMEventCB(QBDI::SEQUENCE_ENTRY | QBDI::SEQUENCE_EXIT | QBDI::BASIC_BLOCK_NEW, allowedNewBlock, &data);
+
+    QBDI::rword retvalue;
+
+    vm->call(&retvalue, (QBDI::rword) dummyFun1, {350});
+    REQUIRE(retvalue == 350);
+    REQUIRE(data.reachEventCB);
+    REQUIRE(data.reachInstCB);
+
+    data.reachEventCB = false;
+    data.reachInstCB = false;
+    data.allowedNewBlock = false;
+
+    vm = vm1.vm.release();
+    REQUIRE(vm1.vm.get() == nullptr);
+    REQUIRE(vm == data.expectedRef);
+
+    QBDI::VM movedVM(std::move(*vm));
+    vm = nullptr;
+
+    REQUIRE(data.expectedRef != &movedVM);
+    data.expectedRef = &movedVM;
+
+    movedVM.call(&retvalue, (QBDI::rword) dummyFun1, {780});
+    REQUIRE(retvalue == 780);
+    REQUIRE(data.reachEventCB);
+    REQUIRE(data.reachInstCB);
+}
+
+TEST_CASE("VMTest, MoveAssignmentOperator") {
+
+    VMTest vm1_;
+    VMTest vm2_;
+    QBDI::VM* vm1 = vm1_.vm.get();
+    QBDI::VM* vm2 = vm2_.vm.get();
+    REQUIRE( vm1 != vm2 );
+
+    MoveCallbackStruct data1 {vm1, true, false, false};
+    MoveCallbackStruct data2 {vm2, true, false, false};
+
+    bool instrumented = vm1->addInstrumentedModuleFromAddr((QBDI::rword)&dummyFunCall);
+    REQUIRE(instrumented);
+    instrumented = vm2->addInstrumentedModuleFromAddr((QBDI::rword)&dummyFunCall);
+    REQUIRE(instrumented);
+
+    vm1->addCodeCB(QBDI::InstPosition::POSTINST, verifyVMRef, &data1);
+    vm1->addVMEventCB(QBDI::SEQUENCE_ENTRY | QBDI::SEQUENCE_EXIT | QBDI::BASIC_BLOCK_NEW, allowedNewBlock, &data1);
+
+    vm2->addCodeCB(QBDI::InstPosition::POSTINST, verifyVMRef, &data2);
+    vm2->addVMEventCB(QBDI::SEQUENCE_ENTRY | QBDI::SEQUENCE_EXIT | QBDI::BASIC_BLOCK_NEW, allowedNewBlock, &data2);
+
+    QBDI::rword retvalue;
+
+    vm1->call(&retvalue, (QBDI::rword) dummyFun1, {350});
+    REQUIRE(retvalue == 350);
+    REQUIRE(data1.reachEventCB);
+    REQUIRE(data1.reachInstCB);
+
+    data1.reachEventCB = false;
+    data1.reachInstCB = false;
+    data1.allowedNewBlock = false;
+
+    vm2->call(&retvalue, (QBDI::rword) dummyFun1, {670});
+    REQUIRE(retvalue == 670);
+    REQUIRE(data2.reachEventCB);
+    REQUIRE(data2.reachInstCB);
+
+    data2.reachEventCB = false;
+    data2.reachInstCB = false;
+    data2.allowedNewBlock = false;
+
+    data1.expectedRef = vm2;
+    data2.expectedRef = nullptr;
+
+    vm1 = vm1_.vm.release();
+    REQUIRE(vm1_.vm.get() == nullptr);
+
+    *vm2 = std::move(*vm1);
+    vm1 = nullptr;
+
+    vm2->call(&retvalue, (QBDI::rword) dummyFun1, {780});
+    REQUIRE(retvalue == 780);
+    REQUIRE(data1.reachEventCB);
+    REQUIRE(data1.reachInstCB);
+    REQUIRE(( not data2.reachEventCB));
+    REQUIRE(( not data2.reachInstCB));
+}

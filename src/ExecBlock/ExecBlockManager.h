@@ -107,6 +107,8 @@ public:
 
     ExecBlockManager(const ExecBlockManager&) = delete;
 
+    void changeVMInstanceRef(VMInstanceRef vminstance);
+
     void printCacheStatistics(FILE* output) const;
 
     ExecBlock* getProgrammedExecBlock(rword address);
