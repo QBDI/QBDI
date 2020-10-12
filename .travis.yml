@@ -36,32 +36,23 @@ _osx_target32: &osx_target32
   before_script:
     - HOMEBREW_NO_AUTO_UPDATE=1 brew install ccache python3
 
-_install_llvm: &install_llvm
-  script:
-    - mkdir build && cd build
-    - cmake .. ${CMAKE_ARGS}
-    - eval '[[ -n "$(find ../deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/lib -type f -print -quit)" && -n "$(find ../deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/include -type f -print -quit)" ]] || make llvm'
-  before_cache:
-    # Reduce cache size
-    - python3 ../deps/llvm/build.py clean ${QBDI_PLATFORM}-${QBDI_ARCH}
-
-_docker_llvm: &docker_llvm
-  services:
-    - docker
-  script:
-    - bash ./docker/travis_linux/llvm.sh
-
 _compile_and_test: &compile_and_test
   script:
     - mkdir build && cd build
     - cmake .. ${CMAKE_ARGS}
+    - eval '[[ -n "$(find ../deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/lib -type f -print -quit)" && -n "$(find ../deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/include -type f -print -quit)" ]] || make llvm'
+    - cmake .. ${CMAKE_ARGS}
     - make -j2
     - ./test/QBDITest
+  before_cache:
+    # Reduce cache size
+    - python3 ../deps/llvm/build.py clean ${QBDI_PLATFORM}-${QBDI_ARCH}
 
 _docker_compile_and_test: &docker_compile_and_test
   services:
     - docker
   script:
+    - bash ./docker/travis_linux/llvm.sh
     - bash ./docker/travis_linux/qbdi.sh
 
 cache:
@@ -80,19 +71,6 @@ cache:
 
 jobs:
   include:
-    - stage: deps_llvm
-      <<: *osx_target
-      <<: *install_llvm
-    - stage: deps_llvm
-      <<: *osx_target32
-      <<: *install_llvm
-    - stage: deps_llvm
-      <<: *linux_target
-      <<: *docker_llvm
-    - stage: deps_llvm
-      <<: *linux_target32
-      <<: *docker_llvm
-
     - stage: qbdi
       <<: *osx_target
       <<: *compile_and_test
