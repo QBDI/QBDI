@@ -65,6 +65,7 @@ class CMakeBuild(build_ext):
                       '-DQBDI_TOOLS_PYQBDI=On',
                       '-DQBDI_TEST=Off',
                       '-DQBDI_BENCHMARK=Off',
+                      '-DQBDI_SHARED_LIBRARY=Off',
                      ]
         build_args = ['--config', 'Release']
 

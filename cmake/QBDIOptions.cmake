@@ -21,6 +21,12 @@ option(QBDI_ASAN "Enable AddressSanitizer (ASAN) for debugging (May be slow down
 # Enable the logging level debug
 option(QBDI_LOG_DEBUG "Enable Debug log level" OFF)
 
+# Compile static Library
+option(QBDI_STATIC_LIBRARY "Build the static library" ON)
+
+# Compile shared Library
+option(QBDI_SHARED_LIBRARY "Build the shared library" ON)
+
 # test
 option(QBDI_TEST "Compile tests" ON)
 
@@ -53,10 +59,38 @@ endif()
 # binding QBDI for frida
 option(QBDI_TOOLS_FRIDAQBDI "Install frida-qbdi" ON)
 
-# package
-option(QBDI_PACKAGE_LIBNCURSE6 "create package with libncurse6 (default libncurse5)" OFF)
+
+# verify options
+if (NOT QBDI_STATIC_LIBRARY)
+    if (QBDI_TEST)
+        message(FATAL_ERROR "Need QBDI_STATIC_LIBRARY to compile QBDI_TEST")
+    endif()
+    if (QBDI_BENCHMARK)
+        message(FATAL_ERROR "Need QBDI_STATIC_LIBRARY to compile QBDI_BENCHMARK")
+    endif()
+    if (QBDI_TOOLS_PYQBDI)
+        message(FATAL_ERROR "Need QBDI_STATIC_LIBRARY to compile QBDI_TOOLS_PYQBDI")
+    endif()
+    if (QBDI_TOOLS_QBDIPRELOAD)
+        message(FATAL_ERROR "Need QBDI_STATIC_LIBRARY to compile QBDI_TOOLS_QBDIPRELOAD")
+    endif()
+    if (QBDI_TOOLS_VALIDATOR)
+        message(FATAL_ERROR "Need QBDI_STATIC_LIBRARY to compile QBDI_TOOLS_VALIDATOR")
+    endif()
+endif()
+
+if (NOT QBDI_SHARED_LIBRARY)
+    if (QBDI_EXAMPLES)
+        message(FATAL_ERROR "Need QBDI_SHARED_LIBRARY to compile QBDI_EXAMPLES")
+    endif()
+endif()
+
+if (QBDI_TOOLS_VALIDATOR AND NOT QBDI_TOOLS_QBDIPRELOAD)
+    message(FATAL_ERROR "Need QBDI_TOOLS_QBDIPRELOAD to compile QBDI_TOOLS_VALIDATOR")
+endif()
 
 
+# display resulted options
 message(STATUS "== QBDI Options ==")
 message(STATUS "QBDI_CCACHE:           ${QBDI_CCACHE}")
 if (QBDI_ARCH_X86_64 OR QBDI_ARCH_X86)
@@ -69,6 +103,8 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 else()
     message(STATUS "QBDI_LOG_DEBUG:        ${QBDI_LOG_DEBUG}")
 endif()
+message(STATUS "QBDI_STATIC_LIBRARY:   ${QBDI_STATIC_LIBRARY}")
+message(STATUS "QBDI_SHARED_LIBRARY:   ${QBDI_SHARED_LIBRARY}")
 message(STATUS "QBDI_TEST:             ${QBDI_TEST}")
 message(STATUS "QBDI_BENCHMARK:        ${QBDI_BENCHMARK}")
 message(STATUS "QBDI_EXAMPLES:         ${QBDI_EXAMPLES}")

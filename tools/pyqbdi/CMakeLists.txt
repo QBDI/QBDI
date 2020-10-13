@@ -85,6 +85,11 @@ if(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
     endif()
 
     target_link_libraries(pyqbdi PRIVATE pyqbdi_module pyqbdi_utils QBDI_static)
+    set_target_properties(pyqbdi
+        PROPERTIES
+            CXX_STANDARD 14
+            CXX_STANDARD_REQUIRED ON
+    )
 
     if (PYTHON_LIBRARIES)
         set_target_properties(pyqbdi PROPERTIES COMPILE_DEFINITIONS "PYTHON_LIBRARIES=\"${PYTHON_LIBRARIES}\"")

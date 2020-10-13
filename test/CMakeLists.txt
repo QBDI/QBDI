@@ -64,8 +64,11 @@ if (QBDI_TEST)
         ${LLVM_LIBS}
     )
 
-    set_property(TARGET QBDITest PROPERTY CXX_STANDARD 14)
-    set_property(TARGET QBDITest PROPERTY CXX_STANDARD_REQUIRED ON)
+    set_target_properties(QBDITest
+        PROPERTIES
+            CXX_STANDARD 14
+            CXX_STANDARD_REQUIRED ON
+    )
 endif()
 
 # Benchmark
@@ -90,6 +93,9 @@ if(QBDI_BENCHMARK)
         ${LLVM_LIBS}
     )
 
-    set_property(TARGET QBDIBenchmark PROPERTY CXX_STANDARD 14)
-    set_property(TARGET QBDIBenchmark PROPERTY CXX_STANDARD_REQUIRED ON)
+    set_target_properties(QBDIBenchmark
+        PROPERTIES
+            CXX_STANDARD 14
+            CXX_STANDARD_REQUIRED ON
+    )
 endif()

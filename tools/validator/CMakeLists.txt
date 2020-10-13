@@ -21,3 +21,9 @@ target_include_directories(validator PRIVATE
     $<INSTALL_INTERFACE:include>
     )
 target_link_libraries(validator QBDIPreload QBDI_static)
+
+set_target_properties(validator
+    PROPERTIES
+        CXX_STANDARD 14
+        CXX_STANDARD_REQUIRED ON
+)

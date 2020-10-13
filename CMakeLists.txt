@@ -8,10 +8,6 @@ include(QBDIConfig)
 # Option
 include(QBDIOptions)
 
-# Use C++ 14
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 # Force find system utils (strip)
 include(CMakeFindBinUtils)
 
@@ -225,80 +221,107 @@ if(${DEPENDENCY_SATISFIED})
         "${CMAKE_CURRENT_SOURCE_DIR}/deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/include"
         "${CMAKE_CURRENT_SOURCE_DIR}/deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/lib/Target/${QBDI_LLVM_ARCH}"
         )
-    add_library(QBDI_obj STATIC)
-    target_link_libraries(QBDI_obj PRIVATE QBDI_src)
 
-    set(qbdi_static_libs ${LLVM_STATIC_LIBS} QBDI_obj)
+    if (QBDI_STATIC_LIBRARY)
+        add_library(QBDI_obj STATIC)
+        target_link_libraries(QBDI_obj PRIVATE QBDI_src)
 
-    MERGE_STATIC_LIBS(QBDI_static QBDI \${qbdi_static_libs})
-
-    add_library(QBDI::QBDI_static ALIAS QBDI_static)
-    target_include_directories(QBDI_static PUBLIC
-        $<INSTALL_INTERFACE:include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/QBDI>
+        set_target_properties(QBDI_obj
+            PROPERTIES
+                CXX_STANDARD 14
+                CXX_STANDARD_REQUIRED ON
         )
 
-    target_link_libraries(QBDI_static PUBLIC ${LLVM_LIBS})
-    add_dependencies(QBDI_static QBDI_obj)
+        set(qbdi_static_libs ${LLVM_STATIC_LIBS} QBDI_obj)
+
+        MERGE_STATIC_LIBS(QBDI_static QBDI \${qbdi_static_libs})
+
+        add_library(QBDI::QBDI_static ALIAS QBDI_static)
+        target_include_directories(QBDI_static PUBLIC
+            $<INSTALL_INTERFACE:include>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/QBDI>
+            )
+
+        target_link_libraries(QBDI_static PUBLIC ${LLVM_LIBS})
+        add_dependencies(QBDI_static QBDI_obj)
+
+        if(QBDI_PLATFORM_WINDOWS)
+            set_target_properties(QBDI_static PROPERTIES OUTPUT_NAME QBDI_static)
+        endif()
+
+        install(TARGETS QBDI_static
+            EXPORT QBDI_targets
+            COMPONENT QBDI
+            ARCHIVE DESTINATION lib)
+
+    endif()
 
     # QBDI as a shared library
-    add_library(QBDI SHARED)
-    add_library(QBDI::QBDI ALIAS QBDI)
+    if (QBDI_SHARED_LIBRARY)
+        add_library(QBDI SHARED)
+        add_library(QBDI::QBDI ALIAS QBDI)
 
-    target_link_libraries(QBDI PRIVATE QBDI_src)
-    target_link_libraries(QBDI PRIVATE ${LLVM_STATIC_LIBS})
+        target_link_libraries(QBDI PRIVATE QBDI_src)
+        target_link_libraries(QBDI PRIVATE ${LLVM_STATIC_LIBS})
 
-    target_include_directories(QBDI PUBLIC
-        $<INSTALL_INTERFACE:include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/QBDI>
+        set_target_properties(QBDI
+            PROPERTIES
+                CXX_STANDARD 14
+                CXX_STANDARD_REQUIRED ON
         )
 
-    target_link_libraries(QBDI PUBLIC ${LLVM_LIBS} PRIVATE ${LLVM_STATIC_LIBS})
-    set_target_properties(QBDI PROPERTIES OUTPUT_NAME QBDI)
-    # Hack: output stub not in the same directory than static to avoid conflicts
-    if(QBDI_PLATFORM_WINDOWS)
-        set_target_properties(QBDI_static PROPERTIES OUTPUT_NAME QBDI_static)
-    endif()
+        target_include_directories(QBDI PUBLIC
+            $<INSTALL_INTERFACE:include>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/QBDI>
+            )
 
-    if(DEFINED STRIP_PATH)
-        # Force a strip cmd
-        set(CMAKE_STRIP ${STRIP_PATH})
-    endif()
-    if(DEFINED CMAKE_STRIP AND NOT CMAKE_STRIP STREQUAL "CMAKE_STRIP-NOTFOUND" AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT QBDI_ENABLE_LOG_DEBUG)
-        set(STRIP_ARGS "")
-        if(APPLE)
-            set(STRIP_ARGS ${STRIP_ARGS} -un)
-        elseif(UNIX)
-            set(STRIP_ARGS ${STRIP_ARGS} -x)
+        target_link_libraries(QBDI PUBLIC ${LLVM_LIBS} PRIVATE ${LLVM_STATIC_LIBS})
+        set_target_properties(QBDI PROPERTIES OUTPUT_NAME QBDI)
+
+        if(DEFINED STRIP_PATH)
+            # Force a strip cmd
+            set(CMAKE_STRIP ${STRIP_PATH})
         endif()
-        add_custom_command(TARGET QBDI
-            POST_BUILD
-            COMMAND ${CMAKE_STRIP} ${STRIP_ARGS} "$<TARGET_FILE:QBDI>")
+        if (DEFINED CMAKE_STRIP AND
+                NOT CMAKE_STRIP STREQUAL "CMAKE_STRIP-NOTFOUND" AND
+                NOT CMAKE_BUILD_TYPE STREQUAL "Debug" AND
+                NOT QBDI_ENABLE_LOG_DEBUG)
+
+            set(STRIP_ARGS "")
+            if(APPLE)
+                set(STRIP_ARGS ${STRIP_ARGS} -un)
+            elseif(UNIX)
+                set(STRIP_ARGS ${STRIP_ARGS} -x)
+            endif()
+            add_custom_command(TARGET QBDI
+                POST_BUILD
+                COMMAND ${CMAKE_STRIP} ${STRIP_ARGS} "$<TARGET_FILE:QBDI>")
+        endif()
+
+        # Install QBDI targets
+        install(TARGETS QBDI
+            EXPORT QBDI_targets
+            COMPONENT QBDI
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib
+            RUNTIME DESTINATION lib)
+
+        if(QBDI_PLATFORM_WINDOWS)
+            install(FILES ${CMAKE_BINARY_DIR}/QBDI.exp
+                COMPONENT QBDI
+                DESTINATION lib)
+        endif()
+
     endif()
 
-    # Install QBDI targets
+
     set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME "QBDI")
-    install(TARGETS QBDI_static
-        EXPORT QBDI_targets
-        ARCHIVE DESTINATION lib)
-
-    install(TARGETS QBDI
-        EXPORT QBDI_targets
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION lib)
-
-    if(QBDI_PLATFORM_WINDOWS)
-        install(FILES ${CMAKE_BINARY_DIR}/QBDI.exp
-            DESTINATION lib)
-    endif()
-
     install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI" DESTINATION include/ PATTERN "*.in" EXCLUDE)
     install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include/QBDI" DESTINATION include/)
 
