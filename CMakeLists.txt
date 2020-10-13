@@ -219,6 +219,7 @@ if(${DEPENDENCY_SATISFIED})
 
     # Add QBDI source file in QBDI_obj
     add_library(QBDI_src INTERFACE)
+    add_library(QBDI_shared_src INTERFACE)
 
     include("${CMAKE_CURRENT_SOURCE_DIR}/src/CMakeLists.txt")
 
@@ -229,6 +230,12 @@ if(${DEPENDENCY_SATISFIED})
         "${CMAKE_CURRENT_SOURCE_DIR}/src"
         "${CMAKE_CURRENT_SOURCE_DIR}/deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/include"
         "${CMAKE_CURRENT_SOURCE_DIR}/deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/lib/Target/${QBDI_LLVM_ARCH}"
+        )
+
+    target_include_directories(QBDI_shared_src INTERFACE
+        "${CMAKE_CURRENT_BINARY_DIR}/include"
+        "${CMAKE_CURRENT_BINARY_DIR}/include/QBDI"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI"
         )
 
     if (QBDI_STATIC_LIBRARY)
@@ -273,7 +280,7 @@ if(${DEPENDENCY_SATISFIED})
         add_library(QBDI SHARED)
         add_library(QBDI::QBDI ALIAS QBDI)
 
-        target_link_libraries(QBDI PRIVATE QBDI_src)
+        target_link_libraries(QBDI PRIVATE QBDI_src QBDI_shared_src)
         target_link_libraries(QBDI PRIVATE ${LLVM_STATIC_LIBS})
 
         set_target_properties(QBDI
