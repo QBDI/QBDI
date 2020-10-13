@@ -33,8 +33,9 @@ if (QBDI_TEST)
     else()
       PREPEND(TEST_LLVM_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/lib ".a" ${_TEST_LLVM_LIBS})
     endif()
+    set(qbditest_static_libs ${TEST_LLVM_LIBS} QBDI_static)
 
-    MERGE_STATIC_LIBS(QBDI_static_test QBDI_static \${TEST_LLVM_LIBS})
+    MERGE_STATIC_LIBS(QBDI_static_test QBDITest_static \${qbditest_static_libs})
 
     add_executable(QBDITest "${CMAKE_CURRENT_LIST_DIR}/QBDITest.cpp")
     add_signature(QBDITest)

@@ -16,7 +16,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(CMakeFindBinUtils)
 
 # Macros
-include(cmake/libutils.cmake)
+include(cmake/merge_archives.cmake)
 
 # CCACHE
 # ======
@@ -228,13 +228,10 @@ if(${DEPENDENCY_SATISFIED})
     add_library(QBDI_obj STATIC)
     target_link_libraries(QBDI_obj PRIVATE QBDI_src)
 
-    # Hack because generators expressions don't work properly under visual studio ...
-    if(QBDI_PLATFORM_WINDOWS)
-        set(qbdi_static_libs ${LLVM_STATIC_LIBS} ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/QBDI_obj.lib)
-    else()
-        set(qbdi_static_libs ${LLVM_STATIC_LIBS} $<TARGET_FILE:QBDI_obj>)
-    endif()
+    set(qbdi_static_libs ${LLVM_STATIC_LIBS} QBDI_obj)
+
     MERGE_STATIC_LIBS(QBDI_static QBDI \${qbdi_static_libs})
+
     add_library(QBDI::QBDI_static ALIAS QBDI_static)
     target_include_directories(QBDI_static PUBLIC
         $<INSTALL_INTERFACE:include>
