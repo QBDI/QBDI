@@ -5,7 +5,7 @@ endif()
 set(__add_qbdi_options ON)
 
 # Enable compilation using ccache
-option(QBDI_CCACHE "Enable CCACHE" ON)
+option(QBDI_CCACHE "Enable CCACHE or SCCACHE" ON)
 
 # FORCE_DISABLE_AVX - default is OFF
 if(QBDI_ARCH_X86_64 OR QBDI_ARCH_X86)
@@ -89,13 +89,14 @@ if (QBDI_TOOLS_VALIDATOR AND NOT QBDI_TOOLS_QBDIPRELOAD)
     message(FATAL_ERROR "Need QBDI_TOOLS_QBDIPRELOAD to compile QBDI_TOOLS_VALIDATOR")
 endif()
 
-
 # display resulted options
 message(STATUS "== QBDI Options ==")
 message(STATUS "QBDI_CCACHE:           ${QBDI_CCACHE}")
+
 if (QBDI_ARCH_X86_64 OR QBDI_ARCH_X86)
     message(STATUS "QBDI_DISABLE_AVX:      ${QBDI_DISABLE_AVX}")
 endif()
+
 message(STATUS "QBDI_ASAN:             ${QBDI_ASAN}")
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(QBDI_LOG_DEBUG ON)
