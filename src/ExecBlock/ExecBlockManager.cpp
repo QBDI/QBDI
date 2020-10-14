@@ -303,6 +303,8 @@ void ExecBlockManager::mergeRegion(size_t i) {
     std::move(regions[i+1].analysisCache.begin(), regions[i+1].analysisCache.end(),
               std::insert_iterator<std::map<rword, InstAnalysisPtr>>(regions[i].analysisCache,
                                                                      regions[i].analysisCache.end()));
+    // flush
+    regions[i].toFlush |= regions[i+1].toFlush;
 
     regions.erase(regions.begin() + i + 1);
 }
@@ -764,18 +766,17 @@ void ExecBlockManager::clearCache(RangeSet<rword> rangeSet) {
 
 void ExecBlockManager::flushCommit() {
     // It needs to be erased from last to first to preserve index validity
-    if(flushList.size() > 0) {
+    if(needFlush) {
         LogDebug("ExecBlockManager::flushCommit", "Flushing analysis caches");
-        std::sort(flushList.begin(), flushList.end(), std::greater<size_t>());
-        // Remove duplicates
-        flushList.erase(std::unique(flushList.begin(), flushList.end()), flushList.end());
-        for(size_t r: flushList) {
-            LogDebug("ExecBlockManager::flushCommit", "Erasing region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
-                     r, regions[r].covered.start(), regions[r].covered.end());
-            regions.erase(regions.begin() + r);
-        }
-        flushList.clear();
+        regions.erase(std::remove_if(regions.begin(), regions.end(),
+            [](const ExecRegion &r) -> bool {
+                if (r.toFlush)
+                    LogDebug("ExecBlockManager::flushCommit", "Erasing region [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
+                             r.covered.start(), r.covered.end());
+                return r.toFlush;
+            }), regions.end());
         analysisCache.clear();
+        needFlush = false;
     }
 }
 
@@ -784,18 +785,26 @@ void ExecBlockManager::clearCache(Range<rword> range) {
     LogDebug("ExecBlockManager::clearCache", "Erasing range [0x%" PRIRWORD ", 0x%" PRIRWORD "]", range.start(), range.end());
     for(i = 0; i < regions.size(); i++) {
         if(regions[i].covered.overlaps(range)) {
-            flushList.push_back(i);
+            regions[i].toFlush = true;
+            needFlush = true;
         }
     }
 }
 
-void ExecBlockManager::clearCache() {
+void ExecBlockManager::clearCache(bool flushNow) {
     LogDebug("ExecBlockManager::clearCache", "Erasing all cache");
-    regions.clear();
-    flushList.clear();
-    analysisCache.clear();
-    total_translated_size = 1;
-    total_translation_size = 1;
+    if (flushNow) {
+        regions.clear();
+        analysisCache.clear();
+        total_translated_size = 1;
+        total_translation_size = 1;
+        needFlush = false;
+    } else {
+        for(auto &r : regions) {
+            r.toFlush = true;
+            needFlush = true;
+        }
+    }
 }
 
 }

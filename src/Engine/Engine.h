@@ -31,6 +31,7 @@
 #include "Callback.h"
 #include "InstAnalysis.h"
 #include "State.h"
+#include "Range.h"
 
 namespace llvm {
     class MCAsmInfo;
@@ -286,6 +287,12 @@ public:
      *
     */
     void clearCache(rword start, rword end);
+
+    /*! Clear a specific address rangeSet from the translation cache.
+     *
+     * @param[in] rangeSet    The range set to clear from the cache.
+    */
+    void clearCache(RangeSet<rword> rangeSet);
 
     /*! Clear the entire translation cache.
     */

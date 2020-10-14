@@ -386,6 +386,10 @@ void Engine::handleNewBasicBlock(rword pc) {
 
 
 bool Engine::precacheBasicBlock(rword pc) {
+    if(blockManager->isFlushPending()) {
+        // Commit the flush
+        blockManager->flushCommit();
+    }
     if (blockManager->getProgrammedExecBlock(pc) != nullptr) {
         // already in cache
         return false;
@@ -498,7 +502,8 @@ bool Engine::run(rword start, rword stop) {
 uint32_t Engine::addInstrRule(InstrRule rule, bool top_list) {
     uint32_t id = instrRulesCounter++;
     RequireAction("Engine::addInstrRule", id < EVENTID_VM_MASK, return VMError::INVALID_EVENTID);
-    blockManager->clearCache(rule.affectedRange());
+
+    this->clearCache(rule.affectedRange());
     switch(rule.getPosition()) {
         case InstPosition::PREINST:
             if (top_list) {
@@ -564,7 +569,7 @@ bool Engine::deleteInstrumentation(uint32_t id) {
     else {
         for(size_t i = 0; i < instrRules.size(); i++) {
             if(instrRules[i].first == id) {
-                blockManager->clearCache(instrRules[i].second->affectedRange());
+                this->clearCache(instrRules[i].second->affectedRange());
                 instrRules.erase(instrRules.begin() + i);
                 return true;
             }
@@ -574,8 +579,13 @@ bool Engine::deleteInstrumentation(uint32_t id) {
 }
 
 void Engine::deleteAllInstrumentations() {
+    // clear cache
+    for (const auto &r: instrRules)
+        this->clearCache(r.second->affectedRange());
     instrRules.clear();
     vmCallbacks.clear();
+    instrRulesCounter = 0;
+    vmCallbacksCounter = 0;
 }
 
 const InstAnalysis* Engine::analyzeInstMetadata(const InstMetadata* instMetadata, AnalysisType type) {
@@ -583,11 +593,19 @@ const InstAnalysis* Engine::analyzeInstMetadata(const InstMetadata* instMetadata
 }
 
 void Engine::clearAllCache() {
-    blockManager->clearCache();
+    blockManager->clearCache(curExecBlock == nullptr);
 }
 
 void Engine::clearCache(rword start, rword end) {
     blockManager->clearCache(Range<rword>(start, end));
+    if (curExecBlock == nullptr && blockManager->isFlushPending())
+        blockManager->flushCommit();
+}
+
+void Engine::clearCache(RangeSet<rword> rangeSet) {
+    blockManager->clearCache(rangeSet);
+    if (curExecBlock == nullptr && blockManager->isFlushPending())
+        blockManager->flushCommit();
 }
 
 } // QBDI::

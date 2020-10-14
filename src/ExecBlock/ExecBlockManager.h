@@ -69,6 +69,7 @@ struct ExecRegion {
     std::map<rword, SeqLoc>                  sequenceCache;
     std::map<rword, InstLoc>                 instCache;
     std::map<rword, InstAnalysisPtr>         analysisCache;
+    bool                                     toFlush = false;
 
     ExecRegion(ExecRegion&&) = default;
     ExecRegion& operator=(ExecRegion&&) = default;
@@ -80,9 +81,9 @@ private:
 
     std::vector<ExecRegion>            regions;
     std::map<rword, InstAnalysisPtr>   analysisCache;
-    std::vector<size_t>                flushList;
     rword                              total_translated_size;
     rword                              total_translation_size;
+    bool                               needFlush;
 
     VMInstanceRef              vminstance;
     llvm::MCInstrInfo&         MCII;
@@ -119,11 +120,11 @@ public:
 
     const InstAnalysis* analyzeInstMetadata(const InstMetadata* instMetadata, AnalysisType type);
 
-    bool isFlushPending() { return this->flushList.size() > 0; }
+    bool isFlushPending() { return needFlush; }
 
     void flushCommit();
 
-    void clearCache();
+    void clearCache(bool flushNow=true);
 
     void clearCache(Range<rword> range);
 
