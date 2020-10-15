@@ -48,11 +48,9 @@ void releaseMappedMemory(llvm::sys::MemoryBlock& block) {
 const std::string getHostCPUName() {
     const std::string& cpuname = llvm::sys::getHostCPUName();
     // set default ARM CPU
-#if defined(QBDI_ARCH_ARM)
-    if (cpuname.empty() || cpuname == "generic") {
-        return std::string("cortex-a8");
-    }
-#endif
+    if constexpr(is_arm)
+        if (cpuname.empty() || cpuname == "generic")
+            return std::string("cortex-a8");
     return cpuname;
 }
 

@@ -217,11 +217,7 @@ std::vector<PatchRule> getDefaultPatchRules() {
         }),
         conv_unique<PatchGenerator>(
             ModifyInstruction({
-#if defined(QBDI_ARCH_X86)
-                SetOpcode(llvm::X86::MOV32rm),
-#else
-                SetOpcode(llvm::X86::MOV64rm),
-#endif
+                SetOpcode(is_x86 ? llvm::X86::MOV32rm : llvm::X86::MOV64rm),
                 AddOperand(Operand(0), Temp(0))
             }),
             WriteTemp(Temp(0), Offset(Reg(REG_PC)))
@@ -240,11 +236,7 @@ std::vector<PatchRule> getDefaultPatchRules() {
         }),
         conv_unique<PatchGenerator>(
             ModifyInstruction({
-#if defined(QBDI_ARCH_X86)
-                SetOpcode(llvm::X86::MOV32rm),
-#else
-                SetOpcode(llvm::X86::MOV64rm),
-#endif
+                SetOpcode(is_x86 ? llvm::X86::MOV32rm : llvm::X86::MOV64rm),
                 AddOperand(Operand(0), Temp(0))
             }),
             SimulateCall(Temp(0))
@@ -314,11 +306,7 @@ std::vector<PatchRule> getDefaultPatchRules() {
         conv_unique<PatchGenerator>(
             GetPCOffset(Temp(0), Operand(0)),
             ModifyInstruction({
-#if defined(QBDI_ARCH_X86)
-                SetOperand(Operand(0), Constant(6)) // Offset to jump the next load.
-#else
-                SetOperand(Operand(0), Constant(11)) // Offset to jump the next load.
-#endif
+                SetOperand(Operand(0), Constant(is_x86 ? 6 : 11)) // Offset to jump the next load.
             }),
             GetPCOffset(Temp(0), Constant(0)),
             WriteTemp(Temp(0), Offset(Reg(REG_PC)))
@@ -337,11 +325,7 @@ std::vector<PatchRule> getDefaultPatchRules() {
         conv_unique<PatchGenerator>(
             GetPCOffset(Temp(0), Operand(0)),
             ModifyInstruction({
-#if defined(QBDI_ARCH_X86)
-                SetOperand(Operand(0), Constant(7))
-#else
-                SetOperand(Operand(0), Constant(12))
-#endif
+                SetOperand(Operand(0), Constant(is_x86 ? 7 : 12))
             }),
             GetPCOffset(Temp(0), Constant(0)),
             WriteTemp(Temp(0), Offset(Reg(REG_PC)))
@@ -360,11 +344,7 @@ std::vector<PatchRule> getDefaultPatchRules() {
         conv_unique<PatchGenerator>(
             GetPCOffset(Temp(0), Operand(0)),
             ModifyInstruction({
-#if defined(QBDI_ARCH_X86)
-                SetOperand(Operand(0), Constant(9))
-#else
-                SetOperand(Operand(0), Constant(14))
-#endif
+                SetOperand(Operand(0), Constant(is_x86 ? 9 : 14))
             }),
             GetPCOffset(Temp(0), Constant(0)),
             WriteTemp(Temp(0), Offset(Reg(REG_PC)))

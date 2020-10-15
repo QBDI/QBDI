@@ -24,42 +24,12 @@
 
 #include "Patch/Types.h"
 
-#include "Platform.h"
-
 namespace QBDI {
 
 class RelocatableInst;
 
-#ifdef QBDI_ARCH_X86_64
-#define movrr(dst, src) mov64rr((dst), (src))
-#define movri(reg, imm) mov64ri((reg), (imm))
-#define movmr(base, scale, offset, disp, seg, src) mov64mr((base), (scale), (offset), (disp), (seg), (src))
-#define movrm(dst, base, scale, offset, disp, seg) mov64rm((dst), (base), (scale), (offset), (disp), (seg))
-#define pushr(reg) push64r((reg))
-#define popr(reg) pop64r((reg))
-#define addri(dest, src, imm) addr64i((dest), (src), (imm))
-#define lea(dst, base, scale, offset, disp, seg) lea64((dst), (base), (scale), (offset), (disp), (seg))
-#define popf() popf64()
-#define pushf() pushf64()
-#define jmpm(base, offset) jmp64m((base), (offset))
-
-#else /* QBDI_ARCH_X86 */
-#define movrr(dst, src) mov32rr((dst), (src))
-#define movri(reg, imm) mov32ri((reg), (imm))
-#define movmr(base, scale, offset, disp, seg, src) mov32mr((base), (scale), (offset), (disp), (seg), (src))
-#define movrm(dst, base, scale, offset, disp, seg) mov32rm((dst), (base), (scale), (offset), (disp), (seg))
-#define pushr(reg) push32r((reg))
-#define popr(reg) pop32r((reg))
-#define addri(dest, src, imm) addr32i((dest), (src), (imm))
-#define lea(dst, base, scale, offset, disp, seg) lea32((dst), (base), (scale), (offset), (disp), (seg))
-#define popf() popf32()
-#define pushf() pushf32()
-#define jmpm(base, offset) jmp32m((base), (offset))
-
-#endif
-
 // low level layer 2
-//
+
 llvm::MCInst mov32rr(unsigned int dst, unsigned int src);
 
 llvm::MCInst mov32ri(unsigned int reg, rword imm);
@@ -119,6 +89,30 @@ llvm::MCInst popf32();
 llvm::MCInst popf64();
 
 llvm::MCInst ret();
+
+// low level layer 2 architecture abtraction
+
+llvm::MCInst movrr(unsigned int dst, unsigned int src);
+
+llvm::MCInst movri(unsigned int dst, rword imm);
+
+llvm::MCInst movmr(unsigned int base, rword scale, unsigned int offset, rword disp, unsigned int seg, unsigned int src);
+
+llvm::MCInst movrm(unsigned int dst, unsigned int base, rword scale, unsigned int offset, rword disp, unsigned int seg);
+
+llvm::MCInst pushr(unsigned int reg);
+
+llvm::MCInst popr(unsigned int reg);
+
+llvm::MCInst addri(unsigned int dst, unsigned int src, rword imm);
+
+llvm::MCInst lea(unsigned int dst, unsigned int base, rword scale, unsigned int offset, rword disp, unsigned int seg);
+
+llvm::MCInst popf();
+
+llvm::MCInst pushf();
+
+llvm::MCInst jmpm(unsigned int base, rword offset);
 
 // high level layer 2
 

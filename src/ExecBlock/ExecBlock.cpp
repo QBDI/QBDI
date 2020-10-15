@@ -58,18 +58,14 @@ void (*ExecBlock::runCodeBlockFct)(void*) = NULL;
 ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(vminstance), assembly(assembly) {
     // Allocate memory blocks
     std::error_code ec;
-#ifdef QBDI_PLATFORM_IOS
     // iOS now use 16k superpages, but as JIT mecanisms are totally differents
     // on this platform, we can enforce a 4k "virtual" page size
-    uint64_t pageSize = 4096;
-#else
-    uint64_t pageSize =
-      llvm::expectedToOptional(llvm::sys::Process::getPageSize()).getValueOr(4096);
-#endif
+    uint64_t pageSize = is_ios ? 4096 :
+        llvm::expectedToOptional(llvm::sys::Process::getPageSize()).getValueOr(4096);
     unsigned mflags =  PF::MF_READ | PF::MF_WRITE;
-#ifdef QBDI_PLATFORM_IOS
-             mflags |= PF::MF_EXEC;
-#endif
+
+    if constexpr(is_ios)
+        mflags |= PF::MF_EXEC;
 
     // Allocate 2 pages block
     codeBlock = QBDI::allocateMappedMemory(2*pageSize, nullptr, mflags, ec);
@@ -180,11 +176,10 @@ void ExecBlock::selectSeq(uint16_t seqID) {
 
 void ExecBlock::run() {
     // Pages are RWX on iOS
-#ifndef QBDI_PLATFORM_IOS
-    makeRX();
-#else
-    llvm::sys::Memory::InvalidateInstructionCache(codeBlock.base(), codeBlock.allocatedSize());
-#endif // QBDI_PLATFORM_IOS
+    if constexpr(is_ios)
+        llvm::sys::Memory::InvalidateInstructionCache(codeBlock.base(), codeBlock.allocatedSize());
+    else
+        makeRX();
     runCodeBlockFct(codeBlock.base());
 }
 
@@ -249,10 +244,9 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
     }
     LogDebug("ExecBlock::writeBasicBlock", "Attempting to write %zu patches to ExecBlock %p", std::distance(seqIt, seqEnd), this);
     // Pages are RWX on iOS
-#ifndef QBDI_PLATFORM_IOS
     // Ensure code block is RW
-    makeRW();
-#endif // QBDI_PLATFORM_IOS
+    if constexpr(not is_ios)
+        makeRW();
     // JIT the basic block instructions patch per patch
     // A patch correspond to an original instruction and should be written in its entierty
     while(seqIt != seqEnd) {

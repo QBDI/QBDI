@@ -179,6 +179,7 @@ def build_llvm(llvm_dir, build_dir, arch, target_plateform, arch_opt=None, ccach
     # Run cmake
     subprocess.check_call(["cmake", str(llvm_dir.resolve()),
                            "-DCMAKE_BUILD_TYPE=Release",
+                           "-DCMAKE_CXX_STANDARD=17",
                            "-DLLVM_TARGETS_TO_BUILD=" + arch,
                            "-DLLVM_BUILD_TOOLS=Off",
                            "-DLLVM_BUILD_UTILS=Off",

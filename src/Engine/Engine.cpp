@@ -85,9 +85,8 @@ void Engine::init() {
     if (cpu.empty()) {
         cpu = QBDI::getHostCPUName();
         // If API is broken on ARM, we are facing big problems...
-#if defined(QBDI_ARCH_ARM)
-        Require("Engine::Engine", !cpu.empty() && cpu != "generic");
-#endif
+        if constexpr(is_arm)
+            Require("Engine::Engine", !cpu.empty() && cpu != "generic");
     }
     if (mattrs.empty()) {
         mattrs = getHostCPUFeatures();

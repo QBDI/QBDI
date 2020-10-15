@@ -22,6 +22,8 @@
 #include "Patch/X86_64/Layer2_X86_64.h"
 #include "Patch/X86_64/RelocatableInst_X86_64.h"
 
+#include "Config.h"
+
 namespace QBDI {
 
 llvm::MCInst mov32rr(unsigned int dst, unsigned int src) {
@@ -354,6 +356,83 @@ llvm::MCInst ret() {
     inst.setOpcode(llvm::X86::RETQ);
 
     return inst;
+}
+
+llvm::MCInst movrr(unsigned int dst, unsigned int src) {
+    if constexpr(is_x86_64)
+        return mov64rr(dst, src);
+    else
+        return mov32rr(dst, src);
+}
+
+llvm::MCInst movri(unsigned int dst, rword imm) {
+    if constexpr(is_x86_64)
+        return mov64ri(dst, imm);
+    else
+        return mov32ri(dst, imm);
+}
+
+llvm::MCInst movmr(unsigned int base, rword scale, unsigned int offset, rword disp, unsigned int seg, unsigned int src) {
+    if constexpr(is_x86_64)
+        return mov64mr(base, scale, offset, disp, seg, src);
+    else
+        return mov32mr(base, scale, offset, disp, seg, src);
+}
+
+llvm::MCInst movrm(unsigned int dst, unsigned int base, rword scale, unsigned int offset, rword disp, unsigned int seg) {
+    if constexpr(is_x86_64)
+        return mov64rm(dst, base, scale, offset, disp, seg);
+    else
+        return mov32rm(dst, base, scale, offset, disp, seg);
+}
+
+llvm::MCInst pushr(unsigned int reg) {
+    if constexpr(is_x86_64)
+        return push64r(reg);
+    else
+        return push32r(reg);
+}
+
+llvm::MCInst popr(unsigned int reg) {
+    if constexpr(is_x86_64)
+        return pop64r(reg);
+    else
+        return pop32r(reg);
+}
+
+llvm::MCInst addri(unsigned int dst, unsigned int src, rword imm) {
+    if constexpr(is_x86_64)
+        return addr64i(dst, src, imm);
+    else
+        return addr32i(dst, src, imm);
+}
+
+llvm::MCInst lea(unsigned int dst, unsigned int base, rword scale, unsigned int offset, rword disp, unsigned int seg) {
+    if constexpr(is_x86_64)
+        return lea64(dst, base, scale, offset, disp, seg);
+    else
+        return lea32(dst, base, scale, offset, disp, seg);
+}
+
+llvm::MCInst popf() {
+    if constexpr(is_x86_64)
+        return popf64();
+    else
+        return popf32();
+}
+
+llvm::MCInst pushf() {
+    if constexpr(is_x86_64)
+        return pushf64();
+    else
+        return pushf32();
+}
+
+llvm::MCInst jmpm(unsigned int base, rword offset) {
+    if constexpr(is_x86_64)
+        return jmp64m(base, offset);
+    else
+        return jmp32m(base, offset);
 }
 
 RelocatableInst::SharedPtr Mov(Reg dst, Reg src) {

@@ -389,7 +389,9 @@ const InstAnalysis* VM::getInstAnalysis(AnalysisType type) {
 }
 
 bool VM::recordMemoryAccess(MemoryAccessType type) {
-#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+    if constexpr(not (is_x86_64 or is_x86))
+        return false;
+
     if(type & MEMORY_READ && !(memoryLoggingLevel & MEMORY_READ)) {
         memoryLoggingLevel |= MEMORY_READ;
         engine->addInstrRule(InstrRule(
@@ -419,9 +421,6 @@ bool VM::recordMemoryAccess(MemoryAccessType type) {
         ), true); // force the rule to be the first of POSTINST
     }
     return true;
-#else
-    return false;
-#endif
 }
 
 std::vector<MemoryAccess> VM::getInstMemoryAccess() const {

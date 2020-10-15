@@ -23,6 +23,8 @@
 #include "Utility/LogSys.h"
 #include "System.h"
 
+#include "Config.h"
+
 
 namespace QBDI {
 
@@ -50,13 +52,12 @@ const std::vector<std::string> getHostCPUFeatures() {
         }
     }
 
-#if defined(QBDI_ARCH_ARM)
-    // set default ARM CPU
-    if(features.size() == 0) {
-        features.insert({"fp16", true});
-        features.insert({"d16", true});
-    }
-#endif
+    if constexpr(is_arm)
+        // set default ARM CPU
+        if(features.size() == 0) {
+            features.insert({"fp16", true});
+            features.insert({"d16", true});
+        }
     // Fixing awfull LLVM API
     if(features.count("fp16") && features["fp16"]) {
         mattrs.emplace_back("vfp2");

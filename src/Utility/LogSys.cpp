@@ -89,7 +89,7 @@ void LogSys::writeTag(LogPriority priority, const char* tag) {
         }
         return;
     }
-    #endif
+#endif
     fprintf(output, "[%s] ", tag);
 }
 

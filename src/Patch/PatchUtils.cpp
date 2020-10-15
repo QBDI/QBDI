@@ -28,9 +28,9 @@
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 // skip RAX as it is very often used implicitly and LLVM
 // sometimes don't tell us...
-#define _QBDI_FIRST_FREE_REGISTER 1
+static constexpr unsigned int _QBDI_FIRST_FREE_REGISTER = 1;
 #else
-#define _QBDI_FIRST_FREE_REGISTER 0
+static constexpr unsigned int _QBDI_FIRST_FREE_REGISTER = 0;
 #endif
 
 

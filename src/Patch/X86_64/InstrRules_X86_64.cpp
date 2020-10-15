@@ -21,7 +21,7 @@
 #include "Patch/X86_64/PatchGenerator_X86_64.h"
 #include "Patch/X86_64/RelocatableInst_X86_64.h"
 
-#include "Platform.h"
+#include "Config.h"
 
 namespace QBDI {
 
@@ -34,11 +34,10 @@ RelocatableInst::SharedPtrVec getBreakToHost(Reg temp) {
 
     // Use the temporary register to compute RIP + offset which is the address which will follow this
     // patch and where the execution needs to be resumed
-#if defined(QBDI_ARCH_X86)
-    breakToHost.push_back(HostPCRel(mov32ri(temp, 0), 1, 22));
-#else
-    breakToHost.push_back(HostPCRel(mov64ri(temp, 0), 1, 29));
-#endif
+    if constexpr(is_x86)
+        breakToHost.push_back(HostPCRel(mov32ri(temp, 0), 1, 22));
+    else
+        breakToHost.push_back(HostPCRel(mov64ri(temp, 0), 1, 29));
     // Set the selector to this address so the execution can be resumed when the exec block will be
     // reexecuted
     append(breakToHost, SaveReg(temp, Offset(offsetof(Context, hostState.selector))));
