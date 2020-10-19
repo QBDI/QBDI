@@ -66,9 +66,9 @@ build_python () {
     CMAKE_ARGUMENT="$2"
 
     if [[ "$TARGET" = "X86" ]]; then
-        DOCKER_IMG="quay.io/pypa/manylinux2010_i686"
+        DOCKER_IMG="quay.io/pypa/manylinux2014_i686"
     else
-        DOCKER_IMG="quay.io/pypa/manylinux2010_x86_64"
+        DOCKER_IMG="quay.io/pypa/manylinux2014_x86_64"
     fi
 
     docker build "${BASEDIR}" -t qbdi:package \

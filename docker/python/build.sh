@@ -9,11 +9,11 @@ GITDIR=$(git rev-parse --show-toplevel)
 . "${BASEDIR}/../common.sh"
 
 ARCH="X86_64"
-DOCKER_IMG="quay.io/pypa/manylinux2010_x86_64"
+DOCKER_IMG="quay.io/pypa/manylinux2014_x86_64"
 
 if [[ "$1" = "X86" || "$1" = "x86" ]]; then
     ARCH="X86"
-    DOCKER_IMG="quay.io/pypa/manylinux2010_i686"
+    DOCKER_IMG="quay.io/pypa/manylinux2014_i686"
 fi
 
 CMAKE_ARGUMENT="$2"

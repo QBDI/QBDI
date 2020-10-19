@@ -1,4 +1,4 @@
-ARG DOCKER_IMG="quay.io/pypa/manylinux2010_x86_64"
+ARG DOCKER_IMG="quay.io/pypa/manylinux2014_x86_64"
 
 FROM $DOCKER_IMG
 
@@ -21,13 +21,8 @@ RUN yum update -y && \
         make \
         wget \
         zlib-devel \
-        ca-certificates \
-        zlib1g-dev && \
-    yum clean all && \
-    ln -s /usr/bin/cmake3 /usr/local/bin/cmake && \
-    ln -s /usr/bin/ctest3 /usr/local/bin/ctest && \
-    ln -s /usr/bin/cpack3 /usr/local/bin/cpack && \
-    ln -s /usr/bin/ccmake3 /usr/local/bin/ccmake 
+        ca-certificates && \
+    yum clean all
 
 
 # create a user
@@ -69,9 +64,9 @@ RUN sudo chown -R $USER:$USER . && \
     ln -s $HOME/qbdi-deps/deps deps
 
 # build wheel
-RUN /opt/python/cp35-cp35m/bin/python setup.py bdist_wheel
 RUN /opt/python/cp36-cp36m/bin/python setup.py bdist_wheel
 RUN /opt/python/cp37-cp37m/bin/python setup.py bdist_wheel
 RUN /opt/python/cp38-cp38/bin/python setup.py bdist_wheel
+RUN /opt/python/cp39-cp39/bin/python setup.py bdist_wheel
 
 RUN for i in dist/*; do auditwheel repair $i -w outwheel; done
