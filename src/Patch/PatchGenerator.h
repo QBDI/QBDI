@@ -293,12 +293,6 @@ public:
         rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
-PatchGenerator::SharedPtrVec generateReadInstrumentPatch(Patch &patch, const llvm::MCInstrInfo* MCII,
-                                                         const llvm::MCRegisterInfo* MRI);
-
-PatchGenerator::SharedPtrVec generateWriteInstrumentPatch(Patch &patch, const llvm::MCInstrInfo* MCII,
-                                                          const llvm::MCRegisterInfo* MRI);
-
 }
 
 #endif

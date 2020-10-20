@@ -15,6 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+// Use llvm::ArrayRef
+#include "llvm/ADT/APInt.h"
+
 #include "VM.h"
 #include "Range.h"
 #include "Errors.h"
@@ -413,21 +417,159 @@ bool VM::recordMemoryAccess(MemoryAccessType type) {
 
     if(type & MEMORY_READ && !(memoryLoggingLevel & MEMORY_READ)) {
         memoryLoggingLevel |= MEMORY_READ;
-        engine->addInstrRule(InstrRuleDynamic(
-            DoesReadAccess(), generateReadInstrumentPatch,
-            PREINST,
-            false,
-            LASTPASS // need to be before user PREINST callback
-        ));
+        engine->addInstrRule(getMemReadPreInstrRule());
+        engine->addInstrRule(getMemReadPostInstrRule());
     }
     if(type & MEMORY_WRITE && !(memoryLoggingLevel & MEMORY_WRITE)) {
         memoryLoggingLevel |= MEMORY_WRITE;
-        engine->addInstrRule(InstrRuleDynamic(
-            DoesWriteAccess(), generateWriteInstrumentPatch,
-            POSTINST,
-            false,
-            FIRSTPASS // need to be before user POSTINST callback
-        ));
+        engine->addInstrRule(getMemWritePreInstrRule());
+        engine->addInstrRule(getMemWritePostInstrRule());
+    }
+    return true;
+}
+
+/* decode a standard MemAccess for a execBlock
+ *
+ * @param[in]  curExecBlock     the current basicBlock
+ * @param[out] access           the access to complete
+ * @param[in]  shadows          iterator on the shadows (the first item
+ *
+ * @return true  when success
+ */
+static bool decodeDefaultMemAccess(const ExecBlock& curExecBlock, MemoryAccess& access,
+                                   llvm::ArrayRef<ShadowInfo> shadows) {
+
+    const uint16_t instID = shadows[0].instID;
+    access = MemoryAccess();
+    access.flags = MEMORY_NO_FLAGS;
+
+    // look at two shadows
+    if (shadows.size() < 2)
+        return false;
+
+    // the first one is MEM_READ_ADDRESS_TAG or MEM_WRITE_ADDRESS_TAG
+    if (shadows[0].tag == MEM_READ_ADDRESS_TAG) {
+        access.type = MEMORY_READ;
+        access.size = getReadSize(curExecBlock.getOriginalMCInst(instID));
+    } else if (shadows[0].tag == MEM_WRITE_ADDRESS_TAG) {
+        access.type = MEMORY_WRITE;
+        access.size = getWriteSize(curExecBlock.getOriginalMCInst(instID));
+    } else
+        return false;
+
+    // if the access size is bigger than rword, the value cannot be store in a shadow.
+    if (access.size > sizeof(rword))
+        access.flags |= MEMORY_UNKNOWN_VALUE;
+
+    access.accessAddress = curExecBlock.getShadow(shadows[0].shadowID);
+    access.instAddress = curExecBlock.getInstAddress(instID);
+
+    // the second shadow reference the same instruction
+    if (access.instAddress != curExecBlock.getInstAddress(shadows[1].instID)) {
+        LogError(
+            "decodeDefaultMemAccess",
+            "An address shadow is not followed by a shadow for the same instruction for instruction at address %" PRIx64,
+            access.instAddress
+        );
+        return false;
+    }
+
+    // the second shadow must be a MEM_VALUE_TAG
+    if(shadows[1].tag == MEM_VALUE_TAG) {
+        access.value = curExecBlock.getShadow(shadows[1].shadowID);
+        return true;
+    } else {
+        LogError(
+            "decodeDefaultMemAccess",
+            "An address shadow is not followed by a value shadow for instruction at address %" PRIx64,
+            access.instAddress
+        );
+        return false;
+    }
+}
+
+/* decode a complexe MemAccess for a execBlock
+ *
+ * @param[in]  curExecBlock     the current basicBlock
+ * @param[out] access           the access to complete
+ * @param[in]  shadows          iterator on the shadows (the first item
+ * @param[in]  searchPostTag    find the stop tag (if in postInst)
+ *
+ * @return true  when success
+ */
+static bool decodeComplexMemAccess(const ExecBlock& curExecBlock, MemoryAccess& access,
+                                   llvm::ArrayRef<ShadowInfo> shadows, bool searchPostTag) {
+
+    const uint16_t instID = shadows[0].instID;
+    access = MemoryAccess();
+    access.flags = MEMORY_UNKNOWN_VALUE;
+    access.value = 0;
+    uint16_t expectedEndTag;
+
+    // look at two shadows minimum
+    if (shadows.size() < 2)
+        return false;
+
+    // the first one is MEM_READ_START_ADDRESS_1_TAG, MEM_READ_START_ADDRESS_2_TAG
+    // or MEM_WRITE_START_ADDRESS_TAG
+    switch (shadows[0].tag) {
+        case MEM_READ_START_ADDRESS_1_TAG:
+            expectedEndTag = MEM_READ_STOP_ADDRESS_1_TAG;
+            access.type = MEMORY_READ;
+            access.size = getReadSize(curExecBlock.getOriginalMCInst(instID));
+            break;
+        case MEM_READ_START_ADDRESS_2_TAG:
+            expectedEndTag = MEM_READ_STOP_ADDRESS_2_TAG;
+            access.type = MEMORY_READ;
+            access.size = getReadSize(curExecBlock.getOriginalMCInst(instID));
+            break;
+        case MEM_WRITE_START_ADDRESS_TAG:
+            expectedEndTag = MEM_WRITE_STOP_ADDRESS_TAG;
+            access.type = MEMORY_WRITE;
+            access.size = getWriteSize(curExecBlock.getOriginalMCInst(instID));
+            break;
+        default:
+            return false;
+    }
+
+    // accessAddress is the start address
+    access.accessAddress = curExecBlock.getShadow(shadows[0].shadowID);
+    access.instAddress = curExecBlock.getInstAddress(instID);
+
+    if (not searchPostTag) {
+        access.flags |= MEMORY_UNKNOWN_SIZE;
+        return true;
+    }
+
+    size_t foundStopIndex = 0;
+    for (size_t i = 1; i < shadows.size() && access.instAddress == curExecBlock.getInstAddress(shadows[i].instID); i++) {
+        if (shadows[i].tag == expectedEndTag) {
+            foundStopIndex = i;
+            break;
+        }
+    }
+
+    if (foundStopIndex == 0) {
+        LogError(
+            "decodeComplexMemAccess",
+            "Doesn't found shadow %x after shadow %x for instruction at address %" PRIx64,
+            shadows[0].tag, expectedEndTag, access.instAddress
+        );
+        return false;
+    }
+
+    // the stop address is load by the access
+    rword stopAddress = curExecBlock.getShadow(shadows[foundStopIndex].shadowID);
+
+    if (stopAddress >= access.accessAddress) {
+        access.size = stopAddress - access.accessAddress;
+    } else {
+        // the stopAddress is lesser than the begin address, this may be the case
+        // in X86 with REP prefix and DF=1
+        // In this case, the memory have been access between [stopAddress + accessSize, access.accessAddress + accessSize)
+        rword realSize = access.accessAddress - stopAddress;
+        access.accessAddress = stopAddress + access.size;
+        access.size = realSize;
     }
     return true;
 }
@@ -442,50 +584,32 @@ std::vector<MemoryAccess> VM::getInstMemoryAccess() const {
     std::vector<ShadowInfo> shadows = curExecBlock->queryShadowByInst(instID, ANY);
     LogDebug("VM::getInstMemoryAccess", "Got %zu shadows for Instruction %" PRIu16, shadows.size(), instID);
 
-    size_t i = 0;
-    while(i < shadows.size()) {
-        auto access = MemoryAccess();
+    auto access = MemoryAccess();
+    for (size_t i = 0; i < shadows.size(); i++) {
 
-        if(shadows[i].tag == MEM_READ_ADDRESS_TAG) {
-            access.type = MEMORY_READ;
-            access.size = getReadSize(curExecBlock->getOriginalMCInst(instID));
-        }
-        else if(engine->isPreInst() == false && shadows[i].tag == MEM_WRITE_ADDRESS_TAG) {
-            access.type = MEMORY_WRITE;
-            access.size = getWriteSize(curExecBlock->getOriginalMCInst(instID));
-        }
-        else {
-            i += 1;
-            continue;
-        }
-        access.accessAddress = curExecBlock->getShadow(shadows[i].shadowID);
-        access.instAddress = curExecBlock->getInstAddress(shadows[i].instID);
-        i += 1;
-
-        if(i >= shadows.size()) {
-            LogError(
-                "Engine::getInstMemoryAccess",
-                "An address shadow is not followed by a shadow for instruction at address %" PRIx64,
-                access.instAddress
-            );
-            continue;
+        bool addAccess = false;
+        switch (shadows[i].tag) {
+            default:
+                break;
+            case MEM_WRITE_ADDRESS_TAG:
+                if (engine->isPreInst())
+                    break;
+                addAccess = decodeDefaultMemAccess(*curExecBlock, access, llvm::ArrayRef<ShadowInfo>(shadows.data() + i, shadows.size() - i));
+                break;
+            case MEM_READ_ADDRESS_TAG:
+                addAccess = decodeDefaultMemAccess(*curExecBlock, access, llvm::ArrayRef<ShadowInfo>(shadows.data() + i, shadows.size() - i));
+                break;
+            case MEM_READ_START_ADDRESS_1_TAG:
+            case MEM_READ_START_ADDRESS_2_TAG:
+            case MEM_WRITE_START_ADDRESS_TAG:
+                addAccess = decodeComplexMemAccess(*curExecBlock, access,
+                    llvm::ArrayRef<ShadowInfo>(shadows.data() + i, shadows.size() - i),
+                    not engine->isPreInst());
+                break;
         }
 
-        if(shadows[i].tag == MEM_VALUE_TAG) {
-            access.value = curExecBlock->getShadow(shadows[i].shadowID);
-        }
-        else {
-            LogError(
-                "Engine::getInstMemoryAccess",
-                "An address shadow is not followed by a value shadow for instruction at address %" PRIx64,
-                access.instAddress
-            );
-            continue;
-        }
-
-        // we found our access and its value, record access
-        memAccess.push_back(access);
-        i += 1;
+        if (addAccess)
+            memAccess.push_back(access);
     }
     return memAccess;
 }
@@ -502,50 +626,32 @@ std::vector<MemoryAccess> VM::getBBMemoryAccess() const {
     LogDebug("VM::getBBMemoryAccess", "Got %zu shadows for Basic Block %" PRIu16 " stopping at Instruction %" PRIu16,
              shadows.size(), bbID, instID);
 
-    size_t i = 0;
-    while(i < shadows.size() && shadows[i].instID <= instID) {
-        auto access = MemoryAccess();
+    auto access = MemoryAccess();
+    for (size_t i = 0; i < shadows.size() && shadows[i].instID <= instID; i++) {
 
-        if(shadows[i].tag == MEM_READ_ADDRESS_TAG) {
-            access.type = MEMORY_READ;
-            access.size = getReadSize(curExecBlock->getOriginalMCInst(shadows[i].instID));
-        }
-        else if(engine->isPreInst() == false && shadows[i].tag == MEM_WRITE_ADDRESS_TAG) {
-            access.type = MEMORY_WRITE;
-            access.size = getWriteSize(curExecBlock->getOriginalMCInst(shadows[i].instID));
-        }
-        else {
-            i += 1;
-            continue;
-        }
-        access.instAddress = curExecBlock->getInstAddress(shadows[i].instID);
-        access.accessAddress = curExecBlock->getShadow(shadows[i].shadowID);
-        i += 1;
-
-        if(i >= shadows.size() || curExecBlock->getInstAddress(shadows[i-1].instID) != curExecBlock->getInstAddress(shadows[i].instID)) {
-            LogError(
-                "VM::getBBMemoryAccess",
-                "An address shadow is not followed by a shadow for instruction at address %" PRIx64,
-                access.instAddress
-            );
-            continue;
+        bool addAccess = false;
+        switch (shadows[i].tag) {
+            default:
+                break;
+            case MEM_WRITE_ADDRESS_TAG:
+                if (engine->isPreInst() && shadows[i].instID == instID)
+                    break;
+                addAccess = decodeDefaultMemAccess(*curExecBlock, access, llvm::ArrayRef<ShadowInfo>(shadows.data() + i, shadows.size() - i));
+                break;
+            case MEM_READ_ADDRESS_TAG:
+                addAccess = decodeDefaultMemAccess(*curExecBlock, access, llvm::ArrayRef<ShadowInfo>(shadows.data() + i, shadows.size() - i));
+                break;
+            case MEM_READ_START_ADDRESS_1_TAG:
+            case MEM_READ_START_ADDRESS_2_TAG:
+            case MEM_WRITE_START_ADDRESS_TAG:
+                addAccess = decodeComplexMemAccess(*curExecBlock, access,
+                    llvm::ArrayRef<ShadowInfo>(shadows.data() + i, shadows.size() - i),
+                    not (engine->isPreInst() && shadows[i].instID == instID));
+                break;
         }
 
-        if(shadows[i].tag == MEM_VALUE_TAG) {
-            access.value = curExecBlock->getShadow(shadows[i].shadowID);
-        }
-        else {
-            LogError(
-                "Engine::getBBMemoryAccess",
-                "An address shadow is not followed by a value shadow for instruction at address %" PRIx64,
-                access.instAddress
-            );
-            continue;
-        }
-
-        // we found our access and its value, record access
-        memAccess.push_back(access);
-        i += 1;
+        if (addAccess)
+            memAccess.push_back(access);
     }
     return memAccess;
 }

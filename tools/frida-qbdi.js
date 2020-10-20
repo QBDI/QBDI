@@ -498,6 +498,20 @@ var MemoryAccessType = Object.freeze({
     MEMORY_READ_WRITE : 3
 });
 
+/**data:MemoryAccessFlags
+  Memory access flags
+*/
+var MemoryAccessFlags = Object.freeze({
+    /**attribute:MemoryAccessType.MEMORY_UNKNOWN_SIZE
+      The size of the access isn't known
+     */
+    MEMORY_UNKNOWN_SIZE : 1,
+    /**attribute:MemoryAccessType.MEMORY_UNKNOWN_VALUE
+      The value of the access is unknown or hasn't been retrived
+     */
+    MEMORY_UNKNOWN_VALUE : 2
+});
+
 /**data:RegisterAccessType
   Register access type (read / write / rw)
 */
@@ -1344,9 +1358,11 @@ function QBDI() {
         p = ptr.add(memoryAccessDesc.offsets[2]);
         access.value = Memory.readRword(p);
         p = ptr.add(memoryAccessDesc.offsets[3]);
-        access.size = Memory.readU8(p);
+        access.size = Memory.readU16(p);
         p = ptr.add(memoryAccessDesc.offsets[4]);
         access.type = Memory.readU8(p);
+        p = ptr.add(memoryAccessDesc.offsets[5]);
+        access.flags = Memory.readU8(p);
         Object.freeze(access);
         return access;
     }

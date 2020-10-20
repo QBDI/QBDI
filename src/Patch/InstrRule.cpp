@@ -27,6 +27,10 @@ namespace QBDI {
 
 void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI,
                            const PatchGenerator::SharedPtrVec patchGen, bool breakToHost, InstPosition position) const {
+
+    if (patchGen.empty())
+        return;
+
     /* The instrument function needs to handle several different cases. An instrumentation can
      * be either prepended or appended to the patch and, in each case, can trigger a break to
      * host.

@@ -74,6 +74,12 @@ void init_binding_Callback(py::module& m) {
         .value("MEMORY_READ_WRITE", MemoryAccessType::MEMORY_READ_WRITE, "Memory read/write access")
         .export_values();
 
+    py::enum_<MemoryAccessFlags>(m, "MemoryAccessFlags", "Memory access flags", py::arithmetic())
+        .value("MEMORY_NO_FLAGS", MemoryAccessFlags::MEMORY_NO_FLAGS)
+        .value("MEMORY_UNKNOWN_SIZE", MemoryAccessFlags::MEMORY_UNKNOWN_SIZE, "The size of the access isn't known")
+        .value("MEMORY_UNKNOWN_VALUE", MemoryAccessFlags::MEMORY_UNKNOWN_VALUE, "The value of the access is unknown or hasn't been retrived")
+        .export_values();
+
     py::class_<VMState>(m, "VMState")
         .def_readonly("event", &VMState::event,
                 "The event(s) which triggered the callback (must be checked using a mask: event & BASIC_BLOCK_ENTRY).")
@@ -91,7 +97,8 @@ void init_binding_Callback(py::module& m) {
         .def_readwrite("accessAddress", &MemoryAccess::accessAddress, "Address of accessed memory")
         .def_readwrite("value", &MemoryAccess::value, "Value read from / written to memory")
         .def_readwrite("size", &MemoryAccess::size, "Size of memory access (in bytes)")
-        .def_readwrite("type", &MemoryAccess::type, "Memory access type (READ / WRITE)");
+        .def_readwrite("type", &MemoryAccess::type, "Memory access type (READ / WRITE)")
+        .def_readwrite("flags", &MemoryAccess::flags, "Memory access flags");
 }
 
 }}

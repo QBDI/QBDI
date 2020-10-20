@@ -140,6 +140,10 @@ Analysis
 
       Address of accessed memory
 
+  .. js:attribute:: flags
+
+      Memory Access flags
+
   .. js:attribute:: instAddress
 
       Address of instruction making the access
@@ -155,7 +159,6 @@ Analysis
   .. js:attribute:: value
 
       Value read from / written to memory
-
 
 
 

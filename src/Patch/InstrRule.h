@@ -247,6 +247,13 @@ public:
                        const Assembly* assembly) const override;
 };
 
+// architecture dependante instrRule
+std::unique_ptr<InstrRule> getMemReadPreInstrRule();
+std::unique_ptr<InstrRule> getMemReadPostInstrRule();
+std::unique_ptr<InstrRule> getMemWritePreInstrRule();
+std::unique_ptr<InstrRule> getMemWritePostInstrRule();
+
+
 }
 
 #endif

@@ -15,31 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef INSTINFO_H
-#define INSTINFO_H
+#ifndef INSTINFO_X86_64_H
+#define INSTINFO_X86_64_H
 
-#include <stdint.h>
-
-namespace llvm {
-  class MCInst;
-  class MCInstrDesc;
-}
+#include "Patch/InstInfo.h"
 
 namespace QBDI {
 
-void initMemAccessInfo();
-unsigned getReadSize(const llvm::MCInst* inst);
-unsigned getWriteSize(const llvm::MCInst* inst);
-bool isStackRead(const llvm::MCInst* inst);
-bool isStackWrite(const llvm::MCInst* inst);
-bool isDoubleRead(const llvm::MCInst* inst);
+bool hasREPPrefix(const llvm::MCInst& instr);
 
-unsigned getImmediateSize(const llvm::MCInst* inst, const llvm::MCInstrDesc* desc);
+}
 
-// The TempManager will allow to reuse some register
-// when the method return True.
-bool useAllRegisters(const llvm::MCInst* inst);
-
-};
-
-#endif // INSTINFO_H
+#endif // INSTINFO_X86_64_H

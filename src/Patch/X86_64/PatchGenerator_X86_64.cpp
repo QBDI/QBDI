@@ -21,6 +21,7 @@
 #include "X86InstrInfo.h"
 
 #include "Patch/Patch.h"
+#include "Patch/X86_64/InstInfo_X86_64.h"
 #include "Patch/X86_64/Layer2_X86_64.h"
 #include "Patch/X86_64/PatchGenerator_X86_64.h"
 #include "Patch/X86_64/RelocatableInst_X86_64.h"
@@ -164,6 +165,13 @@ RelocatableInst::SharedPtrVec GetWriteAddress::generate(const llvm::MCInst* inst
                 reg = Reg(5);
                 Require("GetWriteAddress::generate", reg == llvm::X86::RDI || reg == llvm::X86::EDI);
             }
+
+            // if the instruction has a rep prefix, the memory address is get twice,
+            // one before the instruction, one after. The computation of the real
+            // memory access is done by the VM.
+            if (hasREPPrefix(*inst))
+                return {NoReloc(movrr(temp_manager->getRegForTemp(temp), reg))};
+
             unsigned shiftImm = 10;
             if(size == 8) {
                 // if DF bit is set, shift 0x400 to 0X10 (8 * 2)
@@ -519,41 +527,5 @@ RelocatableInst::SharedPtrVec SimulateRet::generate(const llvm::MCInst* inst,
     return {patch};
 }
 
-PatchGenerator::SharedPtrVec generateReadInstrumentPatch(Patch &patch, const llvm::MCInstrInfo* MCII,
-                                                         const llvm::MCRegisterInfo* MRI) {
-
-    uint64_t TsFlags = MCII->get(patch.metadata.inst.getOpcode()).TSFlags;
-    if (isDoubleRead(&patch.metadata.inst)) {
-        return {
-                    GetReadAddress(Temp(0), 0, TsFlags),
-                    WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
-                    GetReadValue(Temp(0), 0, TsFlags),
-                    WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
-                    GetReadAddress(Temp(0), 1, TsFlags),
-                    WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
-                    GetReadValue(Temp(0), 1, TsFlags),
-                    WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
-                };
-    } else {
-        return {
-                    GetReadAddress(Temp(0), 0, TsFlags),
-                    WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
-                    GetReadValue(Temp(0), 0, TsFlags),
-                    WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
-                };
-    }
-}
-
-PatchGenerator::SharedPtrVec generateWriteInstrumentPatch(Patch &patch, const llvm::MCInstrInfo* MCII,
-                                                          const llvm::MCRegisterInfo* MRI) {
-
-    uint64_t TsFlags = MCII->get(patch.metadata.inst.getOpcode()).TSFlags;
-    return {
-                GetWriteAddress(Temp(0), TsFlags),
-                WriteTemp(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
-                GetWriteValue(Temp(0), TsFlags),
-                WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
-            };
-}
 
 }
