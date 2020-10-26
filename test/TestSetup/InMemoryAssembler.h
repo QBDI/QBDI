@@ -34,6 +34,8 @@ public:
 
     InMemoryObject(const char* source, const char* cpu = "", const char** mattrs = nullptr);
 
+    ~InMemoryObject();
+
     llvm::ArrayRef<uint8_t> getCode() { return code; }
 };
 

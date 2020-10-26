@@ -49,23 +49,39 @@ PatchGenerator::SharedPtrVec generatePreReadInstrumentPatch(Patch &patch, const 
         }
     } else {
         if (isDoubleRead(&patch.metadata.inst)) {
-            return {
-                        GetReadAddress(Temp(0), 0, TsFlags),
-                        WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
-                        GetReadValue(Temp(0), 0, TsFlags),
-                        WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
-                        GetReadAddress(Temp(0), 1, TsFlags),
-                        WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
-                        GetReadValue(Temp(0), 1, TsFlags),
-                        WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
-                    };
+            if (getReadSize(&patch.metadata.inst) > sizeof(rword)) {
+                return {
+                            GetReadAddress(Temp(0), 0, TsFlags),
+                            WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+                            GetReadAddress(Temp(0), 1, TsFlags),
+                            WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+                        };
+            } else {
+                return {
+                            GetReadAddress(Temp(0), 0, TsFlags),
+                            WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+                            GetReadValue(Temp(0), 0, TsFlags),
+                            WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
+                            GetReadAddress(Temp(0), 1, TsFlags),
+                            WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+                            GetReadValue(Temp(0), 1, TsFlags),
+                            WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
+                        };
+            }
         } else {
-            return {
-                        GetReadAddress(Temp(0), 0, TsFlags),
-                        WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
-                        GetReadValue(Temp(0), 0, TsFlags),
-                        WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
-                    };
+            if (getReadSize(&patch.metadata.inst) > sizeof(rword)) {
+                return {
+                            GetReadAddress(Temp(0), 0, TsFlags),
+                            WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+                        };
+            } else {
+                return {
+                            GetReadAddress(Temp(0), 0, TsFlags),
+                            WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+                            GetReadValue(Temp(0), 0, TsFlags),
+                            WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
+                        };
+            }
         }
     }
 }
@@ -115,12 +131,19 @@ PatchGenerator::SharedPtrVec generatePostWriteInstrumentPatch(Patch &patch, cons
                     WriteTemp(Temp(0), Shadow(MEM_WRITE_STOP_ADDRESS_TAG)),
                 };
     } else {
-        return {
-                    GetWriteAddress(Temp(0), TsFlags),
-                    WriteTemp(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
-                    GetWriteValue(Temp(0), TsFlags),
-                    WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
-                };
+        if (getWriteSize(&patch.metadata.inst) > sizeof(rword)) {
+            return {
+                        GetWriteAddress(Temp(0), TsFlags),
+                        WriteTemp(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
+                    };
+        } else {
+            return {
+                        GetWriteAddress(Temp(0), TsFlags),
+                        WriteTemp(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
+                        GetWriteValue(Temp(0), TsFlags),
+                        WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
+                    };
+        }
     }
 }
 

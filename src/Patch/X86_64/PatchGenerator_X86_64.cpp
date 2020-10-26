@@ -71,6 +71,7 @@ RelocatableInst::SharedPtrVec GetReadAddress::generate(const llvm::MCInst* inst,
     unsigned size = getReadSize(inst);
     if(size > 0) {
         unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
+        unsigned memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
         // If it is a stack read, return RSP value
         if(isStackRead(inst)) {
             if (inst->getOpcode() == llvm::X86::LEAVE || inst->getOpcode() == llvm::X86::LEAVE64) {
@@ -96,9 +97,9 @@ RelocatableInst::SharedPtrVec GetReadAddress::generate(const llvm::MCInst* inst,
             }
             return {NoReloc(movrr(temp_manager->getRegForTemp(temp), reg))};
         // Else replace the instruction with a LEA on the same address
-        } else {
+        } else if (memIndex >= 0) {
             // Scan for LLVM X86 address encoding
-            for(unsigned i = 0; i + 4 <= inst->getNumOperands(); i++) {
+            for(unsigned i = memIndex; i + 4 <= inst->getNumOperands(); i++) {
                 if(inst->getOperand(i + 0).isReg() && inst->getOperand(i + 1).isImm() &&
                    inst->getOperand(i + 2).isReg() && inst->getOperand(i + 3).isImm() &&
                    inst->getOperand(i + 4).isReg()) {
@@ -145,6 +146,7 @@ RelocatableInst::SharedPtrVec GetWriteAddress::generate(const llvm::MCInst* inst
     unsigned size = getWriteSize(inst);
     if (size > 0) {
         unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
+        unsigned memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
         // If it is a stack read, return RSP value
         if(isStackWrite(inst)) {
             if (inst->getOpcode() == llvm::X86::ENTER) {
@@ -206,9 +208,9 @@ RelocatableInst::SharedPtrVec GetWriteAddress::generate(const llvm::MCInst* inst
                 Xchg(Reg(REG_SP), Offset(offsetof(Context, hostState.sp))),
             };
         // Else replace the instruction with a LEA on the same address
-        } else {
+        } else if (memIndex >= 0) {
             // Scan for LLVM X86 address encoding
-            for(unsigned i = 0; i + 4 <= inst->getNumOperands(); i++) {
+            for(unsigned i = memIndex; i + 4 <= inst->getNumOperands(); i++) {
                 if(inst->getOperand(i + 0).isReg() && inst->getOperand(i + 1).isImm() &&
                    inst->getOperand(i + 2).isReg() && inst->getOperand(i + 3).isImm() &&
                    inst->getOperand(i + 4).isReg()) {
@@ -256,6 +258,7 @@ RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
     if(size > 0) {
         unsigned dst = temp_manager->getRegForTemp(temp);
         unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
+        unsigned memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
         if(size < 8) {
             dst = temp_manager->getSizedSubReg(dst, 4);
         } else if (size > sizeof(rword)) {
@@ -310,8 +313,8 @@ RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
                 readinst = {mov32rm8(dst, reg, 1, 0, 0, 0)};
             }
             return {NoReloc(std::move(readinst))};
-        } else {
-            for(unsigned i = 0; i + 4 <= inst->getNumOperands(); i++) {
+        } else if (memIndex >= 0) {
+            for(unsigned i = memIndex; i + 4 <= inst->getNumOperands(); i++) {
                 if(inst->getOperand(i + 0).isReg() && inst->getOperand(i + 1).isImm() &&
                    inst->getOperand(i + 2).isReg() && inst->getOperand(i + 3).isImm() &&
                    inst->getOperand(i + 4).isReg()) {
@@ -368,6 +371,7 @@ RelocatableInst::SharedPtrVec GetWriteValue::generate(const llvm::MCInst* inst,
     if (size > 0) {
         unsigned dst = temp_manager->getRegForTemp(temp);
         unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
+        unsigned memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
         if(size < 8) {
             dst = temp_manager->getSizedSubReg(dst, 4);
         } else if (size > sizeof(rword)) {
@@ -411,8 +415,8 @@ RelocatableInst::SharedPtrVec GetWriteValue::generate(const llvm::MCInst* inst,
             else if(size == 1) {
                 return {NoReloc(mov32rm8(dst, temp_manager->getRegForTemp(temp), 1, 0, 0, 0))};
             }
-        } else {
-            for(unsigned i = 0; i + 4 <= inst->getNumOperands(); i++) {
+        } else if (memIndex >= 0) {
+            for(unsigned i = memIndex; i + 4 <= inst->getNumOperands(); i++) {
                 if(inst->getOperand(i + 0).isReg() && inst->getOperand(i + 1).isImm() &&
                    inst->getOperand(i + 2).isReg() && inst->getOperand(i + 3).isImm() &&
                    inst->getOperand(i + 4).isReg()) {

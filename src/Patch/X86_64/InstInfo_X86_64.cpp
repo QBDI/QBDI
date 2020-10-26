@@ -1969,6 +1969,18 @@ unsigned STACK_WRITE_64[] = {
 
 size_t STACK_WRITE_64_SIZE = sizeof(STACK_WRITE_64)/sizeof(unsigned);
 
+unsigned STACK_WRITE_128[] = {
+    llvm::X86::PUSHA16,
+};
+
+size_t STACK_WRITE_128_SIZE = sizeof(STACK_WRITE_128)/sizeof(unsigned);
+
+unsigned STACK_WRITE_256[] = {
+    llvm::X86::PUSHA32,
+};
+
+size_t STACK_WRITE_256_SIZE = sizeof(STACK_WRITE_256)/sizeof(unsigned);
+
 unsigned STACK_READ_16[] = {
     llvm::X86::POP16r,
     llvm::X86::POP16rmm,
@@ -2013,6 +2025,17 @@ unsigned STACK_READ_64[] = {
 
 size_t STACK_READ_64_SIZE = sizeof(STACK_READ_64)/sizeof(unsigned);
 
+unsigned STACK_READ_128[] = {
+    llvm::X86::POPA16,
+};
+
+size_t STACK_READ_128_SIZE = sizeof(STACK_READ_128)/sizeof(unsigned);
+
+unsigned STACK_READ_256[] = {
+    llvm::X86::POPA32,
+};
+
+size_t STACK_READ_256_SIZE = sizeof(STACK_READ_256)/sizeof(unsigned);
 
 /* Highest 16 bits are the write access, lowest 16 bits are the read access. For each 16 bits part: the
  * highest bit stores if the access is a stack access or not while the lowest 12 bits store the
@@ -2098,10 +2121,14 @@ void initMemAccessInfo() {
     _initMemAccessStackRead(STACK_READ_16, STACK_READ_16_SIZE, 2);
     _initMemAccessStackRead(STACK_READ_32, STACK_READ_32_SIZE, 4);
     _initMemAccessStackRead(STACK_READ_64, STACK_READ_64_SIZE, 8);
+    _initMemAccessStackRead(STACK_READ_128, STACK_READ_128_SIZE, 16);
+    _initMemAccessStackRead(STACK_READ_256, STACK_READ_256_SIZE, 32);
     // write stack
     _initMemAccessStackWrite(STACK_WRITE_16, STACK_WRITE_16_SIZE, 2);
     _initMemAccessStackWrite(STACK_WRITE_32, STACK_WRITE_32_SIZE, 4);
     _initMemAccessStackWrite(STACK_WRITE_64, STACK_WRITE_64_SIZE, 8);
+    _initMemAccessStackWrite(STACK_WRITE_128, STACK_WRITE_128_SIZE, 16);
+    _initMemAccessStackWrite(STACK_WRITE_256, STACK_WRITE_256_SIZE, 32);
     for (size_t i = 0; i < DOUBLE_READ_SIZE; i++) {
         MEMACCESS_INFO_TABLE[DOUBLE_READ[i]] |= DOUBLE_READ_FLAG;
     }
@@ -2128,23 +2155,7 @@ bool isDoubleRead(const llvm::MCInst* inst) {
 }
 
 unsigned getImmediateSize(const llvm::MCInst* inst, const llvm::MCInstrDesc* desc) {
-    switch (desc->TSFlags & llvm::X86II::ImmMask) {
-        case llvm::X86II::Imm8:
-        case llvm::X86II::Imm8PCRel:
-        case llvm::X86II::Imm8Reg:
-            return 1;
-        case llvm::X86II::Imm16:
-        case llvm::X86II::Imm16PCRel:
-            return 2;
-        case llvm::X86II::Imm32:
-        case llvm::X86II::Imm32PCRel:
-        case llvm::X86II::Imm32S:
-            return 4;
-        case llvm::X86II::Imm64:
-            return 8;
-        default:
-            return sizeof(rword);
-    }
+  return llvm::X86II::getSizeOfImm(desc->TSFlags);
 }
 
 bool useAllRegisters(const llvm::MCInst* inst) {

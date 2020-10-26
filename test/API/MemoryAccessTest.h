@@ -24,6 +24,8 @@ class MemoryAccessTest {
         MemoryAccessTest();
         ~MemoryAccessTest();
 
+        bool runOnASM(QBDI::rword* retval, const char* source, const std::vector<QBDI::rword>& args = {});
+
         std::unique_ptr<QBDI::VM> vm;
         QBDI::GPRState* state;
         uint8_t* fakestack;

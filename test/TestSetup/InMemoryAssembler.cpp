@@ -165,3 +165,7 @@ InMemoryObject::InMemoryObject(const char* source, const char* cpu, const char**
     CHECK((unsigned int) 0 < text_section.size());
     code = llvm::ArrayRef<uint8_t>((const uint8_t*) text_section.data(), text_section.size());
 }
+
+InMemoryObject::~InMemoryObject() {
+    QBDI::releaseMappedMemory(objectBlock);
+}

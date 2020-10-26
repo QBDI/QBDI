@@ -444,7 +444,7 @@ static bool decodeDefaultMemAccess(const ExecBlock& curExecBlock, MemoryAccess& 
     access.flags = MEMORY_NO_FLAGS;
 
     // look at two shadows
-    if (shadows.size() < 2)
+    if (shadows.size() < 1)
         return false;
 
     // the first one is MEM_READ_ADDRESS_TAG or MEM_WRITE_ADDRESS_TAG
@@ -457,12 +457,19 @@ static bool decodeDefaultMemAccess(const ExecBlock& curExecBlock, MemoryAccess& 
     } else
         return false;
 
-    // if the access size is bigger than rword, the value cannot be store in a shadow.
-    if (access.size > sizeof(rword))
-        access.flags |= MEMORY_UNKNOWN_VALUE;
-
     access.accessAddress = curExecBlock.getShadow(shadows[0].shadowID);
     access.instAddress = curExecBlock.getInstAddress(instID);
+
+    // if the access size is bigger than rword, the value cannot be store in a shadow.
+    // Don't seach for a MEM_VALUE_TAG with MEMORY_UNKNOWN_VALUE
+    if (access.size > sizeof(rword)) {
+        access.flags |= MEMORY_UNKNOWN_VALUE;
+        return true;
+    }
+
+    // need a second shadow to take the value
+    if (shadows.size() < 2)
+        return false;
 
     // the second shadow reference the same instruction
     if (access.instAddress != curExecBlock.getInstAddress(shadows[1].instID)) {
