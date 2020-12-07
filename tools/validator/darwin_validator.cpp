@@ -33,7 +33,7 @@ static const size_t STACK_SIZE = 8388608;
 static QBDI::GPRState ENTRY_GPR;
 static QBDI::FPRState ENTRY_FPR;
 static pid_t DEBUGGED, INSTRUMENTED;
-
+int ctrlfd, datafd;
 
 enum Role {
     Master,
@@ -50,7 +50,7 @@ int QBDI::qbdipreload_on_main(int argc, char** argv) {
 
     if(ROLE == Role::Master) {
         DarwinProcess* debuggedProcess = new DarwinProcess(DEBUGGED);
-        start_master(debuggedProcess, INSTRUMENTED);
+        start_master(debuggedProcess, INSTRUMENTED, ctrlfd, datafd);
         delete debuggedProcess;
     }
     else if(ROLE == Role::Instrumented) {
@@ -73,7 +73,7 @@ int QBDI::qbdipreload_on_main(int argc, char** argv) {
 
         QBDI::rword start = QBDI_GPR_GET(vm->getGPRState(), QBDI::REG_PC);
         QBDI::rword stop = *((QBDI::rword*) QBDI_GPR_GET(vm->getGPRState(), QBDI::REG_SP));
-        start_instrumented(vm, start, stop);
+        start_instrumented(vm, start, stop, ctrlfd, datafd);
     }
     exit(0);
 }
@@ -132,20 +132,42 @@ int QBDI::qbdipreload_on_exit(int status) {
 
 
 int QBDI::qbdipreload_on_start(void *main) {
+    int ctrlfds[2];
+    int datafds[2];
+    if (pipe(ctrlfds) != 0 || pipe(datafds) != 0) {
+        fprintf(stderr, "validator: fatal error, fail create pipe for intrumented process !\n\n");
+        exit(0);
+    }
+
     INSTRUMENTED = fork();
     if(INSTRUMENTED == 0) {
+
         ROLE = Role::Instrumented;
+        ctrlfd = ctrlfds[0];
+        datafd = datafds[1];
+        close(ctrlfds[1]);
+        close(datafds[0]);
+
         QBDI::qbdipreload_hook_main(main);
         return QBDIPRELOAD_NO_ERROR;
     }
 
     DEBUGGED = fork();
     if(DEBUGGED == 0) {
+
         ROLE = Role::Debugged;
+        close(ctrlfds[1]);
+        close(datafds[0]);
+
         // We put ourself to sleep, waiting for our charming prince
         task_suspend(mach_task_self());
         return QBDIPRELOAD_NO_ERROR;
     }
+
+    ctrlfd = ctrlfds[1];
+    datafd = datafds[0];
+    close(ctrlfds[0]);
+    close(datafds[1]);
 
     QBDI::qbdipreload_hook_main(main);
     ROLE = Role::Master;

@@ -36,6 +36,7 @@
 
 static bool INSTRUMENTED = false;
 static pid_t debugged, instrumented;
+int ctrlfd, datafd;
 
 QBDIPRELOAD_INIT;
 
@@ -48,7 +49,7 @@ int QBDI::qbdipreload_on_main(int argc, char** argv) {
     } else {
         LinuxProcess* debuggedProcess = nullptr;
         debuggedProcess = new LinuxProcess(debugged);
-        start_master(debuggedProcess, instrumented);
+        start_master(debuggedProcess, instrumented, ctrlfd, datafd);
         delete debuggedProcess;
         return QBDIPRELOAD_NO_ERROR;
     }
@@ -61,7 +62,7 @@ int QBDI::qbdipreload_on_premain(void *gprCtx, void *fpuCtx) {
 }
 
 int QBDI::qbdipreload_on_run(QBDI::VMInstanceRef vm, QBDI::rword start, QBDI::rword stop) {
-    start_instrumented(vm, start, stop);
+    start_instrumented(vm, start, stop, ctrlfd, datafd);
     return QBDIPRELOAD_NOT_HANDLED;
 }
 
@@ -78,17 +79,41 @@ int QBDI::qbdipreload_on_start(void *main) {
     setvbuf(stderr, NULL, _IONBF, 0);
     signal(SIGWINCH, SIG_IGN);
 
+    int ctrlfds[2];
+    int datafds[2];
+    if (pipe(ctrlfds) != 0 || pipe(datafds) != 0) {
+        fprintf(stderr, "validator: fatal error, fail create pipe for intrumented process !\n\n");
+        exit(0);
+    }
+
     instrumented = fork();
     if(instrumented == 0) {
+
+        ctrlfd = ctrlfds[0];
+        datafd = datafds[1];
+        close(ctrlfds[1]);
+        close(datafds[0]);
+
         INSTRUMENTED = true;
         return QBDIPRELOAD_NOT_HANDLED;
     }
 
     debugged = fork();
     if(debugged == 0) {
+        // don't close all pipe to have the same filedescriptor in the
+        // debugged and the instrumented process
+        close(ctrlfds[1]);
+        close(datafds[0]);
+
         ptrace(PTRACE_TRACEME, 0, NULL, NULL);
         return QBDIPRELOAD_NO_ERROR;
     }
+
+    ctrlfd = ctrlfds[1];
+    datafd = datafds[0];
+    close(ctrlfds[0]);
+    close(datafds[1]);
+
     if (ptrace(PTRACE_ATTACH, debugged, NULL, NULL) == -1) {
         fprintf(stderr, "validator: fatal error, PTRACE_ATTACH failed !\n\n");
         kill(instrumented, SIGKILL);

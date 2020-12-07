@@ -22,6 +22,6 @@
 
 #include "process.h"
 
-void start_master(Process* debugged, pid_t instrumented);
+void start_master(Process* debugged, pid_t instrumented, int ctrlfd, int datafd);
 
 #endif // MASTER_H
