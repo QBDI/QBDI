@@ -100,8 +100,6 @@ static QBDI::VMAction restoreErrno(QBDI::VMInstanceRef vm, const QBDI::VMState *
 
 Pipes PIPES = {NULL, NULL};
 QBDI::VM* VM;
-const size_t BUFFER_SIZE = 128;
-char CTRL_PIPE_FILE[BUFFER_SIZE], DATA_PIPE_FILE[BUFFER_SIZE];
 
 void cleanup_instrumentation() {
     static bool cleaned_up = false;
@@ -109,15 +107,12 @@ void cleanup_instrumentation() {
         writeEvent(EVENT::EXIT, PIPES.dataPipe);
         fclose(PIPES.ctrlPipe);
         fclose(PIPES.dataPipe);
-        remove(CTRL_PIPE_FILE);
-        remove(DATA_PIPE_FILE);
         delete VM;
         cleaned_up = true;
     }
 }
 
-void start_instrumented(QBDI::VM* vm, QBDI::rword start, QBDI::rword stop) {
-    struct stat s;
+void start_instrumented(QBDI::VM* vm, QBDI::rword start, QBDI::rword stop, int ctrlfd, int datafd) {
 
     VM = vm;
     QBDI::LOGSYS.addFilter("*", QBDI::LogPriority::ERROR);
@@ -129,12 +124,8 @@ void start_instrumented(QBDI::VM* vm, QBDI::rword start, QBDI::rword stop) {
     }
 #endif
     // Opening communication FIFO
-    snprintf(CTRL_PIPE_FILE, BUFFER_SIZE, ".%u_ctrl", getppid());
-    snprintf(DATA_PIPE_FILE, BUFFER_SIZE, ".%u_data", getppid());
-    // Wait for the pipes to be created
-    while(stat(DATA_PIPE_FILE, &s) != 0) sleep(0);
-    PIPES.ctrlPipe = fopen(CTRL_PIPE_FILE, "rb");
-    PIPES.dataPipe = fopen(DATA_PIPE_FILE, "wb");
+    PIPES.ctrlPipe = fdopen(ctrlfd, "rb");
+    PIPES.dataPipe = fdopen(datafd, "wb");
     if(PIPES.ctrlPipe == nullptr || PIPES.dataPipe == nullptr) {
         LogError("Validator::Instrumented", "Could not open communication pipes with master, exiting!");
         return;
