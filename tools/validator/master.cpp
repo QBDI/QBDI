@@ -71,7 +71,7 @@ void start_master(Process* debugged, pid_t instrumented, int ctrlfd, int datafd)
             error = VALIDATOR_ERR_DATA_PIPE_LOST;
             break;
         }
-        if(event ==  EVENT::EXIT) {
+        if(event == EVENT::EXIT) {
             debugged->continueExecution();
             break;
         }
@@ -126,6 +126,22 @@ void start_master(Process* debugged, pid_t instrumented, int ctrlfd, int datafd)
             if (running) {
                 debugged->unsetBreakpoint();
             }
+        } else if(event == EVENT::MISSMATCHMEMACCESS) {
+            bool doRead, mayRead, doWrite, mayWrite;
+            std::vector<QBDI::MemoryAccess> accesses;
+            if(readMismatchMemAccessEvent(&address, &doRead, &mayRead, &doWrite, &mayWrite, accesses, dataPipe) != 1) {
+                LogError("Validator::Master", "Lost the data pipe, exiting!");
+                debugged->continueExecution();
+                writeCommand(COMMAND::STOP, ctrlPipe);
+                error = VALIDATOR_ERR_DATA_PIPE_LOST;
+                break;
+            }
+            validator.signalAccessError(address, doRead, mayRead, doWrite, mayWrite, accesses);
+        } else {
+            LogError("Validator::Master", "Unknown validator event %d", event);
+            debugged->continueExecution();
+            error = VALIDATOR_ERR_UNEXPECTED_API_FAILURE;
+            break;
         }
     }
 
