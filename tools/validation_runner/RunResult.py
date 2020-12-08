@@ -27,6 +27,7 @@ class RunResult:
         self.get_branch_commit()
         self.test_results = test_results
         self.coverage = {}
+        self.memaccess_unique = {}
         self.total_instr       = 0
         self.errors            = 0
         self.no_impact_err     = 0
@@ -36,7 +37,8 @@ class RunResult:
         self.no_impact_casc    = 0
         self.non_critical_casc = 0
         self.critical_casc     = 0
-        self.passed_tests   = 0
+        self.passed_tests      = 0
+        self.memaccess_error   = 0
         # Compute aggregated statistics
         for t in test_results:
             # Only count successfull tests
@@ -50,13 +52,17 @@ class RunResult:
                 self.no_impact_casc    += t.no_impact_casc
                 self.non_critical_casc += t.non_critical_casc
                 self.critical_casc     += t.critical_casc
+                self.memaccess_error   += t.memaccess_error
                 self.passed_tests   += 1
                 # Aggregate coverage
                 for instr, count in t.coverage.items():
                     self.coverage[instr] = self.coverage.get(instr, 0) + count
+                for instr, count in t.memaccess_unique.items():
+                    self.memaccess_unique[instr] = self.memaccess_unique.get(instr, 0) + count
         self.total_tests = len(test_results)
         self.unique_instr = len(self.coverage)
         self.coverage_log = coverage_to_log(self.coverage.items())
+        self.memaccess_unique_log = coverage_to_log(self.memaccess_unique.items())
 
     @classmethod
     def from_dict(cls, d):
@@ -75,13 +81,20 @@ class RunResult:
         self.no_impact_casc = d['no_impact_casc']
         self.non_critical_casc = d['non_critical_casc']
         self.critical_casc = d['critical_casc']
+        self.memaccess_error = d['memaccess_error']
         self.coverage_log = d['coverage_log']
+        self.memaccess_unique_log = d['memaccess_unique_log']
         #Rebuild coverage
         self.coverage = {}
+        self.memaccess_unique = {}
         for line in self.coverage_log.split('\n'):
             if ':' in line:
                 inst, count = line.split(':')
                 self.coverage[inst] = int(count)
+        for line in self.memaccess_unique_log.split('\n'):
+            if ':' in line:
+                inst, count = line.split(':')
+                self.memaccess_unique[inst] = int(count)
         self.test_results = []
         return self
 
@@ -90,6 +103,8 @@ class RunResult:
         print('[+] Passed {}/{} validation tests'.format(self.passed_tests, self.total_tests))
         print('[+] Executed {} total instructions'.format(self.total_instr))
         print('[+] Executed {} unique instructions'.format(self.unique_instr))
+        print('[+] Encountered {} memoryAccess errors'.format(self.memaccess_error))
+        print('[+] Encountered {} unique memoryAccess errors'.format(len(list(self.memaccess_unique.items()))))
         print('[+] Encountered {} total errors:'.format(self.errors))
         print('[+]     No impact errors: {}'.format(self.no_impact_err))
         print('[+]     Non critical errors: {}'.format(self.non_critical_err))

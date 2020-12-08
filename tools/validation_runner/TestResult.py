@@ -31,6 +31,12 @@ def scan_for_pattern(data, pattern):
         return m.groups()
     raise Scan_Pattern_Exception("Not found {} in :\n{}".format(pattern, data))
 
+def scan_for_multipattern(data, pattern):
+    r = {}
+    for m in re.finditer(pattern, data):
+        r[m.groups()[0]] = r.get(m.groups()[0], 0) + 1
+    return r
+
 def coverage_to_log(coverage):
     coverage = list(coverage)
     coverage.sort(key=itemgetter(1), reverse=True)
@@ -46,6 +52,7 @@ class TestResult:
         self.binary_hash = self.get_binary_hash()
         # Process coverage file, rebuilding a dictionnary from it
         self.coverage = {}
+        self.memaccess_unique = {}
         if not error:
             for line in coverage.split('\n'):
                 if ':' in line:
@@ -65,15 +72,22 @@ class TestResult:
                 self.no_impact_casc = int(scan_for_pattern(result, 'No impact cascades: (\d+)')[0])
                 self.non_critical_casc = int(scan_for_pattern(result, 'Non critical cascades: (\d+)')[0])
                 self.critical_casc = int(scan_for_pattern(result, 'Critical cascades: (\d+)')[0])
+                self.memaccess_error = int(scan_for_pattern(result, 'Encountered (\d+) memoryAccess errors')[0])
+                self.memaccess_unique_error = int(scan_for_pattern(result, 'Encountered (\d+) memoryAccess unique errors')[0])
             except Scan_Pattern_Exception as e:
                 print("[!] {}".format(e))
                 error = True
                 self.retcode = 255
             else:
                 # Storing logs
+                memAccess_start = result.find('Error MemoryAccess:')
                 cascade_start = result.find('Error cascades:')
+                self.memaccess_log = result[memAccess_start:cascade_start]
                 self.cascades_log = result[cascade_start:]
                 self.coverage_log = coverage_to_log(self.coverage.items())
+
+                self.memaccess_unique = scan_for_multipattern(self.memaccess_log, "MemoryAccess Error \(mnemonic : ([^\)]+)\)")
+                self.memaccess_unique_log = coverage_to_log(self.memaccess_unique.items())
         if error:
             # Process result file, getting statistics
             self.total_instr = 0
@@ -87,10 +101,14 @@ class TestResult:
             self.no_impact_casc = 0
             self.non_critical_casc = 0
             self.critical_casc = 0
+            self.memaccess_error = 0
+            self.memaccess_unique_error = 0
 
             # Storing logs
+            self.memaccess_log = ""
             self.cascades_log = ""
             self.coverage_log = ""
+            self.memaccess_unique_log = ""
 
     @classmethod
     def from_dict(cls, d):
@@ -108,14 +126,23 @@ class TestResult:
         self.no_impact_casc = d['no_impact_casc']
         self.non_critical_casc = d['non_critical_casc']
         self.critical_casc = d['critical_casc']
+        self.memaccess_error = d['memaccess_error']
+        self.memaccess_unique_error = d['memaccess_unique_error']
+        self.memaccess_log = d['memaccess_log']
         self.cascades_log = d['cascades_log']
         self.coverage_log = d['coverage_log']
+        self.memaccess_unique_log = d['memaccess_unique_log']
         #Rebuild coverage
         self.coverage = {}
+        self.memaccess_unique = {}
         for line in self.coverage_log.split('\n'):
             if ':' in line:
                 inst, count = line.split(':')
                 self.coverage[inst] = int(count)
+        for line in self.memaccess_unique_log.split('\n'):
+            if ':' in line:
+                inst, count = line.split(':')
+                self.memaccess_unique[inst] = int(count)
         #Rebuild config
         self.cfg = TestConfig.from_dict(d)
         return self

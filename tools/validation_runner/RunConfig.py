@@ -45,7 +45,7 @@ class TestConfig:
 class RunConfig:
     def __init__(self, config_file):
         with open(config_file, 'r') as f:
-            conf = yaml.load(f)
+            conf = yaml.safe_load(f)
             # Conf validation
             if 'tests' not in conf or len(conf['tests']) == 0:
                 print('No tests in configuration, exiting!')

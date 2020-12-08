@@ -21,32 +21,6 @@
 #include <inttypes.h>
 
 
-LogEntry::LogEntry(uint64_t execID, QBDI::rword address, const char* disassembly) {
-    this->execID = execID;
-    this->address = address;
-    int len = strlen(disassembly) + 1;
-    this->disassembly = new char[len];
-    strncpy(this->disassembly, disassembly, len);
-    this->transfer = 0;
-}
-
-LogEntry::LogEntry(const LogEntry& copy) {
-    this->execID = copy.execID;
-    this->address = copy.address;
-    int len = strlen(copy.disassembly) + 1;
-    this->disassembly = new char[len];
-    strncpy(this->disassembly, copy.disassembly, len);
-    this->transfer = copy.transfer;
-    this->errorIDs.reserve(copy.errorIDs.size());
-    for(ssize_t eID : copy.errorIDs) {
-        this->errorIDs.push_back(eID);
-    }
-}
-
-LogEntry::~LogEntry() {
-    delete[] this->disassembly;
-}
-
 std::pair<QBDI::rword, QBDI::rword> getValidOffsetRange(QBDI::rword address, pid_t pid) {
     std::vector<QBDI::MemoryMap> maps = QBDI::getRemoteProcessMaps(pid);
     for(QBDI::MemoryMap &m : maps) {
@@ -62,10 +36,10 @@ ssize_t ValidatorEngine::logEntryLookup(uint64_t execID) {
     size_t lower = 0;
     while(upper != lower) {
         size_t i = (upper + lower)/2;
-        if(this->savedLogs[i].execID < execID) {
+        if(savedLogs[i]->execID < execID) {
             lower = i;
         }
-        else if(this->savedLogs[i].execID > execID) {
+        else if(savedLogs[i]->execID > execID) {
             upper = i;
         }
         else {
@@ -75,22 +49,25 @@ ssize_t ValidatorEngine::logEntryLookup(uint64_t execID) {
     return -1;
 }
 
-void ValidatorEngine::outputLogEntry(const LogEntry& entry) {
+QBDI::MemoryMap* ValidatorEngine::getModule(QBDI::rword address) {
     static QBDI::MemoryMap *module = nullptr;
     static std::vector<QBDI::MemoryMap> memoryModule;
 
     // try to find module name of current address
-    if (module != nullptr)
-        if (!module->range.contains(entry.address))
+    if (module != nullptr) {
+        if (!module->range.contains(address)) {
             module = nullptr;
+        }
+    }
 
-    if (module == nullptr)
+    if (module == nullptr) {
         for (auto &m : memoryModule) {
-            if (m.range.contains(entry.address)) {
+            if (m.range.contains(address)) {
                 module = &m;
                 break;
             }
         }
+    }
 
     if (module == nullptr) {
         memoryModule.clear();
@@ -100,35 +77,63 @@ void ValidatorEngine::outputLogEntry(const LogEntry& entry) {
             }
         }
         for (auto &m : memoryModule) {
-            if (m.range.contains(entry.address)) {
+            if (m.range.contains(address)) {
                 module = &m;
                 break;
             }
         }
     }
 
+    return module;
+}
+
+void ValidatorEngine::outputLogEntry(const LogEntry& entry, bool showMemoryError, bool showDiffError) {
+    QBDI::MemoryMap *module = getModule(entry.address);
+
     fprintf(stderr, "ExecID: %" PRIu64 " \t%25s 0x%016" PRIRWORD ": %s\n", entry.execID,
             (module != nullptr) ? module->name.c_str() : "",
-            entry.address, entry.disassembly);
+            entry.address, entry.disassembly.c_str());
     if(entry.transfer != 0) {
-        QBDI::MemoryMap *transfer_module = nullptr;
-        for (auto &m : memoryModule) {
-            if (m.range.contains(entry.transfer)) {
-                transfer_module = &m;
-                break;
-            }
-        }
+        QBDI::MemoryMap *transfer_module = getModule(entry.transfer);
         fprintf(stderr, "\tCaused a transfer to address 0x%" PRIRWORD " %s\n", entry.transfer,
                 (transfer_module != nullptr) ? transfer_module->name.c_str() : "");
     }
-    for(ssize_t eID : entry.errorIDs) {
-        if(errors[eID].severity == ErrorSeverity::NoImpact)
-            fprintf(stderr, "\tError with no impact ");
-        else if(errors[eID].severity == ErrorSeverity::NonCritical)
-            fprintf(stderr, "\tError with non critical impact ");
-        else if(errors[eID].severity == ErrorSeverity::Critical)
-            fprintf(stderr, "\tError with critical impact ");
-        fprintf(stderr, "on %s: 0x%" PRIRWORD " (real) != 0x%" PRIRWORD " (qbdi)\n", errors[eID].regName, errors[eID].real, errors[eID].qbdi);
+    if (entry.accessError.get() != nullptr && showMemoryError) {
+        const AccessError& access = *entry.accessError;
+        fprintf(stderr, "\tMemoryAccess Error (mnemonic : %s):\n", entry.mnemonic.c_str());
+        if (access.doRead and !access.mayRead) {
+            fprintf(stderr, "\t\t- Found unexpected read\n");
+        } else if (!access.doRead and access.mayRead) {
+            fprintf(stderr, "\t\t- Missing read\n");
+        }
+        if (access.doWrite and !access.mayWrite) {
+            fprintf(stderr, "\t\t- Found unexpected write\n");
+        } else if (!access.doWrite and access.mayWrite) {
+            fprintf(stderr, "\t\t- Missing write\n");
+        }
+        for (unsigned i = 0; i < access.accesses.size(); i++) {
+            const QBDI::MemoryAccess &a = access.accesses[i];
+            fprintf(stderr, "\t\t[%d] type=%s%s, addr=0x%" PRIRWORD ", size=0x%x, value=0x%" PRIRWORD "\n",
+                i,
+                (a.type & QBDI::MemoryAccessType::MEMORY_READ) ? "r": "",
+                (a.type & QBDI::MemoryAccessType::MEMORY_WRITE) ? "w" : "",
+                a.accessAddress,
+                a.size,
+                a.value
+                );
+        }
+    }
+    if (showDiffError) {
+        for(ssize_t eID : entry.errorIDs) {
+            if(errors[eID].severity == ErrorSeverity::NoImpact) {
+                fprintf(stderr, "\tError with no impact ");
+            } else if(errors[eID].severity == ErrorSeverity::NonCritical) {
+                fprintf(stderr, "\tError with non critical impact ");
+            } else if(errors[eID].severity == ErrorSeverity::Critical) {
+                fprintf(stderr, "\tError with critical impact ");
+            }
+            fprintf(stderr, "on %s: 0x%" PRIRWORD " (real) != 0x%" PRIRWORD " (qbdi)\n", errors[eID].regName, errors[eID].real, errors[eID].qbdi);
+        }
     }
 }
 
@@ -440,11 +445,19 @@ void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, 
         if((e = diffGPR(QBDI::NUM_GPR, eflagsDbg, eflagsInstr)) != -1) curLogEntry->errorIDs.push_back(e);
         #endif
 
-        // If this logEntry generated at least one new error, save it
-        for(const ssize_t eID : curLogEntry->errorIDs) {
-            if(errors[eID].causeExecID == execID) {
-                savedLogs.push_back(*curLogEntry);
-                break;
+        // If this logEntry generated at least one new error, saved it
+        if (! curLogEntry->saved) {
+            for(const ssize_t eID : curLogEntry->errorIDs) {
+                if(errors[eID].causeExecID == execID) {
+                    curLogEntry->saved = true;
+                    break;
+                }
+            }
+            if (curLogEntry->accessError.get() != nullptr) {
+                curLogEntry->saved = true;
+            }
+            if (curLogEntry->saved){
+                savedLogs.push_back(std::unique_ptr<LogEntry>(curLogEntry));
             }
         }
     }
@@ -453,14 +466,25 @@ void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, 
         if(verbosity == LogVerbosity::Full) {
             outputLogEntry(*lastLogEntry);
         }
-        delete lastLogEntry;
+        if (!lastLogEntry->saved) {
+            delete lastLogEntry;
+        }
     }
     lastLogEntry = curLogEntry;
 
     execID++;
 
     coverage[std::string(mnemonic)]++;
-    curLogEntry = new LogEntry(execID, address, disassembly);
+    curLogEntry = new LogEntry(execID, address, disassembly, mnemonic);
+}
+
+void ValidatorEngine::signalAccessError(QBDI::rword address, bool doRead, bool mayRead, bool doWrite, bool mayWrite,
+                                        const std::vector<QBDI::MemoryAccess>& accesses) {
+    if (curLogEntry != nullptr && curLogEntry->accessError.get() == nullptr && curLogEntry->address == address) {
+        accessError += 1;
+        curLogEntry->accessError = std::make_unique<AccessError>(doRead, mayRead, doWrite, mayWrite, accesses);
+        memAccessMnemonicSet.insert(curLogEntry->mnemonic);
+    }
 }
 
 void ValidatorEngine::signalExecTransfer(QBDI::rword address) {
@@ -483,13 +507,19 @@ void ValidatorEngine::flushLastLog() {
         if(verbosity == LogVerbosity::Full) {
             outputLogEntry(*lastLogEntry);
         }
-        delete lastLogEntry;
+        if (!lastLogEntry->saved) {
+            delete lastLogEntry;
+        }
+        lastLogEntry = nullptr;
     }
     if(curLogEntry != nullptr) {
         if(verbosity == LogVerbosity::Full) {
             outputLogEntry(*curLogEntry);
         }
-        delete curLogEntry;
+        if (!curLogEntry->saved) {
+            delete lastLogEntry;
+        }
+        curLogEntry = nullptr;
     }
 }
 
@@ -504,6 +534,8 @@ void ValidatorEngine::logCascades() {
         fprintf(stderr, "Executed %" PRIu64 " total instructions\n", execID);
         fprintf(stderr, "Executed %zu unique instructions\n", coverage.size());
         fprintf(stderr, "Encountered %zu difference mappings\n", diffMaps.size());
+        fprintf(stderr, "Encountered %" PRIu64 " memoryAccess errors\n", accessError);
+        fprintf(stderr, "Encountered %zu memoryAccess unique errors\n", memAccessMnemonicSet.size());
         fprintf(stderr, "Encountered %zu errors:\n", errors.size());
         // Compute error stats, assemble cascades
         for(const DiffError& error : errors) {
@@ -520,7 +552,7 @@ void ValidatorEngine::logCascades() {
             if(!found) {
                 cascades.push_back(Cascade {
                     error.cascadeID,
-                    this->savedLogs[logEntryLookup(error.causeExecID)].address,
+                    savedLogs[logEntryLookup(error.causeExecID)]->address,
                     error.severity,
                     std::vector<uint64_t>(),
                     std::vector<uint64_t>()
@@ -551,6 +583,14 @@ void ValidatorEngine::logCascades() {
     }
     if(verbosity >= LogVerbosity::Summary) {
         fprintf(stderr, "\n\n");
+        fprintf(stderr, "Error MemoryAccess:\n");
+        fprintf(stderr, "==============\n\n");
+        for (auto &l : savedLogs) {
+            if (l->accessError.get() != nullptr) {
+                outputLogEntry(*l, true, false);
+            }
+        }
+        fprintf(stderr, "\n\n");
         fprintf(stderr, "Error cascades:\n");
         fprintf(stderr, "==============\n\n");
         // Simplify, remove duplicates and sort cascades
@@ -560,8 +600,7 @@ void ValidatorEngine::logCascades() {
             while(eidx < cascades[i].execIDs.size() - 1) {
                 if(cascades[i].execIDs[eidx] == cascades[i].execIDs[eidx + 1]) {
                     cascades[i].execIDs.erase(cascades[i].execIDs.begin() + eidx + 1);
-                }
-                else {
+                } else {
                     eidx++;
                 }
             }
@@ -618,12 +657,12 @@ void ValidatorEngine::logCascades() {
 
             if(verbosity == LogVerbosity::Summary) {
                 fprintf(stderr, "Cause:\n");
-                outputLogEntry(this->savedLogs[logEntryLookup(cascades[i].cascadeID)]);
+                outputLogEntry(*savedLogs[logEntryLookup(cascades[i].cascadeID)].get(), false);
             }
             else if(verbosity >= LogVerbosity::Detail) {
                 fprintf(stderr, "Chain:\n");
                 for(ssize_t eID : cascades[i].execIDs) {
-                    outputLogEntry(this->savedLogs[logEntryLookup(eID)]);
+                    outputLogEntry(*savedLogs[logEntryLookup(eID)].get(), false);
                 }
             }
             fprintf(stderr, "\n\n");
