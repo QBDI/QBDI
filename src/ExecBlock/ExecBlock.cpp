@@ -389,9 +389,9 @@ uint16_t ExecBlock::getInstID(rword address) const {
     return NOT_FOUND;
 }
 
-const InstMetadata* ExecBlock::getInstMetadata(uint16_t instID) const {
+const InstMetadata& ExecBlock::getInstMetadata(uint16_t instID) const {
     Require("ExecBlock::getInstMetadata", instID < instMetadata.size());
-    return &instMetadata[instID];
+    return instMetadata[instID];
 }
 
 rword ExecBlock::getInstAddress(uint16_t instID) const {
@@ -399,9 +399,9 @@ rword ExecBlock::getInstAddress(uint16_t instID) const {
     return instMetadata[instID].address;
 }
 
-const llvm::MCInst* ExecBlock::getOriginalMCInst(uint16_t instID) const {
+const llvm::MCInst& ExecBlock::getOriginalMCInst(uint16_t instID) const {
     Require("ExecBlock::getOriginalMCInst", instID < instMetadata.size());
-    return &instMetadata[instID].inst;
+    return instMetadata[instID].inst;
 }
 
 uint16_t ExecBlock::getSeqID(rword address) const {

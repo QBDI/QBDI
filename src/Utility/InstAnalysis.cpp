@@ -239,14 +239,14 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
             // fill the operand analysis
             switch (opdesc.OperandType) {
                 case llvm::MCOI::OPERAND_IMMEDIATE:
-                    opa.size = getImmediateSize(&inst, &desc);
+                    opa.size = getImmediateSize(inst, &desc);
                     break;
                 case llvm::MCOI::OPERAND_MEMORY:
                     opa.flag |= OPERANDFLAG_ADDR;
                     opa.size = sizeof(rword);
                     break;
                 case llvm::MCOI::OPERAND_PCREL:
-                    opa.size = getImmediateSize(&inst, &desc);
+                    opa.size = getImmediateSize(inst, &desc);
                     opa.flag |= OPERANDFLAG_PCREL;
                     break;
                 case llvm::MCOI::OPERAND_UNKNOWN:
@@ -285,10 +285,10 @@ void InstAnalysisDestructor::operator()(InstAnalysis* ptr) const {
     delete ptr;
 }
 
-InstAnalysisPtr analyzeInstMetadataUncached(const InstMetadata* instMetadata, AnalysisType type,
+InstAnalysisPtr analyzeInstMetadataUncached(const InstMetadata& instMetadata, AnalysisType type,
                                             const llvm::MCInstrInfo& MCII, const llvm::MCRegisterInfo& MRI,
                                             const Assembly& assembly) {
-    const llvm::MCInst &inst = instMetadata->inst;
+    const llvm::MCInst &inst = instMetadata.inst;
     const llvm::MCInstrDesc &desc = MCII.get(inst.getOpcode());
 
     InstAnalysis* instAnalysis = new InstAnalysis;
@@ -301,7 +301,7 @@ InstAnalysisPtr analyzeInstMetadataUncached(const InstMetadata* instMetadata, An
         int len = 0;
         std::string buffer;
         llvm::raw_string_ostream bufferOs(buffer);
-        assembly.printDisasm(inst, instMetadata->address, bufferOs);
+        assembly.printDisasm(inst, instMetadata.address, bufferOs);
         bufferOs.flush();
         len = buffer.size() + 1;
         instAnalysis->disassembly = new char[len];
@@ -310,9 +310,9 @@ InstAnalysisPtr analyzeInstMetadataUncached(const InstMetadata* instMetadata, An
     }
 
     if (type & ANALYSIS_INSTRUCTION) {
-        instAnalysis->address           = instMetadata->address;
-        instAnalysis->instSize          = instMetadata->instSize;
-        instAnalysis->affectControlFlow = instMetadata->modifyPC;
+        instAnalysis->address           = instMetadata.address;
+        instAnalysis->instSize          = instMetadata.instSize;
+        instAnalysis->affectControlFlow = instMetadata.modifyPC;
         instAnalysis->isBranch          = desc.isBranch();
         instAnalysis->isCall            = desc.isCall();
         instAnalysis->isReturn          = desc.isReturn();

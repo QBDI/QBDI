@@ -236,7 +236,7 @@ public:
      *
      * @return The metadata of the instruction.
      */
-    const InstMetadata* getInstMetadata(uint16_t instID) const;
+    const InstMetadata& getInstMetadata(uint16_t instID) const;
 
     /*! Obtain the instruction address for a specific instruction ID.
      *
@@ -252,7 +252,7 @@ public:
      *
      * @return The original MCInst of the instruction.
      */
-    const llvm::MCInst* getOriginalMCInst(uint16_t instID) const;
+    const llvm::MCInst& getOriginalMCInst(uint16_t instID) const;
 
     /*! Obtain the next sequence ID.
      *

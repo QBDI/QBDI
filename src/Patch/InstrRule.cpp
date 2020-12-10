@@ -36,7 +36,7 @@ void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const ll
      * host.
     */
     RelocatableInst::SharedPtrVec instru;
-    TempManager tempManager(&patch.metadata.inst, MCII, MRI, true);
+    TempManager tempManager(patch.metadata.inst, MCII, MRI, true);
 
     // Generate the instrumentation code from the original instruction context
     for(const PatchGenerator::SharedPtr& g : patchGen) {
@@ -122,11 +122,11 @@ void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const ll
 }
 
 bool InstrRuleBasic::canBeApplied(const Patch &patch, const llvm::MCInstrInfo* MCII) const {
-    return condition->test(&patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII);
+    return condition->test(patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII);
 }
 
 bool InstrRuleDynamic::canBeApplied(const Patch &patch, const llvm::MCInstrInfo* MCII) const {
-    return condition->test(&patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII);
+    return condition->test(patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII);
 }
 
 bool InstrRuleUser::tryInstrument(Patch &patch, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI,
@@ -135,7 +135,7 @@ bool InstrRuleUser::tryInstrument(Patch &patch, const llvm::MCInstrInfo* MCII, c
         return false;
     }
 
-    InstAnalysisPtr ana = analyzeInstMetadataUncached(&patch.metadata, analysisType, *MCII, *MRI, *assembly);
+    InstAnalysisPtr ana = analyzeInstMetadataUncached(patch.metadata, analysisType, *MCII, *MRI, *assembly);
 
     std::vector<InstrumentDataCBK> vec = cbk(vm, ana.get(), cbk_data);
 

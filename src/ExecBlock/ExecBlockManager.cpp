@@ -104,7 +104,7 @@ ExecBlock* ExecBlockManager::getProgrammedExecBlock(rword address) {
             // Retrieving corresponding block and seqLoc
             ExecBlock* block = region.blocks[instLoc->second.blockIdx].get();
             uint16_t existingSeqId = block->getSeqID(instLoc->second.instID);
-            const SeqLoc& existingSeqLoc = region.sequenceCache[block->getInstMetadata(block->getSeqStart(existingSeqId))->address];
+            const SeqLoc& existingSeqLoc = region.sequenceCache[block->getInstMetadata(block->getSeqStart(existingSeqId)).address];
             // Creating a new sequence at that instruction and saving it in the sequenceCache
             uint16_t newSeqID = block->splitSequence(instLoc->second.instID);
             regions[r].sequenceCache[address] = SeqLoc {
@@ -445,21 +445,20 @@ void ExecBlockManager::updateRegionStat(size_t r, rword translated) {
     }
 }
 
-const InstAnalysis* ExecBlockManager::analyzeInstMetadata(const InstMetadata* instMetadata, AnalysisType type) {
+const InstAnalysis* ExecBlockManager::analyzeInstMetadata(const InstMetadata& instMetadata, AnalysisType type) {
     InstAnalysis* instAnalysis = nullptr;
-    RequireAction("Engine::analyzeInstMetadata", instMetadata, return nullptr);
 
-    size_t r = searchRegion(instMetadata->address);
+    size_t r = searchRegion(instMetadata.address);
 
     // Attempt to locate it in the sequenceCache
-    if(r < regions.size() && regions[r].covered.contains(instMetadata->address) &&
-       regions[r].analysisCache.count(instMetadata->address) == 1) {
-        LogDebug("ExecBlockManager::analyzeInstMetadata", "Analysis of instruction 0x%" PRIRWORD " found in sequenceCache of region %zu", instMetadata->address, r);
-        instAnalysis = regions[r].analysisCache[instMetadata->address].get();
+    if(r < regions.size() && regions[r].covered.contains(instMetadata.address) &&
+       regions[r].analysisCache.count(instMetadata.address) == 1) {
+        LogDebug("ExecBlockManager::analyzeInstMetadata", "Analysis of instruction 0x%" PRIRWORD " found in sequenceCache of region %zu", instMetadata.address, r);
+        instAnalysis = regions[r].analysisCache[instMetadata.address].get();
     }
     if (instAnalysis != nullptr &&
         ((instAnalysis->analysisType & type) != type)) {
-        LogDebug("ExecBlockManager::analyzeInstMetadata", "Analysis of instruction 0x%" PRIRWORD " need to be rebuilt", instMetadata->address);
+        LogDebug("ExecBlockManager::analyzeInstMetadata", "Analysis of instruction 0x%" PRIRWORD " need to be rebuilt", instMetadata.address);
         // Free current cache because we want more data
         instAnalysis = nullptr;
     }
@@ -472,14 +471,14 @@ const InstAnalysis* ExecBlockManager::analyzeInstMetadata(const InstMetadata* in
     instAnalysis = instAnalysisPtr.get();
 
     // If its part of a region, put in in the region cache
-    if(r < regions.size() && regions[r].covered.contains(instMetadata->address)) {
-        LogDebug("ExecBlockManager::analyzeInstMetadata", "Analysis of instruction 0x%" PRIRWORD " cached in region %zu", instMetadata->address, r);
-        regions[r].analysisCache[instMetadata->address] = std::move(instAnalysisPtr);
+    if(r < regions.size() && regions[r].covered.contains(instMetadata.address)) {
+        LogDebug("ExecBlockManager::analyzeInstMetadata", "Analysis of instruction 0x%" PRIRWORD " cached in region %zu", instMetadata.address, r);
+        regions[r].analysisCache[instMetadata.address] = std::move(instAnalysisPtr);
     }
     // Put it in the global cache. Should never happen under normal usage
     else {
-        LogDebug("ExecBlockManager::analyzeInstMetadata", "Analysis of instruction 0x%" PRIRWORD " cached in global cache", instMetadata->address);
-        analysisCache[instMetadata->address] = std::move(instAnalysisPtr);
+        LogDebug("ExecBlockManager::analyzeInstMetadata", "Analysis of instruction 0x%" PRIRWORD " cached in global cache", instMetadata.address);
+        analysisCache[instMetadata.address] = std::move(instAnalysisPtr);
     }
     return instAnalysis;
 }

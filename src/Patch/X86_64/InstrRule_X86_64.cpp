@@ -33,8 +33,8 @@ PatchGenerator::SharedPtrVec generatePreReadInstrumentPatch(Patch &patch, const 
                                                             const llvm::MCRegisterInfo* MRI) {
 
     uint64_t TsFlags = MCII->get(patch.metadata.inst.getOpcode()).TSFlags;
-    if (hasREPPrefix(patch.metadata.inst)) {
-        if (isDoubleRead(&patch.metadata.inst)) {
+    if (hasREPPrefix(patch.metadata.inst) || isUndefinedReadSize(patch.metadata.inst)) {
+        if (isDoubleRead(patch.metadata.inst)) {
             return {
                         GetReadAddress(Temp(0), 0, TsFlags),
                         WriteTemp(Temp(0), Shadow(MEM_READ_START_ADDRESS_1_TAG)),
@@ -48,8 +48,8 @@ PatchGenerator::SharedPtrVec generatePreReadInstrumentPatch(Patch &patch, const 
                     };
         }
     } else {
-        if (isDoubleRead(&patch.metadata.inst)) {
-            if (getReadSize(&patch.metadata.inst) > sizeof(rword)) {
+        if (isDoubleRead(patch.metadata.inst)) {
+            if (getReadSize(patch.metadata.inst) > sizeof(rword)) {
                 return {
                             GetReadAddress(Temp(0), 0, TsFlags),
                             WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
@@ -69,7 +69,7 @@ PatchGenerator::SharedPtrVec generatePreReadInstrumentPatch(Patch &patch, const 
                         };
             }
         } else {
-            if (getReadSize(&patch.metadata.inst) > sizeof(rword)) {
+            if (getReadSize(patch.metadata.inst) > sizeof(rword)) {
                 return {
                             GetReadAddress(Temp(0), 0, TsFlags),
                             WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
@@ -89,8 +89,10 @@ PatchGenerator::SharedPtrVec generatePreReadInstrumentPatch(Patch &patch, const 
 PatchGenerator::SharedPtrVec generatePostReadInstrumentPatch(Patch &patch, const llvm::MCInstrInfo* MCII,
                                                              const llvm::MCRegisterInfo* MRI) {
     uint64_t TsFlags = MCII->get(patch.metadata.inst.getOpcode()).TSFlags;
-    if (hasREPPrefix(patch.metadata.inst)) {
-        if (isDoubleRead(&patch.metadata.inst)) {
+    if (isUndefinedReadSize(patch.metadata.inst)) {
+        return {};
+    } else if (hasREPPrefix(patch.metadata.inst)) {
+        if (isDoubleRead(patch.metadata.inst)) {
             return {
                         GetReadAddress(Temp(0), 0, TsFlags),
                         WriteTemp(Temp(0), Shadow(MEM_READ_STOP_ADDRESS_1_TAG)),
@@ -110,7 +112,7 @@ PatchGenerator::SharedPtrVec generatePostReadInstrumentPatch(Patch &patch, const
 
 PatchGenerator::SharedPtrVec generatePreWriteInstrumentPatch(Patch &patch, const llvm::MCInstrInfo* MCII,
                                                              const llvm::MCRegisterInfo* MRI) {
-    if (hasREPPrefix(patch.metadata.inst)) {
+    if (hasREPPrefix(patch.metadata.inst) || isUndefinedWriteSize(patch.metadata.inst)) {
         uint64_t TsFlags = MCII->get(patch.metadata.inst.getOpcode()).TSFlags;
         return {
                     GetWriteAddress(Temp(0), TsFlags),
@@ -125,13 +127,15 @@ PatchGenerator::SharedPtrVec generatePostWriteInstrumentPatch(Patch &patch, cons
                                                               const llvm::MCRegisterInfo* MRI) {
 
     uint64_t TsFlags = MCII->get(patch.metadata.inst.getOpcode()).TSFlags;
-    if (hasREPPrefix(patch.metadata.inst)) {
+    if (isUndefinedWriteSize(patch.metadata.inst))
+        return {};
+    else if (hasREPPrefix(patch.metadata.inst)) {
         return {
                     GetWriteAddress(Temp(0), TsFlags),
                     WriteTemp(Temp(0), Shadow(MEM_WRITE_STOP_ADDRESS_TAG)),
                 };
     } else {
-        if (getWriteSize(&patch.metadata.inst) > sizeof(rword)) {
+        if (getWriteSize(patch.metadata.inst) > sizeof(rword)) {
             return {
                         GetWriteAddress(Temp(0), TsFlags),
                         WriteTemp(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),

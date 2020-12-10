@@ -28,17 +28,19 @@ namespace llvm {
 namespace QBDI {
 
 void initMemAccessInfo();
-unsigned getReadSize(const llvm::MCInst* inst);
-unsigned getWriteSize(const llvm::MCInst* inst);
-bool isStackRead(const llvm::MCInst* inst);
-bool isStackWrite(const llvm::MCInst* inst);
-bool isDoubleRead(const llvm::MCInst* inst);
+unsigned getReadSize(const llvm::MCInst& inst);
+unsigned getWriteSize(const llvm::MCInst& inst);
+bool isUndefinedReadSize(const llvm::MCInst& inst);
+bool isUndefinedWriteSize(const llvm::MCInst& inst);
+bool isStackRead(const llvm::MCInst& inst);
+bool isStackWrite(const llvm::MCInst& inst);
+bool isDoubleRead(const llvm::MCInst& inst);
 
-unsigned getImmediateSize(const llvm::MCInst* inst, const llvm::MCInstrDesc* desc);
+unsigned getImmediateSize(const llvm::MCInst& inst, const llvm::MCInstrDesc* desc);
 
 // The TempManager will allow to reuse some register
 // when the method return True.
-bool useAllRegisters(const llvm::MCInst* inst);
+bool useAllRegisters(const llvm::MCInst& inst);
 
 };
 

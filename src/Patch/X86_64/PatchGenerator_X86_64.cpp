@@ -68,12 +68,12 @@ RelocatableInst::SharedPtrVec GetPCOffset::generate(const llvm::MCInst* inst,
 RelocatableInst::SharedPtrVec GetReadAddress::generate(const llvm::MCInst* inst,
     rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
     // Check if this instruction does indeed read something
-    unsigned size = getReadSize(inst);
+    unsigned size = getReadSize(*inst);
     if(size > 0) {
         unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
         unsigned memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
         // If it is a stack read, return RSP value
-        if(isStackRead(inst)) {
+        if(isStackRead(*inst)) {
             if (inst->getOpcode() == llvm::X86::LEAVE || inst->getOpcode() == llvm::X86::LEAVE64) {
                 return {Mov(temp_manager->getRegForTemp(temp), Reg(REG_BP))};
             } else {
@@ -143,12 +143,12 @@ RelocatableInst::SharedPtrVec GetReadAddress::generate(const llvm::MCInst* inst,
 RelocatableInst::SharedPtrVec GetWriteAddress::generate(const llvm::MCInst* inst,
     rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
     // Check if this instruction does indeed read something
-    unsigned size = getWriteSize(inst);
+    unsigned size = getWriteSize(*inst);
     if (size > 0) {
         unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
         unsigned memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
         // If it is a stack read, return RSP value
-        if(isStackWrite(inst)) {
+        if(isStackWrite(*inst)) {
             if (inst->getOpcode() == llvm::X86::ENTER) {
                 return {Mov(temp_manager->getRegForTemp(temp), Reg(REG_BP))};
             } else {
@@ -254,7 +254,7 @@ RelocatableInst::SharedPtrVec GetWriteAddress::generate(const llvm::MCInst* inst
 RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
      rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
 
-    unsigned size = getReadSize(inst);
+    unsigned size = getReadSize(*inst);
     if(size > 0) {
         unsigned dst = temp_manager->getRegForTemp(temp);
         unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
@@ -265,7 +265,7 @@ RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
             // read value size greater than 8 bytes isn't implemented
             return {NoReloc(movri(dst, 0))};
         }
-        if(isStackRead(inst)) {
+        if(isStackRead(*inst)) {
             llvm::MCInst readinst;
             unsigned int stack_register = REG_SP;
             if (inst->getOpcode() == llvm::X86::LEAVE || inst->getOpcode() == llvm::X86::LEAVE64) {
@@ -367,7 +367,7 @@ RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
 
 RelocatableInst::SharedPtrVec GetWriteValue::generate(const llvm::MCInst* inst,
      rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
-    unsigned size = getWriteSize(inst);
+    unsigned size = getWriteSize(*inst);
     if (size > 0) {
         unsigned dst = temp_manager->getRegForTemp(temp);
         unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
@@ -379,7 +379,7 @@ RelocatableInst::SharedPtrVec GetWriteValue::generate(const llvm::MCInst* inst,
             return {NoReloc(movri(dst, 0))};
         }
 
-        if(isStackWrite(inst)) {
+        if(isStackWrite(*inst)) {
             llvm::MCInst readinst;
             unsigned int stack_register = REG_SP;
             if (inst->getOpcode() == llvm::X86::ENTER) {

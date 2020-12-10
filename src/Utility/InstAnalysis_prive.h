@@ -38,7 +38,7 @@ struct InstAnalysisDestructor {
 
 using InstAnalysisPtr = std::unique_ptr<InstAnalysis, InstAnalysisDestructor>;
 
-InstAnalysisPtr analyzeInstMetadataUncached(const InstMetadata* instMetadata, AnalysisType type,
+InstAnalysisPtr analyzeInstMetadataUncached(const InstMetadata& instMetadata, AnalysisType type,
                                             const llvm::MCInstrInfo& MCII, const llvm::MCRegisterInfo& MRI,
                                             const Assembly& assembly);
 

@@ -254,7 +254,7 @@ public:
      *
      * @return A InstAnalysis structure containing the analysis result.
      */
-    const InstAnalysis* analyzeInstMetadata(const InstMetadata* instMetadata, AnalysisType type);
+    const InstAnalysis* analyzeInstMetadata(const InstMetadata& instMetadata, AnalysisType type);
 
     /*! Expose current ExecBlock
      *

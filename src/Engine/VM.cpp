@@ -407,7 +407,7 @@ const InstAnalysis* VM::getInstAnalysis(AnalysisType type) {
     const ExecBlock* curExecBlock = engine->getCurExecBlock();
     RequireAction("VM::getInstAnalysis", curExecBlock != nullptr, return nullptr);
     uint16_t curInstID = curExecBlock->getCurrentInstID();
-    const InstMetadata* instMetadata = curExecBlock->getInstMetadata(curInstID);
+    const InstMetadata& instMetadata = curExecBlock->getInstMetadata(curInstID);
     return engine->analyzeInstMetadata(instMetadata, type);
 }
 
@@ -508,6 +508,7 @@ static bool decodeComplexMemAccess(const ExecBlock& curExecBlock, MemoryAccess& 
                                    llvm::ArrayRef<ShadowInfo> shadows, bool searchPostTag) {
 
     const uint16_t instID = shadows[0].instID;
+    const llvm::MCInst& inst = curExecBlock.getOriginalMCInst(instID);
     access = MemoryAccess();
     access.flags = MEMORY_UNKNOWN_VALUE;
     access.value = 0;
@@ -523,17 +524,20 @@ static bool decodeComplexMemAccess(const ExecBlock& curExecBlock, MemoryAccess& 
         case MEM_READ_START_ADDRESS_1_TAG:
             expectedEndTag = MEM_READ_STOP_ADDRESS_1_TAG;
             access.type = MEMORY_READ;
-            access.size = getReadSize(curExecBlock.getOriginalMCInst(instID));
+            access.size = getReadSize(inst);
+            searchPostTag &= not isUndefinedReadSize(inst);
             break;
         case MEM_READ_START_ADDRESS_2_TAG:
             expectedEndTag = MEM_READ_STOP_ADDRESS_2_TAG;
             access.type = MEMORY_READ;
-            access.size = getReadSize(curExecBlock.getOriginalMCInst(instID));
+            access.size = getReadSize(inst);
+            searchPostTag &= not isUndefinedReadSize(inst);
             break;
         case MEM_WRITE_START_ADDRESS_TAG:
             expectedEndTag = MEM_WRITE_STOP_ADDRESS_TAG;
             access.type = MEMORY_WRITE;
-            access.size = getWriteSize(curExecBlock.getOriginalMCInst(instID));
+            access.size = getWriteSize(inst);
+            searchPostTag &= not isUndefinedWriteSize(inst);
             break;
         default:
             return false;

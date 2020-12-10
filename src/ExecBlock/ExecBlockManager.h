@@ -111,7 +111,7 @@ public:
 
     void writeBasicBlock(const std::vector<Patch>& basicBlock);
 
-    const InstAnalysis* analyzeInstMetadata(const InstMetadata* instMetadata, AnalysisType type);
+    const InstAnalysis* analyzeInstMetadata(const InstMetadata& instMetadata, AnalysisType type);
 
     bool isFlushPending() { return needFlush; }
 

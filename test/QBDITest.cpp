@@ -27,9 +27,7 @@
 int main(int argc, char** argv) {
 
     srand(time(nullptr));
-#ifdef _QBDI_LOG_DEBUG
     QBDI::addLogFilter("*", QBDI::LogPriority::WARNING);
-#endif
 
     return Catch::Session().run( argc, argv );;
 }
