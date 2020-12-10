@@ -96,14 +96,14 @@ void inline insert(std::vector<std::shared_ptr<PatchGenerator>> &u, size_t pos, 
 class TempManager {
 
     std::vector<std::pair<unsigned int, unsigned int>> temps;
-    const llvm::MCInst* inst;
+    const llvm::MCInst& inst;
     const llvm::MCInstrInfo* MCII;
     const llvm::MCRegisterInfo* MRI;
     bool allowInstRegister;
 
 public:
 
-    TempManager(const llvm::MCInst * inst, const llvm::MCInstrInfo * MCII,
+    TempManager(const llvm::MCInst& inst, const llvm::MCInstrInfo * MCII,
         const llvm::MCRegisterInfo * MRI, bool allowInstRegister=false)
         : inst(inst), MCII(MCII), MRI(MRI), allowInstRegister(allowInstRegister) {};
 

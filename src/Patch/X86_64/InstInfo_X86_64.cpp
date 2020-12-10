@@ -22,6 +22,7 @@
 #include "X86InstrInfo.h"
 
 #include "Patch/InstInfo.h"
+#include "Utility/LogSys.h"
 
 #include "Config.h"
 #include "State.h"
@@ -1035,23 +1036,23 @@ void initMemAccessInfo() {
     }
 }
 
-unsigned getReadSize(const llvm::MCInst* inst) {
-    return GET_READ_SIZE(MEMACCESS_INFO_TABLE[inst->getOpcode()]);
+unsigned getReadSize(const llvm::MCInst& inst) {
+    return GET_READ_SIZE(MEMACCESS_INFO_TABLE[inst.getOpcode()]);
 }
 
-unsigned getWriteSize(const llvm::MCInst* inst) {
-    return GET_WRITE_SIZE(MEMACCESS_INFO_TABLE[inst->getOpcode()]);
+unsigned getWriteSize(const llvm::MCInst& inst) {
+    return GET_WRITE_SIZE(MEMACCESS_INFO_TABLE[inst.getOpcode()]);
 }
 
-bool isStackRead(const llvm::MCInst* inst) {
-    return IS_STACK_READ(MEMACCESS_INFO_TABLE[inst->getOpcode()]);
+bool isStackRead(const llvm::MCInst& inst) {
+    return IS_STACK_READ(MEMACCESS_INFO_TABLE[inst.getOpcode()]);
 }
 
-bool isStackWrite(const llvm::MCInst* inst) {
-    return IS_STACK_WRITE(MEMACCESS_INFO_TABLE[inst->getOpcode()]);
+bool isStackWrite(const llvm::MCInst& inst) {
+    return IS_STACK_WRITE(MEMACCESS_INFO_TABLE[inst.getOpcode()]);
 }
 
-unsigned getImmediateSize(const llvm::MCInst* inst, const llvm::MCInstrDesc* desc) {
+unsigned getImmediateSize(const llvm::MCInst& inst, const llvm::MCInstrDesc* desc) {
     switch (desc->TSFlags & llvm::X86II::ImmMask) {
         case llvm::X86II::Imm8:
         case llvm::X86II::Imm8PCRel:
@@ -1071,7 +1072,7 @@ unsigned getImmediateSize(const llvm::MCInst* inst, const llvm::MCInstrDesc* des
     }
 }
 
-bool useAllRegisters(const llvm::MCInst* inst) {
+bool useAllRegisters(const llvm::MCInst& inst) {
     if constexpr(is_x86) {
         static const unsigned InstAllRegisters[] = {
             llvm::X86::PUSHA16,
@@ -1079,7 +1080,7 @@ bool useAllRegisters(const llvm::MCInst* inst) {
             llvm::X86::POPA16,
             llvm::X86::POPA32
         };
-        unsigned opcode = inst->getOpcode();
+        unsigned opcode = inst.getOpcode();
 
         for (unsigned op : InstAllRegisters) {
             if (op == opcode)

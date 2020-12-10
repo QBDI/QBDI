@@ -103,7 +103,7 @@ ExecBlock* ExecBlockManager::getProgrammedExecBlock(rword address) {
             // Retrieving corresponding block and seqLoc
             ExecBlock* block = region.blocks[instLoc->second.blockIdx].get();
             uint16_t existingSeqId = block->getSeqID(instLoc->second.instID);
-            const SeqLoc& existingSeqLoc = region.sequenceCache[block->getInstMetadata(block->getSeqStart(existingSeqId))->address];
+            const SeqLoc& existingSeqLoc = region.sequenceCache[block->getInstMetadata(block->getSeqStart(existingSeqId)).address];
             // Creating a new sequence at that instruction and saving it in the sequenceCache
             uint16_t newSeqID = block->splitSequence(instLoc->second.instID);
             regions[r].sequenceCache[address] = SeqLoc {

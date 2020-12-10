@@ -328,14 +328,14 @@ std::vector<Patch> Engine::patch(rword start) {
             });
             // Patch & merge
             for(uint32_t j = 0; j < patchRules.size(); j++) {
-                if(patchRules[j].canBeApplied(&inst, address, instSize, MCII.get())) {
+                if(patchRules[j].canBeApplied(inst, address, instSize, MCII.get())) {
                     LogDebug("Engine::patch", "Patch rule %" PRIu32 " applied", j);
                     if(patch.insts.size() == 0) {
-                        patch = patchRules[j].generate(&inst, address, instSize, MCII.get(), MRI.get());
+                        patch = patchRules[j].generate(inst, address, instSize, MCII.get(), MRI.get());
                     }
                     else {
                         LogDebug("Engine::patch", "Previous instruction merged");
-                        patch = patchRules[j].generate(&inst, address, instSize, MCII.get(), MRI.get(), &patch);
+                        patch = patchRules[j].generate(inst, address, instSize, MCII.get(), MRI.get(), &patch);
                     }
                     break;
                 }

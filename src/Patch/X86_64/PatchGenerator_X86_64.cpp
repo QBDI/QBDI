@@ -66,9 +66,9 @@ RelocatableInst::SharedPtrVec GetPCOffset::generate(const llvm::MCInst* inst,
 RelocatableInst::SharedPtrVec GetReadAddress::generate(const llvm::MCInst* inst,
     rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
     // Check if this instruction does indeed read something
-    if(getReadSize(inst) > 0) {
+    if(getReadSize(*inst) > 0) {
         // If it is a stack read, return RSP value
-        if(isStackRead(inst)) {
+        if(isStackRead(*inst)) {
             if (inst->getOpcode() == llvm::X86::LEAVE || inst->getOpcode() == llvm::X86::LEAVE64) {
                 return {Mov(temp_manager->getRegForTemp(temp), Reg(REG_BP))};
             } else {
@@ -122,9 +122,9 @@ RelocatableInst::SharedPtrVec GetReadAddress::generate(const llvm::MCInst* inst,
 RelocatableInst::SharedPtrVec GetWriteAddress::generate(const llvm::MCInst* inst,
     rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
     // Check if this instruction does indeed read something
-    if(getWriteSize(inst) > 0) {
+    if(getWriteSize(*inst) > 0) {
         // If it is a stack read, return RSP value
-        if(isStackWrite(inst)) {
+        if(isStackWrite(*inst)) {
             if (inst->getOpcode() == llvm::X86::ENTER) {
                 return {Mov(temp_manager->getRegForTemp(temp), Reg(REG_BP))};
             } else {
@@ -177,13 +177,13 @@ RelocatableInst::SharedPtrVec GetWriteAddress::generate(const llvm::MCInst* inst
 
 RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
      rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
-    if(getReadSize(inst) > 0) {
-        unsigned size = getReadSize(inst);
+    if(getReadSize(*inst) > 0) {
+        unsigned size = getReadSize(*inst);
         unsigned dst = temp_manager->getRegForTemp(temp);
         if(size < 8) {
             dst = temp_manager->getSizedSubReg(dst, 4);
         }
-        if(isStackRead(inst)) {
+        if(isStackRead(*inst)) {
             llvm::MCInst readinst;
             unsigned int stack_register = REG_SP;
             if (inst->getOpcode() == llvm::X86::LEAVE || inst->getOpcode() == llvm::X86::LEAVE64) {
@@ -257,14 +257,14 @@ RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
 
 RelocatableInst::SharedPtrVec GetWriteValue::generate(const llvm::MCInst* inst,
      rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
-    if(getWriteSize(inst) > 0) {
-        unsigned size = getWriteSize(inst);
+    if(getWriteSize(*inst) > 0) {
+        unsigned size = getWriteSize(*inst);
         unsigned dst = temp_manager->getRegForTemp(temp);
         if(size < 8) {
             dst = temp_manager->getSizedSubReg(dst, 4);
         }
 
-        if(isStackWrite(inst)) {
+        if(isStackWrite(*inst)) {
             llvm::MCInst readinst;
             unsigned int stack_register = REG_SP;
             if (inst->getOpcode() == llvm::X86::ENTER) {
