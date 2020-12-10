@@ -102,8 +102,16 @@ static QBDI::VMAction verifyMemoryAccess(QBDI::VMInstanceRef vm, QBDI::GPRState 
         // all return instructions read the return address.
         bypassRead |= instAnalysis->isReturn;
         const std::set<std::string> shouldReadInsts {
+            "ARPL16mr", "BOUNDS16rm", "BOUNDS32rm",
             "CMPSB", "CMPSW", "CMPSL", "CMPSQ",
+            "FBLDm", "FCOM32m", "FCOM64m", "FCOMP32m", "FCOMP64m",
+            "FICOM16m", "FICOM32m", "FICOMP16m", "FICOMP32m", "FLDENVm", "FRSTORm",
+            "LODSB", "LODSL", "LODSQ", "LODSW",
             "MOVSB", "MOVSW", "MOVSL", "MOVSQ",
+            "RCL16m1", "RCL16mCL", "RCL16mi", "RCL32m1", "RCL32mCL", "RCL32mi",
+            "RCL64m1", "RCL64mCL", "RCL64mi", "RCL8m1", "RCL8mCL", "RCL8mi",
+            "RCR16m1", "RCR16mCL", "RCR16mi", "RCR32m1", "RCR32mCL", "RCR32mi",
+            "RCR64m1", "RCR64mCL", "RCR64mi", "RCR8m1", "RCR8mCL", "RCR8mi",
             "SCASB", "SCASW", "SCASL", "SCASQ",
         };
         bypassRead |= (shouldReadInsts.count(instAnalysis->mnemonic) == 1);
@@ -111,7 +119,16 @@ static QBDI::VMAction verifyMemoryAccess(QBDI::VMInstanceRef vm, QBDI::GPRState 
     } else if (!doRead and mayRead) {
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
         const std::set<std::string> noReadInsts {
-            "VZEROUPPER", "VZEROALL",
+            "CLDEMOTE", "CLFLUSH", "CLFLUSHOPT", "CLWB", "FEMMS",
+            "FXSAVE", "FXSAVE64", "INT", "INT3", "LFENCE", "MFENCE",
+            "MMX_EMMS", "MMX_MOVNTQmr", "MOVDIRI32", "MOVDIRI64",
+            "MWAITXrrr", "MWAITrr", "PAUSE", "PREFETCH", "PREFETCHNTA",
+            "PREFETCHT0", "PREFETCHT1", "PREFETCHT2", "PREFETCHW",
+            "PREFETCHWT1", "PTWRITE64r", "PTWRITEr", "RDFSBASE",
+            "RDFSBASE64", "RDGSBASE", "RDGSBASE64", "RDPID32",
+            "SFENCE", "TRAP", "UD2B", "UMONITOR16", "UMONITOR32",
+            "UMONITOR64", "VZEROALL", "VZEROUPPER", "WRFSBASE",
+            "WRFSBASE64", "WRGSBASE", "WRGSBASE64", "XSETBV",
         };
         bypassRead |= (noReadInsts.count(instAnalysis->mnemonic) == 1);
 #endif
@@ -122,6 +139,7 @@ static QBDI::VMAction verifyMemoryAccess(QBDI::VMInstanceRef vm, QBDI::GPRState 
         // all call instructions write the return address.
         bypassWrite |= instAnalysis->isCall;
         const std::set<std::string> shouldWriteInsts {
+            "ENTER", "FBSTPm", "FNSTSWm", "FSAVEm", "FSTENVm",
             "STOSB", "STOSW", "STOSL", "STOSQ",
             "MOVSB", "MOVSW", "MOVSL", "MOVSQ",
         };
@@ -130,7 +148,16 @@ static QBDI::VMAction verifyMemoryAccess(QBDI::VMInstanceRef vm, QBDI::GPRState 
     } else if (!doWrite and mayWrite) {
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
         const std::set<std::string> noWriteInsts {
-            "VZEROUPPER", "VZEROALL",
+            "CLDEMOTE", "CLFLUSH", "CLFLUSHOPT", "CLWB", "FEMMS",
+            "FXRSTOR", "FXRSTOR64", "INT", "INT3", "LFENCE", "MFENCE",
+            "MMX_EMMS", "MWAITXrrr", "MWAITrr", "PAUSE", "PREFETCH",
+            "PREFETCHNTA", "PREFETCHT0", "PREFETCHT1", "PREFETCHT2",
+            "PREFETCHW", "PREFETCHWT1", "PTWRITE64m", "PTWRITE64r",
+            "PTWRITEm", "PTWRITEr", "RDFSBASE", "RDFSBASE64", "RDGSBASE",
+            "RDGSBASE64", "RDPID32", "SFENCE", "UMONITOR16", "UMONITOR32",
+            "UMONITOR64", "VZEROALL", "VZEROUPPER", "WRFSBASE", "WRFSBASE64",
+            "WRGSBASE", "WRGSBASE64", "XRSTOR", "XRSTOR64", "XRSTORS",
+            "XRSTORS64", "XSETBV",
         };
         bypassWrite |= (noWriteInsts.count(instAnalysis->mnemonic) == 1);
 #endif
@@ -218,7 +245,6 @@ void start_instrumented(QBDI::VM* vm, QBDI::rword start, QBDI::rword stop, int c
     // memory Access are not supported for ARM now
     vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
     vm->addCodeCB(QBDI::POSTINST, verifyMemoryAccess, (void*) &PIPES);
-
     vm->addMnemonicCB("syscall", QBDI::POSTINST, logSyscall, (void*) &PIPES);
 #endif
     vm->addVMEventCB(QBDI::VMEvent::EXEC_TRANSFER_CALL, logTransfer, (void*) &PIPES);
