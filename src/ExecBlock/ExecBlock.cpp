@@ -255,7 +255,14 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
         uint32_t rollbackShadowIdx = shadowIdx;
         size_t rollbackShadowRegistry = shadowRegistry.size();
 
-        LogDebug("ExecBlock::writeBasicBlock", "Attempting to write patch of %zu RelocatableInst to ExecBlock %p", seqIt->metadata.patchSize, this);
+        LogCallback(LogPriority::DEBUG, "ExecBlock::writeBasicBlock", [&] (FILE *log) -> void {
+            std::string disass;
+            llvm::raw_string_ostream disassOs(disass);
+            assembly.printDisasm(seqIt->metadata.inst, seqIt->metadata.address, disassOs);
+            disassOs.flush();
+            fprintf(log, "Attempting to write patch of %u RelocatableInst to ExecBlock %p for instruction %" PRIRWORD ": %s",
+                    seqIt->metadata.patchSize, this, seqIt->metadata.address, disass.c_str());
+        });
         // Attempt to write a complete patch. If not, rollback to the last complete patch written
         for(const RelocatableInst::SharedPtr& inst : seqIt->insts) {
             if(getEpilogueOffset() > MINIMAL_BLOCK_SIZE) {
@@ -354,7 +361,7 @@ uint16_t ExecBlock::newShadow(uint16_t tag) {
     uint16_t id = shadowIdx++;
     RequireAction("ExecBlock::newShadow", id * sizeof(rword) < dataBlock.allocatedSize() - sizeof(Context), abort());
     if(tag != NO_REGISTRATION) {
-        LogDebug("ExecBlock::newShadow", "Registering new tagged shadow %" PRIu16 " for instID %" PRIu16 " wih tag %" PRIu16, id, getNextInstID(), tag);
+        LogDebug("ExecBlock::newShadow", "Registering new tagged shadow %" PRIu16 " for instID %" PRIu16 " wih tag 0x%x", id, getNextInstID(), tag);
         shadowRegistry.push_back({
             getNextInstID(),
             tag,
@@ -362,6 +369,19 @@ uint16_t ExecBlock::newShadow(uint16_t tag) {
         });
     }
     return id;
+}
+
+uint16_t ExecBlock::getLastShadow(uint16_t tag) {
+    if (tag != NO_REGISTRATION) {
+        uint16_t instID = getNextInstID();
+        for (auto it = shadowRegistry.rbegin(); it != shadowRegistry.rend() and instID == it->instID; ++it) {
+            if (instID == it->instID and tag == it->tag) {
+                LogDebug("ExecBlock::getLastShadow", "Reused tagged shadow %" PRIu16 " for instID %" PRIu16 " wih tag 0x%x", it->shadowID, getNextInstID(), tag);
+                return it->shadowID;
+            }
+        }
+    }
+    return newShadow(tag);
 }
 
 void ExecBlock::setShadow(uint16_t id, rword v) {

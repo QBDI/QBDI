@@ -432,74 +432,88 @@ bool VM::recordMemoryAccess(MemoryAccessType type) {
  *
  * @param[in]  curExecBlock     the current basicBlock
  * @param[out] access           the access to complete
- * @param[in]  shadows          iterator on the shadows (the first item
+ * @param[in]  shadows          iterator on the shadows (the first item is the access to decode)
  *
  * @return true  when success
  */
 static bool decodeDefaultMemAccess(const ExecBlock& curExecBlock, MemoryAccess& access,
-                                   llvm::ArrayRef<ShadowInfo> shadows) {
+                                   llvm::ArrayRef<ShadowInfo> shadows, bool searchValueTag) {
 
     const uint16_t instID = shadows[0].instID;
+    const llvm::MCInst& inst = curExecBlock.getOriginalMCInst(instID);
     access = MemoryAccess();
     access.flags = MEMORY_NO_FLAGS;
 
-    // look at two shadows
+    // look at the first shadow (the address)
     if (shadows.size() < 1)
         return false;
 
+    uint16_t expectedValueTag;
     // the first one is MEM_READ_ADDRESS_TAG or MEM_WRITE_ADDRESS_TAG
-    if (shadows[0].tag == MEM_READ_ADDRESS_TAG) {
-        access.type = MEMORY_READ;
-        access.size = getReadSize(curExecBlock.getOriginalMCInst(instID));
-    } else if (shadows[0].tag == MEM_WRITE_ADDRESS_TAG) {
-        access.type = MEMORY_WRITE;
-        access.size = getWriteSize(curExecBlock.getOriginalMCInst(instID));
-    } else
-        return false;
+    switch (shadows[0].tag) {
+        case MEM_READ_ADDRESS_1_TAG:
+            access.type = MEMORY_READ;
+            access.size = getReadSize(inst);
+            expectedValueTag = MEM_READ_VALUE_1_TAG;
+            searchValueTag &= not isUndefinedReadSize(inst);
+            break;
+        case MEM_READ_ADDRESS_2_TAG:
+            access.type = MEMORY_READ;
+            access.size = getReadSize(inst);
+            expectedValueTag = MEM_READ_VALUE_2_TAG;
+            searchValueTag &= not isUndefinedReadSize(inst);
+            break;
+        case MEM_WRITE_ADDRESS_TAG:
+            access.type = MEMORY_WRITE;
+            access.size = getWriteSize(inst);
+            expectedValueTag = MEM_WRITE_VALUE_TAG;
+            searchValueTag &= not isUndefinedWriteSize(inst);
+            break;
+        default:
+            return false;
+    }
 
     access.accessAddress = curExecBlock.getShadow(shadows[0].shadowID);
     access.instAddress = curExecBlock.getInstAddress(instID);
 
     // if the access size is bigger than rword, the value cannot be store in a shadow.
     // Don't seach for a MEM_VALUE_TAG with MEMORY_UNKNOWN_VALUE
-    if (access.size > sizeof(rword)) {
+    if (access.size > sizeof(rword) or not searchValueTag) {
         access.flags |= MEMORY_UNKNOWN_VALUE;
         return true;
     }
 
     // need a second shadow to take the value
-    if (shadows.size() < 2)
-        return false;
-
-    // the second shadow reference the same instruction
-    if (access.instAddress != curExecBlock.getInstAddress(shadows[1].instID)) {
+    if (shadows.size() < 2 || access.instAddress != curExecBlock.getInstAddress(shadows[1].instID)) {
         LogError(
             "decodeDefaultMemAccess",
             "An address shadow is not followed by a shadow for the same instruction for instruction at address %" PRIx64,
             access.instAddress
         );
-        return false;
+        access.flags |= MEMORY_UNKNOWN_VALUE;
+        return true;
     }
 
-    // the second shadow must be a MEM_VALUE_TAG
-    if(shadows[1].tag == MEM_VALUE_TAG) {
-        access.value = curExecBlock.getShadow(shadows[1].shadowID);
-        return true;
-    } else {
+    // the second shadow must be a MEM_(READ|WRITE)_VALUE_TAG
+    if(shadows[1].tag != expectedValueTag) {
         LogError(
             "decodeDefaultMemAccess",
             "An address shadow is not followed by a value shadow for instruction at address %" PRIx64,
             access.instAddress
         );
-        return false;
+        access.flags |= MEMORY_UNKNOWN_VALUE;
+        return true;
     }
+
+    access.value = curExecBlock.getShadow(shadows[1].shadowID);
+    return true;
 }
 
 /* decode a complexe MemAccess for a execBlock
  *
  * @param[in]  curExecBlock     the current basicBlock
  * @param[out] access           the access to complete
- * @param[in]  shadows          iterator on the shadows (the first item
+ * @param[in]  shadows          iterator on the shadows (the first item is the access to decode)
  * @param[in]  searchPostTag    find the stop tag (if in postInst)
  *
  * @return true  when success
@@ -514,29 +528,28 @@ static bool decodeComplexMemAccess(const ExecBlock& curExecBlock, MemoryAccess& 
     access.value = 0;
     uint16_t expectedEndTag;
 
-    // look at two shadows minimum
-    if (shadows.size() < 2)
+    // look at the first shadow (the
+    if (shadows.size() < 1)
         return false;
 
-    // the first one is MEM_READ_START_ADDRESS_1_TAG, MEM_READ_START_ADDRESS_2_TAG
-    // or MEM_WRITE_START_ADDRESS_TAG
+    // the first one is MEM_READ_START_ADDRESS_TAG, MEM_WRITE_START_ADDRESS_TAG
     switch (shadows[0].tag) {
         case MEM_READ_START_ADDRESS_1_TAG:
-            expectedEndTag = MEM_READ_STOP_ADDRESS_1_TAG;
             access.type = MEMORY_READ;
             access.size = getReadSize(inst);
+            expectedEndTag = MEM_READ_STOP_ADDRESS_1_TAG;
             searchPostTag &= not isUndefinedReadSize(inst);
             break;
         case MEM_READ_START_ADDRESS_2_TAG:
-            expectedEndTag = MEM_READ_STOP_ADDRESS_2_TAG;
             access.type = MEMORY_READ;
             access.size = getReadSize(inst);
+            expectedEndTag = MEM_READ_STOP_ADDRESS_2_TAG;
             searchPostTag &= not isUndefinedReadSize(inst);
             break;
         case MEM_WRITE_START_ADDRESS_TAG:
-            expectedEndTag = MEM_WRITE_STOP_ADDRESS_TAG;
             access.type = MEMORY_WRITE;
             access.size = getWriteSize(inst);
+            expectedEndTag = MEM_WRITE_STOP_ADDRESS_TAG;
             searchPostTag &= not isUndefinedWriteSize(inst);
             break;
         default:
@@ -552,25 +565,30 @@ static bool decodeComplexMemAccess(const ExecBlock& curExecBlock, MemoryAccess& 
         return true;
     }
 
-    size_t foundStopIndex = 0;
-    for (size_t i = 1; i < shadows.size() && access.instAddress == curExecBlock.getInstAddress(shadows[i].instID); i++) {
-        if (shadows[i].tag == expectedEndTag) {
-            foundStopIndex = i;
-            break;
-        }
-    }
-
-    if (foundStopIndex == 0) {
+    // look at two shadows minimum
+    if (shadows.size() < 2 || access.instAddress != curExecBlock.getInstAddress(shadows[1].instID)) {
         LogError(
             "decodeComplexMemAccess",
-            "Doesn't found shadow %x after shadow %x for instruction at address %" PRIx64,
-            shadows[0].tag, expectedEndTag, access.instAddress
+            "An address start shadow is not followed by a shadow for the same instruction for instruction at address %" PRIx64,
+            access.instAddress
         );
-        return false;
+        access.flags |= MEMORY_UNKNOWN_SIZE;
+        return true;
+    }
+
+    // the second shadow must be a MEM_(READ|WRITE)_VALUE_TAG
+    if(shadows[1].tag != expectedEndTag) {
+        LogError(
+            "decodeComplexMemAccess",
+            "An address start shadow is not followed by an address stop shadow for instruction at address %" PRIx64,
+            access.instAddress
+        );
+        access.flags |= MEMORY_UNKNOWN_SIZE;
+        return true;
     }
 
     // the stop address is load by the access
-    rword stopAddress = curExecBlock.getShadow(shadows[foundStopIndex].shadowID);
+    rword stopAddress = curExecBlock.getShadow(shadows[1].shadowID);
 
     if (stopAddress >= access.accessAddress) {
         access.size = stopAddress - access.accessAddress;
@@ -603,12 +621,15 @@ std::vector<MemoryAccess> VM::getInstMemoryAccess() const {
             default:
                 break;
             case MEM_WRITE_ADDRESS_TAG:
-                if (engine->isPreInst())
-                    break;
-                addAccess = decodeDefaultMemAccess(*curExecBlock, access, llvm::ArrayRef<ShadowInfo>(shadows.data() + i, shadows.size() - i));
+                addAccess = decodeDefaultMemAccess(*curExecBlock, access,
+                    llvm::ArrayRef<ShadowInfo>(shadows.data() + i, shadows.size() - i),
+                    not engine->isPreInst());
                 break;
-            case MEM_READ_ADDRESS_TAG:
-                addAccess = decodeDefaultMemAccess(*curExecBlock, access, llvm::ArrayRef<ShadowInfo>(shadows.data() + i, shadows.size() - i));
+            case MEM_READ_ADDRESS_1_TAG:
+            case MEM_READ_ADDRESS_2_TAG:
+                addAccess = decodeDefaultMemAccess(*curExecBlock, access,
+                    llvm::ArrayRef<ShadowInfo>(shadows.data() + i, shadows.size() - i),
+                    true);
                 break;
             case MEM_READ_START_ADDRESS_1_TAG:
             case MEM_READ_START_ADDRESS_2_TAG:
@@ -645,12 +666,15 @@ std::vector<MemoryAccess> VM::getBBMemoryAccess() const {
             default:
                 break;
             case MEM_WRITE_ADDRESS_TAG:
-                if (engine->isPreInst() && shadows[i].instID == instID)
-                    break;
-                addAccess = decodeDefaultMemAccess(*curExecBlock, access, llvm::ArrayRef<ShadowInfo>(shadows.data() + i, shadows.size() - i));
+                addAccess = decodeDefaultMemAccess(*curExecBlock, access,
+                    llvm::ArrayRef<ShadowInfo>(shadows.data() + i, shadows.size() - i),
+                    not (engine->isPreInst() && shadows[i].instID == instID));
                 break;
-            case MEM_READ_ADDRESS_TAG:
-                addAccess = decodeDefaultMemAccess(*curExecBlock, access, llvm::ArrayRef<ShadowInfo>(shadows.data() + i, shadows.size() - i));
+            case MEM_READ_ADDRESS_1_TAG:
+            case MEM_READ_ADDRESS_2_TAG:
+                addAccess = decodeDefaultMemAccess(*curExecBlock, access,
+                    llvm::ArrayRef<ShadowInfo>(shadows.data() + i, shadows.size() - i),
+                    true);
                 break;
             case MEM_READ_START_ADDRESS_1_TAG:
             case MEM_READ_START_ADDRESS_2_TAG:

@@ -23,6 +23,7 @@
 #include "llvm/MC/MCContext.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstPrinter.h"
+#include "llvm/MC/MCInstrInfo.h"
 #include "llvm/MC/MCObjectWriter.h"
 #include "llvm/MC/MCSubtargetInfo.h"
 #include "llvm/MC/MCValue.h"
@@ -82,6 +83,10 @@ llvm::MCDisassembler::DecodeStatus Assembly::getInstruction(llvm::MCInst &instr,
 
 
 void Assembly::writeInstruction(const llvm::MCInst inst, memory_ostream *stream) const {
+    // if the instruction is a pseudo instruction, don't generate it
+    if (MCII.get(inst.getOpcode()).isPseudo())
+        return;
+
     // MCCodeEmitter needs a fixups array
     llvm::SmallVector<llvm::MCFixup,4> fixups;
 

@@ -16,21 +16,16 @@
  * limitations under the License.
  */
 
-#include <stdlib.h>
-#include <time.h>
+#include "X86InstrInfo.h"
+#include "llvm/MC/MCInst.h"
 
-#include <QBDI/Logs.h>
+#include "Patch/X86_64/RelocatableInst_X86_64.h"
 
-#define CATCH_CONFIG_RUNNER
-#include <catch2/catch.hpp>
+namespace QBDI {
 
-int main(int argc, char** argv) {
+  RelocatablePseudoInst::RelocatablePseudoInst() : RelocatableInst(llvm::MCInst{}) {
+    // PHI is a pseudo instruction and will be ignored by QBDI::Assembly
+    inst.setOpcode(llvm::X86::PHI);
+}
 
-    srand(time(nullptr));
-    QBDI::addLogFilter("*", QBDI::LogPriority::WARNING);
-
-    if (getenv("TEST_DEBUG") != nullptr)
-        QBDI::addLogFilter("*", QBDI::LogPriority::DEBUG);
-
-    return Catch::Session().run( argc, argv );;
 }

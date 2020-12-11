@@ -584,8 +584,8 @@ RelocatableInst::SharedPtr Popr(Reg reg) {
     return NoReloc(popr(reg));
 }
 
-RelocatableInst::SharedPtr Add(Reg reg, Constant cst) {
-    return NoReloc(addri(reg, reg, cst));
+RelocatableInst::SharedPtr Add(Reg dst, Reg src, Constant cst) {
+    return NoReloc(addri(dst, src, cst));
 }
 
 RelocatableInst::SharedPtr Pushf() {

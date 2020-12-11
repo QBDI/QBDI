@@ -77,6 +77,8 @@ public:
      * temporary. This PatchGenerator is only guaranteed to work before the instruction has been
      * executed.
      *
+     * Must be before the instruction, except for instruction with REP
+     *
      * @param[in] temp      A temporary where the memory address will be copied.
      * @param[in] index     Index of access to saved when instruction does many read access
      * @param[in] TSFlags   Instruction architecture dependent flag from MCInstrDesc
@@ -99,6 +101,7 @@ class GetWriteAddress : public PatchGenerator, public AutoAlloc<PatchGenerator, 
 
     Temp temp;
     uint64_t TSFlags;
+    bool afterInst;
 
 public:
 
@@ -109,7 +112,8 @@ public:
      * @param[in] temp      A temporary where the memory address will be copied.
      * @param[in] TSFlags   Instruction architecture dependent flag from MCInstrDesc
     */
-    GetWriteAddress(Temp temp, uint64_t TSFlags) : temp(temp), TSFlags(TSFlags) {}
+    GetWriteAddress(Temp temp, uint64_t TSFlags, bool afterInst=false)
+      : temp(temp), TSFlags(TSFlags), afterInst(afterInst) {}
 
     /*! Output:
      *
@@ -135,6 +139,8 @@ class GetReadValue : public PatchGenerator, public AutoAlloc<PatchGenerator, Get
      * temporary. This PatchGenerator is only guaranteed to work before the instruction has been
      * executed.
      *
+     * Must be before the instruction
+     *
      * @param[in] temp      A temporary where the memory value will be copied.
      * @param[in] index     index of access to saved when instruction does many read access
      * @param[in] TSFlags   Instruction architecture dependent flag from MCInstrDesc
@@ -159,6 +165,8 @@ public:
     /*! Resolve the memory address where the instructions has written its value and copy back the value
      * in a temporary. This PatchGenerator is only guaranteed to work after the instruction has been
      * executed.
+     *
+     * Must be after the instruction.
      *
      * @param[in] temp      A temporary where the memory value will be copied. This register must have the
      *                        result of GetWriteAddress()
@@ -229,6 +237,23 @@ public:
         rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
 
     bool modifyPC() const override {return true;}
+};
+
+class CreateShadow : public PatchGenerator, public AutoAlloc<PatchGenerator, CreateShadow>,
+    public PureEval<CreateShadow> {
+
+    Shadow shadow;
+
+public:
+
+    /*! Create a new shadow on the dataBlock
+     *
+     * @param[in] shadow  The shadow to create
+    */
+    CreateShadow(Shadow shadow): shadow(shadow) {}
+
+    std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 }

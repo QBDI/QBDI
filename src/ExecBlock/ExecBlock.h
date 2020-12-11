@@ -331,6 +331,14 @@ public:
      */
     uint16_t newShadow(uint16_t tag = NO_REGISTRATION);
 
+    /*! Search a shadow with the given tag in the current Patch. If no shadow is found, create a new one
+     *
+     *  @param tag The tag associated with the registration, 0xFFFF is reserved for unregistered shadows.
+     *
+     *  @return The shadow id (which is its index within the shadow array).
+     */
+    uint16_t getLastShadow(uint16_t tag = NO_REGISTRATION);
+
     /*! Set the value of a shadow.
      *
      *  @param id [in] ID of the shadow to set.

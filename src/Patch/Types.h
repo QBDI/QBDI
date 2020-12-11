@@ -83,15 +83,18 @@ public:
 };
 
 /* Some reserved Shadow tag */
-constexpr static uint16_t MEM_READ_ADDRESS_TAG          = 0xfff0;
-constexpr static uint16_t MEM_READ_START_ADDRESS_1_TAG  = 0xfff1;
-constexpr static uint16_t MEM_READ_START_ADDRESS_2_TAG  = 0xfff2;
-constexpr static uint16_t MEM_READ_STOP_ADDRESS_1_TAG   = 0xfff3;
-constexpr static uint16_t MEM_READ_STOP_ADDRESS_2_TAG   = 0xfff4;
-constexpr static uint16_t MEM_WRITE_ADDRESS_TAG         = 0xfff5;
-constexpr static uint16_t MEM_WRITE_START_ADDRESS_TAG   = 0xfff6;
-constexpr static uint16_t MEM_WRITE_STOP_ADDRESS_TAG    = 0xfff7;
-constexpr static uint16_t MEM_VALUE_TAG                 = 0xfff8;
+constexpr static uint16_t MEM_READ_ADDRESS_1_TAG          = 0xfff0;
+constexpr static uint16_t MEM_READ_ADDRESS_2_TAG          = 0xfff1;
+constexpr static uint16_t MEM_WRITE_ADDRESS_TAG           = 0xfff2;
+constexpr static uint16_t MEM_READ_START_ADDRESS_1_TAG    = 0xfff3;
+constexpr static uint16_t MEM_READ_START_ADDRESS_2_TAG    = 0xfff4;
+constexpr static uint16_t MEM_WRITE_START_ADDRESS_TAG     = 0xfff5;
+constexpr static uint16_t MEM_READ_VALUE_1_TAG            = 0xfff6;
+constexpr static uint16_t MEM_READ_VALUE_2_TAG            = 0xfff7;
+constexpr static uint16_t MEM_WRITE_VALUE_TAG             = 0xfff8;
+constexpr static uint16_t MEM_READ_STOP_ADDRESS_1_TAG     = 0xfff9;
+constexpr static uint16_t MEM_READ_STOP_ADDRESS_2_TAG     = 0xfffa;
+constexpr static uint16_t MEM_WRITE_STOP_ADDRESS_TAG      = 0xfffb;
 
 /*! Structure representing a constant value in PatchDSL.
 */

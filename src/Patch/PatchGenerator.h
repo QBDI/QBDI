@@ -203,7 +203,45 @@ public:
     std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
         rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
 
-    bool modifyPC() const override {return offset == Offset(Reg(REG_PC));}
+    bool modifyPC() const override {return type == OffsetType and offset == Offset(Reg(REG_PC));}
+};
+
+class ReadTemp : public PatchGenerator, public AutoAlloc<PatchGenerator, ReadTemp> {
+
+    Temp  temp;
+    enum {
+        OffsetType,
+        ShadowType
+    } type;
+    // Not working VS 2015
+    // union {
+        Offset offset;
+        Shadow shadow;
+    // }
+
+public:
+
+    /*! Write a temporary value in the data block at the specified offset. This can be used to overwrite
+     * register values in the context part of the data block.
+     *
+     * @param[in] offset    The offset in the data block where the temporary will be read. His value is unchanged.
+     * @param[in] temp      A temporary which will be take the value.
+    */
+    ReadTemp(Offset offset, Temp temp): temp(temp), type(OffsetType), offset(offset), shadow(0) {}
+
+    /*! Write a temporary value in a shadow in the data block.
+     *
+     * @param[in] shadow    The shadow use to read the value. His value is unchanged.
+     * @param[in] temp      A temporary which will be take the value.
+    */
+    ReadTemp(Shadow shadow, Temp temp): temp(temp), type(ShadowType), offset(0), shadow(shadow) {}
+
+    /*! Output:
+     *
+     * MOV REG64 temp, MEM64 DataBlock[offset]
+    */
+    std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
+        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 class SaveReg : public PatchGenerator, public AutoAlloc<PatchGenerator, SaveReg>,

@@ -24,6 +24,16 @@
 
 namespace QBDI {
 
+class RelocatablePseudoInst : public RelocatableInst {
+
+public:
+    RelocatablePseudoInst();
+
+    virtual llvm::MCInst reloc(ExecBlock *exec_block) const =0;
+
+    virtual ~RelocatablePseudoInst() = default;
+};
+
 class HostPCRel : public RelocatableInst, public AutoAlloc<RelocatableInst, HostPCRel> {
     unsigned int opn;
     rword        offset;
@@ -53,6 +63,20 @@ public:
     }
 };
 
+class CreateShadowInst : public RelocatablePseudoInst, public AutoAlloc<RelocatableInst, CreateShadowInst> {
+
+    uint16_t tag;
+
+public:
+    CreateShadowInst(uint16_t tag)
+        : RelocatablePseudoInst(), tag(tag) {};
+
+    llvm::MCInst reloc(ExecBlock *exec_block) const override {
+        exec_block->newShadow(tag);
+        return inst;
+    }
+};
+
 class TaggedShadow : public RelocatableInst, public AutoAlloc<RelocatableInst, TaggedShadow> {
 
     unsigned int opn;
@@ -64,7 +88,7 @@ public:
         : RelocatableInst(std::move(inst)), opn(opn), tag(tag), inst_size(inst_size) {};
 
     llvm::MCInst reloc(ExecBlock *exec_block) const override {
-        uint16_t id = exec_block->newShadow(tag);
+        uint16_t id = exec_block->getLastShadow(tag);
         llvm::MCInst res = inst;
         res.getOperand(opn).setImm(
             exec_block->getDataBlockOffset() + exec_block->getShadowOffset(id) - inst_size
@@ -83,7 +107,7 @@ public:
         : RelocatableInst(std::move(inst)), opn(opn), tag(tag) {};
 
     llvm::MCInst reloc(ExecBlock *exec_block) const override {
-        uint16_t id = exec_block->newShadow(tag);
+        uint16_t id = exec_block->getLastShadow(tag);
         llvm::MCInst res = inst;
         res.getOperand(opn).setImm(
             exec_block->getDataBlockBase() + exec_block->getShadowOffset(id)

@@ -162,7 +162,7 @@ std::shared_ptr<RelocatableInst> Pushr(Reg reg);
 
 std::shared_ptr<RelocatableInst> Popr(Reg reg);
 
-std::shared_ptr<RelocatableInst> Add(Reg reg, Constant cst);
+std::shared_ptr<RelocatableInst> Add(Reg dst, Reg src, Constant cst);
 
 std::shared_ptr<RelocatableInst> Pushf();
 
