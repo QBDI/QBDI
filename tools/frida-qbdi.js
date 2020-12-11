@@ -549,7 +549,36 @@ var OperandType = Object.freeze({
     /**attribute:OperandType.OPERAND_PRED
       Predicate special operand.
      */
-    OPERAND_PRED : 3
+    OPERAND_PRED : 3,
+    /**attribute:OperandType.OPERAND_FPR
+      Floating point register operand.
+     */
+    OPERAND_FPR : 4,
+    /**attribute:OperandType.OPERAND_SEG
+      Segment or unsaved register operand
+     */
+    OPERAND_SEG : 5
+});
+
+/**data:OperandFlag
+*/
+var OperandFlag = Object.freeze({
+    /**attribute:OperandType.OPERANDFLAG_NONE
+      No flag.
+     */
+    OPERANDFLAG_NONE : 0,
+    /**attribute:OperandType.OPERANDFLAG_ADDR
+      The operand is used to compute an address
+     */
+    OPERANDFLAG_ADDR: 1,
+    /**attribute:OperandType.OPERANDFLAG_PCREL
+      The value of the operand is PC relative.
+     */
+    OPERANDFLAG_PCREL : 2,
+    /**attribute:OperandType.OPERANDFLAG_UNDEFINED_EFFECT
+      The operand role isn't fully defined.
+     */
+    OPERANDFLAG_UNDEFINED_EFFECT : 4
 });
 
 /**data:AnalysisType
@@ -1247,21 +1276,23 @@ function QBDI() {
         var p = ptr;
         analysis.type = Memory.readU32(p);
         p = ptr.add(operandAnalysisStructDesc.offsets[1]);
-        analysis.value = Memory.readRword(p);
+        analysis.flag = Memory.readU8(p);
         p = ptr.add(operandAnalysisStructDesc.offsets[2]);
-        analysis.size = Memory.readU8(p);
+        analysis.value = Memory.readRword(p);
         p = ptr.add(operandAnalysisStructDesc.offsets[3]);
-        analysis.regOff = Memory.readU8(p);
+        analysis.size = Memory.readU8(p);
         p = ptr.add(operandAnalysisStructDesc.offsets[4]);
-        analysis.regCtxIdx = Memory.readU16(p);
+        analysis.regOff = Memory.readU8(p);
         p = ptr.add(operandAnalysisStructDesc.offsets[5]);
+        analysis.regCtxIdx = Memory.readU16(p);
+        p = ptr.add(operandAnalysisStructDesc.offsets[6]);
         var regNamePtr = Memory.readPointer(p);
         if (regNamePtr.isNull()) {
             analysis.regName = undefined;
         } else {
             analysis.regName = Memory.readCString(regNamePtr);
         }
-        p = ptr.add(operandAnalysisStructDesc.offsets[6]);
+        p = ptr.add(operandAnalysisStructDesc.offsets[7]);
         analysis.regAccess = Memory.readU8(p);
         Object.freeze(analysis);
         return analysis;
@@ -1298,24 +1329,26 @@ function QBDI() {
         p = ptr.add(instAnalysisStructDesc.offsets[13]);
         analysis.storeSize = Memory.readU32(p);
         p = ptr.add(instAnalysisStructDesc.offsets[14]);
-        var numOperands = Memory.readU8(p);
+        analysis.flagsAccess = Memory.readU8(p);
         p = ptr.add(instAnalysisStructDesc.offsets[15]);
+        var numOperands = Memory.readU8(p);
+        p = ptr.add(instAnalysisStructDesc.offsets[16]);
         var operandsPtr = Memory.readPointer(p);
         analysis.operands = new Array(numOperands);
         for (var i = 0; i < numOperands; i++) {
             analysis.operands[i] = parseOperandAnalysis(operandsPtr);
             operandsPtr = operandsPtr.add(operandAnalysisStructDesc.size);
         }
-        p = ptr.add(instAnalysisStructDesc.offsets[16]);
+        p = ptr.add(instAnalysisStructDesc.offsets[17]);
         var symbolPtr = Memory.readPointer(p);
         if (!symbolPtr.isNull()) {
             analysis.symbol = Memory.readCString(symbolPtr);
         } else {
             analysis.symbol = "";
         }
-        p = ptr.add(instAnalysisStructDesc.offsets[17]);
-        analysis.symbolOffset = Memory.readU32(p);
         p = ptr.add(instAnalysisStructDesc.offsets[18]);
+        analysis.symbolOffset = Memory.readU32(p);
+        p = ptr.add(instAnalysisStructDesc.offsets[19]);
         var modulePtr = Memory.readPointer(p);
         if (!modulePtr.isNull()) {
             analysis.module = Memory.readCString(modulePtr);

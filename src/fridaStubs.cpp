@@ -21,13 +21,14 @@ struct StructDesc {
 QBDI_EXPORT const StructDesc* qbdi_getMemoryAccessStructDesc() {
     static const StructDesc MemoryAccessDesc {
         sizeof(MemoryAccess),
-        5,
+        6,
         {
             offsetof(MemoryAccess, instAddress),
             offsetof(MemoryAccess, accessAddress),
             offsetof(MemoryAccess, value),
             offsetof(MemoryAccess, size),
-            offsetof(MemoryAccess, type)
+            offsetof(MemoryAccess, type),
+            offsetof(MemoryAccess, flags),
         }
     };
 
@@ -53,9 +54,10 @@ QBDI_EXPORT const StructDesc* qbdi_getVMStateStructDesc() {
 QBDI_EXPORT const StructDesc* qbdi_getOperandAnalysisStructDesc() {
     static const StructDesc OperandAnalysisDesc {
         sizeof(OperandAnalysis),
-        7,
+        8,
         {
             offsetof(OperandAnalysis, type),
+            offsetof(OperandAnalysis, flag),
             offsetof(OperandAnalysis, value),
             offsetof(OperandAnalysis, size),
             offsetof(OperandAnalysis, regOff),
@@ -70,7 +72,7 @@ QBDI_EXPORT const StructDesc* qbdi_getOperandAnalysisStructDesc() {
 QBDI_EXPORT const StructDesc* qbdi_getInstAnalysisStructDesc() {
     static const StructDesc InstAnalysisDesc {
         sizeof(InstAnalysis),
-        19,
+        20,
         {
             offsetof(InstAnalysis, mnemonic),
             offsetof(InstAnalysis, disassembly),
@@ -86,6 +88,7 @@ QBDI_EXPORT const StructDesc* qbdi_getInstAnalysisStructDesc() {
             offsetof(InstAnalysis, mayStore),
             offsetof(InstAnalysis, loadSize),
             offsetof(InstAnalysis, storeSize),
+            offsetof(InstAnalysis, flagsAccess),
             offsetof(InstAnalysis, numOperands),
             offsetof(InstAnalysis, operands),
             offsetof(InstAnalysis, symbol),

@@ -52,8 +52,10 @@ void init_binding_InstAnalysis(py::module& m) {
     py::enum_<OperandType>(m, "OperandType", "Operand type")
         .value("OPERAND_INVALID", OperandType::OPERAND_INVALID, "Invalid operand")
         .value("OPERAND_IMM", OperandType::OPERAND_IMM, "Immediate operand")
-        .value("OPERAND_GPR", OperandType::OPERAND_GPR, "Register operand")
+        .value("OPERAND_GPR", OperandType::OPERAND_GPR, "General Purpose Register operand")
         .value("OPERAND_PRED", OperandType::OPERAND_PRED, "Predicate operand")
+        .value("OPERAND_FPR", OperandType::OPERAND_FPR, "Floating point register operand")
+        .value("OPERAND_SEG", OperandType::OPERAND_SEG, "Segment or unsaved register operand ")
         .export_values();
 
     py::enum_<OperandFlag>(m, "OperandFlag", py::arithmetic(), "Operand flag")
@@ -140,6 +142,10 @@ void init_binding_InstAnalysis(py::module& m) {
                     return get_InstAnalysis_member(obj, &InstAnalysis::disassembly, ANALYSIS_DISASSEMBLY);
                 }, "Instruction disassembly (if ANALYSIS_DISASSEMBLY)")
         // ANALYSIS_OPERANDS
+        .def_property_readonly("flagsAccess",
+                [](const InstAnalysis& obj) {
+                    return get_InstAnalysis_member(obj, &InstAnalysis::flagsAccess, ANALYSIS_OPERANDS);
+                }, "Flag access type (noaccess, r, w, rw) (if ANALYSIS_OPERANDS)")
         .def_property_readonly("numOperands",
                 [](const InstAnalysis& obj) {
                     return get_InstAnalysis_member(obj, &InstAnalysis::numOperands, ANALYSIS_OPERANDS);
