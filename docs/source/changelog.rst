@@ -11,6 +11,15 @@ Next Version
   * Add recordMemoryAccess callback before any InstCallback
 * Refactor ExecBlockManager to work with unaligned instruction on X86 and X86-64 (`#129 <https://github.com/QBDI/QBDI/pull/129>`_)
 * Drop early support for ARM. The support hasn't been tested since 0.6.2.
+* MemoryAccess Support for SIMD instruction and some missing instructions (`#131 <https://github.com/QBDI/QBDI/pull/131>`_)
+* MemoryAccess Support for SIMD instruction and some missing instructions (`#131 <https://github.com/QBDI/QBDI/pull/131>`_)
+
+Some API has changed compared to version 0.7.1 that make the old compiled code incompatible with the new release:
+
+* ``VM::addInstrRule()``: the API has been drop in favor of a new version that dosn't need internals headers.
+* ``MemoryAccess``: the structure has changed to introduce ``flags`` and ``flagsAccess``.
+* ``InstAnalysis``: the structure has changed to introduce ``loadSize`` and ``storeSize``.
+* ``OperandAnalysis``: Add two new type for float and segment register.
 
 Internal update:
 
