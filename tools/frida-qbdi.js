@@ -1294,24 +1294,28 @@ function QBDI() {
         p = ptr.add(instAnalysisStructDesc.offsets[11]);
         analysis.mayStore = Memory.readU8(p) == true;
         p = ptr.add(instAnalysisStructDesc.offsets[12]);
-        var numOperands = Memory.readU8(p);
+        analysis.loadSize = Memory.readU32(p);
         p = ptr.add(instAnalysisStructDesc.offsets[13]);
+        analysis.storeSize = Memory.readU32(p);
+        p = ptr.add(instAnalysisStructDesc.offsets[14]);
+        var numOperands = Memory.readU8(p);
+        p = ptr.add(instAnalysisStructDesc.offsets[15]);
         var operandsPtr = Memory.readPointer(p);
         analysis.operands = new Array(numOperands);
         for (var i = 0; i < numOperands; i++) {
             analysis.operands[i] = parseOperandAnalysis(operandsPtr);
             operandsPtr = operandsPtr.add(operandAnalysisStructDesc.size);
         }
-        p = ptr.add(instAnalysisStructDesc.offsets[14]);
+        p = ptr.add(instAnalysisStructDesc.offsets[16]);
         var symbolPtr = Memory.readPointer(p);
         if (!symbolPtr.isNull()) {
             analysis.symbol = Memory.readCString(symbolPtr);
         } else {
             analysis.symbol = "";
         }
-        p = ptr.add(instAnalysisStructDesc.offsets[15]);
+        p = ptr.add(instAnalysisStructDesc.offsets[17]);
         analysis.symbolOffset = Memory.readU32(p);
-        p = ptr.add(instAnalysisStructDesc.offsets[16]);
+        p = ptr.add(instAnalysisStructDesc.offsets[18]);
         var modulePtr = Memory.readPointer(p);
         if (!modulePtr.isNull()) {
             analysis.module = Memory.readCString(modulePtr);

@@ -318,9 +318,14 @@ InstAnalysisPtr analyzeInstMetadataUncached(const InstMetadata& instMetadata, An
         instAnalysis->isReturn          = desc.isReturn();
         instAnalysis->isCompare         = desc.isCompare();
         instAnalysis->isPredicable      = desc.isPredicable();
-        instAnalysis->mayLoad           = desc.mayLoad();
-        instAnalysis->mayStore          = desc.mayStore();
+        instAnalysis->loadSize          = getReadSize(inst);
+        instAnalysis->storeSize         = getWriteSize(inst);
+        instAnalysis->mayLoad           = (instAnalysis->loadSize != 0) || isUndefinedReadSize(inst);
+        instAnalysis->mayStore          = (instAnalysis->storeSize != 0) || isUndefinedWriteSize(inst);
         instAnalysis->mnemonic          = MCII.getName(inst.getOpcode()).data();
+        // old predicate, used by the validator
+        instAnalysis->mayLoad_LLVM      = desc.mayLoad();
+        instAnalysis->mayStore_LLVM     = desc.mayStore();
     }
 
     if (type & ANALYSIS_OPERANDS) {
