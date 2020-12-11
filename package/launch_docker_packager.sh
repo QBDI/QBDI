@@ -24,7 +24,7 @@ build_ubuntu_debian() {
     docker build "${BASEDIR}" -t qbdi:package \
                               -f "${GITDIR}/docker/ubuntu_debian/Dockerfile" \
                               --build-arg DOCKER_IMG="${DOCKER_IMG}" \
-                              --build-arg QBDI_PLATFORM="linux-$TARGET" \
+                              --build-arg QBDI_ARCH="$TARGET" \
                               --build-arg CMAKE_ARGUMENT="$CMAKE_ARGUMENT" \
                               --pull \
                               --target builder
@@ -41,7 +41,7 @@ build_archlinux () {
 
     docker build "${BASEDIR}" -t qbdi:package \
                               -f "${GITDIR}/docker/archlinux/Dockerfile.${TARGET}" \
-                              --build-arg QBDI_PLATFORM="linux-${TARGET}" \
+                              --build-arg QBDI_ARCH="$TARGET" \
                               --pull
 
     docker create --name package qbdi:package
@@ -66,9 +66,9 @@ build_python () {
     CMAKE_ARGUMENT="$2"
 
     if [[ "$TARGET" = "X86" ]]; then
-        DOCKER_IMG="quay.io/pypa/manylinux2010_i686"
+        DOCKER_IMG="quay.io/pypa/manylinux2014_i686"
     else
-        DOCKER_IMG="quay.io/pypa/manylinux2010_x86_64"
+        DOCKER_IMG="quay.io/pypa/manylinux2014_x86_64"
     fi
 
     docker build "${BASEDIR}" -t qbdi:package \
@@ -109,9 +109,6 @@ build_archlinux X86_64
 
 # archlinux x86
 build_archlinux X86
-
-# android-ARM
-build_android ARM
 
 # android-x86
 build_android X86

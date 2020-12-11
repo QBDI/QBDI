@@ -18,30 +18,22 @@
 #ifndef LLVMTESTENV_H
 #define LLVMTESTENV_H
 
-#include <gtest/gtest.h>
+namespace llvm {
+  class MCAsmInfo;
+  class MCCodeEmitter;
+  class MCContext;
+  class MCInstrInfo;
+  class MCObjectFileInfo;
+  class MCRegisterInfo;
+  class MCSubtargetInfo;
+  class Target;
+}
 
-#include "llvm/ADT/Triple.h"
-#include "llvm/ADT/SmallVector.h"
-#include "llvm/MC/MCAsmBackend.h"
-#include "llvm/MC/MCAsmInfo.h"
-#include "llvm/MC/MCContext.h"
-#include "llvm/MC/MCCodeEmitter.h"
-#include "llvm/MC/MCDisassembler/MCDisassembler.h"
-#include "llvm/MC/MCObjectFileInfo.h"
-#include "llvm/MC/MCTargetOptions.h"
-#include "llvm/Object/ObjectFile.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/FileUtilities.h"
-#include "llvm/Support/ManagedStatic.h"
-#include "llvm/Support/Process.h"
-#include "llvm/Support/SourceMgr.h"
-#include "llvm/Support/TargetRegistry.h"
-#include "llvm/Support/TargetSelect.h"
+namespace QBDI {
+  class Assembly;
+}
 
-#include "Utility/Assembly.h"
-
-
-class LLVMTestEnv : public ::testing::Test {
+class LLVMTestEnv {
 protected:
 
     std::unique_ptr<llvm::MCAsmInfo>         MAI;
@@ -57,12 +49,10 @@ protected:
     std::string                              cpu;
     std::vector<std::string>                 mattrs;
 
-    virtual void SetUp();
-
 public:
 
-    LLVMTestEnv(std::string cpu = "", std::vector<std::string> mattrs = {}): 
-        cpu(cpu), mattrs(mattrs) {}
+    LLVMTestEnv(std::string cpu = "", std::vector<std::string> mattrs = {});
+    ~LLVMTestEnv();
 };
 
 #endif

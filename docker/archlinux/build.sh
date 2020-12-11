@@ -18,7 +18,7 @@ DOCKER_TAG="qbdi:x${ARCH: -2}_archlinux"
 
 prepare_archive
 
-docker build "${BASEDIR}" -t "${DOCKER_TAG}" -f "${BASEDIR}/Dockerfile.${ARCH}" --build-arg QBDI_PLATFORM="linux-$ARCH"
+docker build "${BASEDIR}" -t "${DOCKER_TAG}" -f "${BASEDIR}/Dockerfile.${ARCH}"
 
 delete_archive
 

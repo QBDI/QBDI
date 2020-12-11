@@ -1,4 +1,4 @@
-version: 0.1.{build}
+version: 0.7.2.{build}
 
 clone_folder: c:\projects\qbdi
 
@@ -11,20 +11,22 @@ environment:
   APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
   CMAKE_TEMPLATE: Visual Studio 16 2019
   BUILD_ALL_WHEEL: "False"
-  PYTHON35LIB: "libs\\python35.lib"
+  SCCACHE_CACHE_SIZE: "250M"
+  SCCACHE_DIR: C:\Users\appveyor\AppData\Local\Mozilla\sccache
+  SCCACHE_ERROR_LOG: C:\projects\sccache.log
   PYTHON36LIB: "libs\\python36.lib"
   PYTHON37LIB: "libs\\python37.lib"
   PYTHON38LIB: "libs\\python38.lib"
   matrix:
     - platform: X64
-      qbdi_plateform: win-X86_64
-      PYTHON35: "C:\\Python35-x64"
+      qbdi_arch: X86_64
+      qbdi_plateform: windows
       PYTHON36: "C:\\Python36-x64"
       PYTHON37: "C:\\Python37-x64"
       PYTHON38: "C:\\Python38-x64"
     - platform: X86
-      qbdi_plateform: win-X86
-      PYTHON35: "C:\\Python35"
+      qbdi_arch: X86
+      qbdi_plateform: windows
       PYTHON36: "C:\\Python36"
       PYTHON37: "C:\\Python37"
       PYTHON38: "C:\\Python38"
@@ -41,45 +43,34 @@ for:
 
 
 cache:
-  - deps\llvm\%qbdi_plateform%\lib -> deps\llvm\build.py
-  - deps\llvm\%qbdi_plateform%\include -> deps\llvm\build.py
-  - deps\gtest\%qbdi_plateform%\lib -> deps\gtest\%qbdi_plateform%\build.py
-  - deps\gtest\%qbdi_plateform%\include -> deps\gtest\%qbdi_plateform%\build.py
+  - deps\llvm\%qbdi_plateform%-%qbdi_arch%\lib -> deps\llvm\build.py
+  - deps\llvm\%qbdi_plateform%-%qbdi_arch%\include -> deps\llvm\build.py
+  - '%SCCACHE_DIR%'
 
 install:
-  # Install Python (from the official .msi of https://python.org) and pip when
-  # not already installed.
-  #- ps: if (-not(Test-Path($env:PYTHON))) { & appveyor\install.ps1 }
 
   # Prepend newly installed Python to the PATH of this build (this cannot be
   # done from inside the powershell script as it would require to restart
   # the parent CMD process).
 
+  - cmd: choco install sccache
+  - cmd: sccache.exe --start-server
   - "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat\" %Platform%"
   - "SET OLDPATH=%PATH%"
-  - "SET PATH=%PYTHON35%;%PYTHON35%\\Scripts;%OLDPATH%"
+  - "SET PATH=%PYTHON36%;%PYTHON36%\\Scripts;%OLDPATH%"
   - cmd: mkdir build
   - cmd: cd build
 
 build_script:
-  - cmd: cmake .. -G "Ninja" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DPLATFORM=%qbdi_plateform% -DTOOLS_PYQBDI=Off -DEXAMPLES=On
-  - ps: if (-not((Test-Path("../deps/llvm/$env:qbdi_plateform/lib")) -and (Test-Path("../deps/llvm/$env:qbdi_plateform/include")))) { python ..\deps\llvm\build.py prepare "$env:qbdi_plateform" ; python ..\deps\llvm\build.py build "$env:qbdi_plateform" ; python ..\deps\llvm\build.py package "$env:qbdi_plateform" }
-  - cmd: python ..\deps\llvm\build.py clean %qbdi_plateform%
-  - ps: if (-not((Test-Path("../deps/gtest/$env:qbdi_plateform/lib")) -and (Test-Path("../deps/gtest/$env:qbdi_plateform/include")))) { ninja -v gtest }
-  - cmd: python ..\deps\gtest\%qbdi_plateform%\build.py clean %qbdi_plateform%
-  - cmd: cmake .. -G "Ninja" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DPLATFORM=%qbdi_plateform% -DTOOLS_PYQBDI=Off -DEXAMPLES=On
+  - cmd: cmake .. -G "Ninja" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DQBDI_PLATFORM=%qbdi_plateform% -DQBDI_ARCH=%qbdi_arch% -DQBDI_TOOLS_PYQBDI=Off -DQBDI_EXAMPLES=On
+  - ps: if (-not((Test-Path("../deps/llvm/$env:qbdi_plateform-$env:qbdi_arch/lib")) -and (Test-Path("../deps/llvm/$env:qbdi_plateform-$env:qbdi_arch/include")))) { python ..\deps\llvm\build.py prepare "$env:qbdi_plateform-$env:qbdi_arch" ; python ..\deps\llvm\build.py build "$env:qbdi_plateform-$env:qbdi_arch" OFF; python ..\deps\llvm\build.py package "$env:qbdi_plateform-$env:qbdi_arch" }
+  - cmd: python ..\deps\llvm\build.py clean %qbdi_plateform%-%qbdi_arch%
+  - cmd: cmake .. -G "Ninja" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DQBDI_PLATFORM=%qbdi_plateform% -DQBDI_ARCH=%qbdi_arch% -DQBDI_TOOLS_PYQBDI=Off -DQBDI_EXAMPLES=On
   - cmd: ninja
 
 after_build:
   - cmd: cpack
   - cmd: cd ..
-  # build 3.5
-  - "SET PATH=%PYTHON35%;%PYTHON35%\\Scripts;%OLDPATH%"
-  - "SET PYTHON_LIBRARIES=%PYTHON35%\\%PYTHON35LIB%"
-  - "SET PYTHON_INCLUDE_DIRS=%PYTHON35%\\include"
-  - ps: if ($env:BUILD_ALL_WHEEL -eq "True") { Invoke-Expression "$env:PYTHON35\python.exe -m pip install --upgrade pip" }
-  - ps: if ($env:BUILD_ALL_WHEEL -eq "True") { Invoke-Expression "$env:PYTHON35\python.exe -m pip install setuptools wheel" }
-  - ps: if ($env:BUILD_ALL_WHEEL -eq "True") { Invoke-Expression "$env:PYTHON35\python.exe setup.py bdist_wheel" }
   # build 3.6
   - "SET PATH=%PYTHON36%;%PYTHON36%\\Scripts;%OLDPATH%"
   - "SET PYTHON_LIBRARIES=%PYTHON36%\\%PYTHON36LIB%"
@@ -104,6 +95,9 @@ after_build:
 
 test_script:
   - cmd: c:\projects\qbdi\build\test\QBDItest
+
+on_finish:
+  - cmd: sccache.exe --stop-server
 
 artifacts:
   - name: Installer

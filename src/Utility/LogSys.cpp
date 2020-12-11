@@ -29,7 +29,7 @@ void LogSys::setOutput(FILE* output) {
 }
 
 void LogSys::addFilter(const char *tag, LogPriority priority) {
-    filter.push_back(std::make_pair(tag, priority));
+    filter.emplace_back(tag, priority);
 }
 
 bool LogSys::matchFilter(const char* tag, LogPriority priority) {
@@ -74,7 +74,7 @@ bool LogSys::matchFilter(const char* tag, LogPriority priority) {
 }
 
 void LogSys::writeTag(LogPriority priority, const char* tag) {
-#if defined(QBDI_OS_LINUX) || defined(QBDI_OS_ANDROID) || defined(QBDI_OS_DARWIN)
+#if defined(QBDI_PLATFORM_LINUX) || defined(QBDI_PLATFORM_ANDROID) || defined(QBDI_PLATFORM_OSX)
     if(isatty(fileno(output))) {
         switch(priority) {
             case LogPriority::DEBUG:
@@ -89,7 +89,7 @@ void LogSys::writeTag(LogPriority priority, const char* tag) {
         }
         return;
     }
-    #endif
+#endif
     fprintf(output, "[%s] ", tag);
 }
 

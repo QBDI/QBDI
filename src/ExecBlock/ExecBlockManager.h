@@ -22,16 +22,28 @@
 #include <map>
 #include <vector>
 
-#include "Context.h"
+#include "Callback.h"
 #include "InstAnalysis.h"
 #include "Range.h"
-#include "Utility/Assembly.h"
-#include "ExecBlock/ExecBlock.h"
+#include "State.h"
 
+namespace llvm {
+  class MCInstrInfo;
+  class MCRegisterInfo;
+}
 
 namespace QBDI {
 
+class Assembly;
+class ExecBlock;
+class InstMetadata;
+class Patch;
 class RelocatableInst;
+
+struct InstAnalysisDestructor {
+  void operator()(InstAnalysis* ptr) const;
+};
+
 
 struct InstLoc {
     uint16_t blockIdx;
@@ -48,30 +60,35 @@ struct SeqLoc {
 };
 
 struct ExecRegion {
-    Range<rword>                    covered;
-    unsigned                        translated;
-    unsigned                        available;
-    std::vector<ExecBlock*>         blocks;
-    std::map<rword, SeqLoc>         sequenceCache;
-    std::map<rword, InstLoc>        instCache;
-    std::map<rword, InstAnalysis*>  analysisCache;
+    using InstAnalysisPtr = std::unique_ptr<InstAnalysis, InstAnalysisDestructor>;
+
+    Range<rword>                             covered;
+    unsigned                                 translated;
+    unsigned                                 available;
+    std::vector<std::unique_ptr<ExecBlock>>  blocks;
+    std::map<rword, SeqLoc>                  sequenceCache;
+    std::map<rword, InstLoc>                 instCache;
+    std::map<rword, InstAnalysisPtr>         analysisCache;
+    bool                                     toFlush = false;
+
+    ExecRegion(ExecRegion&&) = default;
+    ExecRegion& operator=(ExecRegion&&) = default;
 };
 
 class ExecBlockManager {
 private:
+    using InstAnalysisPtr = std::unique_ptr<InstAnalysis, InstAnalysisDestructor>;
 
-    std::vector<ExecRegion>         regions;
-    std::map<rword, InstAnalysis*>  analysisCache;
-    std::vector<size_t>             flushList;
-    rword                           total_translated_size;
-    rword                           total_translation_size;
+    std::vector<ExecRegion>            regions;
+    std::map<rword, InstAnalysisPtr>   analysisCache;
+    rword                              total_translated_size;
+    rword                              total_translation_size;
+    bool                               needFlush;
 
     VMInstanceRef              vminstance;
     llvm::MCInstrInfo&         MCII;
     llvm::MCRegisterInfo&      MRI;
     Assembly&                  assembly;
-
-    void eraseRegion(size_t r);
 
     size_t searchRegion(rword start) const;
 
@@ -89,6 +106,10 @@ public:
 
     ~ExecBlockManager();
 
+    ExecBlockManager(const ExecBlockManager&) = delete;
+
+    void changeVMInstanceRef(VMInstanceRef vminstance);
+
     void printCacheStatistics(FILE* output) const;
 
     ExecBlock* getProgrammedExecBlock(rword address);
@@ -99,11 +120,11 @@ public:
 
     const InstAnalysis* analyzeInstMetadata(const InstMetadata* instMetadata, AnalysisType type);
 
-    bool isFlushPending() { return this->flushList.size() > 0; }
+    bool isFlushPending() { return needFlush; }
 
     void flushCommit();
 
-    void clearCache();
+    void clearCache(bool flushNow=true);
 
     void clearCache(Range<rword> range);
 

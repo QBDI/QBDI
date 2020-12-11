@@ -437,7 +437,7 @@ void ValidatorEngine::signalNewState(QBDI::rword address, const char* mnemonic, 
         // Clear the auxilliary carry flag which generates noisy output
         QBDI::rword eflagsDbg = (gprStateDbg->eflags) & (gprStateDbg->eflags ^ 0x4);
         QBDI::rword eflagsInstr = (gprStateInstr->eflags) & (gprStateInstr->eflags ^ 0x4);
-        if((e = diffGPR(17, eflagsDbg, eflagsInstr)) != -1) curLogEntry->errorIDs.push_back(e);
+        if((e = diffGPR(QBDI::NUM_GPR, eflagsDbg, eflagsInstr)) != -1) curLogEntry->errorIDs.push_back(e);
         #endif
 
         // If this logEntry generated at least one new error, save it

@@ -18,24 +18,11 @@
 #ifndef PATCHRULES_X86_64_H
 #define PATCHRULES_X86_64_H
 
-#include <memory>
-#include <vector>
-
-#include "Patch/X86_64/PatchGenerator_X86_64.h"
+#include "Patch/PatchRules.h"
 
 namespace QBDI {
 
-class PatchRule;
-
 static const uint32_t MINIMAL_BLOCK_SIZE = 64;
-
-RelocatableInst::SharedPtrVec getExecBlockPrologue();
-
-RelocatableInst::SharedPtrVec getExecBlockEpilogue();
-
-RelocatableInst::SharedPtrVec getTerminator(rword address);
-
-std::vector<std::shared_ptr<PatchRule>> getDefaultPatchRules();
 
 }
 

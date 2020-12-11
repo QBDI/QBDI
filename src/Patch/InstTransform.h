@@ -21,10 +21,12 @@
 #include <memory>
 #include <vector>
 
-#include "llvm/MC/MCInst.h"
-
 #include "Patch/Types.h"
 #include "Patch/PatchUtils.h"
+
+namespace llvm {
+  class MCInst;
+}
 
 namespace QBDI {
 
@@ -33,8 +35,10 @@ public:
 
     using SharedPtr    = std::shared_ptr<InstTransform>;
     using SharedPtrVec = std::vector<std::shared_ptr<InstTransform>>;
+    using UniqPtr      = std::unique_ptr<PatchGenerator>;
+    using UniqPtrVec   = std::vector<std::unique_ptr<PatchGenerator>>;
 
-    virtual void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) = 0;
+    virtual void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const = 0;
 
     virtual ~InstTransform() {}
 };
@@ -76,7 +80,7 @@ public:
     */
     SetOperand(Operand opn, Constant imm) : opn(opn), type(ImmOperandType), temp(0), reg(0), imm(imm) {}
 
-    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager);
+    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const override;
 };
 
 class SubstituteWithTemp : public InstTransform,
@@ -93,7 +97,7 @@ public:
     */
     SubstituteWithTemp(Reg reg, Temp temp) : reg(reg), temp(temp) {};
 
-    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager);
+    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const override;
 };
 
 class AddOperand : public InstTransform, public AutoAlloc<InstTransform, AddOperand> {
@@ -134,7 +138,7 @@ public:
     */
     AddOperand(Operand opn, Constant imm) : opn(opn), type(ImmOperandType), temp(0), reg(0), imm(imm) {}
 
-    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager);
+    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const override;
 };
 
 class RemoveOperand : public InstTransform, public AutoAlloc<InstTransform, RemoveOperand> {
@@ -149,7 +153,7 @@ public:
     */
     RemoveOperand(Reg reg) : reg(reg) {}
 
-    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager);
+    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const override;
 };
 
 
@@ -165,7 +169,7 @@ public:
     */
     SetOpcode(unsigned int opcode) : opcode(opcode) {}
 
-    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager);
+    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const override;
 };
 
 }

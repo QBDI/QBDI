@@ -1,5 +1,5 @@
 
-if(NOT (${ARCH} STREQUAL "ARM" ))
+if(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
     include(ExternalProject)
 
     if(NOT PYTHON_VERSION)
@@ -32,10 +32,10 @@ if(NOT (${ARCH} STREQUAL "ARM" ))
     message(STATUS "Python ${PYTHON_BIT}")
 
     # verify we compile pyqbdi tools with the good version of python
-    if ((${PYTHON_BIT} STREQUAL "64bit") AND NOT (${ARCH} STREQUAL "X86_64"))
-        message(FATAL_ERROR "PyQBDI with Python ${PYTHON_BIT} is not compatible with the architecture ${ARCH}")
-    elseif ((${PYTHON_BIT} STREQUAL "32bit") AND NOT (${ARCH} STREQUAL "X86"))
-        message(FATAL_ERROR "PyQBDI with Python ${PYTHON_BIT} is not compatible with the architecture ${ARCH}")
+    if ((${PYTHON_BIT} STREQUAL "64bit") AND NOT QBDI_ARCH_X86_64)
+        message(FATAL_ERROR "PyQBDI with Python ${PYTHON_BIT} is not compatible with the architecture ${QBDI_ARCH}")
+    elseif ((${PYTHON_BIT} STREQUAL "32bit") AND NOT QBDI_ARCH_X86)
+        message(FATAL_ERROR "PyQBDI with Python ${PYTHON_BIT} is not compatible with the architecture ${QBDI_ARCH}")
     endif()
 
     ExternalProject_Add(pyqbdi_pybind11
@@ -53,7 +53,7 @@ if(NOT (${ARCH} STREQUAL "ARM" ))
     add_library(pyqbdi_module INTERFACE)
     add_dependencies(pyqbdi_module pyqbdi_pybind11)
 
-    if(${OS} STREQUAL "win")
+    if(QBDI_PLATFORM_WINDOWS)
         target_compile_options(pyqbdi_utils INTERFACE "/GR" "/EHsc")
         target_compile_options(pyqbdi_module INTERFACE "/GR" "/EHsc")
     else()
@@ -85,6 +85,11 @@ if(NOT (${ARCH} STREQUAL "ARM" ))
     endif()
 
     target_link_libraries(pyqbdi PRIVATE pyqbdi_module pyqbdi_utils QBDI_static)
+    set_target_properties(pyqbdi
+        PROPERTIES
+            CXX_STANDARD 14
+            CXX_STANDARD_REQUIRED ON
+    )
 
     if (PYTHON_LIBRARIES)
         set_target_properties(pyqbdi PROPERTIES COMPILE_DEFINITIONS "PYTHON_LIBRARIES=\"${PYTHON_LIBRARIES}\"")
@@ -93,13 +98,13 @@ if(NOT (${ARCH} STREQUAL "ARM" ))
 
     set_target_properties(pyqbdi PROPERTIES PREFIX "")
 
-    if(${OS} STREQUAL "macOS")
+    if (QBDI_PLATFORM_OSX)
         set_target_properties(pyqbdi PROPERTIES MACOSX_RPATH ".")
         set_target_properties(pyqbdi PROPERTIES LINK_FLAGS "-undefined dynamic_lookup ")
         set_target_properties(pyqbdi PROPERTIES SUFFIX ".so")
-    elseif (${OS} STREQUAL "linux")
+    elseif (QBDI_PLATFORM_LINUX)
         set_target_properties(pyqbdi PROPERTIES SUFFIX ".so")
-    elseif(${OS} STREQUAL "win")
+    elseif (QBDI_PLATFORM_WINDOWS)
         set_target_properties(pyqbdi PROPERTIES SUFFIX ".pyd")
     endif()
 

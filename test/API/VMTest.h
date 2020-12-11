@@ -15,16 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <gtest/gtest.h>
+#include <memory>
 
 #include "VM.h"
 
-class VMTest : public ::testing::Test {
-    protected:
-        QBDI::VM* vm;
+class VMTest {
+    public:
+        VMTest();
+        ~VMTest();
+
+        std::unique_ptr<QBDI::VM> vm;
         QBDI::GPRState* state;
         uint8_t* fakestack;
-
-        virtual void SetUp();
-        virtual void TearDown();
 };

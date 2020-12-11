@@ -15,18 +15,11 @@ CPU as a reference::
 
 .. doxygenfunction:: QBDI::VM::VM
 
-The :cpp:func:`QBDI::VM::VM` constructor can also take two optional parameters used to specify
-the CPU type or architecture and additional attributes of the CPU. Those are the same used by LLVM.
-Here's how you would initialize a VM for an ARM Cortex-A9 supporting the VFP2 floating point
-instructions::
-
-    QBDI::VM *vm = new QBDI::VM("cortex-a9", {"vfp2"});
-
 State Management
 ----------------
 
 The state of the guest processor can be queried and modified using two architectures dependent structures :cpp:class:`GPRState` and :cpp:class:`FPRState` which are detailed below for each architecture
-(:ref:`cpp-state-x86`, :ref:`cpp-state-x86-64` and :ref:`cpp-state-arm`).
+(:ref:`cpp-state-x86` and :ref:`cpp-state-x86-64`).
 
 The :cpp:func:`QBDI::VM::getGPRState` and :cpp:func:`QBDI::VM::getFPRState` allow to
 query the current state of the guest processor while the :cpp:func:`QBDI::VM::setGPRState`
@@ -54,7 +47,7 @@ directly. The code below is equivalent to the example from above but avoid unnec
 .. _cpp-state-x86:
 
 X86
-^^^^^^
+^^^
 
 The X86 :cpp:class:`QBDI::GPRState` structure is the following:
 
@@ -87,25 +80,6 @@ The X86_64 :cpp:class:`FPRState` structure is the following:
 .. include:: ../../include/QBDI/State.h
    :start-after: SPHINX_X86_64_FPRSTATE_BEGIN
    :end-before: SPHINX_X86_64_FPRSTATE_END
-   :code:
-
-.. _cpp-state-arm:
-
-ARM
-^^^
-
-The ARM :cpp:class:`GPRState` structure is the following:
-
-.. include:: ../../include/QBDI/State.h
-   :start-after: SPHINX_ARM_GPRSTATE_BEGIN
-   :end-before: SPHINX_ARM_GPRSTATE_END
-   :code:
-
-The ARM :cpp:class:`FPRState` structure is the following:
-
-.. include:: ../../include/QBDI/State.h
-   :start-after: SPHINX_ARM_FPRSTATE_BEGIN
-   :end-before: SPHINX_ARM_FPRSTATE_END
    :code:
 
 

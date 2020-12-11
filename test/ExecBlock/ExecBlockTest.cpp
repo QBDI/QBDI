@@ -15,21 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <stdio.h>
+#include <catch2/catch.hpp>
+
 #include "ExecBlockTest.h"
 
-TEST_F(ExecBlockTest, EmptyBasicBlock) {
+#include "ExecBlock/ExecBlock.h"
+#include "Patch/Patch.h"
+#include "Patch/PatchRule.h"
+#include "Patch/PatchRules.h"
+#include "Utility/Assembly.h"
+
+
+TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest, EmptyBasicBlock") {
     // Allocate ExecBlock
     QBDI::ExecBlock execBlock(*assembly);
     // Write an empty basic block
     QBDI::Patch::Vec empty;
     QBDI::SeqWriteResult res = execBlock.writeSequence(empty.begin(), empty.end(), QBDI::SeqType::Exit);
-    ASSERT_EQ(res.seqID, QBDI::EXEC_BLOCK_FULL);
+    REQUIRE(res.seqID == QBDI::EXEC_BLOCK_FULL);
 }
 
-TEST_F(ExecBlockTest, MultipleBasicBlock) {
+TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest, MultipleBasicBlock") {
     // Allocate ExecBlock
     QBDI::ExecBlock execBlock(*assembly);
-    // Jit two different terminators 
+    // Jit two different terminators
     QBDI::Patch::Vec terminator1;
     QBDI::Patch::Vec terminator2;
     terminator1.push_back(QBDI::Patch());
@@ -39,7 +49,7 @@ TEST_F(ExecBlockTest, MultipleBasicBlock) {
     QBDI::SeqWriteResult block1 = execBlock.writeSequence(terminator1.begin(), terminator1.end(), QBDI::SeqType::Exit);
     QBDI::SeqWriteResult block2 = execBlock.writeSequence(terminator2.begin(), terminator2.end(), QBDI::SeqType::Exit);
     // Are the seqID valid?
-    ASSERT_GT(block2.seqID, block1.seqID);
+    REQUIRE(block2.seqID > block1.seqID);
     // Execute the two basic block and get the value of PC from the data block
     execBlock.selectSeq(block1.seqID);
     execBlock.execute();
@@ -51,11 +61,11 @@ TEST_F(ExecBlockTest, MultipleBasicBlock) {
     execBlock.execute();
     QBDI::rword pc3 = QBDI_GPR_GET(&execBlock.getContext()->gprState, QBDI::REG_PC);
     // block1 and block2 should have different PC values
-    ASSERT_NE(pc1, pc2);
-    ASSERT_EQ(pc1, pc3);
+    REQUIRE(pc1 != pc2);
+    REQUIRE(pc1 == pc3);
 }
 
-TEST_F(ExecBlockTest, BasicBlockOverload) {
+TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest, BasicBlockOverload") {
     // Allocate ExecBlock
     QBDI::ExecBlock execBlock(*assembly);
     QBDI::Patch::Vec empty;
@@ -63,11 +73,11 @@ TEST_F(ExecBlockTest, BasicBlockOverload) {
     uint32_t i = 0;
 
     while((res = execBlock.writeSequence(empty.begin(), empty.end(), QBDI::SeqType::Exit)).seqID != 0xFFFF) {
-        ASSERT_EQ(res.seqID, i);
-        ASSERT_GE(execBlock.getEpilogueOffset(), (uint32_t) 0);
+        REQUIRE(res.seqID == i);
+        REQUIRE(execBlock.getEpilogueOffset() >= (uint32_t) 0);
         execBlock.selectSeq(res.seqID);
         execBlock.execute();
         i++;
     }
-    printf("Maximum basic block per exec block: %d\n", i);
+    INFO("Maximum basic block per exec block: " << i);
 }

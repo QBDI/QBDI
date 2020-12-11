@@ -22,25 +22,29 @@
 
 #include "llvm/ADT/Triple.h"
 #include "llvm/ADT/SmallVector.h"
-#include "llvm/MC/MCDisassembler/MCDisassembler.h"
-#include "llvm/MC/MCTargetOptions.h"
-#include "llvm/Object/ObjectFile.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/FileUtilities.h"
-#include "llvm/Support/Process.h"
-#include "llvm/Support/SourceMgr.h"
+#include "llvm/MC/MCAsmBackend.h"
+#include "llvm/MC/MCAsmInfo.h"
+#include "llvm/MC/MCAssembler.h"
+#include "llvm/MC/MCCodeEmitter.h"
+#include "llvm/MC/MCContext.h"
+#include "llvm/MC/MCInstPrinter.h"
+#include "llvm/MC/MCInstrInfo.h"
+#include "llvm/MC/MCObjectFileInfo.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
 
 #include "Platform.h"
 #include "ExecBlock/ExecBlockManager.h"
 #include "ExecBroker/ExecBroker.h"
-#include "Patch/Types.h"
+#include "Patch/InstInfo.h"
+#include "Patch/InstMetadata.h"
+#include "Patch/InstrRule.h"
+#include "Patch/InstrRules.h"
 #include "Patch/Patch.h"
 #include "Patch/PatchRule.h"
-#include "Patch/InstrRules.h"
-#include "Patch/InstInfo.h"
+#include "Patch/PatchRules.h"
 #include "Patch/RegisterSize.h"
+#include "Patch/Types.h"
 #include "Utility/Assembly.h"
 #include "Utility/LogSys.h"
 #include "Utility/System.h"
@@ -53,25 +57,36 @@ namespace QBDI {
 
 Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs, VMInstanceRef vminstance)
     : cpu(_cpu), mattrs(_mattrs), vminstance(vminstance), instrRulesCounter(0), vmCallbacksCounter(0) {
+    init();
+}
+
+Engine::~Engine() = default;
+
+
+// may need to reinit the Engine during a copy
+void Engine::init() {
+    static bool firstInit = true;
 
     std::string          error;
     std::string          featuresStr;
     const llvm::Target*  processTarget;
 
-    llvm::InitializeAllTargetInfos();
-    llvm::InitializeAllTargetMCs();
-    llvm::InitializeAllAsmParsers();
-    llvm::InitializeAllDisassemblers();
-    initMemAccessInfo();
-    initRegisterSize();
+    if (firstInit) {
+        firstInit = false;
+        llvm::InitializeAllTargetInfos();
+        llvm::InitializeAllTargetMCs();
+        llvm::InitializeAllAsmParsers();
+        llvm::InitializeAllDisassemblers();
+        initMemAccessInfo();
+        initRegisterSize();
+    }
 
     // Build features string
     if (cpu.empty()) {
         cpu = QBDI::getHostCPUName();
         // If API is broken on ARM, we are facing big problems...
-#if defined(QBDI_ARCH_ARM)
-        Require("Engine::Engine", !cpu.empty() && cpu != "generic");
-#endif
+        if constexpr(is_arm)
+            Require("Engine::Engine", !cpu.empty() && cpu != "generic");
     }
     if (mattrs.empty()) {
         mattrs = getHostCPUFeatures();
@@ -90,7 +105,7 @@ Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs,
     );
     llvm::Triple processTriple(tripleName);
     processTarget = llvm::TargetRegistry::lookupTarget(tripleName, error);
-    LogDebug("Engine::Engine", "Initialized LLVM for target %s", tripleName.c_str());
+    LogDebug("Engine::init", "Initialized LLVM for target %s", tripleName.c_str());
 
     // Allocate all LLVM classes
     llvm::MCTargetOptions MCOptions;
@@ -100,14 +115,14 @@ Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs,
     MAI = std::unique_ptr<llvm::MCAsmInfo>(
         processTarget->createMCAsmInfo(*MRI, tripleName, MCOptions)
     );
-    MOFI = std::unique_ptr<llvm::MCObjectFileInfo>(new llvm::MCObjectFileInfo());
-    MCTX = std::unique_ptr<llvm::MCContext>(new llvm::MCContext(MAI.get(), MRI.get(), MOFI.get()));
+    MOFI = std::make_unique<llvm::MCObjectFileInfo>();
+    MCTX = std::make_unique<llvm::MCContext>(MAI.get(), MRI.get(), MOFI.get());
     MOFI->InitMCObjectFileInfo(processTriple, false, *MCTX);
     MCII = std::unique_ptr<llvm::MCInstrInfo>(processTarget->createMCInstrInfo());
     MSTI = std::unique_ptr<llvm::MCSubtargetInfo>(
       processTarget->createMCSubtargetInfo(tripleName, cpu, featuresStr)
     );
-    LogDebug("Engine::Engine", "Initialized LLVM subtarget with cpu %s and features %s", cpu.c_str(), featuresStr.c_str());
+    LogDebug("Engine::init", "Initialized LLVM subtarget with cpu %s and features %s", cpu.c_str(), featuresStr.c_str());
     auto MAB = std::unique_ptr<llvm::MCAsmBackend>(
         processTarget->createMCAsmBackend(*MSTI, *MRI, MCOptions)
     );
@@ -115,15 +130,15 @@ Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs,
        processTarget->createMCCodeEmitter(*MCII, *MRI, *MCTX)
     );
     // Allocate QBDI classes
-    assembly = new Assembly(*MCTX, std::move(MAB), *MCII, *processTarget, *MSTI);
-    blockManager = new ExecBlockManager(*MCII, *MRI, *assembly, vminstance);
-    execBroker = new ExecBroker(*assembly, vminstance);
+    assembly = std::make_unique<Assembly>(*MCTX, std::move(MAB), *MCII, *processTarget, *MSTI);
+    blockManager = std::make_unique<ExecBlockManager>(*MCII, *MRI, *assembly, vminstance);
+    execBroker = std::make_unique<ExecBroker>(*assembly, vminstance);
 
     // Get default Patch rules for this architecture
     patchRules = getDefaultPatchRules();
 
-    gprState = std::unique_ptr<GPRState>(new GPRState);
-    fprState = std::unique_ptr<FPRState>(new FPRState);
+    gprState = std::make_unique<GPRState>();
+    fprState = std::make_unique<FPRState>();
     curGPRState = gprState.get();
     curFPRState = fprState.get();
 
@@ -133,10 +148,75 @@ Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs,
     curExecBlock = nullptr;
 }
 
-Engine::~Engine() {
-    delete assembly;
-    delete blockManager;
-    delete execBroker;
+void Engine::reinit(const std::string& cpu_, const std::vector<std::string>& mattrs_) {
+    RequireAction("Engine::reinit", curExecBlock == nullptr && "Cannot reInit a running Engine", abort());
+
+    // clear callbacks
+    instrRules.clear();
+    vmCallbacks.clear();
+    instrRulesCounter = 0;
+    vmCallbacksCounter = 0;
+
+    // clear state
+    gprState.reset();
+    curGPRState = nullptr;
+    fprState.reset();
+    curFPRState = nullptr;
+    patchRules.clear();
+
+    // close internal object
+    execBroker.reset();
+    blockManager.reset();
+    assembly.reset();
+
+    // close all llvm references
+    MCE.reset();
+    MSTI.reset();
+    MCII.reset();
+    MCTX.reset();
+    MOFI.reset();
+    MAI.reset();
+    MRI.reset();
+
+    cpu = cpu_;
+    mattrs = mattrs_;
+    tripleName = "";
+
+    init();
+}
+
+Engine::Engine(const Engine& other)
+    : cpu(other.cpu), mattrs(other.mattrs), vminstance(nullptr) {
+    this->init();
+    *this = other;
+}
+
+Engine& Engine::operator=(const Engine& other) {
+    this->clearAllCache();
+
+    if (cpu != other.cpu || mattrs != other.mattrs)
+      reinit(other.cpu, other.mattrs);
+
+    // copy the configuration
+    instrRules = other.instrRules;
+    vmCallbacks = other.vmCallbacks;
+    instrRulesCounter = other.instrRulesCounter;
+    vmCallbacksCounter = other.vmCallbacksCounter;
+
+    // copy instrumentation range
+    execBroker->setInstrumentedRange(other.execBroker->getInstrumentedRange());
+
+    // copy state
+    setGPRState(other.getGPRState());
+    setFPRState(other.getFPRState());
+
+    return *this;
+}
+
+void Engine::changeVMInstanceRef(VMInstanceRef vminstance) {
+    this->vminstance = vminstance;
+    blockManager->changeVMInstanceRef(vminstance);
+    execBroker->changeVMInstanceRef(vminstance);
 }
 
 void Engine::initGPRState() {
@@ -163,12 +243,12 @@ FPRState* Engine::getFPRState() const {
    return curFPRState;
 }
 
-void Engine::setGPRState(GPRState* gprState) {
+void Engine::setGPRState(const GPRState* gprState) {
     RequireAction("Engine::setGPRState", gprState, return);
     *(this->curGPRState) = *gprState;
 }
 
-void Engine::setFPRState(FPRState* fprState) {
+void Engine::setFPRState(const FPRState* fprState) {
     RequireAction("Engine::setFPRState", fprState, return);
     *(this->curFPRState) = *fprState;
 }
@@ -244,14 +324,14 @@ std::vector<Patch> Engine::patch(rword start) {
             });
             // Patch & merge
             for(uint32_t j = 0; j < patchRules.size(); j++) {
-                if(patchRules[j]->canBeApplied(&inst, address, instSize, MCII.get())) {
+                if(patchRules[j].canBeApplied(&inst, address, instSize, MCII.get())) {
                     LogDebug("Engine::patch", "Patch rule %" PRIu32 " applied", j);
                     if(patch.insts.size() == 0) {
-                        patch = patchRules[j]->generate(&inst, address, instSize, MCII.get(), MRI.get());
+                        patch = patchRules[j].generate(&inst, address, instSize, MCII.get(), MRI.get());
                     }
                     else {
                         LogDebug("Engine::patch", "Previous instruction merged");
-                        patch = patchRules[j]->generate(&inst, address, instSize, MCII.get(), MRI.get(), &patch);
+                        patch = patchRules[j].generate(&inst, address, instSize, MCII.get(), MRI.get(), &patch);
                     }
                     break;
                 }
@@ -305,6 +385,10 @@ void Engine::handleNewBasicBlock(rword pc) {
 
 
 bool Engine::precacheBasicBlock(rword pc) {
+    if(blockManager->isFlushPending()) {
+        // Commit the flush
+        blockManager->flushCommit();
+    }
     if (blockManager->getProgrammedExecBlock(pc) != nullptr) {
         // already in cache
         return false;
@@ -417,7 +501,8 @@ bool Engine::run(rword start, rword stop) {
 uint32_t Engine::addInstrRule(InstrRule rule, bool top_list) {
     uint32_t id = instrRulesCounter++;
     RequireAction("Engine::addInstrRule", id < EVENTID_VM_MASK, return VMError::INVALID_EVENTID);
-    blockManager->clearCache(rule.affectedRange());
+
+    this->clearCache(rule.affectedRange());
     switch(rule.getPosition()) {
         case InstPosition::PREINST:
             if (top_list) {
@@ -440,7 +525,7 @@ uint32_t Engine::addInstrRule(InstrRule rule, bool top_list) {
 uint32_t Engine::addVMEventCB(VMEvent mask, VMCallback cbk, void *data) {
     uint32_t id = vmCallbacksCounter++;
     RequireAction("Engine::addVMEventCB", id < EVENTID_VM_MASK, return VMError::INVALID_EVENTID);
-    vmCallbacks.push_back(std::make_pair(id, CallbackRegistration {mask, cbk, data}));
+    vmCallbacks.emplace_back(id, CallbackRegistration {mask, cbk, data});
     return id | EVENTID_VM_MASK;
 }
 
@@ -483,7 +568,7 @@ bool Engine::deleteInstrumentation(uint32_t id) {
     else {
         for(size_t i = 0; i < instrRules.size(); i++) {
             if(instrRules[i].first == id) {
-                blockManager->clearCache(instrRules[i].second->affectedRange());
+                this->clearCache(instrRules[i].second->affectedRange());
                 instrRules.erase(instrRules.begin() + i);
                 return true;
             }
@@ -493,8 +578,13 @@ bool Engine::deleteInstrumentation(uint32_t id) {
 }
 
 void Engine::deleteAllInstrumentations() {
+    // clear cache
+    for (const auto &r: instrRules)
+        this->clearCache(r.second->affectedRange());
     instrRules.clear();
     vmCallbacks.clear();
+    instrRulesCounter = 0;
+    vmCallbacksCounter = 0;
 }
 
 const InstAnalysis* Engine::analyzeInstMetadata(const InstMetadata* instMetadata, AnalysisType type) {
@@ -502,11 +592,19 @@ const InstAnalysis* Engine::analyzeInstMetadata(const InstMetadata* instMetadata
 }
 
 void Engine::clearAllCache() {
-    blockManager->clearCache();
+    blockManager->clearCache(curExecBlock == nullptr);
 }
 
 void Engine::clearCache(rword start, rword end) {
     blockManager->clearCache(Range<rword>(start, end));
+    if (curExecBlock == nullptr && blockManager->isFlushPending())
+        blockManager->flushCommit();
+}
+
+void Engine::clearCache(RangeSet<rword> rangeSet) {
+    blockManager->clearCache(rangeSet);
+    if (curExecBlock == nullptr && blockManager->isFlushPending())
+        blockManager->flushCommit();
 }
 
 } // QBDI::

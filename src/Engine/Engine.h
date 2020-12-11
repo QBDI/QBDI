@@ -28,19 +28,20 @@
 #include <malloc.h>
 #endif
 
-#include "llvm/MC/MCAsmBackend.h"
-#include "llvm/MC/MCAsmInfo.h"
-#include "llvm/MC/MCContext.h"
-#include "llvm/MC/MCCodeEmitter.h"
-#include "llvm/MC/MCInstrInfo.h"
-#include "llvm/MC/MCObjectFileInfo.h"
-#include "llvm/MC/MCRegisterInfo.h"
-#include "llvm/MC/MCSubtargetInfo.h"
-
 #include "Callback.h"
 #include "InstAnalysis.h"
 #include "State.h"
-#include "Patch/Types.h"
+#include "Range.h"
+
+namespace llvm {
+    class MCAsmInfo;
+    class MCCodeEmitter;
+    class MCContext;
+    class MCInstrInfo;
+    class MCObjectFileInfo;
+    class MCRegisterInfo;
+    class MCSubtargetInfo;
+}
 
 namespace QBDI {
 
@@ -51,6 +52,7 @@ class ExecBroker;
 class PatchRule;
 class InstrRule;
 class Patch;
+class InstMetadata;
 
 const static uint16_t MEM_READ_ADDRESS_TAG  = 0xfff0;
 const static uint16_t MEM_WRITE_ADDRESS_TAG = 0xfff1;
@@ -77,10 +79,10 @@ private:
     std::vector<std::string>                 mattrs;
     VMInstanceRef                            vminstance;
 
-    Assembly*                                                       assembly;
-    ExecBlockManager*                                               blockManager;
-    ExecBroker*                                                     execBroker;
-    std::vector<std::shared_ptr<PatchRule>>                         patchRules;
+    std::unique_ptr<Assembly>                                       assembly;
+    std::unique_ptr<ExecBlockManager>                               blockManager;
+    std::unique_ptr<ExecBroker>                                     execBroker;
+    std::vector<PatchRule>                                          patchRules;
     std::vector<std::pair<uint32_t, std::shared_ptr<InstrRule>>>    instrRules;
     uint32_t                                                        instrRulesCounter;
     std::vector<std::pair<uint32_t, CallbackRegistration>>          vmCallbacks;
@@ -90,6 +92,9 @@ private:
     GPRState*                                                       curGPRState;
     FPRState*                                                       curFPRState;
     ExecBlock*                                                      curExecBlock;
+
+    void init();
+    void reinit(const std::string& cpu, const std::vector<std::string>& mattrs);
 
     std::vector<Patch> patch(rword start);
 
@@ -113,6 +118,19 @@ public:
 
     ~Engine();
 
+    Engine(const Engine&&) = delete;
+    Engine& operator=(const Engine&&) = delete;
+
+    Engine(const Engine&);
+    Engine& operator=(const Engine&);
+
+    /*! Change the pointer to vminstance. The new pointer will be used for
+     * future callback
+     *
+     * @param[in] vminstance   The new vminstance
+     */
+    void changeVMInstanceRef(VMInstanceRef vminstance);
+
     /*! Obtain the current general purpose register state.
      *
      * @return A structure containing the GPR state.
@@ -129,13 +147,13 @@ public:
      *
      * @param[in] gprState A structure containing the GPR state.
      */
-    void        setGPRState(GPRState* gprState);
+    void        setGPRState(const GPRState* gprState);
 
     /*! Set the GPR state
      *
      * @param[in] fprState A structure containing the FPR state.
      */
-    void        setFPRState(FPRState* fprState);
+    void        setFPRState(const FPRState* fprState);
 
     /*! Add an address range to the set of instrumented address ranges.
      *
@@ -269,6 +287,12 @@ public:
      *
     */
     void clearCache(rword start, rword end);
+
+    /*! Clear a specific address rangeSet from the translation cache.
+     *
+     * @param[in] rangeSet    The range set to clear from the cache.
+    */
+    void clearCache(RangeSet<rword> rangeSet);
 
     /*! Clear the entire translation cache.
     */

@@ -18,46 +18,17 @@
 #ifndef LAYER2_X86_64_H
 #define LAYER2_X86_64_H
 
+#include <memory>
+
+#include "llvm/MC/MCInst.h"
+
 #include "Patch/Types.h"
-#include "Patch/X86_64/RelocatableInst_X86_64.h"
 
 namespace QBDI {
 
-#ifdef QBDI_ARCH_X86_64
-#define movrr mov64rr
-#define movri mov64ri
-#define movmr mov64mr
-#define movrm mov64rm
-#define pushr push64r
-#define popr pop64r
-#define addri addr64i
-#define lea lea64
-#define popf popf64
-#define pushf pushf64
-#define jmpm jmp64m
-
-#else /* QBDI_ARCH_X86 */
-#define movrr mov32rr
-#define movri mov32ri
-#define movmr mov32mr
-#define movrm mov32rm
-#define pushr push32r
-#define popr pop32r
-#define addri addr32i
-#define lea lea32
-#define popf popf32
-#define pushf pushf32
-#define jmpm jmp32m
-
-#endif
+class RelocatableInst;
 
 // low level layer 2
-
-llvm::MCInst mov64rr(unsigned int dst, unsigned int src);
-
-llvm::MCInst mov64ri(unsigned int reg, rword imm);
-
-llvm::MCInst mov64mr(unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg, unsigned int src);
 
 llvm::MCInst mov32rr(unsigned int dst, unsigned int src);
 
@@ -71,11 +42,19 @@ llvm::MCInst mov32rm16(unsigned int dst, unsigned int base, rword scale, unsigne
 
 llvm::MCInst mov32rm(unsigned int dst, unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg);
 
+llvm::MCInst mov64rr(unsigned int dst, unsigned int src);
+
+llvm::MCInst mov64ri(unsigned int reg, rword imm);
+
+llvm::MCInst mov64mr(unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg, unsigned int src);
+
 llvm::MCInst mov64rm(unsigned int dst, unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg);
 
 llvm::MCInst jmp32m(unsigned int base, rword offset);
 
 llvm::MCInst jmp64m(unsigned int base, rword offset);
+
+llvm::MCInst jmp(rword offset);
 
 llvm::MCInst fxsave(unsigned int base, rword offset);
 
@@ -93,9 +72,9 @@ llvm::MCInst pop32r(unsigned int reg);
 
 llvm::MCInst pop64r(unsigned int reg);
 
-llvm::MCInst addr32i(unsigned int reg, rword imm);
+llvm::MCInst addr32i(unsigned int dst, unsigned int src, rword imm);
 
-llvm::MCInst addr64i(unsigned int reg, rword imm);
+llvm::MCInst addr64i(unsigned int dst, unsigned int src, rword imm);
 
 llvm::MCInst lea32(unsigned int dst, unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg);
 
@@ -109,41 +88,63 @@ llvm::MCInst popf32();
 
 llvm::MCInst popf64();
 
-llvm::MCInst jmp(rword offset);
-
 llvm::MCInst ret();
+
+// low level layer 2 architecture abtraction
+
+llvm::MCInst movrr(unsigned int dst, unsigned int src);
+
+llvm::MCInst movri(unsigned int dst, rword imm);
+
+llvm::MCInst movmr(unsigned int base, rword scale, unsigned int offset, rword disp, unsigned int seg, unsigned int src);
+
+llvm::MCInst movrm(unsigned int dst, unsigned int base, rword scale, unsigned int offset, rword disp, unsigned int seg);
+
+llvm::MCInst pushr(unsigned int reg);
+
+llvm::MCInst popr(unsigned int reg);
+
+llvm::MCInst addri(unsigned int dst, unsigned int src, rword imm);
+
+llvm::MCInst lea(unsigned int dst, unsigned int base, rword scale, unsigned int offset, rword disp, unsigned int seg);
+
+llvm::MCInst popf();
+
+llvm::MCInst pushf();
+
+llvm::MCInst jmpm(unsigned int base, rword offset);
 
 // high level layer 2
 
-RelocatableInst::SharedPtr Mov(Reg dst, Reg src);
+std::shared_ptr<RelocatableInst> Mov(Reg dst, Reg src);
 
-RelocatableInst::SharedPtr Mov(Reg reg, Constant cst);
+std::shared_ptr<RelocatableInst> Mov(Reg reg, Constant cst);
 
-RelocatableInst::SharedPtr Mov(Offset offset, Reg reg);
+std::shared_ptr<RelocatableInst> Mov(Offset offset, Reg reg);
 
-RelocatableInst::SharedPtr Mov(Reg reg, Offset offset);
+std::shared_ptr<RelocatableInst> Mov(Reg reg, Offset offset);
 
-RelocatableInst::SharedPtr JmpM(Offset offset);
+std::shared_ptr<RelocatableInst> JmpM(Offset offset);
 
-RelocatableInst::SharedPtr Fxsave(Offset offset);
+std::shared_ptr<RelocatableInst> Fxsave(Offset offset);
 
-RelocatableInst::SharedPtr Fxrstor(Offset offset);
+std::shared_ptr<RelocatableInst> Fxrstor(Offset offset);
 
-RelocatableInst::SharedPtr Vextractf128(Offset offset, unsigned int src, Constant regoffset);
+std::shared_ptr<RelocatableInst> Vextractf128(Offset offset, unsigned int src, Constant regoffset);
 
-RelocatableInst::SharedPtr Vinsertf128(unsigned int dst, Offset offset, Constant regoffset);
+std::shared_ptr<RelocatableInst> Vinsertf128(unsigned int dst, Offset offset, Constant regoffset);
 
-RelocatableInst::SharedPtr Pushr(Reg reg);
+std::shared_ptr<RelocatableInst> Pushr(Reg reg);
 
-RelocatableInst::SharedPtr Popr(Reg reg);
+std::shared_ptr<RelocatableInst> Popr(Reg reg);
 
-RelocatableInst::SharedPtr Add(Reg reg, Constant cst);
+std::shared_ptr<RelocatableInst> Add(Reg reg, Constant cst);
 
-RelocatableInst::SharedPtr Pushf();
+std::shared_ptr<RelocatableInst> Pushf();
 
-RelocatableInst::SharedPtr Popf();
+std::shared_ptr<RelocatableInst> Popf();
 
-RelocatableInst::SharedPtr Ret();
+std::shared_ptr<RelocatableInst> Ret();
 
 }
 

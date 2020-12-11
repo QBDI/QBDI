@@ -30,20 +30,17 @@
 namespace QBDI {
 
 class RelocatableInst {
+protected:
+    llvm::MCInst inst;
+
 public:
 
     using SharedPtr    = std::shared_ptr<RelocatableInst>;
     using SharedPtrVec = std::vector<std::shared_ptr<RelocatableInst>>;
 
-    llvm::MCInst inst;
+    RelocatableInst(llvm::MCInst&& inst) : inst(std::move(inst)) {}
 
-    RelocatableInst(llvm::MCInst inst) {
-        this->inst = inst;
-    }
-
-    virtual llvm::MCInst reloc(ExecBlock *exec_block) {
-        return inst;
-    }
+    virtual llvm::MCInst reloc(ExecBlock *exec_block) const =0;
 
     virtual ~RelocatableInst() {};
 };
@@ -51,9 +48,9 @@ public:
 class NoReloc : public RelocatableInst, public AutoAlloc<RelocatableInst, NoReloc> {
 public:
 
-    NoReloc(llvm::MCInst inst) : RelocatableInst(inst) {}
+    NoReloc(llvm::MCInst&& inst) : RelocatableInst(std::move(inst)) {}
 
-    llvm::MCInst reloc(ExecBlock *exec_block) {
+    llvm::MCInst reloc(ExecBlock *exec_block) const override {
         return inst;
     }
 };
@@ -63,12 +60,13 @@ class DataBlockRel : public RelocatableInst, public AutoAlloc<RelocatableInst, D
     rword        offset;
 
 public:
-    DataBlockRel(llvm::MCInst inst, unsigned int opn, rword offset)
-        : RelocatableInst(inst), opn(opn), offset(offset) {};
+    DataBlockRel(llvm::MCInst&& inst, unsigned int opn, rword offset)
+        : RelocatableInst(std::move(inst)), opn(opn), offset(offset) {};
 
-    llvm::MCInst reloc(ExecBlock *exec_block) {
-        inst.getOperand(opn).setImm(offset + exec_block->getDataBlockOffset());
-        return inst;
+    llvm::MCInst reloc(ExecBlock *exec_block) const override {
+        llvm::MCInst res = inst;
+        res.getOperand(opn).setImm(offset + exec_block->getDataBlockOffset());
+        return res;
     }
 };
 
@@ -77,12 +75,13 @@ class DataBlockAbsRel : public RelocatableInst, public AutoAlloc<RelocatableInst
     rword        offset;
 
 public:
-    DataBlockAbsRel(llvm::MCInst inst, unsigned int opn, rword offset)
-        : RelocatableInst(inst), opn(opn), offset(offset) {};
+    DataBlockAbsRel(llvm::MCInst&& inst, unsigned int opn, rword offset)
+        : RelocatableInst(std::move(inst)), opn(opn), offset(offset) {};
 
-    llvm::MCInst reloc(ExecBlock *exec_block) {
-        inst.getOperand(opn).setImm(exec_block->getDataBlockBase() + offset);
-        return inst;
+    llvm::MCInst reloc(ExecBlock *exec_block) const override {
+        llvm::MCInst res = inst;
+        res.getOperand(opn).setImm(exec_block->getDataBlockBase() + offset);
+        return res;
     }
 };
 
@@ -91,12 +90,13 @@ class EpilogueRel : public RelocatableInst, public AutoAlloc<RelocatableInst, Ep
     rword        offset;
 
 public:
-    EpilogueRel(llvm::MCInst inst, unsigned int opn, rword offset)
-        : RelocatableInst(inst), opn(opn), offset(offset) {};
+    EpilogueRel(llvm::MCInst&& inst, unsigned int opn, rword offset)
+        : RelocatableInst(std::move(inst)), opn(opn), offset(offset) {};
 
-    llvm::MCInst reloc(ExecBlock *exec_block) {
-        inst.getOperand(opn).setImm(offset + exec_block->getEpilogueOffset());
-        return inst;
+    llvm::MCInst reloc(ExecBlock *exec_block) const override {
+        llvm::MCInst res = inst;
+        res.getOperand(opn).setImm(offset + exec_block->getEpilogueOffset());
+        return res;
     }
 };
 

@@ -4,7 +4,8 @@ MAINTAINER Charles Hubain <chubain@quarkslab.com>
 ENV USER="docker" \
     HOME="/home/docker" \
     PREFIX="/usr" \
-    QBDI_PLATFORM="android-ARM" \
+    QBDI_PLATFORM="android" \
+    QBDI_ARCH="ARM" \
     NDK_VERSION="r20" \
     ANDROID_PLATFORM="23"
 
@@ -52,21 +53,12 @@ ADD qbdi-deps.tar.gz $HOME/
 
 RUN sudo chown -R $USER:$USER qbdi-deps
 
-# Test if off, no need of gtest
-#
-#WORKDIR $HOME/qbdi-deps/deps/gtest/$QBDI_PLATFORM
-#
-#RUN sh build.sh prepare && \
-#    sh build.sh build && \
-#    sh build.sh package && \
-#    sh build.sh clean
-
 WORKDIR $HOME/qbdi-deps/deps/llvm/
 
-RUN python3 build.py prepare $QBDI_PLATFORM && \
-    python3 build.py build $QBDI_PLATFORM && \
-    python3 build.py package $QBDI_PLATFORM && \
-    python3 build.py clean $QBDI_PLATFORM
+RUN python3 build.py prepare $QBDI_PLATFORM-$QBDI_ARCH && \
+    python3 build.py build $QBDI_PLATFORM-$QBDI_ARCH OFF && \
+    python3 build.py package $QBDI_PLATFORM-$QBDI_ARCH && \
+    python3 build.py clean $QBDI_PLATFORM-$QBDI_ARCH
 
 # build / test / install QBDI
 
@@ -80,15 +72,17 @@ RUN sudo chown -R $USER:$USER . && \
     ln -s $HOME/qbdi-deps/deps deps && \
     mkdir build && \
     cd build && \
-    cmake -DPLATFORM=$QBDI_PLATFORM \
+    cmake -DQBDI_PLATFORM=$QBDI_PLATFORM \
+          -DQBDI_ARCH=$QBDI_ARCH \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_TOOLCHAIN_FILE=$HOME/android-ndk-$NDK_VERSION/build/cmake/android.toolchain.cmake \
           -DANDROID_ABI=armeabi-v7a \
           -DANDROID_PLATFORM=$ANDROID_PLATFORM \
-          -DTEST_QBDI=off \
+          -DQBDI_TEST=OFF \
+          -DQBDI_CCACHE=OFF \
           .. && \
     make -j2 && \
-    rm -f QBDI-*-$QBDI_PLATFORM.tar.gz && \
+    rm -f QBDI-*-$QBDI_PLATFORM-$QBDI_ARCH.tar.gz && \
     cpack
 
 WORKDIR "$HOME/"

@@ -22,6 +22,7 @@
 #include <utility>
 #include <vector>
 #include <cstdarg>
+#include <memory>
 
 #include "Platform.h"
 #include "Callback.h"
@@ -39,16 +40,16 @@ class InstrRule;
 struct MemCBInfo;
 
 class QBDI_EXPORT VM {
-    private:
+private:
     // Private internal engine
-    Engine*     engine;
+    std::unique_ptr<Engine> engine;
     uint8_t  memoryLoggingLevel;
-    std::vector<std::pair<uint32_t, MemCBInfo>>* memCBInfos;
+    std::unique_ptr<std::vector<std::pair<uint32_t, MemCBInfo>>> memCBInfos;
     uint32_t memCBID;
     uint32_t memReadGateCBID;
     uint32_t memWriteGateCBID;
 
-    public:
+public:
     /*! Construct a new VM for a given CPU with specific attributes
      *
      * @param[in] cpu    The name of the CPU
@@ -57,6 +58,42 @@ class QBDI_EXPORT VM {
     VM(const std::string& cpu = "", const std::vector<std::string>& mattrs = {});
 
     ~VM();
+
+    /*! Move constructors.
+     *  All the cache is keep.
+     *  All registered callbacks will be called with the new pointer of the VM.
+     *
+     * @param[in] vm     The VM to move
+     */
+    VM(VM&& vm);
+
+    /*! Move assignment operator
+     *  All the cache is keep.
+     *  All registered callbacks will be called with the new pointer of the VM.
+     *
+     * @param[in] vm     The VM to move
+     */
+    VM& operator=(VM&& vm);
+
+    /*! Copy constructors
+     *  The state and the configuration is copied. The cache isn't duplicate.
+     *  The assigned VM begin with an empty cache.
+     *
+     * @param[in] vm     The VM to copy
+     */
+    VM(const VM& vm);
+
+    /*! Copy assignment operator
+     *  The state and the configuration is copied. The cache isn't duplicate.
+     *  The assigned VM begin with an empty cache.
+     *
+     * @param[in] vm     The VM to copy
+     */
+    VM& operator=(const VM& vm);
+
+    // delete const move constructor and const move assignment operator
+    VM(const VM&& vm) = delete;
+    VM& operator=(const VM&& vm) = delete;
 
     /*! Obtain the current general purpose register state.
      *
@@ -74,13 +111,13 @@ class QBDI_EXPORT VM {
      *
      * @param[in] gprState A structure containing the GPR state.
      */
-    void        setGPRState(GPRState* gprState);
+    void        setGPRState(const GPRState* gprState);
 
     /*! Set the FPR state
      *
      * @param[in] fprState A structure containing the FPR state.
      */
-    void        setFPRState(FPRState* fprState);
+    void        setFPRState(const FPRState* fprState);
 
     /*! Add an address range to the set of instrumented address ranges.
      *

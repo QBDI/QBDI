@@ -15,9 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "InstInfo_X86_64.h"
+#include <stdint.h>
+
+#include "llvm/MC/MCInst.h"
+#include "llvm/MC/MCInstrDesc.h"
+#include "X86InstrInfo.h"
+
+#include "Patch/InstInfo.h"
+
+#include "Config.h"
+#include "State.h"
 
 namespace QBDI {
+
+namespace {
 
 unsigned READ_8[] = {
 	llvm::X86::CMP8rm,
@@ -954,7 +965,30 @@ unsigned STACK_READ_64[] = {
 
 size_t STACK_READ_64_SIZE = sizeof(STACK_READ_64)/sizeof(unsigned);
 
+/* Highest 8 bits are the write access, lowest 8 bits are the read access. For each 8 bits part: the
+ * highest bit stores if the access is a stack access or not while the lowest 7 bits store the
+ * unsigned access size in bytes (thus up to 127 bytes). A size of 0 means no access.
+ *
+ * -----------------------------------------------------------------------------------------------------------------
+ * |                     WRITE ACCESS                      |                      READ ACCESS                      |
+ * -----------------------------------------------------------------------------------------------------------------
+ * | 1 bit stack access flag | 7 bits unsigned access size | 1 bit stack access flag | 7 bits unsigned access size |
+ * -----------------------------------------------------------------------------------------------------------------
+*/
+
+constexpr uint16_t STACK_ACCESS_FLAG = 0x80;
+constexpr uint16_t READ(uint16_t s) {return s;}
+constexpr uint16_t WRITE(uint16_t s) {return s<<8;}
+constexpr uint16_t STACK_READ(uint16_t s) {return STACK_ACCESS_FLAG | s;}
+constexpr uint16_t STACK_WRITE(uint16_t s) {return (STACK_ACCESS_FLAG | s)<<8;}
+constexpr uint16_t GET_READ_SIZE(uint16_t v) {return v & 0x7f;}
+constexpr uint16_t GET_WRITE_SIZE(uint16_t v) {return (v>>8) & 0x7f;}
+constexpr uint16_t IS_STACK_READ(uint16_t v) {return (v & STACK_ACCESS_FLAG) > 0;}
+constexpr uint16_t IS_STACK_WRITE(uint16_t v) {return ((v>>8) & STACK_ACCESS_FLAG) > 0;}
+
 uint16_t MEMACCESS_INFO_TABLE[llvm::X86::INSTRUCTION_LIST_END] = {0};
+
+} // anonymous namespace
 
 void initMemAccessInfo() {
     for(size_t i = 0; i < READ_8_SIZE; i++) {
@@ -1038,22 +1072,20 @@ unsigned getImmediateSize(const llvm::MCInst* inst, const llvm::MCInstrDesc* des
 }
 
 bool useAllRegisters(const llvm::MCInst* inst) {
-// cannot allocate an array of constant size 0 on windows, just
-// skip the check on x64
-#ifdef QBDI_ARCH_X86
-    static const unsigned InstAllRegisters[] = {
-        llvm::X86::PUSHA16,
-        llvm::X86::PUSHA32,
-        llvm::X86::POPA16,
-        llvm::X86::POPA32
-    };
-    unsigned opcode = inst->getOpcode();
+    if constexpr(is_x86) {
+        static const unsigned InstAllRegisters[] = {
+            llvm::X86::PUSHA16,
+            llvm::X86::PUSHA32,
+            llvm::X86::POPA16,
+            llvm::X86::POPA32
+        };
+        unsigned opcode = inst->getOpcode();
 
-    for (unsigned op : InstAllRegisters) {
-        if (op == opcode)
-            return true;
+        for (unsigned op : InstAllRegisters) {
+            if (op == opcode)
+                return true;
+        }
     }
-#endif
 
     return false;
 }

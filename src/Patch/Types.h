@@ -18,9 +18,11 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-#include "llvm/MC/MCInst.h"
+#include <vector>
 
 #include "ExecBlock/Context.h"
+
+#include "State.h"
 
 namespace QBDI {
 
@@ -43,7 +45,7 @@ public:
      *
      * @return LLVM register id.
     */
-    inline operator unsigned int() {
+    inline operator unsigned int() const {
         return GPR_ID[id];
     }
 
@@ -51,7 +53,7 @@ public:
      *
      * @return The offset.
     */
-    inline rword offset() {
+    inline rword offset() const {
         return offsetof(Context, gprState) + sizeof(rword) * id;
     }
 };
@@ -63,7 +65,7 @@ struct Shadow {
     uint16_t tag;
 
 public:
-    
+
     /*! Allocate a new shadow variable in the data block with the corresponding tag.
      *
      *  @param[in] tag The tag of the new shadow variable.
@@ -74,7 +76,7 @@ public:
      *
      *  @return The tag of the shadow variable.
     */
-    inline rword getTag() {
+    inline rword getTag() const {
         return tag;
     }
 
@@ -96,9 +98,7 @@ struct Constant {
      *
      * @return This constant value.
     */
-    inline operator rword() {
-        return v;
-    }
+    inline operator rword() const {return v;}
 };
 
 /*! Structure representing a memory offset variable in PatchDSL.
@@ -125,9 +125,7 @@ public:
      *
      * @return This offset value.
     */
-    inline operator int64_t() {
-        return offset;
-    }
+    inline operator int64_t() const {return offset;}
 };
 
 /*! Structure representing a temporary register variable in PatchDSL.
@@ -138,10 +136,10 @@ struct Temp {
 
 public:
 
-    /*! Represent a temporary register variable idenified by a unique ID. Inside a patch rules 
-     *  or a instrumentation rules, Temp with identical ids point to the same physical register. 
-     *  The id 0xFFFFFFFF is reserved for internal uses. The mapping from id to physical register 
-     *  is determined at generation time and the allocation and deallocation instructions are 
+    /*! Represent a temporary register variable idenified by a unique ID. Inside a patch rules
+     *  or a instrumentation rules, Temp with identical ids point to the same physical register.
+     *  The id 0xFFFFFFFF is reserved for internal uses. The mapping from id to physical register
+     *  is determined at generation time and the allocation and deallocation instructions are
      *  automatically added to the patch.
      *
      *  @param[in] id The id of the temp to represent.
@@ -152,7 +150,7 @@ public:
      *
      * @return This Temp id.
     */
-    inline operator unsigned int() {
+    inline operator unsigned int() const  {
         return id;
     }
 };
@@ -165,7 +163,7 @@ struct Operand {
 
 public:
 
-    /*! Represent an operand instruction identified by its index in the LLVM MCInst representation 
+    /*! Represent an operand instruction identified by its index in the LLVM MCInst representation
      *  of the instruction.
      *
      *  @param[in] idx The operand index.
@@ -176,22 +174,8 @@ public:
      *
      * @return This Operand idx.
     */
-    inline operator unsigned int() {
+    inline operator unsigned int() const {
         return idx;
-    }
-};
-
-class InstMetadata {
-public:
-    llvm::MCInst inst;
-    rword address;
-    uint32_t instSize;
-    uint32_t patchSize;
-    bool modifyPC;
-    bool merge;
-
-    inline rword endAddress() const {
-        return address + instSize;
     }
 };
 

@@ -16,6 +16,9 @@
  * limitations under the License.
  */
 
+#include "llvm/MC/MCInst.h"
+#include "llvm/MC/MCInstrInfo.h"
+
 #include "Platform.h"
 #include "Patch/PatchUtils.h"
 #include "Patch/InstInfo.h"
@@ -25,9 +28,9 @@
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 // skip RAX as it is very often used implicitly and LLVM
 // sometimes don't tell us...
-#define _QBDI_FIRST_FREE_REGISTER 1
+static constexpr unsigned int _QBDI_FIRST_FREE_REGISTER = 1;
 #else
-#define _QBDI_FIRST_FREE_REGISTER 0
+static constexpr unsigned int _QBDI_FIRST_FREE_REGISTER = 0;
 #endif
 
 
@@ -86,7 +89,7 @@ Reg TempManager::getRegForTemp(unsigned int id) {
         }
         if(free) {
             // store it and return it
-            temps.push_back(std::make_pair(id, i));
+            temps.emplace_back(id, i);
             return Reg(i);
         }
     }
@@ -101,7 +104,7 @@ Reg TempManager::getRegForTemp(unsigned int id) {
         }
         // store it and return it
         if (i < AVAILABLE_GPR) {
-            temps.push_back(std::make_pair(id, i));
+            temps.emplace_back(id, i);
             return Reg(i);
         }
     }
@@ -109,18 +112,18 @@ Reg TempManager::getRegForTemp(unsigned int id) {
     abort();
 }
 
-Reg::Vec TempManager::getUsedRegisters() {
+Reg::Vec TempManager::getUsedRegisters() const {
     Reg::Vec list;
     for(auto p: temps)
         list.push_back(Reg(p.second));
     return list;
 }
 
-size_t TempManager::getUsedRegisterNumber() {
+size_t TempManager::getUsedRegisterNumber() const {
     return temps.size();
 }
 
-unsigned TempManager::getSizedSubReg(unsigned reg, unsigned size) {
+unsigned TempManager::getSizedSubReg(unsigned reg, unsigned size) const {
     if(getRegisterSize(reg) == size) {
         return reg;
     }

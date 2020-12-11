@@ -1,12 +1,13 @@
-ARG DOCKER_IMG="quay.io/pypa/manylinux2010_x86_64"
+ARG DOCKER_IMG="quay.io/pypa/manylinux2014_x86_64"
 
 FROM $DOCKER_IMG
 
-ARG QBDI_PLATFORM="linux-X86_64"
+ARG QBDI_ARCH="X86_64"
 
 ENV USER="docker" \
     HOME="/home/docker" \
     PREFIX="/usr" \
+    QBDI_PLATFORM="linux" \
     PYTHON_OPT="/opt/python"
 
 # Get latest package list, upgrade packages, install required packages
@@ -16,16 +17,12 @@ RUN yum update -y && \
         bash \
         sudo \
         cmake3 \
+        ccache \
         make \
         wget \
         zlib-devel \
-        ca-certificates \
-        zlib1g-dev && \
-    yum clean all && \
-    ln -s /usr/bin/cmake3 /usr/local/bin/cmake && \
-    ln -s /usr/bin/ctest3 /usr/local/bin/ctest && \
-    ln -s /usr/bin/cpack3 /usr/local/bin/cpack && \
-    ln -s /usr/bin/ccmake3 /usr/local/bin/ccmake 
+        ca-certificates && \
+    yum clean all
 
 
 # create a user
@@ -47,11 +44,11 @@ RUN sudo chown -R $USER:$USER .
 
 WORKDIR $HOME/qbdi-deps/deps/llvm/
 
-RUN export PATH=$PYTHON_OPT/cp37-cp37m/bin:$PATH && \
-    python3 build.py prepare $QBDI_PLATFORM && \
-    python3 build.py build $QBDI_PLATFORM && \
-    python3 build.py package $QBDI_PLATFORM && \
-    python3 build.py clean $QBDI_PLATFORM
+RUN export PATH=${PYTHON_OPT}/cp37-cp37m/bin:$PATH && \
+    python3 build.py prepare ${QBDI_PLATFORM}-${QBDI_ARCH} && \
+    python3 build.py build ${QBDI_PLATFORM}-${QBDI_ARCH} OFF && \
+    python3 build.py package ${QBDI_PLATFORM}-${QBDI_ARCH} && \
+    python3 build.py clean ${QBDI_PLATFORM}-${QBDI_ARCH}
 
 # build / test / install QBDI
 ARG CMAKE_ARGUMENT=""
@@ -62,13 +59,14 @@ ADD qbdi.tar.gz $HOME/
 WORKDIR $HOME/qbdi
 
 RUN sudo chown -R $USER:$USER . && \
-    # link llvm and gtest
+    # link llvm
     rm -rf deps && \
-    ln -s $HOME/qbdi-deps/deps deps && \
-    # build wheel
-    /opt/python/cp35-cp35m/bin/python setup.py bdist_wheel && \
-    /opt/python/cp36-cp36m/bin/python setup.py bdist_wheel && \
-    /opt/python/cp37-cp37m/bin/python setup.py bdist_wheel && \
-    /opt/python/cp38-cp38/bin/python setup.py bdist_wheel
+    ln -s $HOME/qbdi-deps/deps deps
+
+# build wheel
+RUN /opt/python/cp36-cp36m/bin/python setup.py bdist_wheel
+RUN /opt/python/cp37-cp37m/bin/python setup.py bdist_wheel
+RUN /opt/python/cp38-cp38/bin/python setup.py bdist_wheel
+RUN /opt/python/cp39-cp39/bin/python setup.py bdist_wheel
 
 RUN for i in dist/*; do auditwheel repair $i -w outwheel; done

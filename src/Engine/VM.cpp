@@ -21,7 +21,12 @@
 #include "Memory.hpp"
 
 #include "Engine/Engine.h"
+#include "ExecBlock/ExecBlock.h"
+#include "Patch/InstInfo.h"
+#include "Patch/InstrRule.h"
 #include "Patch/InstrRules.h"
+#include "Patch/PatchCondition.h"
+#include "Patch/PatchGenerator.h"
 #include "Utility/LogSys.h"
 
 // Mask to identify Virtual Callback events
@@ -36,7 +41,7 @@ struct MemCBInfo {
     void* data;
 };
 
-VMAction memReadGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
+static VMAction memReadGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
     std::vector<std::pair<uint32_t, MemCBInfo>>* memCBInfos = static_cast<std::vector<std::pair<uint32_t, MemCBInfo>>*>(data);
     std::vector<MemoryAccess> memAccesses = vm->getInstMemoryAccess();
     VMAction action = VMAction::CONTINUE;
@@ -60,7 +65,7 @@ VMAction memReadGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, v
     return action;
 }
 
-VMAction memWriteGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
+static VMAction memWriteGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
     std::vector<std::pair<uint32_t, MemCBInfo>>* memCBInfos = static_cast<std::vector<std::pair<uint32_t, MemCBInfo>>*>(data);
     std::vector<MemoryAccess> memAccesses = vm->getInstMemoryAccess();
     VMAction action = VMAction::CONTINUE;
@@ -84,19 +89,66 @@ VMAction memWriteGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, 
     return action;
 }
 
-VMAction stopCallback(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
+static VMAction stopCallback(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
     return VMAction::STOP;
 }
 
 VM::VM(const std::string& cpu, const std::vector<std::string>& mattrs) :
     memoryLoggingLevel(0), memCBID(0), memReadGateCBID(VMError::INVALID_EVENTID), memWriteGateCBID(VMError::INVALID_EVENTID) {
-    engine = new Engine(cpu, mattrs, this);
-    memCBInfos = new std::vector<std::pair<uint32_t, MemCBInfo>>;
+    engine = std::make_unique<Engine>(cpu, mattrs, this);
+    memCBInfos = std::make_unique<std::vector<std::pair<uint32_t, MemCBInfo>>>();
 }
 
-VM::~VM() {
-    delete memCBInfos;
-    delete engine;
+VM::~VM() = default;
+
+VM::VM(VM&& vm) :
+        engine(std::move(vm.engine)),
+        memoryLoggingLevel(vm.memoryLoggingLevel),
+        memCBInfos(std::move(vm.memCBInfos)),
+        memCBID(vm.memCBID),
+        memReadGateCBID(vm.memReadGateCBID),
+        memWriteGateCBID(vm.memWriteGateCBID) {
+
+    engine->changeVMInstanceRef(this);
+}
+
+VM& VM::operator=(VM&& vm) {
+    engine = std::move(vm.engine);
+    memoryLoggingLevel = vm.memoryLoggingLevel;
+    memCBInfos = std::move(vm.memCBInfos);
+    memCBID = vm.memCBID;
+    memReadGateCBID = vm.memReadGateCBID;
+    memWriteGateCBID = vm.memWriteGateCBID;
+
+    engine->changeVMInstanceRef(this);
+
+    return *this;
+}
+
+VM::VM(const VM& vm) :
+        engine(std::make_unique<Engine>(*vm.engine)),
+        memoryLoggingLevel(vm.memoryLoggingLevel),
+        memCBInfos(std::make_unique<std::vector<std::pair<uint32_t, MemCBInfo>>>(*vm.memCBInfos)),
+        memCBID(vm.memCBID),
+        memReadGateCBID(vm.memReadGateCBID),
+        memWriteGateCBID(vm.memWriteGateCBID) {
+
+    engine->changeVMInstanceRef(this);
+}
+
+
+VM& VM::operator=(const VM& vm) {
+    *engine = *vm.engine;
+    *memCBInfos = *vm.memCBInfos;
+
+    memoryLoggingLevel = vm.memoryLoggingLevel;
+    memCBID = vm.memCBID;
+    memReadGateCBID = vm.memReadGateCBID;
+    memWriteGateCBID = vm.memWriteGateCBID;
+
+    engine->changeVMInstanceRef(this);
+
+    return *this;
 }
 
 GPRState* VM::getGPRState() const {
@@ -108,12 +160,12 @@ FPRState* VM::getFPRState() const {
 }
 
 
-void VM::setGPRState(GPRState* gprState) {
+void VM::setGPRState(const GPRState* gprState) {
     RequireAction("VM::setGPRState", gprState != nullptr, return);
     engine->setGPRState(gprState);
 }
 
-void VM::setFPRState(FPRState* fprState) {
+void VM::setFPRState(const FPRState* fprState) {
     RequireAction("VM::setFPRState", fprState != nullptr, return);
     engine->setFPRState(fprState);
 }
@@ -187,14 +239,13 @@ bool VM::call(rword* retval, rword function, const std::vector<rword>& args) {
 }
 
 bool VM::callV(rword* retval, rword function, uint32_t argNum, va_list ap) {
-    rword* args = new rword[argNum];
+  std::vector<rword> args (argNum);
     for(uint32_t i = 0; i < argNum; i++) {
         args[i] = va_arg(ap, rword);
     }
 
-    bool res = this->callA(retval, function, argNum, args);
+    bool res = this->callA(retval, function, argNum, args.data());
 
-    delete[] args;
     return res;
 }
 
@@ -288,14 +339,14 @@ uint32_t VM::addMemRangeCB(rword start, rword end, MemoryAccessType type, InstCa
     RequireAction("VM::addMemRangeCB", type & MEMORY_READ_WRITE, return VMError::INVALID_EVENTID);
     RequireAction("VM::addMemRangeCB", cbk != nullptr, return VMError::INVALID_EVENTID);
     if((type == MEMORY_READ) && memReadGateCBID == VMError::INVALID_EVENTID) {
-        memReadGateCBID = addMemAccessCB(MEMORY_READ, memReadGate, memCBInfos);
+        memReadGateCBID = addMemAccessCB(MEMORY_READ, memReadGate, memCBInfos.get());
     }
     if((type & MEMORY_WRITE) && memWriteGateCBID == VMError::INVALID_EVENTID) {
-        memWriteGateCBID = addMemAccessCB(MEMORY_READ_WRITE, memWriteGate, memCBInfos);
+        memWriteGateCBID = addMemAccessCB(MEMORY_READ_WRITE, memWriteGate, memCBInfos.get());
     }
     uint32_t id = memCBID++;
     RequireAction("VM::addMemRangeCB", id < EVENTID_VIRTCB_MASK, return VMError::INVALID_EVENTID);
-    memCBInfos->push_back(std::make_pair(id, MemCBInfo {type, Range<rword>(start, end), cbk, data}));
+    memCBInfos->emplace_back(id, MemCBInfo {type, {start, end}, cbk, data});
     return id | EVENTID_VIRTCB_MASK;
 }
 
@@ -338,7 +389,9 @@ const InstAnalysis* VM::getInstAnalysis(AnalysisType type) {
 }
 
 bool VM::recordMemoryAccess(MemoryAccessType type) {
-#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+    if constexpr(not (is_x86_64 or is_x86))
+        return false;
+
     if(type & MEMORY_READ && !(memoryLoggingLevel & MEMORY_READ)) {
         memoryLoggingLevel |= MEMORY_READ;
         engine->addInstrRule(InstrRule(
@@ -368,9 +421,6 @@ bool VM::recordMemoryAccess(MemoryAccessType type) {
         ), true); // force the rule to be the first of POSTINST
     }
     return true;
-#else
-    return false;
-#endif
 }
 
 std::vector<MemoryAccess> VM::getInstMemoryAccess() const {

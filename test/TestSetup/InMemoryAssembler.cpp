@@ -15,11 +15,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "Platform.h"
-#include "Utility/System.h"
-#include "llvm/MC/MCObjectWriter.h"
+#include <catch2/catch.hpp>
 
 #include "TestSetup/InMemoryAssembler.h"
+
+
+#include "Platform.h"
+#include "Utility/System.h"
+
+#include "llvm/MC/MCAsmBackend.h"
+#include "llvm/MC/MCAsmInfo.h"
+#include "llvm/MC/MCContext.h"
+#include "llvm/MC/MCCodeEmitter.h"
+#include "llvm/MC/MCInstrInfo.h"
+#include "llvm/MC/MCObjectFileInfo.h"
+#include "llvm/MC/MCObjectWriter.h"
+#include "llvm/MC/MCParser/MCAsmParser.h"
+#include "llvm/MC/MCParser/MCTargetAsmParser.h"
+#include "llvm/MC/MCRegisterInfo.h"
+#include "llvm/MC/MCStreamer.h"
+#include "llvm/MC/MCSubtargetInfo.h"
+#include "llvm/MC/MCTargetOptions.h"
+#include "llvm/MC/SubtargetFeature.h"
+#include "llvm/Object/ObjectFile.h"
+#include "llvm/Support/SourceMgr.h"
+#include "llvm/Support/TargetRegistry.h"
+
 
 InMemoryObject::InMemoryObject(const char* source, const char* cpu, const char** mattrs) {
     std::unique_ptr<llvm::MCAsmInfo>         MAI;
@@ -60,10 +81,8 @@ InMemoryObject::InMemoryObject(const char* source, const char* cpu, const char**
     MAI = std::unique_ptr<llvm::MCAsmInfo>(
         processTarget->createMCAsmInfo(*MRI, tripleName, options)
     );
-    MOFI = std::unique_ptr<llvm::MCObjectFileInfo>(new llvm::MCObjectFileInfo());
-    MCTX = std::unique_ptr<llvm::MCContext>(
-        new llvm::MCContext(MAI.get(), MRI.get(), MOFI.get(), &SrcMgr)
-    );
+    MOFI = std::make_unique<llvm::MCObjectFileInfo>();
+    MCTX = std::make_unique<llvm::MCContext>(MAI.get(), MRI.get(), MOFI.get(), &SrcMgr);
     MOFI->InitMCObjectFileInfo(processTriple, false, *MCTX);
     MCII = std::unique_ptr<llvm::MCInstrInfo>(processTarget->createMCInstrInfo());
     MSTI = std::unique_ptr<llvm::MCSubtargetInfo>(
@@ -94,17 +113,17 @@ InMemoryObject::InMemoryObject(const char* source, const char* cpu, const char**
     parser->setTargetParser(*tap);
     // Finally do something we care about
     mcStr->InitSections(false);
-    EXPECT_FALSE(parser->Run(true));
+    CHECK_FALSE(parser->Run(true));
     delete parser;
     delete tap;
     // Copy object into new page and make it executable
     unsigned mFlags = PF::MF_READ | PF::MF_WRITE;
-#if defined(QBDI_OS_IOS)
+#if defined(QBDI_PLATFORM_IOS)
     mFlags |= PF::MF_EXEC;
 #endif
     objectBlock = QBDI::allocateMappedMemory(objectVector.size(), nullptr, mFlags, ec);
     memcpy(objectBlock.base(), objectVector.data(), objectVector.size());
-#if !defined(QBDI_OS_IOS)
+#if !defined(QBDI_PLATFORM_IOS)
     llvm::sys::Memory::protectMappedMemory(objectBlock, PF::MF_READ | PF::MF_EXEC);
 #endif
 
@@ -143,6 +162,6 @@ InMemoryObject::InMemoryObject(const char* source, const char* cpu, const char**
             }
         }
     }
-    EXPECT_LT((unsigned int) 0, text_section.size());
+    CHECK((unsigned int) 0 < text_section.size());
     code = llvm::ArrayRef<uint8_t>((const uint8_t*) text_section.data(), text_section.size());
 }

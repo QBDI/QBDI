@@ -17,14 +17,18 @@
  */
 
 #include "Patch/InstrRule.h"
+#include "Patch/InstrRules.h"
+#include "Patch/Patch.h"
+#include "Patch/PatchGenerator.h"
+#include "Patch/RelocatableInst.h"
 
 namespace QBDI {
 
-bool InstrRule::canBeApplied(const Patch &patch, llvm::MCInstrInfo* MCII) {
+bool InstrRule::canBeApplied(const Patch &patch, const llvm::MCInstrInfo* MCII) const {
     return condition->test(&patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII);
 }
 
-void InstrRule::instrument(Patch &patch, llvm::MCInstrInfo* MCII, llvm::MCRegisterInfo* MRI) {
+void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI) const {
     /* The instrument function needs to handle several different cases. An instrumentation can
      * be either prepended or appended to the patch and, in each case, can trigger a break to
      * host.
@@ -33,7 +37,7 @@ void InstrRule::instrument(Patch &patch, llvm::MCInstrInfo* MCII, llvm::MCRegist
     TempManager tempManager(&patch.metadata.inst, MCII, MRI, true);
 
     // Generate the instrumentation code from the original instruction context
-    for(PatchGenerator::SharedPtr& g : patchGen) {
+    for(const PatchGenerator::SharedPtr& g : patchGen) {
         append(instru,
             g->generate(&patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, &tempManager, nullptr)
         );

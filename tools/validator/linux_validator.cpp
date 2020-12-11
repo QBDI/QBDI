@@ -23,6 +23,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include <dlfcn.h>
 #include <signal.h>
 #include <sys/mman.h>
@@ -33,7 +34,6 @@
 #include "Platform.h"
 #include "Utility/LogSys.h"
 
-static const size_t STACK_SIZE = 8388608;
 static bool INSTRUMENTED = false;
 static pid_t debugged, instrumented;
 
@@ -76,12 +76,14 @@ int QBDI::qbdipreload_on_start(void *main) {
     setvbuf(stdin, NULL, _IONBF, 0);
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
+    signal(SIGWINCH, SIG_IGN);
 
     instrumented = fork();
     if(instrumented == 0) {
         INSTRUMENTED = true;
         return QBDIPRELOAD_NOT_HANDLED;
     }
+
     debugged = fork();
     if(debugged == 0) {
         ptrace(PTRACE_TRACEME, 0, NULL, NULL);

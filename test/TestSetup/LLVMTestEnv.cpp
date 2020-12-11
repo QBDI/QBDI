@@ -15,10 +15,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "TestSetup/LLVMTestEnv.h"
+#include <catch2/catch.hpp>
+
+#include "llvm/ADT/Triple.h"
+#include "llvm/ADT/SmallVector.h"
+#include "llvm/MC/MCAsmBackend.h"
+#include "llvm/MC/MCAsmInfo.h"
+#include "llvm/MC/MCContext.h"
+#include "llvm/MC/MCCodeEmitter.h"
+#include "llvm/MC/MCDisassembler/MCDisassembler.h"
+#include "llvm/MC/MCInstrInfo.h"
+#include "llvm/MC/MCObjectFileInfo.h"
+#include "llvm/MC/MCTargetOptions.h"
+#include "llvm/Object/ObjectFile.h"
+#include "llvm/Support/CommandLine.h"
+#include "llvm/Support/FileUtilities.h"
+#include "llvm/Support/ManagedStatic.h"
+#include "llvm/Support/Process.h"
+#include "llvm/Support/SourceMgr.h"
+#include "llvm/Support/TargetRegistry.h"
+#include "llvm/Support/TargetSelect.h"
+
+#include "Utility/Assembly.h"
+
 #include "Platform.h"
 
-void LLVMTestEnv::SetUp() {
+#include "TestSetup/LLVMTestEnv.h"
+
+LLVMTestEnv::~LLVMTestEnv() = default;
+
+LLVMTestEnv::LLVMTestEnv(std::string cpu, std::vector<std::string> mattrs) :
+        cpu(cpu), mattrs(mattrs) {
     std::string error;
     std::string featuresStr;
 
@@ -36,7 +63,7 @@ void LLVMTestEnv::SetUp() {
         featuresStr = features.getString();
     }
 
-#ifdef QBDI_OS_IOS
+#ifdef QBDI_PLATFORM_IOS
     // FIXME
     cpu = "swift";
 #endif
@@ -48,35 +75,33 @@ void LLVMTestEnv::SetUp() {
     llvm::Triple process_triple(tripleName);
     processTarget = llvm::TargetRegistry::lookupTarget(tripleName, error);
     llvm::MCTargetOptions options;
-    ASSERT_NE(nullptr, processTarget);
+    REQUIRE(nullptr != processTarget);
     // Allocate all LLVM classes
     MRI = std::unique_ptr<llvm::MCRegisterInfo>(
         processTarget->createMCRegInfo(tripleName)
     );
-    ASSERT_TRUE(MRI != nullptr);
+    REQUIRE(MRI != nullptr);
     MAI = std::unique_ptr<llvm::MCAsmInfo>(
         processTarget->createMCAsmInfo(*MRI, tripleName, options)
     );
-    ASSERT_TRUE(MAI != nullptr);
-    MOFI = std::unique_ptr<llvm::MCObjectFileInfo>(new llvm::MCObjectFileInfo());
-    ASSERT_TRUE(MOFI != nullptr);
-    MCTX = std::unique_ptr<llvm::MCContext>(new llvm::MCContext(MAI.get(), MRI.get(), MOFI.get()));
-    ASSERT_TRUE(MCTX != nullptr);
+    REQUIRE(MAI != nullptr);
+    MOFI = std::make_unique<llvm::MCObjectFileInfo>();
+    REQUIRE(MOFI != nullptr);
+    MCTX = std::make_unique<llvm::MCContext>(MAI.get(), MRI.get(), MOFI.get());
+    REQUIRE(MCTX != nullptr);
     MCII = std::unique_ptr<llvm::MCInstrInfo>(processTarget->createMCInstrInfo());
-    ASSERT_TRUE(MCII != nullptr);
+    REQUIRE(MCII != nullptr);
     MSTI = std::unique_ptr<llvm::MCSubtargetInfo>(
       processTarget->createMCSubtargetInfo(tripleName, cpu, featuresStr)
     );
-    ASSERT_TRUE(MSTI != nullptr);
+    REQUIRE(MSTI != nullptr);
     auto MAB = std::unique_ptr<llvm::MCAsmBackend>(
         processTarget->createMCAsmBackend(*MSTI, *MRI, options)
     );
     MCE = std::unique_ptr<llvm::MCCodeEmitter>(
        processTarget->createMCCodeEmitter(*MCII, *MRI, *MCTX)
     );
-    ASSERT_TRUE(MAB != nullptr);
-    assembly = std::unique_ptr<QBDI::Assembly>(
-        new QBDI::Assembly(*MCTX, std::move(MAB), *MCII, *processTarget, *MSTI)
-    );
-    ASSERT_TRUE(assembly != nullptr);
+    REQUIRE(MAB != nullptr);
+    assembly = std::make_unique<QBDI::Assembly>(*MCTX, std::move(MAB), *MCII, *processTarget, *MSTI);
+    REQUIRE(assembly != nullptr);
 }

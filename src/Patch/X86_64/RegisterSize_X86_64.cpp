@@ -17,6 +17,9 @@
  */
 
 #include <stdint.h>
+
+#include "X86InstrInfo.h"
+
 #include "Patch/Types.h"
 #include "Utility/LogSys.h"
 

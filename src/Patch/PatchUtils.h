@@ -22,9 +22,13 @@
 #include <utility>
 #include <vector>
 
-#include "llvm/MC/MCInst.h"
-#include "llvm/MC/MCRegisterInfo.h"
 #include "Patch/Types.h"
+
+namespace llvm {
+  class MCInst;
+  class MCInstrInfo;
+  class MCRegisterInfo;
+}
 
 namespace QBDI {
 
@@ -39,7 +43,29 @@ public:
     operator std::shared_ptr<T>() {
         return std::shared_ptr<T>(new U(*static_cast<U*>(this)));
     }
+
+    operator std::unique_ptr<T>() {
+        return std::make_unique<U>(*static_cast<U*>(this));
+    }
 };
+
+template<class T, class U>
+void _conv_unique(std::vector<std::unique_ptr<T>>& vec, U&& u) {
+    vec.push_back(std::make_unique<U>(std::forward<U>(u)));
+}
+
+template<class T, class U, class ... Args>
+void _conv_unique(std::vector<std::unique_ptr<T>>& vec, U&& u, Args... args) {
+    vec.push_back(std::make_unique<U>(std::forward<U>(u)));
+    _conv_unique<T>(vec, std::forward<Args>(args)...);
+}
+
+template<class T, class ... Args>
+std::vector<std::unique_ptr<T>> conv_unique(Args... args) {
+    std::vector<std::unique_ptr<T>> vec;
+    _conv_unique<T>(vec, std::forward<Args>(args)...);
+    return vec;
+}
 
 void inline append(std::vector<std::shared_ptr<RelocatableInst>> &u, const std::vector<std::shared_ptr<RelocatableInst>> v) {
     u.insert(u.end(), v.begin(), v.end());
@@ -71,22 +97,23 @@ class TempManager {
 
     std::vector<std::pair<unsigned int, unsigned int>> temps;
     const llvm::MCInst* inst;
-    llvm::MCInstrInfo* MCII;
-    llvm::MCRegisterInfo* MRI;
+    const llvm::MCInstrInfo* MCII;
+    const llvm::MCRegisterInfo* MRI;
     bool allowInstRegister;
 
 public:
 
-    TempManager(const llvm::MCInst *inst, llvm::MCInstrInfo* MCII, llvm::MCRegisterInfo *MRI, bool allowInstRegister=false)
+    TempManager(const llvm::MCInst * inst, const llvm::MCInstrInfo * MCII,
+        const llvm::MCRegisterInfo * MRI, bool allowInstRegister=false)
         : inst(inst), MCII(MCII), MRI(MRI), allowInstRegister(allowInstRegister) {};
 
     Reg getRegForTemp(unsigned int id);
 
-    Reg::Vec getUsedRegisters();
+    Reg::Vec getUsedRegisters() const;
 
-    size_t getUsedRegisterNumber();
+    size_t getUsedRegisterNumber() const;
 
-    unsigned getSizedSubReg(unsigned reg, unsigned size);
+    unsigned getSizedSubReg(unsigned reg, unsigned size) const;
 };
 
 }

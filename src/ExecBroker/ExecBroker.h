@@ -26,10 +26,9 @@
 #include "Range.h"
 #include "State.h"
 #include "ExecBlock/ExecBlock.h"
-#include "Utility/Assembly.h"
-#include "Utility/LogSys.h"
 
 namespace QBDI {
+class Assembly;
 
 class ExecBroker {
 
@@ -48,7 +47,17 @@ public:
 
     ExecBroker(Assembly& assembly, VMInstanceRef vminstance = nullptr);
 
+    void changeVMInstanceRef(VMInstanceRef vminstance);
+
     bool isInstrumented(rword addr) const { return instrumented.contains(addr);}
+
+    void setInstrumentedRange(const RangeSet<rword>& r) {
+      instrumented = r;
+    }
+
+    const RangeSet<rword>& getInstrumentedRange() const {
+      return instrumented;
+    }
 
     void addInstrumentedRange(const Range<rword>& r);
     bool addInstrumentedModule(const std::string& name);

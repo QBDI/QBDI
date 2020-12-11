@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <catch2/catch.hpp>
 #include "TestSetup/ShellcodeTester.h"
 
 
@@ -24,13 +25,13 @@ llvm::sys::MemoryBlock ShellcodeTester::allocateStack(QBDI::rword size) {
 
     stackBlock = llvm::sys::Memory::allocateMappedMemory(size, nullptr,
                                                          PF::MF_READ | PF::MF_WRITE, ec);
-    EXPECT_EQ(0, ec.value());
+    CHECK(0 == ec.value());
     memset(stackBlock.base(), 0, stackBlock.allocatedSize());
     return stackBlock;
 }
 
 void ShellcodeTester::freeStack(llvm::sys::MemoryBlock &memoryBlock) {
-    EXPECT_EQ(0, llvm::sys::Memory::releaseMappedMemory(memoryBlock).value());
+    CHECK(0 == llvm::sys::Memory::releaseMappedMemory(memoryBlock).value());
 }
 
 void ShellcodeTester::comparedExec(const char* source, QBDI::Context &inputCtx,
@@ -40,7 +41,7 @@ void ShellcodeTester::comparedExec(const char* source, QBDI::Context &inputCtx,
     QBDI::Context realCtx, jitCtx;
     llvm::sys::MemoryBlock realStack = allocateStack(stackSize);
     llvm::sys::MemoryBlock jitStack = allocateStack(stackSize);
-    ASSERT_EQ(realStack.allocatedSize(), jitStack.allocatedSize());
+    REQUIRE(realStack.allocatedSize() == jitStack.allocatedSize());
 
     const llvm::ArrayRef<uint8_t>& code = object.getCode();
     llvm::sys::Memory::InvalidateInstructionCache(code.data(), code.size());
@@ -49,16 +50,16 @@ void ShellcodeTester::comparedExec(const char* source, QBDI::Context &inputCtx,
     jitCtx = jitExec(code, inputCtx, jitStack);
 
     for(uint32_t i = 0; i < QBDI::AVAILABLE_GPR; i++) {
-        EXPECT_EQ(QBDI_GPR_GET(&realCtx.gprState, i), QBDI_GPR_GET(&jitCtx.gprState, i));
+        CHECK(QBDI_GPR_GET(&realCtx.gprState, i) == QBDI_GPR_GET(&jitCtx.gprState, i));
     }
 
 #if !defined(_QBDI_ASAN_ENABLED_) || !defined(QBDI_ARCH_X86_64)
     for(uint32_t i = 0; i < sizeof(QBDI::FPRState); i++) {
-        EXPECT_EQ(((char*)&realCtx.fprState)[i], ((char*)&jitCtx.fprState)[i]);
+        CHECK(((char*)&realCtx.fprState)[i] == ((char*)&jitCtx.fprState)[i]);
     }
 #endif
     for(uint32_t i = 0; i < realStack.allocatedSize() - sizeof(QBDI::rword); i++) {
-        EXPECT_EQ(((char*)realStack.base())[i], ((char*)jitStack.base())[i]);
+        CHECK(((char*)realStack.base())[i] == ((char*)jitStack.base())[i]);
     }
 
     freeStack(realStack);

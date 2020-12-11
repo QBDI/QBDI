@@ -17,14 +17,14 @@
  */
 #include <stdio.h>
 #include <cstdint>
-#include <gtest/gtest.h>
 
+#include <catch2/catch.hpp>
 #include "Memory.hpp"
 
-TEST(AllocAlignedTest, CorrectSize) {
+TEST_CASE("AllocAlignedTest, CorrectSize") {
     const static size_t size = 1000;
     uint8_t *array =  (uint8_t*) QBDI::alignedAlloc(size, sizeof(void*));
-    ASSERT_NE(nullptr, array);
+    REQUIRE(array != nullptr);
     for(size_t i = 0; i < size; i++) {
         array[i] = 0x42;
     }
@@ -32,12 +32,12 @@ TEST(AllocAlignedTest, CorrectSize) {
     SUCCEED();
 }
 
-TEST(AllocAlignedTest, CorrectAlignement) {
+TEST_CASE("AllocAlignedTest, CorrectAlignement") {
     const static size_t size = 1000;
     const static size_t align = 16;
     void *array =  QBDI::alignedAlloc(size, align);
-    ASSERT_NE(nullptr, array);
-    ASSERT_EQ((std::uintptr_t) 0, (std::uintptr_t) array % align);
+    REQUIRE(array != nullptr);
+    REQUIRE(reinterpret_cast<std::uintptr_t>(array) % align == static_cast<std::uintptr_t>(0));
     QBDI::alignedFree(array);
     SUCCEED();
 }

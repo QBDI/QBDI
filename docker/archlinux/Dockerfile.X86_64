@@ -1,11 +1,11 @@
 FROM archlinux/base:latest
 MAINTAINER Charles Hubain <chubain@quarkslab.com>
 
-ARG QBDI_PLATFORM="linux-X86_64"
-
 ENV USER="docker" \
     HOME="/home/docker" \
-    PREFIX="/usr"
+    PREFIX="/usr" \
+    QBDI_PLATFORM="linux" \
+    QBDI_ARCH="X86_64"
 
 # Get latest package list, upgrade packages, install required packages 
 # and cleanup to keep container as small as possible
@@ -37,19 +37,12 @@ WORKDIR $HOME
 
 RUN sudo chown -R $USER:$USER .
 
-WORKDIR $HOME/qbdi-deps/deps/gtest/$QBDI_PLATFORM
-
-RUN sh build.sh prepare && \
-    sh build.sh build && \
-    sh build.sh package && \
-    sh build.sh clean
-
 WORKDIR $HOME/qbdi-deps/deps/llvm/
 
-RUN python3 build.py prepare $QBDI_PLATFORM && \
-    python3 build.py build $QBDI_PLATFORM && \
-    python3 build.py package $QBDI_PLATFORM && \
-    python3 build.py clean $QBDI_PLATFORM
+RUN python3 build.py prepare ${QBDI_PLATFORM}-${QBDI_ARCH} && \
+    python3 build.py build ${QBDI_PLATFORM}-${QBDI_ARCH} OFF && \
+    python3 build.py package ${QBDI_PLATFORM}-${QBDI_ARCH} && \
+    python3 build.py clean ${QBDI_PLATFORM}-${QBDI_ARCH}
 
 # build / test / install QBDI
 
@@ -63,7 +56,7 @@ RUN sudo chown -R $USER:$USER . && \
     ln -s $HOME/qbdi-deps/deps deps && \
     mkdir build && \
     cd build && \
-    cp ../docker/archlinux/PKGBUILD.$QBDI_PLATFORM PKGBUILD && \
+    cp ../docker/archlinux/PKGBUILD.$QBDI_ARCH PKGBUILD && \
     makepkg -fc && \
     sudo pacman -U --noconfirm QBDI-*.pkg.tar.xz
 

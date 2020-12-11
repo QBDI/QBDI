@@ -21,10 +21,14 @@
 #include <memory>
 #include <vector>
 
+#include "Patch/Types.h"
+
 #include "Callback.h"
-#include "Patch/InstrRule.h"
 
 namespace QBDI {
+
+class PatchGenerator;
+class RelocatableInst;
 
 /*
  * Setup a user callback in the host state
@@ -34,8 +38,9 @@ namespace QBDI {
  * @param[in] cbk   Pointer to a user callback
  * @param[in] data  Opaque pointer to user callback data
  */
-PatchGenerator::SharedPtrVec getCallbackGenerator(InstCallback cbk, void* data);
+std::vector<std::shared_ptr<PatchGenerator>> getCallbackGenerator(InstCallback cbk, void* data);
 
+std::vector<std::shared_ptr<RelocatableInst>> getBreakToHost(Reg temp);
 }
 
 #endif

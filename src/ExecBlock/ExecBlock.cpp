@@ -15,16 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#include "llvm/MC/MCInst.h"
 #include "llvm/Support/Format.h"
-#include "Patch/PatchRule.h"
+
 #include "ExecBlock.h"
 #include "Patch/Patch.h"
-#include "Platform.h"
-#include "Memory.hpp"
+#include "Patch/PatchGenerator.h"
+#include "Patch/PatchRule.h"
+#include "Patch/PatchRules_Target.h"
+#include "Patch/RelocatableInst.h"
+#include "Utility/Assembly.h"
 #include "Utility/LogSys.h"
 #include "Utility/System.h"
 
-#if defined(QBDI_OS_WIN)
+#include "Memory.hpp"
+#include "Platform.h"
+
+#if defined(QBDI_PLATFORM_WINDOWS)
     #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
         extern "C" void qbdi_runCodeBlockSSE(void *codeBlock);
         extern "C" void qbdi_runCodeBlockAVX(void *codeBlock);
@@ -50,18 +58,14 @@ void (*ExecBlock::runCodeBlockFct)(void*) = NULL;
 ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(vminstance), assembly(assembly) {
     // Allocate memory blocks
     std::error_code ec;
-#ifdef QBDI_OS_IOS
     // iOS now use 16k superpages, but as JIT mecanisms are totally differents
     // on this platform, we can enforce a 4k "virtual" page size
-    uint64_t pageSize = 4096;
-#else
-    uint64_t pageSize =
-      llvm::expectedToOptional(llvm::sys::Process::getPageSize()).getValueOr(4096);
-#endif
+    uint64_t pageSize = is_ios ? 4096 :
+        llvm::expectedToOptional(llvm::sys::Process::getPageSize()).getValueOr(4096);
     unsigned mflags =  PF::MF_READ | PF::MF_WRITE;
-#ifdef QBDI_OS_IOS
-             mflags |= PF::MF_EXEC;
-#endif
+
+    if constexpr(is_ios)
+        mflags |= PF::MF_EXEC;
 
     // Allocate 2 pages block
     codeBlock = QBDI::allocateMappedMemory(2*pageSize, nullptr, mflags, ec);
@@ -77,7 +81,7 @@ ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(
     shadowIdx = 0;
     currentSeq = 0;
     currentInst = 0;
-    codeStream = new memory_ostream(codeBlock);
+    codeStream = std::make_unique<memory_ostream>(codeBlock);
     pageState = RW;
 
     // Epilogue and prologue management.
@@ -87,7 +91,7 @@ ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(
         execBlockEpilogue = getExecBlockEpilogue();
         // Only way to know the epilogue size is to JIT is somewhere
         for(auto &inst: execBlockEpilogue) {
-            assembly.writeInstruction(inst->reloc(this), codeStream);
+            assembly.writeInstruction(inst->reloc(this), codeStream.get());
         }
         epilogueSize = codeStream->current_pos();
         codeStream->seek(0);
@@ -107,11 +111,11 @@ ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(
     // JIT prologue and epilogue
     codeStream->seek(codeBlock.allocatedSize() - epilogueSize);
     for(auto &inst: execBlockEpilogue) {
-        assembly.writeInstruction(inst->reloc(this), codeStream);
+        assembly.writeInstruction(inst->reloc(this), codeStream.get());
     }
     codeStream->seek(0);
     for(auto &inst: execBlockPrologue) {
-        assembly.writeInstruction(inst->reloc(this), codeStream);
+        assembly.writeInstruction(inst->reloc(this), codeStream.get());
     }
 }
 
@@ -119,7 +123,10 @@ ExecBlock::~ExecBlock() {
     // Reunite the 2 blocks before freeing them
     codeBlock = llvm::sys::MemoryBlock(codeBlock.base(), codeBlock.allocatedSize() + dataBlock.allocatedSize());
     QBDI::releaseMappedMemory(codeBlock);
-    delete codeStream;
+}
+
+void ExecBlock::changeVMInstanceRef(VMInstanceRef vminstance) {
+    this->vminstance = vminstance;
 }
 
 void ExecBlock::show() const {
@@ -169,11 +176,10 @@ void ExecBlock::selectSeq(uint16_t seqID) {
 
 void ExecBlock::run() {
     // Pages are RWX on iOS
-#ifndef QBDI_OS_IOS
-    makeRX();
-#else
-    llvm::sys::Memory::InvalidateInstructionCache(codeBlock.base(), codeBlock.allocatedSize());
-#endif // QBDI_OS_IOS
+    if constexpr(is_ios)
+        llvm::sys::Memory::InvalidateInstructionCache(codeBlock.base(), codeBlock.allocatedSize());
+    else
+        makeRX();
     runCodeBlockFct(codeBlock.base());
 }
 
@@ -238,10 +244,9 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
     }
     LogDebug("ExecBlock::writeBasicBlock", "Attempting to write %zu patches to ExecBlock %p", std::distance(seqIt, seqEnd), this);
     // Pages are RWX on iOS
-#ifndef QBDI_OS_IOS
     // Ensure code block is RW
-    makeRW();
-#endif // QBDI_OS_IOS
+    if constexpr(not is_ios)
+        makeRW();
     // JIT the basic block instructions patch per patch
     // A patch correspond to an original instruction and should be written in its entierty
     while(seqIt != seqEnd) {
@@ -254,7 +259,7 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
         // Attempt to write a complete patch. If not, rollback to the last complete patch written
         for(const RelocatableInst::SharedPtr& inst : seqIt->insts) {
             if(getEpilogueOffset() > MINIMAL_BLOCK_SIZE) {
-                assembly.writeInstruction(inst->reloc(this), codeStream);
+                assembly.writeInstruction(inst->reloc(this), codeStream.get());
             }
             else {
                 // Not enough space left, rollback
@@ -294,13 +299,13 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
         LogDebug("ExecBlock::writeBasicBlock", "Writting terminator to ExecBlock %p to finish non-exit sequence", this);
         RelocatableInst::SharedPtrVec terminator = getTerminator(seqIt->metadata.address);
         for(RelocatableInst::SharedPtr &inst : terminator) {
-            assembly.writeInstruction(inst->reloc(this), codeStream);
+            assembly.writeInstruction(inst->reloc(this), codeStream.get());
         }
     }
     // JIT the jump to epilogue
     RelocatableInst::SharedPtrVec jmpEpilogue = JmpEpilogue();
     for(RelocatableInst::SharedPtr &inst : jmpEpilogue) {
-        assembly.writeInstruction(inst->reloc(this), codeStream);
+        assembly.writeInstruction(inst->reloc(this), codeStream.get());
     }
     // Register sequence
     uint16_t endInstID = getNextInstID() - 1;

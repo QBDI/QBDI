@@ -20,6 +20,8 @@
 
 #include "Patch/RelocatableInst.h"
 
+#include "Config.h"
+
 namespace QBDI {
 
 class HostPCRel : public RelocatableInst, public AutoAlloc<RelocatableInst, HostPCRel> {
@@ -27,12 +29,13 @@ class HostPCRel : public RelocatableInst, public AutoAlloc<RelocatableInst, Host
     rword        offset;
 
 public:
-    HostPCRel(llvm::MCInst inst, unsigned int opn, rword offset)
-        : RelocatableInst(inst), opn(opn), offset(offset) {};
+    HostPCRel(llvm::MCInst&& inst, unsigned int opn, rword offset)
+        : RelocatableInst(std::move(inst)), opn(opn), offset(offset) {};
 
-    llvm::MCInst reloc(ExecBlock *exec_block) {
-        inst.getOperand(opn).setImm(offset + exec_block->getCurrentPC());
-        return inst;
+    llvm::MCInst reloc(ExecBlock *exec_block) const override {
+        llvm::MCInst res = inst;
+        res.getOperand(opn).setImm(offset + exec_block->getCurrentPC());
+        return res;
     }
 };
 
@@ -40,12 +43,13 @@ class InstId : public RelocatableInst, public AutoAlloc<RelocatableInst, InstId>
     unsigned int opn;
 
 public:
-    InstId(llvm::MCInst inst, unsigned int opn)
-        : RelocatableInst(inst), opn(opn) {};
+    InstId(llvm::MCInst&& inst, unsigned int opn)
+        : RelocatableInst(std::move(inst)), opn(opn) {};
 
-    llvm::MCInst reloc(ExecBlock *exec_block) {
-        inst.getOperand(opn).setImm(exec_block->getNextInstID());
-        return inst;
+    llvm::MCInst reloc(ExecBlock *exec_block) const override {
+        llvm::MCInst res = inst;
+        res.getOperand(opn).setImm(exec_block->getNextInstID());
+        return res;
     }
 };
 
@@ -56,15 +60,16 @@ class TaggedShadow : public RelocatableInst, public AutoAlloc<RelocatableInst, T
     rword inst_size;
 
 public:
-    TaggedShadow(llvm::MCInst inst, unsigned int opn, uint16_t tag, rword inst_size)
-        : RelocatableInst(inst), opn(opn), tag(tag), inst_size(inst_size) {};
+    TaggedShadow(llvm::MCInst&& inst, unsigned int opn, uint16_t tag, rword inst_size)
+        : RelocatableInst(std::move(inst)), opn(opn), tag(tag), inst_size(inst_size) {};
 
-    llvm::MCInst reloc(ExecBlock *exec_block) {
+    llvm::MCInst reloc(ExecBlock *exec_block) const override {
         uint16_t id = exec_block->newShadow(tag);
-        inst.getOperand(opn).setImm(
+        llvm::MCInst res = inst;
+        res.getOperand(opn).setImm(
             exec_block->getDataBlockOffset() + exec_block->getShadowOffset(id) - inst_size
         );
-        return inst;
+        return res;
     }
 };
 
@@ -74,36 +79,37 @@ class TaggedShadowAbs : public RelocatableInst, public AutoAlloc<RelocatableInst
     uint16_t tag;
 
 public:
-    TaggedShadowAbs(llvm::MCInst inst, unsigned int opn, uint16_t tag)
-        : RelocatableInst(inst), opn(opn), tag(tag) {};
+    TaggedShadowAbs(llvm::MCInst&& inst, unsigned int opn, uint16_t tag)
+        : RelocatableInst(std::move(inst)), opn(opn), tag(tag) {};
 
-    llvm::MCInst reloc(ExecBlock *exec_block) {
+    llvm::MCInst reloc(ExecBlock *exec_block) const override {
         uint16_t id = exec_block->newShadow(tag);
-        inst.getOperand(opn).setImm(
+        llvm::MCInst res = inst;
+        res.getOperand(opn).setImm(
             exec_block->getDataBlockBase() + exec_block->getShadowOffset(id)
         );
-        return inst;
+        return res;
     }
 };
 
-inline std::shared_ptr<RelocatableInst> DataBlockRelx86(llvm::MCInst inst, unsigned int opn, rword offset, unsigned int opn2, rword inst_size) {
-#ifdef QBDI_ARCH_X86_64
-    inst.getOperand(opn2).setReg(Reg(REG_PC));
-    return DataBlockRel(inst, opn, offset - inst_size);
-#else
-    inst.getOperand(opn2).setReg(0);
-    return DataBlockAbsRel(inst, opn, offset);
-#endif
+inline std::shared_ptr<RelocatableInst> DataBlockRelx86(llvm::MCInst&& inst, unsigned int opn, rword offset, unsigned int opn2, rword inst_size) {
+    if constexpr(is_x86_64) {
+        inst.getOperand(opn2).setReg(Reg(REG_PC));
+        return DataBlockRel(std::move(inst), opn, offset - inst_size);
+    } else {
+        inst.getOperand(opn2).setReg(0);
+        return DataBlockAbsRel(std::move(inst), opn, offset);
+    }
 }
 
-inline std::shared_ptr<RelocatableInst> TaggedShadowx86(llvm::MCInst inst, unsigned int opn, uint16_t tag, unsigned int opn2, rword inst_size) {
-#ifdef QBDI_ARCH_X86_64
-    inst.getOperand(opn2).setReg(Reg(REG_PC));
-    return TaggedShadow(inst, opn, tag, inst_size);
-#else
-    inst.getOperand(opn2).setReg(0);
-    return TaggedShadowAbs(inst, opn, tag);
-#endif
+inline std::shared_ptr<RelocatableInst> TaggedShadowx86(llvm::MCInst&& inst, unsigned int opn, uint16_t tag, unsigned int opn2, rword inst_size) {
+    if constexpr(is_x86_64) {
+        inst.getOperand(opn2).setReg(Reg(REG_PC));
+        return TaggedShadow(std::move(inst), opn, tag, inst_size);
+    } else {
+        inst.getOperand(opn2).setReg(0);
+        return TaggedShadowAbs(std::move(inst), opn, tag);
+    }
 
 }
 

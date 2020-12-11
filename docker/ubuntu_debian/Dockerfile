@@ -2,11 +2,12 @@ ARG DOCKER_IMG="ubuntu:latest"
 
 FROM $DOCKER_IMG as builder
 
-ARG QBDI_PLATFORM="linux-X86_64"
+ARG QBDI_ARCH="X86_64"
 
 ENV USER="docker" \
     HOME="/home/docker" \
-    PREFIX="/usr"
+    PREFIX="/usr" \
+    QBDI_PLATFORM="linux"
 
 # Get latest package list, upgrade packages, install required packages
 # and cleanup to keep container as small as possible
@@ -47,19 +48,12 @@ WORKDIR $HOME
 
 RUN sudo chown -R $USER:$USER .
 
-WORKDIR $HOME/qbdi-deps/deps/gtest/$QBDI_PLATFORM
-
-RUN sh build.sh prepare && \
-    sh build.sh build && \
-    sh build.sh package && \
-    sh build.sh clean
-
 WORKDIR $HOME/qbdi-deps/deps/llvm/
 
-RUN python3 build.py prepare $QBDI_PLATFORM && \
-    python3 build.py build $QBDI_PLATFORM && \
-    python3 build.py package $QBDI_PLATFORM && \
-    python3 build.py clean $QBDI_PLATFORM
+RUN python3 build.py prepare ${QBDI_PLATFORM}-${QBDI_ARCH} && \
+    python3 build.py build ${QBDI_PLATFORM}-${QBDI_ARCH} OFF && \
+    python3 build.py package ${QBDI_PLATFORM}-${QBDI_ARCH} && \
+    python3 build.py clean ${QBDI_PLATFORM}-${QBDI_ARCH}
 
 # build / test / install QBDI
 ARG CMAKE_ARGUMENT=""
@@ -70,7 +64,7 @@ ADD qbdi.tar.gz $HOME/
 WORKDIR $HOME/qbdi
 
 RUN sudo chown -R $USER:$USER . && \
-    # link llvm and gtest
+    # link llvm
     rm -rf deps && \
     ln -s $HOME/qbdi-deps/deps deps && \
     # build
@@ -78,9 +72,11 @@ RUN sudo chown -R $USER:$USER . && \
     cd build && \
     cmake -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_CROSSCOMPILING=FALSE \
-          -DPLATFORM=$QBDI_PLATFORM \
+          -DQBDI_PLATFORM=$QBDI_PLATFORM \
+          -DQBDI_ARCH=$QBDI_ARCH \
           -DCMAKE_INSTALL_PREFIX=$PREFIX \
-          -DTOOLS_PYQBDI=FALSE \
+          -DQBDI_TOOLS_PYQBDI=ON \
+          -DQBDI_CCACHE=OFF \
           $CMAKE_ARGUMENT \
           ../ && \
     make -j4 && \

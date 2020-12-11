@@ -22,20 +22,27 @@
 #include <memory>
 #include <vector>
 
-#include "llvm/MC/MCInst.h"
 #include "llvm/Support/Process.h"
 #include "llvm/Support/Memory.h"
 
-#include "Callback.h"
-#include "Context.h"
+#include "Patch/InstMetadata.h"
 #include "Patch/Types.h"
 #include "Utility/memory_ostream.h"
-#include "Utility/Assembly.h"
+
+#include "Callback.h"
+#include "State.h"
+
+namespace llvm {
+  class MCInst;
+}
 
 namespace QBDI {
 
+class Assembly;
 class RelocatableInst;
 class Patch;
+
+struct Context;
 
 enum SeqType {
     Entry = 1,
@@ -82,21 +89,21 @@ private:
     static std::vector<std::shared_ptr<RelocatableInst>> execBlockEpilogue;
     static void (*runCodeBlockFct)(void*);
 
-    VMInstanceRef               vminstance;
-    llvm::sys::MemoryBlock      codeBlock;
-    llvm::sys::MemoryBlock      dataBlock;
-    memory_ostream*             codeStream;
-    Assembly&                   assembly;
-    Context*                    context;
-    rword*                      shadows;
-    std::vector<ShadowInfo>     shadowRegistry;
-    uint16_t                    shadowIdx;
-    std::vector<InstMetadata>   instMetadata;
-    std::vector<InstInfo>       instRegistry;
-    std::vector<SeqInfo>        seqRegistry;
-    PageState                   pageState;
-    uint16_t                    currentSeq;
-    uint16_t                    currentInst;
+    VMInstanceRef                     vminstance;
+    llvm::sys::MemoryBlock            codeBlock;
+    llvm::sys::MemoryBlock            dataBlock;
+    std::unique_ptr<memory_ostream>   codeStream;
+    Assembly&                         assembly;
+    Context*                          context;
+    rword*                            shadows;
+    std::vector<ShadowInfo>           shadowRegistry;
+    uint16_t                          shadowIdx;
+    std::vector<InstMetadata>         instMetadata;
+    std::vector<InstInfo>             instRegistry;
+    std::vector<SeqInfo>              seqRegistry;
+    PageState                         pageState;
+    uint16_t                          currentSeq;
+    uint16_t                          currentInst;
 
     /*! Verify if the code block is in read execute mode.
      *
@@ -128,6 +135,12 @@ public:
     ExecBlock(Assembly& assembly, VMInstanceRef vminstance = nullptr);
 
     ~ExecBlock();
+
+    ExecBlock(const ExecBlock&) = delete;
+
+    /*! Change vminstance when VM object is moved
+     */
+    void changeVMInstanceRef(VMInstanceRef vminstance);
 
     /*! Display the content of an exec block to stderr.
      */

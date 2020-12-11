@@ -5,7 +5,8 @@ FROM ubuntu:$UBUNTU_TAG
 ENV USER="docker" \
     HOME="/home/docker" \
     PREFIX="/usr" \
-    QBDI_PLATFORM="linux-X86_64" \
+    QBDI_PLATFORM="linux" \
+    QBDI_ARCH="X86_64" \
     CLICOLOR_FORCE=1
 
 # Get latest package list, upgrade packages, install required packages 
@@ -18,6 +19,7 @@ RUN apt-get update && \
         git \
         build-essential \
         cmake \
+        ccache \
         g++ \
         g++-multilib \
         libstdc++-8-dev \
@@ -27,18 +29,20 @@ RUN apt-get update && \
         ca-certificates \
         zlib1g-dev \
         python3 \
-        python3-dev
+        python3-dev \
+        python3-yaml \
+        zip \
+        git \
+        xxd
+
+ARG USER_ID=1000
 
 # create a user
-RUN adduser --disabled-password --gecos '' $USER && \
+RUN adduser --uid $USER_ID --disabled-password --gecos '' $USER && \
     adduser $USER sudo && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 WORKDIR $HOME
 
-ADD . $HOME/qbdi
-
-RUN chown -R $USER:$USER $HOME
-
-# switch to new user
 USER $USER
+

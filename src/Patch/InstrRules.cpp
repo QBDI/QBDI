@@ -15,11 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include "Patch/InstrRules.h"
+#include "Patch/PatchGenerator.h"
 
 namespace QBDI {
 
-/*! Output a list of PatchGenerator which would set up the host state part of the context for 
+/*! Output a list of PatchGenerator which would set up the host state part of the context for
  *  a callback.
  *
  * @param[in] cbk   The callback function to call.

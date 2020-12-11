@@ -17,22 +17,12 @@ CPU as a reference::
 .. doxygenfunction:: qbdi_initVM
    :project: QBDI_C
 
-The :c:func:`qbdi_initVM` function takes two optional parameters used to specify
-the CPU type or architecture and additional attributes of the CPU. Those are the same used by LLVM.
-Here's how you would initialize a VM for an ARM Cortex-A9 supporting the VFP2 floating point
-instructions::
-
-   VMInstanceRef vm;
-   const char* mattrs[] = {"vfp2"};
-   qbdi_initVM(&vm, "cortex-a9", mattrs);
-
-
 State Management
 ----------------
 
 The state of the guest processor can be queried and modified using two architectures dependent
 structures :c:type:`GPRState` and :c:type:`FPRState` which are detailed below for each architecture
-(:ref:`c-state-x86`, :ref:`c-state-x86-64` and :ref:`c-state-arm`).
+(:ref:`c-state-x86` and :ref:`c-state-x86-64`).
 
 The :c:func:`qbdi_getGPRState` and :c:func:`qbdi_getFPRState` allow to
 query the current state of the guest processor while the :c:func:`qbdi_setGPRState`
@@ -97,25 +87,6 @@ The X86_64 :c:type:`FPRState` structure is the following:
 .. include:: ../../include/QBDI/State.h
    :start-after: SPHINX_X86_64_FPRSTATE_BEGIN
    :end-before: SPHINX_X86_64_FPRSTATE_END
-   :code:
-
-.. _c-state-arm:
-
-ARM
-^^^
-
-The ARM :c:type:`GPRState` structure is the following:
-
-.. include:: ../../include/QBDI/State.h
-   :start-after: SPHINX_ARM_GPRSTATE_BEGIN
-   :end-before: SPHINX_ARM_GPRSTATE_END
-   :code:
-
-The ARM :c:type:`FPRState` structure is the following:
-
-.. include:: ../../include/QBDI/State.h
-   :start-after: SPHINX_ARM_FPRSTATE_BEGIN
-   :end-before: SPHINX_ARM_FPRSTATE_END
    :code:
 
 State Initialization

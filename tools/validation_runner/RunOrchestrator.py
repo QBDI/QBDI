@@ -31,8 +31,8 @@ def run_test(test, env, idx):
     coverage_file = '.{}_coverage'.format(idx)
     error = False
 
-    with open(result_file, 'w') as result:
-        with open(output_file, 'w') as output:
+    with open(result_file, 'wb') as result:
+        with open(output_file, 'wb') as output:
             env['VALIDATOR_COVERAGE'] = coverage_file
             # Execute
             try:
@@ -44,12 +44,12 @@ def run_test(test, env, idx):
                 error = True
 
     # Parse test results and remove test files
-    with open(result_file, 'r') as f:
-        result = f.read()
+    with open(result_file, 'rb') as f:
+        result = f.read().decode('utf8')
 
     if os.path.isfile(coverage_file):
-        with open(coverage_file, 'r') as f:
-            coverage = f.read()
+        with open(coverage_file, 'rb') as f:
+            coverage = f.read().decode('utf8')
         os.remove(coverage_file)
     else:
         coverage = ""

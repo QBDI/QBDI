@@ -49,7 +49,7 @@ def get_libraries(target_arch, target_platform, prefix="", ext=""):
         "LLVMRemarks",
         ]
     # Add target specific libraries
-    if target_platform in ['iOS', 'macOS']:
+    if target_platform in ['osx', 'ios']:
         LIBRAIRIES.append("LLVMDemangle")
 
     for target_lib in ("Utils", "Info", "Disassembler", "Desc", "AsmParser"):
@@ -95,18 +95,18 @@ def get_llvm(url, source_hash, dest):
         tar.extractall(str(dest))
 
 
-def build_llvm(llvm_dir, build_dir, arch, target_plateform, arch_opt=None):
+def build_llvm(llvm_dir, build_dir, arch, target_plateform, arch_opt=None, ccache="On"):
 
     if not build_dir.exists():
         build_dir.mkdir()
 
     # set platform specific arguments.
-    if target_plateform == "win" and arch_opt == "i386":
+    if target_plateform == "windows" and arch_opt == "i386":
         cmake_specific_option = ["-G", "Ninja",
                                  "-DLLVM_BUILD_32_BITS=On"]
-    elif target_plateform == "win":
+    elif target_plateform == "windows":
         cmake_specific_option = ["-G", "Ninja"]
-    elif target_plateform == "iOS":
+    elif target_plateform == "ios":
         cc = subprocess.check_output(["xcrun", "--sdk", "iphoneos", "-f", "clang"])
         cxx = subprocess.check_output(["xcrun", "--sdk", "iphoneos", "-f", "clang++"])
         sdk = subprocess.check_output(["xcrun", "--sdk", "iphoneos", "--show-sdk-path"])
@@ -162,7 +162,7 @@ def build_llvm(llvm_dir, build_dir, arch, target_plateform, arch_opt=None):
                     '-DANDROID_ABI=x86_64',
                     ]
 
-    elif target_plateform == "macOS" and arch_opt == "i386":
+    elif target_plateform == "osx" and arch_opt == "i386":
         cmake_specific_option = ['-DLLVM_BUILD_32_BITS=On',
                                  '-DLLVM_DEFAULT_TARGET_TRIPLE=i386-apple-darwin17.7.0',
                                  '-DCMAKE_C_FLAGS=-fvisibility=hidden',
@@ -179,6 +179,7 @@ def build_llvm(llvm_dir, build_dir, arch, target_plateform, arch_opt=None):
     # Run cmake
     subprocess.check_call(["cmake", str(llvm_dir.resolve()),
                            "-DCMAKE_BUILD_TYPE=Release",
+                           "-DCMAKE_CXX_STANDARD=17",
                            "-DLLVM_TARGETS_TO_BUILD=" + arch,
                            "-DLLVM_BUILD_TOOLS=Off",
                            "-DLLVM_BUILD_UTILS=Off",
@@ -195,11 +196,12 @@ def build_llvm(llvm_dir, build_dir, arch, target_plateform, arch_opt=None):
                            "-DLLVM_ENABLE_Z3_SOLVER=Off",
                            "-DLLVM_APPEND_VC_REV=Off",
                            "-DLLVM_ENABLE_RTTI=Off",
+                           "-DLLVM_CCACHE_BUILD=" + ccache,
                            ] + cmake_specific_option,
                           cwd=str(build_dir))
 
     # Compile llvm libraries
-    if target_plateform == "win":
+    if target_plateform == "windows":
         subprocess.check_call(["ninja"] + get_libraries(arch, target_plateform, ext=".lib"),
                               cwd=str(build_dir))
     else:
@@ -244,7 +246,7 @@ def install_header_and_lib(llvm_source, build_dir, dest, arch, target_plateform)
         rename_object.rename_object(str(dest / "lib/libLLVMSupport.a"), "Memory.cpp.o")
         rename_object.rename_object(str(dest / "lib/libLLVMSupport.a"), "Error.cpp.o")
         rename_object.rename_object(str(dest / "lib/libLLVMSupport.a"), "LowLevelType.cpp.o")
-        # FIXME: Should we keep it only for iOS?
+        # FIXME: Should we keep it only for IOS?
         rename_object.rename_object(str(dest / "lib/libLLVMSupport.a"), "Parallel.cpp.o", True)
 
 
@@ -262,16 +264,18 @@ if __name__ == "__main__":
         sys.exit(1)
 
     target = sys.argv[2]
-    assert(target in ("android-ARM", "android-X86", "android-X86_64", "iOS-ARM", "linux-ARM", "linux-X86_64", "linux-X86", "macOS-X86_64", "macOS-X86", "win-X86_64", "win-X86"))
 
     target_plateform = target.split("-")[0]
     arch = target.split("-")[1]
+
+    assert (target_plateform in ("android", "ios", "linux", "osx", "windows"))
+    assert (arch in ("ARM", "X86_64", "X86"))
 
     arch_opt = None
     if arch == "ARM":
         if target_plateform == "linux":
             arch_opt = "armv6"
-        elif target_plateform == "iOS":
+        elif target_plateform == "ios":
             arch_opt = "armv7"
         elif target_plateform == "android":
             arch_opt = "armv7-a"
@@ -292,8 +296,11 @@ if __name__ == "__main__":
         get_llvm(SOURCE_URL, SOURCE_SHA256, TARGET_DIR / target)
 
     elif sys.argv[1] == "build":
+        ccache = "On"
+        if len(sys.argv) >= 4:
+            ccache = sys.argv[3]
         build_llvm(extracted_llvm_dir,
-                   build_dir, arch, target_plateform, arch_opt)
+                   build_dir, arch, target_plateform, arch_opt, ccache)
 
     elif sys.argv[1] == "package":
         install_header_and_lib(extracted_llvm_dir,

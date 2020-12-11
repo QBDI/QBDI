@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 #include "ExecBroker/ExecBroker.h"
+#include "Utility/LogSys.h"
 
 namespace QBDI {
 
@@ -23,6 +24,10 @@ ExecBroker::ExecBroker(Assembly& assembly, VMInstanceRef vminstance) :
     transferBlock(assembly, vminstance) {
     pageSize =
       llvm::expectedToOptional(llvm::sys::Process::getPageSize()).getValueOr(4096);
+}
+
+void ExecBroker::changeVMInstanceRef(VMInstanceRef vminstance) {
+    transferBlock.changeVMInstanceRef(vminstance);
 }
 
 void ExecBroker::addInstrumentedRange(const Range<rword>& r) {
