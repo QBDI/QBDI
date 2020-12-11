@@ -10,12 +10,14 @@ Next Version
   * Improve the documentation of getBBMemoryAccess
   * Add recordMemoryAccess callback before any InstCallback
 * Refactor ExecBlockManager to work with unaligned instruction on X86 and X86-64 (`#129 <https://github.com/QBDI/QBDI/pull/129>`_)
+* Drop early support for ARM. The support hasn't been tested since 0.6.2.
 
 Internal update:
 
 * Update LLVM to LLVM 10.0.1 (`#104 <https://github.com/QBDI/QBDI/pull/104>`_ and `#139 <https://github.com/QBDI/QBDI/pull/139>`_)
 * Reduce LLVM library included in QBDI static library and reduce QBDI package size (`#139 <https://github.com/QBDI/QBDI/pull/139>`_ and `#70 <https://github.com/QBDI/QBDI/issues/70>`_)
-* Update GTest to 1.8.1 (`#104 <https://github.com/QBDI/QBDI/pull/104>`_)
+* Replace GTest by `Catch2 <https://github.com/catchorg/Catch2>`_ (`#140 <https://github.com/QBDI/QBDI/pull/140>`_)
+* Refactor code and switch to cpp17 (`#140 <https://github.com/QBDI/QBDI/pull/140>`_)
 
 Version 0.7.1
 -------------

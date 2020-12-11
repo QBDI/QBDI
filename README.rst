@@ -141,36 +141,23 @@ Create a new directory at the root of the source tree, and execute the Linux con
 
     mkdir build
     cd build
-    ../cmake/config-linux-X86_64.sh
+    ../cmake/config/config-linux-X86_64.sh
 
 If the build script warns you of missing dependencies for your platform (in the case of a first
 compilation), or if you want to rebuild them, execute the following commands::
 
     make llvm
-    make gtest
 
 This will rebuild the binary distribution of those dependencies for your platform. You can
 then relaunch the configuration script from above and compile::
 
-    ../cmake/config-linux-X86_64.sh
+    ../cmake/config/config-linux-X86_64.sh
     make -j4
 
 x86
 ^^^
 
 The previous step can be follow but using the ``config-linux-X86.sh`` configuration script instead.
-
-Cross-compiling for ARM
-^^^^^^^^^^^^^^^^^^^^^^^
-
-The same step as above can be used but using the ``config-linux-ARM.sh`` configuration script
-instead. This script however needs to be customized for your cross-compilation toolchain:
-
-* The right binaries must be exported in the ``AS``, ``CC``, ``CXX`` and ``STRIP`` environment
-  variables.
-* The ``-DCMAKE_C_FLAGS`` and ``-DCMAKE_CXX_FLAGS`` should contain the correct default flags for
-  your toolchain. At least the ``ARM_ARCH``, ``ARM_C_INCLUDE`` and ``ARM_CXX_INCLUDE`` should be
-  modified to match your toolchain but more might be needed.
 
 macOS
 -----
@@ -187,19 +174,18 @@ Once requirements are met, create a new directory at the root of the source tree
 
     mkdir build
     cd build
-    ../cmake/config-macOS-X86_64.sh
+    ../cmake/config/config-macOS-X86_64.sh
 
 If the build script warns you of missing dependencies for your platform (in the case of a first
 compilation), or if you want to rebuild them, execute the following commands::
 
     make llvm
-    make gtest
 
 
 This will rebuild the binary distribution of those dependencies for your platform. You can
 then relaunch the build script from above and compile::
 
-    ../cmake/config-macOS-X86_64.sh
+    ../cmake/config/config-macOS-X86_64.sh
     make -j4
 
 Windows
@@ -208,36 +194,45 @@ Windows
 Building on Windows requires a pure Windows installation of *Python 3*
 (from the official packages, this is mandatory) in order to build our dependencies
 (we really hope to improve this in the future).
-It also requires an up-to-date CMake.
+It also requires an up-to-date CMake and Ninja.
 
-First, the ``config-win-X86_64.py`` should be edited to use the generator (the ``-G`` flag)
-matching your Visual Studio installation. Then the following command should be run::
+First, the Visual Studio environnment must be setup. This is usually achived with a command like::
+
+    "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x64
+
+
+Then the following command should be run::
 
     mkdir build
     cd build
-    python ../cmake/config-win-X86_64.py
+    python ../cmake/config/config-win-X86_64.py
 
 If the build script warns you of missing dependencies for your platform (in the case of a first
 compilation), or if you want to rebuild them, execute the following commands::
 
-    MSBuild.exe deps\llvm.vcxproj
-    MSBuild.exe deps\gtest.vcxproj
+    ninja llvm
 
 This will rebuild the binary distribution of those dependencies for your platform. You can
 then relaunch the build script from above and compile::
 
-    python ../cmake/config-win-X86_64.py
-    MSBuild.exe /p:Configuration=Release ALL_BUILD.vcxproj
+    python ../cmake/config/config-win-X86_64.py
+    ninja
 
 Android
 -------
 
 Cross-compiling for Android requires the Android NDK and has only been tested under Linux. The
-``config-android-ARM.sh`` configuration script should be customized to match your NDK installation
+``config-android-X86-64.sh`` configuration script should be customized to match your NDK installation
 and target platform:
 
 * ``NDK_PATH`` should point to your Android NDK
 
 From that point on the Linux guide can be followed using this configuration script.
+
+About ARM support
+=================
+
+QBDI have some support for ARM achitecture up to version `0.6.2 <https://github.com/QBDI/QBDI/releases/tag/v0.6.2>`_.
+The ARM architecture hasn't been tested with more recent release and is now depreciated.
 
 .. compil-end
