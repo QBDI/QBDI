@@ -131,7 +131,7 @@ void Engine::init() {
     );
     // Allocate QBDI classes
     assembly = std::make_unique<Assembly>(*MCTX, std::move(MAB), *MCII, *processTarget, *MSTI);
-    blockManager = std::make_unique<ExecBlockManager>(*MCII, *MRI, *assembly, vminstance);
+    blockManager = std::make_unique<ExecBlockManager>(*assembly, vminstance);
     execBroker = std::make_unique<ExecBroker>(*assembly, vminstance);
 
     // Get default Patch rules for this architecture
@@ -352,7 +352,7 @@ std::vector<Patch> Engine::patch(rword start) {
             basicBlockEnd = true;
         }
 
-        basicBlock.push_back(patch);
+        basicBlock.push_back(std::move(patch));
     }
 
     return basicBlock;
@@ -581,10 +581,6 @@ void Engine::deleteAllInstrumentations() {
     vmCallbacks.clear();
     instrRulesCounter = 0;
     vmCallbacksCounter = 0;
-}
-
-const InstAnalysis* Engine::analyzeInstMetadata(const InstMetadata& instMetadata, AnalysisType type) {
-    return blockManager->analyzeInstMetadata(instMetadata, type);
 }
 
 void Engine::clearAllCache() {

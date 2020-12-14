@@ -135,9 +135,9 @@ bool InstrRuleUser::tryInstrument(Patch &patch, const llvm::MCInstrInfo* MCII, c
         return false;
     }
 
-    InstAnalysisPtr ana = analyzeInstMetadataUncached(patch.metadata, analysisType, *MCII, *MRI, *assembly);
+    const InstAnalysis* ana = analyzeInstMetadata(patch.metadata, analysisType, *assembly);
 
-    std::vector<InstrumentDataCBK> vec = cbk(vm, ana.get(), cbk_data);
+    std::vector<InstrumentDataCBK> vec = cbk(vm, ana, cbk_data);
 
     if (vec.size() == 0)
         return false;

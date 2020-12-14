@@ -26,6 +26,7 @@
 #include "Patch/PatchRules_Target.h"
 #include "Patch/RelocatableInst.h"
 #include "Utility/Assembly.h"
+#include "Utility/InstAnalysis_prive.h"
 #include "Utility/LogSys.h"
 #include "Utility/System.h"
 
@@ -293,7 +294,7 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
         }
         else {
             // Complete instruction was written, we add the metadata
-            instMetadata.push_back(seqIt->metadata);
+            instMetadata.push_back(seqIt->metadata.move());
             // Register instruction
             instRegistry.push_back(InstInfo {seqID, static_cast<uint16_t>(rollbackOffset)});
             // Update indexes
@@ -422,6 +423,11 @@ rword ExecBlock::getInstAddress(uint16_t instID) const {
 const llvm::MCInst& ExecBlock::getOriginalMCInst(uint16_t instID) const {
     Require("ExecBlock::getOriginalMCInst", instID < instMetadata.size());
     return instMetadata[instID].inst;
+}
+
+const InstAnalysis* ExecBlock::getInstAnalysis(uint16_t instID, AnalysisType type) const  {
+    Require("ExecBlock::getInstAnalysis", instID < instMetadata.size());
+    return analyzeInstMetadata(instMetadata[instID], type, assembly);
 }
 
 uint16_t ExecBlock::getSeqID(rword address) const {

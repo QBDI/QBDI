@@ -67,6 +67,10 @@ public:
     void printDisasm(const llvm::MCInst &inst, uint64_t address, llvm::raw_ostream &out = llvm::errs()) const;
 
     const char* getRegisterName(unsigned int id) const {return MRI.getName(id); }
+
+    const llvm::MCInstrInfo& getMCII() const {return MCII;}
+    const llvm::MCRegisterInfo& getMRI() const {return MRI;}
+
 };
 
 }

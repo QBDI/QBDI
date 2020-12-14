@@ -28,8 +28,8 @@
 
 namespace QBDI {
 
-ExecBlockManager::ExecBlockManager(llvm::MCInstrInfo& MCII, llvm::MCRegisterInfo& MRI, Assembly& assembly, VMInstanceRef vminstance) :
-   total_translated_size(1), total_translation_size(1), vminstance(vminstance), MCII(MCII), MRI(MRI), assembly(assembly) {
+ExecBlockManager::ExecBlockManager(Assembly& assembly, VMInstanceRef vminstance) :
+   total_translated_size(1), total_translation_size(1), vminstance(vminstance), assembly(assembly) {
 }
 
 ExecBlockManager::~ExecBlockManager() {
@@ -284,10 +284,6 @@ void ExecBlockManager::mergeRegion(size_t i) {
     // ExecBlock
     std::move(regions[i+1].blocks.begin(), regions[i+1].blocks.end(),
               std::back_inserter(regions[i].blocks));
-    // InstAnalysis
-    std::move(regions[i+1].analysisCache.begin(), regions[i+1].analysisCache.end(),
-              std::insert_iterator<std::map<rword, InstAnalysisPtr>>(regions[i].analysisCache,
-                                                                     regions[i].analysisCache.end()));
     // flush
     regions[i].toFlush |= regions[i+1].toFlush;
 
@@ -445,45 +441,6 @@ void ExecBlockManager::updateRegionStat(size_t r, rword translated) {
     }
 }
 
-const InstAnalysis* ExecBlockManager::analyzeInstMetadata(const InstMetadata& instMetadata, AnalysisType type) {
-    InstAnalysis* instAnalysis = nullptr;
-
-    size_t r = searchRegion(instMetadata.address);
-
-    // Attempt to locate it in the sequenceCache
-    if(r < regions.size() && regions[r].covered.contains(instMetadata.address) &&
-       regions[r].analysisCache.count(instMetadata.address) == 1) {
-        LogDebug("ExecBlockManager::analyzeInstMetadata", "Analysis of instruction 0x%" PRIRWORD " found in sequenceCache of region %zu", instMetadata.address, r);
-        instAnalysis = regions[r].analysisCache[instMetadata.address].get();
-    }
-    if (instAnalysis != nullptr &&
-        ((instAnalysis->analysisType & type) != type)) {
-        LogDebug("ExecBlockManager::analyzeInstMetadata", "Analysis of instruction 0x%" PRIRWORD " need to be rebuilt", instMetadata.address);
-        // Free current cache because we want more data
-        instAnalysis = nullptr;
-    }
-    // We have a usable cached analysis
-    if (instAnalysis != nullptr) {
-        return instAnalysis;
-    }
-    // Cache miss
-    InstAnalysisPtr instAnalysisPtr = analyzeInstMetadataUncached(instMetadata, type, MCII, MRI, assembly);
-    instAnalysis = instAnalysisPtr.get();
-
-    // If its part of a region, put in in the region cache
-    if(r < regions.size() && regions[r].covered.contains(instMetadata.address)) {
-        LogDebug("ExecBlockManager::analyzeInstMetadata", "Analysis of instruction 0x%" PRIRWORD " cached in region %zu", instMetadata.address, r);
-        regions[r].analysisCache[instMetadata.address] = std::move(instAnalysisPtr);
-    }
-    // Put it in the global cache. Should never happen under normal usage
-    else {
-        LogDebug("ExecBlockManager::analyzeInstMetadata", "Analysis of instruction 0x%" PRIRWORD " cached in global cache", instMetadata.address);
-        analysisCache[instMetadata.address] = std::move(instAnalysisPtr);
-    }
-    return instAnalysis;
-}
-
-
 void ExecBlockManager::clearCache(RangeSet<rword> rangeSet) {
     const std::vector<Range<rword>>& ranges = rangeSet.getRanges();
     for(Range<rword> r: ranges) {
@@ -505,7 +462,6 @@ void ExecBlockManager::flushCommit() {
                              r.covered.start(), r.covered.end());
                 return r.toFlush;
             }), regions.end());
-        analysisCache.clear();
         needFlush = false;
     }
 }
@@ -525,7 +481,6 @@ void ExecBlockManager::clearCache(bool flushNow) {
     LogDebug("ExecBlockManager::clearCache", "Erasing all cache");
     if (flushNow) {
         regions.clear();
-        analysisCache.clear();
         total_translated_size = 1;
         total_translation_size = 1;
         needFlush = false;

@@ -254,6 +254,18 @@ public:
      */
     const llvm::MCInst& getOriginalMCInst(uint16_t instID) const;
 
+    /*! Obtain the analysis of an instruction metadata. Analysis results are cached in the InstAnalysis.
+     *  The validity of the returned pointer is only guaranteed until the end of the callback, else
+     *  a deepcopy of the structure is required.
+     *
+     * @param[in] instMetadata Metadata to analyze.
+     * @param[in] type         Properties to retrieve during analysis.
+     *
+     * @return A InstAnalysis structure containing the analysis result.
+     */
+    const InstAnalysis* getInstAnalysis(uint16_t instID, AnalysisType type) const;
+
+
     /*! Obtain the next sequence ID.
      *
      * @return The next sequence ID.

@@ -20,6 +20,7 @@
 
 #include "llvm/MC/MCInst.h"
 #include "State.h"
+#include "Utility/InstAnalysis_prive.h"
 
 namespace QBDI {
 
@@ -31,10 +32,16 @@ public:
     uint32_t patchSize;
     bool modifyPC;
     bool merge;
+    mutable InstAnalysisPtr analysis;
 
     inline rword endAddress() const {
         return address + instSize;
     }
+
+    inline InstMetadata move() const {
+        return {inst, address, instSize, patchSize, modifyPC, merge, InstAnalysisPtr {analysis.release()}};
+    }
+
 };
 
 }

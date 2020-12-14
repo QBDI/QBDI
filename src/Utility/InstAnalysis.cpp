@@ -285,19 +285,32 @@ void InstAnalysisDestructor::operator()(InstAnalysis* ptr) const {
     delete ptr;
 }
 
-InstAnalysisPtr analyzeInstMetadataUncached(const InstMetadata& instMetadata, AnalysisType type,
-                                            const llvm::MCInstrInfo& MCII, const llvm::MCRegisterInfo& MRI,
-                                            const Assembly& assembly) {
+const InstAnalysis* analyzeInstMetadata(const InstMetadata& instMetadata, AnalysisType type,
+                                        const Assembly& assembly) {
+    InstAnalysis* instAnalysis = instMetadata.analysis.get();
+    if (instAnalysis == nullptr) {
+        instAnalysis = new InstAnalysis;
+        // set all values to NULL/0/false
+        memset(instAnalysis, 0, sizeof(InstAnalysis));
+        instMetadata.analysis.reset(instAnalysis);
+    }
+
+    uint32_t oldType = instAnalysis->analysisType;
+    uint32_t newType = oldType | type;
+    uint32_t missingAnalysis = oldType ^ newType;
+
+    instAnalysis->analysisType      = newType;
+
+    if (missingAnalysis == 0)
+        return instAnalysis;
+
+    const llvm::MCInstrInfo& MCII = assembly.getMCII();
+    const llvm::MCRegisterInfo& MRI = assembly.getMRI();
+
     const llvm::MCInst &inst = instMetadata.inst;
     const llvm::MCInstrDesc &desc = MCII.get(inst.getOpcode());
 
-    InstAnalysis* instAnalysis = new InstAnalysis;
-    // set all values to NULL/0/false
-    memset(instAnalysis, 0, sizeof(InstAnalysis));
-
-    instAnalysis->analysisType      = type;
-
-    if (type & ANALYSIS_DISASSEMBLY) {
+    if (missingAnalysis & ANALYSIS_DISASSEMBLY) {
         int len = 0;
         std::string buffer;
         llvm::raw_string_ostream bufferOs(buffer);
@@ -309,7 +322,7 @@ InstAnalysisPtr analyzeInstMetadataUncached(const InstMetadata& instMetadata, An
         buffer.clear();
     }
 
-    if (type & ANALYSIS_INSTRUCTION) {
+    if (missingAnalysis & ANALYSIS_INSTRUCTION) {
         instAnalysis->address           = instMetadata.address;
         instAnalysis->instSize          = instMetadata.instSize;
         instAnalysis->affectControlFlow = instMetadata.modifyPC;
@@ -328,12 +341,12 @@ InstAnalysisPtr analyzeInstMetadataUncached(const InstMetadata& instMetadata, An
         instAnalysis->mayStore_LLVM     = desc.mayStore();
     }
 
-    if (type & ANALYSIS_OPERANDS) {
+    if (missingAnalysis & ANALYSIS_OPERANDS) {
         // analyse operands (immediates / registers)
         analyseOperands(instAnalysis, inst, desc, MRI);
     }
 
-    if (type & ANALYSIS_SYMBOL) {
+    if (missingAnalysis & ANALYSIS_SYMBOL) {
         // find nearest symbol (if any)
 #ifndef QBDI_PLATFORM_WINDOWS
         Dl_info info;
@@ -354,7 +367,7 @@ InstAnalysisPtr analyzeInstMetadataUncached(const InstMetadata& instMetadata, An
         }
 #endif
     }
-    return InstAnalysisPtr(instAnalysis);
+    return instAnalysis;
 }
 
 }

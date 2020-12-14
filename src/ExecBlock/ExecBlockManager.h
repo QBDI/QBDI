@@ -23,7 +23,6 @@
 #include <vector>
 
 #include "Callback.h"
-#include "Utility/InstAnalysis_prive.h"
 #include "Range.h"
 #include "State.h"
 
@@ -61,7 +60,6 @@ struct ExecRegion {
     std::vector<std::unique_ptr<ExecBlock>>  blocks;
     std::map<rword, SeqLoc>                  sequenceCache;
     std::map<rword, InstLoc>                 instCache;
-    std::map<rword, InstAnalysisPtr>         analysisCache;
     bool                                     toFlush = false;
 
     ExecRegion(ExecRegion&&) = default;
@@ -70,17 +68,12 @@ struct ExecRegion {
 
 class ExecBlockManager {
 private:
-    using InstAnalysisPtr = std::unique_ptr<InstAnalysis, InstAnalysisDestructor>;
-
     std::vector<ExecRegion>            regions;
-    std::map<rword, InstAnalysisPtr>   analysisCache;
     rword                              total_translated_size;
     rword                              total_translation_size;
     bool                               needFlush;
 
     VMInstanceRef              vminstance;
-    llvm::MCInstrInfo&         MCII;
-    llvm::MCRegisterInfo&      MRI;
     Assembly&                  assembly;
 
     size_t searchRegion(rword start) const;
@@ -95,7 +88,7 @@ private:
 
 public:
 
-    ExecBlockManager(llvm::MCInstrInfo& MCII, llvm::MCRegisterInfo& MRI, Assembly& assembly, VMInstanceRef vminstance = nullptr);
+    ExecBlockManager(Assembly& assembly, VMInstanceRef vminstance = nullptr);
 
     ~ExecBlockManager();
 
@@ -110,8 +103,6 @@ public:
     const SeqLoc* getSeqLoc(rword address) const;
 
     void writeBasicBlock(const std::vector<Patch>& basicBlock);
-
-    const InstAnalysis* analyzeInstMetadata(const InstMetadata& instMetadata, AnalysisType type);
 
     bool isFlushPending() { return needFlush; }
 
