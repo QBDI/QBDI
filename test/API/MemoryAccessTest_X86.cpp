@@ -1239,3 +1239,121 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-enter-leave") {
     for (auto& e: expectedLeave.accesses)
         CHECK(e.see);
 }
+
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-fld-fstp") {
+
+    const char source[] = "flds	(%eax)\n"
+                          "fldl (%ebx)\n"
+                          "movl	$0x0, (%eax)\n"
+                          "movl	$0x0, (%ebx)\n"
+                          "fstpl (%ebx)\n"
+                          "fstps (%eax)\n";
+
+    const uint32_t v1 = 0x416ac41e;
+    const uint64_t v2 = 0x79819abe76;
+    uint32_t buff1 = v1;
+    uint64_t buff2 = v2;
+
+    ExpectedMemoryAccesses expectedLoad32 = {{
+        { (QBDI::rword) &buff1, v1, 4, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
+    }};
+    ExpectedMemoryAccesses expectedLoad64 = {{
+        { (QBDI::rword) &buff2, 0, 8, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+    }};
+    ExpectedMemoryAccesses expectedStore64Pre = {{
+        { (QBDI::rword) &buff2, 0, 8, QBDI::MEMORY_WRITE, QBDI::MEMORY_UNKNOWN_VALUE},
+    }};
+    ExpectedMemoryAccesses expectedStore64Post = {{
+        { (QBDI::rword) &buff2, 0, 8, QBDI::MEMORY_WRITE, QBDI::MEMORY_UNKNOWN_VALUE},
+    }};
+    ExpectedMemoryAccesses expectedStore32Pre = {{
+        { (QBDI::rword) &buff1, 0, 4, QBDI::MEMORY_WRITE, QBDI::MEMORY_UNKNOWN_VALUE},
+    }};
+    ExpectedMemoryAccesses expectedStore32Post = {{
+        { (QBDI::rword) &buff1, v1, 4, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
+    }};
+
+    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm->addMnemonicCB("LD_F32m", QBDI::PREINST, checkAccess, &expectedLoad32);
+    vm->addMnemonicCB("LD_F64m", QBDI::PREINST, checkAccess, &expectedLoad64);
+    vm->addMnemonicCB("ST_FP64m", QBDI::PREINST, checkAccess, &expectedStore64Pre);
+    vm->addMnemonicCB("ST_FP64m", QBDI::POSTINST, checkAccess, &expectedStore64Post);
+    vm->addMnemonicCB("ST_FP32m", QBDI::PREINST, checkAccess, &expectedStore32Pre);
+    vm->addMnemonicCB("ST_FP32m", QBDI::POSTINST, checkAccess, &expectedStore32Post);
+
+    QBDI::GPRState* state = vm->getGPRState();
+    state->eax = (QBDI::rword) &buff1;
+    state->ebx = (QBDI::rword) &buff2;
+    vm->setGPRState(state);
+
+    QBDI::rword retval;
+    bool ran = runOnASM(&retval, source);
+
+    CHECK(ran);
+    CHECK(buff1 == v1);
+    CHECK(buff2 == v2);
+    for (auto& e: expectedLoad32.accesses)
+        CHECK(e.see);
+    for (auto& e: expectedLoad64.accesses)
+        CHECK(e.see);
+    for (auto& e: expectedStore64Pre.accesses)
+        CHECK(e.see);
+    for (auto& e: expectedStore64Post.accesses)
+        CHECK(e.see);
+    for (auto& e: expectedStore32Pre.accesses)
+        CHECK(e.see);
+    for (auto& e: expectedStore32Post.accesses)
+        CHECK(e.see);
+}
+
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movapd") {
+
+    const char source[] = "movapd	(%eax), %xmm1\n"
+                          "movapd %xmm2, (%ebx)\n";
+
+    const uint8_t v1[16] = {0x41, 0x6a, 0xc4, 0x1e, 0x14, 0xa9, 0x5d, 0x27, 0x67, 0x4f, 0x91, 0x6e, 0x4b, 0x57, 0x4d, 0xc9};
+    const uint8_t v2[16] = {0xa9, 0x5d, 0x27, 0x6a, 0xc4, 0x91, 0x6e, 0x4b, 0x57, 0x4d, 0x41, 0x6a, 0x0e, 0x80, 0xeb, 0xad};
+    QBDI_ALIGNED(16) uint8_t buff1[16];
+    QBDI_ALIGNED(16) uint8_t buff2[16] = {0};
+
+    memcpy(buff1, v1, sizeof(v1));
+
+    ExpectedMemoryAccesses expectedLoad = {{
+        { (QBDI::rword) &buff1, 0, 16, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+    }};
+    ExpectedMemoryAccesses expectedStorePre = {{
+        { (QBDI::rword) &buff2, 0, 16, QBDI::MEMORY_WRITE, QBDI::MEMORY_UNKNOWN_VALUE},
+    }};
+    ExpectedMemoryAccesses expectedStorePost = {{
+        { (QBDI::rword) &buff2, 0, 16, QBDI::MEMORY_WRITE, QBDI::MEMORY_UNKNOWN_VALUE},
+    }};
+
+    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm->addMnemonicCB("MOVAPDrm", QBDI::PREINST, checkAccess, &expectedLoad);
+    vm->addMnemonicCB("MOVAPDmr", QBDI::PREINST, checkAccess, &expectedStorePre);
+    vm->addMnemonicCB("MOVAPDmr", QBDI::POSTINST, checkAccess, &expectedStorePost);
+
+    QBDI::GPRState* state = vm->getGPRState();
+    state->eax = (QBDI::rword) &buff1;
+    state->ebx = (QBDI::rword) &buff2;
+    vm->setGPRState(state);
+
+    QBDI::FPRState* fstate = vm->getFPRState();
+    memset(fstate->xmm1, '\x00', sizeof(v1));
+    memcpy(fstate->xmm2, v2, sizeof(v2));
+    vm->setFPRState(fstate);
+
+    QBDI::rword retval;
+    bool ran = runOnASM(&retval, source);
+
+    CHECK(ran);
+    CHECK(memcmp(fstate->xmm2, buff2, sizeof(v2)) == 0);
+    CHECK(memcmp(fstate->xmm1, v1, sizeof(v1)) == 0);
+    for (auto& e: expectedLoad.accesses)
+        CHECK(e.see);
+    for (auto& e: expectedStorePre.accesses)
+        CHECK(e.see);
+    for (auto& e: expectedStorePost.accesses)
+        CHECK(e.see);
+}
+

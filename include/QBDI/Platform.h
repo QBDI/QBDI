@@ -23,12 +23,14 @@
 #ifdef QBDI_PLATFORM_WINDOWS
 # define QBDI_NOINLINE __declspec(noinline)
 # define QBDI_EXPORT __declspec(dllexport)
+# define QBDI_ALIGNED(n) __declspec(align(n))
 # define QBDI_NOSTACKPROTECTOR
 # define _QBDI_FORCE_USE
 #else
 # define QBDI_NOINLINE __attribute__((noinline))
 # define QBDI_EXPORT __attribute__ ((visibility ("default")))
 # define QBDI_NOSTACKPROTECTOR __attribute__((no_stack_protector))
+# define QBDI_ALIGNED(n) __attribute__((aligned(n)))
 # define _QBDI_FORCE_USE __attribute__((__used__))
 #endif
 
