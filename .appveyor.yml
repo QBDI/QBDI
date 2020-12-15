@@ -17,6 +17,7 @@ environment:
   PYTHON36LIB: "libs\\python36.lib"
   PYTHON37LIB: "libs\\python37.lib"
   PYTHON38LIB: "libs\\python38.lib"
+  PYTHON39LIB: "libs\\python39.lib"
   matrix:
     - platform: X64
       qbdi_arch: X86_64
@@ -24,12 +25,14 @@ environment:
       PYTHON36: "C:\\Python36-x64"
       PYTHON37: "C:\\Python37-x64"
       PYTHON38: "C:\\Python38-x64"
+      PYTHON39: "C:\\Python39-x64"
     - platform: X86
       qbdi_arch: X86
       qbdi_plateform: windows
       PYTHON36: "C:\\Python36"
       PYTHON37: "C:\\Python37"
       PYTHON38: "C:\\Python38"
+      PYTHON39: "C:\\Python39"
 
 for:
 -
@@ -89,9 +92,16 @@ after_build:
   - "SET PATH=%PYTHON38%;%PYTHON38%\\Scripts;%OLDPATH%"
   - "SET PYTHON_LIBRARIES=%PYTHON38%\\%PYTHON38LIB%"
   - "SET PYTHON_INCLUDE_DIRS=%PYTHON38%\\include"
-  - ps: Invoke-Expression "$env:PYTHON38\python.exe -m pip install --upgrade pip"
-  - ps: Invoke-Expression "$env:PYTHON38\python.exe -m pip install setuptools wheel"
-  - ps: Invoke-Expression "$env:PYTHON38\python.exe setup.py bdist_wheel"
+  - ps: if ($env:BUILD_ALL_WHEEL -eq "True") { Invoke-Expression "$env:PYTHON38\python.exe -m pip install --upgrade pip" }
+  - ps: if ($env:BUILD_ALL_WHEEL -eq "True") { Invoke-Expression "$env:PYTHON38\python.exe -m pip install setuptools wheel" }
+  - ps: if ($env:BUILD_ALL_WHEEL -eq "True") { Invoke-Expression "$env:PYTHON38\python.exe setup.py bdist_wheel" }
+  # build 3.9
+  - "SET PATH=%PYTHON39%;%PYTHON39%\\Scripts;%OLDPATH%"
+  - "SET PYTHON_LIBRARIES=%PYTHON39%\\%PYTHON39LIB%"
+  - "SET PYTHON_INCLUDE_DIRS=%PYTHON39%\\include"
+  - ps: Invoke-Expression "$env:PYTHON39\python.exe -m pip install --upgrade pip"
+  - ps: Invoke-Expression "$env:PYTHON39\python.exe -m pip install setuptools wheel"
+  - ps: Invoke-Expression "$env:PYTHON39\python.exe setup.py bdist_wheel"
 
 test_script:
   - cmd: c:\projects\qbdi\build\test\QBDItest
