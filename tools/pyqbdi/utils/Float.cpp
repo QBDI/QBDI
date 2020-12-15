@@ -21,7 +21,7 @@
 namespace QBDI {
 namespace pyQBDI {
 
-void init_utils_Float(py::module& m) {
+void init_utils_Float(py::module_& m) {
 
     m.def("encodeFloat",
             [](float val) {

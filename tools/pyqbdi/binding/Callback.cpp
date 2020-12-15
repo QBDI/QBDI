@@ -21,7 +21,7 @@
 namespace QBDI {
 namespace pyQBDI {
 
-void init_binding_Callback(py::module& m) {
+void init_binding_Callback(py::module_& m) {
 
     py::enum_<VMAction>(m, "VMAction", "The callback results.")
         .value("CONTINUE", VMAction::CONTINUE, "The execution of the basic block continues.")

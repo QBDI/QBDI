@@ -21,7 +21,7 @@
 namespace QBDI {
 namespace pyQBDI {
 
-void init_utils_Memory(py::module& m) {
+void init_utils_Memory(py::module_& m) {
 
     m.def("readMemory",
             [](QBDI::rword address, QBDI::rword size) {
