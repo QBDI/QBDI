@@ -96,15 +96,15 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-push_pop_reg") {
         { (QBDI::rword) &tmpStack[8], v1, 4, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("PUSH32r", QBDI::PREINST, checkAccess, &expectedPushPre);
-    vm->addMnemonicCB("PUSH32r", QBDI::POSTINST, checkAccess, &expectedPushPost);
-    vm->addMnemonicCB("POP32r", QBDI::PREINST, checkAccess, &expectedPop);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("PUSH32r", QBDI::PREINST, checkAccess, &expectedPushPre);
+    vm.addMnemonicCB("PUSH32r", QBDI::POSTINST, checkAccess, &expectedPushPost);
+    vm.addMnemonicCB("POP32r", QBDI::PREINST, checkAccess, &expectedPop);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->eax = v1;
     state->ebx = (QBDI::rword) &tmpStack[9];
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -133,13 +133,13 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-pusha_popa") {
         { (QBDI::rword) &tmpStack[1], 0, 4 * 8, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("PUSHA32", QBDI::POSTINST, checkAccess, &expectedPusha);
-    vm->addMnemonicCB("POPA32", QBDI::PREINST, checkAccess, &expectedPopa);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("PUSHA32", QBDI::POSTINST, checkAccess, &expectedPusha);
+    vm.addMnemonicCB("POPA32", QBDI::PREINST, checkAccess, &expectedPopa);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->ebx = (QBDI::rword) &tmpStack[9];
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -178,16 +178,16 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-push_pop_mem") {
         { (QBDI::rword) &tmpStack[8], v1, 4, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("PUSH32rmm", QBDI::PREINST, checkAccess, &expectedPushPre);
-    vm->addMnemonicCB("PUSH32rmm", QBDI::POSTINST, checkAccess, &expectedPushPost);
-    vm->addMnemonicCB("POP32rmm", QBDI::PREINST, checkAccess, &expectedPopPre);
-    vm->addMnemonicCB("POP32rmm", QBDI::POSTINST, checkAccess, &expectedPopPost);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("PUSH32rmm", QBDI::PREINST, checkAccess, &expectedPushPre);
+    vm.addMnemonicCB("PUSH32rmm", QBDI::POSTINST, checkAccess, &expectedPushPost);
+    vm.addMnemonicCB("POP32rmm", QBDI::PREINST, checkAccess, &expectedPopPre);
+    vm.addMnemonicCB("POP32rmm", QBDI::POSTINST, checkAccess, &expectedPopPost);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->eax = (QBDI::rword) &v1;
     state->ebx = (QBDI::rword) &tmpStack[9];
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -224,14 +224,14 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-call_ret") {
         { (QBDI::rword) &tmpStack[8], 0, 4, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("CALL*", QBDI::PREINST, checkAccess, &expectedCallPre);
-    vm->addMnemonicCB("CALL*", QBDI::POSTINST, checkAccess, &expectedCallPost);
-    vm->addMnemonicCB("RET*", QBDI::PREINST, checkAccess, &expectedRet);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("CALL*", QBDI::PREINST, checkAccess, &expectedCallPre);
+    vm.addMnemonicCB("CALL*", QBDI::POSTINST, checkAccess, &expectedCallPost);
+    vm.addMnemonicCB("RET*", QBDI::PREINST, checkAccess, &expectedRet);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->ebx = (QBDI::rword) &tmpStack[9];
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -259,13 +259,13 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-cmpsb") {
         { (QBDI::rword) &v2, v2, 1, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ);
-    vm->addMnemonicCB("CMPSB", QBDI::PREINST, checkAccess, &expected);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ);
+    vm.addMnemonicCB("CMPSB", QBDI::PREINST, checkAccess, &expected);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->esi = (QBDI::rword) &v1;
     state->edi = (QBDI::rword) &v2;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -285,13 +285,13 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-cmpsw") {
         { (QBDI::rword) &v2, v2, 2, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ);
-    vm->addMnemonicCB("CMPSW", QBDI::PREINST, checkAccess, &expected);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ);
+    vm.addMnemonicCB("CMPSW", QBDI::PREINST, checkAccess, &expected);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->esi = (QBDI::rword) &v1;
     state->edi = (QBDI::rword) &v2;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -311,13 +311,13 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-cmpsd") {
         { (QBDI::rword) &v2, v2, 4, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ);
-    vm->addMnemonicCB("CMPSL", QBDI::PREINST, checkAccess, &expected);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ);
+    vm.addMnemonicCB("CMPSL", QBDI::PREINST, checkAccess, &expected);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->esi = (QBDI::rword) &v1;
     state->edi = (QBDI::rword) &v2;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -343,15 +343,15 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-rep_cmpsb") {
         { (QBDI::rword) &v2, 0, 10, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ);
-    vm->addMnemonicCB("CMPSB", QBDI::PREINST, checkAccess, &expectedPre);
-    vm->addMnemonicCB("CMPSB", QBDI::POSTINST, checkAccess, &expectedPost);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ);
+    vm.addMnemonicCB("CMPSB", QBDI::PREINST, checkAccess, &expectedPre);
+    vm.addMnemonicCB("CMPSB", QBDI::POSTINST, checkAccess, &expectedPost);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->esi = (QBDI::rword) &v1;
     state->edi = (QBDI::rword) &v2;
     state->ecx = sizeof(v1);
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -381,15 +381,15 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-repne_cmpsb") {
         { (QBDI::rword) &v2, 0, 10, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ);
-    vm->addMnemonicCB("CMPSB", QBDI::PREINST, checkAccess, &expectedPre);
-    vm->addMnemonicCB("CMPSB", QBDI::POSTINST, checkAccess, &expectedPost);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ);
+    vm.addMnemonicCB("CMPSB", QBDI::PREINST, checkAccess, &expectedPre);
+    vm.addMnemonicCB("CMPSB", QBDI::POSTINST, checkAccess, &expectedPost);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->esi = (QBDI::rword) &v1;
     state->edi = (QBDI::rword) &v2;
     state->ecx = sizeof(v1);
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -420,15 +420,15 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-rep_cmpsb2") {
         { (QBDI::rword) &v2, 0, 10, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ);
-    vm->addMnemonicCB("CMPSB", QBDI::PREINST, checkAccess, &expectedPre);
-    vm->addMnemonicCB("CMPSB", QBDI::POSTINST, checkAccess, &expectedPost);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ);
+    vm.addMnemonicCB("CMPSB", QBDI::PREINST, checkAccess, &expectedPre);
+    vm.addMnemonicCB("CMPSB", QBDI::POSTINST, checkAccess, &expectedPost);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->esi = (QBDI::rword) &v1[9];
     state->edi = (QBDI::rword) &v2[9];
     state->ecx = sizeof(v1);
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -458,15 +458,15 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-rep_cmpsw") {
         { (QBDI::rword) &v2, 0, 10, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ);
-    vm->addMnemonicCB("CMPSW", QBDI::PREINST, checkAccess, &expectedPre);
-    vm->addMnemonicCB("CMPSW", QBDI::POSTINST, checkAccess, &expectedPost);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ);
+    vm.addMnemonicCB("CMPSW", QBDI::PREINST, checkAccess, &expectedPre);
+    vm.addMnemonicCB("CMPSW", QBDI::POSTINST, checkAccess, &expectedPost);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->esi = (QBDI::rword) &v1;
     state->edi = (QBDI::rword) &v2;
     state->ecx = sizeof(v1) / sizeof(uint16_t);
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -497,15 +497,15 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-rep_cmpsw2") {
         { (QBDI::rword) &v2, 0, 10, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ);
-    vm->addMnemonicCB("CMPSW", QBDI::PREINST, checkAccess, &expectedPre);
-    vm->addMnemonicCB("CMPSW", QBDI::POSTINST, checkAccess, &expectedPost);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ);
+    vm.addMnemonicCB("CMPSW", QBDI::PREINST, checkAccess, &expectedPre);
+    vm.addMnemonicCB("CMPSW", QBDI::POSTINST, checkAccess, &expectedPost);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->esi = (QBDI::rword) &v1[4];
     state->edi = (QBDI::rword) &v2[4];
     state->ecx = sizeof(v1) / sizeof(uint16_t);
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -534,14 +534,14 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movsb") {
         { (QBDI::rword) &v1, v1, 1, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("MOVSB", QBDI::PREINST, checkAccess, &expectedPre);
-    vm->addMnemonicCB("MOVSB", QBDI::POSTINST, checkAccess, &expectedPost);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("MOVSB", QBDI::PREINST, checkAccess, &expectedPre);
+    vm.addMnemonicCB("MOVSB", QBDI::POSTINST, checkAccess, &expectedPost);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->esi = (QBDI::rword) &v1;
     state->edi = (QBDI::rword) &v2;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -566,13 +566,13 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movsw") {
         { (QBDI::rword) &v1, v1, 2, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("MOVSW", QBDI::POSTINST, checkAccess, &expected);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("MOVSW", QBDI::POSTINST, checkAccess, &expected);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->esi = (QBDI::rword) &v1;
     state->edi = (QBDI::rword) &v2;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -594,13 +594,13 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movsl") {
         { (QBDI::rword) &v1, v1, 4, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("MOVSL", QBDI::POSTINST, checkAccess, &expected);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("MOVSL", QBDI::POSTINST, checkAccess, &expected);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->esi = (QBDI::rword) &v1;
     state->edi = (QBDI::rword) &v2;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -623,13 +623,13 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movsb2") {
         { (QBDI::rword) &v1, v1, 1, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("MOVSB", QBDI::POSTINST, checkAccess, &expected);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("MOVSB", QBDI::POSTINST, checkAccess, &expected);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->esi = (QBDI::rword) &v1;
     state->edi = (QBDI::rword) &v2;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -652,13 +652,13 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movsw2") {
         { (QBDI::rword) &v1, v1, 2, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("MOVSW", QBDI::POSTINST, checkAccess, &expected);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("MOVSW", QBDI::POSTINST, checkAccess, &expected);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->esi = (QBDI::rword) &v1;
     state->edi = (QBDI::rword) &v2;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -681,13 +681,13 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movsl2") {
         { (QBDI::rword) &v1, v1, 4, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("MOVSL", QBDI::POSTINST, checkAccess, &expected);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("MOVSL", QBDI::POSTINST, checkAccess, &expected);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->esi = (QBDI::rword) &v1;
     state->edi = (QBDI::rword) &v2;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -714,15 +714,15 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-rep_movsl") {
         { (QBDI::rword) &v1, 0, sizeof(v1), QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("MOVSL", QBDI::PREINST, checkAccess, &expectedPre);
-    vm->addMnemonicCB("MOVSL", QBDI::POSTINST, checkAccess, &expectedPost);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("MOVSL", QBDI::PREINST, checkAccess, &expectedPre);
+    vm.addMnemonicCB("MOVSL", QBDI::POSTINST, checkAccess, &expectedPost);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->esi = (QBDI::rword) &v1;
     state->edi = (QBDI::rword) &v2;
     state->ecx = sizeof(v1) / sizeof(uint32_t);
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -753,15 +753,15 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-rep_movsl2") {
         { (QBDI::rword) &v1, 0, sizeof(v1), QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("MOVSL", QBDI::PREINST, checkAccess, &expectedPre);
-    vm->addMnemonicCB("MOVSL", QBDI::POSTINST, checkAccess, &expectedPost);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("MOVSL", QBDI::PREINST, checkAccess, &expectedPre);
+    vm.addMnemonicCB("MOVSL", QBDI::POSTINST, checkAccess, &expectedPost);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->esi = (QBDI::rword) &v1[4];
     state->edi = (QBDI::rword) &v2[4];
     state->ecx = sizeof(v1) / sizeof(uint32_t);
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -785,13 +785,13 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-scasb") {
         { (QBDI::rword) &v2, v2, 1, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("SCASB", QBDI::POSTINST, checkAccess, &expected);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("SCASB", QBDI::POSTINST, checkAccess, &expected);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->esi = (QBDI::rword) v1;
     state->edi = (QBDI::rword) &v2;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -811,13 +811,13 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-scasw") {
         { (QBDI::rword) &v2, v2, 2, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("SCASW", QBDI::POSTINST, checkAccess, &expected);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("SCASW", QBDI::POSTINST, checkAccess, &expected);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->esi = (QBDI::rword) v1;
     state->edi = (QBDI::rword) &v2;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -837,13 +837,13 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-scasl") {
         { (QBDI::rword) &v2, v2, 4, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("SCASL", QBDI::POSTINST, checkAccess, &expected);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("SCASL", QBDI::POSTINST, checkAccess, &expected);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->esi = (QBDI::rword) v1;
     state->edi = (QBDI::rword) &v2;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -863,12 +863,12 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-lodsb") {
         { (QBDI::rword) &v1, v1, 1, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("LODSB", QBDI::POSTINST, checkAccess, &expected);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("LODSB", QBDI::POSTINST, checkAccess, &expected);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->esi = (QBDI::rword) &v1;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -889,12 +889,12 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-lodsw") {
         { (QBDI::rword) &v1, v1, 2, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("LODSW", QBDI::POSTINST, checkAccess, &expected);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("LODSW", QBDI::POSTINST, checkAccess, &expected);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->esi = (QBDI::rword) &v1;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -915,12 +915,12 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-lodsl") {
         { (QBDI::rword) &v1, v1, 4, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("LODSL", QBDI::POSTINST, checkAccess, &expected);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("LODSL", QBDI::POSTINST, checkAccess, &expected);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->esi = (QBDI::rword) &v1;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -941,13 +941,13 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-stosb") {
         { (QBDI::rword) &v2, v1, 1, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("STOSB", QBDI::POSTINST, checkAccess, &expected);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("STOSB", QBDI::POSTINST, checkAccess, &expected);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->eax = v1;
     state->edi = (QBDI::rword) &v2;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -968,13 +968,13 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-stosw") {
         { (QBDI::rword) &v2, v1, 2, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("STOSW", QBDI::POSTINST, checkAccess, &expected);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("STOSW", QBDI::POSTINST, checkAccess, &expected);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->eax = v1;
     state->edi = (QBDI::rword) &v2;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -995,13 +995,13 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-stosl") {
         { (QBDI::rword) &v2, v1, 4, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("STOSL", QBDI::POSTINST, checkAccess, &expected);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("STOSL", QBDI::POSTINST, checkAccess, &expected);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->eax = v1;
     state->edi = (QBDI::rword) &v2;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -1023,13 +1023,13 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-stosb2") {
         { (QBDI::rword) &v2, v1, 1, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("STOSB", QBDI::POSTINST, checkAccess, &expected);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("STOSB", QBDI::POSTINST, checkAccess, &expected);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->eax = v1;
     state->edi = (QBDI::rword) &v2;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -1051,13 +1051,13 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-stosw2") {
         { (QBDI::rword) &v2, v1, 2, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("STOSW", QBDI::POSTINST, checkAccess, &expected);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("STOSW", QBDI::POSTINST, checkAccess, &expected);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->eax = v1;
     state->edi = (QBDI::rword) &v2;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -1079,13 +1079,13 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-stosl2") {
         { (QBDI::rword) &v2, v1, 4, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("STOSL", QBDI::POSTINST, checkAccess, &expected);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("STOSL", QBDI::POSTINST, checkAccess, &expected);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->eax = v1;
     state->edi = (QBDI::rword) &v2;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -1106,13 +1106,13 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movzx") {
         { (QBDI::rword) &v[5], v[5], 1, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("MOVZX32rm8", QBDI::POSTINST, checkAccess, &expected);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("MOVZX32rm8", QBDI::POSTINST, checkAccess, &expected);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->eax = 0xfab792eb;
     state->ebx = (QBDI::rword) &v;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -1140,14 +1140,14 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-addmr") {
         { (QBDI::rword) &buff, v1, 4, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("ADD32mr", QBDI::PREINST, checkAccess, &expectedPre);
-    vm->addMnemonicCB("ADD32mr", QBDI::POSTINST, checkAccess, &expectedPost);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("ADD32mr", QBDI::PREINST, checkAccess, &expectedPre);
+    vm.addMnemonicCB("ADD32mr", QBDI::POSTINST, checkAccess, &expectedPost);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->eax = v2;
     state->ebx = (QBDI::rword) &buff;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -1176,13 +1176,13 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-xchgrm") {
         { (QBDI::rword) &buff, v1, 4, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("XCHG32rm", QBDI::PREINST, checkAccess, &expectedPre);
-    vm->addMnemonicCB("XCHG32rm", QBDI::POSTINST, checkAccess, &expectedPost);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("XCHG32rm", QBDI::PREINST, checkAccess, &expectedPre);
+    vm.addMnemonicCB("XCHG32rm", QBDI::POSTINST, checkAccess, &expectedPost);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->eax = (QBDI::rword) &buff;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -1216,15 +1216,15 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-enter-leave") {
         { (QBDI::rword) &tmpStack[8], v, 4, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("ENTER", QBDI::PREINST, checkAccess, &expectedEnterPre);
-    vm->addMnemonicCB("ENTER", QBDI::POSTINST, checkAccess, &expectedEnterPost);
-    vm->addMnemonicCB("LEAVE*", QBDI::POSTINST, checkAccess, &expectedLeave);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("ENTER", QBDI::PREINST, checkAccess, &expectedEnterPre);
+    vm.addMnemonicCB("ENTER", QBDI::POSTINST, checkAccess, &expectedEnterPost);
+    vm.addMnemonicCB("LEAVE*", QBDI::POSTINST, checkAccess, &expectedLeave);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->ebx = (QBDI::rword) &tmpStack[9];
     state->ebp = v;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -1273,18 +1273,18 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-fld-fstp") {
         { (QBDI::rword) &buff1, v1, 4, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("LD_F32m", QBDI::PREINST, checkAccess, &expectedLoad32);
-    vm->addMnemonicCB("LD_F64m", QBDI::PREINST, checkAccess, &expectedLoad64);
-    vm->addMnemonicCB("ST_FP64m", QBDI::PREINST, checkAccess, &expectedStore64Pre);
-    vm->addMnemonicCB("ST_FP64m", QBDI::POSTINST, checkAccess, &expectedStore64Post);
-    vm->addMnemonicCB("ST_FP32m", QBDI::PREINST, checkAccess, &expectedStore32Pre);
-    vm->addMnemonicCB("ST_FP32m", QBDI::POSTINST, checkAccess, &expectedStore32Post);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("LD_F32m", QBDI::PREINST, checkAccess, &expectedLoad32);
+    vm.addMnemonicCB("LD_F64m", QBDI::PREINST, checkAccess, &expectedLoad64);
+    vm.addMnemonicCB("ST_FP64m", QBDI::PREINST, checkAccess, &expectedStore64Pre);
+    vm.addMnemonicCB("ST_FP64m", QBDI::POSTINST, checkAccess, &expectedStore64Post);
+    vm.addMnemonicCB("ST_FP32m", QBDI::PREINST, checkAccess, &expectedStore32Pre);
+    vm.addMnemonicCB("ST_FP32m", QBDI::POSTINST, checkAccess, &expectedStore32Post);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->eax = (QBDI::rword) &buff1;
     state->ebx = (QBDI::rword) &buff2;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);
@@ -1328,20 +1328,20 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movapd") {
         { (QBDI::rword) &buff2, 0, 16, QBDI::MEMORY_WRITE, QBDI::MEMORY_UNKNOWN_VALUE},
     }};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-    vm->addMnemonicCB("MOVAPDrm", QBDI::PREINST, checkAccess, &expectedLoad);
-    vm->addMnemonicCB("MOVAPDmr", QBDI::PREINST, checkAccess, &expectedStorePre);
-    vm->addMnemonicCB("MOVAPDmr", QBDI::POSTINST, checkAccess, &expectedStorePost);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("MOVAPDrm", QBDI::PREINST, checkAccess, &expectedLoad);
+    vm.addMnemonicCB("MOVAPDmr", QBDI::PREINST, checkAccess, &expectedStorePre);
+    vm.addMnemonicCB("MOVAPDmr", QBDI::POSTINST, checkAccess, &expectedStorePost);
 
-    QBDI::GPRState* state = vm->getGPRState();
+    QBDI::GPRState* state = vm.getGPRState();
     state->eax = (QBDI::rword) &buff1;
     state->ebx = (QBDI::rword) &buff2;
-    vm->setGPRState(state);
+    vm.setGPRState(state);
 
-    QBDI::FPRState* fstate = vm->getFPRState();
+    QBDI::FPRState* fstate = vm.getFPRState();
     memset(fstate->xmm1, '\x00', sizeof(v1));
     memcpy(fstate->xmm2, v2, sizeof(v2));
-    vm->setFPRState(fstate);
+    vm.setFPRState(fstate);
 
     QBDI::rword retval;
     bool ran = runOnASM(&retval, source);

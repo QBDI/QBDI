@@ -163,16 +163,13 @@ QBDI::rword mad(volatile uint32_t* a, volatile uint32_t* b, volatile uint32_t* c
     return *c;
 }
 
-MemoryAccessTest::MemoryAccessTest() {
-    // Constructing a new QBDI vm
-    vm = std::make_unique<QBDI::VM>();
-    REQUIRE(vm.get() != nullptr);
+MemoryAccessTest::MemoryAccessTest() : vm() {
 
-    bool instrumented = vm->addInstrumentedModuleFromAddr((QBDI::rword) &arrayRead8);
+    bool instrumented = vm.addInstrumentedModuleFromAddr((QBDI::rword) &arrayRead8);
     REQUIRE(instrumented);
 
     // get GPR state
-    state = vm->getGPRState();
+    state = vm.getGPRState();
 
     // Get a pointer to the GPR state of the vm
     // Setup initial GPR state, this fakestack will produce a ret NULL at the end of the execution
@@ -183,7 +180,6 @@ MemoryAccessTest::MemoryAccessTest() {
 
 MemoryAccessTest::~MemoryAccessTest() {
     QBDI::alignedFree(fakestack);
-    vm.reset();
 }
 
 bool MemoryAccessTest::runOnASM(QBDI::rword* retval, const char* source, const std::vector<QBDI::rword>& args) {
@@ -197,10 +193,10 @@ bool MemoryAccessTest::runOnASM(QBDI::rword* retval, const char* source, const s
     const llvm::ArrayRef<uint8_t>& code = object.getCode();
     llvm::sys::Memory::InvalidateInstructionCache(code.data(), code.size());
 
-    vm->addInstrumentedRange((QBDI::rword) code.data(), (QBDI::rword) code.data() + code.size());
-    vm->clearCache((QBDI::rword) code.data(), (QBDI::rword) code.data() + code.size());
+    vm.addInstrumentedRange((QBDI::rword) code.data(), (QBDI::rword) code.data() + code.size());
+    vm.clearCache((QBDI::rword) code.data(), (QBDI::rword) code.data() + code.size());
 
-    return vm->call(retval, (QBDI::rword) code.data(), args);
+    return vm.call(retval, (QBDI::rword) code.data(), args);
 }
 
 QBDI::VMAction checkArrayRead8(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* data) {
@@ -417,10 +413,10 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Read8") {
     size_t buffer_size = sizeof(buffer) / sizeof(char);
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
 
-    vm->addMemAccessCB(QBDI::MEMORY_READ, checkArrayRead8, &info);
+    vm.addMemAccessCB(QBDI::MEMORY_READ, checkArrayRead8, &info);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer, (QBDI::rword) buffer_size});
-    bool ran = vm->run((QBDI::rword) arrayRead8, (QBDI::rword) FAKE_RET_ADDR);
+    bool ran = vm.run((QBDI::rword) arrayRead8, (QBDI::rword) FAKE_RET_ADDR);
 
     REQUIRE(true == ran);
     QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -433,10 +429,10 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Read16") {
     size_t buffer_size = sizeof(buffer) / sizeof(uint16_t);
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
 
-    vm->addMemAccessCB(QBDI::MEMORY_READ, checkArrayRead16, &info);
+    vm.addMemAccessCB(QBDI::MEMORY_READ, checkArrayRead16, &info);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer, (QBDI::rword) buffer_size});
-    bool ran = vm->run((QBDI::rword) arrayRead16, (QBDI::rword) FAKE_RET_ADDR);
+    bool ran = vm.run((QBDI::rword) arrayRead16, (QBDI::rword) FAKE_RET_ADDR);
 
     REQUIRE(true == ran);
     QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -449,10 +445,10 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Read32") {
     size_t buffer_size = sizeof(buffer) / sizeof(uint32_t);
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
 
-    vm->addMemAccessCB(QBDI::MEMORY_READ, checkArrayRead32, &info);
+    vm.addMemAccessCB(QBDI::MEMORY_READ, checkArrayRead32, &info);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer, (QBDI::rword) buffer_size});
-    bool ran = vm->run((QBDI::rword) arrayRead32, (QBDI::rword) FAKE_RET_ADDR);
+    bool ran = vm.run((QBDI::rword) arrayRead32, (QBDI::rword) FAKE_RET_ADDR);
 
     REQUIRE(true == ran);
     QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -465,10 +461,10 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Write8") {
     uint8_t buffer[buffer_size];
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
 
-    vm->addMemAccessCB(QBDI::MEMORY_WRITE, checkArrayWrite8, &info);
+    vm.addMemAccessCB(QBDI::MEMORY_WRITE, checkArrayWrite8, &info);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer, (QBDI::rword) buffer_size});
-    bool ran = vm->run((QBDI::rword) arrayWrite8, (QBDI::rword) FAKE_RET_ADDR);
+    bool ran = vm.run((QBDI::rword) arrayWrite8, (QBDI::rword) FAKE_RET_ADDR);
 
     REQUIRE(true == ran);
     QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -481,10 +477,10 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Write16") {
     uint16_t buffer[buffer_size];
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
 
-    vm->addMemAccessCB(QBDI::MEMORY_WRITE, checkArrayWrite16, &info);
+    vm.addMemAccessCB(QBDI::MEMORY_WRITE, checkArrayWrite16, &info);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer, (QBDI::rword) buffer_size});
-    bool ran = vm->run((QBDI::rword) arrayWrite16, (QBDI::rword) FAKE_RET_ADDR);
+    bool ran = vm.run((QBDI::rword) arrayWrite16, (QBDI::rword) FAKE_RET_ADDR);
 
     REQUIRE(true == ran);
     QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -497,10 +493,10 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Write32") {
     uint32_t buffer[buffer_size];
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
 
-    vm->addMemAccessCB(QBDI::MEMORY_WRITE, checkArrayWrite32, &info);
+    vm.addMemAccessCB(QBDI::MEMORY_WRITE, checkArrayWrite32, &info);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer, (QBDI::rword) buffer_size});
-    bool ran = vm->run((QBDI::rword) arrayWrite32, (QBDI::rword) FAKE_RET_ADDR);
+    bool ran = vm.run((QBDI::rword) arrayWrite32, (QBDI::rword) FAKE_RET_ADDR);
 
     REQUIRE(true == ran);
     QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -514,12 +510,12 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-BasicBlockRead") {
     TestInfo infoInst = {(void*)buffer, sizeof(buffer), 0};
     TestInfo infoBB = {(void*)buffer, sizeof(buffer), 0};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_READ);
-    vm->addVMEventCB(QBDI::VMEvent::SEQUENCE_EXIT, checkUnrolledReadBB, &infoBB);
-    vm->addMemAccessCB(QBDI::MEMORY_READ, checkUnrolledReadInst, &infoInst);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ);
+    vm.addVMEventCB(QBDI::VMEvent::SEQUENCE_EXIT, checkUnrolledReadBB, &infoBB);
+    vm.addMemAccessCB(QBDI::MEMORY_READ, checkUnrolledReadInst, &infoInst);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer});
-    bool ran = vm->run((QBDI::rword) unrolledRead, (QBDI::rword) FAKE_RET_ADDR);
+    bool ran = vm.run((QBDI::rword) unrolledRead, (QBDI::rword) FAKE_RET_ADDR);
 
     REQUIRE(true == ran);
     QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -531,7 +527,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-BasicBlockRead") {
     infoBB.i = 0;
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer, buffer_size});
-    ran = vm->run((QBDI::rword) unrolledReadLoop, (QBDI::rword) FAKE_RET_ADDR);
+    ran = vm.run((QBDI::rword) unrolledReadLoop, (QBDI::rword) FAKE_RET_ADDR);
 
     REQUIRE(true == ran);
     ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -546,12 +542,12 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-BasicBlockWrite") {
     TestInfo infoInst = {(void*)buffer, sizeof(buffer), 0};
     TestInfo infoBB = {(void*)buffer, sizeof(buffer), 0};
 
-    vm->recordMemoryAccess(QBDI::MEMORY_WRITE);
-    vm->addVMEventCB(QBDI::VMEvent::SEQUENCE_EXIT, checkUnrolledWriteBB, &infoBB);
-    vm->addMemAccessCB(QBDI::MEMORY_WRITE, checkUnrolledWriteInst, &infoInst);
+    vm.recordMemoryAccess(QBDI::MEMORY_WRITE);
+    vm.addVMEventCB(QBDI::VMEvent::SEQUENCE_EXIT, checkUnrolledWriteBB, &infoBB);
+    vm.addMemAccessCB(QBDI::MEMORY_WRITE, checkUnrolledWriteInst, &infoInst);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer});
-    bool ran = vm->run((QBDI::rword) unrolledWrite, (QBDI::rword) FAKE_RET_ADDR);
+    bool ran = vm.run((QBDI::rword) unrolledWrite, (QBDI::rword) FAKE_RET_ADDR);
 
     REQUIRE(true == ran);
     QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -563,7 +559,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-BasicBlockWrite") {
     infoBB.i = 0;
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer, buffer_size});
-    ran = vm->run((QBDI::rword) unrolledWriteLoop, (QBDI::rword) FAKE_RET_ADDR);
+    ran = vm.run((QBDI::rword) unrolledWriteLoop, (QBDI::rword) FAKE_RET_ADDR);
 
     REQUIRE(true == ran);
     ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -577,10 +573,10 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-ReadRange") {
     size_t buffer_size = sizeof(buffer) / sizeof(uint32_t);
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
 
-    vm->addMemRangeCB((QBDI::rword) buffer, (QBDI::rword) (buffer + buffer_size), QBDI::MEMORY_READ, checkArrayRead32, &info);
+    vm.addMemRangeCB((QBDI::rword) buffer, (QBDI::rword) (buffer + buffer_size), QBDI::MEMORY_READ, checkArrayRead32, &info);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer, (QBDI::rword) buffer_size});
-    bool ran = vm->run((QBDI::rword) arrayRead32, (QBDI::rword) FAKE_RET_ADDR);
+    bool ran = vm.run((QBDI::rword) arrayRead32, (QBDI::rword) FAKE_RET_ADDR);
 
     REQUIRE(true == ran);
     QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -593,10 +589,10 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-WriteRange") {
     uint32_t buffer[buffer_size];
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
 
-    vm->addMemRangeCB((QBDI::rword) buffer, (QBDI::rword) (buffer + buffer_size), QBDI::MEMORY_WRITE, checkArrayWrite32, &info);
+    vm.addMemRangeCB((QBDI::rword) buffer, (QBDI::rword) (buffer + buffer_size), QBDI::MEMORY_WRITE, checkArrayWrite32, &info);
 
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer, (QBDI::rword) buffer_size});
-    bool ran = vm->run((QBDI::rword) arrayWrite32, (QBDI::rword) FAKE_RET_ADDR);
+    bool ran = vm.run((QBDI::rword) arrayWrite32, (QBDI::rword) FAKE_RET_ADDR);
 
     REQUIRE(true == ran);
     QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
@@ -610,9 +606,9 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-ReadWriteRange") {
     TestInfo info = {(void*)buffer, sizeof(buffer), 0};
 
     // Array write
-    uint32_t cb1 = vm->addMemRangeCB((QBDI::rword) buffer, (QBDI::rword) (buffer + buffer_size), QBDI::MEMORY_READ_WRITE, checkArrayWrite32, &info);
+    uint32_t cb1 = vm.addMemRangeCB((QBDI::rword) buffer, (QBDI::rword) (buffer + buffer_size), QBDI::MEMORY_READ_WRITE, checkArrayWrite32, &info);
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer, (QBDI::rword) buffer_size});
-    bool ran = vm->run((QBDI::rword) arrayWrite32, (QBDI::rword) FAKE_RET_ADDR);
+    bool ran = vm.run((QBDI::rword) arrayWrite32, (QBDI::rword) FAKE_RET_ADDR);
     REQUIRE(true == ran);
     QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
     REQUIRE(ret == (QBDI::rword) arrayWrite32(buffer, buffer_size));
@@ -620,10 +616,10 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-ReadWriteRange") {
 
     // Array read
     info.i = 0;
-    vm->deleteInstrumentation(cb1);
-    vm->addMemRangeCB((QBDI::rword) buffer, (QBDI::rword) (buffer + buffer_size), QBDI::MEMORY_READ_WRITE, checkArrayRead32, &info);
+    vm.deleteInstrumentation(cb1);
+    vm.addMemRangeCB((QBDI::rword) buffer, (QBDI::rword) (buffer + buffer_size), QBDI::MEMORY_READ_WRITE, checkArrayRead32, &info);
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) buffer, (QBDI::rword) buffer_size});
-    ran = vm->run((QBDI::rword) arrayRead32, (QBDI::rword) FAKE_RET_ADDR);
+    ran = vm.run((QBDI::rword) arrayRead32, (QBDI::rword) FAKE_RET_ADDR);
     REQUIRE(true == ran);
     ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
     REQUIRE(ret == (QBDI::rword) arrayRead32(buffer, buffer_size));
@@ -633,44 +629,44 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-ReadWriteRange") {
 TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-MemorySnooping") {
     uint32_t a = 10, b = 42, c = 1337;
     QBDI::rword original = mad(&a, &b, &c);
-    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
 
     // Will replace a with 0x42 on read,  Will replace c with 0x42 on write
-    uint32_t snoop1 = vm->addMemAddrCB((QBDI::rword) &a, QBDI::MEMORY_READ, readSnooper, &a);
-    uint32_t snoop2 = vm->addMemAddrCB((QBDI::rword) &c, QBDI::MEMORY_WRITE, writeSnooper, &c);
+    uint32_t snoop1 = vm.addMemAddrCB((QBDI::rword) &a, QBDI::MEMORY_READ, readSnooper, &a);
+    uint32_t snoop2 = vm.addMemAddrCB((QBDI::rword) &c, QBDI::MEMORY_WRITE, writeSnooper, &c);
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) &a, (QBDI::rword) &b, (QBDI::rword) &c});
     a = 10, b = 42, c = 1337;
-    vm->run((QBDI::rword) mad, (QBDI::rword) FAKE_RET_ADDR);
+    vm.run((QBDI::rword) mad, (QBDI::rword) FAKE_RET_ADDR);
     QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
     REQUIRE((QBDI::rword) 0x42 == ret);
     // Will replace b with 0x42 on read, no effect because snoop2 is still active
-    uint32_t snoop3 = vm->addMemAddrCB((QBDI::rword) &b, QBDI::MEMORY_READ, readSnooper, &b);
+    uint32_t snoop3 = vm.addMemAddrCB((QBDI::rword) &b, QBDI::MEMORY_READ, readSnooper, &b);
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) &a, (QBDI::rword) &b, (QBDI::rword) &c});
     a = 10, b = 42, c = 1337;
-    vm->run((QBDI::rword) mad, (QBDI::rword) FAKE_RET_ADDR);
+    vm.run((QBDI::rword) mad, (QBDI::rword) FAKE_RET_ADDR);
     ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
     REQUIRE((QBDI::rword) 0x42 == ret);
     // Deleting snoop2, effect of snoop1 and snoop3
-    vm->deleteInstrumentation(snoop2);
+    vm.deleteInstrumentation(snoop2);
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) &a, (QBDI::rword) &b, (QBDI::rword) &c});
     a = 10, b = 42, c = 1337;
-    vm->run((QBDI::rword) mad, (QBDI::rword) FAKE_RET_ADDR);
+    vm.run((QBDI::rword) mad, (QBDI::rword) FAKE_RET_ADDR);
     ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
     a = 0x42, b = 0x42, c = 1337;
     REQUIRE(mad(&a, &b, &c) == ret);
     // Deleting snoop1, effect of snoop3
-    vm->deleteInstrumentation(snoop1);
+    vm.deleteInstrumentation(snoop1);
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) &a, (QBDI::rword) &b, (QBDI::rword) &c});
     a = 10, b = 42, c = 1337;
-    vm->run((QBDI::rword) mad, (QBDI::rword) FAKE_RET_ADDR);
+    vm.run((QBDI::rword) mad, (QBDI::rword) FAKE_RET_ADDR);
     ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
     a = 10, b = 0x42, c = 1337;
     REQUIRE(mad(&a, &b, &c) == ret);
     // Deleting snoop3
-    vm->deleteInstrumentation(snoop3);
+    vm.deleteInstrumentation(snoop3);
     QBDI::simulateCall(state, FAKE_RET_ADDR, {(QBDI::rword) &a, (QBDI::rword) &b, (QBDI::rword) &c});
     a = 10, b = 42, c = 1337;
-    vm->run((QBDI::rword) mad, (QBDI::rword) FAKE_RET_ADDR);
+    vm.run((QBDI::rword) mad, (QBDI::rword) FAKE_RET_ADDR);
     ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
     REQUIRE(original == ret);
 }

@@ -15,8 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <memory>
+#ifndef QBDITEST_MEMORYACCESSTEST
+#define QBDITEST_MEMORYACCESSTEST
 
+#include <memory>
 #include "VM.h"
 
 class MemoryAccessTest {
@@ -26,7 +28,9 @@ class MemoryAccessTest {
 
         bool runOnASM(QBDI::rword* retval, const char* source, const std::vector<QBDI::rword>& args = {});
 
-        std::unique_ptr<QBDI::VM> vm;
+        QBDI::VM vm;
         QBDI::GPRState* state;
         uint8_t* fakestack;
 };
+
+#endif /* QBDITEST_MEMORYACCESSTEST */

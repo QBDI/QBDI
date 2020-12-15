@@ -63,6 +63,7 @@ void init_binding_InstAnalysis(py::module_& m) {
         .value("OPERANDFLAG_ADDR", OperandFlag::OPERANDFLAG_ADDR, "The operand is used to compute an address")
         .value("OPERANDFLAG_PCREL", OperandFlag::OPERANDFLAG_PCREL, "The value of the operand is PC relative")
         .value("OPERANDFLAG_UNDEFINED_EFFECT", OperandFlag::OPERANDFLAG_UNDEFINED_EFFECT, "The operand role isn’t fully defined")
+        .value("OPERANDFLAG_IMPLICIT", OperandFlag::OPERANDFLAG_IMPLICIT, "The operand is implicit")
         .export_values();
 
     py::enum_<AnalysisType>(m, "AnalysisType", py::arithmetic(), "Instruction analysis type")

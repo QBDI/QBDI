@@ -62,7 +62,7 @@ QBDI_NOINLINE int dummyFunCall(int arg0) {
 
 #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
 #define MNEM_COUNT 5u
-#define MNEM_VALIDATION 128u
+#define MNEM_VALIDATION 140u
 #elif defined(QBDI_ARCH_ARM)
 #define MNEM_COUNT 1u
 #define MNEM_VALIDATION 25u
@@ -77,7 +77,7 @@ struct TestInst {
     uint8_t numOperands;
     bool isCompare;
     QBDI::RegisterAccessType flagsAccess;
-    QBDI::OperandAnalysis operands[6];
+    QBDI::OperandAnalysis operands[7];
 };
 
 #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
@@ -105,23 +105,25 @@ struct TestInst TestInsts[MNEM_COUNT] = {
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 4, 0, 0, "EAX", QBDI::REGISTER_READ},
         }
     },
-    {1, 4, false, QBDI::REGISTER_READ | QBDI::REGISTER_WRITE, {
+    {1, 5, false, QBDI::REGISTER_READ | QBDI::REGISTER_WRITE, {
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0, 5, QBDI::GPR_NAMES[5], QBDI::REGISTER_READ},
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0, 4, QBDI::GPR_NAMES[4], QBDI::REGISTER_READ},
+           {QBDI::OPERAND_INVALID, QBDI::OPERANDFLAG_NONE, 0, 0, 0, -1, NULL, QBDI::REGISTER_UNUSED},
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 4, 0, 5, "EDI", QBDI::REGISTER_READ_WRITE},
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 4, 0, 4, "ESI", QBDI::REGISTER_READ_WRITE},
         }
     },
 #if defined(QBDI_ARCH_X86_64)
-    {5, 5, true, QBDI::REGISTER_WRITE, {
+    {5, 6, true, QBDI::REGISTER_WRITE, {
 #else
-    {4, 5, true, QBDI::REGISTER_WRITE, {
+    {4, 6, true, QBDI::REGISTER_WRITE, {
 #endif
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, sizeof(QBDI::rword), 0, 0, QBDI::GPR_NAMES[0], QBDI::REGISTER_READ},
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0, 4, QBDI::GPR_NAMES[4], QBDI::REGISTER_READ},
            {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_ADDR, 1, sizeof(QBDI::rword), 0, -1, NULL, QBDI::REGISTER_UNUSED},
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0, 5, QBDI::GPR_NAMES[5], QBDI::REGISTER_READ},
            {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_ADDR, 3, sizeof(QBDI::rword), 0, -1, NULL, QBDI::REGISTER_UNUSED},
+           {QBDI::OPERAND_INVALID, QBDI::OPERANDFLAG_NONE, 0, 0, 0, -1, NULL, QBDI::REGISTER_UNUSED},
         }
     },
 };

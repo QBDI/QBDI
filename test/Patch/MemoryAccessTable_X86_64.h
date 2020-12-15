@@ -15,8 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef QBDITEST_MEMORYACCESSTABLE
+#define QBDITEST_MEMORYACCESSTABLE
+
 #include "TestSetup/LLVMTestEnv.h"
 
 class MemoryAccessTable_X86_64 : public LLVMTestEnv {
 };
 
+#endif /* QBDITEST_MEMORYACCESSTABLE */

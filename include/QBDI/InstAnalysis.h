@@ -55,6 +55,7 @@ typedef enum {
     _QBDI_EI(OPERANDFLAG_ADDR) = 1<<0,              /*!< The operand is used to compute an address */
     _QBDI_EI(OPERANDFLAG_PCREL) = 1<<1,             /*!< The value of the operand is PC relative */
     _QBDI_EI(OPERANDFLAG_UNDEFINED_EFFECT) = 1<<2,  /*!< The operand role isn't fully defined */
+    _QBDI_EI(OPERANDFLAG_IMPLICIT) = 1<<3,          /*!< The operand is implicit */
 } OperandFlag;
 
 _QBDI_ENABLE_BITMASK_OPERATORS(OperandFlag)
