@@ -43,7 +43,7 @@ if (NOT (QBDI_PLATFORM_WINDOWS OR QBDI_PLATFORM_IOS))
     option(QBDI_TOOLS_QBDIPRELOAD "Compile QBDIPRELOAD (not available on windows)" ON)
 
     # Validator (compare execution between QBDIPreload and ptrace)
-    option(QBDI_TOOLS_VALIDATOR "Compile the validator (need TOOLS_QBDIPRELOAD)" OFF)
+    option(QBDI_TOOLS_VALIDATOR "Compile the validator (need QBDI_TOOLS_QBDIPRELOAD)" OFF)
 else()
     set(QBDI_TOOLS_QBDIPRELOAD OFF)
     set(QBDI_TOOLS_VALIDATOR OFF)

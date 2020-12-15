@@ -85,9 +85,9 @@ static VMAction trampoline_VMCallback(VMInstanceRef vm, const VMState *vmState, 
 }
 
 
-void init_binding_VM(py::module& m) {
+void init_binding_VM(py::module_& m) {
 
-    py::module atexit = py::module::import("atexit");
+    py::module_ atexit = py::module_::import("atexit");
     atexit.attr("register")(std::function<void()>(clearTrampDataMap));
 
     py::class_<VM>(m, "VM")

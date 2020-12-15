@@ -21,7 +21,7 @@
 namespace QBDI {
 namespace pyQBDI {
 
-void init_binding_Logs(py::module& m) {
+void init_binding_Logs(py::module_& m) {
 
     py::enum_<LogPriority>(m, "LogPriority",
             "Each log has a priority (or level) which can be used to control verbosity\n"
