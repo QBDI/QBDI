@@ -380,9 +380,9 @@ public:
      */
     void        deleteAllInstrumentations();
 
-    /*! Obtain the analysis of an instruction metadata. Analysis results are cached in the VM.
+    /*! Obtain the analysis of the current instruction. Analysis results are cached in the VM.
      *  The validity of the returned pointer is only guaranteed until the end of the callback, else
-     *  a deepcopy of the structure is required.
+     *  a deepcopy of the structure is required. Call this method only inside an InstCallback.
      *
      * @param[in] [type]         Properties to retrieve during analysis.
      *                           This argument is optional, defaulting to
@@ -390,7 +390,21 @@ public:
      *
      * @return A InstAnalysis structure containing the analysis result.
      */
-    const InstAnalysis* getInstAnalysis(AnalysisType type = ANALYSIS_INSTRUCTION | ANALYSIS_DISASSEMBLY);
+    const InstAnalysis* getInstAnalysis(AnalysisType type = ANALYSIS_INSTRUCTION | ANALYSIS_DISASSEMBLY) const;
+
+    /*! Obtain the analysis of a cached instruction. Analysis results are cached in the VM.
+     *  The validity of the returned pointer is only guaranteed until the end of the callback
+     *  or a call to a noconst method.
+     *
+     * @param[in] address        The address of the instruction to analyse.
+     * @param[in] [type]         Properties to retrieve during analysis.
+     *                           This argument is optional, defaulting to
+     *                           QBDI::ANALYSIS_INSTRUCTION | QBDI::ANALYSIS_DISASSEMBLY.
+     *
+     * @return A InstAnalysis structure containing the analysis result.
+     *    null if the instruction isn't in the cache.
+     */
+    const InstAnalysis* getCachedInstAnalysis(rword address, AnalysisType type = ANALYSIS_INSTRUCTION | ANALYSIS_DISASSEMBLY) const;
 
     /*! Add instrumentation rules to log memory access using inline instrumentation and
      *  instruction shadows.

@@ -354,7 +354,7 @@ QBDI_EXPORT bool qbdi_deleteInstrumentation(VMInstanceRef instance, uint32_t id)
  */
 QBDI_EXPORT void qbdi_deleteAllInstrumentations(VMInstanceRef instance);
 
- /*! Obtain the analysis of an instruction metadata. Analysis results are cached in the VM.
+ /*! Obtain the analysis of the current instruction. Analysis results are cached in the VM.
  *  The validity of the returned pointer is only guaranteed until the end of the callback, else
  *  a deepcopy of the structure is required.
  *
@@ -364,6 +364,19 @@ QBDI_EXPORT void qbdi_deleteAllInstrumentations(VMInstanceRef instance);
  * @return A InstAnalysis structure containing the analysis result.
  */
 QBDI_EXPORT const InstAnalysis* qbdi_getInstAnalysis(VMInstanceRef instance, AnalysisType type);
+
+/*! Obtain the analysis of a cached instruction. Analysis results are cached in the VM.
+ *  The validity of the returned pointer is only guaranteed until the end of the callback
+ *  or a call to a noconst method.
+ *
+ * @param[in] instance     VM instance.
+ * @param[in] address      The address of the instruction to analyse.
+ * @param[in] type         Properties to retrieve during analysis.
+ *
+ * @return A InstAnalysis structure containing the analysis result.
+ *    null if the instruction isn't in the cache.
+ */
+QBDI_EXPORT const InstAnalysis* qbdi_getCachedInstAnalysis(VMInstanceRef instance, rword address, AnalysisType type);
 
 /*! Add instrumentation rules to log memory access using inline instrumentation and
  *  instruction shadows.

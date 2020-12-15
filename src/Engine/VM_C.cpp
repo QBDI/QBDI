@@ -188,6 +188,11 @@ const InstAnalysis* qbdi_getInstAnalysis(VMInstanceRef instance, AnalysisType ty
     return static_cast<VM*>(instance)->getInstAnalysis(type);
 }
 
+const InstAnalysis* qbdi_getCachedInstAnalysis(VMInstanceRef instance, rword address, AnalysisType type) {
+    RequireAction("VM_C::getCachedInstAnalysis", instance, return nullptr);
+    return static_cast<VM*>(instance)->getCachedInstAnalysis(address, type);
+}
+
 bool qbdi_recordMemoryAccess(VMInstanceRef instance, MemoryAccessType type) {
     RequireAction("VM_C::recordMemoryAccess", instance, return false);
     return static_cast<VM*>(instance)->recordMemoryAccess(type);

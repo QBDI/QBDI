@@ -387,6 +387,8 @@ for us and provide analysis results in a :cpp:class:`QBDI::InstAnalysis` structu
 
 .. doxygenfunction:: QBDI::VM::getInstAnalysis
 
+.. doxygenfunction:: QBDI::VM::getCachedInstAnalysis
+
 Analysis can gather all kinds of properties linked with the instruction.
 By default, instructions basic properties (address, mnemonic, ...), as well
 as disassembly, are returned (as this is a very common case).

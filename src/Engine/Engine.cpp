@@ -386,6 +386,7 @@ void Engine::instrument(std::vector<Patch> &basicBlock) {
 
 
 void Engine::handleNewBasicBlock(rword pc) {
+    RequireAction("Engine::handleNewBasicBlock", curExecBlock == nullptr, abort());
     // disassemble and patch new basic block
     Patch::Vec basicBlock = patch(pc);
     // instrument it
@@ -396,11 +397,12 @@ void Engine::handleNewBasicBlock(rword pc) {
 
 
 bool Engine::precacheBasicBlock(rword pc) {
+    RequireAction("Engine::precacheBasicBlock", curExecBlock == nullptr, abort());
     if(blockManager->isFlushPending()) {
         // Commit the flush
         blockManager->flushCommit();
     }
-    if (blockManager->getProgrammedExecBlock(pc) != nullptr) {
+    if (blockManager->getExecBlock(pc) != nullptr) {
         // already in cache
         return false;
     }
@@ -410,6 +412,8 @@ bool Engine::precacheBasicBlock(rword pc) {
 
 
 bool Engine::run(rword start, rword stop) {
+    RequireAction("Engine::run", curExecBlock == nullptr, abort());
+
     rword         currentPC = start;
     bool          hasRan = false;
     curGPRState = gprState.get();
@@ -481,6 +485,7 @@ bool Engine::run(rword start, rword stop) {
                 case BREAK_TO_VM:
                     break;
                 case STOP:
+                    curExecBlock = nullptr;
                     *gprState = *curGPRState;
                     *fprState = *curFPRState;
                     curGPRState = gprState.get();
@@ -501,6 +506,7 @@ bool Engine::run(rword start, rword stop) {
     } while(currentPC != stop);
 
     // Copy final context
+    curExecBlock = nullptr;
     *gprState = *curGPRState;
     *fprState = *curFPRState;
     curGPRState = gprState.get();
@@ -549,6 +555,17 @@ void Engine::signalEvent(VMEvent event, rword currentPC, GPRState *gprState, FPR
             r.cbk(vminstance, &vmState, gprState, fprState, r.data);
         }
     }
+}
+
+const InstAnalysis* Engine::getInstAnalysis(rword address, AnalysisType type) const {
+    const ExecBlock* block = blockManager->getExecBlock(address);
+    if (block == nullptr) {
+        // not in cache
+        return nullptr;
+    }
+    uint16_t instID = block->getInstID(address);
+    RequireAction("Engine::getInstAnalysis", instID != NOT_FOUND, return nullptr);
+    return block->getInstAnalysis(instID, type);
 }
 
 bool Engine::deleteInstrumentation(uint32_t id) {

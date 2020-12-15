@@ -405,6 +405,9 @@ for us and provide analysis results in a :c:type:`InstAnalysis` structure::
 .. doxygenfunction:: qbdi_getInstAnalysis
    :project: QBDI_C
 
+.. doxygenfunction:: qbdi_getCachedInstAnalysis
+   :project: QBDI_C
+
 Analysis can gather all kinds of properties linked with the instruction.
 It's possible to select which one will be retrieved using `type` argument.
 

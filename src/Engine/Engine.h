@@ -257,13 +257,25 @@ public:
      */
     bool isPreInst() const;
 
-    /*! Pre-cache a known basic block
+    /*! Pre-cache a known basic block.
+     * The VM mustn't run when called.
      *
      * @param[in] pc Start address of a basic block
      *
      * @return True if basic block has been inserted in cache.
      */
     bool precacheBasicBlock(rword pc);
+
+    /*! Return an InstAnalysis for a cached instruction.
+     * The pointer may be invalid by any noconst method call.
+     *
+     * @param[in] address Start address of the instruction
+     * @param[in] type    type of the Analysis
+     *
+     * @return A pointer to the Analysis or a null pointer if the instruction isn't
+     *    in the cache.
+     */
+    const InstAnalysis* getInstAnalysis(rword address, AnalysisType type) const;
 
     /*! Clear a specific address range from the translation cache.
      *
