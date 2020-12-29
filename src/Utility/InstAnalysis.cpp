@@ -94,7 +94,6 @@ void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm::MCReg
     }
     for (uint16_t j = 0; j < size_SEG_ID; j++) {
         if (regNo == SEG_ID[j]) {
-            opa.regCtxIdx = 0;
             opa.regOff = 0;
             opa.size = getRegisterSize(regNo);
             opa.type = OPERAND_SEG;
@@ -171,6 +170,12 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
     // Analysis of instruction operands
     uint8_t numOperands = inst.getNumOperands();
     uint8_t numOperandsMax = numOperands + desc.getNumImplicitDefs() + desc.getNumImplicitUses();
+
+    // (R|E)SP are missing for RET and CALL in x86
+    if constexpr((is_x86_64 or is_x86)) {
+        if ((desc.isReturn() and isStackRead(inst)) or (desc.isCall() and isStackWrite(inst)))
+            numOperandsMax = numOperandsMax + 2;
+    }
     if (numOperandsMax == 0) {
         // no operand to analyse
         return;
@@ -261,6 +266,30 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
     // analyse implicit registers (R/W)
     analyseImplicitRegisters(instAnalysis, desc.getImplicitUses(), REGISTER_READ, MRI);
     analyseImplicitRegisters(instAnalysis, desc.getImplicitDefs(), REGISTER_WRITE, MRI);
+
+
+    // (R|E)SP are missing for RET and CALL in x86
+    if constexpr((is_x86_64 or is_x86)) {
+        if ((desc.isReturn() and isStackRead(inst)) or (desc.isCall() and isStackWrite(inst))) {
+            // use SP to read|write the return address
+            OperandAnalysis& opa = instAnalysis->operands[instAnalysis->numOperands];
+            analyseRegister(opa, GPR_ID[REG_SP], MRI);
+            opa.regAccess = REGISTER_READ;
+            opa.flag |= OPERANDFLAG_IMPLICIT | OPERANDFLAG_ADDR;
+            instAnalysis->numOperands++;
+            // try to merge with a previous one
+            tryMergeCurrentRegister(instAnalysis);
+
+            // increment or decrement SP
+            OperandAnalysis& opa2 = instAnalysis->operands[instAnalysis->numOperands];
+            analyseRegister(opa2, GPR_ID[REG_SP], MRI);
+            opa2.regAccess = REGISTER_READ_WRITE;
+            opa2.flag |= OPERANDFLAG_IMPLICIT;
+            instAnalysis->numOperands++;
+            // try to merge with a previous one
+            tryMergeCurrentRegister(instAnalysis);
+        }
+    }
 }
 
 } // anonymous namespace
