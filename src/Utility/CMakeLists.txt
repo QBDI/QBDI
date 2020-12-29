@@ -11,7 +11,14 @@ set(SOURCES
     "${CMAKE_CURRENT_LIST_DIR}/String.cpp"
     )
 
-if(QBDI_PLATFORM_IOS)
+if (QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
+    set(SOURCES
+        ${SOURCES}
+        "${CMAKE_CURRENT_LIST_DIR}/InstAnalysis_X86_64.cpp"
+        )
+endif()
+
+if (QBDI_PLATFORM_IOS)
     set(SOURCES
         ${SOURCES}
         "${CMAKE_CURRENT_LIST_DIR}/System_iOS.cpp"

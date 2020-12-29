@@ -60,9 +60,9 @@ QBDI_EXPORT const StructDesc* qbdi_getOperandAnalysisStructDesc() {
             offsetof(OperandAnalysis, flag),
             offsetof(OperandAnalysis, value),
             offsetof(OperandAnalysis, size),
+            offsetof(OperandAnalysis, name),
             offsetof(OperandAnalysis, regOff),
             offsetof(OperandAnalysis, regCtxIdx),
-            offsetof(OperandAnalysis, regName),
             offsetof(OperandAnalysis, regAccess),
         }
     };

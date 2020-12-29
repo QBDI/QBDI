@@ -83,34 +83,34 @@ struct TestInst {
 #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
 struct TestInst TestInsts[MNEM_COUNT] = {
     {3, 2, true, QBDI::REGISTER_WRITE, {
-           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 1, 8, 3, "DH", QBDI::REGISTER_READ},
-           {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_NONE, MNEM_IMM_SHORT_VAL, 1, 0, -1, nullptr, QBDI::REGISTER_UNUSED},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 1, "DH", 8, 3, QBDI::REGISTER_READ},
+           {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_NONE, MNEM_IMM_SHORT_VAL, 1, nullptr, 0, -1, QBDI::REGISTER_UNUSED},
         }
     },
 #if defined(QBDI_ARCH_X86_64)
     {3, 2, true, QBDI::REGISTER_WRITE, {
-           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 0, "RAX", QBDI::REGISTER_READ},
-           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 1, "RBX", QBDI::REGISTER_READ},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, "RAX", 0, 0, QBDI::REGISTER_READ},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, "RBX", 0, 1, QBDI::REGISTER_READ},
         }
     },
 #else
     {3, 2, true, QBDI::REGISTER_WRITE, {
-           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 2, 0, 0, "AX", QBDI::REGISTER_READ},
-           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 2, 0, 1, "BX", QBDI::REGISTER_READ},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 2, "AX", 0, 0, QBDI::REGISTER_READ},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 2, "BX", 0, 1, QBDI::REGISTER_READ},
         }
     },
 #endif
     {5, 2, true, QBDI::REGISTER_WRITE, {
-           {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_NONE, MNEM_IMM_VAL, 4, 0, -1, nullptr, QBDI::REGISTER_UNUSED},
-           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 4, 0, 0, "EAX", QBDI::REGISTER_READ},
+           {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_NONE, MNEM_IMM_VAL, 4, nullptr, 0, -1, QBDI::REGISTER_UNUSED},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 4, "EAX", 0, 0, QBDI::REGISTER_READ},
         }
     },
     {1, 5, false, QBDI::REGISTER_READ | QBDI::REGISTER_WRITE, {
-           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0, 5, QBDI::GPR_NAMES[5], QBDI::REGISTER_READ},
-           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0, 4, QBDI::GPR_NAMES[4], QBDI::REGISTER_READ},
-           {QBDI::OPERAND_INVALID, QBDI::OPERANDFLAG_NONE, 0, 0, 0, -1, NULL, QBDI::REGISTER_UNUSED},
-           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 4, 0, 5, "EDI", QBDI::REGISTER_READ_WRITE},
-           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 4, 0, 4, "ESI", QBDI::REGISTER_READ_WRITE},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), QBDI::GPR_NAMES[5], 0, 5, QBDI::REGISTER_READ},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), QBDI::GPR_NAMES[4], 0, 4, QBDI::REGISTER_READ},
+           {QBDI::OPERAND_INVALID, QBDI::OPERANDFLAG_NONE, 0, 0, nullptr, 0, -1, QBDI::REGISTER_UNUSED},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 4, "EDI", 0, 5, QBDI::REGISTER_READ_WRITE},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 4, "ESI", 0, 4, QBDI::REGISTER_READ_WRITE},
         }
     },
 #if defined(QBDI_ARCH_X86_64)
@@ -118,21 +118,21 @@ struct TestInst TestInsts[MNEM_COUNT] = {
 #else
     {4, 6, true, QBDI::REGISTER_WRITE, {
 #endif
-           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, sizeof(QBDI::rword), 0, 0, QBDI::GPR_NAMES[0], QBDI::REGISTER_READ},
-           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0, 4, QBDI::GPR_NAMES[4], QBDI::REGISTER_READ},
-           {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_ADDR, 1, sizeof(QBDI::rword), 0, -1, NULL, QBDI::REGISTER_UNUSED},
-           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0, 5, QBDI::GPR_NAMES[5], QBDI::REGISTER_READ},
-           {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_ADDR, 3, sizeof(QBDI::rword), 0, -1, NULL, QBDI::REGISTER_UNUSED},
-           {QBDI::OPERAND_INVALID, QBDI::OPERANDFLAG_NONE, 0, 0, 0, -1, NULL, QBDI::REGISTER_UNUSED},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, sizeof(QBDI::rword), QBDI::GPR_NAMES[0], 0, 0, QBDI::REGISTER_READ},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), QBDI::GPR_NAMES[4], 0, 4, QBDI::REGISTER_READ},
+           {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_ADDR, 1, sizeof(QBDI::rword), nullptr, 0, -1, QBDI::REGISTER_UNUSED},
+           {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), QBDI::GPR_NAMES[5], 0, 5, QBDI::REGISTER_READ},
+           {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_ADDR, 3, sizeof(QBDI::rword), nullptr, 0, -1, QBDI::REGISTER_UNUSED},
+           {QBDI::OPERAND_INVALID, QBDI::OPERANDFLAG_NONE, 0, 0, nullptr, 0, -1, QBDI::REGISTER_UNUSED},
         }
     },
 };
 #elif defined(QBDI_ARCH_ARM)
 struct TestInst TestInsts[MNEM_COUNT] = {
     {4, 3, true, {
-            {QBDI::OPERAND_GPR, 0, sizeof(QBDI::rword), 0, 3, "R3", QBDI::REGISTER_READ},
-            {QBDI::OPERAND_IMM, MNEM_IMM_SHORT_VAL, sizeof(QBDI::rword), 0, -1, nullptr, QBDI::REGISTER_UNUSED},
-            {QBDI::OPERAND_PRED, 0, sizeof(QBDI::rword), 0, 0, nullptr, QBDI::REGISTER_UNUSED},
+            {QBDI::OPERAND_GPR, 0, sizeof(QBDI::rword), "R3", 0, 3, QBDI::REGISTER_READ},
+            {QBDI::OPERAND_IMM, MNEM_IMM_SHORT_VAL, sizeof(QBDI::rword), nullptr, 0, -1, QBDI::REGISTER_UNUSED},
+            {QBDI::OPERAND_PRED, 0, sizeof(QBDI::rword), nullptr, 0, 0, QBDI::REGISTER_UNUSED},
         }
     }
 };
@@ -379,12 +379,12 @@ QBDI::VMAction evilMnemCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBD
                         info[1]++;
                     }
                 }
-                if (op.regName == nullptr && cmpOp.regName == nullptr) {
+                if (op.name == nullptr && cmpOp.name == nullptr) {
                     info[1]++;
                 } else {
-                    CHECKED_IF(op.regName != nullptr)
-                        CHECKED_IF(cmpOp.regName != nullptr)
-                            CHECKED_IF(std::string(op.regName) == std::string(cmpOp.regName))
+                    CHECKED_IF(op.name != nullptr)
+                        CHECKED_IF(cmpOp.name != nullptr)
+                            CHECKED_IF(std::string(op.name) == std::string(cmpOp.name))
                                 info[1]++;
                 }
                 CHECKED_IF(op.size == cmpOp.size) {

@@ -55,7 +55,8 @@ void init_binding_InstAnalysis(py::module_& m) {
         .value("OPERAND_GPR", OperandType::OPERAND_GPR, "General Purpose Register operand")
         .value("OPERAND_PRED", OperandType::OPERAND_PRED, "Predicate operand")
         .value("OPERAND_FPR", OperandType::OPERAND_FPR, "Floating point register operand")
-        .value("OPERAND_SEG", OperandType::OPERAND_SEG, "Segment or unsaved register operand ")
+        .value("OPERAND_SEG", OperandType::OPERAND_SEG, "Segment or unsaved register operand")
+        .value("OPERAND_COND", OperandType::OPERAND_COND, "Condition operand")
         .export_values();
 
     py::enum_<OperandFlag>(m, "OperandFlag", py::arithmetic(), "Operand flag")
@@ -78,9 +79,9 @@ void init_binding_InstAnalysis(py::module_& m) {
         .def_readonly("flag", &OperandAnalysis::flag, "Operand flag")
         .def_readonly("value", &OperandAnalysis::value, "Operand value (if immediate), or register Id")
         .def_readonly("size", &OperandAnalysis::size, "Operand size (in bytes)")
+        .def_readonly("name", &OperandAnalysis::name, "Register or condition name")
         .def_readonly("regOff", &OperandAnalysis::regOff, "Sub-register offset in register (in bits)")
         .def_readonly("regCtxIdx", &OperandAnalysis::regCtxIdx, "Register index in VM state")
-        .def_readonly("regName", &OperandAnalysis::regName, "Register name")
         .def_readonly("regAccess", &OperandAnalysis::regAccess, "Register access type (r, w, rw)");
 
     py::class_<InstAnalysis>(m, "InstAnalysis")

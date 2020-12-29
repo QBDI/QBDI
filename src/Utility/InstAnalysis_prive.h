@@ -41,6 +41,10 @@ using InstAnalysisPtr = std::unique_ptr<InstAnalysis, InstAnalysisDestructor>;
 const InstAnalysis* analyzeInstMetadata(const InstMetadata& instMetadata, AnalysisType type,
                                         const Assembly& assembly);
 
+// X86 specific
+extern unsigned MCOI_COND_CODE;
+const char* getName_MCOI_COND(unsigned);
+
 }
 
 #endif

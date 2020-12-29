@@ -29,7 +29,7 @@ def insnCB(vm, gpr, fpr, data):
         if op.type == pyqbdi.OPERAND_IMM:
             print("const: {:d}".format(op.value))
         elif op.type == pyqbdi.OPERAND_GPR:
-            print("reg: {:s}".format(op.regName))
+            print("reg: {:s}".format(op.name))
     return pyqbdi.CONTINUE
 
 

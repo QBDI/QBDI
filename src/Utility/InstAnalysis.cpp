@@ -55,9 +55,9 @@ bool isFlagRegister(unsigned int regNo) {
 }
 
 void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm::MCRegisterInfo& MRI) {
-    opa.regName = MRI.getName(regNo);
-    if (opa.regName != nullptr && opa.regName[0] == '\x00')
-        opa.regName = nullptr;
+    opa.name = MRI.getName(regNo);
+    if (opa.name != nullptr && opa.name[0] == '\x00')
+        opa.name = nullptr;
     opa.value = regNo;
     opa.size = 0;
     opa.flag = OPERANDFLAG_NONE;
@@ -78,7 +78,7 @@ void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm::MCReg
             opa.size = getRegisterSize(regNo);
             opa.type = OPERAND_GPR;
             if (!opa.size)
-                LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.regName);
+                LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.name);
             return;
         }
     }
@@ -89,7 +89,7 @@ void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm::MCReg
         opa.size = getRegisterSize(regNo);
         opa.type = OPERAND_FPR;
         if (!opa.size)
-            LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.regName);
+            LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.name);
         return;
     }
     for (uint16_t j = 0; j < size_SEG_ID; j++) {
@@ -98,11 +98,11 @@ void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm::MCReg
             opa.size = getRegisterSize(regNo);
             opa.type = OPERAND_SEG;
             if (!opa.size)
-                LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.regName);
+                LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.name);
             return;
         }
     }
-    LogWarning("analyseRegister", "Unknown register %d : %s", regNo, opa.regName);
+    LogWarning("analyseRegister", "Unknown register %d : %s", regNo, opa.name);
 }
 
 void tryMergeCurrentRegister(InstAnalysis* instAnalysis) {
@@ -174,7 +174,7 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
     // (R|E)SP are missing for RET and CALL in x86
     if constexpr((is_x86_64 or is_x86)) {
         if ((desc.isReturn() and isStackRead(inst)) or (desc.isCall() and isStackWrite(inst)))
-            numOperandsMax = numOperandsMax + 2;
+            numOperandsMax = numOperandsMax + 1;
     }
     if (numOperandsMax == 0) {
         // no operand to analyse
@@ -232,6 +232,11 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
             instAnalysis->numOperands++;
         } else if (op.isImm()) {
             // fill the operand analysis
+            if (opdesc.isPredicate()) {
+                opa.type = OPERAND_PRED;
+            } else {
+                opa.type = OPERAND_IMM;
+            }
             switch (opdesc.OperandType) {
                 case llvm::MCOI::OPERAND_IMMEDIATE:
                     opa.size = getImmediateSize(inst, &desc);
@@ -249,14 +254,16 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
                     opa.size = sizeof(rword);
                     break;
                 default:
-                    LogWarning("ExecBlockManager::analyseOperands",
-                            "Not supported operandType %d for immediate operand", opdesc.OperandType);
-                    continue;
-            }
-            if (opdesc.isPredicate()) {
-                opa.type = OPERAND_PRED;
-            } else {
-                opa.type = OPERAND_IMM;
+                    if (opdesc.OperandType ==  MCOI_COND_CODE /* llvm::X86::OperandType::OPERAND_COND_CODE */) {
+                        opa.type = OPERAND_COND;
+                        opa.size = 0;
+                        opa.name = getName_MCOI_COND(static_cast<unsigned>(op.getImm()));
+                        break;
+                    } else {
+                        LogWarning("ExecBlockManager::analyseOperands",
+                                "Not supported operandType %d for immediate operand", opdesc.OperandType);
+                        continue;
+                    }
             }
             opa.value = static_cast<rword>(op.getImm());
             instAnalysis->numOperands++;
@@ -271,15 +278,6 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
     // (R|E)SP are missing for RET and CALL in x86
     if constexpr((is_x86_64 or is_x86)) {
         if ((desc.isReturn() and isStackRead(inst)) or (desc.isCall() and isStackWrite(inst))) {
-            // use SP to read|write the return address
-            OperandAnalysis& opa = instAnalysis->operands[instAnalysis->numOperands];
-            analyseRegister(opa, GPR_ID[REG_SP], MRI);
-            opa.regAccess = REGISTER_READ;
-            opa.flag |= OPERANDFLAG_IMPLICIT | OPERANDFLAG_ADDR;
-            instAnalysis->numOperands++;
-            // try to merge with a previous one
-            tryMergeCurrentRegister(instAnalysis);
-
             // increment or decrement SP
             OperandAnalysis& opa2 = instAnalysis->operands[instAnalysis->numOperands];
             analyseRegister(opa2, GPR_ID[REG_SP], MRI);

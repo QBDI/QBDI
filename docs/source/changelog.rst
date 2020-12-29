@@ -12,14 +12,39 @@ Next Version
 * Refactor ExecBlockManager to work with unaligned instruction on X86 and X86-64 (`#129 <https://github.com/QBDI/QBDI/pull/129>`_)
 * Drop early support for ARM. The support hasn't been tested since 0.6.2.
 * MemoryAccess Support for SIMD instruction and some missing instructions (`#131 <https://github.com/QBDI/QBDI/pull/131>`_)
-* MemoryAccess Support for SIMD instruction and some missing instructions (`#131 <https://github.com/QBDI/QBDI/pull/131>`_)
+* Improve InstAnalysis (`#131 <https://github.com/QBDI/QBDI/pull/131>`_)
 
 Some API has changed compared to version 0.7.1 that make the old compiled code incompatible with the new release:
 
 * ``VM::addInstrRule()``: the API has been drop in favor of a new version that dosn't need internals headers.
 * ``MemoryAccess``: the structure has changed to introduce ``flags`` and ``flagsAccess``.
 * ``InstAnalysis``: the structure has changed to introduce ``loadSize`` and ``storeSize``.
-* ``OperandAnalysis``: Add two new type for float and segment register.
+* ``InstAnalysis``: Due to the update of LLVM, the some mnemonic has changed. All the conditionnal branch (like ``JE_n``) become ``JCC_n``.
+* ``OperandAnalysis``: Add three new type for float, segment register and condition.
+* ``OperandAnalysis``: The type ``OPERAND_INVALID`` is now return when a register isn't specified in order to have the same number of
+  operand for any instruction with the same Mnemonic.
+
+  Here is an example of output:
+
+  .. code:: text
+
+      lea rax, [rax+4*rax+12345678]
+          [0] optype: GPR, flag: NONE, value: ??, size: 8, name: "RAX", regOff: 0, regCtxIdx: 0, regaccess : -w
+          [1] optype: GPR, flag: UNDEFINED_EFFECT, valud: ??, size: 8, name: "RAX", regOff: 0, regCtxIdx: 0, regaccess : r-
+          [2] optype: IMM, flag: UNDEFINED_EFFECT, value: 4, size: 8, name: (null), regOff: ??, regCtxIdx: ??, regaccess : --
+          [3] optype: GPR, flag: UNDEFINED_EFFECT, value: ??, size: 8, name: "RAX", regOff: 0, regCtxIdx: 0, regaccess : r-
+          [4] optype: IMM, flag: UNDEFINED_EFFECT, value: 12345678, size: 4, name: (null), regOff: ??, regCtxIdx: ??, regaccess : --
+          [5] optype: INVALID, flag: UNDEFINED_EFFECT, value: ??, size: ??, name: (null),  regOff: ??, regCtxIdx: ??, regaccess : --
+
+      lea rax, gs:[rbx+12345678]
+          [0] optype: GPR, flag: NONE, value: ??, size: 8, name: "RAX", regOff: 0, regCtxIdx: 0, regaccess : -w
+          [1] optype: GPR, flag: UNDEFINED_EFFECT, valud: ??, size: 8, name: "RBX", regOff: 0, regCtxIdx: 1, regaccess : r-
+          [2] optype: IMM, flag: UNDEFINED_EFFECT, value: 1, size: 8, name: (null), regOff: ??, regCtxIdx: ??, regaccess : --
+          [3] optype: INVALID, flag: UNDEFINED_EFFECT, value: ??, size: ??, name: (null), regOff: ??, regCtxIdx: ??, regaccess : --
+          [4] optype: IMM, flag: UNDEFINED_EFFECT, value: 12345678, size: 4, name: (null), regOff: ??, regCtxIdx: ??, regaccess : --
+          [5] optype: SEG, flag: UNDEFINED_EFFECT, value: ??, size: 2, name: "GS",  regOff: ??, regCtxIdx: ??, regaccess : r-
+
+* ``OperandAnalysis``: rename ``regName`` to ``name``.
 
 Internal update:
 

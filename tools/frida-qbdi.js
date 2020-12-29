@@ -558,7 +558,11 @@ var OperandType = Object.freeze({
     /**attribute:OperandType.OPERAND_SEG
       Segment or unsaved register operand
      */
-    OPERAND_SEG : 5
+    OPERAND_SEG : 5,
+    /**attribute:OperandType.OPERAND_COND
+      Condition operand
+     */
+    OPERAND_COND : 6
 });
 
 /**data:OperandFlag
@@ -1287,16 +1291,16 @@ function QBDI() {
         p = ptr.add(operandAnalysisStructDesc.offsets[3]);
         analysis.size = Memory.readU8(p);
         p = ptr.add(operandAnalysisStructDesc.offsets[4]);
-        analysis.regOff = Memory.readU8(p);
-        p = ptr.add(operandAnalysisStructDesc.offsets[5]);
-        analysis.regCtxIdx = Memory.readU16(p);
-        p = ptr.add(operandAnalysisStructDesc.offsets[6]);
-        var regNamePtr = Memory.readPointer(p);
-        if (regNamePtr.isNull()) {
-            analysis.regName = undefined;
+        var namePtr = Memory.readPointer(p);
+        if (namePtr.isNull()) {
+            analysis.name = undefined;
         } else {
-            analysis.regName = Memory.readCString(regNamePtr);
+            analysis.name = Memory.readCString(namePtr);
         }
+        p = ptr.add(operandAnalysisStructDesc.offsets[5]);
+        analysis.regOff = Memory.readU8(p);
+        p = ptr.add(operandAnalysisStructDesc.offsets[6]);
+        analysis.regCtxIdx = Memory.readU16(p);
         p = ptr.add(operandAnalysisStructDesc.offsets[7]);
         analysis.regAccess = Memory.readU8(p);
         Object.freeze(analysis);
