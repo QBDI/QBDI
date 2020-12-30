@@ -49,6 +49,28 @@ void init_binding_InstAnalysis(py::module_& m) {
         .value("REGISTER_READ_WRITE", RegisterAccessType::REGISTER_READ_WRITE, "Register read/write access")
         .export_values();
 
+    py::enum_<ConditionType>(m, "ConditionType", "Condition type")
+        .value("CONDITION_NONE", ConditionType::CONDITION_NONE, "The instruction is unconditionnal")
+        .value("CONDITION_ALWAYS", ConditionType::CONDITION_ALWAYS, "The instruction is always true")
+        .value("CONDITION_NEVER", ConditionType::CONDITION_NEVER, "The instruction is always false")
+        .value("CONDITION_EQUALS", ConditionType::CONDITION_EQUALS, "Equals ( '==' )")
+        .value("CONDITION_NOT_EQUALS", ConditionType::CONDITION_NOT_EQUALS, "Not Equals ( '!=' )")
+        .value("CONDITION_ABOVE", ConditionType::CONDITION_ABOVE, "Above ( '>' unsigned )")
+        .value("CONDITION_BELOW_EQUALS", ConditionType::CONDITION_BELOW_EQUALS, "Below or Equals ( '<=' unsigned )")
+        .value("CONDITION_ABOVE_EQUALS", ConditionType::CONDITION_ABOVE_EQUALS, "Above or Equals ( '>=' unsigned )")
+        .value("CONDITION_BELOW", ConditionType::CONDITION_BELOW, "Below ( '<' unsigned )")
+        .value("CONDITION_GREAT", ConditionType::CONDITION_GREAT, "Great ( '>' signed )")
+        .value("CONDITION_LESS_EQUALS", ConditionType::CONDITION_LESS_EQUALS, "Less or Equals ( '<=' signed )")
+        .value("CONDITION_GREAT_EQUALS", ConditionType::CONDITION_GREAT_EQUALS, "Great or Equals ( '>=' signed )")
+        .value("CONDITION_LESS", ConditionType::CONDITION_LESS, "Less ( '<' signed )")
+        .value("CONDITION_EVEN", ConditionType::CONDITION_EVEN, "Even")
+        .value("CONDITION_ODD", ConditionType::CONDITION_ODD, "Odd")
+        .value("CONDITION_OVERFLOW", ConditionType::CONDITION_OVERFLOW, "Overflow")
+        .value("CONDITION_NOT_OVERFLOW", ConditionType::CONDITION_NOT_OVERFLOW, "Not Overflow")
+        .value("CONDITION_SIGN", ConditionType::CONDITION_SIGN, "Sign")
+        .value("CONDITION_NOT_SIGN", ConditionType::CONDITION_NOT_SIGN, "Not Sign")
+        .export_values();
+
     py::enum_<OperandType>(m, "OperandType", "Operand type")
         .value("OPERAND_INVALID", OperandType::OPERAND_INVALID, "Invalid operand")
         .value("OPERAND_IMM", OperandType::OPERAND_IMM, "Immediate operand")
@@ -56,7 +78,6 @@ void init_binding_InstAnalysis(py::module_& m) {
         .value("OPERAND_PRED", OperandType::OPERAND_PRED, "Predicate operand")
         .value("OPERAND_FPR", OperandType::OPERAND_FPR, "Floating point register operand")
         .value("OPERAND_SEG", OperandType::OPERAND_SEG, "Segment or unsaved register operand")
-        .value("OPERAND_COND", OperandType::OPERAND_COND, "Condition operand")
         .export_values();
 
     py::enum_<OperandFlag>(m, "OperandFlag", py::arithmetic(), "Operand flag")
@@ -79,9 +100,9 @@ void init_binding_InstAnalysis(py::module_& m) {
         .def_readonly("flag", &OperandAnalysis::flag, "Operand flag")
         .def_readonly("value", &OperandAnalysis::value, "Operand value (if immediate), or register Id")
         .def_readonly("size", &OperandAnalysis::size, "Operand size (in bytes)")
-        .def_readonly("name", &OperandAnalysis::name, "Register or condition name")
         .def_readonly("regOff", &OperandAnalysis::regOff, "Sub-register offset in register (in bits)")
         .def_readonly("regCtxIdx", &OperandAnalysis::regCtxIdx, "Register index in VM state")
+        .def_readonly("regName", &OperandAnalysis::regName, "Register name")
         .def_readonly("regAccess", &OperandAnalysis::regAccess, "Register access type (r, w, rw)");
 
     py::class_<InstAnalysis>(m, "InstAnalysis")
@@ -138,6 +159,10 @@ void init_binding_InstAnalysis(py::module_& m) {
                 [](const InstAnalysis& obj) {
                     return get_InstAnalysis_member(obj, &InstAnalysis::storeSize, ANALYSIS_INSTRUCTION);
                 }, "size of the expected write access, may be 0 with mayStore if the size isn't determined (if ANALYSIS_INSTRUCTION)")
+        .def_property_readonly("condition",
+                [](const InstAnalysis& obj) {
+                    return get_InstAnalysis_member(obj, &InstAnalysis::condition, ANALYSIS_INSTRUCTION);
+                }, "Condition associated with the instruction (if ANALYSIS_INSTRUCTION)")
         // ANALYSIS_DISASSEMBLY
         .def_property_readonly("disassembly",
                 [](const InstAnalysis& obj) {

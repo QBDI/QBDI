@@ -60,9 +60,9 @@ QBDI_EXPORT const StructDesc* qbdi_getOperandAnalysisStructDesc() {
             offsetof(OperandAnalysis, flag),
             offsetof(OperandAnalysis, value),
             offsetof(OperandAnalysis, size),
-            offsetof(OperandAnalysis, name),
             offsetof(OperandAnalysis, regOff),
             offsetof(OperandAnalysis, regCtxIdx),
+            offsetof(OperandAnalysis, regName),
             offsetof(OperandAnalysis, regAccess),
         }
     };
@@ -72,7 +72,7 @@ QBDI_EXPORT const StructDesc* qbdi_getOperandAnalysisStructDesc() {
 QBDI_EXPORT const StructDesc* qbdi_getInstAnalysisStructDesc() {
     static const StructDesc InstAnalysisDesc {
         sizeof(InstAnalysis),
-        20,
+        21,
         {
             offsetof(InstAnalysis, mnemonic),
             offsetof(InstAnalysis, disassembly),
@@ -88,6 +88,7 @@ QBDI_EXPORT const StructDesc* qbdi_getInstAnalysisStructDesc() {
             offsetof(InstAnalysis, mayStore),
             offsetof(InstAnalysis, loadSize),
             offsetof(InstAnalysis, storeSize),
+            offsetof(InstAnalysis, condition),
             offsetof(InstAnalysis, flagsAccess),
             offsetof(InstAnalysis, numOperands),
             offsetof(InstAnalysis, operands),

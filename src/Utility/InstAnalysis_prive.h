@@ -23,6 +23,7 @@
 #include "InstAnalysis.h"
 
 namespace llvm {
+  class MCInstrDesc;
   class MCInstrInfo;
   class MCRegisterInfo;
 }
@@ -42,8 +43,7 @@ const InstAnalysis* analyzeInstMetadata(const InstMetadata& instMetadata, Analys
                                         const Assembly& assembly);
 
 // X86 specific
-extern unsigned MCOI_COND_CODE;
-const char* getName_MCOI_COND(unsigned);
+void analyseCondition(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const llvm::MCInstrDesc& desc);
 
 }
 

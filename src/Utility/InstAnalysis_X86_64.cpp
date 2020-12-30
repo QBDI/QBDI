@@ -19,42 +19,49 @@
 #include <map>
 #include <string>
 
+#include "llvm/MC/MCInst.h"
+#include "llvm/MC/MCInstrDesc.h"
 #include "MCTargetDesc/X86BaseInfo.h"
 
 #include "InstAnalysis_prive.h"
+#include "LogSys.h"
 
 namespace QBDI {
 
-unsigned MCOI_COND_CODE = llvm::X86::OperandType::OPERAND_COND_CODE;
+static ConditionType ConditionLLVM2QBDI(unsigned cond) {
+    switch (cond) {
+        case llvm::X86::CondCode::COND_E : return CONDITION_EQUALS;
+        case llvm::X86::CondCode::COND_NE: return CONDITION_NOT_EQUALS;
+        case llvm::X86::CondCode::COND_A : return CONDITION_ABOVE;
+        case llvm::X86::CondCode::COND_BE: return CONDITION_BELOW_EQUALS;
+        case llvm::X86::CondCode::COND_AE: return CONDITION_ABOVE_EQUALS;
+        case llvm::X86::CondCode::COND_B : return CONDITION_BELOW;
+        case llvm::X86::CondCode::COND_G : return CONDITION_GREAT;
+        case llvm::X86::CondCode::COND_LE: return CONDITION_LESS_EQUALS;
+        case llvm::X86::CondCode::COND_GE: return CONDITION_GREAT_EQUALS;
+        case llvm::X86::CondCode::COND_L : return CONDITION_LESS;
+        case llvm::X86::CondCode::COND_P : return CONDITION_EVEN;
+        case llvm::X86::CondCode::COND_NP: return CONDITION_ODD;
+        case llvm::X86::CondCode::COND_O : return CONDITION_OVERFLOW;
+        case llvm::X86::CondCode::COND_NO: return CONDITION_NOT_OVERFLOW;
+        case llvm::X86::CondCode::COND_S : return CONDITION_SIGN;
+        case llvm::X86::CondCode::COND_NS: return CONDITION_NOT_SIGN;
+        default:
+          LogError("ConditionLLVM2QBDI", "Unsupported LLVM condition %d", cond);
+          abort();
+    }
+}
 
-static const std::map<unsigned, std::string> CondNameMap = {
-    { llvm::X86::CondCode::COND_O, "O"},
-    { llvm::X86::CondCode::COND_NO, "NO"},
-    { llvm::X86::CondCode::COND_B, "B"},
-    { llvm::X86::CondCode::COND_AE, "AE"},
-    { llvm::X86::CondCode::COND_E, "E"},
-    { llvm::X86::CondCode::COND_NE, "NE"},
-    { llvm::X86::CondCode::COND_BE, "BE"},
-    { llvm::X86::CondCode::COND_A, "A"},
-    { llvm::X86::CondCode::COND_S, "S"},
-    { llvm::X86::CondCode::COND_NS, "NS"},
-    { llvm::X86::CondCode::COND_P, "P"},
-    { llvm::X86::CondCode::COND_NP, "NP"},
-    { llvm::X86::CondCode::COND_L, "L"},
-    { llvm::X86::CondCode::COND_GE, "GE"},
-    { llvm::X86::CondCode::COND_LE, "LE"},
-    { llvm::X86::CondCode::COND_G, "G"},
-    { llvm::X86::CondCode::COND_NE_OR_P, "NE_OR_P"},
-    { llvm::X86::CondCode::COND_E_AND_NP, "E_AND_NP"},
-};
-
-
-const char* getName_MCOI_COND(unsigned value) {
-    auto r = CondNameMap.find(value);
-    if (r == CondNameMap.end())
-        return nullptr;
-    else
-        return r->second.c_str();
+void analyseCondition(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const llvm::MCInstrDesc& desc) {
+    const unsigned numOperands = inst.getNumOperands();
+    for (int i = 0; i < numOperands; i++) {
+        const llvm::MCOperandInfo& opdesc = desc.OpInfo[i];
+        if (opdesc.OperandType == llvm::X86::OperandType::OPERAND_COND_CODE) {
+            instAnalysis->condition = ConditionLLVM2QBDI(static_cast<unsigned>(inst.getOperand(i).getImm()));
+            return;
+        }
+    }
+    instAnalysis->condition = CONDITION_NONE;
 }
 
 }

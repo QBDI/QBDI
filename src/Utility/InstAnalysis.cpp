@@ -55,9 +55,9 @@ bool isFlagRegister(unsigned int regNo) {
 }
 
 void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm::MCRegisterInfo& MRI) {
-    opa.name = MRI.getName(regNo);
-    if (opa.name != nullptr && opa.name[0] == '\x00')
-        opa.name = nullptr;
+    opa.regName = MRI.getName(regNo);
+    if (opa.regName != nullptr && opa.regName[0] == '\x00')
+        opa.regName = nullptr;
     opa.value = regNo;
     opa.size = 0;
     opa.flag = OPERANDFLAG_NONE;
@@ -78,7 +78,7 @@ void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm::MCReg
             opa.size = getRegisterSize(regNo);
             opa.type = OPERAND_GPR;
             if (!opa.size)
-                LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.name);
+                LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.regName);
             return;
         }
     }
@@ -89,7 +89,7 @@ void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm::MCReg
         opa.size = getRegisterSize(regNo);
         opa.type = OPERAND_FPR;
         if (!opa.size)
-            LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.name);
+            LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.regName);
         return;
     }
     for (uint16_t j = 0; j < size_SEG_ID; j++) {
@@ -98,11 +98,11 @@ void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm::MCReg
             opa.size = getRegisterSize(regNo);
             opa.type = OPERAND_SEG;
             if (!opa.size)
-                LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.name);
+                LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.regName);
             return;
         }
     }
-    LogWarning("analyseRegister", "Unknown register %d : %s", regNo, opa.name);
+    LogWarning("analyseRegister", "Unknown register %d : %s", regNo, opa.regName);
 }
 
 void tryMergeCurrentRegister(InstAnalysis* instAnalysis) {
@@ -224,19 +224,21 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
                     opa.flag |= OPERANDFLAG_UNDEFINED_EFFECT;
                     break;
                 default:
-                    LogWarning("ExecBlockManager::analyseOperands",
-                            "Not supported operandType %d for register operand", opdesc.OperandType);
+                    // warning only if generic operandType
+                    if (opdesc.OperandType < llvm::MCOI::OPERAND_FIRST_TARGET) {
+                        LogWarning("ExecBlockManager::analyseOperands",
+                                "Not supported operandType %d for register operand", opdesc.OperandType);
+                    } else {
+                        LogDebug("ExecBlockManager::analyseOperands",
+                                "Not supported operandType %d for register operand (target specific)", opdesc.OperandType);
+                    }
+                    continue;
             }
             if (opa.type != QBDI::OPERAND_INVALID)
                 opa.regAccess = regWrites.test(i) ? REGISTER_WRITE : REGISTER_READ;
             instAnalysis->numOperands++;
         } else if (op.isImm()) {
             // fill the operand analysis
-            if (opdesc.isPredicate()) {
-                opa.type = OPERAND_PRED;
-            } else {
-                opa.type = OPERAND_IMM;
-            }
             switch (opdesc.OperandType) {
                 case llvm::MCOI::OPERAND_IMMEDIATE:
                     opa.size = getImmediateSize(inst, &desc);
@@ -254,16 +256,20 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
                     opa.size = sizeof(rword);
                     break;
                 default:
-                    if (opdesc.OperandType ==  MCOI_COND_CODE /* llvm::X86::OperandType::OPERAND_COND_CODE */) {
-                        opa.type = OPERAND_COND;
-                        opa.size = 0;
-                        opa.name = getName_MCOI_COND(static_cast<unsigned>(op.getImm()));
-                        break;
-                    } else {
+                    // warning only if generic operandType
+                    if (opdesc.OperandType < llvm::MCOI::OPERAND_FIRST_TARGET) {
                         LogWarning("ExecBlockManager::analyseOperands",
                                 "Not supported operandType %d for immediate operand", opdesc.OperandType);
-                        continue;
+                    } else {
+                        LogDebug("ExecBlockManager::analyseOperands",
+                                "Not supported operandType %d for immediate operand (target specific)", opdesc.OperandType);
                     }
+                    continue;
+            }
+            if (opdesc.isPredicate()) {
+                opa.type = OPERAND_PRED;
+            } else {
+                opa.type = OPERAND_IMM;
             }
             opa.value = static_cast<rword>(op.getImm());
             instAnalysis->numOperands++;
@@ -356,6 +362,8 @@ const InstAnalysis* analyzeInstMetadata(const InstMetadata& instMetadata, Analys
         // old predicate, used by the validator
         instAnalysis->mayLoad_LLVM      = desc.mayLoad();
         instAnalysis->mayStore_LLVM     = desc.mayStore();
+
+        analyseCondition(instAnalysis, inst, desc);
     }
 
     if (missingAnalysis & ANALYSIS_OPERANDS) {

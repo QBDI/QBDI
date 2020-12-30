@@ -531,6 +531,88 @@ var RegisterAccessType = Object.freeze({
     REGISTER_READ_WRITE : 3
 });
 
+/**data:ConditionType
+  Instruction Condition
+*/
+var ConditionType = = Object.freeze({
+    /**attribute:ConditionType.CONDITION_NONE
+     The instruction is unconditionnal
+     */
+    CONDITION_NONE : 0x0,
+    /**attribute:ConditionType.CONDITION_ALWAYS
+     The instruction is always true
+     */
+    CONDITION_ALWAYS : 0x2,
+    /**attribute:ConditionType.CONDITION_NEVER
+     The instruction is always false
+     */
+    CONDITION_NEVER : 0x3,
+    /**attribute:ConditionType.CONDITION_EQUALS
+     Equals ( '==' )
+     */
+    CONDITION_EQUALS : 0x4,
+    /**attribute:ConditionType.CONDITION_NOT_EQUALS
+     Not Equals ( '!=' )
+     */
+    CONDITION_NOT_EQUALS : 0x5,
+    /**attribute:ConditionType.CONDITION_ABOVE
+     Above ( '>' unsigned )
+     */
+    CONDITION_ABOVE : 0x6,
+    /**attribute:ConditionType.CONDITION_BELOW_EQUALS
+     Below or Equals ( '<=' unsigned )
+     */
+    CONDITION_BELOW_EQUALS : 0x7,
+    /**attribute:ConditionType.CONDITION_ABOVE_EQUALS
+     Above or Equals ( '>=' unsigned )
+     */
+    CONDITION_ABOVE_EQUALS : 0x8,
+    /**attribute:ConditionType.CONDITION_BELOW
+     Below ( '<' unsigned )
+     */
+    CONDITION_BELOW : 0x9,
+    /**attribute:ConditionType.CONDITION_GREAT
+     Great ( '>' signed )
+     */
+    CONDITION_GREAT : 0xa,
+    /**attribute:ConditionType.CONDITION_LESS_EQUALS
+     Less or Equals ( '<=' signed )
+     */
+    CONDITION_LESS_EQUALS : 0xb,
+    /**attribute:ConditionType.CONDITION_GREAT_EQUALS
+     Great or Equals ( '>=' signed )
+     */
+    CONDITION_GREAT_EQUALS : 0xc,
+    /**attribute:ConditionType.CONDITION_LESS
+     Less ( '<' signed )
+     */
+    CONDITION_LESS : 0xd,
+    /**attribute:ConditionType.CONDITION_EVEN
+     Even
+     */
+    CONDITION_EVEN : 0xe,
+    /**attribute:ConditionType.CONDITION_ODD
+     Odd
+     */
+    CONDITION_ODD : 0xf,
+    /**attribute:ConditionType.CONDITION_OVERFLOW
+     Overflow
+     */
+    CONDITION_OVERFLOW : 0x10,
+    /**attribute:ConditionType.CONDITION_NOT_OVERFLOW
+     Not Overflow
+     */
+    CONDITION_NOT_OVERFLOW : 0x11,
+    /**attribute:ConditionType.CONDITION_SIGN
+     Sign
+     */
+    CONDITION_SIGN : 0x12,
+    /**attribute:ConditionType.CONDITION_NOT_SIGN
+     Not Sign
+     */
+    CONDITION_NOT_SIGN : 0x13
+});
+
 /**data:OperandType
   Register access type (read / write / rw)
 */
@@ -558,11 +640,7 @@ var OperandType = Object.freeze({
     /**attribute:OperandType.OPERAND_SEG
       Segment or unsaved register operand
      */
-    OPERAND_SEG : 5,
-    /**attribute:OperandType.OPERAND_COND
-      Condition operand
-     */
-    OPERAND_COND : 6
+    OPERAND_SEG : 5
 });
 
 /**data:OperandFlag
@@ -1291,16 +1369,16 @@ function QBDI() {
         p = ptr.add(operandAnalysisStructDesc.offsets[3]);
         analysis.size = Memory.readU8(p);
         p = ptr.add(operandAnalysisStructDesc.offsets[4]);
-        var namePtr = Memory.readPointer(p);
-        if (namePtr.isNull()) {
-            analysis.name = undefined;
-        } else {
-            analysis.name = Memory.readCString(namePtr);
-        }
-        p = ptr.add(operandAnalysisStructDesc.offsets[5]);
         analysis.regOff = Memory.readU8(p);
-        p = ptr.add(operandAnalysisStructDesc.offsets[6]);
+        p = ptr.add(operandAnalysisStructDesc.offsets[5]);
         analysis.regCtxIdx = Memory.readU16(p);
+        p = ptr.add(operandAnalysisStructDesc.offsets[6]);
+        var regNamePtr = Memory.readPointer(p);
+        if (regNamePtr.isNull()) {
+            analysis.regName = undefined;
+        } else {
+            analysis.regName = Memory.readCString(regNamePtr);
+        }
         p = ptr.add(operandAnalysisStructDesc.offsets[7]);
         analysis.regAccess = Memory.readU8(p);
         Object.freeze(analysis);
@@ -1338,26 +1416,28 @@ function QBDI() {
         p = ptr.add(instAnalysisStructDesc.offsets[13]);
         analysis.storeSize = Memory.readU32(p);
         p = ptr.add(instAnalysisStructDesc.offsets[14]);
-        analysis.flagsAccess = Memory.readU8(p);
+        analysis.condition = Memory.readU8(p);
         p = ptr.add(instAnalysisStructDesc.offsets[15]);
-        var numOperands = Memory.readU8(p);
+        analysis.flagsAccess = Memory.readU8(p);
         p = ptr.add(instAnalysisStructDesc.offsets[16]);
+        var numOperands = Memory.readU8(p);
+        p = ptr.add(instAnalysisStructDesc.offsets[17]);
         var operandsPtr = Memory.readPointer(p);
         analysis.operands = new Array(numOperands);
         for (var i = 0; i < numOperands; i++) {
             analysis.operands[i] = parseOperandAnalysis(operandsPtr);
             operandsPtr = operandsPtr.add(operandAnalysisStructDesc.size);
         }
-        p = ptr.add(instAnalysisStructDesc.offsets[17]);
+        p = ptr.add(instAnalysisStructDesc.offsets[18]);
         var symbolPtr = Memory.readPointer(p);
         if (!symbolPtr.isNull()) {
             analysis.symbol = Memory.readCString(symbolPtr);
         } else {
             analysis.symbol = "";
         }
-        p = ptr.add(instAnalysisStructDesc.offsets[18]);
-        analysis.symbolOffset = Memory.readU32(p);
         p = ptr.add(instAnalysisStructDesc.offsets[19]);
+        analysis.symbolOffset = Memory.readU32(p);
+        p = ptr.add(instAnalysisStructDesc.offsets[20]);
         var modulePtr = Memory.readPointer(p);
         if (!modulePtr.isNull()) {
             analysis.module = Memory.readCString(modulePtr);
