@@ -122,8 +122,6 @@ const std::set<unsigned> unsupportedInst {
     // specific addressing operation
     BNDLDXrm,
     BNDSTXmr,
-    // TODO with custom handler
-    XLAT,
     // TODO support VSIB addressing
     VGATHERDPDYrm,
     VGATHERDPDrm,

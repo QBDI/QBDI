@@ -94,6 +94,13 @@ RelocatableInst::SharedPtrVec GetReadAddress::generate(const llvm::MCInst* inst,
                 Require("GetReadAddress::generate", reg == llvm::X86::RDI || reg == llvm::X86::EDI);
             }
             return {NoReloc(movrr(temp_manager->getRegForTemp(temp), reg))};
+        } else if (inst->getOpcode() == llvm::X86::XLAT) {
+            unsigned dest = temp_manager->getRegForTemp(temp);
+            // (R|E)BX
+            unsigned int reg = Reg(1);
+            Require("GetReadAddress::generate", reg == llvm::X86::RBX || reg == llvm::X86::EBX);
+            return {NoReloc(movzxrr8(dest, llvm::X86::AL)),
+                    NoReloc(lea(dest, reg, 1, dest, 0, 0))};
         } else if (FormDesc == llvm::X86II::RawFrmMemOffs) {
             if (inst->getOperand(0).isImm() && inst->getOperand(1).isReg()) {
                 return {
@@ -297,6 +304,14 @@ RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
                 readinst = {mov32rm8(dst, reg, 1, 0, 0, 0)};
             }
             return {NoReloc(std::move(readinst))};
+        } else if (inst->getOpcode() == llvm::X86::XLAT) {
+            unsigned dest = temp_manager->getRegForTemp(temp);
+            // (R|E)BX
+            unsigned int reg = Reg(1);
+            Require("GetReadAddress::generate", reg == llvm::X86::RBX || reg == llvm::X86::EBX);
+            Require("GetReadAddress::generate", size == 1);
+            return {NoReloc(movzxrr8(dest, llvm::X86::AL)),
+                    NoReloc(mov32rm8(dest, reg, 1, dest, 0, 0))};
         } else if (FormDesc == llvm::X86II::RawFrmMemOffs) {
             if (inst->getOperand(0).isImm() && inst->getOperand(1).isReg()) {
                 rword displacement = inst->getOperand(0).getImm();

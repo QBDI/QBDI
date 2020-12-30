@@ -1466,3 +1466,30 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-maskmovq") {
     for (auto& e: expectedPost.accesses)
         CHECK(e.see);
 }
+
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-xlat") {
+
+    const char source[] = "xlatb\n";
+
+    const uint8_t v[8] = {0x41, 0x6a, 0xc4, 0x1e, 0x14, 0xa9, 0x5d, 0x27};
+
+    ExpectedMemoryAccesses expected = {{
+        { (QBDI::rword) &v[5], v[5], 1, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
+    }};
+
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("XLAT", QBDI::PREINST, checkAccess, &expected);
+
+    QBDI::GPRState* state = vm.getGPRState();
+    state->ebx = (QBDI::rword) &v;
+    state->eax = 5;
+    vm.setGPRState(state);
+
+    QBDI::rword retval;
+    bool ran = runOnASM(&retval, source);
+
+    CHECK(ran);
+    CHECK(v[5] == vm.getGPRState()->eax);
+    for (auto& e: expected.accesses)
+        CHECK(e.see);
+}
