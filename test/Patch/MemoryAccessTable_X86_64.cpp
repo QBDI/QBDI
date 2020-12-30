@@ -141,13 +141,6 @@ const std::set<unsigned> unsupportedInst {
     VPGATHERQDrm,
     VPGATHERQQYrm,
     VPGATHERQQrm,
-    // TODO read/write from implicit RDI
-    MASKMOVDQU,
-    MASKMOVDQU64,
-    MMX_MASKMOVQ,
-    MMX_MASKMOVQ64,
-    VMASKMOVDQU,
-    VMASKMOVDQU64,
     // MOVDIR64B write unsupported.
     // read is normal MODr/m , write is the first operand, need custom handler
     MOVDIR64B16,

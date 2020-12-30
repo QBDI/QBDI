@@ -24,6 +24,9 @@ namespace QBDI {
 
 bool hasREPPrefix(const llvm::MCInst& instr);
 
+// Implicit access based on RDI or RSI
+bool implicitDSIAccess(unsigned opcode, unsigned TSFlags);
+
 }
 
 #endif // INSTINFO_X86_64_H

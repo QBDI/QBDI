@@ -80,9 +80,7 @@ RelocatableInst::SharedPtrVec GetReadAddress::generate(const llvm::MCInst* inst,
                 return {Mov(temp_manager->getRegForTemp(temp), Reg(REG_SP))};
             }
         // specific case for instruction type cmpsb and movsb
-        } else if (FormDesc == llvm::X86II::RawFrmDstSrc ||
-                   FormDesc == llvm::X86II::RawFrmDst ||
-                   FormDesc == llvm::X86II::RawFrmSrc) {
+        } else if (implicitDSIAccess(inst->getOpcode(), TSFlags)) {
             RequireAction("GetReadAddress::generate", index < 2 && "Wrong index", abort());
             unsigned int reg;
             if (FormDesc == llvm::X86II::RawFrmSrc ||
@@ -171,9 +169,7 @@ RelocatableInst::SharedPtrVec GetWriteAddress::generate(const llvm::MCInst* inst
                 else
                     return {Add(temp_manager->getRegForTemp(temp), Reg(REG_SP), Constant(-size))};
             }
-        } else if (FormDesc == llvm::X86II::RawFrmDstSrc ||
-                   FormDesc == llvm::X86II::RawFrmDst ||
-                   FormDesc == llvm::X86II::RawFrmSrc) {
+        } else if (implicitDSIAccess(inst->getOpcode(), TSFlags)) {
             unsigned int reg;
             if (FormDesc == llvm::X86II::RawFrmSrc) {
                 // (R|E)SI
@@ -274,9 +270,7 @@ RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
                 readinst = mov32rm8(dst, Reg(stack_register), 1, 0, 0, 0);
             }
             return {NoReloc(std::move(readinst))};
-        } else if (FormDesc == llvm::X86II::RawFrmDstSrc ||
-                   FormDesc == llvm::X86II::RawFrmDst ||
-                   FormDesc == llvm::X86II::RawFrmSrc) {
+        } else if (implicitDSIAccess(inst->getOpcode(), TSFlags)) {
             llvm::MCInst readinst;
             RequireAction("GetReadValue::generate", index < 2 && "Wrong index", abort());
             unsigned int reg;
@@ -388,10 +382,7 @@ RelocatableInst::SharedPtrVec GetWriteValue::generate(const llvm::MCInst* inst,
         if(size < 8) {
             dst = temp_manager->getSizedSubReg(dst, 4);
         }
-        if (isStackWrite(*inst) ||
-                   FormDesc == llvm::X86II::RawFrmDstSrc ||
-                   FormDesc == llvm::X86II::RawFrmDst ||
-                   FormDesc == llvm::X86II::RawFrmSrc) {
+        if (isStackWrite(*inst) || implicitDSIAccess(inst->getOpcode(), TSFlags)) {
             // the computation of the address need to have DF,
             // As the address is already in temp, just dereference it.
             if(size == 8) {

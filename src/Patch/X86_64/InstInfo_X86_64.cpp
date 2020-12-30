@@ -29,9 +29,7 @@
 
 namespace QBDI {
 /* TODO instruction (no yet supported)
- * MONITOR & MWAIT // ununderstand access of these instructions
- * llvm::X86::MMX_MASKMOVQ64,   // 64 bits implicit store to [rdi]
- * XLAT                         // need custom helper
+ * See test/Patch/MemoryAccessTable_X86_64.cpp
  */
 namespace {
 
@@ -754,6 +752,8 @@ const unsigned READ_64[] = {
     llvm::X86::MMX_CVTPI2PSirm,
     llvm::X86::MMX_CVTPS2PIirm,
     llvm::X86::MMX_CVTTPS2PIirm,
+    llvm::X86::MMX_MASKMOVQ,
+    llvm::X86::MMX_MASKMOVQ64,
     llvm::X86::MMX_MOVQ64rm,
     llvm::X86::MMX_PABSBrm,
     llvm::X86::MMX_PABSDrm,
@@ -1094,6 +1094,8 @@ const unsigned READ_128[] = {
     llvm::X86::HSUBPDrm,
     llvm::X86::HSUBPSrm,
     llvm::X86::LDDQUrm,
+    llvm::X86::MASKMOVDQU,
+    llvm::X86::MASKMOVDQU64,
     llvm::X86::MAXPDrm,
     llvm::X86::MAXPSrm,
     llvm::X86::MINPDrm,
@@ -1338,6 +1340,8 @@ const unsigned READ_128[] = {
     llvm::X86::VINSERTF128rm,
     llvm::X86::VINSERTI128rm,
     llvm::X86::VLDDQUrm,
+    llvm::X86::VMASKMOVDQU,
+    llvm::X86::VMASKMOVDQU64,
     llvm::X86::VMASKMOVPDmr,
     llvm::X86::VMASKMOVPDrm,
     llvm::X86::VMASKMOVPSmr,
@@ -2118,6 +2122,8 @@ const unsigned WRITE_64[] = {
     llvm::X86::LOCK_XOR64mi32,
     llvm::X86::LOCK_XOR64mi8,
     llvm::X86::LOCK_XOR64mr,
+    llvm::X86::MMX_MASKMOVQ,
+    llvm::X86::MMX_MASKMOVQ64,
     llvm::X86::MMX_MOVNTQmr,
     llvm::X86::MMX_MOVQ64mr,
     llvm::X86::MOV64mi32,
@@ -2203,6 +2209,8 @@ const size_t WRITE_80_SIZE = sizeof(WRITE_80)/sizeof(unsigned);
 const unsigned WRITE_128[] = {
     llvm::X86::BNDMOV64mr,
     llvm::X86::CMPXCHG16B,
+    llvm::X86::MASKMOVDQU,
+    llvm::X86::MASKMOVDQU64,
     llvm::X86::MOVAPDmr,
     llvm::X86::MOVAPSmr,
     llvm::X86::MOVDQAmr,
@@ -2215,6 +2223,8 @@ const unsigned WRITE_128[] = {
     llvm::X86::VCVTPS2PHYmr,
     llvm::X86::VEXTRACTF128mr,
     llvm::X86::VEXTRACTI128mr,
+    llvm::X86::VMASKMOVDQU,
+    llvm::X86::VMASKMOVDQU64,
     llvm::X86::VMASKMOVPDmr,
     llvm::X86::VMASKMOVPSmr,
     llvm::X86::VMOVAPDmr,
@@ -2642,6 +2652,30 @@ bool useAllRegisters(const llvm::MCInst& inst) {
 
 bool hasREPPrefix(const llvm::MCInst& instr) {
     return (instr.getFlags() & (llvm::X86::IP_HAS_REPEAT_NE | llvm::X86::IP_HAS_REPEAT)) != llvm::X86::IP_NO_PREFIX;
+}
+
+bool implicitDSIAccess(unsigned opcode, unsigned TSFlags) {
+
+    switch (TSFlags & llvm::X86II::FormMask) {
+        case llvm::X86II::RawFrmDstSrc:
+        case llvm::X86II::RawFrmDst:
+        case llvm::X86II::RawFrmSrc:
+            return true;
+        default:
+            break;
+    }
+
+    switch (opcode) {
+        case llvm::X86::MASKMOVDQU:
+        case llvm::X86::MASKMOVDQU64:
+        case llvm::X86::MMX_MASKMOVQ:
+        case llvm::X86::MMX_MASKMOVQ64:
+        case llvm::X86::VMASKMOVDQU:
+        case llvm::X86::VMASKMOVDQU64:
+            return true;
+        default:
+            return false;
+    }
 }
 
 };
