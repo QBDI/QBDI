@@ -66,9 +66,9 @@ static void debugOperand(const QBDI::InstAnalysis* ana) {
               << ", flag: " << op.flag
               << ", value: " << op.value
               << ", size: " << (int) op.size
-              << ", name: " << (op.name == nullptr ? "nullptr": op.name)
               << ", regOff : " << (int) op.regOff
               << ", regCtxIdx: " << op.regCtxIdx
+              << ", regName: " << (op.regName == nullptr ? "nullptr": op.regName)
               << ", regAccess: " << (op.regAccess & QBDI::REGISTER_READ ? "r": "-")
                                  << (op.regAccess & QBDI::REGISTER_WRITE ? "w": "-"));
         }

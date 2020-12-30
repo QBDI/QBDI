@@ -96,6 +96,17 @@ RelocatableInst::SharedPtrVec GetReadAddress::generate(const llvm::MCInst* inst,
                 Require("GetReadAddress::generate", reg == llvm::X86::RDI || reg == llvm::X86::EDI);
             }
             return {NoReloc(movrr(temp_manager->getRegForTemp(temp), reg))};
+        } else if (FormDesc == llvm::X86II::RawFrmMemOffs) {
+            if (inst->getOperand(0).isImm() && inst->getOperand(1).isReg()) {
+                return {
+                    NoReloc(lea(
+                        temp_manager->getRegForTemp(temp),
+                        0, 1, 0,
+                        inst->getOperand(0).getImm(),
+                        inst->getOperand(1).getReg()
+                    ))
+                };
+            }
         // Else replace the instruction with a LEA on the same address
         } else if (memIndex >= 0) {
             // Scan for LLVM X86 address encoding
@@ -175,6 +186,17 @@ RelocatableInst::SharedPtrVec GetWriteAddress::generate(const llvm::MCInst* inst
             }
 
             return {NoReloc(movrr(temp_manager->getRegForTemp(temp), reg))};
+        } else if (FormDesc == llvm::X86II::RawFrmMemOffs) {
+            if (inst->getOperand(0).isImm() && inst->getOperand(1).isReg()) {
+                return {
+                    NoReloc(lea(
+                        temp_manager->getRegForTemp(temp),
+                        0, 1, 0,
+                        inst->getOperand(0).getImm(),
+                        inst->getOperand(1).getReg()
+                    ))
+                };
+            }
         // Else replace the instruction with a LEA on the same address
         } else if (memIndex >= 0) {
             // Scan for LLVM X86 address encoding
@@ -281,6 +303,24 @@ RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
                 readinst = {mov32rm8(dst, reg, 1, 0, 0, 0)};
             }
             return {NoReloc(std::move(readinst))};
+        } else if (FormDesc == llvm::X86II::RawFrmMemOffs) {
+            if (inst->getOperand(0).isImm() && inst->getOperand(1).isReg()) {
+                rword displacement = inst->getOperand(0).getImm();
+                unsigned seg = inst->getOperand(1).getReg();
+
+                if(size == 8) {
+                    return {NoReloc(mov64rm(dst, 0, 1, 0, displacement, seg))};
+                }
+                else if(size == 4) {
+                    return {NoReloc(mov32rm(dst, 0, 1, 0, displacement, seg))};
+                }
+                else if(size == 2) {
+                    return {NoReloc(mov32rm16(dst, 0, 1, 0, displacement, seg))};
+                }
+                else if(size == 1) {
+                    return {NoReloc(mov32rm8(dst, 0, 1, 0, displacement, seg))};
+                }
+            }
         } else if (memIndex >= 0) {
             for(unsigned i = memIndex; i + 4 <= inst->getNumOperands(); i++) {
                 if(inst->getOperand(i + 0).isReg() && inst->getOperand(i + 1).isImm() &&
@@ -365,6 +405,24 @@ RelocatableInst::SharedPtrVec GetWriteValue::generate(const llvm::MCInst* inst,
             }
             else if(size == 1) {
                 return {NoReloc(mov32rm8(dst, addr, 1, 0, 0, 0))};
+            }
+        } else if (FormDesc == llvm::X86II::RawFrmMemOffs) {
+            if (inst->getOperand(0).isImm() && inst->getOperand(1).isReg()) {
+                rword displacement = inst->getOperand(0).getImm();
+                unsigned seg = inst->getOperand(1).getReg();
+
+                if(size == 8) {
+                    return {NoReloc(mov64rm(dst, 0, 1, 0, displacement, seg))};
+                }
+                else if(size == 4) {
+                    return {NoReloc(mov32rm(dst, 0, 1, 0, displacement, seg))};
+                }
+                else if(size == 2) {
+                    return {NoReloc(mov32rm16(dst, 0, 1, 0, displacement, seg))};
+                }
+                else if(size == 1) {
+                    return {NoReloc(mov32rm8(dst, 0, 1, 0, displacement, seg))};
+                }
             }
         } else if (memIndex >= 0) {
             for(unsigned i = memIndex; i + 4 <= inst->getNumOperands(); i++) {

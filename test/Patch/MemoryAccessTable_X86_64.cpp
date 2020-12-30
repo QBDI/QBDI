@@ -148,33 +148,11 @@ const std::set<unsigned> unsupportedInst {
     MMX_MASKMOVQ64,
     VMASKMOVDQU,
     VMASKMOVDQU64,
-    // TODO read is normal MODr/m , write is the first operand, need custom handler
+    // MOVDIR64B write unsupported.
+    // read is normal MODr/m , write is the first operand, need custom handler
     MOVDIR64B16,
     MOVDIR64B32,
     MOVDIR64B64,
-    // TODO support moff operand
-    MOV16ao16,
-    MOV16ao32,
-    MOV16ao64,
-    MOV16o16a,
-    MOV16o32a,
-    MOV16o64a,
-    MOV32ao16,
-    MOV32ao32,
-    MOV32ao64,
-    MOV32o16a,
-    MOV32o32a,
-    MOV32o64a,
-    MOV64ao32,
-    MOV64ao64,
-    MOV64o32a,
-    MOV64o64a,
-    MOV8ao16,
-    MOV8ao32,
-    MOV8ao64,
-    MOV8o16a,
-    MOV8o32a,
-    MOV8o64a,
 };
 
 // instruction that reads memory/stack but without mayLoad
