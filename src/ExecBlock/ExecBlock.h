@@ -82,8 +82,6 @@ private:
 
     enum PageState {RX, RW};
 
-    static void (*runCodeBlockFct)(void*, rword);
-
     VMInstanceRef                     vminstance;
     llvm::sys::MemoryBlock            codeBlock;
     llvm::sys::MemoryBlock            dataBlock;

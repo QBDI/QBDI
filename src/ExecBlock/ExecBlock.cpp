@@ -36,24 +36,12 @@
 #include "Platform.h"
 
 #if defined(QBDI_PLATFORM_WINDOWS)
-    #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
-        extern "C" void qbdi_runCodeBlockSSE(void *codeBlock, QBDI::rword execflags);
-        extern "C" void qbdi_runCodeBlockAVX(void *codeBlock, QBDI::rword execflags);
-    #else
-        extern "C" void qbdi_runCodeBlock(void *codeBlock, QBDI::rword execflags);
-    #endif
+    extern "C" void qbdi_runCodeBlock(void *codeBlock, QBDI::rword execflags);
 #else
-    #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
-        extern void qbdi_runCodeBlockSSE(void *codeBlock, QBDI::rword execflags) asm ("__qbdi_runCodeBlockSSE");
-        extern void qbdi_runCodeBlockAVX(void *codeBlock, QBDI::rword execflags) asm ("__qbdi_runCodeBlockAVX");
-    #else
-        extern void qbdi_runCodeBlock(void *codeBlock, QBDI::rword execflags) asm ("__qbdi_runCodeBlock");
-    #endif
+    extern void qbdi_runCodeBlock(void *codeBlock, QBDI::rword execflags) asm ("__qbdi_runCodeBlock");
 #endif
 
 namespace QBDI {
-
-void (*ExecBlock::runCodeBlockFct)(void*, rword) = nullptr;
 
 ExecBlock::ExecBlock(const Assembly& assembly, VMInstanceRef vminstance,
                      const std::vector<std::unique_ptr<RelocatableInst>>* execBlockPrologue,
@@ -120,21 +108,6 @@ ExecBlock::ExecBlock(const Assembly& assembly, VMInstanceRef vminstance,
     for(const auto &inst: *execBlockPrologue) {
         assembly.writeInstruction(inst->reloc(this), codeStream.get());
     }
-
-    // runCodeBlock variant selection
-    if (runCodeBlockFct == nullptr) {
-        #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
-        if(isHostCPUFeaturePresent("avx")) {
-            LogDebug("ExecBlock::ExecBlock", "AVX support enabled in host context switches");
-            runCodeBlockFct = qbdi_runCodeBlockAVX;
-        } else {
-            LogDebug("ExecBlock::ExecBlock", "AVX support disabled in host context switches");
-            runCodeBlockFct = qbdi_runCodeBlockSSE;
-        }
-        #else
-        runCodeBlockFct = qbdi_runCodeBlock;
-        #endif
-    }
 }
 
 ExecBlock::~ExecBlock() {
@@ -199,7 +172,7 @@ void ExecBlock::run() {
         llvm::sys::Memory::InvalidateInstructionCache(codeBlock.base(), codeBlock.allocatedSize());
     else
         makeRX();
-    runCodeBlockFct(codeBlock.base(), context->hostState.executeFlags);
+    qbdi_runCodeBlock(codeBlock.base(), context->hostState.executeFlags);
 }
 
 VMAction ExecBlock::execute() {
