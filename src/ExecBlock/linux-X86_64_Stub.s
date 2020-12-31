@@ -38,6 +38,7 @@ _skip_save_fpu_SSE:
     push r10;
     push r9;
     push r8;
+    push rbp;
     push rdi;
     push rsi;
     push rdx;
@@ -51,6 +52,7 @@ _skip_save_fpu_SSE:
     pop rdx;
     pop rsi;
     pop rdi;
+    pop rbp;
     pop r8;
     pop r9;
     pop r10;
@@ -100,6 +102,7 @@ _skip_save_ymm:
     push r10;
     push r9;
     push r8;
+    push rbp;
     push rdi;
     push rsi;
     push rdx;
@@ -113,6 +116,7 @@ _skip_save_ymm:
     pop rdx;
     pop rsi;
     pop rdi;
+    pop rbp;
     pop r8;
     pop r9;
     pop r10;

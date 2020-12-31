@@ -32,8 +32,7 @@ namespace QBDI {
 RelocatableInst::UniquePtrVec getExecBlockPrologue(Options opts) {
     RelocatableInst::UniquePtrVec prologue;
 
-    // Save host BP, SP
-    append(prologue, SaveReg(Reg(REG_BP), Offset(offsetof(Context, hostState.bp))));
+    // Save host SP
     append(prologue, SaveReg(Reg(REG_SP), Offset(offsetof(Context, hostState.sp))));
     // Restore FPR
     if ((opts & Options::OPT_DISABLE_FPR) == 0) {
@@ -94,8 +93,7 @@ RelocatableInst::UniquePtrVec getExecBlockEpilogue(Options opts) {
     // Save GPR
     for(unsigned int i = 0; i < NUM_GPR-1; i++)
         append(epilogue, SaveReg(Reg(i), Offset(Reg(i))));
-    // Restore host BP, SP
-    append(epilogue, LoadReg(Reg(REG_BP), Offset(offsetof(Context, hostState.bp))));
+    // Restore host SP
     append(epilogue, LoadReg(Reg(REG_SP), Offset(offsetof(Context, hostState.sp))));
     // Save EFLAGS
     epilogue.push_back(Pushf());

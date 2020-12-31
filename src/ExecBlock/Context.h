@@ -39,7 +39,6 @@ extern const unsigned int size_SEG_ID;
 /*! X86 / X86_64 Host context.
  */
 struct HostState {
-    rword bp;
     rword sp;
     rword selector;
     rword callback;
