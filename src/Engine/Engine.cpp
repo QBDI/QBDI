@@ -226,6 +226,7 @@ Engine& Engine::operator=(const Engine& other) {
 void Engine::setOptions(Options options) {
     RequireAction("Engine::setOptions", not running && "Cannot setOptions on a running Engine", abort());
     if (options != this->options) {
+        LogDebug("Engine::setOptions", "Change Options from %x to %x", this->options, options);
         clearAllCache();
         assembly->setOptions(options);
 
