@@ -35,6 +35,7 @@
 #include "Utility/LogSys.h"
 
 static bool INSTRUMENTED = false;
+static bool MASTER = false;
 static pid_t debugged, instrumented;
 int ctrlfd, datafd;
 
@@ -66,9 +67,16 @@ int QBDI::qbdipreload_on_run(QBDI::VMInstanceRef vm, QBDI::rword start, QBDI::rw
     return QBDIPRELOAD_NOT_HANDLED;
 }
 
+void killChild() {
+    kill(debugged, SIGKILL);
+    kill(instrumented, SIGKILL);
+}
+
 int QBDI::qbdipreload_on_exit(int status) {
     if(INSTRUMENTED) {
         cleanup_instrumentation();
+    } else if (MASTER) {
+        killChild();
     }
     return QBDIPRELOAD_NO_ERROR;
 }
@@ -77,7 +85,7 @@ int QBDI::qbdipreload_on_start(void *main) {
     setvbuf(stdin, NULL, _IONBF, 0);
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
-    signal(SIGWINCH, SIG_IGN);
+    signal(SIGCHLD, SIG_IGN);
 
     int ctrlfds[2];
     int datafds[2];
@@ -121,5 +129,7 @@ int QBDI::qbdipreload_on_start(void *main) {
         exit(0);
     }
 
+    MASTER = true;
+    atexit(killChild);
     return QBDIPRELOAD_NOT_HANDLED;
 }

@@ -16,12 +16,16 @@
  * limitations under the License.
  */
 #include "linux_process.h"
+#include "validator.h"
 
+#include <errno.h>
 #include <string.h>
 #include <signal.h>
 #include <sys/ptrace.h>
 #include <sys/user.h>
 #include <sys/wait.h>
+
+#include "Utility/LogSys.h"
 
 static void userToGPRState(const GPR_STRUCT* user, QBDI::GPRState* gprState) {
     #if defined(QBDI_ARCH_X86_64)
@@ -126,11 +130,17 @@ void userToFPRState(const FPR_STRUCT* user, QBDI::FPRState* fprState) {
 void LinuxProcess::setBreakpoint(void *address) {
     this->brk_address = address;
     this->brk_value = ptrace(PTRACE_PEEKDATA, this->pid, address, NULL);
-    ptrace(PTRACE_POKEDATA, this->pid, address, BRK_INS | (this->brk_value & (~BRK_MASK)));
+    if (ptrace(PTRACE_POKEDATA, this->pid, address, BRK_INS | (this->brk_value & (~BRK_MASK))) == -1) {
+        LogError("LinuxProcess::setBreakpoint", "Failed to set breakpoint: %s", strerror(errno));
+        exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
+    }
 }
 
 void LinuxProcess::unsetBreakpoint() {
-    ptrace(PTRACE_POKEDATA, this->pid, this->brk_address, this->brk_value);
+    if (ptrace(PTRACE_POKEDATA, this->pid, this->brk_address, this->brk_value) == -1) {
+        LogError("LinuxProcess::unsetBreakpoint", "Failed to unset breakpoint: %s", strerror(errno));
+        exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
+    }
 }
 
 void LinuxProcess::continueExecution() {
@@ -158,7 +168,10 @@ int LinuxProcess::waitForStatus() {
 
 void LinuxProcess::getProcessGPR(QBDI::GPRState *gprState) {
     GPR_STRUCT user;
-    ptrace(PTRACE_GETREGS, this->pid, NULL, &user);
+    if (ptrace(PTRACE_GETREGS, this->pid, NULL, &user) == -1) {
+        LogError("LinuxProcess::getProcessGPR", "Failed to get GPR state: %s", strerror(errno));
+        exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
+    }
     userToGPRState(&user, gprState);
 }
 
@@ -173,15 +186,22 @@ void LinuxProcess::getProcessFPR(QBDI::FPRState *fprState) {
     // From gdb/aarch32-linux-nat.h
     #define VFP_REGS_SIZE (32 * 8 + 4)
     uint8_t user[VFP_REGS_SIZE];
-    ptrace(PTRACE_GETVFPREGS, this->pid, NULL, user);
+    if (ptrace(PTRACE_GETVFPREGS, this->pid, NULL, user) == -1) {
+        LogError("LinuxProcess::getProcessFPR", "Failed to get FPR state: %s", strerror(errno));
+        exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
+    }
     userToFPRState(user, fprState);
     #else
     FPR_STRUCT user;
     #if defined(QBDI_ARCH_X86)
-    ptrace(PTRACE_GETFPXREGS, this->pid, NULL, &user);
+    if (ptrace(PTRACE_GETFPXREGS, this->pid, NULL, &user) == -1)
     #else
-    ptrace(PTRACE_GETFPREGS, this->pid, NULL, &user);
+    if (ptrace(PTRACE_GETFPREGS, this->pid, NULL, &user) == -1)
     #endif
+    {
+        LogError("LinuxProcess::getProcessFPR", "Failed to get FPR state: %s", strerror(errno));
+        exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
+    }
     userToFPRState(&user, fprState);
     #endif
 }
