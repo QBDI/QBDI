@@ -52,8 +52,8 @@ _docker_compile_and_test: &docker_compile_and_test
   services:
     - docker
   script:
-    - bash ./docker/travis_linux/llvm.sh
-    - bash ./docker/travis_linux/qbdi.sh
+    - bash ./docker/ci_linux/llvm.sh
+    - bash ./docker/ci_linux/qbdi.sh
 
 cache:
   apt: TRUE

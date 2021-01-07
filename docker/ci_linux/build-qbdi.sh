@@ -17,6 +17,8 @@ cmake -DCMAKE_BUILD_TYPE=Release \
 
 make -j4
 
+cpack
+
 ./test/QBDITest
 
 set +e
