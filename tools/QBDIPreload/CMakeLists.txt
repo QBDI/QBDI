@@ -31,3 +31,8 @@ install(EXPORT QBDIPreload_targets
         FILE QBDIPreloadConfig.cmake
         NAMESPACE QBDIPreload::
         DESTINATION ${PRELOAD_RESOURCES_PREFIX}/cmake)
+
+install(EXPORT QBDIPreload_targets
+        FILE QBDIPreload${QBDI_ARCH}Config.cmake
+        NAMESPACE QBDIPreload::${QBDI_ARCH}::
+        DESTINATION ${PRELOAD_RESOURCES_PREFIX}/cmake)

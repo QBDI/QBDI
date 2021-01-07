@@ -19,13 +19,12 @@ if (QBDI_TEST)
     # needed for the test. The new library allows to remove the llvm library only
     # used by QBDITest for libQBDI.a and avoid error when link QBDItest
     set(_TEST_LLVM_LIBS
-        LLVMObject
-        LLVMTextAPI
-        LLVMCore
         LLVMBitReader
         LLVMBitstreamReader
+        LLVMCore
+        LLVMObject
         LLVMRemarks
-
+        LLVMTextAPI
       )
 
     if(QBDI_PLATFORM_WINDOWS)
@@ -33,9 +32,8 @@ if (QBDI_TEST)
     else()
       PREPEND(TEST_LLVM_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/lib ".a" ${_TEST_LLVM_LIBS})
     endif()
-    set(qbditest_static_libs ${TEST_LLVM_LIBS} QBDI_static)
 
-    MERGE_STATIC_LIBS(QBDI_static_test QBDITest_static \${qbditest_static_libs})
+    MERGE_STATIC_LIBS(LLVM_static_test LLVM_static_test \${TEST_LLVM_LIBS})
 
     add_executable(QBDITest "${CMAKE_CURRENT_LIST_DIR}/QBDITest.cpp")
     add_signature(QBDITest)
@@ -60,8 +58,8 @@ if (QBDI_TEST)
 
     add_dependencies(QBDITest Catch2)
     target_link_libraries(QBDITest
-        QBDI_static_test
-        ${LLVM_LIBS}
+        LLVM_static_test
+        QBDI_static
     )
 
     set_target_properties(QBDITest
