@@ -78,7 +78,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['breathe', 'sphinx.ext.autodoc', 'sphinxcontrib.autojs']
+extensions = ['breathe', 'sphinx.ext.autodoc', 'sphinx_js']
 breathe_default_project = "QBDI_CPP"
 
 # Add any paths that contain templates here, relative to this directory.
@@ -346,3 +346,7 @@ breathe_domain_by_file_pattern = {
 }
 
 breathe_use_project_refids = True
+
+# -- Sphinx-JS ------------------------------------------------------------
+
+js_source_path = '../../tools/'
