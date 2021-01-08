@@ -1,4 +1,4 @@
-name: Tests Linux
+name: Tests and Package Linux
 
 on: [push]
 
@@ -24,9 +24,11 @@ jobs:
         with:
           path: |
             ~/.ccache
-          key: ccache-linux-${{ matrix.QBDI_ARCH }}
+          key: ccache-linux-${{ matrix.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}
       - if: steps.cache-ccache.outputs.cache-hit != 'true'
-        run: mkdir ~/.ccache
+        run: |
+          mkdir ~/.ccache
+          cp .github/workflows/ccache.conf ~/.ccache/ccache.conf
       - name: Cache llvm
         uses: actions/cache@v2
         id: cache-llvm
