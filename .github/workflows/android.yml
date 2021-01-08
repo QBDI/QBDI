@@ -1,0 +1,79 @@
+name: Package Android
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix: 
+        include:
+          - QBDI_ARCH: 'X86_64'
+            ANDROID_ABI: 'x86_64'
+          - QBDI_ARCH: 'X86'
+            ANDROID_ABI: 'x86'
+    env:
+      QBDI_PLATFORM: 'android'
+      NDK_VERSION: 'r21d'
+      ANDROID_PLATFORM: 23
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: Cache ccache
+        uses: actions/cache@v2
+        id: cache-ccache
+        with:
+          path: |
+            ~/.ccache
+          key: ccache-android-${{ matrix.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}
+      - if: steps.cache-ccache.outputs.cache-hit != 'true'
+        run: |
+          mkdir ~/.ccache
+          cp .github/workflows/ccache.conf ~/.ccache/ccache.conf
+      - name: Cache llvm
+        uses: actions/cache@v2
+        id: cache-llvm
+        with:
+          path: |
+            deps/llvm/linux-${{ matrix.QBDI_ARCH }}/include
+            deps/llvm/linux-${{ matrix.QBDI_ARCH }}/lib
+          key: llvm-${{ runner.os }}-android-${{ matrix.QBDI_ARCH }}-${{ hashFiles('deps/llvm/build.py') }}
+      - name: Install dependencies
+        run: sudo apt-get install build-essential ccache cmake g++ libstdc++-8-dev make pkg-config python3 unzip wget zlib1g-dev
+      - name: Install android NDK ${{ env.NDK_VERSION }}
+        run: |
+          wget --no-verbose https://dl.google.com/android/repository/android-ndk-${{ env.NDK_VERSION }}-linux-x86_64.zip
+          unzip -q android-ndk-${{ env.NDK_VERSION }}-linux-x86_64.zip
+          rm android-ndk-${{ env.NDK_VERSION }}-linux-x86_64.zip
+      - name: Build LLVM dependencies
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        working-directory: ./deps/llvm/
+        env:
+          NDK_PATH: ${{ github.workspace }}/android-ndk-${{ env.NDK_VERSION }}
+        run: |
+            python3 build.py prepare ${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}
+            python3 build.py build ${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}
+            python3 build.py package ${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}
+            python3 build.py clean ${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}
+      - name: Build Package
+        run: |
+          mkdir build
+          cd build
+          cmake -DQBDI_PLATFORM=${{ env.QBDI_PLATFORM }} \
+                -DQBDI_ARCH=${{ matrix.QBDI_ARCH }} \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/android-ndk-${{ env.NDK_VERSION }}/build/cmake/android.toolchain.cmake \
+                -DANDROID_ABI=${{ matrix.ANDROID_ABI }} \
+                -DANDROID_PLATFORM=${{ env.ANDROID_PLATFORM }} \
+                -DQBDI_TEST=OFF \
+                ..
+          make -j 4
+          cpack
+      - name: Export package
+        uses: actions/upload-artifact@v2
+        with:
+          name: package android ${{ matrix.QBDI_ARCH }}
+          path: build/QBDI-*-android-${{ matrix.QBDI_ARCH }}.tar.gz
+
+
+
