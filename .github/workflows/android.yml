@@ -1,6 +1,11 @@
 name: Package Android
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
+      - dev-next
+  workflow_dispatch:
 
 jobs:
   build:

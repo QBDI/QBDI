@@ -7,8 +7,10 @@ Next Version
 * Fix android compilation (`#126 <https://github.com/QBDI/QBDI/pull/126>`_)
 * Fix instrumentation of Pusha and Popa on X86 (`#127 <https://github.com/QBDI/QBDI/pull/127>`_)
 * Fix getBBMemoryAccess (`#128 <https://github.com/QBDI/QBDI/pull/128>`_)
+
   * Improve the documentation of getBBMemoryAccess
   * Add recordMemoryAccess callback before any InstCallback
+
 * Refactor ExecBlockManager to work with unaligned instruction on X86 and X86-64 (`#129 <https://github.com/QBDI/QBDI/pull/129>`_)
 * Drop early support for ARM. The support hasn't been tested since 0.6.2.
 
@@ -18,6 +20,7 @@ Internal update:
 * Reduce LLVM library included in QBDI static library and reduce QBDI package size (`#139 <https://github.com/QBDI/QBDI/pull/139>`_ and `#70 <https://github.com/QBDI/QBDI/issues/70>`_)
 * Replace GTest by `Catch2 <https://github.com/catchorg/Catch2>`_ (`#140 <https://github.com/QBDI/QBDI/pull/140>`_)
 * Refactor code and switch to cpp17 (`#140 <https://github.com/QBDI/QBDI/pull/140>`_)
+* Use Github Actions to build dev-next package of QBDI (linux and android) and PyQBDI (linux) (`#147 <https://github.com/QBDI/QBDI/pull/147>`_)
 
 Version 0.7.1
 -------------
