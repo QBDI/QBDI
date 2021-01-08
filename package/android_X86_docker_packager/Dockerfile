@@ -1,5 +1,5 @@
 FROM debian:10
-MAINTAINER Charles Hubain <chubain@quarkslab.com>
+LABEL maintainer="QBDI Team <qbdi@quarkslab.com>"
 
 ENV USER="docker" \
     HOME="/home/docker" \
