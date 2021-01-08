@@ -33,7 +33,7 @@ class GetPCOffset : public PatchGenerator, public AutoAlloc<PatchGenerator, GetP
         OperandType,
     } type;
 
-public:
+    public:
 
     /*! Interpret a constant as a RIP relative offset and copy it in a temporary. It can be used to
      * obtain the current value of RIP by using a constant of 0.
@@ -71,7 +71,7 @@ class GetReadAddress : public PatchGenerator, public AutoAlloc<PatchGenerator, G
     size_t index;
     uint64_t TSFlags;
 
-public:
+    public:
 
     /*! Resolve the memory address where the instructions will read its value and copy the address in a
      * temporary. This PatchGenerator is only guaranteed to work before the instruction has been
@@ -103,7 +103,7 @@ class GetWriteAddress : public PatchGenerator, public AutoAlloc<PatchGenerator, 
     uint64_t TSFlags;
     bool afterInst;
 
-public:
+    public:
 
     /*! Resolve the memory address where the instructions will write its value and copy the address in a
      * temporary. This PatchGenerator is only guaranteed to work before the instruction has been
@@ -133,7 +133,7 @@ class GetReadValue : public PatchGenerator, public AutoAlloc<PatchGenerator, Get
     size_t index;
     uint64_t TSFlags;
 
- public:
+    public:
 
     /*! Resolve the memory address where the instructions will read its value and copy the value in a
      * temporary. This PatchGenerator is only guaranteed to work before the instruction has been
@@ -160,7 +160,7 @@ class GetWriteValue : public PatchGenerator, public AutoAlloc<PatchGenerator, Ge
     Temp temp;
     uint64_t TSFlags;
 
-public:
+    public:
 
     /*! Resolve the memory address where the instructions has written its value and copy back the value
      * in a temporary. This PatchGenerator is only guaranteed to work after the instruction has been
@@ -186,7 +186,7 @@ class SimulateCall : public PatchGenerator, public AutoAlloc<PatchGenerator, Sim
 
     Temp temp;
 
-public:
+    public:
 
     /*! Simulate the effects of a call to the address stored in a temporary. The target address
      * overwrites the stored value of RIP in the context part of the data block and the return address
@@ -213,7 +213,7 @@ class SimulateRet : public PatchGenerator, public AutoAlloc<PatchGenerator, Simu
 
     Temp temp;
 
-public:
+    public:
 
     /*! Simulate the effects of a return instruction. First the return address is popped from the stack
      * into a temporary, then an optional stack deallocation is performed and finally the return
@@ -244,7 +244,7 @@ class CreateShadow : public PatchGenerator, public AutoAlloc<PatchGenerator, Cre
 
     Shadow shadow;
 
-public:
+    public:
 
     /*! Create a new shadow on the dataBlock
      *

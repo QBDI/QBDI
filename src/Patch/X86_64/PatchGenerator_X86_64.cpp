@@ -63,6 +63,7 @@ RelocatableInst::SharedPtrVec GetPCOffset::generate(const llvm::MCInst* inst,
                 Constant(address + instSize + inst->getOperand(op).getImm()))
             };
     }
+    _QBDI_UNREACHABLE();
 }
 
 RelocatableInst::SharedPtrVec GetReadAddress::generate(const llvm::MCInst* inst,
@@ -481,6 +482,7 @@ RelocatableInst::SharedPtrVec WriteTemp::generate(const llvm::MCInst* inst,
                 7
             )};
     }
+    _QBDI_UNREACHABLE();
 }
 
 RelocatableInst::SharedPtrVec ReadTemp::generate(const llvm::MCInst* inst,
@@ -497,6 +499,7 @@ RelocatableInst::SharedPtrVec ReadTemp::generate(const llvm::MCInst* inst,
                 7
             )};
     }
+    _QBDI_UNREACHABLE();
 }
 
 RelocatableInst::SharedPtrVec SaveReg::generate(const llvm::MCInst* inst,

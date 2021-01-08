@@ -85,8 +85,9 @@ void Engine::init() {
     if (cpu.empty()) {
         cpu = QBDI::getHostCPUName();
         // If API is broken on ARM, we are facing big problems...
-        if constexpr(is_arm)
+        if constexpr(is_arm) {
             Require("Engine::Engine", !cpu.empty() && cpu != "generic");
+        }
     }
     if (mattrs.empty()) {
         mattrs = getHostCPUFeatures();
@@ -194,13 +195,14 @@ Engine::Engine(const Engine& other)
 Engine& Engine::operator=(const Engine& other) {
     this->clearAllCache();
 
-    if (cpu != other.cpu || mattrs != other.mattrs)
-      reinit(other.cpu, other.mattrs);
+    if (cpu != other.cpu || mattrs != other.mattrs) {
+        reinit(other.cpu, other.mattrs);
+    }
 
     // copy the configuration
     instrRules.clear();
     for (const auto& r : other.instrRules) {
-      instrRules.emplace_back(r.first, r.second->clone());
+        instrRules.emplace_back(r.first, r.second->clone());
     }
     vmCallbacks = other.vmCallbacks;
     instrRulesCounter = other.instrRulesCounter;
@@ -222,8 +224,9 @@ void Engine::changeVMInstanceRef(VMInstanceRef vminstance) {
     blockManager->changeVMInstanceRef(vminstance);
     execBroker->changeVMInstanceRef(vminstance);
 
-    for (auto& r : instrRules)
-      r.second->changeVMInstanceRef(vminstance);
+    for (auto& r : instrRules) {
+        r.second->changeVMInstanceRef(vminstance);
+    }
 }
 
 void Engine::initGPRState() {
@@ -592,8 +595,9 @@ bool Engine::deleteInstrumentation(uint32_t id) {
 
 void Engine::deleteAllInstrumentations() {
     // clear cache
-    for (const auto &r: instrRules)
+    for (const auto &r: instrRules) {
         this->clearCache(r.second->affectedRange());
+    }
     instrRules.clear();
     vmCallbacks.clear();
     instrRulesCounter = 0;
@@ -606,14 +610,16 @@ void Engine::clearAllCache() {
 
 void Engine::clearCache(rword start, rword end) {
     blockManager->clearCache(Range<rword>(start, end));
-    if (curExecBlock == nullptr && blockManager->isFlushPending())
+    if (curExecBlock == nullptr && blockManager->isFlushPending()) {
         blockManager->flushCommit();
+    }
 }
 
 void Engine::clearCache(RangeSet<rword> rangeSet) {
     blockManager->clearCache(rangeSet);
-    if (curExecBlock == nullptr && blockManager->isFlushPending())
+    if (curExecBlock == nullptr && blockManager->isFlushPending()) {
         blockManager->flushCommit();
+    }
 }
 
 } // QBDI::

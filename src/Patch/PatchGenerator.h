@@ -168,11 +168,12 @@ public:
 
 class WriteTemp : public PatchGenerator, public AutoAlloc<PatchGenerator, WriteTemp> {
 
-    Temp  temp;
-    enum {
+    Temp temp;
+    enum DstType {
         OffsetType,
         ShadowType
-    } type;
+    };
+    DstType type;
     // Not working VS 2015
     // union {
         Offset offset;
@@ -208,11 +209,12 @@ public:
 
 class ReadTemp : public PatchGenerator, public AutoAlloc<PatchGenerator, ReadTemp> {
 
-    Temp  temp;
-    enum {
+    Temp temp;
+    enum SrcType {
         OffsetType,
         ShadowType
-    } type;
+    };
+    SrcType type;
     // Not working VS 2015
     // union {
         Offset offset;

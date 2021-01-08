@@ -25,8 +25,8 @@
 namespace QBDI {
 
 class RelocatablePseudoInst : public RelocatableInst {
+    public:
 
-public:
     RelocatablePseudoInst();
 
     virtual llvm::MCInst reloc(ExecBlock *exec_block) const =0;
@@ -38,7 +38,8 @@ class HostPCRel : public RelocatableInst, public AutoAlloc<RelocatableInst, Host
     unsigned int opn;
     rword        offset;
 
-public:
+    public:
+
     HostPCRel(llvm::MCInst&& inst, unsigned int opn, rword offset)
         : RelocatableInst(std::move(inst)), opn(opn), offset(offset) {};
 
@@ -52,7 +53,8 @@ public:
 class InstId : public RelocatableInst, public AutoAlloc<RelocatableInst, InstId> {
     unsigned int opn;
 
-public:
+    public:
+
     InstId(llvm::MCInst&& inst, unsigned int opn)
         : RelocatableInst(std::move(inst)), opn(opn) {};
 
@@ -67,7 +69,8 @@ class CreateShadowInst : public RelocatablePseudoInst, public AutoAlloc<Relocata
 
     uint16_t tag;
 
-public:
+    public:
+
     CreateShadowInst(uint16_t tag)
         : RelocatablePseudoInst(), tag(tag) {};
 
@@ -83,7 +86,8 @@ class TaggedShadow : public RelocatableInst, public AutoAlloc<RelocatableInst, T
     uint16_t tag;
     rword inst_size;
 
-public:
+    public:
+
     TaggedShadow(llvm::MCInst&& inst, unsigned int opn, uint16_t tag, rword inst_size)
         : RelocatableInst(std::move(inst)), opn(opn), tag(tag), inst_size(inst_size) {};
 
@@ -102,7 +106,8 @@ class TaggedShadowAbs : public RelocatableInst, public AutoAlloc<RelocatableInst
     unsigned int opn;
     uint16_t tag;
 
-public:
+    public:
+
     TaggedShadowAbs(llvm::MCInst&& inst, unsigned int opn, uint16_t tag)
         : RelocatableInst(std::move(inst)), opn(opn), tag(tag) {};
 

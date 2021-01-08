@@ -66,6 +66,7 @@ RelocatableInst::SharedPtrVec GetPCOffset::generate(const llvm::MCInst *inst,
                 return {};
             }
     }
+     _QBDI_UNREACHABLE();
 }
 
 RelocatableInst::SharedPtrVec GetInstId::generate(const llvm::MCInst *inst,

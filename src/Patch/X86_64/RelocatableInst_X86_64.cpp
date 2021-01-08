@@ -23,7 +23,7 @@
 
 namespace QBDI {
 
-  RelocatablePseudoInst::RelocatablePseudoInst() : RelocatableInst(llvm::MCInst{}) {
+RelocatablePseudoInst::RelocatablePseudoInst() : RelocatableInst(llvm::MCInst{}) {
     // PHI is a pseudo instruction and will be ignored by QBDI::Assembly
     inst.setOpcode(llvm::X86::PHI);
 }

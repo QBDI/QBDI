@@ -14,38 +14,38 @@ Next Version
 * MemoryAccess Support for SIMD instruction and some missing instructions (`#131 <https://github.com/QBDI/QBDI/pull/131>`_)
 * Improve InstAnalysis (`#131 <https://github.com/QBDI/QBDI/pull/131>`_)
 
-Some API has changed compared to version 0.7.1 that make the old compiled code incompatible with the new release:
+Some API have changed compared to version 0.7.1 that makes the old compiled code incompatible with the new release:
 
-* ``VM::addInstrRule()``: the API has been drop in favor of a new version that dosn't need internals headers.
+* ``VM::addInstrRule()``: the API has been dropped in favor of a new version that doesn't need internals headers.
 
 * ``MemoryAccess``: the structure has changed to introduce ``flags``.
 
-    The MamoryAccess has been refactor to support the access of SIMD instruction.
+    The MemoryAccess has been refactor to support the access of SIMD instruction.
 
     * ``MEMORY_UNKNOWN_SIZE``: the size of the access is unknown. This may be the case when the instruction has the REP prefix in X86.
-    * ``MEMORY_UNKNOWN_VALUE``: The value of the access isn't capture by QBDI. This happend when the access cannot be fold in the ``value`` field
+    * ``MEMORY_UNKNOWN_VALUE``: The value of the access isn't captured by QBDI. This happend when the access cannot be fold in the ``value`` field
       or the size is unkwnown before the access.
 
-    Futhermore, almost all the access are now available before the instruction. Some flags are remove after the instruction.
+    Futhermore, almost all the accesses are now available before the instruction. Some flags are removed after the instruction.
 
 * ``InstAnalysis``: the structure has changed to introduce ``loadSize``, ``storeSize`` and ``condition``, available with the analysis type ``ANALYSIS_INSTRUCTION``.
 
     The fields ``loadSize`` and ``storeSize`` return the size of the expected access of the instruction.
 
-    Due to the update of LLVM, the some mnemonic has changed. All the conditionnal branch (like ``JE_n``) become ``JCC_n``.
+    Due to the update of LLVM, some mnemonic have changed. All the conditionnal branch (like ``JE_n``) become ``JCC_n``.
     The effective condition is available in ``condition`` field.
 
 * ``InstAnalysis``: the semantics of the field ``mayLoad`` and ``mayStore`` are changed.
 
-    These fields are now handle without LLVM and are synchronized with the accesses detect by the MemoryAccess API.
+    These fields are now handled without LLVM and are synchronized with the accesses detected by the MemoryAccess API.
 
 * ``InstAnalysis``: the structure has changed to introduce ``flagsAccess``, available with the analysis type ``ANALYSIS_OPERANDS``.
 
-    The field containts the access of the instruction to the generic flag register (EFLAGS in X86).
+    The field contains the access of the instruction to the generic flag register (EFLAGS in X86).
 
-* ``OperandAnalysis``: Add two new type for float and segment register.
+* ``OperandAnalysis``: Add two new types for float and segment register.
 
-* ``OperandAnalysis``: The type ``OPERAND_INVALID`` is now return when a register isn't specified in order to have the same number of
+* ``OperandAnalysis``: The type ``OPERAND_INVALID`` is now returned when a register isn't specified in order to have the same number of
   operand for any instruction with the same Mnemonic.
 
   Here is an example of output:

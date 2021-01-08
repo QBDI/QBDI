@@ -56,8 +56,9 @@ bool isFlagRegister(unsigned int regNo) {
 
 void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm::MCRegisterInfo& MRI) {
     opa.regName = MRI.getName(regNo);
-    if (opa.regName != nullptr && opa.regName[0] == '\x00')
+    if (opa.regName != nullptr && opa.regName[0] == '\x00') {
         opa.regName = nullptr;
+    }
     opa.value = regNo;
     opa.size = 0;
     opa.flag = OPERANDFLAG_NONE;
@@ -65,8 +66,9 @@ void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm::MCReg
     opa.regCtxIdx = -1;
     opa.type = OPERAND_INVALID;
     opa.regAccess = REGISTER_UNUSED;
-    if (regNo == /* llvm::X86|ARM::NoRegister */ 0)
+    if (regNo == /* llvm::X86|ARM::NoRegister */ 0) {
         return;
+    }
     // try to match register in our GPR context
     for (uint16_t j = 0; j < NUM_GPR; j++) {
         if (MRI.isSubRegisterEq(GPR_ID[j], regNo)) {
@@ -77,19 +79,21 @@ void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm::MCReg
             opa.regCtxIdx = j;
             opa.size = getRegisterSize(regNo);
             opa.type = OPERAND_GPR;
-            if (!opa.size)
+            if (!opa.size) {
                 LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.regName);
+            }
             return;
         }
     }
-    std::map<unsigned int, int16_t>::const_iterator it = FPR_ID.find(regNo);
+    auto it = FPR_ID.find(regNo);
     if (it != FPR_ID.end()) {
         opa.regCtxIdx = it->second;
         opa.regOff = 0;
         opa.size = getRegisterSize(regNo);
         opa.type = OPERAND_FPR;
-        if (!opa.size)
+        if (!opa.size) {
             LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.regName);
+        }
         return;
     }
     for (uint16_t j = 0; j < size_SEG_ID; j++) {
@@ -97,8 +101,9 @@ void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm::MCReg
             opa.regOff = 0;
             opa.size = getRegisterSize(regNo);
             opa.type = OPERAND_SEG;
-            if (!opa.size)
+            if (!opa.size) {
                 LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.regName);
+            }
             return;
         }
     }
@@ -173,8 +178,9 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
 
     // (R|E)SP are missing for RET and CALL in x86
     if constexpr((is_x86_64 or is_x86)) {
-        if ((desc.isReturn() and isStackRead(inst)) or (desc.isCall() and isStackWrite(inst)))
+        if ((desc.isReturn() and isStackRead(inst)) or (desc.isCall() and isStackWrite(inst))) {
             numOperandsMax = numOperandsMax + 1;
+        }
     }
     if (numOperandsMax == 0) {
         // no operand to analyse
@@ -234,8 +240,9 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
                     }
                     continue;
             }
-            if (opa.type != QBDI::OPERAND_INVALID)
+            if (opa.type != QBDI::OPERAND_INVALID) {
                 opa.regAccess = regWrites.test(i) ? REGISTER_WRITE : REGISTER_READ;
+            }
             instAnalysis->numOperands++;
         } else if (op.isImm()) {
             // fill the operand analysis
@@ -324,8 +331,9 @@ const InstAnalysis* analyzeInstMetadata(const InstMetadata& instMetadata, Analys
 
     instAnalysis->analysisType      = newType;
 
-    if (missingAnalysis == 0)
+    if (missingAnalysis == 0) {
         return instAnalysis;
+    }
 
     const llvm::MCInstrInfo& MCII = assembly.getMCII();
     const llvm::MCRegisterInfo& MRI = assembly.getMRI();
