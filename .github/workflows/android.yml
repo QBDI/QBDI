@@ -44,7 +44,7 @@ jobs:
             deps/llvm/linux-${{ matrix.QBDI_ARCH }}/lib
           key: llvm-${{ runner.os }}-android-${{ matrix.QBDI_ARCH }}-${{ hashFiles('deps/llvm/build.py') }}
       - name: Install dependencies
-        run: sudo apt-get install build-essential ccache cmake g++ libstdc++-8-dev make pkg-config python3 unzip wget zlib1g-dev
+        run: sudo apt-get install build-essential ccache cmake g++ libstdc++-8-dev make ninja-build pkg-config python3 unzip wget zlib1g-dev
       - name: Install android NDK ${{ env.NDK_VERSION }}
         run: |
           wget --no-verbose https://dl.google.com/android/repository/android-ndk-${{ env.NDK_VERSION }}-linux-x86_64.zip
@@ -71,8 +71,9 @@ jobs:
                 -DANDROID_ABI=${{ matrix.ANDROID_ABI }} \
                 -DANDROID_PLATFORM=${{ env.ANDROID_PLATFORM }} \
                 -DQBDI_TEST=OFF \
+                -G Ninja \
                 ..
-          make -j 4
+          ninja
           cpack
       - name: Export package
         uses: actions/upload-artifact@v2
