@@ -4,7 +4,7 @@ CMake Integration
 One architecture
 ----------------
 
-If you used only one architecture of QBDI in your CMake, you can use the package ``QBDI`` and ``QBDIPreload``:
+If you want to use only one architecture of QBDI in your CMake project, you can import the package ``QBDI`` and ``QBDIPreload``:
 
 .. code-block:: cmake
 
@@ -14,7 +14,7 @@ If you used only one architecture of QBDI in your CMake, you can use the package
     find_package(QBDI REQUIRED HINTS "${EXTRACT_DIRECTORY}" NO_DEFAULT_PATH)
     find_package(QBDIPreload REQUIRED HINTS "${EXTRACT_DIRECTORY}" NO_DEFAULT_PATH)
 
-Once the package found, you can link your executable with the dynamic or the static library:
+Once the package is found, you can link your executable with the dynamic or the static library:
 
 .. code-block:: cmake
 
@@ -28,10 +28,10 @@ Once the package found, you can link your executable with the dynamic or the sta
     target_link_libraries(example_preload QBDI::QBDI_static QBDIPreload::QBDIPreload)
 
 
-Two architectures
------------------
+Multi architectures
+-------------------
 
-If two or more architecture of QBDI are used in the same project, you should use the package ``QBDI<arch>`` and ``QBDIPreload<arch>``.
+If two or more architectures of QBDI are used in the same project, you should import the package ``QBDI<arch>`` and ``QBDIPreload<arch>``.
 
 .. code-block:: cmake
 

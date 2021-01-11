@@ -1287,7 +1287,7 @@ class QBDI {
         // Use a closure to provide object and a parsed event
         var vm = this;
         var jcbk = function(vmPtr, state, gprPtr, fprPtr, dataPtr) {
-            var s = this._parseVMState(state);
+            var s = vm._parseVMState(state);
             var gpr = new GPRState(gprPtr);
             var fpr = new FPRState(fprPtr);
             var data = vm._getUserData(dataPtr);
