@@ -55,7 +55,7 @@ RelocatableInst::SharedPtrVec ExecBlock::execBlockPrologue = RelocatableInst::Sh
 RelocatableInst::SharedPtrVec ExecBlock::execBlockEpilogue = RelocatableInst::SharedPtrVec();
 void (*ExecBlock::runCodeBlockFct)(void*) = NULL;
 
-ExecBlock::ExecBlock(Assembly &assembly, VMInstanceRef vminstance) : vminstance(vminstance), assembly(assembly) {
+ExecBlock::ExecBlock(const Assembly &assembly, VMInstanceRef vminstance) : vminstance(vminstance), assembly(assembly) {
     // Allocate memory blocks
     std::error_code ec;
     // iOS now use 16k superpages, but as JIT mecanisms are totally differents

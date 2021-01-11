@@ -22,6 +22,8 @@
 #include <map>
 #include <vector>
 
+#include "Utility/InstAnalysis_prive.h"
+
 #include "Callback.h"
 #include "InstAnalysis.h"
 #include "Range.h"
@@ -39,10 +41,6 @@ class ExecBlock;
 class InstMetadata;
 class Patch;
 class RelocatableInst;
-
-struct InstAnalysisDestructor {
-  void operator()(InstAnalysis* ptr) const;
-};
 
 
 struct InstLoc {
@@ -85,10 +83,10 @@ private:
     rword                              total_translation_size;
     bool                               needFlush;
 
-    VMInstanceRef              vminstance;
-    llvm::MCInstrInfo&         MCII;
-    llvm::MCRegisterInfo&      MRI;
-    Assembly&                  assembly;
+    VMInstanceRef                    vminstance;
+    const llvm::MCInstrInfo&         MCII;
+    const llvm::MCRegisterInfo&      MRI;
+    const Assembly&                  assembly;
 
     size_t searchRegion(rword start) const;
 
@@ -102,7 +100,7 @@ private:
 
 public:
 
-    ExecBlockManager(llvm::MCInstrInfo& MCII, llvm::MCRegisterInfo& MRI, Assembly& assembly, VMInstanceRef vminstance = nullptr);
+    ExecBlockManager(const llvm::MCInstrInfo& MCII, const llvm::MCRegisterInfo& MRI, const Assembly& assembly, VMInstanceRef vminstance = nullptr);
 
     ~ExecBlockManager();
 

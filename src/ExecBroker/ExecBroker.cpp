@@ -20,7 +20,7 @@
 
 namespace QBDI {
 
-ExecBroker::ExecBroker(Assembly& assembly, VMInstanceRef vminstance) :
+ExecBroker::ExecBroker(const Assembly& assembly, VMInstanceRef vminstance) :
     transferBlock(assembly, vminstance) {
     pageSize =
       llvm::expectedToOptional(llvm::sys::Process::getPageSize()).getValueOr(4096);

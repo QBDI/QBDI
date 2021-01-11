@@ -93,7 +93,7 @@ private:
     llvm::sys::MemoryBlock            codeBlock;
     llvm::sys::MemoryBlock            dataBlock;
     std::unique_ptr<memory_ostream>   codeStream;
-    Assembly&                         assembly;
+    const Assembly&                   assembly;
     Context*                          context;
     rword*                            shadows;
     std::vector<ShadowInfo>           shadowRegistry;
@@ -132,7 +132,7 @@ public:
      * @param[in] assembly    Assembly used to assemble instructions in the ExecBlock.
      * @param[in] vminstance  Pointer to public engine interface
      */
-    ExecBlock(Assembly& assembly, VMInstanceRef vminstance = nullptr);
+    ExecBlock(const Assembly& assembly, VMInstanceRef vminstance = nullptr);
 
     ~ExecBlock();
 

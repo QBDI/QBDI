@@ -45,7 +45,7 @@ private:
 
 public:
 
-    ExecBroker(Assembly& assembly, VMInstanceRef vminstance = nullptr);
+    ExecBroker(const Assembly& assembly, VMInstanceRef vminstance = nullptr);
 
     void changeVMInstanceRef(VMInstanceRef vminstance);
 
