@@ -19,6 +19,9 @@
 #define INSTMETADATA_H
 
 #include "llvm/MC/MCInst.h"
+
+#include "Utility/InstAnalysis_prive.h"
+
 #include "State.h"
 
 namespace QBDI {
@@ -31,9 +34,14 @@ public:
     uint32_t patchSize;
     bool modifyPC;
     bool merge;
+    mutable InstAnalysisPtr analysis;
 
     inline rword endAddress() const {
         return address + instSize;
+    }
+
+    inline InstMetadata lightCopy() const {
+        return {inst, address, instSize, patchSize, modifyPC, merge, nullptr};
     }
 };
 

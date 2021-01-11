@@ -245,13 +245,18 @@ void InstAnalysisDestructor::operator()(InstAnalysis* ptr) const {
 }
 
 
-InstAnalysisPtr analyzeInstMetadata_uncached(const InstMetadata& instMetadata, AnalysisType type,
-                                             const llvm::MCInstrInfo& MCII, const llvm::MCRegisterInfo& MRI,
-                                             const Assembly& assembly) {
+const InstAnalysis* analyzeInstMetadata(const InstMetadata& instMetadata, AnalysisType type,
+                                        const Assembly& assembly) {
 
+    if (instMetadata.analysis.get() != nullptr and
+        ( instMetadata.analysis->analysisType & type) == type) {
+
+        return instMetadata.analysis.get();
+    }
+
+    const llvm::MCInstrInfo& MCII = assembly.getMCII();
     const llvm::MCInst &inst = instMetadata.inst;
     const llvm::MCInstrDesc &desc = MCII.get(inst.getOpcode());
-
 
     InstAnalysis* instAnalysis = new InstAnalysis;
     // set all values to NULL/0/false
@@ -287,7 +292,7 @@ InstAnalysisPtr analyzeInstMetadata_uncached(const InstMetadata& instMetadata, A
 
     if (type & ANALYSIS_OPERANDS) {
         // analyse operands (immediates / registers)
-        analyseOperands(instAnalysis, inst, desc, MRI);
+        analyseOperands(instAnalysis, inst, desc, assembly.getMRI());
     }
 
     if (type & ANALYSIS_SYMBOL) {
@@ -312,7 +317,9 @@ InstAnalysisPtr analyzeInstMetadata_uncached(const InstMetadata& instMetadata, A
 #endif
     }
 
-    return InstAnalysisPtr(instAnalysis);
+    instMetadata.analysis.reset(instAnalysis);
+
+    return instAnalysis;
 }
 
 } // namespace QBDI

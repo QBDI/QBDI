@@ -22,10 +22,7 @@
 #include <map>
 #include <vector>
 
-#include "Utility/InstAnalysis_prive.h"
-
 #include "Callback.h"
-#include "InstAnalysis.h"
 #include "Range.h"
 #include "State.h"
 
@@ -58,15 +55,12 @@ struct SeqLoc {
 };
 
 struct ExecRegion {
-    using InstAnalysisPtr = std::unique_ptr<InstAnalysis, InstAnalysisDestructor>;
-
     Range<rword>                             covered;
     unsigned                                 translated;
     unsigned                                 available;
     std::vector<std::unique_ptr<ExecBlock>>  blocks;
     std::map<rword, SeqLoc>                  sequenceCache;
     std::map<rword, InstLoc>                 instCache;
-    std::map<rword, InstAnalysisPtr>         analysisCache;
     bool                                     toFlush = false;
 
     ExecRegion(ExecRegion&&) = default;
@@ -74,18 +68,14 @@ struct ExecRegion {
 };
 
 class ExecBlockManager {
-private:
-    using InstAnalysisPtr = std::unique_ptr<InstAnalysis, InstAnalysisDestructor>;
+    private:
 
     std::vector<ExecRegion>            regions;
-    std::map<rword, InstAnalysisPtr>   analysisCache;
     rword                              total_translated_size;
     rword                              total_translation_size;
     bool                               needFlush;
 
     VMInstanceRef                    vminstance;
-    const llvm::MCInstrInfo&         MCII;
-    const llvm::MCRegisterInfo&      MRI;
     const Assembly&                  assembly;
 
     size_t searchRegion(rword start) const;
@@ -98,9 +88,9 @@ private:
 
     float getExpansionRatio() const;
 
-public:
+    public:
 
-    ExecBlockManager(const llvm::MCInstrInfo& MCII, const llvm::MCRegisterInfo& MRI, const Assembly& assembly, VMInstanceRef vminstance = nullptr);
+    ExecBlockManager(const Assembly& assembly, VMInstanceRef vminstance = nullptr);
 
     ~ExecBlockManager();
 
@@ -115,8 +105,6 @@ public:
     const SeqLoc* getSeqLoc(rword address) const;
 
     void writeBasicBlock(const std::vector<Patch>& basicBlock);
-
-    const InstAnalysis* analyzeInstMetadata(const InstMetadata* instMetadata, AnalysisType type);
 
     bool isFlushPending() { return needFlush; }
 

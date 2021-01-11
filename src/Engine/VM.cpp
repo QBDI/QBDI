@@ -384,8 +384,7 @@ const InstAnalysis* VM::getInstAnalysis(AnalysisType type) {
     const ExecBlock* curExecBlock = engine->getCurExecBlock();
     RequireAction("VM::getInstAnalysis", curExecBlock != nullptr, return nullptr);
     uint16_t curInstID = curExecBlock->getCurrentInstID();
-    const InstMetadata* instMetadata = curExecBlock->getInstMetadata(curInstID);
-    return engine->analyzeInstMetadata(instMetadata, type);
+    return curExecBlock->getInstAnalysis(curInstID, type);
 }
 
 bool VM::recordMemoryAccess(MemoryAccessType type) {
