@@ -102,6 +102,8 @@ class ExecBlockManager {
 
     ExecBlock* getProgrammedExecBlock(rword address);
 
+    const ExecBlock* getExecBlock(rword address) const;
+
     const SeqLoc* getSeqLoc(rword address) const;
 
     void writeBasicBlock(const std::vector<Patch>& basicBlock);

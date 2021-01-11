@@ -299,6 +299,7 @@ var QBDI_C = Object.freeze({
     deleteInstrumentation: _qbdibinder.bind('qbdi_deleteInstrumentation', 'uchar', ['pointer', 'uint32']),
     deleteAllInstrumentations: _qbdibinder.bind('qbdi_deleteAllInstrumentations', 'void', ['pointer']),
     getInstAnalysis: _qbdibinder.bind('qbdi_getInstAnalysis', 'pointer', ['pointer', 'uint32']),
+    getCachedInstAnalysis: _qbdibinder.bind('qbdi_getCachedInstAnalysis', 'pointer', ['pointer', rword, 'uint32']),
     recordMemoryAccess: _qbdibinder.bind('qbdi_recordMemoryAccess', 'uchar', ['pointer', 'uint32']),
     getInstMemoryAccess: _qbdibinder.bind('qbdi_getInstMemoryAccess', 'pointer', ['pointer', 'pointer']),
     getBBMemoryAccess: _qbdibinder.bind('qbdi_getBBMemoryAccess', 'pointer', ['pointer', 'pointer']),
@@ -1107,7 +1108,7 @@ class QBDI {
     }
 
     /**
-     * Obtain the analysis of an instruction metadata. Analysis results are cached in the VM.
+     * Obtain the analysis of the current instruction. Analysis results are cached in the VM.
      * The validity of the returned pointer is only guaranteed until the end of the callback, else a deepcopy of the structure is required.
      *
      * @param [type] Properties to retrieve during analysis (default to ANALYSIS_INSTRUCTION | ANALYSIS_DISASSEMBLY).
@@ -1117,6 +1118,24 @@ class QBDI {
     getInstAnalysis(type) {
         type = type || (AnalysisType.ANALYSIS_INSTRUCTION | AnalysisType.ANALYSIS_DISASSEMBLY);
         var analysis = QBDI_C.getInstAnalysis(this.#vm, type);
+        if (analysis.isNull()) {
+            return NULL;
+        }
+        return this._parseInstAnalysis(analysis);
+    }
+
+    /**
+     * Obtain the analysis of a cached instruction. Analysis results are cached in the VM.
+     * The validity of the returned pointer is only guaranteed until the end of the callback, else a deepcopy of the structure is required.
+     *
+     * @param  addr   The address of the instruction to analyse.
+     * @param [type]  Properties to retrieve during analysis (default to ANALYSIS_INSTRUCTION | ANALYSIS_DISASSEMBLY).
+     *
+     * @return A InstAnalysis object containing the analysis result. null if the instruction isn't in the cache.
+     */
+    getCachedInstAnalysis(addr, type) {
+        type = type || (AnalysisType.ANALYSIS_INSTRUCTION | AnalysisType.ANALYSIS_DISASSEMBLY);
+        var analysis = QBDI_C.getCachedInstAnalysis(this.#vm, addr, type);
         if (analysis.isNull()) {
             return NULL;
         }

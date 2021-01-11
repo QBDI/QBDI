@@ -389,7 +389,7 @@ bool Engine::precacheBasicBlock(rword pc) {
         // Commit the flush
         blockManager->flushCommit();
     }
-    if (blockManager->getProgrammedExecBlock(pc) != nullptr) {
+    if (blockManager->getExecBlock(pc) != nullptr) {
         // already in cache
         return false;
     }
@@ -553,6 +553,17 @@ void Engine::signalEvent(VMEvent event, rword currentPC, GPRState *gprState, FPR
             r.cbk(vminstance, &vmState, gprState, fprState, r.data);
         }
     }
+}
+
+const InstAnalysis* Engine::getInstAnalysis(rword address, AnalysisType type) const {
+    const ExecBlock* block = blockManager->getExecBlock(address);
+    if (block == nullptr) {
+        // not in cache
+        return nullptr;
+    }
+    uint16_t instID = block->getInstID(address);
+    RequireAction("Engine::getInstAnalysis", instID != NOT_FOUND, return nullptr);
+    return block->getInstAnalysis(instID, type);
 }
 
 bool Engine::deleteInstrumentation(uint32_t id) {

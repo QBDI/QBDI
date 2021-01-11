@@ -124,6 +124,26 @@ ExecBlock* ExecBlockManager::getProgrammedExecBlock(rword address) {
     return nullptr;
 }
 
+const ExecBlock* ExecBlockManager::getExecBlock(rword address) const {
+    LogDebug("ExecBlockManager::getExecBlock", "Looking up address %" PRIRWORD, address);
+
+    size_t r = searchRegion(address);
+
+    if(r < regions.size() && regions[r].covered.contains(address)) {
+        const ExecRegion& region = regions[r];
+
+        // Attempting instCache resolution
+        const std::map<rword, InstLoc>::const_iterator instLoc = region.instCache.find(address);
+        if(instLoc != region.instCache.end()) {
+            LogDebug("ExecBlockManager::getExecBlock", "Found address 0x%" PRIRWORD " in ExecBlock %p",
+                     address, region.blocks[seqLoc->second.blockIdx].get());
+            return region.blocks[instLoc->second.blockIdx].get();
+        }
+    }
+    LogDebug("ExecBlockManager::getExecBlock", "Cache miss for address 0x%" PRIRWORD, address);
+    return nullptr;
+}
+
 const SeqLoc* ExecBlockManager::getSeqLoc(rword address) const {
     size_t r = searchRegion(address);
     if(r < regions.size() && regions[r].covered.contains(address)) {

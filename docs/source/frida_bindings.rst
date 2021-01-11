@@ -93,6 +93,8 @@ Analysis
 
 .. js:autofunction:: QBDI#getInstAnalysis
 
+.. js:autofunction:: QBDI#getCachedInstAnalysis
+
 .. js:autofunction:: QBDI#getInstMemoryAccess
 
 .. js:autofunction:: QBDI#getBBMemoryAccess

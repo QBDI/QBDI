@@ -29,6 +29,7 @@
 #endif
 
 #include "Callback.h"
+#include "InstAnalysis.h"
 #include "State.h"
 #include "Range.h"
 
@@ -267,6 +268,17 @@ public:
      * @return True if basic block has been inserted in cache.
      */
     bool precacheBasicBlock(rword pc);
+
+    /*! Return an InstAnalysis for a cached instruction.
+     * The pointer may be invalid by any noconst method call.
+     *
+     * @param[in] address Start address of the instruction
+     * @param[in] type    type of the Analysis
+     *
+     * @return A pointer to the Analysis or a null pointer if the instruction isn't
+     *    in the cache.
+     */
+    const InstAnalysis* getInstAnalysis(rword address, AnalysisType type) const;
 
     /*! Clear a specific address range from the translation cache.
      *

@@ -230,19 +230,34 @@ void init_binding_VM(py::module& m) {
                 },
                 "Remove all the registered instrumentations.")
         .def("getInstAnalysis",
-                [](VM& vm, AnalysisType type) {
+                [](const VM& vm, AnalysisType type) {
                     return vm.getInstAnalysis(type);
                 },
-                "Obtain the analysis of an instruction metadata. Analysis results are cached in the VM.",
-                py::arg_v("type",AnalysisType::ANALYSIS_INSTRUCTION | AnalysisType::ANALYSIS_DISASSEMBLY,
+                "Obtain the analysis of the current instruction. Analysis results are cached in the VM.",
+                py::arg_v("type", AnalysisType::ANALYSIS_INSTRUCTION | AnalysisType::ANALYSIS_DISASSEMBLY,
                             "AnalysisType.ANALYSIS_INSTRUCTION|AnalysisType.ANALYSIS_DISASSEMBLY"),
                 py::return_value_policy::copy)
         .def("getInstAnalysis",
-                [](VM& vm, int type) {
+                [](const VM& vm, int type) {
                     return vm.getInstAnalysis(static_cast<AnalysisType>(type));
                 },
-                "Obtain the analysis of an instruction metadata. Analysis results are cached in the VM.",
+                "Obtain the analysis of the current instruction. Analysis results are cached in the VM.",
                 "type"_a, py::return_value_policy::copy)
+        .def("getCachedInstAnalysis",
+                [](const VM& vm, rword address, AnalysisType type) {
+                    return vm.getCachedInstAnalysis(address, type);
+                },
+                "Obtain the analysis of a cached instruction. Analysis results are cached in the VM.",
+                "address"_a,
+                py::arg_v("type", AnalysisType::ANALYSIS_INSTRUCTION | AnalysisType::ANALYSIS_DISASSEMBLY,
+                            "AnalysisType.ANALYSIS_INSTRUCTION|AnalysisType.ANALYSIS_DISASSEMBLY"),
+                py::return_value_policy::copy)
+        .def("getCachedInstAnalysis",
+                [](const VM& vm, rword address, int type) {
+                    return vm.getCachedInstAnalysis(address, static_cast<AnalysisType>(type));
+                },
+                "Obtain the analysis of a cached instruction. Analysis results are cached in the VM.",
+                "address"_a, "type"_a, py::return_value_policy::copy)
         .def("recordMemoryAccess", &VM::recordMemoryAccess,
                 "Add instrumentation rules to log memory access using inline instrumentation and instruction shadows.",
                 "type"_a)
