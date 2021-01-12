@@ -380,12 +380,15 @@ void VM::deleteAllInstrumentations() {
     memoryLoggingLevel = 0;
 }
 
-const InstAnalysis* VM::getInstAnalysis(AnalysisType type) {
+const InstAnalysis* VM::getInstAnalysis(AnalysisType type) const {
     const ExecBlock* curExecBlock = engine->getCurExecBlock();
     RequireAction("VM::getInstAnalysis", curExecBlock != nullptr, return nullptr);
     uint16_t curInstID = curExecBlock->getCurrentInstID();
-    const InstMetadata* instMetadata = curExecBlock->getInstMetadata(curInstID);
-    return engine->analyzeInstMetadata(instMetadata, type);
+    return curExecBlock->getInstAnalysis(curInstID, type);
+}
+
+const InstAnalysis* VM::getCachedInstAnalysis(rword address, AnalysisType type) const {
+    return engine->getInstAnalysis(address, type);
 }
 
 bool VM::recordMemoryAccess(MemoryAccessType type) {

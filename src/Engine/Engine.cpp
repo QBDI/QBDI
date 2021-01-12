@@ -131,7 +131,7 @@ void Engine::init() {
     );
     // Allocate QBDI classes
     assembly = std::make_unique<Assembly>(*MCTX, std::move(MAB), *MCII, *processTarget, *MSTI);
-    blockManager = std::make_unique<ExecBlockManager>(*MCII, *MRI, *assembly, vminstance);
+    blockManager = std::make_unique<ExecBlockManager>(*assembly, vminstance);
     execBroker = std::make_unique<ExecBroker>(*assembly, vminstance);
 
     // Get default Patch rules for this architecture
@@ -345,7 +345,7 @@ std::vector<Patch> Engine::patch(rword start) {
             basicBlockEnd = true;
         }
 
-        basicBlock.push_back(patch);
+        basicBlock.push_back(std::move(patch));
     }
 
     return basicBlock;
@@ -389,7 +389,7 @@ bool Engine::precacheBasicBlock(rword pc) {
         // Commit the flush
         blockManager->flushCommit();
     }
-    if (blockManager->getProgrammedExecBlock(pc) != nullptr) {
+    if (blockManager->getExecBlock(pc) != nullptr) {
         // already in cache
         return false;
     }
@@ -555,6 +555,17 @@ void Engine::signalEvent(VMEvent event, rword currentPC, GPRState *gprState, FPR
     }
 }
 
+const InstAnalysis* Engine::getInstAnalysis(rword address, AnalysisType type) const {
+    const ExecBlock* block = blockManager->getExecBlock(address);
+    if (block == nullptr) {
+        // not in cache
+        return nullptr;
+    }
+    uint16_t instID = block->getInstID(address);
+    RequireAction("Engine::getInstAnalysis", instID != NOT_FOUND, return nullptr);
+    return block->getInstAnalysis(instID, type);
+}
+
 bool Engine::deleteInstrumentation(uint32_t id) {
     if (id & EVENTID_VM_MASK) {
         id &= ~EVENTID_VM_MASK;
@@ -585,10 +596,6 @@ void Engine::deleteAllInstrumentations() {
     vmCallbacks.clear();
     instrRulesCounter = 0;
     vmCallbacksCounter = 0;
-}
-
-const InstAnalysis* Engine::analyzeInstMetadata(const InstMetadata* instMetadata, AnalysisType type) {
-    return blockManager->analyzeInstMetadata(instMetadata, type);
 }
 
 void Engine::clearAllCache() {

@@ -23,7 +23,6 @@
 #include <vector>
 
 #include "Callback.h"
-#include "InstAnalysis.h"
 #include "Range.h"
 #include "State.h"
 
@@ -39,10 +38,6 @@ class ExecBlock;
 class InstMetadata;
 class Patch;
 class RelocatableInst;
-
-struct InstAnalysisDestructor {
-  void operator()(InstAnalysis* ptr) const;
-};
 
 
 struct InstLoc {
@@ -60,15 +55,12 @@ struct SeqLoc {
 };
 
 struct ExecRegion {
-    using InstAnalysisPtr = std::unique_ptr<InstAnalysis, InstAnalysisDestructor>;
-
     Range<rword>                             covered;
     unsigned                                 translated;
     unsigned                                 available;
     std::vector<std::unique_ptr<ExecBlock>>  blocks;
     std::map<rword, SeqLoc>                  sequenceCache;
     std::map<rword, InstLoc>                 instCache;
-    std::map<rword, InstAnalysisPtr>         analysisCache;
     bool                                     toFlush = false;
 
     ExecRegion(ExecRegion&&) = default;
@@ -76,19 +68,15 @@ struct ExecRegion {
 };
 
 class ExecBlockManager {
-private:
-    using InstAnalysisPtr = std::unique_ptr<InstAnalysis, InstAnalysisDestructor>;
+    private:
 
     std::vector<ExecRegion>            regions;
-    std::map<rword, InstAnalysisPtr>   analysisCache;
     rword                              total_translated_size;
     rword                              total_translation_size;
     bool                               needFlush;
 
-    VMInstanceRef              vminstance;
-    llvm::MCInstrInfo&         MCII;
-    llvm::MCRegisterInfo&      MRI;
-    Assembly&                  assembly;
+    VMInstanceRef                    vminstance;
+    const Assembly&                  assembly;
 
     size_t searchRegion(rword start) const;
 
@@ -100,9 +88,9 @@ private:
 
     float getExpansionRatio() const;
 
-public:
+    public:
 
-    ExecBlockManager(llvm::MCInstrInfo& MCII, llvm::MCRegisterInfo& MRI, Assembly& assembly, VMInstanceRef vminstance = nullptr);
+    ExecBlockManager(const Assembly& assembly, VMInstanceRef vminstance = nullptr);
 
     ~ExecBlockManager();
 
@@ -114,11 +102,11 @@ public:
 
     ExecBlock* getProgrammedExecBlock(rword address);
 
+    const ExecBlock* getExecBlock(rword address) const;
+
     const SeqLoc* getSeqLoc(rword address) const;
 
     void writeBasicBlock(const std::vector<Patch>& basicBlock);
-
-    const InstAnalysis* analyzeInstMetadata(const InstMetadata* instMetadata, AnalysisType type);
 
     bool isFlushPending() { return needFlush; }
 

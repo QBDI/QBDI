@@ -93,7 +93,7 @@ private:
     llvm::sys::MemoryBlock            codeBlock;
     llvm::sys::MemoryBlock            dataBlock;
     std::unique_ptr<memory_ostream>   codeStream;
-    Assembly&                         assembly;
+    const Assembly&                   assembly;
     Context*                          context;
     rword*                            shadows;
     std::vector<ShadowInfo>           shadowRegistry;
@@ -132,7 +132,7 @@ public:
      * @param[in] assembly    Assembly used to assemble instructions in the ExecBlock.
      * @param[in] vminstance  Pointer to public engine interface
      */
-    ExecBlock(Assembly& assembly, VMInstanceRef vminstance = nullptr);
+    ExecBlock(const Assembly& assembly, VMInstanceRef vminstance = nullptr);
 
     ~ExecBlock();
 
@@ -253,6 +253,17 @@ public:
      * @return The original MCInst of the instruction.
      */
     const llvm::MCInst* getOriginalMCInst(uint16_t instID) const;
+
+    /*! Obtain the analysis of an instruction metadata. Analysis results are cached in the InstAnalysis.
+     *  The validity of the returned pointer is only guaranteed until the end of the callback, else
+     *  a deepcopy of the structure is required.
+     *
+     * @param[in] instMetadata Metadata to analyze.
+     * @param[in] type         Properties to retrieve during analysis.
+     *
+     * @return A InstAnalysis structure containing the analysis result.
+     */
+    const InstAnalysis* getInstAnalysis(uint16_t instID, AnalysisType type) const;
 
     /*! Obtain the next sequence ID.
      *

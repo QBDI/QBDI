@@ -14,6 +14,7 @@ Next Version
 * Refactor ExecBlockManager to work with unaligned instruction on X86 and X86-64 (`#129 <https://github.com/QBDI/QBDI/pull/129>`_)
 * Drop early support for ARM. The support hasn't been tested since 0.6.2.
 * Rework cmake package export to import X86 and X86_64 version of QBDI in one CMake (`#146 <https://github.com/QBDI/QBDI/pull/146>`_ and `#132 <https://github.com/QBDI/QBDI/pull/132>`_)
+* Add VM::getCachedInstAnalysis to retrieve an InstAnalysis from an address. The address must be cached in the VM. (`#148 <https://github.com/QBDI/QBDI/pull/148>`_)
 
 Internal update:
 

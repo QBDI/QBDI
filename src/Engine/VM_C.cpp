@@ -183,9 +183,14 @@ void qbdi_deleteAllInstrumentations(VMInstanceRef instance) {
     static_cast<VM*>(instance)->deleteAllInstrumentations();
 }
 
-const InstAnalysis* qbdi_getInstAnalysis(VMInstanceRef instance, AnalysisType type) {
+const InstAnalysis* qbdi_getInstAnalysis(const VMInstanceRef instance, AnalysisType type) {
     RequireAction("VM_C::getInstAnalysis", instance, return nullptr);
-    return static_cast<VM*>(instance)->getInstAnalysis(type);
+    return static_cast<const VM*>(instance)->getInstAnalysis(type);
+}
+
+const InstAnalysis* qbdi_getCachedInstAnalysis(const VMInstanceRef instance, rword address, AnalysisType type) {
+    RequireAction("VM_C::getCachedInstAnalysis", instance, return nullptr);
+    return static_cast<const VM*>(instance)->getCachedInstAnalysis(address, type);
 }
 
 bool qbdi_recordMemoryAccess(VMInstanceRef instance, MemoryAccessType type) {

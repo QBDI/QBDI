@@ -15,36 +15,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef INSTMETADATA_H
-#define INSTMETADATA_H
+#ifndef INSTANALYSISPRIVE_H
+#define INSTANALYSISPRIVE_H
 
-#include "llvm/MC/MCInst.h"
+#include <memory>
 
-#include "Utility/InstAnalysis_prive.h"
+#include "InstAnalysis.h"
 
-#include "State.h"
+namespace llvm {
+  class MCInstrDesc;
+  class MCInstrInfo;
+  class MCRegisterInfo;
+}
 
 namespace QBDI {
 
-class InstMetadata {
-public:
-    llvm::MCInst inst;
-    rword address;
-    uint32_t instSize;
-    uint32_t patchSize;
-    bool modifyPC;
-    bool merge;
-    mutable InstAnalysisPtr analysis;
+class Assembly;
+class InstMetadata;
 
-    inline rword endAddress() const {
-        return address + instSize;
-    }
-
-    inline InstMetadata lightCopy() const {
-        return {inst, address, instSize, patchSize, modifyPC, merge, nullptr};
-    }
+struct InstAnalysisDestructor {
+  void operator()(InstAnalysis* ptr) const;
 };
+
+using InstAnalysisPtr = std::unique_ptr<InstAnalysis, InstAnalysisDestructor>;
+
+const InstAnalysis* analyzeInstMetadata(const InstMetadata& instMetadata, AnalysisType type,
+                                        const Assembly& assembly);
 
 }
 
-#endif // INSTMETADATA_H
+#endif
+
