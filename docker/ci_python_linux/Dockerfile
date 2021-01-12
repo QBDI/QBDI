@@ -22,8 +22,10 @@ RUN yum update -y && \
     (yum install -y ccache || true) && \
     yum clean all
 
+RUN /opt/python/cp37-cp37m/bin/pip install ninja==1.10.0.post2
 
-ENV CCACHE_URL="https://github.com/ccache/ccache/releases/download/v${CCACHE_VERSION}/ccache-${CCACHE_VERSION}.tar.gz" \
+ENV PATH=$PATH:/opt/python/cp37-cp37m/bin/ \
+    CCACHE_URL="https://github.com/ccache/ccache/releases/download/v${CCACHE_VERSION}/ccache-${CCACHE_VERSION}.tar.gz" \
     CCACHE_ARCHIVE="ccache-${CCACHE_VERSION}.tar.gz" 
 
 RUN if ! which ccache >/dev/null 2>&1; then \
@@ -31,14 +33,13 @@ RUN if ! which ccache >/dev/null 2>&1; then \
         cd /tmp; \
         wget "${CCACHE_URL}" -O "${CCACHE_ARCHIVE}"; \
         (echo "${CCACHE_HASH} ${CCACHE_ARCHIVE}" | sha256sum -c -) || exit 1; \
-        tar xf ${CCACHE_ARCHIVE}; \
-        cd /tmp/ccache-${CCACHE_VERSION}; \
+        tar xf "${CCACHE_ARCHIVE}"; \
+        cd "/tmp/ccache-${CCACHE_VERSION}"; \
         mkdir build && cd build; \
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON; \
-        make -j 4; \
-        make install; \
+        cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON; \
+        ninja install; \
         cd /; \
-        rm -rf /tmp/ccache-${CCACHE_VERSION}; \
+        rm -rf "/tmp/ccache-${CCACHE_VERSION}" "/tmp/${CCACHE_ARCHIVE}"; \
     fi
 
 ARG USER_ID=1000
