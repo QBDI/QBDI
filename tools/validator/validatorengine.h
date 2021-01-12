@@ -22,8 +22,10 @@
 #include <utility>
 #include <vector>
 #include <map>
+#include <memory>
 
-#include "Memory.hpp"
+#include <QBDI/Callback.h>
+#include <QBDI/Memory.hpp>
 #include "Utility/LogSys.h"
 
 enum LogVerbosity {
@@ -63,21 +65,34 @@ struct Cascade {
     std::vector<uint64_t> similarCascade;
 };
 
+struct AccessError {
+    bool doRead;
+    bool mayRead;
+    bool doWrite;
+    bool mayWrite;
+    std::vector<QBDI::MemoryAccess> accesses;
+
+    AccessError(bool doRead, bool mayRead, bool doWrite, bool mayWrite, const std::vector<QBDI::MemoryAccess>& accesses) :
+      doRead(doRead), mayRead(mayRead), doWrite(doWrite), mayWrite(mayWrite), accesses(accesses) {}
+};
+
 class LogEntry {
 
 public:
 
     uint64_t execID;
     QBDI::rword address;
-    char *disassembly;
+    std::string disassembly;
+    std::string mnemonic;
     QBDI::rword transfer;
+    bool saved;
+    std::unique_ptr<AccessError> accessError;
+
     std::vector<ssize_t> errorIDs;
 
-    LogEntry(uint64_t execID, QBDI::rword address, const char* disassembly);
-
-    LogEntry(const LogEntry& copy);
-
-    ~LogEntry();
+    LogEntry(uint64_t execID, QBDI::rword address, const char* disassembly, const char* mnemonic) :
+      execID(execID), address(address), disassembly(disassembly), mnemonic(mnemonic), transfer(0),
+      saved(false) {}
 };
 
 template<typename T1, typename T2> bool KVComp(const std::pair<T1, T2> &a, const std::pair<T1, T2> &b) {
@@ -88,18 +103,22 @@ class ValidatorEngine {
     LogEntry *lastLogEntry;
     LogEntry *curLogEntry;
     std::vector<DiffMap> diffMaps;
-    std::vector<LogEntry> savedLogs;
+    std::vector<std::unique_ptr<LogEntry>> savedLogs;
     std::vector<DiffError> errors;
     std::map<std::string, uint64_t> coverage;
+    std::set<std::string> memAccessMnemonicSet;
 
     QBDI::rword debugged;
     QBDI::rword instrumented;
     LogVerbosity verbosity;
     uint64_t execID;
+    uint64_t accessError;
 
     ssize_t logEntryLookup(uint64_t execID);
 
-    void outputLogEntry(const LogEntry& entry);
+    QBDI::MemoryMap* getModule(QBDI::rword address);
+
+    void outputLogEntry(const LogEntry& entry, bool showMemoryError=true, bool showDiffError=true);
 
     std::vector<std::pair<QBDI::rword, QBDI::rword>> getMapsFromPID(pid_t pid);
 
@@ -113,11 +132,14 @@ public:
 
     ValidatorEngine(pid_t debugged, pid_t instrumented, LogVerbosity verbosity) :
         lastLogEntry(nullptr), curLogEntry(nullptr), debugged(debugged),
-        instrumented(instrumented), verbosity(verbosity), execID(0) {}
+        instrumented(instrumented), verbosity(verbosity), execID(0), accessError(0) {}
 
     void signalNewState(QBDI::rword address, const char* mnemonic, const char* disassembly,
                         const QBDI::GPRState *gprStateDbg, const QBDI::FPRState *fprStateDbg,
                         const QBDI::GPRState *gprStateInstr, const QBDI::FPRState *fprStateInstr);
+
+    void signalAccessError(QBDI::rword address, bool doRead, bool mayRead, bool doWrite, bool mayWrite,
+                           const std::vector<QBDI::MemoryAccess>& accesses);
 
     void signalExecTransfer(QBDI::rword address);
 

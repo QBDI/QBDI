@@ -21,6 +21,7 @@
 #include <inttypes.h>
 #include <errno.h>
 #include <dlfcn.h>
+#include <set>
 #include <sys/stat.h>
 
 #include "instrumented.h"
@@ -73,6 +74,89 @@ static QBDI::VMAction step(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBD
     return QBDI::VMAction::STOP;
 }
 
+static QBDI::VMAction verifyMemoryAccess(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBDI::FPRState *fprState, void *data) {
+    SAVED_ERRNO = errno;
+    Pipes *pipes = (Pipes*) data;
+
+    const QBDI::InstAnalysis* instAnalysis = vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION);
+
+    bool mayRead = instAnalysis->mayLoad;
+    bool mayWrite = instAnalysis->mayStore;
+
+    bool doRead = false;
+    bool doWrite = false;
+    std::vector<QBDI::MemoryAccess> accesses = vm->getInstMemoryAccess();
+    for (auto &m : accesses) {
+        if ((m.type & QBDI::MEMORY_READ) != 0) {
+            doRead = true;
+        }
+        if ((m.type & QBDI::MEMORY_WRITE) != 0) {
+            doWrite = true;
+        }
+    }
+
+    // llvm API mayRead and mayWrite are incomplete.
+    bool bypassRead = false;
+    bool bypassWrite = false;
+
+    if (doRead and !mayRead) {
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+        // all return instructions read the return address.
+        bypassRead |= instAnalysis->isReturn;
+        const std::set<std::string> shouldReadInsts {
+            "CMPSB", "CMPSW", "CMPSL", "CMPSQ",
+            "MOVSB", "MOVSW", "MOVSL", "MOVSQ",
+            "SCASB", "SCASW", "SCASL", "SCASQ",
+        };
+        bypassRead |= (shouldReadInsts.count(instAnalysis->mnemonic) == 1);
+#endif
+    } else if (!doRead and mayRead) {
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+        const std::set<std::string> noReadInsts {
+            "VZEROUPPER", "VZEROALL",
+        };
+        bypassRead |= (noReadInsts.count(instAnalysis->mnemonic) == 1);
+#endif
+    }
+
+    if (doWrite and !mayWrite) {
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+        // all call instructions write the return address.
+        bypassWrite |= instAnalysis->isCall;
+        const std::set<std::string> shouldWriteInsts {
+            "STOSB", "STOSW", "STOSL", "STOSQ",
+            "MOVSB", "MOVSW", "MOVSL", "MOVSQ",
+        };
+        bypassWrite |= (shouldWriteInsts.count(instAnalysis->mnemonic) == 1);
+#endif
+    } else if (!doWrite and mayWrite) {
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+        const std::set<std::string> noWriteInsts {
+            "VZEROUPPER", "VZEROALL",
+        };
+        bypassWrite |= (noWriteInsts.count(instAnalysis->mnemonic) == 1);
+#endif
+    }
+
+
+    if ((doRead == mayRead || bypassRead) && (doWrite == mayWrite || bypassWrite)) {
+        errno = SAVED_ERRNO;
+        return QBDI::VMAction::CONTINUE;
+    }
+
+
+    // Write a new instruction event
+    if(writeMismatchMemAccessEvent(instAnalysis->address, doRead, instAnalysis->mayLoad,
+                                   doWrite, instAnalysis->mayStore, accesses, pipes->dataPipe) != 1) {
+        // DATA pipe failure, we exit
+        LogError("Validator::Instrumented", "Lost the data pipe, exiting!");
+        return QBDI::VMAction::STOP;
+    }
+    errno = SAVED_ERRNO;
+    // Continue the execution
+    return QBDI::VMAction::CONTINUE;
+}
+
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 static QBDI::VMAction logSyscall(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBDI::FPRState *fprState, void *data) {
     Pipes *pipes = (Pipes*) data;
@@ -100,8 +184,6 @@ static QBDI::VMAction restoreErrno(QBDI::VMInstanceRef vm, const QBDI::VMState *
 
 Pipes PIPES = {NULL, NULL};
 QBDI::VM* VM;
-const size_t BUFFER_SIZE = 128;
-char CTRL_PIPE_FILE[BUFFER_SIZE], DATA_PIPE_FILE[BUFFER_SIZE];
 
 void cleanup_instrumentation() {
     static bool cleaned_up = false;
@@ -109,15 +191,12 @@ void cleanup_instrumentation() {
         writeEvent(EVENT::EXIT, PIPES.dataPipe);
         fclose(PIPES.ctrlPipe);
         fclose(PIPES.dataPipe);
-        remove(CTRL_PIPE_FILE);
-        remove(DATA_PIPE_FILE);
         delete VM;
         cleaned_up = true;
     }
 }
 
-void start_instrumented(QBDI::VM* vm, QBDI::rword start, QBDI::rword stop) {
-    struct stat s;
+void start_instrumented(QBDI::VM* vm, QBDI::rword start, QBDI::rword stop, int ctrlfd, int datafd) {
 
     VM = vm;
     QBDI::LOGSYS.addFilter("*", QBDI::LogPriority::ERROR);
@@ -129,12 +208,8 @@ void start_instrumented(QBDI::VM* vm, QBDI::rword start, QBDI::rword stop) {
     }
 #endif
     // Opening communication FIFO
-    snprintf(CTRL_PIPE_FILE, BUFFER_SIZE, ".%u_ctrl", getppid());
-    snprintf(DATA_PIPE_FILE, BUFFER_SIZE, ".%u_data", getppid());
-    // Wait for the pipes to be created
-    while(stat(DATA_PIPE_FILE, &s) != 0) sleep(0);
-    PIPES.ctrlPipe = fopen(CTRL_PIPE_FILE, "rb");
-    PIPES.dataPipe = fopen(DATA_PIPE_FILE, "wb");
+    PIPES.ctrlPipe = fdopen(ctrlfd, "rb");
+    PIPES.dataPipe = fdopen(datafd, "wb");
     if(PIPES.ctrlPipe == nullptr || PIPES.dataPipe == nullptr) {
         LogError("Validator::Instrumented", "Could not open communication pipes with master, exiting!");
         return;
@@ -142,6 +217,10 @@ void start_instrumented(QBDI::VM* vm, QBDI::rword start, QBDI::rword stop) {
 
     vm->addCodeCB(QBDI::PREINST, step, (void*) &PIPES);
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+    // memory Access are not supported for ARM now
+    vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm->addCodeCB(QBDI::POSTINST, verifyMemoryAccess, (void*) &PIPES);
+
     vm->addMnemonicCB("syscall", QBDI::POSTINST, logSyscall, (void*) &PIPES);
 #endif
     vm->addVMEventCB(QBDI::VMEvent::EXEC_TRANSFER_CALL, logTransfer, (void*) &PIPES);

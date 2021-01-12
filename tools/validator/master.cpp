@@ -28,9 +28,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-void start_master(Process* debugged, pid_t instrumented) {
+void start_master(Process* debugged, pid_t instrumented, int ctrlfd, int datafd) {
     const size_t BUFFER_SIZE = 128;
-    char ctrlPipeFile[BUFFER_SIZE], dataPipeFile[BUFFER_SIZE];
     char mnemonic[BUFFER_SIZE], disassembly[BUFFER_SIZE];
     char* env = nullptr;
     int status;
@@ -45,12 +44,8 @@ void start_master(Process* debugged, pid_t instrumented) {
     QBDI::LOGSYS.addFilter("*", QBDI::LogPriority::ERROR);
 
     // Create communication fifo
-    snprintf(ctrlPipeFile, BUFFER_SIZE, ".%u_ctrl", getpid());
-    snprintf(dataPipeFile, BUFFER_SIZE, ".%u_data", getpid());
-    mkfifo(ctrlPipeFile, S_IRUSR| S_IWUSR);
-    mkfifo(dataPipeFile, S_IRUSR| S_IWUSR);
-    ctrlPipe = fopen(ctrlPipeFile, "wb");
-    dataPipe = fopen(dataPipeFile, "rb");
+    ctrlPipe = fdopen(ctrlfd, "wb");
+    dataPipe = fdopen(datafd, "rb");
     if(ctrlPipe == nullptr || dataPipe == nullptr) {
         LogError("Validator::Master", "Could not open communication pipes with instrumented, exiting!");
         exit(VALIDATOR_ERR_PIPE_CREATION_FAIL);
@@ -76,7 +71,7 @@ void start_master(Process* debugged, pid_t instrumented) {
             error = VALIDATOR_ERR_DATA_PIPE_LOST;
             break;
         }
-        if(event ==  EVENT::EXIT) {
+        if(event == EVENT::EXIT) {
             debugged->continueExecution();
             break;
         }
@@ -131,6 +126,22 @@ void start_master(Process* debugged, pid_t instrumented) {
             if (running) {
                 debugged->unsetBreakpoint();
             }
+        } else if(event == EVENT::MISSMATCHMEMACCESS) {
+            bool doRead, mayRead, doWrite, mayWrite;
+            std::vector<QBDI::MemoryAccess> accesses;
+            if(readMismatchMemAccessEvent(&address, &doRead, &mayRead, &doWrite, &mayWrite, accesses, dataPipe) != 1) {
+                LogError("Validator::Master", "Lost the data pipe, exiting!");
+                debugged->continueExecution();
+                writeCommand(COMMAND::STOP, ctrlPipe);
+                error = VALIDATOR_ERR_DATA_PIPE_LOST;
+                break;
+            }
+            validator.signalAccessError(address, doRead, mayRead, doWrite, mayWrite, accesses);
+        } else {
+            LogError("Validator::Master", "Unknown validator event %d", event);
+            debugged->continueExecution();
+            error = VALIDATOR_ERR_UNEXPECTED_API_FAILURE;
+            break;
         }
     }
 
@@ -140,11 +151,5 @@ void start_master(Process* debugged, pid_t instrumented) {
         validator.logCoverage(env);
     }
 
-    // Deleting pipes
-    if(error == VALIDATOR_ERR_DATA_PIPE_LOST || error == VALIDATOR_ERR_CTRL_PIPE_LOST) {
-        // The instrumented process probably crashed and cannot delete it himself
-        remove(ctrlPipeFile);
-    }
-    remove(dataPipeFile);
     exit(error);
 }
