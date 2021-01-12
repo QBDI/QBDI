@@ -22,6 +22,7 @@ RUN apt-get update && \
         g++-multilib \
         libstdc++-8-dev \
         make \
+        ninja-build \
         pkg-config \
         wget \
         ca-certificates \
