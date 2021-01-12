@@ -1,0 +1,65 @@
+name: Tests and Package Linux
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: 
+        QBDI_ARCH: ['X86_64', 'X86']
+    env:
+      QBDI_PLATFORM: 'linux'
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Cache ccache
+        uses: actions/cache@v2
+        id: cache-ccache
+        with:
+          path: |
+            ~/.ccache
+          key: ccache-linux-${{ matrix.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}
+      - if: steps.cache-ccache.outputs.cache-hit != 'true'
+        run: |
+          mkdir ~/.ccache
+          cp .github/workflows/ccache.conf ~/.ccache/ccache.conf
+      - name: Cache llvm
+        uses: actions/cache@v2
+        id: cache-llvm
+        with:
+          path: |
+            deps/llvm/linux-${{ matrix.QBDI_ARCH }}/include
+            deps/llvm/linux-${{ matrix.QBDI_ARCH }}/lib
+          key: llvm-${{ runner.os }}-linux-${{ matrix.QBDI_ARCH }}-${{ hashFiles('deps/llvm/build.py') }}
+      - name: Cache test result
+        uses: actions/cache@v2
+        with:
+          path: |
+            tools/validation_runner/travis_db
+          key: test-linux-${{ matrix.QBDI_ARCH }}
+      - name: Create build image
+        env:
+          QBDI_ARCH: ${{ matrix.QBDI_ARCH }}
+        run: bash ./docker/ci_linux/img_build.sh
+      - name: Build LLVM dependencies
+        env:
+          QBDI_ARCH: ${{ matrix.QBDI_ARCH }}
+        run: bash ./docker/ci_linux/llvm.sh
+      - name: Build and test QBDI
+        env:
+          QBDI_ARCH: ${{ matrix.QBDI_ARCH }}
+        run: bash ./docker/ci_linux/qbdi.sh
+      - name: Export package
+        uses: actions/upload-artifact@v2
+        with:
+          name: package linux ${{ matrix.QBDI_ARCH }}
+          path: build/QBDI-*-linux-${{ matrix.QBDI_ARCH }}.tar.gz
+
+
+

@@ -3,6 +3,7 @@ import re
 import sys
 import platform
 import subprocess
+import shutil
 
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
@@ -39,6 +40,11 @@ class CMakeExtension(Extension):
 
 
 class CMakeBuild(build_ext):
+
+    @staticmethod
+    def has_ninja():
+        return bool(shutil.which('ninja'))
+
     def run(self):
         try:
             out = subprocess.check_output(['cmake', '--version'])
@@ -73,7 +79,10 @@ class CMakeBuild(build_ext):
             cmake_args += ["-G", "Ninja"]
         else:
             cmake_args += ['-DQBDI_TOOLS_QBDIPRELOAD=On']
-            build_args += ['--', '-j4']
+            if self.has_ninja():
+                cmake_args += ["-G", "Ninja"]
+            else:
+                build_args += ['--', '-j4']
 
         env = os.environ.copy()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),

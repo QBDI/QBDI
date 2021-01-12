@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
 set -ex
 
@@ -6,7 +6,8 @@ cd "${HOME}/qbdi/"
 mkdir -p build
 cd build
 
-cmake -DCMAKE_BUILD_TYPE=Release \
+cmake -G Ninja \
+      -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_CROSSCOMPILING=FALSE \
       -DQBDI_PLATFORM=${QBDI_PLATFORM} \
       -DQBDI_ARCH=${QBDI_ARCH} \
@@ -15,7 +16,9 @@ cmake -DCMAKE_BUILD_TYPE=Release \
       -DQBDI_TOOLS_VALIDATOR=ON \
       -DQBDI_TOOLS_PYQBDI=ON
 
-make -j4
+ninja
+
+cpack
 
 ./test/QBDITest
 

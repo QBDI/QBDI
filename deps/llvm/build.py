@@ -100,6 +100,9 @@ def build_llvm(llvm_dir, build_dir, arch, target_plateform, arch_opt=None, ccach
     if not build_dir.exists():
         build_dir.mkdir()
 
+    cmake_specific_option = []
+    build_specific_option = []
+
     # set platform specific arguments.
     if target_plateform == "windows" and arch_opt == "i386":
         cmake_specific_option = ["-G", "Ninja",
@@ -176,6 +179,14 @@ def build_llvm(llvm_dir, build_dir, arch, target_plateform, arch_opt=None, ccach
         cmake_specific_option = ['-DCMAKE_C_FLAGS=-fvisibility=hidden',
                                  '-DCMAKE_CXX_FLAGS=-fvisibility=hidden']
 
+    if target_plateform != "windows":
+        # Ninja is use by default on windows target
+        if bool(shutil.which('ninja')):
+            cmake_specific_option += ["-G", "Ninja"]
+        else:
+            build_specific_option += ['-j4']
+
+
     # Run cmake
     subprocess.check_call(["cmake", str(llvm_dir.resolve()),
                            "-DCMAKE_BUILD_TYPE=Release",
@@ -202,11 +213,9 @@ def build_llvm(llvm_dir, build_dir, arch, target_plateform, arch_opt=None, ccach
 
     # Compile llvm libraries
     if target_plateform == "windows":
-        subprocess.check_call(["ninja"] + get_libraries(arch, target_plateform, ext=".lib"),
-                              cwd=str(build_dir))
+        subprocess.check_call(["ninja"] + build_specific_option + get_libraries(arch, target_plateform, ext=".lib"), cwd=str(build_dir))
     else:
-        # FIXME: Not always 4, could be 8 on my computer and 2 on travis)
-        subprocess.check_call(["make", "-j4"] + get_libraries(arch, target_plateform), cwd=str(build_dir))
+        subprocess.check_call(['cmake', '--build', '.', '--'] + build_specific_option + get_libraries(arch, target_plateform), cwd=str(build_dir))
 
 
 def extract_file(source, dest, exts):

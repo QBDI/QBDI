@@ -1,12 +1,10 @@
-ARG UBUNTU_TAG=latest
+ARG DOCKER_IMG="ubuntu:20.04"
 
-FROM i386/ubuntu:$UBUNTU_TAG
+FROM $DOCKER_IMG
 
 ENV USER="docker" \
     HOME="/home/docker" \
     PREFIX="/usr" \
-    QBDI_PLATFORM="linux" \
-    QBDI_ARCH="X86" \
     CLICOLOR_FORCE=1
 
 # Get latest package list, upgrade packages, install required packages 
@@ -24,6 +22,7 @@ RUN apt-get update && \
         g++-multilib \
         libstdc++-8-dev \
         make \
+        ninja-build \
         pkg-config \
         wget \
         ca-certificates \
@@ -33,7 +32,9 @@ RUN apt-get update && \
         python3-yaml \
         zip \
         git \
-        xxd
+        xxd && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 ARG USER_ID=1000
 
