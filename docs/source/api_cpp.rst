@@ -13,7 +13,7 @@ CPU as a reference::
 
     QBDI::VM *vm = new QBDI::VM();
 
-.. doxygenfunction:: QBDI::VM::VM
+.. doxygenfunction:: QBDI::VM::VM(const std::string &cpu = "", const std::vector<std::string> &mattrs = {})
 
 State Management
 ----------------

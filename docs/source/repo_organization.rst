@@ -12,6 +12,9 @@ The root of the source tree is organized as follows:
 ``deps/``
    Contains the dependency build system and cache.
 
+``docker/``
+   Contains the Dockerfile for the docker image and the CI.
+
 ``docs/``
    Contains this documentation source and configuration.
 
@@ -47,11 +50,11 @@ The source files are organized as follows:
    Contains code related to the VM API and underlying Engine controlling the overall execution.
 
 ``src/ExecBlock``
-   Contains code used to generate, store and execute JITed code inside ExecBlocks which form a code 
+   Contains code used to generate, store and execute JITed code inside ExecBlocks which form a code
    cache managed by the ExecBlockManager.
 
 ``src/ExecBroker``
-   Contains code implementing the execution brokering mechanism allowing to switch between 
+   Contains code implementing the execution brokering mechanism allowing to switch between
    instrumented execution and real execution.
 
 ``src/Patch``

@@ -44,7 +44,7 @@ def extract_version(cmakefile):
 # Extract version from CMakeLists.txt
 # We cannot use cmake configure_file because documentation is built without cmake on readthedocs
 current_dir = os.path.dirname(os.path.realpath(__file__))
-cmake_path = os.path.join(current_dir, '..', '..', 'CMakeLists.txt')
+cmake_path = os.path.join(current_dir, '..', '..', 'cmake', 'QBDIConfig.cmake')
 VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_DEV = extract_version(cmake_path)
 VERSION_FULL = "%u.%u.%u" % (VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH)
 if VERSION_DEV:
@@ -59,10 +59,10 @@ if read_the_docs_build:
     # Call doxygen
     subprocess.call("cd ../; %s qbdi_cpp.doxygen.in > qbdi_cpp.doxygen" % sedcmd, shell=True)
     subprocess.call("cd ../; %s qbdi_c.doxygen.in > qbdi_c.doxygen" % sedcmd, shell=True)
-    subprocess.call("cd ../; %s tools.doxygen.in > tools.doxygen" % sedcmd, shell=True)
+    subprocess.call("cd ../; %s qbdipreload.doxygen.in > qbdipreload.doxygen" % sedcmd, shell=True)
     subprocess.call('cd ../; doxygen qbdi_cpp.doxygen', shell=True)
     subprocess.call('cd ../; doxygen qbdi_c.doxygen', shell=True)
-    subprocess.call('cd ../; doxygen tools.doxygen', shell=True)
+    subprocess.call('cd ../; doxygen qbdipreload.doxygen', shell=True)
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -78,7 +78,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['breathe', 'sphinx.ext.autodoc', 'sphinxcontrib.autojs']
+extensions = ['breathe', 'sphinx.ext.autodoc', 'sphinx_js']
 breathe_default_project = "QBDI_CPP"
 
 # Add any paths that contain templates here, relative to this directory.
@@ -97,7 +97,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'QBDI'
-copyright = '2015-2020, Quarkslab'
+copyright = '2015-2021, Quarkslab'
 author = 'Quarkslab'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -338,7 +338,7 @@ texinfo_documents = [
 breathe_projects = {
     "QBDI_CPP":"../doxygen_cpp/xml/",
     "QBDI_C":"../doxygen_c/xml/",
-    "TOOLS":"../doxygen_tools/xml/",
+    "QBDIPRELOAD":"../doxygen_qbdipreload/xml/",
 }
 
 breathe_domain_by_file_pattern = {
@@ -346,3 +346,7 @@ breathe_domain_by_file_pattern = {
 }
 
 breathe_use_project_refids = True
+
+# -- Sphinx-JS ------------------------------------------------------------
+
+js_source_path = '../../tools/'

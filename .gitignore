@@ -12,10 +12,10 @@ deps/**
 docs/build
 docs/doxygen_c
 docs/doxygen_cpp
+docs/doxygen_qbdipreload
 docs/qbdi_c.doxygen
 docs/qbdi_cpp.doxygen
-docs/doxygen_tools
-docs/tools.doxygen
+docs/qbdipreload.doxygen
 
 qbdi-deps.tar.gz
 qbdi.tar.gz

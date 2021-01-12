@@ -18,7 +18,7 @@ vm.addInstrumentedModuleFromAddr(funcPtr);
 // This callback will print context and display current instruction address and dissassembly
 // We choose to print only XOR instructions
 var icbk = vm.newInstCallback(function(vm, gpr, fpr, data) {
-    inst = vm.getInstAnalysis();
+    var inst = vm.getInstAnalysis();
     if (inst.mnemonic.search("XOR")){
         return VMAction.CONTINUE;
     }

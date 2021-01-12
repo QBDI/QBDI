@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 3.5)
 project(QBDI)
 
+include(GNUInstallDirs)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
 # Config platform & arch
@@ -166,16 +168,17 @@ if(${DEPENDENCY_SATISFIED})
 
     # Common static LLVM objects
     set(_LLVM_STATIC_LIBS
-      LLVMBinaryFormat
-      LLVMMCDisassembler
-      LLVMMCParser
-      LLVMMC
-      LLVMSupport
-      LLVM${QBDI_LLVM_ARCH}Disassembler
       LLVM${QBDI_LLVM_ARCH}AsmParser
       LLVM${QBDI_LLVM_ARCH}Desc
+      LLVM${QBDI_LLVM_ARCH}Disassembler
       LLVM${QBDI_LLVM_ARCH}Info
-      LLVM${QBDI_LLVM_ARCH}Utils)
+      LLVM${QBDI_LLVM_ARCH}Utils
+      LLVMBinaryFormat
+      LLVMMC
+      LLVMMCDisassembler
+      LLVMMCParser
+      LLVMSupport
+      )
 
     if(QBDI_PLATFORM_LINUX AND (QBDI_ARCH_X86 OR QBDI_ARCH_X86_64))
 
@@ -217,6 +220,8 @@ if(${DEPENDENCY_SATISFIED})
         PREPEND(LLVM_STATIC_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/lib ".a" ${_LLVM_STATIC_LIBS})
     endif()
 
+    MERGE_STATIC_LIBS(LLVM_static LLVM_static \${LLVM_STATIC_LIBS})
+
     # Add QBDI source file in QBDI_obj
     add_library(QBDI_src INTERFACE)
     add_library(QBDI_shared_src INTERFACE)
@@ -248,7 +253,7 @@ if(${DEPENDENCY_SATISFIED})
                 CXX_STANDARD_REQUIRED ON
         )
 
-        set(qbdi_static_libs ${LLVM_STATIC_LIBS} QBDI_obj)
+        set(qbdi_static_libs LLVM_static QBDI_obj)
 
         MERGE_STATIC_LIBS(QBDI_static QBDI \${qbdi_static_libs})
 
@@ -271,7 +276,9 @@ if(${DEPENDENCY_SATISFIED})
         install(TARGETS QBDI_static
             EXPORT QBDI_targets
             COMPONENT QBDI
-            ARCHIVE DESTINATION lib)
+            LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+            ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+            RUNTIME DESTINATION "${CMAKE_INSTALL_LIBDIR}")
 
     endif()
 
@@ -279,9 +286,6 @@ if(${DEPENDENCY_SATISFIED})
     if (QBDI_SHARED_LIBRARY)
         add_library(QBDI SHARED)
         add_library(QBDI::QBDI ALIAS QBDI)
-
-        target_link_libraries(QBDI PRIVATE QBDI_src QBDI_shared_src)
-        target_link_libraries(QBDI PRIVATE ${LLVM_STATIC_LIBS})
 
         set_target_properties(QBDI
             PROPERTIES
@@ -297,7 +301,8 @@ if(${DEPENDENCY_SATISFIED})
             $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/QBDI>
             )
 
-        target_link_libraries(QBDI PUBLIC ${LLVM_LIBS} PRIVATE ${LLVM_STATIC_LIBS})
+        target_link_libraries(QBDI PRIVATE QBDI_src QBDI_shared_src LLVM_static ${LLVM_LIBS})
+
         set_target_properties(QBDI PROPERTIES OUTPUT_NAME QBDI)
 
         if(DEFINED STRIP_PATH)
@@ -324,24 +329,23 @@ if(${DEPENDENCY_SATISFIED})
         install(TARGETS QBDI
             EXPORT QBDI_targets
             COMPONENT QBDI
-            LIBRARY DESTINATION lib
-            ARCHIVE DESTINATION lib
-            RUNTIME DESTINATION lib)
+            LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+            ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+            RUNTIME DESTINATION "${CMAKE_INSTALL_LIBDIR}")
 
         if(QBDI_PLATFORM_WINDOWS)
             install(FILES ${CMAKE_BINARY_DIR}/QBDI.exp
                 COMPONENT QBDI
-                DESTINATION lib)
+                DESTINATION "${CMAKE_INSTALL_LIBDIR}")
         endif()
 
     endif()
 
-
     set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME "QBDI")
-    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI" DESTINATION include/ PATTERN "*.in" EXCLUDE)
-    install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include/QBDI" DESTINATION include/)
+    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}" PATTERN "*.in" EXCLUDE)
+    install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include/QBDI" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
-    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI.h" DESTINATION include/)
+    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI.h" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
     # Configure install
     if(UNIX AND NOT (QBDI_ARCH_ARM AND (QBDI_PLATFORM_IOS OR QBDI_PLATFORM_ANDROID)))
@@ -352,47 +356,67 @@ if(${DEPENDENCY_SATISFIED})
 
     if(FULL_PACKAGE)
         string(REPLACE ";" " " LLVM_LIBS_STR "${LLVM_LIBS}")
-        configure_file(package/qbdi.pc.in package/qbdi.pc @ONLY)
-        install(FILES ${CMAKE_BINARY_DIR}/package/qbdi.pc DESTINATION lib/pkgconfig/)
+        configure_file("${CMAKE_CURRENT_SOURCE_DIR}/package/qbdi.pc.in" "${CMAKE_CURRENT_BINARY_DIR}/package/qbdi.pc" @ONLY)
+        install(FILES "${CMAKE_CURRENT_BINARY_DIR}/package/qbdi.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig/")
 
-        set(RESOURCES_PREFIX ${CMAKE_INSTALL_PREFIX}/share/qbdi)
+        set(RESOURCES_PREFIX "${CMAKE_INSTALL_DATADIR}/qbdi${QBDI_ARCH}")
 
         install(EXPORT QBDI_targets
             FILE QBDIConfig.cmake
             NAMESPACE QBDI::
             DESTINATION ${RESOURCES_PREFIX}/cmake)
 
-        # QBDI template
-        configure_file(package/qbdi-template.in package/qbdi-template)
-        install(DIRECTORY templates/qbdi_template DESTINATION ${RESOURCES_PREFIX}
-            COMPONENT QBDITemplate)
-        install(PROGRAMS ${CMAKE_BINARY_DIR}/package/qbdi-template DESTINATION bin
-            COMPONENT QBDITemplate)
+        install(EXPORT QBDI_targets
+            FILE QBDI${QBDI_ARCH}Config.cmake
+            NAMESPACE QBDI::${QBDI_ARCH}::
+            DESTINATION ${RESOURCES_PREFIX}/cmake)
 
-        set(PRELOAD_RESOURCES_PREFIX ${CMAKE_INSTALL_PREFIX}/share/qbdipreload)
+        # QBDI template
+        configure_file("${CMAKE_CURRENT_SOURCE_DIR}/package/qbdi-template.in"
+                       "${CMAKE_CURRENT_BINARY_DIR}/package/qbdi-template")
+        configure_file("${CMAKE_CURRENT_SOURCE_DIR}/templates/qbdi_template/CMakeLists.txt.in"
+                       "${CMAKE_CURRENT_BINARY_DIR}/templates/qbdi_template/CMakeLists.txt" @ONLY)
+        install(DIRECTORY templates/qbdi_template DESTINATION "${RESOURCES_PREFIX}"
+                COMPONENT QBDITemplate PATTERN "CMakeLists.txt.in" EXCLUDE)
+        install(FILES "${CMAKE_CURRENT_BINARY_DIR}/templates/qbdi_template/CMakeLists.txt"
+                DESTINATION "${RESOURCES_PREFIX}/qbdi_template")
+        install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/package/qbdi-template" DESTINATION "${CMAKE_INSTALL_BINDIR}"
+                COMPONENT QBDITemplate RENAME "qbdi-template-${QBDI_ARCH}")
+
+        set(PRELOAD_RESOURCES_PREFIX "${CMAKE_INSTALL_DATADIR}/qbdipreload${QBDI_ARCH}")
         # QBDI preload template
         if(QBDI_TOOLS_QBDIPRELOAD)
-            configure_file(package/qbdi-preload-template.in package/qbdi-preload-template)
-            install(DIRECTORY templates/qbdi_preload_template DESTINATION ${PRELOAD_RESOURCES_PREFIX}
-                COMPONENT QBDITemplate)
-            install(PROGRAMS ${CMAKE_BINARY_DIR}/package/qbdi-preload-template DESTINATION bin
-                COMPONENT QBDITemplate)
+            configure_file("${CMAKE_CURRENT_SOURCE_DIR}/package/qbdi-preload-template.in"
+                           "${CMAKE_CURRENT_BINARY_DIR}/package/qbdi-preload-template")
+            configure_file("${CMAKE_CURRENT_SOURCE_DIR}/templates/qbdi_preload_template/CMakeLists.txt.in"
+                           "${CMAKE_CURRENT_BINARY_DIR}/templates/qbdi_preload_template/CMakeLists.txt" @ONLY)
+            install(DIRECTORY templates/qbdi_preload_template DESTINATION "${PRELOAD_RESOURCES_PREFIX}"
+                    COMPONENT QBDITemplate PATTERN "CMakeLists.txt.in" EXCLUDE)
+            install(FILES "${CMAKE_CURRENT_BINARY_DIR}/templates/qbdi_preload_template/CMakeLists.txt"
+                    DESTINATION "${PRELOAD_RESOURCES_PREFIX}/qbdi_preload_template")
+            install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/package/qbdi-preload-template" DESTINATION "${CMAKE_INSTALL_BINDIR}"
+                    COMPONENT QBDITemplate RENAME "qbdi-preload-template-${QBDI_ARCH}")
         endif()
 
         # Frida template
         if(QBDI_TOOLS_FRIDAQBDI)
             configure_file(package/qbdi-frida-template.in package/qbdi-frida-template)
-            install(DIRECTORY templates/qbdi_frida_template DESTINATION ${RESOURCES_PREFIX}
+            install(DIRECTORY templates/qbdi_frida_template DESTINATION "${RESOURCES_PREFIX}"
                 COMPONENT QBDIFridaTemplate)
-            install(PROGRAMS ${CMAKE_BINARY_DIR}/package/qbdi-frida-template DESTINATION bin
-                COMPONENT QBDIFridaTemplate)
-            install(FILES tools/frida-qbdi.js DESTINATION ${RESOURCES_PREFIX})
+            install(PROGRAMS ${CMAKE_BINARY_DIR}/package/qbdi-frida-template DESTINATION "${CMAKE_INSTALL_BINDIR}"
+                COMPONENT QBDIFridaTemplate RENAME "qbdi-frida-template-${QBDI_ARCH}")
+            install(FILES tools/frida-qbdi.js DESTINATION "${RESOURCES_PREFIX}")
         endif()
 
     else()
         install(EXPORT QBDI_targets
             FILE QBDIConfig.cmake
             NAMESPACE QBDI::
+            DESTINATION cmake)
+
+        install(EXPORT QBDI_targets
+            FILE QBDI${QBDI_ARCH}Config.cmake
+            NAMESPACE QBDI::${QBDI_ARCH}::
             DESTINATION cmake)
 
         install(DIRECTORY templates/qbdi_template/ DESTINATION templates/qbdi_template)

@@ -6,6 +6,7 @@ User Documentation
 
     Introduction <intro>
     Installation <installation>
+    CMake integration <cmake_target>
     API <api>
     QBDIPreload <qbdi_preload>
     PyQBDI <pyQBDI>

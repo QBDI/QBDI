@@ -5,67 +5,97 @@ We propose bindings for Frida, the whole C/C++ API is available through them, bu
 
 .. _frida-bindins-api:
 
+
 API bindings
 ------------
 
 Initialization
 ^^^^^^^^^^^^^^
-.. autojs:: ../../tools/frida-qbdi.js
-    :exclude-desc: true
-    :members: _QBDI
-    :member-order: alphabetical
+.. js:autoclass:: QBDI
 
 State Management
 ^^^^^^^^^^^^^^^^
 
-.. autojs:: ../../tools/frida-qbdi.js
-    :members: GPRState.prototype.dump, GPRState.prototype.pp, GPRState.prototype.synchronizeRegister, GPRState.prototype.synchronizeContext,
-              GPRState.prototype.getRegister, GPRState.prototype.setRegister, GPRState.prototype.getRegisters, GPRState.prototype.setRegisters
-    :member-order: bysource
+.. js:autoclass:: GPRState
+   :members:
 
-.. autojs:: ../../tools/frida-qbdi.js
-    :members: QBDI.prototype.dumpGPRs, QBDI.prototype.ppGPRs, QBDI.prototype.synchronizeRegister, QBDI.prototype.synchronizeContext,
-              QBDI.prototype.getGPR, QBDI.prototype.setGPR, QBDI.prototype.getGPRs, QBDI.prototype.setGPRS
-    :member-order: bysource
+.. js:autofunction:: QBDI#getGPRState
+
+.. js:autofunction:: QBDI#setGPRState
+
 
 State Initialization
 ^^^^^^^^^^^^^^^^^^^^
 
-.. autojs:: ../../tools/frida-qbdi.js
-    :members: QBDI.prototype.alignedAlloc, QBDI.prototype.allocateVirtualStack, QBDI.prototype.simulateCall,
-              QBDI.prototype.getGPRState(state), QBDI.prototype.getFPRState(state), QBDI.prototype.setGPRState, QBDI.prototype.setFPRState
-    :member-order: alphabetical
+.. js:autofunction:: QBDI#alignedAlloc
+
+.. js:autofunction:: QBDI#allocateVirtualStack
+
+.. js:autofunction:: QBDI#simulateCall
+
+.. js:autofunction:: QBDI#getFPRState
+
+.. js:autofunction:: QBDI#setFPRState
 
 Execution
 ^^^^^^^^^
 
-.. autojs:: ../../tools/frida-qbdi.js
-    :members: QBDI.prototype.run, QBDI.prototype.call, QBDI.prototype.getModuleNames,
-              QBDI.prototype.addInstrumentedModule, QBDI.prototype.addInstrumentedRange, QBDI.prototype.addInstrumentedModuleFromAddr, QBDI.prototype.instrumentAllExecutableMaps
-              QBDI.prototype.removeInstrumentedModule, QBDI.prototype.removeInstrumentedRange, removeInstrumentedModuleFromAddr, removeAllInstrumentedRanges
-    :member-order: alphabetical
+.. js:autofunction:: QBDI#run
+
+.. js:autofunction:: QBDI#call
+
+.. js:autofunction:: QBDI#getModuleNames
+
+.. js:autofunction:: QBDI#addInstrumentedModule
+
+.. js:autofunction:: QBDI#addInstrumentedRange
+
+.. js:autofunction:: QBDI#addInstrumentedModuleFromAddr
+
+.. js:autofunction:: QBDI#instrumentAllExecutableMaps
+
+.. js:autofunction:: QBDI#removeInstrumentedModule
+
+.. js:autofunction:: QBDI#removeInstrumentedRange
+
+.. js:autofunction:: QBDI#removeInstrumentedModuleFromAddr
+
+.. js:autofunction:: QBDI#removeAllInstrumentedRanges
 
 Instrumentation
 ^^^^^^^^^^^^^^^
 
-.. autojs:: ../../tools/frida-qbdi.js
-    :members: QBDI.prototype.addCodeCB, QBDI.prototype.addCodeAddrCB, QBDI.prototype.addCodeRangeCB, QBDI.prototype.addMnemonicCB,
-              QBDI.prototype.deleteInstrumentation, QBDI.prototype.deleteAllInstrumentations
-    :member-order: alphabetical
+.. js:autofunction:: QBDI#addCodeCB
+
+.. js:autofunction:: QBDI#addCodeAddrCB
+
+.. js:autofunction:: QBDI#addCodeRangeCB
+
+.. js:autofunction:: QBDI#addMnemonicCB
+
+.. js:autofunction:: QBDI#deleteInstrumentation
+
+.. js:autofunction:: QBDI#deleteAllInstrumentations
 
 Memory Callback
 ^^^^^^^^^^^^^^^
 
-.. autojs:: ../../tools/frida-qbdi.js
-    :members: QBDI.prototype.addMemAddrCB, QBDI.prototype.addMemRangeCB, QBDI.prototype.addMemAccessCB, QBDI.prototype.recordMemoryAccess
-    :member-order: alphabetical
+.. js:autofunction:: QBDI#addMemAddrCB
+
+.. js:autofunction:: QBDI#addMemRangeCB
+
+.. js:autofunction:: QBDI#addMemAccessCB
+
+.. js:autofunction:: QBDI#recordMemoryAccess
 
 Analysis
 ^^^^^^^^
 
-.. autojs:: ../../tools/frida-qbdi.js
-    :members: QBDI.prototype.getInstAnalysis, QBDI.prototype.getInstMemoryAccess, QBDI.prototype.getBBMemoryAccess
-    :member-order: alphabetical
+.. js:autofunction:: QBDI#getInstAnalysis
+
+.. js:autofunction:: QBDI#getInstMemoryAccess
+
+.. js:autofunction:: QBDI#getBBMemoryAccess
 
 .. js:class:: InstAnalysis
 
@@ -162,25 +192,83 @@ Analysis
 Cache management
 ^^^^^^^^^^^^^^^^
 
-.. autojs:: ../../tools/frida-qbdi.js
-    :members: QBDI.prototype.precacheBasicBlock, QBDI.prototype.clearCache, QBDI.prototype.clearAllCache
-    :member-order: alphabetical
+.. js:autofunction:: QBDI#precacheBasicBlock
+
+.. js:autofunction:: QBDI#clearCache
+
+.. js:autofunction:: QBDI#clearAllCache
+
 
 VM Events
 ^^^^^^^^^
 
-.. autojs:: ../../tools/frida-qbdi.js
-    :members: QBDI.prototype.addVMEventCB, VMError
-    :member-order: alphabetical
+.. js:autofunction:: QBDI#addVMEventCB
+
+.. js:autoclass:: VMError
+
+    .. js:autoattribute:: INVALID_EVENTID
 
 Globals
 -------
 
-.. autojs:: ../../tools/frida-qbdi.js
-    :members: QBDI_LIB_FULLPATH, GPR_NAMES, REG_PC, REG_RETURN, REG_SP,
-              VMAction, VMEvent, InstPosition, MemoryAccessType, SyncDirection, AnalysisType
-    :member-order: bysource
+.. js:autoattribute:: QBDI_LIB_FULLPATH
 
+.. js:autoattribute:: GPR_NAMES
+
+.. js:autoattribute:: REG_PC
+
+.. js:autoattribute:: REG_RETURN
+
+.. js:autoattribute:: REG_SP
+
+.. js:autoclass:: VMAction
+
+    .. js:autoattribute:: CONTINUE
+    .. js:autoattribute:: BREAK_TO_VM
+    .. js:autoattribute:: STOP
+
+.. js:autoclass:: VMEvent
+
+    .. js:autoattribute:: SEQUENCE_ENTRY
+    .. js:autoattribute:: SEQUENCE_EXIT
+    .. js:autoattribute:: BASIC_BLOCK_ENTRY
+    .. js:autoattribute:: BASIC_BLOCK_EXIT
+    .. js:autoattribute:: BASIC_BLOCK_NEW
+    .. js:autoattribute:: EXEC_TRANSFER_CALL
+    .. js:autoattribute:: EXEC_TRANSFER_RETURN
+    .. js:autoattribute:: SYSCALL_ENTRY
+    .. js:autoattribute:: SYSCALL_EXIT
+    .. js:autoattribute:: SIGNAL
+
+.. js:autoclass:: InstPosition
+
+    .. js:autoattribute:: PREINST
+    .. js:autoattribute:: POSTINST
+
+.. js:autoclass:: MemoryAccessType
+
+    .. js:autoattribute:: MEMORY_READ
+    .. js:autoattribute:: MEMORY_WRITE
+    .. js:autoattribute:: MEMORY_READ_WRITE
+
+.. js:autoclass:: SyncDirection
+
+    .. js:autoattribute:: QBDI_TO_FRIDA
+    .. js:autoattribute:: FRIDA_TO_QBDI
+
+.. js:autoclass:: OperandType
+
+    .. js:autoattribute:: OPERAND_INVALID
+    .. js:autoattribute:: OPERAND_IMM
+    .. js:autoattribute:: OPERAND_GPR
+    .. js:autoattribute:: OPERAND_PRED
+
+.. js:autoclass:: AnalysisType
+
+    .. js:autoattribute:: ANALYSIS_INSTRUCTION
+    .. js:autoattribute:: ANALYSIS_DISASSEMBLY
+    .. js:autoattribute:: ANALYSIS_OPERANDS
+    .. js:autoattribute:: ANALYSIS_SYMBOL
 
 Register values
 ---------------
@@ -191,9 +279,22 @@ QBDI uses a custom type (:js:data:`rword`) to represent a register value.
 This binding provides a common interface (``.toRword()``) to cast values into JS types compatible
 with the C :js:data:`rword` type.
 
-.. autojs:: ../../tools/frida-qbdi.js
-    :members: rword, NativePointer.prototype.toRword, Number.prototype.toRword, UInt64.prototype.toRword
-    :member-order: bysource
+
+.. js:autoattribute:: rword
+
+.. js:function:: NativePointer.prototype.toRword()
+
+    Convert a NativePointer into a type with the size of a register (``Number`` or ``UInt64``).
+
+.. js:function:: Number.prototype.toRword()
+
+   Convert a number into a type with the size of a register (``Number`` or ``UInt64``).
+   Can't be used for numbers > 32 bits, would cause weird results due to IEEE-754.
+
+.. js:function:: UInt64.prototype.toRword()
+
+   An identity function (returning the same ``UInt64`` object).
+   It exists only to provide a unified **toRword** interface.
 
 
 Helpers
@@ -201,8 +302,13 @@ Helpers
 
 Some functions helpful to interact with Frida interface and write scripts.
 
-.. autojs:: ../../tools/frida-qbdi.js
-    :members: QBDI.prototype.getModuleNames,
-              QBDI.prototype.newInstCallback, QBDI.prototype.newVMCallback,
-              QBDI.version, hexPointer
-    :member-order: bysource
+.. js:autofunction:: QBDI#getModuleNames
+
+.. js:autofunction:: QBDI#newInstCallback
+
+.. js:autofunction:: QBDI#newVMCallback
+
+.. js:autoattribute:: QBDI#version
+
+.. js:autofunction:: hexPointer
+
