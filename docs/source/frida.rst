@@ -12,6 +12,8 @@ with instrumentation callbacks that can be written in JavaScript,
 calls performed directly on `Frida NativeFunction` objects, bindings imported
 as `nodejs` scripts (`frida-compile` support), etc.
 
+.. note::
+   frida-qbdi.js is a ES2019 script. Frida lesser than 14.0 is not supported.
 
 .. toctree::
     :maxdepth: 2

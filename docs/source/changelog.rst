@@ -22,7 +22,8 @@ Internal update:
 * Replace GTest by `Catch2 <https://github.com/catchorg/Catch2>`_ (`#140 <https://github.com/QBDI/QBDI/pull/140>`_)
 * Refactor code and switch to cpp17 (`#140 <https://github.com/QBDI/QBDI/pull/140>`_)
 * Use Github Actions to build dev-next package of QBDI (linux and android) and PyQBDI (linux) (`#147 <https://github.com/QBDI/QBDI/pull/147>`_)
-* Rewrite frida-qbdi.js and use sphinx-js for frida-QBDI documentation (`#146 <https://github.com/QBDI/QBDI/pull/146>`_)
+* Rewrite frida-qbdi.js and use sphinx-js for frida-QBDI documentation (`#146 <https://github.com/QBDI/QBDI/pull/146>`_).
+  A version of frida greater or equals to 14.0 is needed to run frida-qbdi.js (need support of ES2019).
 
 Version 0.7.1
 -------------
