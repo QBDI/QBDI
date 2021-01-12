@@ -14,4 +14,7 @@ source_group("Source Files\\BINDING" FILES ${BINDING_PYTHON_SRC})
 
 target_sources(pyqbdi_module INTERFACE "${BINDING_PYTHON_SRC}")
 
+target_include_directories(pyqbdi_module INTERFACE
+    ${CMAKE_CURRENT_LIST_DIR}
+)
 

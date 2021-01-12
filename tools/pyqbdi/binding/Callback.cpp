@@ -17,6 +17,7 @@
  */
 
 #include "pyqbdi.hpp"
+#include "callback_python.h"
 
 namespace QBDI {
 namespace pyQBDI {
@@ -92,6 +93,12 @@ void init_binding_Callback(py::module_& m) {
         .def_readwrite("value", &MemoryAccess::value, "Value read from / written to memory")
         .def_readwrite("size", &MemoryAccess::size, "Size of memory access (in bytes)")
         .def_readwrite("type", &MemoryAccess::type, "Memory access type (READ / WRITE)");
+
+    py::class_<InstrumentDataCBKPython>(m, "InstrumentDataCBK")
+        .def(py::init<PyInstCallback&, py::object&, InstPosition>(), "cbk"_a, "data"_a, "position"_a)
+        .def_readwrite("cbk", &InstrumentDataCBKPython::cbk, "Address of the function to call when the instruction is executed")
+        .def_readwrite("data", &InstrumentDataCBKPython::data, "User defined data which will be forward to cbk.")
+        .def_readwrite("position", &InstrumentDataCBKPython::position, "Relative position of the event callback (PREINST / POSTINST).");
 }
 
 }}
