@@ -521,6 +521,28 @@ var OperandType = Object.freeze({
 });
 
 /**
+ * Operand flag
+ */
+var OperandFlag = Object.freeze({
+    /**
+     * No flag
+     */
+    OPERANDFLAG_NONE : 0,
+    /**
+     * The operand is used to compute an address
+     */
+    OPERANDFLAG_ADDR : 1 << 0,
+    /**
+     * The value of the operand is PC relative
+     */
+    OPERANDFLAG_PCREL : 1 << 1,
+    /**
+     * The operand role isn't fully defined
+     */
+    OPERANDFLAG_UNDEFINED_EFFECT : 1 << 2
+});
+
+/**
  * Properties to retrieve during an instruction analysis.
  */
 var AnalysisType = Object.freeze({
@@ -1506,21 +1528,23 @@ class QBDI {
         var p = ptr;
         analysis.type = Memory.readU32(p);
         p = ptr.add(this.#operandAnalysisStructDesc.offsets[1]);
-        analysis.value = Memory.readRword(p);
+        analysis.flag = Memory.readU8(p);
         p = ptr.add(this.#operandAnalysisStructDesc.offsets[2]);
-        analysis.size = Memory.readU8(p);
+        analysis.value = Memory.readRword(p);
         p = ptr.add(this.#operandAnalysisStructDesc.offsets[3]);
-        analysis.regOff = Memory.readU8(p);
+        analysis.size = Memory.readU8(p);
         p = ptr.add(this.#operandAnalysisStructDesc.offsets[4]);
-        analysis.regCtxIdx = Memory.readU16(p);
+        analysis.regOff = Memory.readU8(p);
         p = ptr.add(this.#operandAnalysisStructDesc.offsets[5]);
+        analysis.regCtxIdx = Memory.readU16(p);
+        p = ptr.add(this.#operandAnalysisStructDesc.offsets[6]);
         var regNamePtr = Memory.readPointer(p);
         if (regNamePtr.isNull()) {
             analysis.regName = undefined;
         } else {
             analysis.regName = Memory.readCString(regNamePtr);
         }
-        p = ptr.add(this.#operandAnalysisStructDesc.offsets[6]);
+        p = ptr.add(this.#operandAnalysisStructDesc.offsets[7]);
         analysis.regAccess = Memory.readU8(p);
         Object.freeze(analysis);
         return analysis;
