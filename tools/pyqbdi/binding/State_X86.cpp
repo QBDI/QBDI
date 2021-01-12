@@ -27,7 +27,7 @@ void hexify_register(std::ostringstream& out, const char* s, int size) {
     }
 }
 
-void init_binding_State(py::module& m) {
+void init_binding_State(py::module_& m) {
 
     py::class_<FPControl>(m, "FPControl")
         .def(py::init<>())

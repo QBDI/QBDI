@@ -39,8 +39,8 @@ if(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
     endif()
 
     ExternalProject_Add(pyqbdi_pybind11
-        URL                 "https://github.com/pybind/pybind11/archive/v2.4.3.zip"
-        URL_HASH            SHA256=f1cc1e9c2836f9873aefdaf76a3280a55aae51068c759b27499a9cf34090d364
+        URL                 "https://github.com/pybind/pybind11/archive/v2.6.1.zip"
+        URL_HASH            SHA256=e3f9408fca4e8ebf2d22229d5256adb49098073832aad87f3f6078d91a6942b2
         CONFIGURE_COMMAND   ""
         BUILD_COMMAND       ""
         INSTALL_COMMAND     "")
@@ -78,7 +78,7 @@ if(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
         ${PYTHON_INCLUDE_DIRS}
     )
 
-    if ((HAS_QBDIPRELOAD) AND (TOOLS_QBDIPRELOAD))
+    if (QBDI_TOOLS_QBDIPRELOAD)
         target_sources(pyqbdi PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/preload.cpp")
         target_include_directories(pyqbdi PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../QBDIPreload/include")
         target_link_libraries(pyqbdi PRIVATE QBDIPreload)

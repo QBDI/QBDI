@@ -21,7 +21,7 @@
 namespace QBDI {
 namespace pyQBDI {
 
-void init_binding_Range(py::module& m) {
+void init_binding_Range(py::module_& m) {
     py::class_<Range<rword>>(m, "Range")
         .def(py::init<rword, rword>(),
                 "Create a new range",

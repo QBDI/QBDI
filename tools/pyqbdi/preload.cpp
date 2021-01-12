@@ -56,21 +56,21 @@ int QBDI::qbdipreload_on_main(int argc, char** argv) {
     py::initialize_interpreter();
     {
         // need to initialize sys module after initialize_interpreter()
-        py::module sys = py::module::import("sys");
+        py::module_ sys = py::module_::import("sys");
         sys.attr("argv") = args;
         // remove LD_PRELOAD to avoid reuse it in subprocess.popen
-        py::module os = py::module::import("os");
+        py::module_ os = py::module_::import("os");
 #if defined(QBDI_PLATFORM_OSX)
         os.attr("environ").attr("__delitem__")("DYLD_INSERT_LIBRARIES");
 #elif defined(QBDI_PLATFORM_LINUX) || defined(QBDI_PLATFORM_ANDROID)
         os.attr("environ").attr("__delitem__")("LD_PRELOAD");
 #endif
-        py::module pyqbdi = py::module::import("pyqbdi");
+        py::module_ pyqbdi = py::module_::import("pyqbdi");
         pyqbdi.attr("__preload__") = true;
 
         // load file before create VM object
         try {
-            py::module main = py::module::import("__main__");
+            py::module_ main = py::module_::import("__main__");
             py::object scope = main.attr("__dict__");
             py::eval_file(fileTool, scope);
         } catch (const std::exception& e) {
@@ -85,7 +85,7 @@ int QBDI::qbdipreload_on_main(int argc, char** argv) {
 
 int QBDI::qbdipreload_on_run(QBDI::VMInstanceRef vm, QBDI::rword start, QBDI::rword stop) {
     try {
-        py::module main = py::module::import("__main__");
+        py::module_ main = py::module_::import("__main__");
         main.attr("pyqbdipreload_on_run")(vm, start, stop);
     }
     catch (const std::exception& e) {
@@ -99,7 +99,7 @@ int QBDI::qbdipreload_on_run(QBDI::VMInstanceRef vm, QBDI::rword start, QBDI::rw
 int QBDI::qbdipreload_on_exit(int status) {
     // need to destroy atexit module before call finalize_interpreter.
     {
-        py::module atexit = py::module::import("atexit");
+        py::module_ atexit = py::module_::import("atexit");
         atexit.attr("_run_exitfuncs")();
     }
     py::finalize_interpreter();

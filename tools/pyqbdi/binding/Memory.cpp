@@ -21,7 +21,7 @@
 namespace QBDI {
 namespace pyQBDI {
 
-void init_binding_Memory(py::module& m) {
+void init_binding_Memory(py::module_& m) {
 
     py::enum_<Permission>(m, "Permission", py::arithmetic(), "Memory access rights.")
         .value("PF_NONE", Permission::PF_NONE, "No access")

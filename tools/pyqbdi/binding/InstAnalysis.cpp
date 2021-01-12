@@ -40,7 +40,7 @@ py::object get_InstAnalysis_member(const InstAnalysis& obj, char* InstAnalysis::
     }
 }
 
-void init_binding_InstAnalysis(py::module& m) {
+void init_binding_InstAnalysis(py::module_& m) {
 
     py::enum_<RegisterAccessType>(m, "RegisterAccessType", py::arithmetic(), "Access type (R/W/RW) of a register operand")
         .value("REGISTER_UNUSED", RegisterAccessType::REGISTER_UNUSED, "Unused register")
