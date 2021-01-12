@@ -256,7 +256,14 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
         uint32_t rollbackShadowIdx = shadowIdx;
         size_t rollbackShadowRegistry = shadowRegistry.size();
 
-        LogDebug("ExecBlock::writeBasicBlock", "Attempting to write patch of %zu RelocatableInst to ExecBlock %p", seqIt->metadata.patchSize, this);
+        LogCallback(LogPriority::DEBUG, "ExecBlock::writeBasicBlock", [&] (FILE *log) -> void {
+            std::string disass;
+            llvm::raw_string_ostream disassOs(disass);
+            assembly.printDisasm(seqIt->metadata.inst, seqIt->metadata.address, disassOs);
+            disassOs.flush();
+            fprintf(log, "Attempting to write patch of %u RelocatableInst to ExecBlock %p for instruction %" PRIRWORD ": %s",
+                    seqIt->metadata.patchSize, this, seqIt->metadata.address, disass.c_str());
+        });
         // Attempt to write a complete patch. If not, rollback to the last complete patch written
         for(const RelocatableInst::SharedPtr& inst : seqIt->insts) {
             if(getEpilogueOffset() > MINIMAL_BLOCK_SIZE) {

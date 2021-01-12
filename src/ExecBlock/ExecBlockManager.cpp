@@ -136,7 +136,7 @@ const ExecBlock* ExecBlockManager::getExecBlock(rword address) const {
         const std::map<rword, InstLoc>::const_iterator instLoc = region.instCache.find(address);
         if(instLoc != region.instCache.end()) {
             LogDebug("ExecBlockManager::getExecBlock", "Found address 0x%" PRIRWORD " in ExecBlock %p",
-                     address, region.blocks[seqLoc->second.blockIdx].get());
+                     address, region.blocks[instLoc->second.blockIdx].get());
             return region.blocks[instLoc->second.blockIdx].get();
         }
     }

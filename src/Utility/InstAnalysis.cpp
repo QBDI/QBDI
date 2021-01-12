@@ -183,7 +183,7 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
                     opa.flag |= OPERANDFLAG_UNDEFINED_EFFECT;
                     break;
                 default:
-                    LogWarning("ExecBlockManager::analyseOperands",
+                    LogWarning("analyseOperands",
                             "Not supported operandType %d for register operand", opdesc.OperandType);
                     continue;
             }
@@ -210,7 +210,7 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
                     opa.size = sizeof(rword);
                     break;
                 default:
-                    LogWarning("ExecBlockManager::analyseOperands",
+                    LogWarning("analyseOperands",
                             "Not supported operandType %d for immediate operand", opdesc.OperandType);
                     continue;
             }
