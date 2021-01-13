@@ -184,6 +184,11 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
     // Analysis of instruction operands
     uint8_t numOperands = inst.getNumOperands();
     uint8_t numOperandsMax = numOperands + desc.getNumImplicitDefs() + desc.getNumImplicitUses();
+    // (R|E)SP are missing for RET and CALL in x86
+    if constexpr((is_x86_64 or is_x86)) {
+        if ((desc.isReturn() and isStackRead(inst)) or (desc.isCall() and isStackWrite(inst)))
+            numOperandsMax = numOperandsMax + 1;
+    }
     if (numOperandsMax == 0) {
         // no operand to analyse
         return;
@@ -275,6 +280,20 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
     // analyse implicit registers (R/W)
     analyseImplicitRegisters(instAnalysis, desc.getImplicitUses(), REGISTER_READ, MRI);
     analyseImplicitRegisters(instAnalysis, desc.getImplicitDefs(), REGISTER_WRITE, MRI);
+
+    // (R|E)SP are missing for RET and CALL in x86
+    if constexpr((is_x86_64 or is_x86)) {
+        if ((desc.isReturn() and isStackRead(inst)) or (desc.isCall() and isStackWrite(inst))) {
+            // increment or decrement SP
+            OperandAnalysis& opa2 = instAnalysis->operands[instAnalysis->numOperands];
+            analyseRegister(opa2, GPR_ID[REG_SP], MRI);
+            opa2.regAccess = REGISTER_READ_WRITE;
+            opa2.flag |= OPERANDFLAG_IMPLICIT;
+            instAnalysis->numOperands++;
+            // try to merge with a previous one
+            tryMergeCurrentRegister(instAnalysis);
+        }
+    }
 }
 
 } // namespace anonymous
