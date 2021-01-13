@@ -295,10 +295,10 @@ allow to fine-tune the instrumentation to specific codes or even portions of the
 .. note:: Mnemonics can be instrumented using LLVM convention (You can register a callback on *ADD64rm* or *ADD64rr* for instance).
 .. note:: You can also use "*" as a wildcard. (eg : *ADD\*rr*)
 
+If the execution of an instruction triggers more than one callback:
 
-
-If the execution of an instruction triggers more than one callback, those will be called in the
-order they were added to the VM.
+- The callback before the instruction will be called in the reverse order of registration in the VM.
+- The callback after the instruction will be called in the order of registration in the VM.
 
 Memory Callback
 ^^^^^^^^^^^^^^^
@@ -359,11 +359,48 @@ values of :c:type:`VMEvent` in a mask using the ``|`` binary operator.
    :project: QBDI_C
 
 
-Custom Instrumentation
-^^^^^^^^^^^^^^^^^^^^^^
+Instrumentation Callback
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-Custom instrumentation is not available via the C API as it requires manipulating internal C++
-classes.
+The instrumentation process is an internal step of QBDI when the original instructions are decoded,
+transformed and written before to be executed. The Instrumentation Callback provides an InstAnalysis
+of the instruction during the instrumentation process and allows adding Instruction Callback on this specific instruction
+based on its analysis.
+
+.. doxygentypedef:: QBDI_InstrumentCallback
+   :project: QBDI_C
+
+With C API, the Instruction Callback can be added in :c:type:`InstrumentDataVec` with the method :c:func:`qbdi_addInstrumentData`.
+
+.. doxygenfunction:: qbdi_addInstrumentData
+   :project: QBDI_C
+
+An :c:type:`QBDI_InstrumentCallback` can be registered for all instructions, or limited to a specific range of address.
+
+.. doxygenfunction:: qbdi_addInstrRule
+   :project: QBDI_C
+
+.. doxygenfunction:: qbdi_addInstrRuleRange
+   :project: QBDI_C
+
+.. note::
+
+    The instrumentation callback can be called many times for the same instruction.
+    The callback must return the same result for the same instruction.
+
+::
+
+    void instrumentCB(VMInstanceRef vm, const InstAnalysis *inst, InstrumentDataVec cbks, void *data) {
+        printf("[+] Instrument 0x%" PRIRWORD " %s\n", inst.address, inst.disassembly);
+        if (inst.isCall) {
+            qbdi_addInstrumentData(cbks, QBDI_POSTINST, callCB, NULL);
+        } else if (inst.isRet) {
+            qbdi_addInstrumentData(cbks, QBDI_POSTINST, retCB, NULL);
+        }
+    }
+
+    qbdi_addInstrRule(vm, instrumentCB, QBDI_ANALYSIS_INSTRUCTION | QBDI_ANALYSIS_DISASSEMBLY, NULL);
+
 
 Removing Instrumentations
 ^^^^^^^^^^^^^^^^^^^^^^^^^
