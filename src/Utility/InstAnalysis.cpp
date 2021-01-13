@@ -213,11 +213,8 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
         }
         if (op.isReg()) {
             unsigned int regNo = op.getReg();
-            // validate that this is really a register operand, not
-            // something else (memory access)
-            if (regNo == 0) {
-                continue;
-            }
+            // don't reject regNo == 0 tp keep the same position of operand
+            // ex : "lea rax, [rbx+10]" and "lea rax, [rbx+4*rcx+10]" will have the same number of operand
             if (isFlagRegister(regNo)) {
                 instAnalysis->flagsAccess |= regWrites.test(i) ? REGISTER_WRITE : REGISTER_READ;
                 continue;
@@ -238,7 +235,9 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
                             "Not supported operandType %d for register operand", opdesc.OperandType);
                     continue;
             }
-            opa.regAccess = regWrites.test(i) ? REGISTER_WRITE : REGISTER_READ;
+            if (regNo != 0) {
+                opa.regAccess = regWrites.test(i) ? REGISTER_WRITE : REGISTER_READ;
+            }
             instAnalysis->numOperands++;
         } else if (op.isImm()) {
             // fill the operand analysis
