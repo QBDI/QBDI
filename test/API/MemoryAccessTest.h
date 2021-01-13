@@ -15,6 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#ifndef QBDITEST_MEMORYACCESSTEST_H
+#define QBDITEST_MEMORYACCESSTEST_H
+
 #include <memory>
 
 #include "VM.h"
@@ -24,7 +28,9 @@ class MemoryAccessTest {
         MemoryAccessTest();
         ~MemoryAccessTest();
 
-        std::unique_ptr<QBDI::VM> vm;
+        QBDI::VM vm;
         QBDI::GPRState* state;
         uint8_t* fakestack;
 };
+
+#endif /* QBDITEST_MEMORYACCESSTEST_H */
