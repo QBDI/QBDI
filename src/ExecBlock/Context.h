@@ -18,14 +18,18 @@
 #ifndef CONTEXT_H
 #define CONTEXT_H
 
+#include <map>
 #include "State.h"
 
 namespace QBDI {
 
 extern const unsigned int GPR_ID[];
 extern const unsigned int FLAG_ID[];
+extern const unsigned int SEG_ID[];
+extern const std::map<unsigned int, int16_t> FPR_ID;
 extern const unsigned int size_GPR_ID;
 extern const unsigned int size_FLAG_ID;
+extern const unsigned int size_SEG_ID;
 
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 // ============================================================================

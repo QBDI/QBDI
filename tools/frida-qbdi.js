@@ -517,7 +517,15 @@ var OperandType = Object.freeze({
     /**
      * Predicate special operand.
      */
-    OPERAND_PRED : 3
+    OPERAND_PRED : 3,
+    /**
+     * Float register operand.
+     */
+    OPERAND_FPR : 4,
+    /**
+     * Segment or unsupported register operand
+     */
+    OPERAND_SEG : 5
 });
 
 /**
@@ -1536,7 +1544,7 @@ class QBDI {
         p = ptr.add(this.#operandAnalysisStructDesc.offsets[4]);
         analysis.regOff = Memory.readU8(p);
         p = ptr.add(this.#operandAnalysisStructDesc.offsets[5]);
-        analysis.regCtxIdx = Memory.readU16(p);
+        analysis.regCtxIdx = Memory.readS16(p);
         p = ptr.add(this.#operandAnalysisStructDesc.offsets[6]);
         var regNamePtr = Memory.readPointer(p);
         if (regNamePtr.isNull()) {

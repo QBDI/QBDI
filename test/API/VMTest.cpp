@@ -84,7 +84,7 @@ struct TestInst {
 struct TestInst TestInsts[MNEM_COUNT] = {
     {3, 2, true, QBDI::REGISTER_WRITE, {
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 1, 8, 3, "DH", QBDI::REGISTER_READ},
-           {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_NONE, MNEM_IMM_SHORT_VAL, 1, 0, 0, nullptr, QBDI::REGISTER_UNUSED},
+           {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_NONE, MNEM_IMM_SHORT_VAL, 1, 0, -1, nullptr, QBDI::REGISTER_UNUSED},
         }
     },
 #if defined(QBDI_ARCH_X86_64)
@@ -101,7 +101,7 @@ struct TestInst TestInsts[MNEM_COUNT] = {
     },
 #endif
     {5, 2, true, QBDI::REGISTER_WRITE, {
-           {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_NONE, MNEM_IMM_VAL, 4, 0, 0, nullptr, QBDI::REGISTER_UNUSED},
+           {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_NONE, MNEM_IMM_VAL, 4, 0, -1, nullptr, QBDI::REGISTER_UNUSED},
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 4, 0, 0, "EAX", QBDI::REGISTER_READ},
         }
     },
@@ -119,9 +119,9 @@ struct TestInst TestInsts[MNEM_COUNT] = {
 #endif
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, sizeof(QBDI::rword), 0, 0, QBDI::GPR_NAMES[0], QBDI::REGISTER_READ},
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0, 4, QBDI::GPR_NAMES[4], QBDI::REGISTER_READ},
-           {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_ADDR, 1, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
+           {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_ADDR, 1, sizeof(QBDI::rword), 0, -1, NULL, QBDI::REGISTER_UNUSED},
            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0, 5, QBDI::GPR_NAMES[5], QBDI::REGISTER_READ},
-           {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_ADDR, 3, sizeof(QBDI::rword), 0, 0, NULL, QBDI::REGISTER_UNUSED},
+           {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_ADDR, 3, sizeof(QBDI::rword), 0, -1, NULL, QBDI::REGISTER_UNUSED},
         }
     },
 };
@@ -129,8 +129,8 @@ struct TestInst TestInsts[MNEM_COUNT] = {
 struct TestInst TestInsts[MNEM_COUNT] = {
     {4, 3, true, {
             {QBDI::OPERAND_GPR, 0, sizeof(QBDI::rword), 0, 3, "R3", QBDI::REGISTER_READ},
-            {QBDI::OPERAND_IMM, MNEM_IMM_SHORT_VAL, sizeof(QBDI::rword), 0, 0, nullptr, QBDI::REGISTER_UNUSED},
-            {QBDI::OPERAND_PRED, 0, sizeof(QBDI::rword), 0, 0, nullptr, QBDI::REGISTER_UNUSED},
+            {QBDI::OPERAND_IMM, MNEM_IMM_SHORT_VAL, sizeof(QBDI::rword), 0, -1, nullptr, QBDI::REGISTER_UNUSED},
+            {QBDI::OPERAND_PRED, 0, sizeof(QBDI::rword), 0, -1, nullptr, QBDI::REGISTER_UNUSED},
         }
     }
 };

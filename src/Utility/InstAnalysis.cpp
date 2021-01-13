@@ -61,10 +61,13 @@ static bool isFlagRegister(unsigned int regNo) {
 
 void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm::MCRegisterInfo& MRI) {
     opa.regName = MRI.getName(regNo);
+    if (opa.regName != nullptr && opa.regName[0] == '\x00') {
+        opa.regName = nullptr;
+    }
     opa.value = regNo;
     opa.size = 0;
     opa.regOff = 0;
-    opa.regCtxIdx = 0;
+    opa.regCtxIdx = -1;
     opa.type = OPERAND_INVALID;
     if (regNo == /* llvm::X86|ARM::NoRegister */ 0) {
         return;
@@ -79,14 +82,47 @@ void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm::MCReg
             opa.regCtxIdx = j;
             opa.size = getRegisterSize(regNo);
             opa.type = OPERAND_GPR;
+            if (!opa.size) {
+                LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.regName);
+            }
             return;
         }
     }
+    auto it = FPR_ID.find(regNo);
+    if (it != FPR_ID.end()) {
+        opa.regCtxIdx = it->second;
+        opa.regOff = 0;
+        opa.size = getRegisterSize(regNo);
+        opa.type = OPERAND_FPR;
+        if (!opa.size) {
+            LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.regName);
+        }
+        return;
+    }
+    for (uint16_t j = 0; j < size_SEG_ID; j++) {
+        if (regNo == SEG_ID[j]) {
+            opa.regCtxIdx = -1;
+            opa.regOff = 0;
+            opa.size = getRegisterSize(regNo);
+            opa.type = OPERAND_SEG;
+            if (!opa.size) {
+                LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.regName);
+            }
+            return;
+        }
+    }
+    // unsupported register
+    LogWarning("analyseRegister", "Unknown register %d : %s", regNo, opa.regName);
+    opa.regCtxIdx = -1;
+    opa.regOff = 0;
+    opa.size = 0;
+    opa.type = OPERAND_SEG;
+    return;
 }
 
 void tryMergeCurrentRegister(InstAnalysis* instAnalysis) {
     OperandAnalysis& opa = instAnalysis->operands[instAnalysis->numOperands - 1];
-    if (opa.type != QBDI::OPERAND_GPR) {
+    if ((opa.type != QBDI::OPERAND_GPR && opa.type != QBDI::OPERAND_FPR) || opa.regCtxIdx < 0) {
         return;
     }
     for (uint16_t j = 0; j < instAnalysis->numOperands - 1; j++) {
@@ -174,7 +210,8 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
         // fill a new operand analysis
         OperandAnalysis& opa = instAnalysis->operands[instAnalysis->numOperands];
         // reinitialise the opa if a previous iteration has write some value
-        opa = OperandAnalysis();
+        memset(&opa, 0, sizeof(OperandAnalysis));
+        opa.regCtxIdx = -1;
         if (!op.isValid()) {
             continue;
         }
@@ -191,11 +228,6 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
             }
             // fill the operand analysis
             analyseRegister(opa, regNo, MRI);
-            // we have'nt found a GPR (as size is only known for GPR)
-            if (opa.size == 0 || opa.type == OPERAND_INVALID) {
-                // TODO: add support for more registers
-                continue;
-            }
             switch (opdesc.OperandType) {
                 case llvm::MCOI::OPERAND_REGISTER:
                     break;

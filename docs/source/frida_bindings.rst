@@ -330,6 +330,8 @@ Globals
     .. js:autoattribute:: OPERAND_IMM
     .. js:autoattribute:: OPERAND_GPR
     .. js:autoattribute:: OPERAND_PRED
+    .. js:autoattribute:: OPERAND_FPR
+    .. js:autoattribute:: OPERAND_SEG
 
 .. js:autoclass:: OperandFlag
 

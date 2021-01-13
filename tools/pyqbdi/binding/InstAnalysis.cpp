@@ -54,6 +54,8 @@ void init_binding_InstAnalysis(py::module_& m) {
         .value("OPERAND_IMM", OperandType::OPERAND_IMM, "Immediate operand")
         .value("OPERAND_GPR", OperandType::OPERAND_GPR, "Register operand")
         .value("OPERAND_PRED", OperandType::OPERAND_PRED, "Predicate operand")
+        .value("OPERAND_FPR", OperandType::OPERAND_FPR, "Float register operand ")
+        .value("OPERAND_SEG", OperandType::OPERAND_SEG, "Segment or unsupported register operand")
         .export_values();
 
     py::enum_<OperandFlag>(m, "OperandFlag", py::arithmetic(), "Operand flag")
