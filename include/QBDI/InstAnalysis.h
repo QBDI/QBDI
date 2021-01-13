@@ -99,8 +99,12 @@ typedef struct {
     bool        isReturn;           /*!< true if instruction acts like a 'return' */
     bool        isCompare;          /*!< true if instruction is a comparison */
     bool        isPredicable;       /*!< true if instruction contains a predicate (~is conditional) */
-    bool        mayLoad;            /*!< true if instruction 'may' load data from memory */
-    bool        mayStore;           /*!< true if instruction 'may' store data to memory */
+    bool        mayLoad;            /*!< true if QBDI detects a load for this instruction */
+    bool        mayStore;           /*!< true if QBDI detects a store for this instruction */
+    uint32_t    loadSize;           /*!< size of the expected read access, may be 0 with mayLoad if the size isn't determined */
+    uint32_t    storeSize;          /*!< size of the expected write access, may be 0 with mayStore if the size isn't determined */
+    bool        mayLoad_LLVM;       // mayLoad of 0.7.1
+    bool        mayStore_LLVM;      // mayStore of 0.7.1
     // ANALYSIS_DISASSEMBLY
     char*       disassembly;        /*!< Instruction disassembly (warning: NULL if !ANALYSIS_DISASSEMBLY) */
     // ANALYSIS_OPERANDS

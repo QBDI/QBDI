@@ -400,7 +400,6 @@ and is amortized using a cache inside the VM.
 
 .. doxygenstruct:: QBDI::InstAnalysis
    :members:
-   :undoc-members:
 
 If provided :cpp:type:`QBDI::AnalysisType` is equal to `QBDI::ANALYSIS_OPERANDS`, then
 :cpp:func:`QBDI::getInstAnalysis` will also analyze all instruction operands, and

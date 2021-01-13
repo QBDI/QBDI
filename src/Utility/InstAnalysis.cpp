@@ -357,8 +357,12 @@ const InstAnalysis* analyzeInstMetadata(const InstMetadata& instMetadata, Analys
         instAnalysis->isReturn          = desc.isReturn();
         instAnalysis->isCompare         = desc.isCompare();
         instAnalysis->isPredicable      = desc.isPredicable();
-        instAnalysis->mayLoad           = desc.mayLoad();
-        instAnalysis->mayStore          = desc.mayStore();
+        instAnalysis->loadSize          = getReadSize(inst);
+        instAnalysis->storeSize         = getWriteSize(inst);
+        instAnalysis->mayLoad           = instAnalysis->loadSize != 0;
+        instAnalysis->mayStore          = instAnalysis->storeSize != 0;
+        instAnalysis->mayLoad_LLVM      = desc.mayLoad();
+        instAnalysis->mayStore_LLVM     = desc.mayStore();
         instAnalysis->mnemonic          = MCII.getName(inst.getOpcode()).data();
     }
 

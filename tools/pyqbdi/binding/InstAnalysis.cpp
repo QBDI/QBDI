@@ -124,11 +124,19 @@ void init_binding_InstAnalysis(py::module_& m) {
         .def_property_readonly("mayLoad",
                 [](const InstAnalysis& obj) {
                     return get_InstAnalysis_member(obj, &InstAnalysis::mayLoad, ANALYSIS_INSTRUCTION);
-                }, "True if instruction 'may' load data from memory (if ANALYSIS_INSTRUCTION)")
+                }, "True if QBDI detects a load for this instruction (if ANALYSIS_INSTRUCTION)")
         .def_property_readonly("mayStore",
                 [](const InstAnalysis& obj) {
                     return get_InstAnalysis_member(obj, &InstAnalysis::mayStore, ANALYSIS_INSTRUCTION);
-                }, "True if instruction 'may' store data to memory (if ANALYSIS_INSTRUCTION)")
+                }, "True if QBDI detects a store for this instruction (if ANALYSIS_INSTRUCTION)")
+        .def_property_readonly("loadSize",
+                [](const InstAnalysis& obj) {
+                    return get_InstAnalysis_member(obj, &InstAnalysis::loadSize, ANALYSIS_INSTRUCTION);
+                }, "size of the expected read access (if ANALYSIS_INSTRUCTION)")
+        .def_property_readonly("storeSize",
+                [](const InstAnalysis& obj) {
+                    return get_InstAnalysis_member(obj, &InstAnalysis::storeSize, ANALYSIS_INSTRUCTION);
+                }, "size of the expected write access (if ANALYSIS_INSTRUCTION)")
         // ANALYSIS_DISASSEMBLY
         .def_property_readonly("disassembly",
                 [](const InstAnalysis& obj) {

@@ -80,8 +80,8 @@ static QBDI::VMAction verifyMemoryAccess(QBDI::VMInstanceRef vm, QBDI::GPRState 
 
     const QBDI::InstAnalysis* instAnalysis = vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION);
 
-    bool mayRead = instAnalysis->mayLoad;
-    bool mayWrite = instAnalysis->mayStore;
+    bool mayRead = instAnalysis->mayLoad_LLVM;
+    bool mayWrite = instAnalysis->mayStore_LLVM;
 
     bool doRead = false;
     bool doWrite = false;

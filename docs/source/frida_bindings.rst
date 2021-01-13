@@ -141,11 +141,19 @@ Analysis
 
   .. js:attribute:: mayLoad
 
-    True if instruction ‘may’ load data from memory (if ANALYSIS_INSTRUCTION)
+    True if QBDI detects a load for this instruction (if ANALYSIS_INSTRUCTION)
 
   .. js:attribute:: mayStore
 
-    True if instruction ‘may’ store data to memory (if ANALYSIS_INSTRUCTION)
+    True if QBDI detects a store for this instruction (if ANALYSIS_INSTRUCTION)
+
+  .. js:attribute:: loadSize
+
+    size of the expected read access (if ANALYSIS_INSTRUCTION)
+
+  .. js:attribute:: storeSize
+
+    size of the expected write access (if ANALYSIS_INSTRUCTION)
 
   .. js:attribute:: mnemonic
 
