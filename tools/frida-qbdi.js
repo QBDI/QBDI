@@ -547,7 +547,11 @@ var OperandFlag = Object.freeze({
     /**
      * The operand role isn't fully defined
      */
-    OPERANDFLAG_UNDEFINED_EFFECT : 1 << 2
+    OPERANDFLAG_UNDEFINED_EFFECT : 1 << 2,
+    /**
+     * The operand is implicit
+     */
+    OPERANDFLAG_IMPLICIT : 1 << 3
 });
 
 /**

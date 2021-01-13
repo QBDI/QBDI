@@ -339,6 +339,7 @@ Globals
     .. js:autoattribute:: OPERANDFLAG_ADDR
     .. js:autoattribute:: OPERANDFLAG_PCREL
     .. js:autoattribute:: OPERANDFLAG_UNDEFINED_EFFECT
+    .. js:autoattribute:: OPERANDFLAG_IMPLICIT
 
 .. js:autoclass:: AnalysisType
 

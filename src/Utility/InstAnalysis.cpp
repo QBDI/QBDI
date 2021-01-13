@@ -125,6 +125,9 @@ void tryMergeCurrentRegister(InstAnalysis* instAnalysis) {
     if ((opa.type != QBDI::OPERAND_GPR && opa.type != QBDI::OPERAND_FPR) || opa.regCtxIdx < 0) {
         return;
     }
+    if ((opa.flag & QBDI::OPERANDFLAG_IMPLICIT) == 0) {
+        return;
+    }
     for (uint16_t j = 0; j < instAnalysis->numOperands - 1; j++) {
         OperandAnalysis& pop = instAnalysis->operands[j];
         if (pop.type != opa.type || pop.flag != opa.flag) {
@@ -142,7 +145,7 @@ void tryMergeCurrentRegister(InstAnalysis* instAnalysis) {
     }
 }
 
-void analyseImplicitRegisters(InstAnalysis* instAnalysis, const uint16_t* implicitRegs, std::vector<unsigned int>& skipRegs,
+void analyseImplicitRegisters(InstAnalysis* instAnalysis, const uint16_t* implicitRegs,
                               RegisterAccessType type, const llvm::MCRegisterInfo& MRI) {
     if (!implicitRegs) {
         return;
@@ -155,13 +158,6 @@ void analyseImplicitRegisters(InstAnalysis* instAnalysis, const uint16_t* implic
             continue;
         }
         OperandAnalysis topa;
-        // skip register if in blacklist
-        if(std::find_if(skipRegs.begin(), skipRegs.end(),
-                [&regNo, &MRI](const unsigned int skipRegNo) {
-                    return MRI.isSubRegisterEq(skipRegNo, regNo);
-                }) != skipRegs.end()) {
-            continue;
-        }
         analyseRegister(topa, *implicitRegs, MRI);
         // we found a GPR (as size is only known for GPR)
         // TODO: add support for more registers
@@ -170,6 +166,7 @@ void analyseImplicitRegisters(InstAnalysis* instAnalysis, const uint16_t* implic
             OperandAnalysis& opa = instAnalysis->operands[instAnalysis->numOperands];
             opa = topa;
             opa.regAccess = type;
+            opa.flag |= OPERANDFLAG_IMPLICIT;
             instAnalysis->numOperands++;
             // try to merge with a previous one
             tryMergeCurrentRegister(instAnalysis);
@@ -202,7 +199,6 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
             regWrites.set(i, true);
         }
     }
-    std::vector<unsigned int> skipRegs;
     // for each instruction operands
     for (uint8_t i = 0; i < numOperands; i++) {
         const llvm::MCOperand& op = inst.getOperand(i);
@@ -244,8 +240,6 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
             }
             opa.regAccess = regWrites.test(i) ? REGISTER_WRITE : REGISTER_READ;
             instAnalysis->numOperands++;
-            // try to merge with a previous one
-            tryMergeCurrentRegister(instAnalysis);
         } else if (op.isImm()) {
             // fill the operand analysis
             switch (opdesc.OperandType) {
@@ -280,8 +274,8 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
     }
 
     // analyse implicit registers (R/W)
-    analyseImplicitRegisters(instAnalysis, desc.getImplicitDefs(), skipRegs, REGISTER_WRITE, MRI);
-    analyseImplicitRegisters(instAnalysis, desc.getImplicitUses(), skipRegs, REGISTER_READ, MRI);
+    analyseImplicitRegisters(instAnalysis, desc.getImplicitUses(), REGISTER_READ, MRI);
+    analyseImplicitRegisters(instAnalysis, desc.getImplicitDefs(), REGISTER_WRITE, MRI);
 }
 
 } // namespace anonymous
