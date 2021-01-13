@@ -1472,7 +1472,7 @@ class QBDI {
 
     _parseMemoryAccess(ptr) {
         var access = {};
-        var p = ptr;
+        var p = ptr.add(this.#instAnalysisStructDesc.offsets[0]);
         access.instAddress = Memory.readRword(p);
         p = ptr.add(this.#memoryAccessDesc.offsets[1]);
         access.accessAddress = Memory.readRword(p);
@@ -1507,7 +1507,7 @@ class QBDI {
 
     _parseVMState(ptr) {
         var state = {};
-        var p = ptr;
+        var p = ptr.add(this.#instAnalysisStructDesc.offsets[0]);
         state.event = Memory.readU8(p);
         p = ptr.add(this.#vmStateStructDesc.offsets[1]);
         state.sequenceStart = Memory.readRword(p);
@@ -1525,7 +1525,7 @@ class QBDI {
 
     _parseOperandAnalysis(ptr) {
         var analysis = {};
-        var p = ptr;
+        var p = ptr.add(this.#instAnalysisStructDesc.offsets[0]);
         analysis.type = Memory.readU32(p);
         p = ptr.add(this.#operandAnalysisStructDesc.offsets[1]);
         analysis.flag = Memory.readU8(p);
@@ -1552,7 +1552,7 @@ class QBDI {
 
     _parseInstAnalysis(ptr) {
         var analysis = {};
-        var p = ptr;
+        var p = ptr.add(this.#instAnalysisStructDesc.offsets[0]);
         analysis.mnemonic = Memory.readCString(Memory.readPointer(p));
         p = ptr.add(this.#instAnalysisStructDesc.offsets[1]);
         analysis.disassembly = Memory.readCString(Memory.readPointer(p));
