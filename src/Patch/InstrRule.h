@@ -60,11 +60,11 @@ class InstrRule {
 
     virtual RangeSet<rword> affectedRange() const =0;
 
-    int getPriority() const { return priority; };
+    inline int getPriority() const { return priority; };
 
-    void setPriority(int priority) { this->priority = priority; };
+    inline void setPriority(int priority) { this->priority = priority; };
 
-    virtual void changeVMInstanceRef(VMInstanceRef vminstance) {};
+    inline virtual void changeVMInstanceRef(VMInstanceRef vminstance) {};
 
     /*! Determine wheter this rule have to be apply on this Path and instrument if needed.
      *
@@ -118,17 +118,17 @@ class InstrRuleBasic : public InstrRule {
 
     ~InstrRuleBasic() override = default;
 
-    operator std::unique_ptr<InstrRule>() override {
+    inline operator std::unique_ptr<InstrRule>() override {
         return std::make_unique<InstrRuleBasic>(*this);
     }
 
-    std::unique_ptr<InstrRule> clone() const override {
-      return std::make_unique<InstrRuleBasic>(*this);
+    inline std::unique_ptr<InstrRule> clone() const override {
+        return std::make_unique<InstrRuleBasic>(*this);
     };
 
-    InstPosition getPosition() const { return position; }
+    inline InstPosition getPosition() const { return position; }
 
-    RangeSet<rword> affectedRange() const override {
+    inline RangeSet<rword> affectedRange() const override {
         return condition->affectedRange();
     }
 
@@ -142,8 +142,8 @@ class InstrRuleBasic : public InstrRule {
     */
     bool canBeApplied(const Patch &patch, const llvm::MCInstrInfo* MCII) const;
 
-    bool tryInstrument(Patch &patch, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI,
-                       const Assembly* assembly) const override {
+    inline bool tryInstrument(Patch &patch, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI,
+                              const Assembly* assembly) const override {
         if (canBeApplied(patch, MCII)) {
             instrument(patch, MCII, MRI, patchGen, breakToHost, position);
             return true;
@@ -169,19 +169,19 @@ class InstrRuleUser : public InstrRule {
 
     ~InstrRuleUser() override = default;
 
-    operator std::unique_ptr<InstrRule>() override {
+    inline operator std::unique_ptr<InstrRule>() override {
         return std::make_unique<InstrRuleUser>(*this);
     }
 
-    std::unique_ptr<InstrRule> clone() const override {
-      return std::make_unique<InstrRuleUser>(*this);
+    inline std::unique_ptr<InstrRule> clone() const override {
+        return std::make_unique<InstrRuleUser>(*this);
     };
 
-    void changeVMInstanceRef(VMInstanceRef vminstance) override {
+    inline void changeVMInstanceRef(VMInstanceRef vminstance) override {
         vm = vminstance;
     };
 
-    RangeSet<rword> affectedRange() const override {
+    inline RangeSet<rword> affectedRange() const override {
         return range;
     }
 

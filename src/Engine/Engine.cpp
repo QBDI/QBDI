@@ -224,8 +224,9 @@ void Engine::changeVMInstanceRef(VMInstanceRef vminstance) {
     blockManager->changeVMInstanceRef(vminstance);
     execBroker->changeVMInstanceRef(vminstance);
 
-    for (auto& r : instrRules)
-      r.second->changeVMInstanceRef(vminstance);
+    for (auto& r : instrRules) {
+        r.second->changeVMInstanceRef(vminstance);
+    }
 }
 
 void Engine::initGPRState() {

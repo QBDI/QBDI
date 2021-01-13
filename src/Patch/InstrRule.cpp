@@ -138,8 +138,9 @@ bool InstrRuleUser::tryInstrument(Patch &patch, const llvm::MCInstrInfo* MCII, c
 
     LogDebug("InstrRuleUser::tryInstrument", "InstrCB return %u callback(s)", vec.size());
 
-    if (vec.size() == 0)
+    if (vec.size() == 0) {
         return false;
+    }
 
     for (const InstrumentDataCBK& cbkToAdd : vec) {
         instrument(patch, MCII, MRI, getCallbackGenerator(cbkToAdd.cbk, cbkToAdd.data), true, cbkToAdd.position);
