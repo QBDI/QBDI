@@ -66,9 +66,11 @@ void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm::MCReg
     }
     opa.value = regNo;
     opa.size = 0;
+    opa.flag = OPERANDFLAG_NONE;
     opa.regOff = 0;
     opa.regCtxIdx = -1;
     opa.type = OPERAND_INVALID;
+    opa.regAccess = REGISTER_UNUSED;
     if (regNo == /* llvm::X86|ARM::NoRegister */ 0) {
         return;
     }
