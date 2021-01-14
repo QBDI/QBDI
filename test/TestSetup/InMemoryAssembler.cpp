@@ -113,7 +113,7 @@ InMemoryObject::InMemoryObject(const char* source, const char* cpu, const char**
     parser->setTargetParser(*tap);
     // Finally do something we care about
     mcStr->InitSections(false);
-    CHECK_FALSE(parser->Run(true));
+    REQUIRE_FALSE(parser->Run(true));
     delete parser;
     delete tap;
     // Copy object into new page and make it executable
@@ -162,6 +162,10 @@ InMemoryObject::InMemoryObject(const char* source, const char* cpu, const char**
             }
         }
     }
-    CHECK((unsigned int) 0 < text_section.size());
+    REQUIRE((unsigned int) 0 < text_section.size());
     code = llvm::ArrayRef<uint8_t>((const uint8_t*) text_section.data(), text_section.size());
+}
+
+InMemoryObject::~InMemoryObject() {
+    QBDI::releaseMappedMemory(objectBlock);
 }
