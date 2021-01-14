@@ -177,11 +177,13 @@ RelocatableInst::SharedPtrVec GetWriteAddress::generate(const llvm::MCInst* inst
 
 RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
      rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
-    if(getReadSize(*inst) > 0) {
-        unsigned size = getReadSize(*inst);
+    const unsigned size = getReadSize(*inst);
+    if(size > 0) {
         unsigned dst = temp_manager->getRegForTemp(temp);
-        if(size < 8) {
+        if(is_bits_64 && size < sizeof(rword)) {
             dst = temp_manager->getSizedSubReg(dst, 4);
+        } else if (size > sizeof(rword)) {
+            return {NoReloc(movri(dst, 0))};
         }
         if(isStackRead(*inst)) {
             llvm::MCInst readinst;
@@ -257,13 +259,14 @@ RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
 
 RelocatableInst::SharedPtrVec GetWriteValue::generate(const llvm::MCInst* inst,
      rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
-    if(getWriteSize(*inst) > 0) {
-        unsigned size = getWriteSize(*inst);
+    const unsigned size = getWriteSize(*inst);
+    if(size > 0) {
         unsigned dst = temp_manager->getRegForTemp(temp);
-        if(size < 8) {
+        if(is_bits_64 && size < sizeof(rword)) {
             dst = temp_manager->getSizedSubReg(dst, 4);
+        } else if (size > sizeof(rword)) {
+            return {NoReloc(movri(dst, 0))};
         }
-
         if(isStackWrite(*inst)) {
             llvm::MCInst readinst;
             unsigned int stack_register = REG_SP;
