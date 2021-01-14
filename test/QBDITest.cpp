@@ -27,9 +27,12 @@
 int main(int argc, char** argv) {
 
     srand(time(nullptr));
-#ifdef _QBDI_LOG_DEBUG
-    QBDI::addLogFilter("*", QBDI::LogPriority::WARNING);
-#endif
+
+    if (getenv("TEST_DEBUG") != nullptr) {
+        QBDI::addLogFilter("*", QBDI::LogPriority::DEBUG);
+    } else {
+        QBDI::addLogFilter("*", QBDI::LogPriority::WARNING);
+    }
 
     return Catch::Session().run( argc, argv );;
 }
