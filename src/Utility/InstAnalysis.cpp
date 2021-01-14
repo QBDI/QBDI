@@ -263,8 +263,11 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
                     opa.size = sizeof(rword);
                     break;
                 default:
-                    LogWarning("analyseOperands",
-                            "Not supported operandType %d for immediate operand", opdesc.OperandType);
+                    // warning only if unsupported operandType (don't warn for llvm::X86::OperandType::OPERAND_COND_CODE)
+                    if (not isSupportedOperandType(opdesc.OperandType)) {
+                        LogWarning("analyseOperands",
+                                "Not supported operandType %d for immediate operand", opdesc.OperandType);
+                    }
                     continue;
             }
             if (opdesc.isPredicate()) {
@@ -364,6 +367,8 @@ const InstAnalysis* analyzeInstMetadata(const InstMetadata& instMetadata, Analys
         instAnalysis->mayLoad_LLVM      = desc.mayLoad();
         instAnalysis->mayStore_LLVM     = desc.mayStore();
         instAnalysis->mnemonic          = MCII.getName(inst.getOpcode()).data();
+
+        analyseCondition(instAnalysis, inst, desc);
     }
 
     if (missingType & ANALYSIS_OPERANDS) {

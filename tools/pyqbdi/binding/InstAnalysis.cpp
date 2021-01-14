@@ -49,6 +49,28 @@ void init_binding_InstAnalysis(py::module_& m) {
         .value("REGISTER_READ_WRITE", RegisterAccessType::REGISTER_READ_WRITE, "Register read/write access")
         .export_values();
 
+    py::enum_<ConditionType>(m, "ConditionType", "Condition type")
+        .value("CONDITION_NONE", ConditionType::CONDITION_NONE, "The instruction is unconditionnal")
+        .value("CONDITION_ALWAYS", ConditionType::CONDITION_ALWAYS, "The instruction is always true")
+        .value("CONDITION_NEVER", ConditionType::CONDITION_NEVER, "The instruction is always false")
+        .value("CONDITION_EQUALS", ConditionType::CONDITION_EQUALS, "Equals ( '==' )")
+        .value("CONDITION_NOT_EQUALS", ConditionType::CONDITION_NOT_EQUALS, "Not Equals ( '!=' )")
+        .value("CONDITION_ABOVE", ConditionType::CONDITION_ABOVE, "Above ( '>' unsigned )")
+        .value("CONDITION_BELOW_EQUALS", ConditionType::CONDITION_BELOW_EQUALS, "Below or Equals ( '<=' unsigned )")
+        .value("CONDITION_ABOVE_EQUALS", ConditionType::CONDITION_ABOVE_EQUALS, "Above or Equals ( '>=' unsigned )")
+        .value("CONDITION_BELOW", ConditionType::CONDITION_BELOW, "Below ( '<' unsigned )")
+        .value("CONDITION_GREAT", ConditionType::CONDITION_GREAT, "Great ( '>' signed )")
+        .value("CONDITION_LESS_EQUALS", ConditionType::CONDITION_LESS_EQUALS, "Less or Equals ( '<=' signed )")
+        .value("CONDITION_GREAT_EQUALS", ConditionType::CONDITION_GREAT_EQUALS, "Great or Equals ( '>=' signed )")
+        .value("CONDITION_LESS", ConditionType::CONDITION_LESS, "Less ( '<' signed )")
+        .value("CONDITION_EVEN", ConditionType::CONDITION_EVEN, "Even")
+        .value("CONDITION_ODD", ConditionType::CONDITION_ODD, "Odd")
+        .value("CONDITION_OVERFLOW", ConditionType::CONDITION_OVERFLOW, "Overflow")
+        .value("CONDITION_NOT_OVERFLOW", ConditionType::CONDITION_NOT_OVERFLOW, "Not Overflow")
+        .value("CONDITION_SIGN", ConditionType::CONDITION_SIGN, "Sign")
+        .value("CONDITION_NOT_SIGN", ConditionType::CONDITION_NOT_SIGN, "Not Sign")
+        .export_values();
+
     py::enum_<OperandType>(m, "OperandType", "Operand type")
         .value("OPERAND_INVALID", OperandType::OPERAND_INVALID, "Invalid operand")
         .value("OPERAND_IMM", OperandType::OPERAND_IMM, "Immediate operand")
@@ -137,6 +159,10 @@ void init_binding_InstAnalysis(py::module_& m) {
                 [](const InstAnalysis& obj) {
                     return get_InstAnalysis_member(obj, &InstAnalysis::storeSize, ANALYSIS_INSTRUCTION);
                 }, "size of the expected write access (if ANALYSIS_INSTRUCTION)")
+        .def_property_readonly("condition",
+                [](const InstAnalysis& obj) {
+                    return get_InstAnalysis_member(obj, &InstAnalysis::condition, ANALYSIS_INSTRUCTION);
+                }, "Condition associated with the instruction (if ANALYSIS_INSTRUCTION)")
         // ANALYSIS_DISASSEMBLY
         .def_property_readonly("disassembly",
                 [](const InstAnalysis& obj) {

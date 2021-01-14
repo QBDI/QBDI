@@ -155,6 +155,10 @@ Analysis
 
     size of the expected write access (if ANALYSIS_INSTRUCTION)
 
+  .. js:attribute:: condition
+
+    Condition associated with the instruction (if ANALYSIS_INSTRUCTION)
+
   .. js:attribute:: mnemonic
 
     LLVM mnemonic (if ANALYSIS_INSTRUCTION)
@@ -355,6 +359,28 @@ Globals
     .. js:autoattribute:: ANALYSIS_DISASSEMBLY
     .. js:autoattribute:: ANALYSIS_OPERANDS
     .. js:autoattribute:: ANALYSIS_SYMBOL
+
+.. js:autoclass:: ConditionType
+
+  .. js:autoattribute:: CONDITION_NONE
+  .. js:autoattribute:: CONDITION_ALWAYS
+  .. js:autoattribute:: CONDITION_NEVER
+  .. js:autoattribute:: CONDITION_EQUALS
+  .. js:autoattribute:: CONDITION_NOT_EQUALS
+  .. js:autoattribute:: CONDITION_ABOVE
+  .. js:autoattribute:: CONDITION_BELOW_EQUALS
+  .. js:autoattribute:: CONDITION_ABOVE_EQUALS
+  .. js:autoattribute:: CONDITION_BELOW
+  .. js:autoattribute:: CONDITION_GREAT
+  .. js:autoattribute:: CONDITION_LESS_EQUALS
+  .. js:autoattribute:: CONDITION_GREAT_EQUALS
+  .. js:autoattribute:: CONDITION_LESS
+  .. js:autoattribute:: CONDITION_EVEN
+  .. js:autoattribute:: CONDITION_ODD
+  .. js:autoattribute:: CONDITION_OVERFLOW
+  .. js:autoattribute:: CONDITION_NOT_OVERFLOW
+  .. js:autoattribute:: CONDITION_SIGN
+  .. js:autoattribute:: CONDITION_NOT_SIGN
 
 Register values
 ---------------
