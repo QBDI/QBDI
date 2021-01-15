@@ -28,7 +28,7 @@ QBDI_NOINLINE QBDI::rword Fibonacci(QBDI::rword number) {
      return Fibonacci(number - 1) + Fibonacci(number - 2);
 }
 
-TEST_CASE("Benchmark Fibonacci") {
+TEST_CASE("Benchmark_Fibonacci") {
 
     BENCHMARK("Fibonacci(25)") {
         return Fibonacci(25);

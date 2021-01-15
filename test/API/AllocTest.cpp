@@ -21,7 +21,7 @@
 #include <catch2/catch.hpp>
 #include "Memory.hpp"
 
-TEST_CASE("AllocAlignedTest, CorrectSize") {
+TEST_CASE("AllocAlignedTest-CorrectSize") {
     const static size_t size = 1000;
     uint8_t *array =  (uint8_t*) QBDI::alignedAlloc(size, sizeof(void*));
     REQUIRE(array != nullptr);
@@ -32,7 +32,7 @@ TEST_CASE("AllocAlignedTest, CorrectSize") {
     SUCCEED();
 }
 
-TEST_CASE("AllocAlignedTest, CorrectAlignement") {
+TEST_CASE("AllocAlignedTest-CorrectAlignement") {
     const static size_t size = 1000;
     const static size_t align = 16;
     void *array =  QBDI::alignedAlloc(size, align);

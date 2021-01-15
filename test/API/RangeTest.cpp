@@ -21,7 +21,7 @@
 
 #include "Range.h"
 
-TEST_CASE("Range, StateIntegrity") {
+TEST_CASE("Range-StateIntegrity") {
     static const int N = 100;
     std::vector<QBDI::Range<int>> testRanges;
     QBDI::RangeSet<int> rangeSet;
@@ -68,7 +68,7 @@ template<typename T> void randomPermutation(std::vector<T> &v) {
     }
 }
 
-TEST_CASE("Range, Commutativity") {
+TEST_CASE("Range-Commutativity") {
     static const int N = 100;
     std::vector<QBDI::Range<int>> testRanges;
     QBDI::RangeSet<int> rangeSet;
@@ -96,7 +96,7 @@ TEST_CASE("Range, Commutativity") {
     }
 }
 
-TEST_CASE("Range, Intersection") {
+TEST_CASE("Range-Intersection") {
     static const int N = 100;
     QBDI::RangeSet<int> rangeSet1;
     QBDI::RangeSet<int> rangeSet2;
@@ -128,7 +128,7 @@ TEST_CASE("Range, Intersection") {
     }
 }
 
-TEST_CASE("Range, IntersectionAndOverlaps") {
+TEST_CASE("Range-IntersectionAndOverlaps") {
     static const int N = 100;
     std::vector<QBDI::Range<int>> testRanges;
 
