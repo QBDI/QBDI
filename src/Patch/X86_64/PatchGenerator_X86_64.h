@@ -62,7 +62,7 @@ public:
      *
     */
     std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 class SimulateCall : public PatchGenerator, public AutoAlloc<PatchGenerator, SimulateCall> {
@@ -87,7 +87,7 @@ public:
      * PUSH REG64 temp
     */
     std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
 
     bool modifyPC() const override {return true;}
 };
@@ -117,7 +117,7 @@ public:
      * MOV MEM64 DataBlock[Offset(RIP)], REG64 temp
     */
     std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
 
     bool modifyPC() const override {return true;}
 };

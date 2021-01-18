@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "Patch/InstrRule.h"
 #include "Patch/InstrRules.h"
 #include "Patch/Patch.h"
@@ -38,7 +37,7 @@ void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const ll
     // Generate the instrumentation code from the original instruction context
     for(const PatchGenerator::SharedPtr& g : patchGen) {
         append(instru,
-            g->generate(&patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, &tempManager, nullptr)
+            g->generate(&patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII, &tempManager, nullptr)
         );
     }
 
@@ -58,6 +57,7 @@ void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const ll
                                 &patch.metadata.inst,
                                 patch.metadata.address,
                                 patch.metadata.instSize,
+                                MCII,
                                 &tempManager,
                                 nullptr
                            )
@@ -73,6 +73,7 @@ void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const ll
                                 &patch.metadata.inst,
                                 patch.metadata.address,
                                 patch.metadata.instSize,
+                                MCII,
                                 &tempManager,
                                 nullptr
                            )

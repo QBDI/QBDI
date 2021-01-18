@@ -26,7 +26,7 @@
 namespace QBDI {
 
 RelocatableInst::SharedPtrVec ModifyInstruction::generate(const llvm::MCInst *inst,
-    rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const {
+    rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const {
 
     llvm::MCInst a(*inst);
     for(auto t: transforms) {
