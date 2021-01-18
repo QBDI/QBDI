@@ -14,7 +14,23 @@ Next Version
 * Refactor ExecBlockManager to work with unaligned instruction on X86 and X86-64 (`#129 <https://github.com/QBDI/QBDI/pull/129>`_)
 * Drop early support for ARM. The support hasn't been tested since 0.6.2.
 * Rework cmake package export to import X86 and X86_64 version of QBDI in one CMake (`#146 <https://github.com/QBDI/QBDI/pull/146>`_ and `#132 <https://github.com/QBDI/QBDI/pull/132>`_)
-* Add VM::getCachedInstAnalysis to retrieve an InstAnalysis from an address. The address must be cached in the VM. (`#148 <https://github.com/QBDI/QBDI/pull/148>`_)
+* Add :cpp:func:`QBDI::VM::getCachedInstAnalysis` to retrieve an InstAnalysis from an address. The address must be cached in the VM. (`#148 <https://github.com/QBDI/QBDI/pull/148>`_)
+* Change in ``InstAnalysis`` and ``OperandAnalysis`` (`#153 <https://github.com/QBDI/QBDI/pull/153>`_):
+
+  * Add ``InstAnalysis.flagsAccess`` to determine if the instruction uses or sets the flags (``EFLAGS`` register). The analysis ``ANALYSIS_OPERANDS`` is needed to use this field.
+  * Change ``InstAnalysis.mayLoad`` and ``InstAnalysis.mayStore`` definition. The field will be true if QBDI detects memory access for the instruction.
+  * Add ``InstAnalysis.loadSize`` and ``InstAnalysis.storeSize``. If the instruction will read or write the memory, the expected size of the access is given by these fields.
+    The analysis ``ANALYSIS_INSTRUCTION`` is needed to use this field.
+  * Add ``InstAnalysis.condition``. With the update of LLVM, the mnemonic for conditional jump (like ``JE_4``) are merged in a unique mnemonic ``JCC_4``.
+    This new field will contain the condition.
+    The analysis ``ANALYSIS_INSTRUCTION`` is needed to use this field. A new enum ``ConditionType`` has all the possible value.
+  * Add ``OPERANDFLAG_IMPLICIT`` for ``OperandAnalysis.flag``. An operand will have this flag when a register is implicit to the instruction.
+  * Add ``OPERAND_FPR`` for ``OperandAnalysis.type``. This type is used for floating point registers.
+    For this type, ``OperandAnalysis.regCtxIdx`` is the offset in ``FPRState`` or -1 when an offset cannot be provided.
+  * Add ``OPERAND_SEG`` for ``OperandAnalysis.type``. This type is used for segments or other unsupported register (like ``SSP``).
+  * Change type of ``OperandAnalysis.regCtxIdx`` to signed integer. When the value is less than 0, the index is invalid.
+  * Change algorithm for ``OperandAnalysis``. The type ``OPERAND_INVALID`` may be present in the list of operands when a register is unset with the current instruction.
+    Many operands may describe the used of the same register when a register is used multiple times for different purposes by the instruction.
 
 Internal update:
 

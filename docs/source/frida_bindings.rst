@@ -141,23 +141,39 @@ Analysis
 
   .. js:attribute:: mayLoad
 
-    True if instruction ‘may’ load data from memory (if ANALYSIS_INSTRUCTION)
+    True if QBDI detects a load for this instruction (if ANALYSIS_INSTRUCTION)
 
   .. js:attribute:: mayStore
 
-    True if instruction ‘may’ store data to memory (if ANALYSIS_INSTRUCTION)
+    True if QBDI detects a store for this instruction (if ANALYSIS_INSTRUCTION)
+
+  .. js:attribute:: loadSize
+
+    size of the expected read access (if ANALYSIS_INSTRUCTION)
+
+  .. js:attribute:: storeSize
+
+    size of the expected write access (if ANALYSIS_INSTRUCTION)
+
+  .. js:attribute:: condition
+
+    Condition associated with the instruction (if ANALYSIS_INSTRUCTION)
 
   .. js:attribute:: mnemonic
 
     LLVM mnemonic (if ANALYSIS_INSTRUCTION)
 
-  .. js:attribute:: module
+  .. js:attribute:: flagsAccess
 
-    Instruction module name (if ANALYSIS_SYMBOL and found)
+    Flag access type (noaccess, r, w, rw) (if ANALYSIS_OPERANDS)
 
   .. js:attribute:: operands
 
     Structure containing analysis results of an operand provided by the VM (if ANALYSIS_OPERANDS)
+
+  .. js:attribute:: module
+
+    Instruction module name (if ANALYSIS_SYMBOL and found)
 
   .. js:attribute:: symbol
 
@@ -326,6 +342,8 @@ Globals
     .. js:autoattribute:: OPERAND_IMM
     .. js:autoattribute:: OPERAND_GPR
     .. js:autoattribute:: OPERAND_PRED
+    .. js:autoattribute:: OPERAND_FPR
+    .. js:autoattribute:: OPERAND_SEG
 
 .. js:autoclass:: OperandFlag
 
@@ -333,6 +351,7 @@ Globals
     .. js:autoattribute:: OPERANDFLAG_ADDR
     .. js:autoattribute:: OPERANDFLAG_PCREL
     .. js:autoattribute:: OPERANDFLAG_UNDEFINED_EFFECT
+    .. js:autoattribute:: OPERANDFLAG_IMPLICIT
 
 .. js:autoclass:: AnalysisType
 
@@ -340,6 +359,28 @@ Globals
     .. js:autoattribute:: ANALYSIS_DISASSEMBLY
     .. js:autoattribute:: ANALYSIS_OPERANDS
     .. js:autoattribute:: ANALYSIS_SYMBOL
+
+.. js:autoclass:: ConditionType
+
+  .. js:autoattribute:: CONDITION_NONE
+  .. js:autoattribute:: CONDITION_ALWAYS
+  .. js:autoattribute:: CONDITION_NEVER
+  .. js:autoattribute:: CONDITION_EQUALS
+  .. js:autoattribute:: CONDITION_NOT_EQUALS
+  .. js:autoattribute:: CONDITION_ABOVE
+  .. js:autoattribute:: CONDITION_BELOW_EQUALS
+  .. js:autoattribute:: CONDITION_ABOVE_EQUALS
+  .. js:autoattribute:: CONDITION_BELOW
+  .. js:autoattribute:: CONDITION_GREAT
+  .. js:autoattribute:: CONDITION_LESS_EQUALS
+  .. js:autoattribute:: CONDITION_GREAT_EQUALS
+  .. js:autoattribute:: CONDITION_LESS
+  .. js:autoattribute:: CONDITION_EVEN
+  .. js:autoattribute:: CONDITION_ODD
+  .. js:autoattribute:: CONDITION_OVERFLOW
+  .. js:autoattribute:: CONDITION_NOT_OVERFLOW
+  .. js:autoattribute:: CONDITION_SIGN
+  .. js:autoattribute:: CONDITION_NOT_SIGN
 
 Register values
 ---------------

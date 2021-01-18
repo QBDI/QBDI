@@ -34,6 +34,13 @@ public:
 
     InMemoryObject(const char* source, const char* cpu = "", const char** mattrs = nullptr);
 
+    InMemoryObject(const InMemoryObject& vm) = delete;
+    InMemoryObject(InMemoryObject&& vm) = default;
+    InMemoryObject& operator=(const InMemoryObject& vm) = delete;
+    InMemoryObject& operator=(const InMemoryObject&& vm) = delete;
+
+    ~InMemoryObject();
+
     llvm::ArrayRef<uint8_t> getCode() { return code; }
 };
 

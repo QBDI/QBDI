@@ -166,6 +166,7 @@ static const unsigned int REG_RETURN = 0;
 static const unsigned int REG_BP = 6;
 static const unsigned int REG_SP = 7;
 static const unsigned int REG_PC = 8;
+static const unsigned int REG_FLAG = 9;
 
 #endif // QBDI_ARCH_X86
 
@@ -301,6 +302,7 @@ static const unsigned int REG_RETURN = 0;
 static const unsigned int REG_BP = 14;
 static const unsigned int REG_SP = 15;
 static const unsigned int REG_PC = 16;
+static const unsigned int REG_FLAG = 17;
 
 #endif // QBDI_ARCH_X86_64
 
@@ -376,6 +378,7 @@ static const unsigned int REG_BP = 12;
 static const unsigned int REG_SP = 13;
 static const unsigned int REG_LR = 14;
 static const unsigned int REG_PC = 15;
+static const unsigned int REG_FLAG = 16;
 
 #endif // QBDI_ARCH_ARM
 

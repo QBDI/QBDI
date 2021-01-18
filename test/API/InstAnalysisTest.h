@@ -15,17 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef REGISTERSIZE_H
-#define REGISTERSIZE_H
+#ifndef QBDITEST_INSTANALYSISTEST
+#define QBDITEST_INSTANALYSISTEST
 
-#include <stdint.h>
+#include <memory>
+#include "VM.h"
+#include "TestSetup/InMemoryAssembler.h"
 
-namespace QBDI {
+class InstAnalysisTest {
+    private:
+        std::vector<InMemoryObject> objects;
 
-void initRegisterSize();
+    protected:
+        InstAnalysisTest() : vm() {}
 
-uint16_t getRegisterSize(unsigned reg);
+        QBDI::rword writeASM(const char* source);
 
+        QBDI::VM vm;
 };
 
-#endif // REGISTERSIZE_H
+#endif /* QBDITEST_INSTANALYSISTEST */

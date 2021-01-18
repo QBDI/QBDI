@@ -42,6 +42,10 @@ using InstAnalysisPtr = std::unique_ptr<InstAnalysis, InstAnalysisDestructor>;
 const InstAnalysis* analyzeInstMetadata(const InstMetadata& instMetadata, AnalysisType type,
                                         const Assembly& assembly);
 
+// X86 specific
+void analyseCondition(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const llvm::MCInstrDesc& desc);
+bool isSupportedOperandType(unsigned opType);
+
 }
 
 #endif
