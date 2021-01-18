@@ -87,12 +87,19 @@ void init_binding_Callback(py::module_& m) {
         .def_readonly("sequenceEnd", &VMState::sequenceEnd,
                 "The current sequence end address which can also be the execution transfer destination.");
 
+    py::enum_<MemoryAccessFlags>(m, "MemoryAccessFlags", "Memory access flags", py::arithmetic())
+        .value("MEMORY_NO_FLAGS", MemoryAccessFlags::MEMORY_NO_FLAGS, "Empty flags")
+        .value("MEMORY_UNKNOWN_SIZE", MemoryAccessFlags::MEMORY_UNKNOWN_SIZE, "The size of the access isn't known")
+        .value("MEMORY_UNKNOWN_VALUE", MemoryAccessFlags::MEMORY_UNKNOWN_VALUE, "The value of the access is unknown or hasn't been retrived")
+        .export_values();
+
     py::class_<MemoryAccess>(m, "MemoryAccess")
         .def_readwrite("instAddress", &MemoryAccess::instAddress, "Address of instruction making the access")
         .def_readwrite("accessAddress", &MemoryAccess::accessAddress, "Address of accessed memory")
         .def_readwrite("value", &MemoryAccess::value, "Value read from / written to memory")
         .def_readwrite("size", &MemoryAccess::size, "Size of memory access (in bytes)")
-        .def_readwrite("type", &MemoryAccess::type, "Memory access type (READ / WRITE)");
+        .def_readwrite("type", &MemoryAccess::type, "Memory access type (READ / WRITE)")
+        .def_readwrite("flags", &MemoryAccess::flags, "Memory access flags");
 
     py::class_<InstrumentDataCBKPython>(m, "InstrumentDataCBK")
         .def(py::init<PyInstCallback&, py::object&, InstPosition>(), "cbk"_a, "data"_a, "position"_a)

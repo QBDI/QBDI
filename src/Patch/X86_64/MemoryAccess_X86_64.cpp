@@ -61,6 +61,12 @@ void analyseMemoryAccessAddrValue(const ExecBlock& curExecBlock, llvm::ArrayRef<
     access.accessAddress = curExecBlock.getShadow(shadows[0].shadowID);
     access.instAddress = curExecBlock.getInstAddress(shadows[0].instID);
 
+    if (access.size > sizeof(rword)) {
+        access.flags |= MEMORY_UNKNOWN_VALUE;
+        dest.push_back(std::move(access));
+        return;
+    }
+
     size_t index = 0;
     // search the index of MEM_x_VALUE_TAG. For most instruction, it's the next shadow.
     do {
@@ -110,23 +116,39 @@ static PatchGenerator::SharedPtrVec generateReadInstrumentPatch(Patch &patch, co
 
     // instruction with double read
     if (isDoubleRead(patch.metadata.inst)) {
-        return {
-                    GetReadAddress(Temp(0), 0),
-                    WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
-                    GetReadValue(Temp(0), 0),
-                    WriteTemp(Temp(0), Shadow(MEM_READ_VALUE_TAG)),
-                    GetReadAddress(Temp(0), 1),
-                    WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
-                    GetReadValue(Temp(0), 1),
-                    WriteTemp(Temp(0), Shadow(MEM_READ_VALUE_TAG)),
-                };
+        if (getReadSize(patch.metadata.inst) > sizeof(rword)) {
+            return {
+                        GetReadAddress(Temp(0), 0),
+                        WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+                        GetReadAddress(Temp(0), 1),
+                        WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+                    };
+        } else {
+            return {
+                        GetReadAddress(Temp(0), 0),
+                        WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+                        GetReadValue(Temp(0), 0),
+                        WriteTemp(Temp(0), Shadow(MEM_READ_VALUE_TAG)),
+                        GetReadAddress(Temp(0), 1),
+                        WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+                        GetReadValue(Temp(0), 1),
+                        WriteTemp(Temp(0), Shadow(MEM_READ_VALUE_TAG)),
+                    };
+        }
     } else {
-        return {
-                    GetReadAddress(Temp(0), 0),
-                    WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
-                    GetReadValue(Temp(0), 0),
-                    WriteTemp(Temp(0), Shadow(MEM_READ_VALUE_TAG)),
-                };
+        if (getReadSize(patch.metadata.inst) > sizeof(rword)) {
+            return {
+                        GetReadAddress(Temp(0)),
+                        WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+                    };
+        } else {
+            return {
+                        GetReadAddress(Temp(0)),
+                        WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+                        GetReadValue(Temp(0)),
+                        WriteTemp(Temp(0), Shadow(MEM_READ_VALUE_TAG)),
+                    };
+        }
     }
 }
 
@@ -153,18 +175,29 @@ static PatchGenerator::SharedPtrVec generatePostWriteInstrumentPatch(Patch &patc
 
     // Some instruction need to have the address get before the instruction
     if (mayChangeWriteAddr(patch.metadata.inst, desc) && !isStackWrite(patch.metadata.inst)) {
-        return {
-                    ReadTemp(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
-                    GetWriteValue(Temp(0)),
-                    WriteTemp(Temp(0), Shadow(MEM_WRITE_VALUE_TAG)),
-                };
+        if (getWriteSize(patch.metadata.inst) > sizeof(rword)) {
+            return {};
+        } else {
+            return {
+                        ReadTemp(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
+                        GetWriteValue(Temp(0)),
+                        WriteTemp(Temp(0), Shadow(MEM_WRITE_VALUE_TAG)),
+                    };
+        }
     } else {
-        return {
-                    GetWriteAddress(Temp(0)),
-                    WriteTemp(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
-                    GetWriteValue(Temp(0)),
-                    WriteTemp(Temp(0), Shadow(MEM_WRITE_VALUE_TAG)),
-                };
+        if (getWriteSize(patch.metadata.inst) > sizeof(rword)) {
+            return {
+                        GetWriteAddress(Temp(0)),
+                        WriteTemp(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
+                    };
+        } else {
+            return {
+                        GetWriteAddress(Temp(0)),
+                        WriteTemp(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
+                        GetWriteValue(Temp(0)),
+                        WriteTemp(Temp(0), Shadow(MEM_WRITE_VALUE_TAG)),
+                    };
+        }
     }
 }
 

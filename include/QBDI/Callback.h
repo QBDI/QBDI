@@ -125,14 +125,25 @@ typedef enum {
 
 _QBDI_ENABLE_BITMASK_OPERATORS(MemoryAccessType);
 
+/*! Memory access flags
+ */
+typedef enum {
+    _QBDI_EI(MEMORY_NO_FLAGS)       = 0,
+    _QBDI_EI(MEMORY_UNKNOWN_SIZE)   = 1<<0, /*!< The size of the access isn't known */
+    _QBDI_EI(MEMORY_UNKNOWN_VALUE)  = 1<<1  /*!< The value of the access is unknown or hasn't been retrived */
+} MemoryAccessFlags;
+
+_QBDI_ENABLE_BITMASK_OPERATORS(MemoryAccessFlags);
+
 /*! Describe a memory access
  */
 typedef struct {
-    rword instAddress;     /*!< Address of instruction making the access */
-    rword accessAddress;   /*!< Address of accessed memory */
-    rword value;           /*!< Value read from / written to memory */
-    uint8_t size;          /*!< Size of memory access (in bytes) */
-    MemoryAccessType type; /*!< Memory access type (READ / WRITE) */
+    rword instAddress;        /*!< Address of instruction making the access */
+    rword accessAddress;      /*!< Address of accessed memory */
+    rword value;              /*!< Value read from / written to memory */
+    uint16_t size;            /*!< Size of memory access (in bytes) */
+    MemoryAccessType type;    /*!< Memory access type (READ / WRITE) */
+    MemoryAccessFlags flags;  /*!< Memory access flags */
 } MemoryAccess;
 
 
