@@ -49,4 +49,3 @@ bool isSupportedOperandType(unsigned opType);
 }
 
 #endif
-

@@ -42,7 +42,7 @@ public:
 
     virtual llvm::MCInst reloc(ExecBlock *exec_block) const =0;
 
-    virtual ~RelocatableInst() {};
+    virtual ~RelocatableInst() = default;
 };
 
 class NoReloc : public RelocatableInst, public AutoAlloc<RelocatableInst, NoReloc> {

@@ -21,15 +21,13 @@
 #include "Patch/Patch.h"
 #include "Patch/PatchGenerator.h"
 #include "Patch/RelocatableInst.h"
+#include "Utility/InstAnalysis_prive.h"
 #include "Utility/LogSys.h"
 
 namespace QBDI {
 
-bool InstrRule::canBeApplied(const Patch &patch, const llvm::MCInstrInfo* MCII) const {
-    return condition->test(patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII);
-}
-
-void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI) const {
+void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI,
+                           const PatchGenerator::SharedPtrVec patchGen, bool breakToHost, InstPosition position) const {
     /* The instrument function needs to handle several different cases. An instrumentation can
      * be either prepended or appended to the patch and, in each case, can trigger a break to
      * host.
@@ -120,6 +118,35 @@ void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const ll
         LogError("InstrRule::Instrument", "Invalid position 0x%x", position);
         abort();
     }
+}
+
+bool InstrRuleBasic::canBeApplied(const Patch &patch, const llvm::MCInstrInfo* MCII) const {
+    return condition->test(patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII);
+}
+
+bool InstrRuleUser::tryInstrument(Patch &patch, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI,
+                                  const Assembly* assembly) const {
+    if (!range.contains(Range<rword>(patch.metadata.address, patch.metadata.address + patch.metadata.instSize))) {
+        return false;
+    }
+
+    LogDebug("InstrRuleUser::tryInstrument", "Call user InstrCB at %p with analysisType 0x%x", cbk, analysisType);
+
+    const InstAnalysis* ana = analyzeInstMetadata(patch.metadata, analysisType, *assembly);
+
+    std::vector<InstrumentDataCBK> vec = cbk(vm, ana, cbk_data);
+
+    LogDebug("InstrRuleUser::tryInstrument", "InstrCB return %u callback(s)", vec.size());
+
+    if (vec.size() == 0) {
+        return false;
+    }
+
+    for (const InstrumentDataCBK& cbkToAdd : vec) {
+        instrument(patch, MCII, MRI, getCallbackGenerator(cbkToAdd.cbk, cbkToAdd.data), true, cbkToAdd.position);
+    }
+
+    return true;
 }
 
 }

@@ -41,7 +41,6 @@
 #endif
 
 namespace QBDI {
-
 namespace {
 
 static bool isFlagRegister(unsigned int regNo) {

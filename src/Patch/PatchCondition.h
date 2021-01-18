@@ -52,7 +52,7 @@ public:
         return r;
     }
 
-    virtual ~PatchCondition() {};
+    virtual ~PatchCondition() = default;
 };
 
 class MnemonicIs : public PatchCondition, public AutoAlloc<PatchCondition, MnemonicIs> {

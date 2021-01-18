@@ -32,6 +32,14 @@ Next Version
   * Change algorithm for ``OperandAnalysis``. The type ``OPERAND_INVALID`` may be present in the list of operands when a register is unset with the current instruction.
     Many operands may describe the used of the same register when a register is used multiple times for different purposes by the instruction.
 
+* Add Instrumentation Callback :c:type:`QBDI_InstrumentDataCBK` and :cpp:type:`QBDI::InstrumentDataCBK` (`#151 <https://github.com/QBDI/QBDI/pull/151>`_)
+
+  The Instrumentation Callback receives an InstAnalysis of each instruction during the instrumentation process. Based on this analysis, the callback
+  may insert custom InstCallback for each instruction.
+
+  The call order of the callback has changed for the PREINST callback. If an instruction has multiple callbacks in PREINST position, they will be called
+  in the reverse order of registration.
+
 Internal update:
 
 * Update LLVM to LLVM 10.0.1 (`#104 <https://github.com/QBDI/QBDI/pull/104>`_ and `#139 <https://github.com/QBDI/QBDI/pull/139>`_)

@@ -282,8 +282,10 @@ specific codes or portions of them.
 
 
 
-If the execution of an instruction triggers more than one callback, those will be called in the
-order they were added to the VM.
+If the execution of an instruction triggers more than one callback:
+
+- The callback before the instruction will be called in the reverse order of registration in the VM.
+- The callback after the instruction will be called in the order of registration in the VM.
 
 Memory Callback
 ^^^^^^^^^^^^^^^
@@ -338,14 +340,46 @@ several values of :cpp:type:`QBDI::VMEvent` in a mask using the ``|`` binary ope
 .. doxygenenum:: QBDI::VMEvent
 
 
-Custom Instrumentation
-^^^^^^^^^^^^^^^^^^^^^^
+Instrumentation Callback
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-Custom instrumentation can be pushed by inserting your own :cpp:class:`QBDI::InstrRule` in the
-VM. This requires using private headers to define your own rules but allows a very high level
-of flexibility.
+The instrumentation process is an internal step of QBDI when the original instructions are decoded,
+transformed and written before to be executed. The Instrumentation Callback provides an InstAnalysis
+of the instruction during the instrumentation process and allows adding Instruction Callback on this specific instruction
+based on its analysis.
 
-.. doxygenfunction:: QBDI::VM::addInstrRule
+.. doxygentypedef:: QBDI::InstrumentCallback
+
+.. doxygenstruct:: QBDI::InstrumentDataCBK
+   :members:
+
+An :cpp:type:`QBDI::InstrumentCallback` can be registered for all instructions, or limited to a specific range of address.
+
+.. doxygenfunction:: QBDI::VM::addInstrRule(InstrumentCallback cbk, AnalysisType type, void* data)
+
+.. doxygenfunction:: QBDI::VM::addInstrRuleRange(rword start, rword end, InstrumentCallback cbk, AnalysisType type, void* data)
+
+.. doxygenfunction:: QBDI::VM::addInstrRuleRangeSet
+
+.. note::
+
+    The instrumentation callback can be called many times for the same instruction.
+    The callback must return the same result for the same instruction.
+
+::
+
+    std::vector<InstrumentDataCBK> instrumentCB(VMInstanceRef vm, const InstAnalysis *inst, void *data) {
+        printf("[+] Instrument 0x%" PRIRWORD " %s\n", inst.address, inst.disassembly);
+        if (inst.isCall) {
+            return { QBDI::InstrumentDataCBK {callCB, nullptr, QBDI::POSTINST}};
+        } else if (inst.isRet) {
+            return { QBDI::InstrumentDataCBK {retCB, nullptr, QBDI::POSTINST}};
+        } else {
+            return {};
+        }
+    }
+
+    vm->addInstrRule(instrumentCB, QBDI::ANALYSIS_INSTRUCTION | QBDI::ANALYSIS_DISASSEMBLY, nullptr);
 
 Removing Instrumentations
 ^^^^^^^^^^^^^^^^^^^^^^^^^

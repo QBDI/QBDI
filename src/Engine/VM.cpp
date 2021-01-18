@@ -41,6 +41,13 @@ struct MemCBInfo {
     void* data;
 };
 
+struct InstrCBInfo {
+    Range<rword> range;
+    QBDI_InstrumentCallback cbk;
+    AnalysisType type;
+    void* data;
+};
+
 static VMAction memReadGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
     std::vector<std::pair<uint32_t, MemCBInfo>>* memCBInfos = static_cast<std::vector<std::pair<uint32_t, MemCBInfo>>*>(data);
     std::vector<MemoryAccess> memAccesses = vm->getInstMemoryAccess();
@@ -89,6 +96,14 @@ static VMAction memWriteGate(VMInstanceRef vm, GPRState* gprState, FPRState* fpr
     return action;
 }
 
+static std::vector<InstrumentDataCBK> InstrCBGateC(VMInstanceRef vm, const InstAnalysis *inst, void* _data) {
+    InstrCBInfo* data = static_cast<InstrCBInfo*>(_data);
+    std::vector<InstrumentDataCBK> vec {};
+    data->cbk(vm, inst, &vec, data->data);
+    return vec;
+}
+
+
 static VMAction stopCallback(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
     return VMAction::STOP;
 }
@@ -97,6 +112,7 @@ VM::VM(const std::string& cpu, const std::vector<std::string>& mattrs) :
     memoryLoggingLevel(0), memCBID(0), memReadGateCBID(VMError::INVALID_EVENTID), memWriteGateCBID(VMError::INVALID_EVENTID) {
     engine = std::make_unique<Engine>(cpu, mattrs, this);
     memCBInfos = std::make_unique<std::vector<std::pair<uint32_t, MemCBInfo>>>();
+    instrCBInfos = std::make_unique<std::vector<std::pair<uint32_t, std::unique_ptr<InstrCBInfo>>>>();
 }
 
 VM::~VM() = default;
@@ -107,7 +123,8 @@ VM::VM(VM&& vm) :
         memCBInfos(std::move(vm.memCBInfos)),
         memCBID(vm.memCBID),
         memReadGateCBID(vm.memReadGateCBID),
-        memWriteGateCBID(vm.memWriteGateCBID) {
+        memWriteGateCBID(vm.memWriteGateCBID),
+        instrCBInfos(std::move(vm.instrCBInfos)) {
 
     engine->changeVMInstanceRef(this);
 }
@@ -119,6 +136,7 @@ VM& VM::operator=(VM&& vm) {
     memCBID = vm.memCBID;
     memReadGateCBID = vm.memReadGateCBID;
     memWriteGateCBID = vm.memWriteGateCBID;
+    instrCBInfos = std::move(vm.instrCBInfos);
 
     engine->changeVMInstanceRef(this);
 
@@ -134,6 +152,11 @@ VM::VM(const VM& vm) :
         memWriteGateCBID(vm.memWriteGateCBID) {
 
     engine->changeVMInstanceRef(this);
+    instrCBInfos = std::make_unique<std::vector<std::pair<uint32_t, std::unique_ptr<InstrCBInfo>>>>();
+    for (const auto& p : *vm.instrCBInfos) {
+        engine->deleteInstrumentation(p.first);
+        addInstrRuleRange(p.second->range.start(), p.second->range.end(), p.second->cbk, p.second->type, p.second->data);
+    }
 }
 
 
@@ -145,6 +168,12 @@ VM& VM::operator=(const VM& vm) {
     memCBID = vm.memCBID;
     memReadGateCBID = vm.memReadGateCBID;
     memWriteGateCBID = vm.memWriteGateCBID;
+
+    instrCBInfos = std::make_unique<std::vector<std::pair<uint32_t, std::unique_ptr<InstrCBInfo>>>>();
+    for (const auto& p : *vm.instrCBInfos) {
+        engine->deleteInstrumentation(p.first);
+        addInstrRuleRange(p.second->range.start(), p.second->range.end(), p.second->cbk, p.second->type, p.second->data);
+    }
 
     engine->changeVMInstanceRef(this);
 
@@ -249,14 +278,40 @@ bool VM::callV(rword* retval, rword function, uint32_t argNum, va_list ap) {
     return res;
 }
 
-uint32_t VM::addInstrRule(InstrRule rule) {
-    return engine->addInstrRule(rule, false);
+uint32_t VM::addInstrRule(InstrumentCallback cbk, AnalysisType type, void* data) {
+    RangeSet<rword> r;
+    r.add(Range<rword>(0, (rword) -1));
+    return engine->addInstrRule(InstrRuleUser(cbk, type, data, this, r));
+}
+
+uint32_t VM::addInstrRule(QBDI_InstrumentCallback cbk, AnalysisType type, void* data) {
+    InstrCBInfo* _data = new InstrCBInfo{Range<rword>(0, (rword) -1), cbk, type, data};
+    uint32_t id = addInstrRule(InstrCBGateC, type, _data);
+    instrCBInfos->emplace_back(id, _data);
+    return id;
+}
+
+uint32_t VM::addInstrRuleRange(rword start, rword end, InstrumentCallback cbk, AnalysisType type, void* data) {
+    RangeSet<rword> r;
+    r.add(Range<rword>(start, end));
+    return engine->addInstrRule(InstrRuleUser(cbk, type, data, this, r));
+}
+
+uint32_t VM::addInstrRuleRange(rword start, rword end, QBDI_InstrumentCallback cbk, AnalysisType type, void* data) {
+    InstrCBInfo* _data = new InstrCBInfo{Range<rword>(start, end), cbk, type, data};
+    uint32_t id = addInstrRuleRange(start, end, InstrCBGateC, type, _data);
+    instrCBInfos->emplace_back(id, _data);
+    return id;
+}
+
+uint32_t VM::addInstrRuleRangeSet(RangeSet<rword> range, InstrumentCallback cbk, AnalysisType type, void* data) {
+    return engine->addInstrRule(InstrRuleUser(cbk, type, data, this, range));
 }
 
 uint32_t VM::addMnemonicCB(const char* mnemonic, InstPosition pos, InstCallback cbk, void *data) {
     RequireAction("VM::addMnemonicCB", mnemonic != nullptr, return VMError::INVALID_EVENTID);
     RequireAction("VM::addMnemonicCB", cbk != nullptr, return VMError::INVALID_EVENTID);
-    return engine->addInstrRule(InstrRule(
+    return engine->addInstrRule(InstrRuleBasic(
         MnemonicIs(mnemonic),
         getCallbackGenerator(cbk, data),
         pos,
@@ -266,7 +321,7 @@ uint32_t VM::addMnemonicCB(const char* mnemonic, InstPosition pos, InstCallback 
 
 uint32_t VM::addCodeCB(InstPosition pos, InstCallback cbk, void *data) {
     RequireAction("VM::addCodeCB", cbk != nullptr, return VMError::INVALID_EVENTID);
-    return engine->addInstrRule(InstrRule(
+    return engine->addInstrRule(InstrRuleBasic(
         True(),
         getCallbackGenerator(cbk, data),
         pos,
@@ -276,7 +331,7 @@ uint32_t VM::addCodeCB(InstPosition pos, InstCallback cbk, void *data) {
 
 uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk, void *data) {
     RequireAction("VM::addCodeAddrCB", cbk != nullptr, return VMError::INVALID_EVENTID);
-    return engine->addInstrRule(InstrRule(
+    return engine->addInstrRule(InstrRuleBasic(
         AddressIs(address),
         getCallbackGenerator(cbk, data),
         pos,
@@ -287,7 +342,7 @@ uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk, vo
 uint32_t VM::addCodeRangeCB(rword start, rword end, InstPosition pos, InstCallback cbk, void *data) {
     RequireAction("VM::addCodeRangeCB", start < end, return VMError::INVALID_EVENTID);
     RequireAction("VM::addCodeRangeCB", cbk != nullptr, return VMError::INVALID_EVENTID);
-    return engine->addInstrRule(InstrRule(
+    return engine->addInstrRule(InstrRuleBasic(
         InstructionInRange(start, end),
         getCallbackGenerator(cbk, data),
         pos,
@@ -300,21 +355,21 @@ uint32_t VM::addMemAccessCB(MemoryAccessType type, InstCallback cbk, void *data)
     recordMemoryAccess(type);
     switch(type) {
         case MEMORY_READ:
-            return engine->addInstrRule(InstrRule(
+            return engine->addInstrRule(InstrRuleBasic(
                 DoesReadAccess(),
                 getCallbackGenerator(cbk, data),
                 InstPosition::PREINST,
                 true
             ));
         case MEMORY_WRITE:
-            return engine->addInstrRule(InstrRule(
+            return engine->addInstrRule(InstrRuleBasic(
                 DoesWriteAccess(),
                 getCallbackGenerator(cbk, data),
                 InstPosition::POSTINST,
                 true
             ));
         case MEMORY_READ_WRITE:
-            return engine->addInstrRule(InstrRule(
+            return engine->addInstrRule(InstrRuleBasic(
                 Or({
                     DoesReadAccess(),
                     DoesWriteAccess(),
@@ -368,6 +423,12 @@ bool VM::deleteInstrumentation(uint32_t id) {
         return false;
     }
     else {
+        instrCBInfos->erase(std::remove_if(
+                  instrCBInfos->begin(), instrCBInfos->end(),
+                  [id](const std::pair<uint32_t, std::unique_ptr<InstrCBInfo>>& x){
+                      return x.first == id;
+                  }
+              ), instrCBInfos->end());
         return engine->deleteInstrumentation(id);
     }
 }
@@ -377,6 +438,7 @@ void VM::deleteAllInstrumentations() {
     memReadGateCBID = VMError::INVALID_EVENTID;
     memWriteGateCBID = VMError::INVALID_EVENTID;
     memCBInfos->clear();
+    instrCBInfos->clear();
     memoryLoggingLevel = 0;
 }
 
@@ -397,7 +459,7 @@ bool VM::recordMemoryAccess(MemoryAccessType type) {
 
     if(type & MEMORY_READ && !(memoryLoggingLevel & MEMORY_READ)) {
         memoryLoggingLevel |= MEMORY_READ;
-        engine->addInstrRule(InstrRule(
+        engine->addInstrRule(InstrRuleBasic(
             DoesReadAccess(),
             {
                 GetReadAddress(Temp(0)),
@@ -406,12 +468,12 @@ bool VM::recordMemoryAccess(MemoryAccessType type) {
                 WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
             },
             PREINST,
-            false
-        ), true); // force the rule to be the first of PREINST
+            false,
+            0x8000)); // force the rule to be the first of PREINST (the last apply)
     }
     if(type & MEMORY_WRITE && !(memoryLoggingLevel & MEMORY_WRITE)) {
         memoryLoggingLevel |= MEMORY_WRITE;
-        engine->addInstrRule(InstrRule(
+        engine->addInstrRule(InstrRuleBasic(
             DoesWriteAccess(),
             {
                 GetWriteAddress(Temp(0)),
@@ -420,8 +482,8 @@ bool VM::recordMemoryAccess(MemoryAccessType type) {
                 WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
             },
             POSTINST,
-            false
-        ), true); // force the rule to be the first of POSTINST
+            false,
+            -0x8000)); // force the rule to be the first apply (lesser priority)
     }
     return true;
 }

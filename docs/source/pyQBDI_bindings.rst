@@ -25,6 +25,7 @@ VM
 --
 
 .. autoclass:: pyqbdi.VM
+    :special-members: __init__
     :members:
 
 
@@ -50,7 +51,6 @@ InstAnalysis
 
 .. autoclass:: pyqbdi.OperandAnalysis
     :members:
-
 
 .. autodata:: pyqbdi.RegisterAccessType
 .. autodata:: pyqbdi.OperandType
@@ -78,6 +78,13 @@ Range
 -----
 
 .. autoclass:: pyqbdi.Range
+    :members:
+
+Instrument Rule Data
+--------------------
+
+.. autoclass:: pyqbdi.InstrumentDataCBK
+    :special-members: __init__
     :members:
 
 Miscellaneous

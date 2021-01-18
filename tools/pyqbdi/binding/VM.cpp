@@ -17,6 +17,7 @@
  */
 
 #include "pyqbdi.hpp"
+#include "callback_python.h"
 
 namespace QBDI {
 namespace pyQBDI {
@@ -24,13 +25,17 @@ namespace pyQBDI {
 // Callback to python managment
 template<typename T>
 struct TrampData {
+    public:
+
     T cbk;
     py::object obj;
-    TrampData(T& cbk, py::object& obj) : cbk(cbk), obj(obj) {}
+    uint32_t id;
+
+    TrampData(const T& cbk, const py::object& obj) : cbk(cbk), obj(obj), id(0) {}
 };
 
 template<typename T>
-static void removeTrampData(uint32_t n, std::map<uint32_t, std::unique_ptr<TrampData<T>>>& map) {
+static void removeTrampData(uint32_t n, std::map<uint32_t, T>& map) {
     auto it = map.find(n);
     if (it != map.end()) {
         map.erase(it);
@@ -46,17 +51,17 @@ static py::object addTrampData(uint32_t n, std::map<uint32_t, std::unique_ptr<Tr
     return py::cast(n);
 }
 
-// Python Callback
-using PyInstCallback = std::function<VMAction(VMInstanceRef, GPRState*, FPRState*, py::object&)>;
-using PyVMCallback = std::function<VMAction(VMInstanceRef, const VMState*, GPRState*, FPRState*, py::object&)>;
-
 // Map of python callback <=> QBDI number
 static std::map<uint32_t, std::unique_ptr<TrampData<PyInstCallback>>> InstCallbackMap;
 static std::map<uint32_t, std::unique_ptr<TrampData<PyVMCallback>>> VMCallbackMap;
+static std::map<uint32_t, std::unique_ptr<TrampData<PyInstrRuleCallback>>> InstrRuleCallbackMap;
+static std::map<uint32_t, std::vector<std::unique_ptr<TrampData<PyInstCallback>>>> InstrRuleInstCallbackMap;
 
 static void clearTrampDataMap() {
     InstCallbackMap.clear();
     VMCallbackMap.clear();
+    InstrRuleCallbackMap.clear();
+    InstrRuleInstCallbackMap.clear();
 }
 
 // QBDI trampoline for python callback
@@ -84,6 +89,35 @@ static VMAction trampoline_VMCallback(VMInstanceRef vm, const VMState *vmState, 
     return res;
 }
 
+static std::vector<InstrumentDataCBK> trampoline_InstrRuleCallback(VMInstanceRef vm, const InstAnalysis *analysis, void *data) {
+    TrampData<PyInstrRuleCallback>* cbk = static_cast<TrampData<PyInstrRuleCallback>*>(data);
+    std::vector<InstrumentDataCBKPython> resCB;
+    try {
+        resCB = cbk->cbk(vm, analysis, cbk->obj);
+    } catch (const std::exception& e) {
+        std::cerr << "Error during InstrRuleCallback : " << e.what() << std::endl;
+        exit(1);
+    }
+    std::vector<InstrumentDataCBK> res;
+    if (resCB.size() == 0) {
+        return res;
+    }
+    if (InstrRuleInstCallbackMap.count(cbk->id) == 0) {
+        InstrRuleInstCallbackMap[cbk->id] = std::vector<std::unique_ptr<TrampData<PyInstCallback>>> {};
+    }
+    auto it = InstrRuleInstCallbackMap.find(cbk->id);
+    assert(it == InstrRuleInstCallbackMap.end());
+    auto& vec = it->second;
+
+    for (const InstrumentDataCBKPython& cb: resCB) {
+        std::unique_ptr<TrampData<PyInstCallback>> data {new TrampData<PyInstCallback>(cb.cbk, cb.data)};
+        data->id = cbk->id;
+        res.emplace_back(cb.position, trampoline_InstCallback, static_cast<void*>(data.get()) );
+        vec.push_back(std::move(data));
+    }
+
+    return res;
+}
 
 void init_binding_VM(py::module_& m) {
 
@@ -139,10 +173,47 @@ void init_binding_VM(py::module_& m) {
                 },
                 "Call a function using the DBI (and its current state).",
                 "function"_a, "args"_a)
+        .def("addInstrRule",
+                [](VM& vm, PyInstrRuleCallback& cbk, AnalysisType type, py::object& obj) {
+                    std::unique_ptr<TrampData<PyInstrRuleCallback>> data {new TrampData<PyInstrRuleCallback>(cbk, obj)};
+                    uint32_t n = vm.addInstrRule(&trampoline_InstrRuleCallback, type, static_cast<void*>(data.get()));
+                    data->id = n;
+                    return addTrampData(n, InstrRuleCallbackMap, std::move(data));
+                },
+                "Add a custom instrumentation rule to the VM.",
+                "cbk"_a, "type"_a, "data"_a)
+        .def("addInstrRule",
+                [](VM& vm, PyInstrRuleCallback& cbk, int type, py::object& obj) {
+                    std::unique_ptr<TrampData<PyInstrRuleCallback>> data {new TrampData<PyInstrRuleCallback>(cbk, obj)};
+                    uint32_t n = vm.addInstrRule(&trampoline_InstrRuleCallback, static_cast<AnalysisType>(type), static_cast<void*>(data.get()));
+                    data->id = n;
+                    return addTrampData(n, InstrRuleCallbackMap, std::move(data));
+                },
+                "Add a custom instrumentation rule to the VM.",
+                "cbk"_a, "type"_a, "data"_a)
+        .def("addInstrRuleRange",
+                [](VM& vm, rword start, rword end, PyInstrRuleCallback& cbk, AnalysisType type, py::object& obj) {
+                    std::unique_ptr<TrampData<PyInstrRuleCallback>> data {new TrampData<PyInstrRuleCallback>(cbk, obj)};
+                    uint32_t n = vm.addInstrRuleRange(start, end, &trampoline_InstrRuleCallback, type, static_cast<void*>(data.get()));
+                    data->id = n;
+                    return addTrampData(n, InstrRuleCallbackMap, std::move(data));
+                },
+                "Add a custom instrumentation rule to the VM on a specify range.",
+                "start"_a, "end"_a, "cbk"_a, "type"_a, "data"_a)
+        .def("addInstrRuleRange",
+                [](VM& vm, rword start, rword end, PyInstrRuleCallback& cbk, int type, py::object& obj) {
+                    std::unique_ptr<TrampData<PyInstrRuleCallback>> data {new TrampData<PyInstrRuleCallback>(cbk, obj)};
+                    uint32_t n = vm.addInstrRuleRange(start, end, &trampoline_InstrRuleCallback, static_cast<AnalysisType>(type), static_cast<void*>(data.get()));
+                    data->id = n;
+                    return addTrampData(n, InstrRuleCallbackMap, std::move(data));
+                },
+                "Add a custom instrumentation rule to the VM on a specify range.",
+                "start"_a, "end"_a, "cbk"_a, "type"_a, "data"_a)
         .def("addMnemonicCB",
                 [](VM& vm, const char* mnemonic, InstPosition pos, PyInstCallback& cbk, py::object& obj) {
                     std::unique_ptr<TrampData<PyInstCallback>> data {new TrampData<PyInstCallback>(cbk, obj)};
                     uint32_t n = vm.addMnemonicCB(mnemonic, pos, &trampoline_InstCallback, static_cast<void*>(data.get()));
+                    data->id = n;
                     return addTrampData(n, InstCallbackMap, std::move(data));
                 },
                 "Register a callback event if the instruction matches the mnemonic.",
@@ -151,6 +222,7 @@ void init_binding_VM(py::module_& m) {
                 [](VM& vm, InstPosition pos, PyInstCallback& cbk, py::object& obj) {
                     std::unique_ptr<TrampData<PyInstCallback>> data {new TrampData<PyInstCallback>(cbk, obj)};
                     uint32_t n = vm.addCodeCB(pos, &trampoline_InstCallback, static_cast<void*>(data.get()));
+                    data->id = n;
                     return addTrampData(n, InstCallbackMap, std::move(data));
                 },
                 "Register a callback event for every instruction executed.",
@@ -159,6 +231,7 @@ void init_binding_VM(py::module_& m) {
                 [](VM& vm, rword address, InstPosition pos, PyInstCallback& cbk, py::object& obj) {
                     std::unique_ptr<TrampData<PyInstCallback>> data {new TrampData<PyInstCallback>(cbk, obj)};
                     uint32_t n = vm.addCodeAddrCB(address, pos, &trampoline_InstCallback, static_cast<void*>(data.get()));
+                    data->id = n;
                     return addTrampData(n, InstCallbackMap, std::move(data));
                 },
                 "Register a callback for when a specific address is executed.",
@@ -167,6 +240,7 @@ void init_binding_VM(py::module_& m) {
                 [](VM& vm, rword start, rword end, InstPosition pos, PyInstCallback& cbk, py::object& obj) {
                     std::unique_ptr<TrampData<PyInstCallback>> data {new TrampData<PyInstCallback>(cbk, obj)};
                     uint32_t n = vm.addCodeRangeCB(start, end, pos, &trampoline_InstCallback, static_cast<void*>(data.get()));
+                    data->id = n;
                     return addTrampData(n, InstCallbackMap, std::move(data));
                 },
                 "Register a callback for when a specific address range is executed.",
@@ -175,6 +249,7 @@ void init_binding_VM(py::module_& m) {
                 [](VM& vm, MemoryAccessType type, PyInstCallback& cbk, py::object& obj) {
                     std::unique_ptr<TrampData<PyInstCallback>> data {new TrampData<PyInstCallback>(cbk, obj)};
                     uint32_t n = vm.addMemAccessCB(type, &trampoline_InstCallback, static_cast<void*>(data.get()));
+                    data->id = n;
                     return addTrampData(n, InstCallbackMap, std::move(data));
                 },
                 "Register a callback event for every memory access matching the type bitfield made by the instructions.",
@@ -193,6 +268,7 @@ void init_binding_VM(py::module_& m) {
                 [](VM& vm, rword start, rword end, MemoryAccessType type, PyInstCallback& cbk, py::object& obj) {
                     std::unique_ptr<TrampData<PyInstCallback>> data {new TrampData<PyInstCallback>(cbk, obj)};
                     uint32_t n = vm.addMemRangeCB(start, end, type, &trampoline_InstCallback, static_cast<void*>(data.get()));
+                    data->id = n;
                     return addTrampData(n, InstCallbackMap, std::move(data));
                 },
                 "Add a virtual callback which is triggered for any memory access at a specific address range "
@@ -203,6 +279,7 @@ void init_binding_VM(py::module_& m) {
                 [](VM& vm, VMEvent mask, PyVMCallback& cbk, py::object& obj) {
                     std::unique_ptr<TrampData<PyVMCallback>> data {new TrampData<PyVMCallback>(cbk, obj)};
                     uint32_t n = vm.addVMEventCB(mask, &trampoline_VMCallback, static_cast<void*>(data.get()));
+                    data->id = n;
                     return addTrampData(n, VMCallbackMap, std::move(data));
                 },
                 "Register a callback event for a specific VM event.",
@@ -211,6 +288,7 @@ void init_binding_VM(py::module_& m) {
                 [](VM& vm, int mask, PyVMCallback& cbk, py::object& obj) {
                     std::unique_ptr<TrampData<PyVMCallback>> data {new TrampData<PyVMCallback>(cbk, obj)};
                     uint32_t n = vm.addVMEventCB(static_cast<VMEvent>(mask), &trampoline_VMCallback, static_cast<void*>(data.get()));
+                    data->id = n;
                     return addTrampData(n, VMCallbackMap, std::move(data));
                 },
                 "Register a callback event for a specific VM event.",
@@ -220,6 +298,8 @@ void init_binding_VM(py::module_& m) {
                     vm.deleteInstrumentation(id);
                     removeTrampData(id, InstCallbackMap);
                     removeTrampData(id, VMCallbackMap);
+                    removeTrampData(id, InstrRuleCallbackMap);
+                    removeTrampData(id, InstrRuleInstCallbackMap);
                 },
                 "Remove an instrumentation.",
                 "id"_a)

@@ -39,7 +39,6 @@ class InstMetadata;
 class Patch;
 class RelocatableInst;
 
-
 struct InstLoc {
     uint16_t blockIdx;
     uint16_t instID;

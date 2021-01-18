@@ -21,8 +21,10 @@
 #include "Platform.h"
 #include "State.h"
 #include "Bitmask.h"
-
+#include "InstAnalysis.h"
 #ifdef __cplusplus
+#include <vector>
+
 namespace QBDI {
 #endif
 
@@ -30,11 +32,11 @@ namespace QBDI {
  */
 typedef enum {
     _QBDI_EI(CONTINUE)    = 0, /*!< The execution of the basic block continues. */
-    _QBDI_EI(BREAK_TO_VM) = 1, /*!< The execution breaks and returns to the VM causing a complete reevaluation of 
-                                *   the execution state. A BREAK_TO_VM is needed to ensure that modifications of 
+    _QBDI_EI(BREAK_TO_VM) = 1, /*!< The execution breaks and returns to the VM causing a complete reevaluation of
+                                *   the execution state. A BREAK_TO_VM is needed to ensure that modifications of
                                 *   the Program Counter or the program code are taken into account.
                                 */
-    _QBDI_EI(STOP)        = 2, /*!< Stops the execution of the program. This causes the run function to return 
+    _QBDI_EI(STOP)        = 2, /*!< Stops the execution of the program. This causes the run function to return
                                 *   early.
                                 */
 } VMAction;
@@ -49,11 +51,11 @@ typedef VMInstance* VMInstanceRef;
 #endif
 
 /*! Instruction callback function type.
- * 
+ *
  * @param[in] vm            VM instance of the callback.
- * @param[in] gprState      A structure containing the state of the General Purpose Registers. Modifying 
+ * @param[in] gprState      A structure containing the state of the General Purpose Registers. Modifying
  *                          it affects the VM execution accordingly.
- * @param[in] fprState      A structure containing the state of the Floating Point Registers. Modifying 
+ * @param[in] fprState      A structure containing the state of the Floating Point Registers. Modifying
  *                          it affects the VM execution accordingly.
  * @param[in] data          User defined data which can be defined when registering the callback.
  *
@@ -96,12 +98,12 @@ typedef struct {
 } VMState;
 
 /*! VM callback function type.
- * 
+ *
  * @param[in] vm            VM instance of the callback.
  * @param[in] vmState       A structure containing the current state of the VM.
- * @param[in] gprState      A structure containing the state of the General Purpose Registers. Modifying 
+ * @param[in] gprState      A structure containing the state of the General Purpose Registers. Modifying
  *                          it affects the VM execution accordingly.
- * @param[in] fprState      A structure containing the state of the Floating Point Registers. Modifying 
+ * @param[in] fprState      A structure containing the state of the Floating Point Registers. Modifying
  *                          it affects the VM execution accordingly.
  * @param[in] data          User defined data which can be defined when registering the callback.
  *
@@ -133,7 +135,42 @@ typedef struct {
     MemoryAccessType type; /*!< Memory access type (READ / WRITE) */
 } MemoryAccess;
 
+
 #ifdef __cplusplus
+struct InstrumentDataCBK {
+    InstPosition position;  /*!< Relative position of the event callback (PREINST / POSTINST). */
+    InstCallback cbk;       /*!< Address of the function to call when the instruction is executed */
+    void* data;             /*!< User defined data which will be forward to cbk */
+
+    InstrumentDataCBK(InstPosition position, InstCallback cbk, void* data) : position(position), cbk(cbk), data(data) {}
+};
+
+using InstrumentDataVec = std::vector<InstrumentDataCBK>*;
+#else
+typedef void* InstrumentDataVec;
+#endif
+
+/*! Instrument callback function type.
+ *
+ * @param[in] vm                VM instance of the callback.
+ * @param[in] inst              AnalysisType of the current instrumented Instruction.
+ * @param[in] cbks              An object to add the callback to apply for this instruction.
+ * @param[in] data              User defined data which can be defined when registering the callback.
+ */
+typedef void (*QBDI_InstrumentCallback)(VMInstanceRef vm, const InstAnalysis *inst, InstrumentDataVec cbks, void* data);
+
+#ifdef __cplusplus
+
+/*! Instrument callback function type.
+ *
+ * @param[in] vm                VM instance of the callback.
+ * @param[in] inst              AnalysisType of the current instrumented Instruction.
+ * @param[in] data              User defined data which can be defined when registering the callback.
+ *
+ * @return                      Return cbk to call when this instruction is run.
+ */
+typedef std::vector<InstrumentDataCBK> (*InstrumentCallback)(VMInstanceRef vm, const InstAnalysis *inst, void* data);
+
 } // QBDI::
 #endif
 

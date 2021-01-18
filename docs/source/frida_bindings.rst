@@ -73,6 +73,10 @@ Instrumentation
 
 .. js:autofunction:: QBDI#addMnemonicCB
 
+.. js:autofunction:: QBDI#addInstrRule
+
+.. js:autofunction:: QBDI#addInstrRuleRange
+
 .. js:autofunction:: QBDI#deleteInstrumentation
 
 .. js:autofunction:: QBDI#deleteAllInstrumentations
@@ -415,6 +419,8 @@ Helpers
 Some functions helpful to interact with Frida interface and write scripts.
 
 .. js:autofunction:: QBDI#getModuleNames
+
+.. js:autofunction:: QBDI#newInstrRuleCallback
 
 .. js:autofunction:: QBDI#newInstCallback
 

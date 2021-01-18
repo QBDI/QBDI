@@ -24,7 +24,7 @@
  */
 var QBDI_MAJOR = 0;
 var QBDI_MINOR = 7;
-var QBDI_PATCH = 1;
+var QBDI_PATCH = 2;
 /**
  * Minimum version of QBDI to use Frida bindings
  */
@@ -203,6 +203,8 @@ var rword = Process.pointerSize === 8 ? 'uint64' : 'uint32';
 
 Memory.readRword = Process.pointerSize === 8 ? Memory.readU64 : Memory.readU32;
 
+Memory.writeRword = Process.pointerSize === 8 ? Memory.writeU64 : Memory.writeU32;
+
 // Convert a number to its register-sized representation
 
 /**
@@ -290,6 +292,9 @@ var QBDI_C = Object.freeze({
     setFPRState: _qbdibinder.bind('qbdi_setFPRState', 'void', ['pointer', 'pointer']),
     addMnemonicCB: _qbdibinder.bind('qbdi_addMnemonicCB', 'uint32', ['pointer', 'pointer', 'uint32', 'pointer', 'pointer']),
     addMemAccessCB: _qbdibinder.bind('qbdi_addMemAccessCB', 'uint32', ['pointer', 'uint32', 'pointer', 'pointer']),
+    addInstrRule: _qbdibinder.bind('qbdi_addInstrRule', 'uint32', ['pointer', 'pointer', 'uint32', 'pointer']),
+    addInstrRuleRange: _qbdibinder.bind('qbdi_addInstrRuleRange', 'uint32', ['pointer', rword, rword, 'pointer', 'uint32', 'pointer']),
+    addInstrumentData: _qbdibinder.bind('qbdi_addInstrumentData', 'void', ['pointer', 'uint32', 'pointer', 'pointer']),
     addMemAddrCB: _qbdibinder.bind('qbdi_addMemAddrCB', 'uint32', ['pointer', rword, 'uint32', 'pointer', 'pointer']),
     addMemRangeCB: _qbdibinder.bind('qbdi_addMemRangeCB', 'uint32', ['pointer', rword, rword, 'uint32', 'pointer', 'pointer']),
     addCodeCB: _qbdibinder.bind('qbdi_addCodeCB', 'uint32', ['pointer', 'uint32', 'pointer', 'pointer']),
@@ -850,12 +855,12 @@ class QBDI {
     #vmStateStructDesc = null;
     #userDataPtrMap = {};
     #userDataIIdMap = {};
+    #userDataPointer = 0;
 
     /**
      * Create a new instrumentation virtual machine using "**new QBDI()**"
      */
     constructor() {
-
         // Enforce a minimum QBDI version (API compatibility)
         if (!this.version || this.version.integer < QBDI_MINIMUM_VERSION) {
             throw new Error('Invalid QBDI version !');
@@ -1098,6 +1103,40 @@ class QBDI {
         var vm = this.#vm;
         return this._retainUserData(data, function (dataPtr) {
             return QBDI_C.addMemAccessCB(vm, type, cbk, dataPtr);
+        });
+    }
+
+    /**
+     * Add a custom instrumentation rule to the VM.
+     *
+     * @param cbk    A function pointer to the instrument callback.
+     * @param type   Analyse type needed for this instruction function pointer to the callback
+     * @param data   User defined data passed to the callback.
+     *
+     * @return   The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
+     */
+    addInstrRule(cbk, type, data) {
+        var vm = this.#vm;
+        return this._retainUserDataForInstrRuleCB(data, function (dataPtr) {
+            return QBDI_C.addInstrRule(vm, cbk, type, dataPtr);
+        });
+    }
+
+    /**
+     * Add a custom instrumentation rule to the VM for a range of address.
+     *
+     * @param start  Begin of the range of address where apply the rule
+     * @param end    End of the range of address where apply the rule
+     * @param cbk    A function pointer to the instrument callback.
+     * @param type   Analyse type needed for this instruction function pointer to the callback
+     * @param data   User defined data passed to the callback.
+     *
+     * @return   The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
+     */
+    addInstrRuleRange(start, end, cbk, type, data) {
+        var vm = this.#vm;
+        return this._retainUserDataForInstrRuleCB(data, function (dataPtr) {
+            return QBDI_C.addInstrRuleRange(vm, start, end, cbk, type, dataPtr);
         });
     }
 
@@ -1373,6 +1412,47 @@ class QBDI {
     // Helpers
 
     /**
+     * Create a native **Instruction rule callback** from a JS function.
+     *
+     * Example:
+     *       >>> var icbk = vm.newInstrRuleCallback(function(vm, ana, data) {
+     *       >>>   console.log("0x" + ana.address.toString(16) + " " + ana.disassembly);
+     *       >>>   return [{cbk: printCB, data: ana.disassembly, position: InstPosition.POSTINST}];
+     *       >>> });
+     *
+     * @param cbk an instruction callback (ex: function(vm, ana, data) {};)
+     *
+     * @return an instruction rule callback
+     */
+    newInstrRuleCallback(cbk) {
+        if (typeof(cbk) !== 'function' || cbk.length !== 3) {
+            return undefined;
+        }
+        // Use a closure to provide object
+        var vm = this;
+        var jcbk = function(vmPtr, anaPtr, cbksPtr, dataPtr) {
+            var ana = vm._parseInstAnalysis(anaPtr);
+            var data = vm._getUserData(dataPtr);
+            var res = cbk(vm, ana, data.userdata);
+            if (res === null) {
+                return;
+            }
+            if (!Array.isArray(res)) {
+                throw new TypeError('Invalid InstrumentDataCBK Array');
+            }
+            if (res.length === 0) {
+                return;
+            }
+            for (var i = 0; i < res.length; i++) {
+                var d = vm._retainUserDataForInstrRuleCB2(res[i].data, data.id);
+                QBDI_C.addInstrumentData(cbksPtr, res[i].position, res[i].cbk, d);
+            }
+        }
+        return new NativeCallback(jcbk, 'void', ['pointer', 'pointer', 'pointer', 'pointer']);
+    }
+
+
+    /**
      * Create a native **Instruction callback** from a JS function.
      *
      * Example:
@@ -1502,19 +1582,43 @@ class QBDI {
     // If a ``NativePointer`` is given, it will be used as raw user data and the
     // object will not be retained.
     _retainUserData(data, fn) {
-        var dataPtr = data || NULL;
+        var dataPtr = ptr("0");
         var managed = false;
-        if (!NativePointer.prototype.isPrototypeOf(data)) {
-            dataPtr = Memory.alloc(4);
+        if (data !== null && data !== undefined) {
+            this.#userDataPointer += 1;
+            dataPtr = dataPtr.add(this.#userDataPointer);
             managed = true;
         }
         var iid = fn(dataPtr);
         if (managed) {
             this.#userDataPtrMap[dataPtr] = data;
             this.#userDataIIdMap[iid] = dataPtr;
-            Memory.writeU32(dataPtr, iid);
         }
         return iid;
+    }
+
+    _retainUserDataForInstrRuleCB(data, fn) {
+        this.#userDataPointer += 1;
+        var dataPtr = ptr("0").add(this.#userDataPointer);
+
+        var iid = fn(dataPtr);
+
+        this.#userDataPtrMap[dataPtr] = {userdata: data, id: iid};
+        this.#userDataIIdMap[iid] = [dataPtr];
+        return iid;
+    }
+
+    _retainUserDataForInstrRuleCB2(data, id) {
+        if (data !== null && data !== undefined) {
+            this.#userDataPointer += 1;
+            var dataPtr = ptr("0").add(this.#userDataPointer);
+
+            this.#userDataPtrMap[dataPtr] = data;
+            this.#userDataIIdMap[id].push(dataPtr);
+            return dataPtr;
+        } else {
+            return ptr("0");
+        }
     }
 
     // Retrieve a user data object from its ``NativePointer`` reference.
@@ -1525,10 +1629,10 @@ class QBDI {
         if (!data.isNull()) {
             var d = this.#userDataPtrMap[dataPtr];
             if (d !== undefined) {
-                data = d;
+                return d;
             }
         }
-        return data;
+        return undefined;
     }
 
     // Release references to a user data object using the correponding
@@ -1536,7 +1640,13 @@ class QBDI {
     _releaseUserData(id) {
         var dataPtr = this.#userDataIIdMap[id];
         if (dataPtr !== undefined) {
-            delete this.#userDataPtrMap[dataPtr];
+            if (Array.isArray(dataPtr)) {
+                for (var i = 0; i < dataPtr.length; i++) {
+                    delete this.#userDataPtrMap[dataPtr[i]];
+                }
+            } else {
+                delete this.#userDataPtrMap[dataPtr];
+            }
             delete this.#userDataIIdMap[id];
         }
     }
@@ -1545,6 +1655,7 @@ class QBDI {
     _releaseAllUserData() {
         this.#userDataPtrMap = {};
         this.#userDataIIdMap = {};
+        this.#userDataPointer = 0;
     }
 
     _formatVAArgs(args) {
