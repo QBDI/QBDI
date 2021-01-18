@@ -22,6 +22,7 @@
 #include <memory>
 #include <vector>
 
+#include "llvm/ADT/APInt.h"
 #include "llvm/Support/Process.h"
 #include "llvm/Support/Memory.h"
 
@@ -52,6 +53,8 @@ enum SeqType {
 struct InstInfo {
     uint16_t seqID;
     uint16_t offset;
+    uint16_t shadowOffset;
+    uint16_t shadowSize;
 };
 
 struct SeqInfo {
@@ -340,7 +343,7 @@ public:
      *
      *  @return The shadow id (which is its index within the shadow array).
      */
-    uint16_t newShadow(uint16_t tag = NO_REGISTRATION);
+    uint16_t newShadow(uint16_t tag = ShadowReservedTag::Untagged);
 
     /*! Set the value of a shadow.
      *
@@ -364,6 +367,14 @@ public:
      *  @return Offset of the shadow.
      */
     rword getShadowOffset(uint16_t id) const;
+
+    /* Get all registered shadows for an instruction
+     *
+     * @param instID  The id of the instruction in the ExecBlock
+     *
+     * @return a vector of shadowID matching the query
+     */
+    const llvm::ArrayRef<ShadowInfo> getShadowByInst(uint16_t instID) const;
 
     /* Query registered shadows and returns a vector of matching shadowID
      *

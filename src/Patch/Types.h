@@ -82,6 +82,17 @@ public:
 
 };
 
+enum ShadowReservedTag : uint16_t {
+
+    // MemoryAccess Tag
+    MEM_READ_ADDRESS_TAG  = 0xfff0,
+    MEM_WRITE_ADDRESS_TAG = 0xfff1,
+    MEM_VALUE_TAG         = 0xfff2,
+
+    // also defined in Callback.h
+    Untagged = 0xffff,
+};
+
 /*! Structure representing a constant value in PatchDSL.
 */
 struct Constant {

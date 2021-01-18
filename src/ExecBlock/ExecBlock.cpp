@@ -298,7 +298,9 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
             instMetadata.push_back(seqIt->metadata.lightCopy());
             instMetadata.back().analysis.reset(seqIt->metadata.analysis.release());
             // Register instruction
-            instRegistry.push_back(InstInfo {seqID, static_cast<uint16_t>(rollbackOffset)});
+            instRegistry.push_back(InstInfo {seqID, static_cast<uint16_t>(rollbackOffset),
+                                             static_cast<uint16_t>(rollbackShadowRegistry),
+                                             static_cast<uint16_t>(shadowRegistry.size() - rollbackShadowRegistry)});
             // Update indexes
             seqIt++;
             patchWritten += 1;
@@ -363,7 +365,7 @@ void ExecBlock::makeRW() {
 uint16_t ExecBlock::newShadow(uint16_t tag) {
     uint16_t id = shadowIdx++;
     RequireAction("ExecBlock::newShadow", id * sizeof(rword) < dataBlock.allocatedSize() - sizeof(Context), abort());
-    if(tag != NO_REGISTRATION) {
+    if(tag != ShadowReservedTag::Untagged) {
         LogDebug("ExecBlock::newShadow", "Registering new tagged shadow %" PRIu16 " for instID %" PRIu16 " wih tag %" PRIu16, id, getNextInstID(), tag);
         shadowRegistry.push_back({
             getNextInstID(),
@@ -446,6 +448,18 @@ uint16_t ExecBlock::getSeqStart(uint16_t seqID) const {
 uint16_t ExecBlock::getSeqEnd(uint16_t seqID) const {
     Require("ExecBlock::getSeqStart", seqID < seqRegistry.size());
     return seqRegistry[seqID].endInstID;
+}
+
+const llvm::ArrayRef<ShadowInfo> ExecBlock::getShadowByInst(uint16_t instID) const {
+    Require("ExecBlock::getShadowByInst", instID < instRegistry.size());
+    Require("ExecBlock::getShadowByInst", instRegistry[instID].shadowOffset <= shadowRegistry.size());
+    Require("ExecBlock::getShadowByInst", instRegistry[instID].shadowOffset + instRegistry[instID].shadowSize <= shadowRegistry.size());
+
+    if (instRegistry[instID].shadowOffset == shadowRegistry.size()) {
+        return llvm::ArrayRef<ShadowInfo> {};
+    } else {
+        return llvm::ArrayRef<ShadowInfo> { &shadowRegistry[instRegistry[instID].shadowOffset], instRegistry[instID].shadowSize };
+    }
 }
 
 std::vector<ShadowInfo> ExecBlock::queryShadowByInst(uint16_t instID, uint16_t tag) const {
