@@ -354,9 +354,8 @@ RelocatableInst::SharedPtrVec WriteTemp::generate(const llvm::MCInst* inst,
     else if(type == ShadowType) {
         return {TaggedShadowx86(
             movmr(0, 0, 0, 0, 0, temp_manager->getRegForTemp(temp)),
-            3,
-            shadow.getTag(),
             0,
+            shadow.getTag(),
             7
         )};
     }

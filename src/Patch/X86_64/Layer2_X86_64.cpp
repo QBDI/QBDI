@@ -444,31 +444,31 @@ RelocatableInst::SharedPtr Mov(Reg reg, Constant cst) {
 }
 
 RelocatableInst::SharedPtr Mov(Offset offset, Reg reg) {
-    return DataBlockRelx86(movmr(0, 0, 0, 0, 0, reg), 3, offset, 0, 7);
+    return DataBlockRelx86(movmr(0, 0, 0, 0, 0, reg), 0, offset, 7);
 }
 
 RelocatableInst::SharedPtr Mov(Reg reg, Offset offset) {
-    return DataBlockRelx86(movrm(reg, 0, 0, 0, 0, 0), 4, offset, 1, 7);
+    return DataBlockRelx86(movrm(reg, 0, 0, 0, 0, 0), 1, offset, 7);
 }
 
 RelocatableInst::SharedPtr JmpM(Offset offset) {
-    return DataBlockRelx86(jmpm(0, 0), 3, offset, 0, 6);
+    return DataBlockRelx86(jmpm(0, 0), 0, offset, 6);
 }
 
 RelocatableInst::SharedPtr Fxsave(Offset offset) {
-    return DataBlockRelx86(fxsave(0, 0), 3, offset, 0, 7);
+    return DataBlockRelx86(fxsave(0, 0), 0, offset, 7);
 }
 
 RelocatableInst::SharedPtr Fxrstor(Offset offset) {
-    return DataBlockRelx86(fxrstor(0, 0), 3, offset, 0, 7);
+    return DataBlockRelx86(fxrstor(0, 0), 0, offset, 7);
 }
 
 RelocatableInst::SharedPtr Vextractf128(Offset offset, unsigned int src, Constant regoffset) {
-    return DataBlockRelx86(vextractf128(0, 0, src, regoffset), 3, offset, 0, 10);
+    return DataBlockRelx86(vextractf128(0, 0, src, regoffset), 0, offset, 10);
 }
 
 RelocatableInst::SharedPtr Vinsertf128(unsigned int dst, Offset offset, Constant regoffset) {
-    return DataBlockRelx86(vinsertf128(dst, 0, 0, regoffset), 5, offset, 2, 10);
+    return DataBlockRelx86(vinsertf128(dst, 0, 0, regoffset), 2, offset, 10);
 }
 
 RelocatableInst::SharedPtr Pushr(Reg reg) {

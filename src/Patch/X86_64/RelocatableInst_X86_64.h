@@ -92,23 +92,23 @@ public:
     }
 };
 
-inline std::shared_ptr<RelocatableInst> DataBlockRelx86(llvm::MCInst&& inst, unsigned int opn, rword offset, unsigned int opn2, rword inst_size) {
+inline std::shared_ptr<RelocatableInst> DataBlockRelx86(llvm::MCInst&& inst, unsigned int opn, rword offset, rword inst_size) {
     if constexpr(is_x86_64) {
-        inst.getOperand(opn2).setReg(Reg(REG_PC));
-        return DataBlockRel(std::move(inst), opn, offset - inst_size);
+        inst.getOperand(opn /* AddrBaseReg */).setReg(Reg(REG_PC));
+        return DataBlockRel(std::move(inst), opn + 3 /* AddrDisp */, offset - inst_size);
     } else {
-        inst.getOperand(opn2).setReg(0);
-        return DataBlockAbsRel(std::move(inst), opn, offset);
+        inst.getOperand(opn /* AddrBaseReg */).setReg(0);
+        return DataBlockAbsRel(std::move(inst), opn + 3 /* AddrDisp */, offset);
     }
 }
 
-inline std::shared_ptr<RelocatableInst> TaggedShadowx86(llvm::MCInst&& inst, unsigned int opn, uint16_t tag, unsigned int opn2, rword inst_size) {
+inline std::shared_ptr<RelocatableInst> TaggedShadowx86(llvm::MCInst&& inst, unsigned int opn, uint16_t tag, rword inst_size) {
     if constexpr(is_x86_64) {
-        inst.getOperand(opn2).setReg(Reg(REG_PC));
-        return TaggedShadow(std::move(inst), opn, tag, inst_size);
+        inst.getOperand(opn /* AddrBaseReg */).setReg(Reg(REG_PC));
+        return TaggedShadow(std::move(inst), opn + 3 /* AddrDisp */, tag, inst_size);
     } else {
-        inst.getOperand(opn2).setReg(0);
-        return TaggedShadowAbs(std::move(inst), opn, tag);
+        inst.getOperand(opn /* AddrBaseReg */).setReg(0);
+        return TaggedShadowAbs(std::move(inst), opn + 3 /* AddrDisp */, tag);
     }
 
 }
