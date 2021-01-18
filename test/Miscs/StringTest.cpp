@@ -20,27 +20,27 @@
 #include "Utility/String.h"
 
 
-TEST_CASE("startsWithTest, SimpleMatches"){
+TEST_CASE("startsWithTest-SimpleMatches"){
     CHECK(QBDI::String::startsWith("JMP", "JMP64"));
     CHECK_FALSE(QBDI::String::startsWith("xMP", "JMP"));
     CHECK_FALSE(QBDI::String::startsWith("JMP64", "x"));
 }
 
 
-TEST_CASE("startsWithTest, NullPointers"){
+TEST_CASE("startsWithTest-NullPointers"){
     CHECK_FALSE(QBDI::String::startsWith("JMP64", NULL));
     CHECK_FALSE(QBDI::String::startsWith(NULL, "x"));
     CHECK_FALSE(QBDI::String::startsWith(NULL, NULL));
 }
 
 
-TEST_CASE("startsWithTest, WildCardBasic"){
+TEST_CASE("startsWithTest-WildCardBasic"){
     CHECK(QBDI::String::startsWith("J*", "JMP"));
     CHECK_FALSE(QBDI::String::startsWith("J*", "xMP"));
 }
 
 
-TEST_CASE("startsWithTest, WildCardAdvanced"){
+TEST_CASE("startsWithTest-WildCardAdvanced"){
     CHECK(QBDI::String::startsWith("J*P", "JMP"));
     CHECK_FALSE(QBDI::String::startsWith("J*P", "JMx"));
     CHECK(QBDI::String::startsWith("JMP*", "JMP"));
@@ -49,7 +49,7 @@ TEST_CASE("startsWithTest, WildCardAdvanced"){
 }
 
 
-TEST_CASE("startsWithTest, Prefix"){
+TEST_CASE("startsWithTest-Prefix"){
     CHECK(QBDI::String::startsWith("B", "B64"));
     CHECK(QBDI::String::startsWith("B*", "B64"));
     CHECK_FALSE(QBDI::String::startsWith("B", "BIQ"));

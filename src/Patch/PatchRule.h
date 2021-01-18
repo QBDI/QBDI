@@ -62,7 +62,7 @@ public:
      *
      * @return True if this patch condition evaluate to true on this context.
     */
-    bool canBeApplied(const llvm::MCInst *inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const {
+    bool canBeApplied(const llvm::MCInst &inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const {
         return condition->test(inst, address, instSize, MCII);
     }
 
@@ -81,7 +81,7 @@ public:
      *
      * @return A Patch which is composed of the input context and a series of RelocatableInst.
     */
-    Patch generate(const llvm::MCInst *inst, rword address, rword instSize,
+    Patch generate(const llvm::MCInst &inst, rword address, rword instSize,
         const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI, const Patch* toMerge = nullptr) const;
 };
 

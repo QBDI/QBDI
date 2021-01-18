@@ -256,7 +256,7 @@ uint32_t VM::addInstrRule(InstrRule rule) {
 uint32_t VM::addMnemonicCB(const char* mnemonic, InstPosition pos, InstCallback cbk, void *data) {
     RequireAction("VM::addMnemonicCB", mnemonic != nullptr, return VMError::INVALID_EVENTID);
     RequireAction("VM::addMnemonicCB", cbk != nullptr, return VMError::INVALID_EVENTID);
-    return addInstrRule(InstrRule(
+    return engine->addInstrRule(InstrRule(
         MnemonicIs(mnemonic),
         getCallbackGenerator(cbk, data),
         pos,
@@ -266,7 +266,7 @@ uint32_t VM::addMnemonicCB(const char* mnemonic, InstPosition pos, InstCallback 
 
 uint32_t VM::addCodeCB(InstPosition pos, InstCallback cbk, void *data) {
     RequireAction("VM::addCodeCB", cbk != nullptr, return VMError::INVALID_EVENTID);
-    return addInstrRule(InstrRule(
+    return engine->addInstrRule(InstrRule(
         True(),
         getCallbackGenerator(cbk, data),
         pos,
@@ -276,7 +276,7 @@ uint32_t VM::addCodeCB(InstPosition pos, InstCallback cbk, void *data) {
 
 uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk, void *data) {
     RequireAction("VM::addCodeAddrCB", cbk != nullptr, return VMError::INVALID_EVENTID);
-    return addInstrRule(InstrRule(
+    return engine->addInstrRule(InstrRule(
         AddressIs(address),
         getCallbackGenerator(cbk, data),
         pos,
@@ -287,7 +287,7 @@ uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk, vo
 uint32_t VM::addCodeRangeCB(rword start, rword end, InstPosition pos, InstCallback cbk, void *data) {
     RequireAction("VM::addCodeRangeCB", start < end, return VMError::INVALID_EVENTID);
     RequireAction("VM::addCodeRangeCB", cbk != nullptr, return VMError::INVALID_EVENTID);
-    return addInstrRule(InstrRule(
+    return engine->addInstrRule(InstrRule(
         InstructionInRange(start, end),
         getCallbackGenerator(cbk, data),
         pos,
@@ -300,21 +300,21 @@ uint32_t VM::addMemAccessCB(MemoryAccessType type, InstCallback cbk, void *data)
     recordMemoryAccess(type);
     switch(type) {
         case MEMORY_READ:
-            return addInstrRule(InstrRule(
+            return engine->addInstrRule(InstrRule(
                 DoesReadAccess(),
                 getCallbackGenerator(cbk, data),
                 InstPosition::PREINST,
                 true
             ));
         case MEMORY_WRITE:
-            return addInstrRule(InstrRule(
+            return engine->addInstrRule(InstrRule(
                 DoesWriteAccess(),
                 getCallbackGenerator(cbk, data),
                 InstPosition::POSTINST,
                 true
             ));
         case MEMORY_READ_WRITE:
-            return addInstrRule(InstrRule(
+            return engine->addInstrRule(InstrRule(
                 Or({
                     DoesReadAccess(),
                     DoesWriteAccess(),

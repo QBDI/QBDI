@@ -45,11 +45,7 @@ class InstrRule : public AutoAlloc<InstrRule, InstrRule> {
     InstPosition    position;
     bool            breakToHost;
 
-public:
-
-    using SharedPtr    = std::shared_ptr<InstrRule>;
-    using SharedPtrVec = std::vector<std::shared_ptr<InstrRule>>;
-
+    public:
 
     /*! Allocate a new instrumentation rule with a condition, a list of generators, an
      *  instrumentation position and a breakToHost request.

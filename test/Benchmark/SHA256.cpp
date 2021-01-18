@@ -30,7 +30,7 @@ QBDI_NOINLINE sha256::HashType* compute_sha() {
     return hash;
 }
 
-TEST_CASE("Benchmark sha256") {
+TEST_CASE("Benchmark_sha256") {
 
     BENCHMARK("sha256(len: 1MBytes)") {
         return compute_sha();

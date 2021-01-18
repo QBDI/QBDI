@@ -53,9 +53,10 @@ QBDI_EXPORT const StructDesc* qbdi_getVMStateStructDesc() {
 QBDI_EXPORT const StructDesc* qbdi_getOperandAnalysisStructDesc() {
     static const StructDesc OperandAnalysisDesc {
         sizeof(OperandAnalysis),
-        7,
+        8,
         {
             offsetof(OperandAnalysis, type),
+            offsetof(OperandAnalysis, flag),
             offsetof(OperandAnalysis, value),
             offsetof(OperandAnalysis, size),
             offsetof(OperandAnalysis, regOff),

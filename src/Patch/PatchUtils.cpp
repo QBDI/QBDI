@@ -55,13 +55,13 @@ Reg TempManager::getRegForTemp(unsigned int id) {
         i = _QBDI_FIRST_FREE_REGISTER;
     }
 
-    const llvm::MCInstrDesc &desc = MCII->get(inst->getOpcode());
+    const llvm::MCInstrDesc &desc = MCII->get(inst.getOpcode());
     // Find a free register
     for(; i < AVAILABLE_GPR; i++) {
         bool free = true;
         // Check for explicit registers
-        for(unsigned int j = 0; inst && j < inst->getNumOperands(); j++) {
-            const llvm::MCOperand &op = inst->getOperand(j);
+        for(unsigned int j = 0; j < inst.getNumOperands(); j++) {
+            const llvm::MCOperand &op = inst.getOperand(j);
             if (op.isReg() && MRI->isSubRegisterEq(GPR_ID[i], op.getReg())) {
                 free = false;
                 break;

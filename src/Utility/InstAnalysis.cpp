@@ -183,7 +183,7 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
                     opa.flag |= OPERANDFLAG_UNDEFINED_EFFECT;
                     break;
                 default:
-                    LogWarning("ExecBlockManager::analyseOperands",
+                    LogWarning("analyseOperands",
                             "Not supported operandType %d for register operand", opdesc.OperandType);
                     continue;
             }
@@ -195,14 +195,14 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
             // fill the operand analysis
             switch (opdesc.OperandType) {
                 case llvm::MCOI::OPERAND_IMMEDIATE:
-                    opa.size = getImmediateSize(&inst, &desc);
+                    opa.size = getImmediateSize(inst, &desc);
                     break;
                 case llvm::MCOI::OPERAND_MEMORY:
                     opa.flag |= OPERANDFLAG_ADDR;
                     opa.size = sizeof(rword);
                     break;
                 case llvm::MCOI::OPERAND_PCREL:
-                    opa.size = getImmediateSize(&inst, &desc);
+                    opa.size = getImmediateSize(inst, &desc);
                     opa.flag |= OPERANDFLAG_PCREL;
                     break;
                 case llvm::MCOI::OPERAND_UNKNOWN:
@@ -210,7 +210,7 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
                     opa.size = sizeof(rword);
                     break;
                 default:
-                    LogWarning("ExecBlockManager::analyseOperands",
+                    LogWarning("analyseOperands",
                             "Not supported operandType %d for immediate operand", opdesc.OperandType);
                     continue;
             }
@@ -243,7 +243,6 @@ void InstAnalysisDestructor::operator()(InstAnalysis* ptr) const {
     }
     delete ptr;
 }
-
 
 const InstAnalysis* analyzeInstMetadata(const InstMetadata& instMetadata, AnalysisType type,
                                         const Assembly& assembly) {

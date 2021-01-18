@@ -27,7 +27,7 @@
 #include "Utility/Assembly.h"
 
 
-TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest, EmptyBasicBlock") {
+TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest-EmptyBasicBlock") {
     // Allocate ExecBlock
     QBDI::ExecBlock execBlock(*assembly);
     // Write an empty basic block
@@ -36,7 +36,7 @@ TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest, EmptyBasicBlock") {
     REQUIRE(res.seqID == QBDI::EXEC_BLOCK_FULL);
 }
 
-TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest, MultipleBasicBlock") {
+TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest-MultipleBasicBlock") {
     // Allocate ExecBlock
     QBDI::ExecBlock execBlock(*assembly);
     // Jit two different terminators
@@ -65,7 +65,7 @@ TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest, MultipleBasicBlock") {
     REQUIRE(pc1 == pc3);
 }
 
-TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest, BasicBlockOverload") {
+TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest-BasicBlockOverload") {
     // Allocate ExecBlock
     QBDI::ExecBlock execBlock(*assembly);
     QBDI::Patch::Vec empty;

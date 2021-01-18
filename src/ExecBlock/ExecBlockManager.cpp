@@ -103,7 +103,7 @@ ExecBlock* ExecBlockManager::getProgrammedExecBlock(rword address) {
             // Retrieving corresponding block and seqLoc
             ExecBlock* block = region.blocks[instLoc->second.blockIdx].get();
             uint16_t existingSeqId = block->getSeqID(instLoc->second.instID);
-            const SeqLoc& existingSeqLoc = region.sequenceCache[block->getInstMetadata(block->getSeqStart(existingSeqId))->address];
+            const SeqLoc& existingSeqLoc = region.sequenceCache[block->getInstMetadata(block->getSeqStart(existingSeqId)).address];
             // Creating a new sequence at that instruction and saving it in the sequenceCache
             uint16_t newSeqID = block->splitSequence(instLoc->second.instID);
             regions[r].sequenceCache[address] = SeqLoc {
@@ -136,7 +136,7 @@ const ExecBlock* ExecBlockManager::getExecBlock(rword address) const {
         const std::map<rword, InstLoc>::const_iterator instLoc = region.instCache.find(address);
         if(instLoc != region.instCache.end()) {
             LogDebug("ExecBlockManager::getExecBlock", "Found address 0x%" PRIRWORD " in ExecBlock %p",
-                     address, region.blocks[seqLoc->second.blockIdx].get());
+                     address, region.blocks[instLoc->second.blockIdx].get());
             return region.blocks[instLoc->second.blockIdx].get();
         }
     }

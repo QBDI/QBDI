@@ -194,11 +194,15 @@ Engine::Engine(const Engine& other)
 Engine& Engine::operator=(const Engine& other) {
     this->clearAllCache();
 
-    if (cpu != other.cpu || mattrs != other.mattrs)
-      reinit(other.cpu, other.mattrs);
+    if (cpu != other.cpu || mattrs != other.mattrs) {
+        reinit(other.cpu, other.mattrs);
+    }
 
     // copy the configuration
-    instrRules = other.instrRules;
+    instrRules.clear();
+    for (const auto& r : other.instrRules) {
+        instrRules.emplace_back(r.first, std::make_unique<InstrRule>(*r.second));
+    }
     vmCallbacks = other.vmCallbacks;
     instrRulesCounter = other.instrRulesCounter;
     vmCallbacksCounter = other.vmCallbacksCounter;
@@ -324,14 +328,14 @@ std::vector<Patch> Engine::patch(rword start) {
             });
             // Patch & merge
             for(uint32_t j = 0; j < patchRules.size(); j++) {
-                if(patchRules[j].canBeApplied(&inst, address, instSize, MCII.get())) {
+                if(patchRules[j].canBeApplied(inst, address, instSize, MCII.get())) {
                     LogDebug("Engine::patch", "Patch rule %" PRIu32 " applied", j);
                     if(patch.insts.size() == 0) {
-                        patch = patchRules[j].generate(&inst, address, instSize, MCII.get(), MRI.get());
+                        patch = patchRules[j].generate(inst, address, instSize, MCII.get(), MRI.get());
                     }
                     else {
                         LogDebug("Engine::patch", "Previous instruction merged");
-                        patch = patchRules[j].generate(&inst, address, instSize, MCII.get(), MRI.get(), &patch);
+                        patch = patchRules[j].generate(inst, address, instSize, MCII.get(), MRI.get(), &patch);
                     }
                     break;
                 }
@@ -364,7 +368,7 @@ void Engine::instrument(std::vector<Patch> &basicBlock) {
         });
         // Instrument
         for (const auto& item: instrRules) {
-            const std::shared_ptr<InstrRule>& rule = item.second;
+            const std::unique_ptr<InstrRule>& rule = item.second;
             if (rule->canBeApplied(patch, MCII.get())) { // Push MCII
                 rule->instrument(patch, MCII.get(), MRI.get());
                 LogDebug("Engine::instrument", "Instrumentation rule %" PRIu32 " applied", item.first);
@@ -498,24 +502,24 @@ bool Engine::run(rword start, rword stop) {
     return hasRan;
 }
 
-uint32_t Engine::addInstrRule(InstrRule rule, bool top_list) {
+uint32_t Engine::addInstrRule(std::unique_ptr<InstrRule> rule, bool top_list) {
     uint32_t id = instrRulesCounter++;
     RequireAction("Engine::addInstrRule", id < EVENTID_VM_MASK, return VMError::INVALID_EVENTID);
 
-    this->clearCache(rule.affectedRange());
-    switch(rule.getPosition()) {
+    this->clearCache(rule->affectedRange());
+    switch(rule->getPosition()) {
         case InstPosition::PREINST:
             if (top_list) {
-                instrRules.emplace_back(id, static_cast<InstrRule::SharedPtr>(rule));
+                instrRules.emplace_back(id, std::move(rule));
             } else {
-                instrRules.insert(instrRules.begin(), std::make_pair(id, static_cast<InstrRule::SharedPtr>(rule)));
+                instrRules.emplace(instrRules.begin(), id, std::move(rule));
             }
             break;
         case InstPosition::POSTINST:
             if (top_list) {
-                instrRules.insert(instrRules.begin(), std::make_pair(id, static_cast<InstrRule::SharedPtr>(rule)));
+                instrRules.emplace(instrRules.begin(), id, std::move(rule));
             } else {
-                instrRules.emplace_back(id, static_cast<InstrRule::SharedPtr>(rule));
+                instrRules.emplace_back(id, std::move(rule));
             }
             break;
     }
@@ -590,8 +594,9 @@ bool Engine::deleteInstrumentation(uint32_t id) {
 
 void Engine::deleteAllInstrumentations() {
     // clear cache
-    for (const auto &r: instrRules)
+    for (const auto &r: instrRules) {
         this->clearCache(r.second->affectedRange());
+    }
     instrRules.clear();
     vmCallbacks.clear();
     instrRulesCounter = 0;
@@ -604,14 +609,16 @@ void Engine::clearAllCache() {
 
 void Engine::clearCache(rword start, rword end) {
     blockManager->clearCache(Range<rword>(start, end));
-    if (curExecBlock == nullptr && blockManager->isFlushPending())
+    if (curExecBlock == nullptr && blockManager->isFlushPending()) {
         blockManager->flushCommit();
+    }
 }
 
 void Engine::clearCache(RangeSet<rword> rangeSet) {
     blockManager->clearCache(rangeSet);
-    if (curExecBlock == nullptr && blockManager->isFlushPending())
+    if (curExecBlock == nullptr && blockManager->isFlushPending()) {
         blockManager->flushCommit();
+    }
 }
 
 } // QBDI::

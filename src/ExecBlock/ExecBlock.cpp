@@ -256,7 +256,14 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
         uint32_t rollbackShadowIdx = shadowIdx;
         size_t rollbackShadowRegistry = shadowRegistry.size();
 
-        LogDebug("ExecBlock::writeBasicBlock", "Attempting to write patch of %zu RelocatableInst to ExecBlock %p", seqIt->metadata.patchSize, this);
+        LogCallback(LogPriority::DEBUG, "ExecBlock::writeBasicBlock", [&] (FILE *log) -> void {
+            std::string disass;
+            llvm::raw_string_ostream disassOs(disass);
+            assembly.printDisasm(seqIt->metadata.inst, seqIt->metadata.address, disassOs);
+            disassOs.flush();
+            fprintf(log, "Attempting to write patch of %u RelocatableInst to ExecBlock %p for instruction %" PRIRWORD ": %s",
+                    seqIt->metadata.patchSize, this, seqIt->metadata.address, disass.c_str());
+        });
         // Attempt to write a complete patch. If not, rollback to the last complete patch written
         for(const RelocatableInst::SharedPtr& inst : seqIt->insts) {
             if(getEpilogueOffset() > MINIMAL_BLOCK_SIZE) {
@@ -392,9 +399,9 @@ uint16_t ExecBlock::getInstID(rword address) const {
     return NOT_FOUND;
 }
 
-const InstMetadata* ExecBlock::getInstMetadata(uint16_t instID) const {
+const InstMetadata& ExecBlock::getInstMetadata(uint16_t instID) const {
     Require("ExecBlock::getInstMetadata", instID < instMetadata.size());
-    return &instMetadata[instID];
+    return instMetadata[instID];
 }
 
 rword ExecBlock::getInstAddress(uint16_t instID) const {
@@ -402,9 +409,9 @@ rword ExecBlock::getInstAddress(uint16_t instID) const {
     return instMetadata[instID].address;
 }
 
-const llvm::MCInst* ExecBlock::getOriginalMCInst(uint16_t instID) const {
+const llvm::MCInst& ExecBlock::getOriginalMCInst(uint16_t instID) const {
     Require("ExecBlock::getOriginalMCInst", instID < instMetadata.size());
-    return &instMetadata[instID].inst;
+    return instMetadata[instID].inst;
 }
 
 const InstAnalysis* ExecBlock::getInstAnalysis(uint16_t instID, AnalysisType type) const {

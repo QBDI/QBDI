@@ -21,11 +21,12 @@
 #include "Patch/Patch.h"
 #include "Patch/PatchGenerator.h"
 #include "Patch/RelocatableInst.h"
+#include "Utility/LogSys.h"
 
 namespace QBDI {
 
 bool InstrRule::canBeApplied(const Patch &patch, const llvm::MCInstrInfo* MCII) const {
-    return condition->test(&patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII);
+    return condition->test(patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII);
 }
 
 void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI) const {
@@ -34,7 +35,7 @@ void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const ll
      * host.
     */
     RelocatableInst::SharedPtrVec instru;
-    TempManager tempManager(&patch.metadata.inst, MCII, MRI, true);
+    TempManager tempManager(patch.metadata.inst, MCII, MRI, true);
 
     // Generate the instrumentation code from the original instruction context
     for(const PatchGenerator::SharedPtr& g : patchGen) {
@@ -113,9 +114,11 @@ void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const ll
     // The resulting instrumentation is either appended or prepended as per the InstPosition
     if(position == PREINST) {
         patch.prepend(instru);
-    }
-    else if(position == POSTINST) {
+    } else if(position == POSTINST) {
         patch.append(instru);
+    } else {
+        LogError("InstrRule::Instrument", "Invalid position 0x%x", position);
+        abort();
     }
 }
 

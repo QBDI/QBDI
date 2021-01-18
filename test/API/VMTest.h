@@ -15,6 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef QBDITEST_VMTEST_H
+#define QBDITEST_VMTEST_H
+
 #include <memory>
 
 #include "VM.h"
@@ -28,3 +31,5 @@ class VMTest {
         QBDI::GPRState* state;
         uint8_t* fakestack;
 };
+
+#endif /* QBDITEST_VMTEST_H */

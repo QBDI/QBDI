@@ -164,6 +164,43 @@ Analysis
     Instruction symbol (if ANALYSIS_SYMBOL and found)
 
 
+.. js:class:: OperandAnalysis
+
+  Structure containing analysis results of an operand provided by the VM.
+
+  .. js:attribute:: type
+
+    Operand type
+
+  .. js:attribute:: flag
+
+    Operand flag
+
+  .. js:attribute:: value
+
+    Operand value (if immediate), or register Id
+
+  .. js:attribute:: size
+
+    Operand size (in bytes)
+
+  .. js:attribute:: regOff
+
+    Sub-register offset in register (in bits)
+
+  .. js:attribute:: regCtxIdx
+
+    Register index in VM state
+
+  .. js:attribute:: regName
+
+    Register name
+
+  .. js:attribute:: regAccess
+
+    Register access type (r, w, rw)
+
+
 .. js:class:: MemoryAccess
 
   Object that describes a memory access
@@ -188,8 +225,33 @@ Analysis
 
       Value read from / written to memory
 
+.. js:class:: VMState
 
+  Object that describes the current VM state
 
+  .. js:attribute:: event
+
+    The event(s) which triggered the callback (must be checked using a mask: event & BASIC_BLOCK_ENTRY).
+
+  .. js:attribute:: sequenceStart
+
+    The current basic block start address which can also be the execution transfer destination.
+
+  .. js:attribute:: sequenceEnd
+
+    The current basic block end address which can also be the execution transfer destination.
+
+  .. js:attribute:: basicBlockStart
+
+    The current sequence start address which can also be the execution transfer destination.
+
+  .. js:attribute:: basicBlockEnd
+
+    The current sequence end address which can also be the execution transfer destination.
+
+  .. js:attribute:: lastSignal
+
+    Not implemented.
 
 Cache management
 ^^^^^^^^^^^^^^^^
@@ -264,6 +326,13 @@ Globals
     .. js:autoattribute:: OPERAND_IMM
     .. js:autoattribute:: OPERAND_GPR
     .. js:autoattribute:: OPERAND_PRED
+
+.. js:autoclass:: OperandFlag
+
+    .. js:autoattribute:: OPERANDFLAG_NONE
+    .. js:autoattribute:: OPERANDFLAG_ADDR
+    .. js:autoattribute:: OPERANDFLAG_PCREL
+    .. js:autoattribute:: OPERANDFLAG_UNDEFINED_EFFECT
 
 .. js:autoclass:: AnalysisType
 
