@@ -15,82 +15,164 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "llvm/MC/MCInstrInfo.h"
 
 #include "ExecBlock/ExecBlock.h"
-#include "Patch/InstInfo.h"
 #include "Patch/MemoryAccess.h"
+#include "Patch/Patch.h"
 #include "Patch/PatchCondition.h"
-#include "Patch/PatchGenerator.h"
+#include "Patch/X86_64/InstInfo_X86_64.h"
+#include "Patch/X86_64/PatchGenerator_X86_64.h"
 #include "Utility/LogSys.h"
 
 #include "Callback.h"
 
 namespace QBDI {
 
+enum MemoryTag : uint16_t {
+    MEM_READ_ADDRESS_TAG  = MEMORY_TAG_BEGIN + 0,
+    MEM_WRITE_ADDRESS_TAG = MEMORY_TAG_BEGIN + 1,
+
+    MEM_READ_VALUE_TAG    = MEMORY_TAG_BEGIN + 2,
+    MEM_WRITE_VALUE_TAG   = MEMORY_TAG_BEGIN + 3,
+};
+
+void analyseMemoryAccessAddrValue(const ExecBlock& curExecBlock, llvm::ArrayRef<ShadowInfo>& shadows, std::vector<MemoryAccess>& dest) {
+    if (shadows.size() < 1) {
+        return;
+    }
+    auto access = MemoryAccess();
+    uint16_t expectValueTag;
+    switch (shadows[0].tag) {
+        default:
+            return;
+        case MEM_READ_ADDRESS_TAG:
+            access.type = MEMORY_READ;
+            access.size = getReadSize(curExecBlock.getOriginalMCInst(shadows[0].instID));
+            expectValueTag = MEM_READ_VALUE_TAG;
+            break;
+        case MEM_WRITE_ADDRESS_TAG:
+            access.type = MEMORY_WRITE;
+            access.size = getWriteSize(curExecBlock.getOriginalMCInst(shadows[0].instID));
+            expectValueTag = MEM_WRITE_VALUE_TAG;
+            break;
+    }
+
+    access.accessAddress = curExecBlock.getShadow(shadows[0].shadowID);
+    access.instAddress = curExecBlock.getInstAddress(shadows[0].instID);
+
+    size_t index = 0;
+    // search the index of MEM_x_VALUE_TAG. For most instruction, it's the next shadow.
+    do {
+        index += 1;
+        if (index >= shadows.size()) {
+            LogError(
+                "analyseMemoryAccessAddrValue",
+                "Not found shadow tag %" PRIu16 " for instruction %" PRIx64,
+                expectValueTag, access.instAddress
+            );
+            return;
+        }
+        RequireAction("analyseMemoryAccessAddrValue", shadows[0].instID == shadows[index].instID, return);
+    } while (shadows[index].tag != expectValueTag);
+
+    access.value = curExecBlock.getShadow(shadows[index].shadowID);
+
+    dest.push_back(std::move(access));
+}
+
 void analyseMemoryAccess(const ExecBlock& curExecBlock, uint16_t instID, bool afterInst, std::vector<MemoryAccess>& dest) {
 
     llvm::ArrayRef<ShadowInfo> shadows = curExecBlock.getShadowByInst(instID);
     LogDebug("analyseMemoryAccess", "Got %zu shadows for Instruction %" PRIu16, shadows.size(), instID);
 
-    size_t i = 0;
-    while(i < shadows.size()) {
-        Require("analyseMemoryAccess", shadows[i].instID == instID);
+    while(! shadows.empty()) {
+        Require("analyseMemoryAccess", shadows[0].instID == instID);
 
-        auto access = MemoryAccess();
-        if(shadows[i].tag == MEM_READ_ADDRESS_TAG) {
-            access.type = MEMORY_READ;
-            access.size = getReadSize(curExecBlock.getOriginalMCInst(instID));
+        switch (shadows[0].tag) {
+            default:
+                break;
+            case MEM_READ_ADDRESS_TAG:
+                analyseMemoryAccessAddrValue(curExecBlock, shadows, dest);
+                break;
+            case MEM_WRITE_ADDRESS_TAG:
+                if (afterInst) {
+                    analyseMemoryAccessAddrValue(curExecBlock, shadows, dest);
+                }
+                break;
         }
-        else if(afterInst && shadows[i].tag == MEM_WRITE_ADDRESS_TAG) {
-            access.type = MEMORY_WRITE;
-            access.size = getWriteSize(curExecBlock.getOriginalMCInst(instID));
-        }
-        else {
-            i += 1;
-            continue;
-        }
-        access.accessAddress = curExecBlock.getShadow(shadows[i].shadowID);
-        access.instAddress = curExecBlock.getInstAddress(instID);
-        i += 1;
+        shadows = shadows.drop_front();
+    }
+}
 
-        if(i >= shadows.size()) {
-            LogError(
-                "analyseMemoryAccess",
-                "An address shadow is not followed by a shadow for instruction at address %" PRIx64,
-                access.instAddress
-            );
-            continue;
-        }
-        Require("analyseMemoryAccess", shadows[i].instID == instID);
+static PatchGenerator::SharedPtrVec generateReadInstrumentPatch(Patch &patch, const llvm::MCInstrInfo* MCII,
+                                                                const llvm::MCRegisterInfo* MRI) {
 
-        if(shadows[i].tag == MEM_VALUE_TAG) {
-            access.value = curExecBlock.getShadow(shadows[i].shadowID);
-        }
-        else {
-            LogError(
-                "analyseMemoryAccess",
-                "An address shadow is not followed by a value shadow for instruction at address %" PRIx64,
-                access.instAddress
-            );
-            continue;
-        }
+    // instruction with double read
+    if (isDoubleRead(patch.metadata.inst)) {
+        return {
+                    GetReadAddress(Temp(0), 0),
+                    WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+                    GetReadValue(Temp(0), 0),
+                    WriteTemp(Temp(0), Shadow(MEM_READ_VALUE_TAG)),
+                    GetReadAddress(Temp(0), 1),
+                    WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+                    GetReadValue(Temp(0), 1),
+                    WriteTemp(Temp(0), Shadow(MEM_READ_VALUE_TAG)),
+                };
+    } else {
+        return {
+                    GetReadAddress(Temp(0), 0),
+                    WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+                    GetReadValue(Temp(0), 0),
+                    WriteTemp(Temp(0), Shadow(MEM_READ_VALUE_TAG)),
+                };
+    }
+}
 
-        // we found our access and its value, record access
-        dest.push_back(access);
-        i += 1;
+static PatchGenerator::SharedPtrVec generatePreWriteInstrumentPatch(Patch &patch, const llvm::MCInstrInfo* MCII,
+                                                                    const llvm::MCRegisterInfo* MRI) {
+
+    const llvm::MCInstrDesc& desc = MCII->get(patch.metadata.inst.getOpcode());
+
+    // Some instruction need to have the address get before the instruction
+    if (mayChangeWriteAddr(patch.metadata.inst, desc) && !isStackWrite(patch.metadata.inst)) {
+        return {
+                    GetWriteAddress(Temp(0)),
+                    WriteTemp(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
+                };
+    } else {
+        return {};
+    }
+}
+
+static PatchGenerator::SharedPtrVec generatePostWriteInstrumentPatch(Patch &patch, const llvm::MCInstrInfo* MCII,
+                                                                     const llvm::MCRegisterInfo* MRI) {
+
+    const llvm::MCInstrDesc& desc = MCII->get(patch.metadata.inst.getOpcode());
+
+    // Some instruction need to have the address get before the instruction
+    if (mayChangeWriteAddr(patch.metadata.inst, desc) && !isStackWrite(patch.metadata.inst)) {
+        return {
+                    ReadTemp(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
+                    GetWriteValue(Temp(0)),
+                    WriteTemp(Temp(0), Shadow(MEM_WRITE_VALUE_TAG)),
+                };
+    } else {
+        return {
+                    GetWriteAddress(Temp(0)),
+                    WriteTemp(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
+                    GetWriteValue(Temp(0)),
+                    WriteTemp(Temp(0), Shadow(MEM_WRITE_VALUE_TAG)),
+                };
     }
 }
 
 std::vector<std::unique_ptr<InstrRule>> getInstrRuleMemAccessRead() {
     return conv_unique<InstrRule>(
-        InstrRuleBasic(
+        InstrRuleDynamic(
             DoesReadAccess(),
-            {
-                GetReadAddress(Temp(0)),
-                WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
-                GetReadValue(Temp(0)),
-                WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
-            },
+            generateReadInstrumentPatch,
             PREINST,
             false,
             0x8000 /* first PREINST */)
@@ -99,14 +181,15 @@ std::vector<std::unique_ptr<InstrRule>> getInstrRuleMemAccessRead() {
 
 std::vector<std::unique_ptr<InstrRule>> getInstrRuleMemAccessWrite() {
     return conv_unique<InstrRule>(
-        InstrRuleBasic(
+        InstrRuleDynamic(
             DoesWriteAccess(),
-            {
-                GetWriteAddress(Temp(0)),
-                WriteTemp(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
-                GetWriteValue(Temp(0)),
-                WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
-            },
+            generatePreWriteInstrumentPatch,
+            PREINST,
+            false,
+            0x8000 /* first PRETINST */),
+        InstrRuleDynamic(
+            DoesWriteAccess(),
+            generatePostWriteInstrumentPatch,
             POSTINST,
             false,
             -0x8000 /* first POSTINST */)

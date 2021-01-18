@@ -66,7 +66,11 @@ RelocatableInst::SharedPtrVec GetPCOffset::generate(const llvm::MCInst* inst,
 RelocatableInst::SharedPtrVec GetReadAddress::generate(const llvm::MCInst* inst,
     rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const {
     // Check if this instruction does indeed read something
-    if(getReadSize(*inst) > 0) {
+    unsigned size = getReadSize(*inst);
+    if(size > 0) {
+        uint64_t TSFlags = MCII->get(inst->getOpcode()).TSFlags;
+        unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
+
         // If it is a stack read, return RSP value
         if(isStackRead(*inst)) {
             if (inst->getOpcode() == llvm::X86::LEAVE || inst->getOpcode() == llvm::X86::LEAVE64) {
@@ -74,6 +78,24 @@ RelocatableInst::SharedPtrVec GetReadAddress::generate(const llvm::MCInst* inst,
             } else {
                 return {Mov(temp_manager->getRegForTemp(temp), Reg(REG_SP))};
             }
+        }
+        // specific case for instruction type cmpsb and movsb
+        else if (FormDesc == llvm::X86II::RawFrmDstSrc ||
+                 FormDesc == llvm::X86II::RawFrmDst ||
+                 FormDesc == llvm::X86II::RawFrmSrc) {
+            RequireAction("GetReadAddress::generate", index < 2 && "Wrong index", abort());
+            unsigned int reg;
+            if (FormDesc == llvm::X86II::RawFrmSrc ||
+                (FormDesc == llvm::X86II::RawFrmDstSrc && index == 0)) {
+                // (R|E)SI
+                reg = Reg(4);
+                Require("GetReadAddress::generate", reg == llvm::X86::RSI || reg == llvm::X86::ESI);
+            } else {
+                // (R|E)DI
+                reg = Reg(5);
+                Require("GetReadAddress::generate", reg == llvm::X86::RDI || reg == llvm::X86::EDI);
+            }
+            return {NoReloc(movrr(temp_manager->getRegForTemp(temp), reg))};
         }
         // Else replace the instruction with a LEA on the same address
         else {
@@ -122,7 +144,11 @@ RelocatableInst::SharedPtrVec GetReadAddress::generate(const llvm::MCInst* inst,
 RelocatableInst::SharedPtrVec GetWriteAddress::generate(const llvm::MCInst* inst,
     rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const {
     // Check if this instruction does indeed read something
-    if(getWriteSize(*inst) > 0) {
+    unsigned size = getWriteSize(*inst);
+    if(size > 0) {
+        uint64_t TSFlags = MCII->get(inst->getOpcode()).TSFlags;
+        unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
+
         // If it is a stack read, return RSP value
         if(isStackWrite(*inst)) {
             if (inst->getOpcode() == llvm::X86::ENTER) {
@@ -130,6 +156,21 @@ RelocatableInst::SharedPtrVec GetWriteAddress::generate(const llvm::MCInst* inst
             } else {
                 return {Mov(temp_manager->getRegForTemp(temp), Reg(REG_SP))};
             }
+        }
+        else if (FormDesc == llvm::X86II::RawFrmDstSrc ||
+                 FormDesc == llvm::X86II::RawFrmDst ||
+                 FormDesc == llvm::X86II::RawFrmSrc) {
+            unsigned int reg;
+            if (FormDesc == llvm::X86II::RawFrmSrc) {
+                // (R|E)SI
+                reg = Reg(4);
+                Require("GetWriteAddress::generate", reg == llvm::X86::RSI || reg == llvm::X86::ESI);
+            } else {
+                // (R|E)DI
+                reg = Reg(5);
+                Require("GetWriteAddress::generate", reg == llvm::X86::RDI || reg == llvm::X86::EDI);
+            }
+            return {NoReloc(movrr(temp_manager->getRegForTemp(temp), reg))};
         }
         // Else replace the instruction with a LEA on the same address
         else {
@@ -179,12 +220,16 @@ RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
      rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const {
     const unsigned size = getReadSize(*inst);
     if(size > 0) {
+        uint64_t TSFlags = MCII->get(inst->getOpcode()).TSFlags;
+        unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
+
         unsigned dst = temp_manager->getRegForTemp(temp);
         if(is_bits_64 && size < sizeof(rword)) {
             dst = temp_manager->getSizedSubReg(dst, 4);
         } else if (size > sizeof(rword)) {
             return {NoReloc(movri(dst, 0))};
         }
+
         if(isStackRead(*inst)) {
             llvm::MCInst readinst;
             unsigned int stack_register = REG_SP;
@@ -204,6 +249,36 @@ RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
                 readinst = mov32rm8(dst, Reg(stack_register), 1, 0, 0, 0);
             }
             return {NoReloc(std::move(readinst))};
+        }
+        else if (FormDesc == llvm::X86II::RawFrmDstSrc ||
+                 FormDesc == llvm::X86II::RawFrmDst ||
+                 FormDesc == llvm::X86II::RawFrmSrc) {
+
+            RequireAction("GetReadValue::generate", index < 2 && "Wrong index", abort());
+            unsigned int reg;
+            if (FormDesc == llvm::X86II::RawFrmSrc ||
+                (FormDesc == llvm::X86II::RawFrmDstSrc && index == 0)) {
+                // (R|E)SI
+                reg = Reg(4);
+                Require("GetReadValue::generate", reg == llvm::X86::RSI || reg == llvm::X86::ESI);
+            } else {
+                // (R|E)DI
+                reg = Reg(5);
+                Require("GetReadValue::generate", reg == llvm::X86::RDI || reg == llvm::X86::EDI);
+            }
+
+            if(size == 8) {
+                return {NoReloc(mov64rm(dst, reg, 1, 0, 0, 0))};
+            }
+            else if(size == 4) {
+                return {NoReloc(mov32rm(dst, reg, 1, 0, 0, 0))};
+            }
+            else if(size == 2) {
+                return {NoReloc(mov32rm16(dst, reg, 1, 0, 0, 0))};
+            }
+            else if(size == 1) {
+                return {NoReloc(mov32rm8(dst, reg, 1, 0, 0, 0))};
+            }
         }
         else {
             for(unsigned i = 0; i + 4 <= inst->getNumOperands(); i++) {
@@ -261,12 +336,17 @@ RelocatableInst::SharedPtrVec GetWriteValue::generate(const llvm::MCInst* inst,
      rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const {
     const unsigned size = getWriteSize(*inst);
     if(size > 0) {
-        unsigned dst = temp_manager->getRegForTemp(temp);
+        uint64_t TSFlags = MCII->get(inst->getOpcode()).TSFlags;
+        unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
+
+        unsigned src_addr = temp_manager->getRegForTemp(temp);
+        unsigned dst = src_addr;
         if(is_bits_64 && size < sizeof(rword)) {
             dst = temp_manager->getSizedSubReg(dst, 4);
         } else if (size > sizeof(rword)) {
             return {NoReloc(movri(dst, 0))};
         }
+
         if(isStackWrite(*inst)) {
             llvm::MCInst readinst;
             unsigned int stack_register = REG_SP;
@@ -287,49 +367,42 @@ RelocatableInst::SharedPtrVec GetWriteValue::generate(const llvm::MCInst* inst,
             }
             return {NoReloc(std::move(readinst))};
         }
+        else if (FormDesc == llvm::X86II::RawFrmDstSrc ||
+                 FormDesc == llvm::X86II::RawFrmDst ||
+                 FormDesc == llvm::X86II::RawFrmSrc) {
+            // As the address is already in temp, just dereference it.
+            if(size == 8) {
+                return {NoReloc(mov64rm(dst, src_addr, 1, 0, 0, 0))};
+            }
+            else if(size == 4) {
+                return {NoReloc(mov32rm(dst, src_addr, 1, 0, 0, 0))};
+            }
+            else if(size == 2) {
+                return {NoReloc(mov32rm16(dst, src_addr, 1, 0, 0, 0))};
+            }
+            else if(size == 1) {
+                return {NoReloc(mov32rm8(dst, src_addr, 1, 0, 0, 0))};
+            }
+        }
         else {
             for(unsigned i = 0; i + 4 <= inst->getNumOperands(); i++) {
                 if(inst->getOperand(i + 0).isReg() && inst->getOperand(i + 1).isImm() &&
                    inst->getOperand(i + 2).isReg() && inst->getOperand(i + 3).isImm() &&
                    inst->getOperand(i + 4).isReg()) {
-                    llvm::MCInst readinst;
 
-                    unsigned base = inst->getOperand(i + 0).getReg();
-                    rword scale = inst->getOperand(i + 1).getImm();
-                    unsigned offset = inst->getOperand(i + 2).getReg();
-                    rword displacement = inst->getOperand(i + 3).getImm();
                     unsigned seg = inst->getOperand(i + 4).getReg();
 
-                    if(inst->getOperand(i + 0).getReg() == Reg(REG_PC)) {
-                        base = temp_manager->getRegForTemp(0xFFFFFFFF);
-                    }
-
                     if(size == 8) {
-                        readinst = mov64rm(dst, base, scale, offset, displacement, seg);
+                        return {NoReloc(mov64rm(dst, src_addr, 1, 0, 0, seg))};
                     }
                     else if(size == 4) {
-                        readinst = mov32rm(dst, base, scale, offset, displacement, seg);
+                        return {NoReloc(mov32rm(dst, src_addr, 1, 0, 0, seg))};
                     }
                     else if(size == 2) {
-                        readinst = mov32rm16(dst, base, scale, offset, displacement, seg);
+                        return {NoReloc(mov32rm16(dst, src_addr, 1, 0, 0, seg))};
                     }
                     else if(size == 1) {
-                        readinst = mov32rm8(dst, base, scale, offset, displacement, seg);
-                    }
-
-                    if(inst->getOperand(i + 0).getReg() == Reg(REG_PC)) {
-                        return {
-                            Mov(
-                                temp_manager->getRegForTemp(0xFFFFFFFF),
-                                Constant(address + instSize)
-                            ),
-                            NoReloc(std::move(readinst))
-                        };
-                    }
-                    else {
-                        return {
-                            NoReloc(std::move(readinst))
-                        };
+                        return {NoReloc(mov32rm8(dst, src_addr, 1, 0, 0, seg))};
                     }
                 }
             }
@@ -345,6 +418,18 @@ RelocatableInst::SharedPtrVec GetInstId::generate(const llvm::MCInst* inst,
     return {InstId(movri(temp_manager->getRegForTemp(temp), 0), 1)};
 }
 
+RelocatableInst::SharedPtrVec ReadTemp::generate(const llvm::MCInst* inst,
+    rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const {
+
+    if(type == OffsetType) {
+        return {Mov(temp_manager->getRegForTemp(temp), offset)};
+    }
+    else if(type == ShadowType) {
+        return {Mov(temp_manager->getRegForTemp(temp), shadow)};
+    }
+    _QBDI_UNREACHABLE();
+}
+
 RelocatableInst::SharedPtrVec WriteTemp::generate(const llvm::MCInst* inst,
     rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const {
 
@@ -352,15 +437,11 @@ RelocatableInst::SharedPtrVec WriteTemp::generate(const llvm::MCInst* inst,
         return {Mov(offset, temp_manager->getRegForTemp(temp))};
     }
     else if(type == ShadowType) {
-        return {TaggedShadowx86(
-            movmr(0, 0, 0, 0, 0, temp_manager->getRegForTemp(temp)),
-            0,
-            shadow.getTag(),
-            7
-        )};
+        return {Mov(shadow, temp_manager->getRegForTemp(temp))};
     }
     _QBDI_UNREACHABLE();
 }
+
 
 RelocatableInst::SharedPtrVec SaveReg::generate(const llvm::MCInst* inst,
     rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const {

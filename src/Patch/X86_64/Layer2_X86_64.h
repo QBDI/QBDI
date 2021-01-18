@@ -122,7 +122,11 @@ std::shared_ptr<RelocatableInst> Mov(Reg reg, Constant cst);
 
 std::shared_ptr<RelocatableInst> Mov(Offset offset, Reg reg);
 
+std::shared_ptr<RelocatableInst> Mov(Shadow shadow, Reg reg, bool create=true);
+
 std::shared_ptr<RelocatableInst> Mov(Reg reg, Offset offset);
+
+std::shared_ptr<RelocatableInst> Mov(Reg reg, Shadow shadow);
 
 std::shared_ptr<RelocatableInst> JmpM(Offset offset);
 

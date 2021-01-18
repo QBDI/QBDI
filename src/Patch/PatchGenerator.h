@@ -166,97 +166,37 @@ public:
         rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
-class GetReadAddress : public PatchGenerator, public AutoAlloc<PatchGenerator, GetReadAddress> {
+class ReadTemp : public PatchGenerator, public AutoAlloc<PatchGenerator, ReadTemp> {
 
-    Temp temp;
+    Temp  temp;
+    enum {
+        OffsetType,
+        ShadowType
+    } type;
 
-public:
-
-    /*! Resolve the memory address where the instructions will read its value and copy the address in a
-     * temporary. This PatchGenerator is only guaranteed to work before the instruction has been
-     * executed.
-     *
-     * @param[in] temp   A temporary where the memory address will be copied.
-    */
-    GetReadAddress(Temp temp) : temp(temp) {}
-
-    /*! Output:
-     *
-     * if stack access:
-     * MOV REG64 temp, REG64 RSP
-     *
-     * else:
-     * LEA REG64 temp, MEM64 addr
-    */
-    std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
-};
-
-class GetWriteAddress : public PatchGenerator, public AutoAlloc<PatchGenerator, GetWriteAddress> {
-
-    Temp temp;
+    Offset offset;
+    Shadow shadow;
 
 public:
 
-    /*! Resolve the memory address where the instructions will write its value and copy the address in a
-     * temporary. This PatchGenerator is only guaranteed to work before the instruction has been
-     * executed.
+    /*! Write a temporary value in the data block at the specified offset. This can be used to overwrite
+     * register values in the context part of the data block.
      *
-     * @param[in] temp   A temporary where the memory address will be copied.
+     * @param[in] temp      A temporary to store the shadow value.
+     * @param[in] offset    The offset in the data block where the temporary will be read.
     */
-    GetWriteAddress(Temp temp) : temp(temp) {}
+    ReadTemp(Temp temp, Offset offset): temp(temp), type(OffsetType), offset(offset), shadow(0) {}
+
+    /*! Read a temporary value from the last shadow with the same tag for this instruction.
+     *
+     * @param[in] temp      A temporary to store the shadow value.
+     * @param[in] shadow    The shadow in the data block where the temporary will be read.
+    */
+    ReadTemp(Temp temp, Shadow shadow): temp(temp), type(ShadowType), offset(0), shadow(shadow) {}
 
     /*! Output:
      *
-     * if stack access:
-     * MOV REG64 temp, REG64 RSP
-     *
-     * else:
-     * LEA REG64 temp, MEM64 addr
-    */
-    std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
-};
-
-class GetReadValue : public PatchGenerator, public AutoAlloc<PatchGenerator, GetReadValue> {
-
-    Temp temp;
-
- public:
-
-    /*! Resolve the memory address where the instructions will read its value and copy the value in a
-     * temporary. This PatchGenerator is only guaranteed to work before the instruction has been
-     * executed.
-     *
-     * @param[in] temp   A temporary where the memory value will be copied.
-    */
-    GetReadValue(Temp temp) : temp(temp) {}
-
-    /*! Output:
-     *
-     * MOV REG64 temp, MEM64 val
-    */
-    std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-         rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
-};
-
-class GetWriteValue : public PatchGenerator, public AutoAlloc<PatchGenerator, GetWriteValue> {
-
-    Temp temp;
-
-public:
-
-    /*! Resolve the memory address where the instructions has written its value and copy back the value
-     * in a temporary. This PatchGenerator is only guaranteed to work after the instruction has been
-     * executed.
-     *
-     * @param[in] temp   A temporary where the memory value will be copied.
-    */
-    GetWriteValue(Temp temp) : temp(temp) {}
-
-    /*! Output:
-     *
-     * MOV REG64 temp, MEM64 val
+     * MOV REG64 temp, MEM64 DataBlock[offset]
     */
     std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
         rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;

@@ -27,6 +27,11 @@ namespace QBDI {
 
 void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI,
                            const PatchGenerator::SharedPtrVec patchGen, bool breakToHost, InstPosition position) const {
+
+    if (patchGen.size() == 0 && breakToHost == false) {
+        return;
+    }
+
     /* The instrument function needs to handle several different cases. An instrumentation can
      * be either prepended or appended to the patch and, in each case, can trigger a break to
      * host.
@@ -122,6 +127,10 @@ void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const ll
 }
 
 bool InstrRuleBasic::canBeApplied(const Patch &patch, const llvm::MCInstrInfo* MCII) const {
+    return condition->test(patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII);
+}
+
+bool InstrRuleDynamic::canBeApplied(const Patch &patch, const llvm::MCInstrInfo* MCII) const {
     return condition->test(patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII);
 }
 

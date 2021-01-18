@@ -21,7 +21,7 @@
 #include "llvm/MC/MCInstrDesc.h"
 #include "X86InstrInfo.h"
 
-#include "Patch/InstInfo.h"
+#include "Patch/X86_64/InstInfo_X86_64.h"
 #include "Utility/LogSys.h"
 
 #include "Config.h"
@@ -54,6 +54,7 @@ const unsigned READ_8[] = {
     llvm::X86::CMP8mi8,
     llvm::X86::CMP8mr,
     llvm::X86::CMP8rm,
+    llvm::X86::CMPSB,
     llvm::X86::CMPXCHG8rm,
     llvm::X86::CRC32r32m8,
     llvm::X86::CRC32r64m8,
@@ -75,8 +76,10 @@ const unsigned READ_8[] = {
     llvm::X86::LOCK_SUB8mr,
     llvm::X86::LOCK_XOR8mi,
     llvm::X86::LOCK_XOR8mr,
+    llvm::X86::LODSB,
     llvm::X86::LXADD8,
     llvm::X86::MOV8rm,
+    llvm::X86::MOVSB,
     llvm::X86::MOVSX16rm8,
     llvm::X86::MOVSX32rm8,
     llvm::X86::MOVSX64rm8,
@@ -106,6 +109,7 @@ const unsigned READ_8[] = {
     llvm::X86::SBB8mi,
     llvm::X86::SBB8mr,
     llvm::X86::SBB8rm,
+    llvm::X86::SCASB,
     llvm::X86::SHL8m1,
     llvm::X86::SHL8mCL,
     llvm::X86::SHL8mi,
@@ -160,6 +164,7 @@ const unsigned READ_16[] = {
     llvm::X86::CMP16mi8,
     llvm::X86::CMP16mr,
     llvm::X86::CMP16rm,
+    llvm::X86::CMPSW,
     llvm::X86::CMPXCHG16rm,
     llvm::X86::CRC32r32m16,
     llvm::X86::DEC16m,
@@ -195,11 +200,13 @@ const unsigned READ_16[] = {
     llvm::X86::LOCK_XOR16mi,
     llvm::X86::LOCK_XOR16mi8,
     llvm::X86::LOCK_XOR16mr,
+    llvm::X86::LODSW,
     llvm::X86::LXADD16,
     llvm::X86::LZCNT16rm,
     llvm::X86::MMX_PINSRWrm,
     llvm::X86::MOV16rm,
     llvm::X86::MOVBE16rm,
+    llvm::X86::MOVSW,
     llvm::X86::MOVSX32rm16,
     llvm::X86::MOVSX64rm16,
     llvm::X86::MOVZX32rm16,
@@ -233,6 +240,7 @@ const unsigned READ_16[] = {
     llvm::X86::SBB16mi8,
     llvm::X86::SBB16mr,
     llvm::X86::SBB16rm,
+    llvm::X86::SCASW,
     llvm::X86::SHL16m1,
     llvm::X86::SHL16mCL,
     llvm::X86::SHL16mi,
@@ -314,6 +322,7 @@ const unsigned READ_32[] = {
     llvm::X86::CMP32mi8,
     llvm::X86::CMP32mr,
     llvm::X86::CMP32rm,
+    llvm::X86::CMPSL,
     llvm::X86::CMPSSrm,
     llvm::X86::CMPXCHG32rm,
     llvm::X86::COMISSrm,
@@ -365,6 +374,7 @@ const unsigned READ_32[] = {
     llvm::X86::LOCK_XOR32mi,
     llvm::X86::LOCK_XOR32mi8,
     llvm::X86::LOCK_XOR32mr,
+    llvm::X86::LODSL,
     llvm::X86::LXADD32,
     llvm::X86::LZCNT32rm,
     llvm::X86::MAXSSrm,
@@ -375,6 +385,7 @@ const unsigned READ_32[] = {
     llvm::X86::MMX_PUNPCKLWDirm,
     llvm::X86::MOV32rm,
     llvm::X86::MOVDI2PDIrm,
+    llvm::X86::MOVSL,
     llvm::X86::MOVSSrm,
     llvm::X86::MOVSX64rm32,
     llvm::X86::MUL32m,
@@ -422,6 +433,7 @@ const unsigned READ_32[] = {
     llvm::X86::SBB32mi8,
     llvm::X86::SBB32mr,
     llvm::X86::SBB32rm,
+    llvm::X86::SCASL,
     llvm::X86::SHL32m1,
     llvm::X86::SHL32mCL,
     llvm::X86::SHL32mi,
@@ -541,6 +553,7 @@ const unsigned READ_64[] = {
     llvm::X86::CMP64mr,
     llvm::X86::CMP64rm,
     llvm::X86::CMPSDrm,
+    llvm::X86::CMPSQ,
     llvm::X86::CMPXCHG64rm,
     llvm::X86::CMPXCHG8B,
     llvm::X86::COMISDrm,
@@ -589,6 +602,7 @@ const unsigned READ_64[] = {
     llvm::X86::LOCK_XOR64mi32,
     llvm::X86::LOCK_XOR64mi8,
     llvm::X86::LOCK_XOR64mr,
+    llvm::X86::LODSQ,
     llvm::X86::LXADD64,
     llvm::X86::LZCNT64rm,
     llvm::X86::MAXSDrm,
@@ -675,6 +689,7 @@ const unsigned READ_64[] = {
     llvm::X86::MOVLPSrm,
     llvm::X86::MOVQI2PQIrm,
     llvm::X86::MOVSDrm,
+    llvm::X86::MOVSQ,
     llvm::X86::MUL64m,
     llvm::X86::MULSDrm,
     llvm::X86::MULX64rm,
@@ -717,6 +732,7 @@ const unsigned READ_64[] = {
     llvm::X86::SBB64mi8,
     llvm::X86::SBB64mr,
     llvm::X86::SBB64rm,
+    llvm::X86::SCASQ,
     llvm::X86::SHL64m1,
     llvm::X86::SHL64mCL,
     llvm::X86::SHL64mi,
@@ -822,6 +838,7 @@ const unsigned READ_128[] = {
     llvm::X86::BLENDVPSrm0,
     llvm::X86::CMPPDrmi,
     llvm::X86::CMPPSrmi,
+    llvm::X86::CMPXCHG16B,
     llvm::X86::CVTDQ2PSrm,
     llvm::X86::CVTPD2DQrm,
     llvm::X86::CVTPD2PSrm,
@@ -836,6 +853,7 @@ const unsigned READ_128[] = {
     llvm::X86::HADDPSrm,
     llvm::X86::HSUBPDrm,
     llvm::X86::HSUBPSrm,
+    llvm::X86::LCMPXCHG16B,
     llvm::X86::LDDQUrm,
     llvm::X86::MAXPDrm,
     llvm::X86::MAXPSrm,
@@ -1479,6 +1497,7 @@ const unsigned WRITE_8[] = {
     llvm::X86::LOCK_XOR8mr,
     llvm::X86::MOV8mi,
     llvm::X86::MOV8mr,
+    llvm::X86::MOVSB,
     llvm::X86::NEG8m,
     llvm::X86::NOT8m,
     llvm::X86::OR8mi,
@@ -1507,11 +1526,13 @@ const unsigned WRITE_8[] = {
     llvm::X86::SHR8m1,
     llvm::X86::SHR8mCL,
     llvm::X86::SHR8mi,
+    llvm::X86::STOSB,
     llvm::X86::SUB8mi,
     llvm::X86::SUB8mi8,
     llvm::X86::SUB8mr,
     llvm::X86::VPEXTRBmr,
     llvm::X86::XADD8rm,
+    llvm::X86::XCHG8rm,
     llvm::X86::XOR8mi,
     llvm::X86::XOR8mi8,
     llvm::X86::XOR8mr,
@@ -1566,6 +1587,7 @@ const unsigned WRITE_16[] = {
     llvm::X86::MOV16mi,
     llvm::X86::MOV16mr,
     llvm::X86::MOVBE16mr,
+    llvm::X86::MOVSW,
     llvm::X86::NEG16m,
     llvm::X86::NOT16m,
     llvm::X86::OR16mi,
@@ -1599,11 +1621,13 @@ const unsigned WRITE_16[] = {
     llvm::X86::SHR16mi,
     llvm::X86::SHRD16mrCL,
     llvm::X86::SHRD16mri8,
+    llvm::X86::STOSW,
     llvm::X86::SUB16mi,
     llvm::X86::SUB16mi8,
     llvm::X86::SUB16mr,
     llvm::X86::VPEXTRWmr,
     llvm::X86::XADD16rm,
+    llvm::X86::XCHG16rm,
     llvm::X86::XOR16mi,
     llvm::X86::XOR16mi8,
     llvm::X86::XOR16mr,
@@ -1652,6 +1676,7 @@ const unsigned WRITE_32[] = {
     llvm::X86::MOVBE32mr,
     llvm::X86::MOVNTImr,
     llvm::X86::MOVPDI2DImr,
+    llvm::X86::MOVSL,
     llvm::X86::MOVSSmr,
     llvm::X86::NEG32m,
     llvm::X86::NOT32m,
@@ -1690,6 +1715,7 @@ const unsigned WRITE_32[] = {
     llvm::X86::SHRD32mrCL,
     llvm::X86::SHRD32mri8,
     llvm::X86::STMXCSR,
+    llvm::X86::STOSL,
     llvm::X86::ST_F32m,
     llvm::X86::ST_FP32m,
     llvm::X86::SUB32mi,
@@ -1701,6 +1727,7 @@ const unsigned WRITE_32[] = {
     llvm::X86::VPEXTRDmr,
     llvm::X86::VSTMXCSR,
     llvm::X86::XADD32rm,
+    llvm::X86::XCHG32rm,
     llvm::X86::XOR32mi,
     llvm::X86::XOR32mi8,
     llvm::X86::XOR32mr,
@@ -1754,6 +1781,7 @@ const unsigned WRITE_64[] = {
     llvm::X86::MOVNTI_64mr,
     llvm::X86::MOVPQI2QImr,
     llvm::X86::MOVSDmr,
+    llvm::X86::MOVSQ,
     llvm::X86::NEG64m,
     llvm::X86::NOT64m,
     llvm::X86::OR64mi32,
@@ -1789,6 +1817,7 @@ const unsigned WRITE_64[] = {
     llvm::X86::SHR64mi,
     llvm::X86::SHRD64mrCL,
     llvm::X86::SHRD64mri8,
+    llvm::X86::STOSQ,
     llvm::X86::ST_F64m,
     llvm::X86::ST_FP64m,
     llvm::X86::SUB64mi32,
@@ -1803,6 +1832,7 @@ const unsigned WRITE_64[] = {
     llvm::X86::VMOVSDmr,
     llvm::X86::VPEXTRQmr,
     llvm::X86::XADD64rm,
+    llvm::X86::XCHG64rm,
     llvm::X86::XOR64mi32,
     llvm::X86::XOR64mi8,
     llvm::X86::XOR64mr,
@@ -1818,6 +1848,8 @@ const unsigned WRITE_80[] = {
 const size_t WRITE_80_SIZE = sizeof(WRITE_80)/sizeof(unsigned);
 
 const unsigned WRITE_128[] = {
+    llvm::X86::CMPXCHG16B,
+    llvm::X86::LCMPXCHG16B,
     llvm::X86::MOVAPDmr,
     llvm::X86::MOVAPSmr,
     llvm::X86::MOVDQAmr,
@@ -1983,7 +2015,6 @@ const unsigned STACK_READ_64[] = {
 
 const size_t STACK_READ_64_SIZE = sizeof(STACK_READ_64)/sizeof(unsigned);
 
-
 /* Highest 16 bits are the write access, lowest 16 bits are the read access. For each 16 bits part: the
  * highest bit stores if the access is a stack access or not while the lowest 12 bits store the
  * unsigned access size in bytes (thus up to 4095 bytes). A size of 0 means no access.
@@ -2114,8 +2145,8 @@ bool isStackWrite(const llvm::MCInst& inst) {
     return IS_STACK_WRITE(MEMACCESS_INFO_TABLE[inst.getOpcode()]);
 }
 
-unsigned getImmediateSize(const llvm::MCInst& inst, const llvm::MCInstrDesc* desc) {
-    return llvm::X86II::getSizeOfImm(desc->TSFlags);
+unsigned getImmediateSize(const llvm::MCInst& inst, const llvm::MCInstrDesc& desc) {
+    return llvm::X86II::getSizeOfImm(desc.TSFlags);
 }
 
 bool useAllRegisters(const llvm::MCInst& inst) {
@@ -2135,6 +2166,53 @@ bool useAllRegisters(const llvm::MCInst& inst) {
     }
 
     return false;
+}
+
+bool isDoubleRead(const llvm::MCInst& inst) {
+    switch (inst.getOpcode()) {
+        case llvm::X86::CMPSB:
+        case llvm::X86::CMPSL:
+        case llvm::X86::CMPSQ:
+        case llvm::X86::CMPSW:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool mayChangeWriteAddr(const llvm::MCInst& inst, const llvm::MCInstrDesc& desc) {
+
+    switch (desc.TSFlags & llvm::X86II::FormMask) {
+        case llvm::X86II::RawFrmDstSrc:
+        case llvm::X86II::RawFrmDst:
+        case llvm::X86II::RawFrmSrc:
+            return true;
+        default:
+            break;
+    }
+
+    switch (inst.getOpcode()) {
+        case llvm::X86::XCHG8rm:
+        case llvm::X86::XCHG16rm:
+        case llvm::X86::XCHG32rm:
+        case llvm::X86::XCHG64rm:
+        case llvm::X86::CMPXCHG8rm:
+        case llvm::X86::CMPXCHG16rm:
+        case llvm::X86::CMPXCHG32rm:
+        case llvm::X86::CMPXCHG64rm:
+        case llvm::X86::CMPXCHG8B:
+        case llvm::X86::CMPXCHG16B:
+        case llvm::X86::LCMPXCHG8:
+        case llvm::X86::LCMPXCHG16:
+        case llvm::X86::LCMPXCHG32:
+        case llvm::X86::LCMPXCHG64:
+        case llvm::X86::LCMPXCHG8B:
+        case llvm::X86::LCMPXCHG16B:
+            return true;
+        default:
+            return false;
+    }
+
 }
 
 };

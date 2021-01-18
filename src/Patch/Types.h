@@ -85,9 +85,8 @@ public:
 enum ShadowReservedTag : uint16_t {
 
     // MemoryAccess Tag
-    MEM_READ_ADDRESS_TAG  = 0xfff0,
-    MEM_WRITE_ADDRESS_TAG = 0xfff1,
-    MEM_VALUE_TAG         = 0xfff2,
+    MEMORY_TAG_BEGIN  = 0xffe0,
+    MEMORY_TAG_END    = 0xfff0,
 
     // also defined in Callback.h
     Untagged = 0xffff,

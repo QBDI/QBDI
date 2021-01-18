@@ -345,6 +345,15 @@ public:
      */
     uint16_t newShadow(uint16_t tag = ShadowReservedTag::Untagged);
 
+    /*! Search the last Shadow with the tag for the current instruction.
+     *  Used by relocation to load or store data from the instrumented code.
+     *
+     *  @param tag The tag associated with the registration
+     *
+     *  @return The shadow id (which is its index within the shadow array).
+     */
+    uint16_t getLastShadow(uint16_t tag);
+
     /*! Set the value of a shadow.
      *
      *  @param id [in] ID of the shadow to set.

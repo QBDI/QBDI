@@ -376,6 +376,18 @@ uint16_t ExecBlock::newShadow(uint16_t tag) {
     return id;
 }
 
+uint16_t ExecBlock::getLastShadow(uint16_t tag) {
+    uint16_t nextInstID = getNextInstID();
+
+    for (auto it = shadowRegistry.crbegin(); it != shadowRegistry.crend(); it++)  {
+        if (it->instID == nextInstID && it->tag == tag) {
+            return it->shadowID;
+        }
+    }
+    LogError("ExecBlock::getLastShadow", "Cannot found shadow tag %" PRIu16 " for the current instruction", tag);
+    abort();
+}
+
 void ExecBlock::setShadow(uint16_t id, rword v) {
     RequireAction("ExecBlock::setShadow", id * sizeof(rword) < dataBlock.allocatedSize() - sizeof(Context), abort());
     shadows[id] = v;

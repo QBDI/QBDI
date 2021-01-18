@@ -447,8 +447,16 @@ RelocatableInst::SharedPtr Mov(Offset offset, Reg reg) {
     return DataBlockRelx86(movmr(0, 0, 0, 0, 0, reg), 0, offset, 7);
 }
 
+RelocatableInst::SharedPtr Mov(Shadow shadow, Reg reg, bool create) {
+    return TaggedShadowx86(movmr(0, 0, 0, 0, 0, reg), 0, shadow.getTag(), 7, create);
+}
+
 RelocatableInst::SharedPtr Mov(Reg reg, Offset offset) {
     return DataBlockRelx86(movrm(reg, 0, 0, 0, 0, 0), 1, offset, 7);
+}
+
+RelocatableInst::SharedPtr Mov(Reg reg, Shadow shadow) {
+    return TaggedShadowx86(movrm(reg, 0, 0, 0, 0, 0), 1, shadow.getTag(), 7, false);
 }
 
 RelocatableInst::SharedPtr JmpM(Offset offset) {
