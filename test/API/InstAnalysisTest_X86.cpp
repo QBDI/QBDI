@@ -621,3 +621,20 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-vpaddb") {
             {QBDI::OPERAND_FPR, QBDI::OPERANDFLAG_NONE, 0, 16, 0, 192, "XMM2", QBDI::REGISTER_READ},
         }, QBDI::REGISTER_UNUSED);
 }
+
+TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-xlatb") {
+
+    QBDI::rword addr = writeASM("xlatb\n");
+
+    checkInst(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
+        ExpectedInstAnalysis { "XLAT", addr,
+          /* instSize */ 1, /* affectControlFlow */ false, /* isBranch */ false,
+          /* isCall */ false, /* isReturn */ false, /* isCompare */ false,
+          /* isPredicable */ false, /* mayLoad */ true, /* mayStore */ false,
+          /* loadSize */ 1, /* storeSize */ 0, /* condition */ QBDI::CONDITION_NONE});
+    checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
+        {
+            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_IMPLICIT, 0, 1, 0, 0, "AL", QBDI::REGISTER_READ_WRITE},
+            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_IMPLICIT, 0, 4, 0, 1, "EBX", QBDI::REGISTER_READ},
+        }, QBDI::REGISTER_UNUSED);
+}

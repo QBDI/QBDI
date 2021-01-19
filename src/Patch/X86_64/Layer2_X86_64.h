@@ -42,6 +42,8 @@ llvm::MCInst mov32rm16(unsigned int dst, unsigned int base, rword scale, unsigne
 
 llvm::MCInst mov32rm(unsigned int dst, unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg);
 
+llvm::MCInst movzx32rr8(unsigned int dst, unsigned int src);
+
 llvm::MCInst mov64rr(unsigned int dst, unsigned int src);
 
 llvm::MCInst mov64ri(unsigned int reg, rword imm);
@@ -49,6 +51,8 @@ llvm::MCInst mov64ri(unsigned int reg, rword imm);
 llvm::MCInst mov64mr(unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg, unsigned int src);
 
 llvm::MCInst mov64rm(unsigned int dst, unsigned int base, rword scale, unsigned int offset, rword displacement, unsigned int seg);
+
+llvm::MCInst movzx64rr8(unsigned int dst, unsigned int src);
 
 llvm::MCInst jmp32m(unsigned int base, rword offset);
 
@@ -99,6 +103,8 @@ llvm::MCInst movri(unsigned int dst, rword imm);
 llvm::MCInst movmr(unsigned int base, rword scale, unsigned int offset, rword disp, unsigned int seg, unsigned int src);
 
 llvm::MCInst movrm(unsigned int dst, unsigned int base, rword scale, unsigned int offset, rword disp, unsigned int seg);
+
+llvm::MCInst movzxrr8(unsigned int dst, unsigned int src);
 
 llvm::MCInst pushr(unsigned int reg);
 

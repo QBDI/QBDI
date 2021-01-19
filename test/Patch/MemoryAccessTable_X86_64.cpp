@@ -32,8 +32,6 @@ using namespace llvm::X86;
 const std::set<unsigned> unsupportedInst {
         // codeGenOnly
     // alias for other instruction, will never be dissassemble by LLVM
-
-    LCMPXCHG16B,
     LXADD16,
     LXADD32,
     LXADD64,
@@ -122,8 +120,6 @@ const std::set<unsigned> unsupportedInst {
     // specific addressing operation
     BNDLDXrm,
     BNDSTXmr,
-    // TODO with custom handler
-    XLAT,
     // TODO support VSIB addressing
     VGATHERDPDYrm,
     VGATHERDPDrm,

@@ -102,6 +102,17 @@ llvm::MCInst mov32rm(unsigned int dst, unsigned int base, rword scale, unsigned 
     return inst;
 }
 
+llvm::MCInst movzx32rr8(unsigned int dst, unsigned int src) {
+
+    llvm::MCInst inst;
+
+    inst.setOpcode(llvm::X86::MOVZX32rr8);
+    inst.addOperand(llvm::MCOperand::createReg(dst));
+    inst.addOperand(llvm::MCOperand::createReg(src));
+
+    return inst;
+}
+
 llvm::MCInst mov64rr(unsigned int dst, unsigned int src) {
     llvm::MCInst inst;
 
@@ -146,6 +157,17 @@ llvm::MCInst mov64rm(unsigned int dst, unsigned int base, rword scale, unsigned 
     inst.addOperand(llvm::MCOperand::createReg(offset));
     inst.addOperand(llvm::MCOperand::createImm(displacement));
     inst.addOperand(llvm::MCOperand::createReg(seg));
+
+    return inst;
+}
+
+llvm::MCInst movzx64rr8(unsigned int dst, unsigned int src) {
+
+    llvm::MCInst inst;
+
+    inst.setOpcode(llvm::X86::MOVZX64rr8);
+    inst.addOperand(llvm::MCOperand::createReg(dst));
+    inst.addOperand(llvm::MCOperand::createReg(src));
 
     return inst;
 }
@@ -384,6 +406,13 @@ llvm::MCInst movrm(unsigned int dst, unsigned int base, rword scale, unsigned in
         return mov64rm(dst, base, scale, offset, disp, seg);
     else
         return mov32rm(dst, base, scale, offset, disp, seg);
+}
+
+llvm::MCInst movzxrr8(unsigned int dst, unsigned int src) {
+    if constexpr(is_x86_64)
+        return movzx64rr8(dst, src);
+    else
+        return movzx32rr8(dst, src);
 }
 
 llvm::MCInst pushr(unsigned int reg) {

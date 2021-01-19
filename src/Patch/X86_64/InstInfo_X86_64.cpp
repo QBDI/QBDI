@@ -132,6 +132,7 @@ const unsigned READ_8[] = {
     llvm::X86::VPINSRBrm,
     llvm::X86::XADD8rm,
     llvm::X86::XCHG8rm,
+    llvm::X86::XLAT,
     llvm::X86::XOR8mi,
     llvm::X86::XOR8mi8,
     llvm::X86::XOR8mr,

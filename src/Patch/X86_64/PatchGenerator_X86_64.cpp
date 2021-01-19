@@ -110,6 +110,14 @@ RelocatableInst::SharedPtrVec GetReadAddress::generate(const llvm::MCInst* inst,
                     ))
                 };
             }
+        // XLAT instruction
+        } else if (inst->getOpcode() == llvm::X86::XLAT) {
+            unsigned dest = temp_manager->getRegForTemp(temp);
+            // (R|E)BX
+            unsigned int reg = Reg(1);
+            Require("GetReadAddress::generate", reg == llvm::X86::RBX || reg == llvm::X86::EBX);
+            return {NoReloc(movzxrr8(dest, llvm::X86::AL)),
+                    NoReloc(lea(dest, reg, 1, dest, 0, 0))};
         }
         // Else replace the instruction with a LEA on the same address
         else if (memIndex >= 0) {
@@ -323,6 +331,14 @@ RelocatableInst::SharedPtrVec GetReadValue::generate(const llvm::MCInst* inst,
                     return {NoReloc(mov32rm8(dst, 0, 1, 0, displacement, seg))};
                 }
             }
+        } else if (inst->getOpcode() == llvm::X86::XLAT) {
+            unsigned dest = temp_manager->getRegForTemp(temp);
+            // (R|E)BX
+            unsigned int reg = Reg(1);
+            Require("GetReadValue::generate", reg == llvm::X86::RBX || reg == llvm::X86::EBX);
+            Require("GetReadValue::generate", size == 1);
+            return {NoReloc(movzxrr8(dest, llvm::X86::AL)),
+                    NoReloc(mov32rm8(dest, reg, 1, dest, 0, 0))};
         } else if (memIndex >= 0) {
             for(unsigned i = memIndex; i + 4 <= inst->getNumOperands(); i++) {
                 if(inst->getOperand(i + 0).isReg() && inst->getOperand(i + 1).isImm() &&
