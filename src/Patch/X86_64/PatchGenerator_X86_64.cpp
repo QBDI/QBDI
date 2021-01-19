@@ -74,12 +74,13 @@ RelocatableInst::SharedPtrVec GetReadAddress::generate(const llvm::MCInst* inst,
         unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
         unsigned memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
 
+        Reg dest = temp_manager->getRegForTemp(temp);
         // If it is a stack read, return RSP value
         if(isStackRead(*inst)) {
             if (inst->getOpcode() == llvm::X86::LEAVE || inst->getOpcode() == llvm::X86::LEAVE64) {
-                return {Mov(temp_manager->getRegForTemp(temp), Reg(REG_BP))};
+                return {Mov(dest, Reg(REG_BP))};
             } else {
-                return {Mov(temp_manager->getRegForTemp(temp), Reg(REG_SP))};
+                return {Mov(dest, Reg(REG_SP))};
             }
         }
         // Implicit RSI or RDI
@@ -96,23 +97,23 @@ RelocatableInst::SharedPtrVec GetReadAddress::generate(const llvm::MCInst* inst,
                 reg = Reg(5);
                 Require("GetReadAddress::generate", reg == llvm::X86::RDI || reg == llvm::X86::EDI);
             }
-            return {NoReloc(movrr(temp_manager->getRegForTemp(temp), reg))};
+            return {NoReloc(movrr(dest, reg))};
         }
         // Moffs access
         else if (FormDesc == llvm::X86II::RawFrmMemOffs) {
             if (inst->getOperand(0).isImm() && inst->getOperand(1).isReg()) {
                 return {
                     NoReloc(lea(
-                        temp_manager->getRegForTemp(temp),
+                        dest,
                         0, 1, 0,
                         inst->getOperand(0).getImm(),
                         inst->getOperand(1).getReg()
                     ))
                 };
             }
+        }
         // XLAT instruction
-        } else if (inst->getOpcode() == llvm::X86::XLAT) {
-            unsigned dest = temp_manager->getRegForTemp(temp);
+        else if (inst->getOpcode() == llvm::X86::XLAT) {
             // (R|E)BX
             unsigned int reg = Reg(1);
             Require("GetReadAddress::generate", reg == llvm::X86::RBX || reg == llvm::X86::EBX);
@@ -134,7 +135,7 @@ RelocatableInst::SharedPtrVec GetReadAddress::generate(const llvm::MCInst* inst,
                                 Constant(address + instSize)
                             ),
                             NoReloc(lea(
-                                temp_manager->getRegForTemp(temp),
+                                dest,
                                 temp_manager->getRegForTemp(0xFFFFFFFF),
                                 inst->getOperand(i + 1).getImm(),
                                 inst->getOperand(i + 2).getReg(),
@@ -146,7 +147,7 @@ RelocatableInst::SharedPtrVec GetReadAddress::generate(const llvm::MCInst* inst,
                     else {
                         return {
                             NoReloc(lea(
-                                temp_manager->getRegForTemp(temp),
+                                dest,
                                 inst->getOperand(i + 0).getReg(),
                                 inst->getOperand(i + 1).getImm(),
                                 inst->getOperand(i + 2).getReg(),
@@ -172,13 +173,15 @@ RelocatableInst::SharedPtrVec GetWriteAddress::generate(const llvm::MCInst* inst
         uint64_t TSFlags = desc.TSFlags;
         unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
         unsigned memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
+        unsigned opcode = inst->getOpcode();
 
+        Reg dest = temp_manager->getRegForTemp(temp);
         // If it is a stack read, return RSP value
         if(isStackWrite(*inst)) {
             if (inst->getOpcode() == llvm::X86::ENTER) {
-                return {Mov(temp_manager->getRegForTemp(temp), Reg(REG_BP))};
+                return {Mov(dest, Reg(REG_BP))};
             } else {
-                return {Mov(temp_manager->getRegForTemp(temp), Reg(REG_SP))};
+                return {Mov(dest, Reg(REG_SP))};
             }
         }
         // Implicit RSI or RDI
@@ -193,14 +196,14 @@ RelocatableInst::SharedPtrVec GetWriteAddress::generate(const llvm::MCInst* inst
                 reg = Reg(5);
                 Require("GetWriteAddress::generate", reg == llvm::X86::RDI || reg == llvm::X86::EDI);
             }
-            return {NoReloc(movrr(temp_manager->getRegForTemp(temp), reg))};
+            return {NoReloc(movrr(dest, reg))};
         }
         // Moffs access
         else if (FormDesc == llvm::X86II::RawFrmMemOffs) {
             if (inst->getOperand(0).isImm() && inst->getOperand(1).isReg()) {
                 return {
                     NoReloc(lea(
-                        temp_manager->getRegForTemp(temp),
+                        dest,
                         0, 1, 0,
                         inst->getOperand(0).getImm(),
                         inst->getOperand(1).getReg()
@@ -223,7 +226,7 @@ RelocatableInst::SharedPtrVec GetWriteAddress::generate(const llvm::MCInst* inst
                                 Constant(address + instSize)
                             ),
                             NoReloc(lea(
-                                temp_manager->getRegForTemp(temp),
+                                dest,
                                 temp_manager->getRegForTemp(0xFFFFFFFF),
                                 inst->getOperand(i + 1).getImm(),
                                 inst->getOperand(i + 2).getReg(),
@@ -235,7 +238,7 @@ RelocatableInst::SharedPtrVec GetWriteAddress::generate(const llvm::MCInst* inst
                     else {
                         return {
                             NoReloc(lea(
-                                temp_manager->getRegForTemp(temp),
+                                dest,
                                 inst->getOperand(i + 0).getReg(),
                                 inst->getOperand(i + 1).getImm(),
                                 inst->getOperand(i + 2).getReg(),

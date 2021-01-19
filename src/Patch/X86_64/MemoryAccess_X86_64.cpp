@@ -49,7 +49,10 @@ void analyseMemoryAccessAddrValue(const ExecBlock& curExecBlock, llvm::ArrayRef<
     if (shadows.size() < 1) {
         return;
     }
+
     auto access = MemoryAccess();
+    access.flags = MEMORY_NO_FLAGS;
+
     uint16_t expectValueTag;
     switch (shadows[0].tag) {
         default:
@@ -71,6 +74,7 @@ void analyseMemoryAccessAddrValue(const ExecBlock& curExecBlock, llvm::ArrayRef<
 
     if (access.size > sizeof(rword)) {
         access.flags |= MEMORY_UNKNOWN_VALUE;
+        access.value = 0;
         dest.push_back(std::move(access));
         return;
     }
@@ -100,6 +104,8 @@ void analyseMemoryAccessAddrRange(const ExecBlock& curExecBlock, llvm::ArrayRef<
         return;
     }
     auto access = MemoryAccess();
+    access.flags = MEMORY_NO_FLAGS;
+
     uint16_t expectValueTag;
     unsigned accessAtomicSize;
     switch (shadows[0].tag) {
