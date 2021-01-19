@@ -304,6 +304,198 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-cmpsq") {
         CHECK(e.see);
 }
 
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-rep_cmpsb") {
+
+    const char source[] = "cld\n"
+                          "rep cmpsb\n";
+
+    uint8_t v1[10] = {0x56, 0x78, 0x89, 0xab, 0xe6, 0xe7, 0x1a, 0xfa, 0xc8, 0x6d};
+    uint8_t v2[10] = {0x56, 0x78, 0x89, 0xab, 0xe6, 0xe7, 0x1a, 0xfa, 0xc8, 0x6c};
+    ExpectedMemoryAccesses expectedPre = {{
+        { (QBDI::rword) &v1, 0, 0, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE | QBDI::MEMORY_UNKNOWN_SIZE},
+        { (QBDI::rword) &v2, 0, 0, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE | QBDI::MEMORY_UNKNOWN_SIZE},
+    }};
+    ExpectedMemoryAccesses expectedPost = {{
+        { (QBDI::rword) &v1, 0, 10, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+        { (QBDI::rword) &v2, 0, 10, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+    }};
+
+    vm.recordMemoryAccess(QBDI::MEMORY_READ);
+    vm.addMnemonicCB("CMPSB", QBDI::PREINST, checkAccess, &expectedPre);
+    vm.addMnemonicCB("CMPSB", QBDI::POSTINST, checkAccess, &expectedPost);
+
+    QBDI::GPRState* state = vm.getGPRState();
+    state->rsi = (QBDI::rword) &v1;
+    state->rdi = (QBDI::rword) &v2;
+    state->rcx = sizeof(v1);
+    vm.setGPRState(state);
+
+    QBDI::rword retval;
+    bool ran = runOnASM(&retval, source);
+
+    CHECK(ran);
+
+    for (auto& e: expectedPre.accesses)
+        CHECK(e.see);
+
+    for (auto& e: expectedPost.accesses)
+        CHECK(e.see);
+}
+
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-repne_cmpsb") {
+
+    const char source[] = "cld\n"
+                          "repne cmpsb\n";
+
+    uint8_t v1[10] = {0x56, 0x78, 0x89, 0xab, 0xe6, 0xe7, 0x1a, 0xfa, 0xc8, 0x6d};
+    uint8_t v2[10] = {0xb1, 0x5, 0x98, 0xae, 0xe2, 0xe6, 0x19, 0xf9, 0xc7, 0x6d};
+    ExpectedMemoryAccesses expectedPre = {{
+        { (QBDI::rword) &v1, 0, 0, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE | QBDI::MEMORY_UNKNOWN_SIZE},
+        { (QBDI::rword) &v2, 0, 0, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE | QBDI::MEMORY_UNKNOWN_SIZE},
+    }};
+    ExpectedMemoryAccesses expectedPost = {{
+        { (QBDI::rword) &v1, 0, 10, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+        { (QBDI::rword) &v2, 0, 10, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+    }};
+
+    vm.recordMemoryAccess(QBDI::MEMORY_READ);
+    vm.addMnemonicCB("CMPSB", QBDI::PREINST, checkAccess, &expectedPre);
+    vm.addMnemonicCB("CMPSB", QBDI::POSTINST, checkAccess, &expectedPost);
+
+    QBDI::GPRState* state = vm.getGPRState();
+    state->rsi = (QBDI::rword) &v1;
+    state->rdi = (QBDI::rword) &v2;
+    state->rcx = sizeof(v1);
+    vm.setGPRState(state);
+
+    QBDI::rword retval;
+    bool ran = runOnASM(&retval, source);
+
+    CHECK(ran);
+
+    for (auto& e: expectedPre.accesses)
+        CHECK(e.see);
+
+    for (auto& e: expectedPost.accesses)
+        CHECK(e.see);
+}
+
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-rep_cmpsb2") {
+
+    const char source[] = "std\n"
+                          "rep cmpsb\n"
+                          "cld\n";
+
+    uint8_t v1[10] = {0x5c, 0x78, 0x89, 0xab, 0xe6, 0xe7, 0x1a, 0xfa, 0xc8, 0x6c};
+    uint8_t v2[10] = {0x56, 0x78, 0x89, 0xab, 0xe6, 0xe7, 0x1a, 0xfa, 0xc8, 0x6c};
+    ExpectedMemoryAccesses expectedPre = {{
+        { (QBDI::rword) &v1[9], 0, 0, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE | QBDI::MEMORY_UNKNOWN_SIZE},
+        { (QBDI::rword) &v2[9], 0, 0, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE | QBDI::MEMORY_UNKNOWN_SIZE},
+    }};
+    ExpectedMemoryAccesses expectedPost = {{
+        { (QBDI::rword) &v1, 0, 10, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+        { (QBDI::rword) &v2, 0, 10, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+    }};
+
+    vm.recordMemoryAccess(QBDI::MEMORY_READ);
+    vm.addMnemonicCB("CMPSB", QBDI::PREINST, checkAccess, &expectedPre);
+    vm.addMnemonicCB("CMPSB", QBDI::POSTINST, checkAccess, &expectedPost);
+
+    QBDI::GPRState* state = vm.getGPRState();
+    state->rsi = (QBDI::rword) &v1[9];
+    state->rdi = (QBDI::rword) &v2[9];
+    state->rcx = sizeof(v1);
+    vm.setGPRState(state);
+
+    QBDI::rword retval;
+    bool ran = runOnASM(&retval, source);
+
+    CHECK(ran);
+
+    for (auto& e: expectedPre.accesses)
+        CHECK(e.see);
+
+    for (auto& e: expectedPost.accesses)
+        CHECK(e.see);
+}
+
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-rep_cmpsw") {
+
+    const char source[] = "cld\n"
+                          "rep cmpsw\n";
+
+    uint16_t v1[5] = {0x5c78, 0x89ab, 0xe6e7, 0x1afa, 0xc86c};
+    uint16_t v2[5] = {0x5c78, 0x89ab, 0xe6e7, 0x1afa, 0xc86d};
+    ExpectedMemoryAccesses expectedPre = {{
+        { (QBDI::rword) &v1, 0, 0, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE | QBDI::MEMORY_UNKNOWN_SIZE},
+        { (QBDI::rword) &v2, 0, 0, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE | QBDI::MEMORY_UNKNOWN_SIZE},
+    }};
+    ExpectedMemoryAccesses expectedPost = {{
+        { (QBDI::rword) &v1, 0, 10, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+        { (QBDI::rword) &v2, 0, 10, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+    }};
+
+    vm.recordMemoryAccess(QBDI::MEMORY_READ);
+    vm.addMnemonicCB("CMPSW", QBDI::PREINST, checkAccess, &expectedPre);
+    vm.addMnemonicCB("CMPSW", QBDI::POSTINST, checkAccess, &expectedPost);
+
+    QBDI::GPRState* state = vm.getGPRState();
+    state->rsi = (QBDI::rword) &v1;
+    state->rdi = (QBDI::rword) &v2;
+    state->rcx = sizeof(v1) / sizeof(uint16_t);
+    vm.setGPRState(state);
+
+    QBDI::rword retval;
+    bool ran = runOnASM(&retval, source);
+
+    CHECK(ran);
+
+    for (auto& e: expectedPre.accesses)
+        CHECK(e.see);
+
+    for (auto& e: expectedPost.accesses)
+        CHECK(e.see);
+}
+
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-rep_cmpsw2") {
+
+    const char source[] = "std\n"
+                          "rep cmpsw\n"
+                          "cld\n";
+
+    uint16_t v1[5] = {0x5c78, 0x89ab, 0xe6e7, 0x1afa, 0xc86c};
+    uint16_t v2[5] = {0x5678, 0x89ab, 0xe6e7, 0x1afa, 0xc86c};
+    ExpectedMemoryAccesses expectedPre = {{
+        { (QBDI::rword) &v1[4], 0, 0, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE | QBDI::MEMORY_UNKNOWN_SIZE},
+        { (QBDI::rword) &v2[4], 0, 0, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE | QBDI::MEMORY_UNKNOWN_SIZE},
+    }};
+    ExpectedMemoryAccesses expectedPost = {{
+        { (QBDI::rword) &v1, 0, 10, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+        { (QBDI::rword) &v2, 0, 10, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+    }};
+
+    vm.recordMemoryAccess(QBDI::MEMORY_READ);
+    vm.addMnemonicCB("CMPSW", QBDI::PREINST, checkAccess, &expectedPre);
+    vm.addMnemonicCB("CMPSW", QBDI::POSTINST, checkAccess, &expectedPost);
+
+    QBDI::GPRState* state = vm.getGPRState();
+    state->rsi = (QBDI::rword) &v1[4];
+    state->rdi = (QBDI::rword) &v2[4];
+    state->rcx = sizeof(v1) / sizeof(uint16_t);
+    vm.setGPRState(state);
+
+    QBDI::rword retval;
+    bool ran = runOnASM(&retval, source);
+
+    CHECK(ran);
+
+    for (auto& e: expectedPre.accesses)
+        CHECK(e.see);
+
+    for (auto& e: expectedPost.accesses)
+        CHECK(e.see);
+}
+
 TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-movsb") {
 
     const char source[] = "cld\n"
@@ -536,6 +728,81 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-movsq2") {
     CHECK(ran);
     CHECK(v2 == v1);
     for (auto& e: expected.accesses)
+        CHECK(e.see);
+}
+
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-rep_movsl") {
+
+    const char source[] = "cld\n"
+                          "rep movsl\n";
+
+    uint32_t v1[5] = {0xab673, 0xeba9256, 0x638feba8, 0x7182faB, 0x7839021b};
+    uint32_t v2[5] = {0};
+    ExpectedMemoryAccesses expectedPre = {{
+        { (QBDI::rword) &v1, 0, 0, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE | QBDI::MEMORY_UNKNOWN_SIZE},
+    }};
+    ExpectedMemoryAccesses expectedPost = {{
+        { (QBDI::rword) &v2, 0, sizeof(v1), QBDI::MEMORY_WRITE, QBDI::MEMORY_UNKNOWN_VALUE},
+        { (QBDI::rword) &v1, 0, sizeof(v1), QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+    }};
+
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("MOVSL", QBDI::PREINST, checkAccess, &expectedPre);
+    vm.addMnemonicCB("MOVSL", QBDI::POSTINST, checkAccess, &expectedPost);
+
+    QBDI::GPRState* state = vm.getGPRState();
+    state->rsi = (QBDI::rword) &v1;
+    state->rdi = (QBDI::rword) &v2;
+    state->rcx = sizeof(v1) / sizeof(uint32_t);
+    vm.setGPRState(state);
+
+    QBDI::rword retval;
+    bool ran = runOnASM(&retval, source);
+
+    CHECK(ran);
+    for (size_t i = 0; i < sizeof(v1) / sizeof(uint32_t); i++)
+        CHECK(v2[i] == v1[i]);
+    for (auto& e: expectedPre.accesses)
+        CHECK(e.see);
+    for (auto& e: expectedPost.accesses)
+        CHECK(e.see);
+}
+
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-rep_movsl2") {
+
+    const char source[] = "std\n"
+                          "rep movsl\n"
+                          "cld\n";
+
+    uint32_t v1[5] = {0xab673, 0xeba9256, 0x638feba8, 0x7182faB, 0x7839021b};
+    uint32_t v2[5] = {0};
+    ExpectedMemoryAccesses expectedPre = {{
+        { (QBDI::rword) &v1[4], 0, 0, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE | QBDI::MEMORY_UNKNOWN_SIZE},
+    }};
+    ExpectedMemoryAccesses expectedPost = {{
+        { (QBDI::rword) &v2, 0, sizeof(v1), QBDI::MEMORY_WRITE, QBDI::MEMORY_UNKNOWN_VALUE},
+        { (QBDI::rword) &v1, 0, sizeof(v1), QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+    }};
+
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("MOVSL", QBDI::PREINST, checkAccess, &expectedPre);
+    vm.addMnemonicCB("MOVSL", QBDI::POSTINST, checkAccess, &expectedPost);
+
+    QBDI::GPRState* state = vm.getGPRState();
+    state->rsi = (QBDI::rword) &v1[4];
+    state->rdi = (QBDI::rword) &v2[4];
+    state->rcx = sizeof(v1) / sizeof(uint32_t);
+    vm.setGPRState(state);
+
+    QBDI::rword retval;
+    bool ran = runOnASM(&retval, source);
+
+    CHECK(ran);
+    for (size_t i = 0; i < sizeof(v1) / sizeof(uint32_t); i++)
+        CHECK(v2[i] == v1[i]);
+    for (auto& e: expectedPre.accesses)
+        CHECK(e.see);
+    for (auto& e: expectedPost.accesses)
         CHECK(e.see);
 }
 

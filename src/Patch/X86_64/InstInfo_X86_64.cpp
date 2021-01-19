@@ -2597,4 +2597,8 @@ bool mayChangeWriteAddr(const llvm::MCInst& inst, const llvm::MCInstrDesc& desc)
 
 }
 
+bool hasREPPrefix(const llvm::MCInst& instr) {
+    return (instr.getFlags() & (llvm::X86::IP_HAS_REPEAT_NE | llvm::X86::IP_HAS_REPEAT)) != llvm::X86::IP_NO_PREFIX;
+}
+
 };

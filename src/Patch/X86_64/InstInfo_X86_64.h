@@ -27,6 +27,8 @@ bool isDoubleRead(const llvm::MCInst& inst);
 // does the instruction may change the value of register used to address a strore
 bool mayChangeWriteAddr(const llvm::MCInst& inst, const llvm::MCInstrDesc& desc);
 
+bool hasREPPrefix(const llvm::MCInst& instr);
+
 }
 
 #endif
