@@ -22,6 +22,10 @@
 
 namespace QBDI {
 
+bool isMinSizeRead(const llvm::MCInst& inst);
+
+bool isMinSizeWrite(const llvm::MCInst& inst);
+
 bool isDoubleRead(const llvm::MCInst& inst);
 
 // does the instruction may change the value of register used to address a strore

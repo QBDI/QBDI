@@ -54,18 +54,25 @@ void analyseMemoryAccessAddrValue(const ExecBlock& curExecBlock, llvm::ArrayRef<
     access.flags = MEMORY_NO_FLAGS;
 
     uint16_t expectValueTag;
+    const llvm::MCInst& inst = curExecBlock.getOriginalMCInst(shadows[0].instID);
     switch (shadows[0].tag) {
         default:
             return;
         case MEM_READ_ADDRESS_TAG:
             access.type = MEMORY_READ;
-            access.size = getReadSize(curExecBlock.getOriginalMCInst(shadows[0].instID));
+            access.size = getReadSize(inst);
             expectValueTag = MEM_READ_VALUE_TAG;
+            if (isMinSizeRead(inst)) {
+                access.flags |= MEMORY_MINIMUM_SIZE;
+            }
             break;
         case MEM_WRITE_ADDRESS_TAG:
             access.type = MEMORY_WRITE;
-            access.size = getWriteSize(curExecBlock.getOriginalMCInst(shadows[0].instID));
+            access.size = getWriteSize(inst);
             expectValueTag = MEM_WRITE_VALUE_TAG;
+            if (isMinSizeRead(inst)) {
+                access.flags |= MEMORY_MINIMUM_SIZE;
+            }
             break;
     }
 

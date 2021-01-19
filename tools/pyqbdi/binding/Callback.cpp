@@ -89,8 +89,9 @@ void init_binding_Callback(py::module_& m) {
 
     py::enum_<MemoryAccessFlags>(m, "MemoryAccessFlags", "Memory access flags", py::arithmetic())
         .value("MEMORY_NO_FLAGS", MemoryAccessFlags::MEMORY_NO_FLAGS, "Empty flags")
-        .value("MEMORY_UNKNOWN_SIZE", MemoryAccessFlags::MEMORY_UNKNOWN_SIZE, "The size of the access isn't known")
-        .value("MEMORY_UNKNOWN_VALUE", MemoryAccessFlags::MEMORY_UNKNOWN_VALUE, "The value of the access is unknown or hasn't been retrived")
+        .value("MEMORY_UNKNOWN_SIZE", MemoryAccessFlags::MEMORY_UNKNOWN_SIZE, "The size of the access isn't known.")
+        .value("MEMORY_MINIMUM_SIZE", MemoryAccessFlags::MEMORY_MINIMUM_SIZE, "The given size is a minimum size.")
+        .value("MEMORY_UNKNOWN_VALUE", MemoryAccessFlags::MEMORY_UNKNOWN_VALUE, "The value of the access is unknown or hasn't been retrived.")
         .export_values();
 
     py::class_<MemoryAccess>(m, "MemoryAccess")

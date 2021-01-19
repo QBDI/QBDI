@@ -343,6 +343,7 @@ Globals
 
     .. js:autoattribute:: MEMORY_NO_FLAGS
     .. js:autoattribute:: MEMORY_UNKNOWN_SIZE
+    .. js:autoattribute:: MEMORY_MINIMUM_SIZE
     .. js:autoattribute:: MEMORY_UNKNOWN_VALUE
 
 .. js:autoclass:: SyncDirection

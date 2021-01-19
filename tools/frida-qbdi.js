@@ -498,9 +498,13 @@ var MemoryAccessFlags = Object.freeze({
      */
     MEMORY_UNKNOWN_SIZE : 1<<0,
     /**
+     * The given size is a minimum size.
+     */
+    MEMORY_MINIMUM_SIZE : 1<<1,
+    /**
      * The value of the access is unknown or hasn't been retrived.
      */
-    MEMORY_UNKNOWN_VALUE : 1<<1
+    MEMORY_UNKNOWN_VALUE : 1<<2
 });
 
 /**

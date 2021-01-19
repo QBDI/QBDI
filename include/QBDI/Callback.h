@@ -129,8 +129,9 @@ _QBDI_ENABLE_BITMASK_OPERATORS(MemoryAccessType);
  */
 typedef enum {
     _QBDI_EI(MEMORY_NO_FLAGS)       = 0,
-    _QBDI_EI(MEMORY_UNKNOWN_SIZE)   = 1<<0, /*!< The size of the access isn't known */
-    _QBDI_EI(MEMORY_UNKNOWN_VALUE)  = 1<<1  /*!< The value of the access is unknown or hasn't been retrived */
+    _QBDI_EI(MEMORY_UNKNOWN_SIZE)   = 1<<0, /*!< The size of the access isn't known. */
+    _QBDI_EI(MEMORY_MINIMUM_SIZE)   = 1<<1, /*!< The given size is a minimum size. */
+    _QBDI_EI(MEMORY_UNKNOWN_VALUE)  = 1<<2  /*!< The value of the access is unknown or hasn't been retrived. */
 } MemoryAccessFlags;
 
 _QBDI_ENABLE_BITMASK_OPERATORS(MemoryAccessFlags);

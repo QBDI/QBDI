@@ -137,19 +137,6 @@ const std::set<unsigned> unsupportedInst {
     VPGATHERQDrm,
     VPGATHERQQYrm,
     VPGATHERQQrm,
-    // TODO variable size
-    XRSTOR,
-    XRSTOR64,
-    XRSTORS,
-    XRSTORS64,
-    XSAVE,
-    XSAVE64,
-    XSAVEC,
-    XSAVEC64,
-    XSAVEOPT,
-    XSAVEOPT64,
-    XSAVES,
-    XSAVES64,
 };
 
 // instruction that reads memory/stack but without mayLoad
@@ -347,6 +334,10 @@ const std::set<unsigned> fixupNoWrite {
     WRFSBASE64,
     WRGSBASE,
     WRGSBASE64,
+    XRSTOR,
+    XRSTOR64,
+    XRSTORS,
+    XRSTORS64,
     XSETBV,
 };
 

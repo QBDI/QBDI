@@ -1503,3 +1503,41 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movdir64b") {
     for (auto& e: expectedPost.accesses)
         CHECK(e.see);
 }
+
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-xsave") {
+
+    if (!checkFeature("xsave")) {
+        return;
+    }
+
+    const char source[] = "xsave (%ecx)\n";
+
+    QBDI_ALIGNED(64) uint8_t v[4096] = {0};
+
+    ExpectedMemoryAccesses expectedPre = {{
+        { (QBDI::rword) &v, 0, 576, QBDI::MEMORY_READ, QBDI::MEMORY_MINIMUM_SIZE | QBDI::MEMORY_UNKNOWN_VALUE},
+    }};
+    ExpectedMemoryAccesses expectedPost = {{
+        { (QBDI::rword) &v, 0, 576, QBDI::MEMORY_READ, QBDI::MEMORY_MINIMUM_SIZE | QBDI::MEMORY_UNKNOWN_VALUE},
+        { (QBDI::rword) &v, 0, 576, QBDI::MEMORY_WRITE, QBDI::MEMORY_MINIMUM_SIZE | QBDI::MEMORY_UNKNOWN_VALUE},
+    }};
+
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("XSAVE", QBDI::PREINST, checkAccess, &expectedPre);
+    vm.addMnemonicCB("XSAVE", QBDI::POSTINST, checkAccess, &expectedPost);
+
+    QBDI::GPRState* state = vm.getGPRState();
+    state->eax = 7;
+    state->edx = 0;
+    state->ecx = (QBDI::rword) &v;
+    vm.setGPRState(state);
+
+    QBDI::rword retval;
+    bool ran = runOnASM(&retval, source);
+
+    CHECK(ran);
+    for (auto& e: expectedPre.accesses)
+        CHECK(e.see);
+    for (auto& e: expectedPost.accesses)
+        CHECK(e.see);
+}

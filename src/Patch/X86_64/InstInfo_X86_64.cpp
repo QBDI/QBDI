@@ -1783,6 +1783,23 @@ const unsigned READ_4096[] = {
 
 const size_t READ_4096_SIZE = sizeof(READ_4096)/sizeof(unsigned);
 
+const unsigned READ_4608[] = {
+    llvm::X86::XRSTOR,
+    llvm::X86::XRSTOR64,
+    llvm::X86::XRSTORS,
+    llvm::X86::XRSTORS64,
+    llvm::X86::XSAVE,
+    llvm::X86::XSAVE64,
+    llvm::X86::XSAVEC,
+    llvm::X86::XSAVEC64,
+    llvm::X86::XSAVEOPT,
+    llvm::X86::XSAVEOPT64,
+    llvm::X86::XSAVES,
+    llvm::X86::XSAVES64,
+};
+
+const size_t READ_4608_SIZE = sizeof(READ_4608)/sizeof(unsigned);
+
 const unsigned WRITE_8[] = {
     llvm::X86::ADC8mi,
     llvm::X86::ADC8mi8,
@@ -2277,6 +2294,19 @@ const unsigned WRITE_4096[] = {
 
 const size_t WRITE_4096_SIZE = sizeof(WRITE_4096)/sizeof(unsigned);
 
+const unsigned WRITE_4608[] = {
+    llvm::X86::XSAVE,
+    llvm::X86::XSAVE64,
+    llvm::X86::XSAVEC,
+    llvm::X86::XSAVEC64,
+    llvm::X86::XSAVEOPT,
+    llvm::X86::XSAVEOPT64,
+    llvm::X86::XSAVES,
+    llvm::X86::XSAVES64,
+};
+
+const size_t WRITE_4608_SIZE = sizeof(WRITE_4608)/sizeof(unsigned);
+
 const unsigned STACK_WRITE_16[] = {
     llvm::X86::PUSH16i8,
     llvm::X86::PUSH16r,
@@ -2434,25 +2464,56 @@ const unsigned STACK_READ_256[] = {
 
 const size_t STACK_READ_256_SIZE = sizeof(STACK_READ_256)/sizeof(unsigned);
 
+const unsigned MIN_SIZE_READ[] = {
+    llvm::X86::XRSTOR,
+    llvm::X86::XRSTOR64,
+    llvm::X86::XRSTORS,
+    llvm::X86::XRSTORS64,
+    llvm::X86::XSAVE,
+    llvm::X86::XSAVE64,
+    llvm::X86::XSAVEC,
+    llvm::X86::XSAVEC64,
+    llvm::X86::XSAVEOPT,
+    llvm::X86::XSAVEOPT64,
+    llvm::X86::XSAVES,
+    llvm::X86::XSAVES64,
+};
+
+const size_t MIN_SIZE_READ_SIZE = sizeof(MIN_SIZE_READ)/sizeof(unsigned);
+
+const unsigned MIN_SIZE_WRITE[] = {
+    llvm::X86::XSAVE,
+    llvm::X86::XSAVE64,
+    llvm::X86::XSAVEC,
+    llvm::X86::XSAVEC64,
+    llvm::X86::XSAVEOPT,
+    llvm::X86::XSAVEOPT64,
+    llvm::X86::XSAVES,
+    llvm::X86::XSAVES64,
+};
+
+const size_t MIN_SIZE_WRITE_SIZE = sizeof(MIN_SIZE_WRITE)/sizeof(unsigned);
+
 /* Highest 16 bits are the write access, lowest 16 bits are the read access. For each 16 bits part: the
  * highest bit stores if the access is a stack access or not while the lowest 12 bits store the
  * unsigned access size in bytes (thus up to 4095 bytes). A size of 0 means no access.
  *
- * ----------------------------------------------------------------------------
- * | Ox1f                        WRITE ACCESS                            0x10 |
- * ----------------------------------------------------------------------------
- * | 1 bit stack access flag | 3 bits reserved | 12 bits unsigned access size |
- * ----------------------------------------------------------------------------
+ * -------------------------------------------------------------------------------------------------
+ * | Ox1f                                   WRITE ACCESS                                      0x10 |
+ * -------------------------------------------------------------------------------------------------
+ * | 1 bit stack access flag | 1 bit minimum size | 2 bits reserved | 12 bits unsigned access size |
+ * -------------------------------------------------------------------------------------------------
  *
- * ----------------------------------------------------------------------------
- * | 0xf                          READ ACCESS                             0x0 |
- * ----------------------------------------------------------------------------
- * | 1 bit stack access flag | 3 bits reserved | 12 bits unsigned access size |
- * ----------------------------------------------------------------------------
+ * -------------------------------------------------------------------------------------------------
+ * | 0xf                                    READ ACCESS                                        0x0 |
+ * -------------------------------------------------------------------------------------------------
+ * | 1 bit stack access flag | 1 bit minimum size | 2 bits reserved | 12 bits unsigned access size |
+ * -------------------------------------------------------------------------------------------------
 */
 
 constexpr uint32_t WRITE_POSITION = 16;
 constexpr uint32_t STACK_ACCESS_FLAG = 0x8000;
+constexpr uint32_t ACCESS_MIN_SIZE_FLAG = 0x4000;
 constexpr uint32_t READ(uint32_t s) {return s & 0xfff;}
 constexpr uint32_t WRITE(uint32_t s) {return (s & 0xfff)<<WRITE_POSITION;}
 constexpr uint32_t STACK_READ(uint32_t s) {return STACK_ACCESS_FLAG | READ(s);}
@@ -2461,6 +2522,8 @@ constexpr uint32_t GET_READ_SIZE(uint32_t v) {return v & 0xfff;}
 constexpr uint32_t GET_WRITE_SIZE(uint32_t v) {return (v>>WRITE_POSITION) & 0xfff;}
 constexpr uint32_t IS_STACK_READ(uint32_t v) {return (v & STACK_ACCESS_FLAG) == STACK_ACCESS_FLAG;}
 constexpr uint32_t IS_STACK_WRITE(uint32_t v) {return ((v>>WRITE_POSITION) & STACK_ACCESS_FLAG) == STACK_ACCESS_FLAG;}
+constexpr uint32_t IS_MIN_SIZE_READ(uint32_t v) {return (v & ACCESS_MIN_SIZE_FLAG) == ACCESS_MIN_SIZE_FLAG;}
+constexpr uint32_t IS_MIN_SIZE_WRITE(uint32_t v) {return ((v>>WRITE_POSITION) & ACCESS_MIN_SIZE_FLAG) == ACCESS_MIN_SIZE_FLAG;}
 
 
 uint32_t MEMACCESS_INFO_TABLE[llvm::X86::INSTRUCTION_LIST_END] = {0};
@@ -2527,6 +2590,7 @@ void initMemAccessInfo() {
     _initMemAccessRead(READ_256, READ_256_SIZE, 32);
     _initMemAccessRead(READ_864, READ_864_SIZE, 108);
     _initMemAccessRead(READ_4096, READ_4096_SIZE, 512);
+    _initMemAccessRead(READ_4608, READ_4608_SIZE, 576);
     // write
     _initMemAccessWrite(WRITE_8, WRITE_8_SIZE, 1);
     _initMemAccessWrite(WRITE_16, WRITE_16_SIZE, 2);
@@ -2538,6 +2602,7 @@ void initMemAccessInfo() {
     _initMemAccessWrite(WRITE_256, WRITE_256_SIZE, 32);
     _initMemAccessWrite(WRITE_864, WRITE_864_SIZE, 108);
     _initMemAccessWrite(WRITE_4096, WRITE_4096_SIZE, 512);
+    _initMemAccessWrite(WRITE_4608, WRITE_4608_SIZE, 576);
     // read stack
     _initMemAccessStackRead(STACK_READ_16, STACK_READ_16_SIZE, 2);
     _initMemAccessStackRead(STACK_READ_32, STACK_READ_32_SIZE, 4);
@@ -2550,6 +2615,14 @@ void initMemAccessInfo() {
     _initMemAccessStackWrite(STACK_WRITE_64, STACK_WRITE_64_SIZE, 8);
     _initMemAccessStackWrite(STACK_WRITE_128, STACK_WRITE_128_SIZE, 16);
     _initMemAccessStackWrite(STACK_WRITE_256, STACK_WRITE_256_SIZE, 32);
+    // min size read
+    for(size_t i = 0; i < MIN_SIZE_READ_SIZE; i++) {
+        MEMACCESS_INFO_TABLE[MIN_SIZE_READ[i]] |= ACCESS_MIN_SIZE_FLAG;
+    }
+    // min size write
+    for(size_t i = 0; i < MIN_SIZE_WRITE_SIZE; i++) {
+        MEMACCESS_INFO_TABLE[MIN_SIZE_WRITE[i]] |= (ACCESS_MIN_SIZE_FLAG<<WRITE_POSITION);
+    }
 }
 
 unsigned getReadSize(const llvm::MCInst& inst) {
@@ -2566,6 +2639,14 @@ bool isStackRead(const llvm::MCInst& inst) {
 
 bool isStackWrite(const llvm::MCInst& inst) {
     return IS_STACK_WRITE(MEMACCESS_INFO_TABLE[inst.getOpcode()]);
+}
+
+bool isMinSizeRead(const llvm::MCInst& inst) {
+    return IS_MIN_SIZE_READ(MEMACCESS_INFO_TABLE[inst.getOpcode()]);
+}
+
+bool isMinSizeWrite(const llvm::MCInst& inst) {
+    return IS_MIN_SIZE_WRITE(MEMACCESS_INFO_TABLE[inst.getOpcode()]);
 }
 
 unsigned getImmediateSize(const llvm::MCInst& inst, const llvm::MCInstrDesc& desc) {
