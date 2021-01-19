@@ -1333,3 +1333,92 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movapd") {
         CHECK(e.see);
 }
 
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-maskmovdqu") {
+
+    const char source[] = "maskmovdqu	%xmm1, %xmm0\n";
+
+    const uint8_t v1[16] = {0x41, 0x6a, 0xc4, 0x1e, 0x14, 0xa9, 0x5d, 0x27, 0x67, 0x4f, 0x91, 0x6e, 0x4b, 0x57, 0x4d, 0xc9};
+    const uint8_t v2[16] = {0xa9, 0x5d, 0x27, 0x6a, 0xc4, 0x91, 0x6e, 0x4b, 0x57, 0x4d, 0x41, 0x6a, 0x0e, 0x80, 0xeb, 0xad};
+    const uint8_t mask[16] = {0x80, 0x80, 0x80, 0x80, 0x0, 0x80, 0x0, 0x80, 0x80, 0x0, 0x80, 0x0, 0x0, 0x80, 0x80, 0x0};
+    QBDI_ALIGNED(16) uint8_t buff1[16];
+
+    memcpy(buff1, v1, sizeof(v1));
+
+    ExpectedMemoryAccesses expectedPre = {{
+        { (QBDI::rword) &buff1, 0, 16, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+    }};
+    ExpectedMemoryAccesses expectedPost = {{
+        { (QBDI::rword) &buff1, 0, 16, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+        { (QBDI::rword) &buff1, 0, 16, QBDI::MEMORY_WRITE, QBDI::MEMORY_UNKNOWN_VALUE},
+    }};
+
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("MASKMOVDQU", QBDI::PREINST, checkAccess, &expectedPre);
+    vm.addMnemonicCB("MASKMOVDQU", QBDI::POSTINST, checkAccess, &expectedPost);
+
+    QBDI::GPRState* state = vm.getGPRState();
+    state->edi = (QBDI::rword) &buff1;
+    vm.setGPRState(state);
+
+    QBDI::FPRState* fstate = vm.getFPRState();
+    memcpy(fstate->xmm0, v2, sizeof(v2));
+    memcpy(fstate->xmm1, mask, sizeof(mask));
+    vm.setFPRState(fstate);
+
+    QBDI::rword retval;
+    bool ran = runOnASM(&retval, source);
+
+    CHECK(ran);
+    for (unsigned i = 0; i < sizeof(buff1); i++)
+        CHECK( ((mask[i] == 0)?v1[i]:v2[i]) == buff1[i]);
+
+    for (auto& e: expectedPre.accesses)
+        CHECK(e.see);
+    for (auto& e: expectedPost.accesses)
+        CHECK(e.see);
+}
+
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-maskmovq") {
+
+    const char source[] = "maskmovq	%mm1, %mm0\n";
+
+    const uint8_t v1[8] = {0x41, 0x6a, 0xc4, 0x1e, 0x14, 0xa9, 0x5d, 0x27};
+    const uint8_t v2[8] = {0xa9, 0x5d, 0x27, 0x6a, 0xc4, 0x91, 0x6e, 0x4b};
+    const uint8_t mask[8] = {0x80, 0x80, 0x80, 0x80, 0x0, 0x80, 0x0, 0x80};
+    QBDI_ALIGNED(8) uint8_t buff1[8];
+
+    memcpy(buff1, v1, sizeof(v1));
+
+    ExpectedMemoryAccesses expectedPre = {{
+        { (QBDI::rword) &buff1, 0, 8, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+    }};
+    ExpectedMemoryAccesses expectedPost = {{
+        { (QBDI::rword) &buff1, 0, 8, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+        { (QBDI::rword) &buff1, 0, 8, QBDI::MEMORY_WRITE, QBDI::MEMORY_UNKNOWN_VALUE},
+    }};
+
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("MMX_MASKMOVQ", QBDI::PREINST, checkAccess, &expectedPre);
+    vm.addMnemonicCB("MMX_MASKMOVQ", QBDI::POSTINST, checkAccess, &expectedPost);
+
+    QBDI::GPRState* state = vm.getGPRState();
+    state->edi = (QBDI::rword) &buff1;
+    vm.setGPRState(state);
+
+    QBDI::FPRState* fstate = vm.getFPRState();
+    memcpy(fstate->stmm0.reg, v2, sizeof(v2));
+    memcpy(fstate->stmm1.reg, mask, sizeof(mask));
+    vm.setFPRState(fstate);
+
+    QBDI::rword retval;
+    bool ran = runOnASM(&retval, source);
+
+    CHECK(ran);
+    for (unsigned i = 0; i < sizeof(buff1); i++)
+        CHECK( ((mask[i] == 0)?v1[i]:v2[i]) == buff1[i]);
+
+    for (auto& e: expectedPre.accesses)
+        CHECK(e.see);
+    for (auto& e: expectedPost.accesses)
+        CHECK(e.see);
+}

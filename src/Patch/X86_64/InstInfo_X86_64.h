@@ -29,6 +29,8 @@ bool mayChangeWriteAddr(const llvm::MCInst& inst, const llvm::MCInstrDesc& desc)
 
 bool hasREPPrefix(const llvm::MCInst& instr);
 
+bool implicitDSIAccess(const llvm::MCInst& inst, const llvm::MCInstrDesc& desc);
+
 }
 
 #endif
