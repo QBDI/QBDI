@@ -137,10 +137,6 @@ const std::set<unsigned> unsupportedInst {
     VPGATHERQDrm,
     VPGATHERQQYrm,
     VPGATHERQQrm,
-    // TODO read is normal MODr/m , write is the first operand, need custom handler
-    MOVDIR64B16,
-    MOVDIR64B32,
-    MOVDIR64B64,
     // TODO variable size
     XRSTOR,
     XRSTOR64,
@@ -186,6 +182,7 @@ const std::set<unsigned> fixupRead {
     LRETL,
     LRETQ,
     LRETW,
+    MOVDIR64B16,
     MOVSB,
     MOVSL,
     MOVSQ,
@@ -248,6 +245,7 @@ const std::set<unsigned> fixupWrite {
     FNSTSWm,
     FSAVEm,
     FSTENVm,
+    MOVDIR64B16,
     MOVSB,
     MOVSL,
     MOVSQ,

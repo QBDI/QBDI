@@ -211,6 +211,12 @@ RelocatableInst::SharedPtrVec GetWriteAddress::generate(const llvm::MCInst* inst
                 };
             }
         }
+        // MOVDIR64B instruction
+        else if (opcode == llvm::X86::MOVDIR64B16 ||
+                 opcode == llvm::X86::MOVDIR64B32 ||
+                 opcode == llvm::X86::MOVDIR64B64) {
+            return {NoReloc(movrr(dest, inst->getOperand(0).getReg()))};
+        }
         // Else replace the instruction with a LEA on the same address
         else if (memIndex >= 0) {
             // Scan for LLVM X86 address encoding

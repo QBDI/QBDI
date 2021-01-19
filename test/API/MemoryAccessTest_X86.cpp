@@ -24,6 +24,16 @@
 #include "Memory.hpp"
 #include "Range.h"
 
+#include "Utility/System.h"
+
+static bool checkFeature(const char* f) {
+    if (!QBDI::isHostCPUFeaturePresent(f)) {
+        WARN("Host doesn't support " << f << " feature: SKIP");
+        return false;
+    }
+    return true;
+}
+
 /*
 static QBDI::VMAction debugCB(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBDI::FPRState *fprState, void *data) {
     const QBDI::InstAnalysis* instAnalysis = vm->getInstAnalysis();
@@ -1447,5 +1457,49 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-xlat") {
     CHECK(ran);
     CHECK(v[5] == vm.getGPRState()->eax);
     for (auto& e: expected.accesses)
+        CHECK(e.see);
+}
+
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movdir64b") {
+
+    if (!checkFeature("movdir64b")) {
+        return;
+    }
+
+    const char source[] = "movdir64b (%eax), %ecx\n";
+
+    uint8_t v[512] = {0};
+    uint8_t buff[512] = {0};
+
+    for (size_t i = 0; i < sizeof(v); i++) {
+        v[i] = (i % 256);
+    }
+
+    ExpectedMemoryAccesses expectedPre = {{
+        { (QBDI::rword) &v, 0, 512, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+    }};
+    ExpectedMemoryAccesses expectedPost = {{
+        { (QBDI::rword) &v, 0, 512, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+        { (QBDI::rword) &buff, 0, 512, QBDI::MEMORY_WRITE, QBDI::MEMORY_UNKNOWN_VALUE},
+    }};
+
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("MOVDIR64B32", QBDI::PREINST, checkAccess, &expectedPre);
+    vm.addMnemonicCB("MOVDIR64B32", QBDI::POSTINST, checkAccess, &expectedPost);
+
+    QBDI::GPRState* state = vm.getGPRState();
+    state->eax = (QBDI::rword) &v;
+    state->ecx = (QBDI::rword) &buff;
+    vm.setGPRState(state);
+
+    QBDI::rword retval;
+    bool ran = runOnASM(&retval, source);
+
+    CHECK(ran);
+    for (size_t i = 0; i < sizeof(v); i++)
+        CHECK(buff[i] == (i % 256));
+    for (auto& e: expectedPre.accesses)
+        CHECK(e.see);
+    for (auto& e: expectedPost.accesses)
         CHECK(e.see);
 }

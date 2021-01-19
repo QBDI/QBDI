@@ -1776,6 +1776,9 @@ const size_t READ_864_SIZE = sizeof(READ_864)/sizeof(unsigned);
 const unsigned READ_4096[] = {
     llvm::X86::FXRSTOR,
     llvm::X86::FXRSTOR64,
+    llvm::X86::MOVDIR64B16,
+    llvm::X86::MOVDIR64B32,
+    llvm::X86::MOVDIR64B64,
 };
 
 const size_t READ_4096_SIZE = sizeof(READ_4096)/sizeof(unsigned);
@@ -2267,6 +2270,9 @@ const size_t WRITE_864_SIZE = sizeof(WRITE_864)/sizeof(unsigned);
 const unsigned WRITE_4096[] = {
     llvm::X86::FXSAVE,
     llvm::X86::FXSAVE64,
+    llvm::X86::MOVDIR64B16,
+    llvm::X86::MOVDIR64B32,
+    llvm::X86::MOVDIR64B64,
 };
 
 const size_t WRITE_4096_SIZE = sizeof(WRITE_4096)/sizeof(unsigned);
