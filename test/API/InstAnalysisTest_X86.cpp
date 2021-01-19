@@ -295,6 +295,24 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-xchgrr") {
         }, QBDI::REGISTER_UNUSED);
 }
 
+TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-movoa") {
+
+    QBDI::rword addr = writeASM("mov %fs:0x0, %eax\n");
+
+    checkInst(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
+        ExpectedInstAnalysis { "MOV32ao32", addr,
+          /* instSize */ 6, /* affectControlFlow */ false, /* isBranch */ false,
+          /* isCall */ false, /* isReturn */ false, /* isCompare */ false,
+          /* isPredicable */ false, /* mayLoad */ true, /* mayStore */ false,
+          /* loadSize */ 4, /* storeSize */ 0, /* condition */ QBDI::CONDITION_NONE});
+    checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
+        {
+            {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_ADDR, 0, 4, 0, -1, nullptr, QBDI::REGISTER_UNUSED},
+            {QBDI::OPERAND_SEG, QBDI::OPERANDFLAG_ADDR, 0, 2, 0, -1, "FS", QBDI::REGISTER_READ},
+            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_IMPLICIT, 0, 4, 0, 0, "EAX", QBDI::REGISTER_WRITE},
+        }, QBDI::REGISTER_UNUSED);
+}
+
 TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-movsb") {
 
     QBDI::rword addr = writeASM("movsb\n");

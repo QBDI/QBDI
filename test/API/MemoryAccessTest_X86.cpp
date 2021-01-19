@@ -232,6 +232,25 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-call_ret") {
         CHECK(e.see);
 }
 
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movao") {
+
+    const char source[] = "mov %gs:0x0, %eax\n";
+
+    ExpectedMemoryAccesses expected = {{
+        { 0, 0, 4, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
+    }};
+
+    vm.recordMemoryAccess(QBDI::MEMORY_READ);
+    vm.addMnemonicCB("MOV32ao32", QBDI::PREINST, checkAccess, &expected);
+
+    QBDI::rword retval;
+    bool ran = runOnASM(&retval, source);
+
+    CHECK(ran);
+    for (auto& e: expected.accesses)
+        CHECK(e.see);
+}
+
 // COMPS MOVS SCAS LODS STOS
 // REP and REPNE prefix
 
