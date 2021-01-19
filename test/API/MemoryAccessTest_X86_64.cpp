@@ -967,6 +967,33 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-stosq2") {
         CHECK(e.see);
 }
 
+TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-movzx") {
+
+    const char source[] = "movzbq  0x5(%rbx), %rax\n";
+
+    uint8_t v[] = {0xeb, 0xaf, 0x71, 0x96, 0x30, 0x14, 0x52, 0xce};
+
+    ExpectedMemoryAccesses expected = {{
+        { (QBDI::rword) &v[5], v[5], 1, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
+    }};
+
+    vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+    vm.addMnemonicCB("MOVZX64rm8", QBDI::POSTINST, checkAccess, &expected);
+
+    QBDI::GPRState* state = vm.getGPRState();
+    state->rax = 0x6efab792eb;
+    state->rbx = (QBDI::rword) &v;
+    vm.setGPRState(state);
+
+    QBDI::rword retval;
+    bool ran = runOnASM(&retval, source);
+
+    CHECK(ran);
+    CHECK(state->rax == v[5]);
+    for (auto& e: expected.accesses)
+        CHECK(e.see);
+}
+
 TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-addmr") {
 
     const char source[] = "addq %rax, (%rbx)\n";
