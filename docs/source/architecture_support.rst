@@ -26,7 +26,11 @@ in the assembly and disassembly backend of LLVM. Only a small part of SIMD instr
 by our tests but we do not expect any problems with the uncovered ones because their semantic are
 closely related with the covered ones.
 
-Memory access information is only provided for general instructions, not for SIMD ones.
+Memory access information is provided for general and SIMD instructions, except:
+
+- privileged instructions
+- instructions of CET, RTM, MPX, XOP or AVX512 features
+- VGATHER* and VPGATHER* instructions of AVX2
 
 Instruction Coverage
 ^^^^^^^^^^^^^^^^^^^^
@@ -96,8 +100,6 @@ Intel x86
 ---------
 
 The x86 support is based on x86-64.
-
-Memory access information is only provided for general instructions, not for SIMD ones.
 
 Instruction Coverage
 ^^^^^^^^^^^^^^^^^^^^

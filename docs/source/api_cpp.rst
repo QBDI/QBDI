@@ -483,6 +483,8 @@ example shows how to use those APIs to log the memory writes.
 
 .. doxygenenum:: QBDI::MemoryAccessType
 
+.. doxygenenum:: QBDI::MemoryAccessFlags
+
 .. doxygenfunction:: QBDI::VM::getInstMemoryAccess
 
 .. doxygenfunction:: QBDI::VM::getBBMemoryAccess
