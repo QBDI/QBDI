@@ -54,7 +54,7 @@ static ConditionType ConditionLLVM2QBDI(unsigned cond) {
 
 void analyseCondition(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const llvm::MCInstrDesc& desc) {
     const unsigned numOperands = inst.getNumOperands();
-    for (int i = 0; i < numOperands; i++) {
+    for (unsigned i = 0; i < numOperands; i++) {
         const llvm::MCOperandInfo& opdesc = desc.OpInfo[i];
         if (opdesc.OperandType == llvm::X86::OperandType::OPERAND_COND_CODE) {
             instAnalysis->condition = ConditionLLVM2QBDI(static_cast<unsigned>(inst.getOperand(i).getImm()));

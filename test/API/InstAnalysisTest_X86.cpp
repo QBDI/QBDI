@@ -80,7 +80,7 @@ static void checkOperand(const QBDI::InstAnalysis* ana, const std::vector<QBDI::
     CHECKED_IF((ana->analysisType & QBDI::ANALYSIS_OPERANDS) == QBDI::ANALYSIS_OPERANDS) {
         CHECK(flagsAccess == ana->flagsAccess);
         CHECK(expecteds.size() == ana->numOperands);
-        for (int i = 0; i < std::min<unsigned>(ana->numOperands, expecteds.size()); i++) {
+        for (unsigned i = 0; i < std::min<unsigned>(ana->numOperands, expecteds.size()); i++) {
             const QBDI::OperandAnalysis& expect = expecteds[i];
             const QBDI::OperandAnalysis& op = ana->operands[i];
             CHECK(expect.type == op.type);
