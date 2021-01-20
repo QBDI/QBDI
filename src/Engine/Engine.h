@@ -88,6 +88,7 @@ private:
     GPRState*                                                       curGPRState;
     FPRState*                                                       curFPRState;
     ExecBlock*                                                      curExecBlock;
+    bool                                                            running;
 
     void init();
     void reinit(const std::string& cpu, const std::vector<std::string>& mattrs);

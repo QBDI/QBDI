@@ -57,7 +57,7 @@
 namespace QBDI {
 
 Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs, VMInstanceRef vminstance)
-    : cpu(_cpu), mattrs(_mattrs), vminstance(vminstance), instrRulesCounter(0), vmCallbacksCounter(0) {
+    : cpu(_cpu), mattrs(_mattrs), vminstance(vminstance), instrRulesCounter(0), vmCallbacksCounter(0), running(false) {
     init();
 }
 
@@ -150,7 +150,7 @@ void Engine::init() {
 }
 
 void Engine::reinit(const std::string& cpu_, const std::vector<std::string>& mattrs_) {
-    RequireAction("Engine::reinit", curExecBlock == nullptr && "Cannot reInit a running Engine", abort());
+    RequireAction("Engine::reinit", not running && "Cannot reInit a running Engine", abort());
 
     // clear callbacks
     instrRules.clear();
@@ -187,12 +187,13 @@ void Engine::reinit(const std::string& cpu_, const std::vector<std::string>& mat
 }
 
 Engine::Engine(const Engine& other)
-    : cpu(other.cpu), mattrs(other.mattrs), vminstance(nullptr) {
+    : cpu(other.cpu), mattrs(other.mattrs), vminstance(nullptr), running(false) {
     this->init();
     *this = other;
 }
 
 Engine& Engine::operator=(const Engine& other) {
+    RequireAction("Engine::operator=", not running && "Cannot assign a running Engine", abort());
     this->clearAllCache();
 
     if (cpu != other.cpu || mattrs != other.mattrs) {
@@ -219,6 +220,7 @@ Engine& Engine::operator=(const Engine& other) {
 }
 
 void Engine::changeVMInstanceRef(VMInstanceRef vminstance) {
+    RequireAction("Engine::changeVMInstanceRef", not running && "Cannot changeVMInstanceRef on a running Engine", abort());
     this->vminstance = vminstance;
 
     blockManager->changeVMInstanceRef(vminstance);
@@ -394,6 +396,7 @@ void Engine::handleNewBasicBlock(rword pc) {
 
 
 bool Engine::precacheBasicBlock(rword pc) {
+    RequireAction("Engine::precacheBasicBlock", not running && "Cannot precacheBasicBlock on a running Engine", abort());
     if(blockManager->isFlushPending()) {
         // Commit the flush
         blockManager->flushCommit();
@@ -402,12 +405,16 @@ bool Engine::precacheBasicBlock(rword pc) {
         // already in cache
         return false;
     }
+    running = true;
     handleNewBasicBlock(pc);
+    running = false;
     return true;
 }
 
 
 bool Engine::run(rword start, rword stop) {
+    RequireAction("Engine::precacheBasicBlock", not running && "Cannot run an already running Engine", abort());
+
     rword         currentPC = start;
     bool          hasRan = false;
     curGPRState = gprState.get();
@@ -417,6 +424,8 @@ bool Engine::run(rword start, rword stop) {
     if (!execBroker->isInstrumented(start)) {
         return false;
     }
+
+    running = true;
 
     // Execute basic block per basic block
     do {
@@ -483,6 +492,8 @@ bool Engine::run(rword start, rword stop) {
                     *fprState = *curFPRState;
                     curGPRState = gprState.get();
                     curFPRState = fprState.get();
+                    curExecBlock = nullptr;
+                    running = false;
                     return hasRan;
             }
 
@@ -503,6 +514,8 @@ bool Engine::run(rword start, rword stop) {
     *fprState = *curFPRState;
     curGPRState = gprState.get();
     curFPRState = fprState.get();
+    curExecBlock = nullptr;
+    running = false;
 
     return hasRan;
 }
@@ -603,19 +616,19 @@ void Engine::deleteAllInstrumentations() {
 }
 
 void Engine::clearAllCache() {
-    blockManager->clearCache(curExecBlock == nullptr);
+    blockManager->clearCache(not running);
 }
 
 void Engine::clearCache(rword start, rword end) {
     blockManager->clearCache(Range<rword>(start, end));
-    if (curExecBlock == nullptr && blockManager->isFlushPending()) {
+    if (not running && blockManager->isFlushPending()) {
         blockManager->flushCommit();
     }
 }
 
 void Engine::clearCache(RangeSet<rword> rangeSet) {
     blockManager->clearCache(rangeSet);
-    if (curExecBlock == nullptr && blockManager->isFlushPending()) {
+    if (not running && blockManager->isFlushPending()) {
         blockManager->flushCommit();
     }
 }
