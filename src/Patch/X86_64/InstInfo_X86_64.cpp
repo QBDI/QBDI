@@ -2655,17 +2655,14 @@ unsigned getImmediateSize(const llvm::MCInst& inst, const llvm::MCInstrDesc& des
 
 bool useAllRegisters(const llvm::MCInst& inst) {
     if constexpr(is_x86) {
-        static const unsigned InstAllRegisters[] = {
-            llvm::X86::PUSHA16,
-            llvm::X86::PUSHA32,
-            llvm::X86::POPA16,
-            llvm::X86::POPA32
-        };
-        unsigned opcode = inst.getOpcode();
-
-        for (unsigned op : InstAllRegisters) {
-            if (op == opcode)
+        switch (inst.getOpcode()) {
+            case llvm::X86::PUSHA16:
+            case llvm::X86::PUSHA32:
+            case llvm::X86::POPA16:
+            case llvm::X86::POPA32:
                 return true;
+            default:
+                break;
         }
     }
 
@@ -2741,6 +2738,31 @@ bool implicitDSIAccess(const llvm::MCInst& inst, const llvm::MCInstrDesc& desc) 
         case llvm::X86::MMX_MASKMOVQ64:
         case llvm::X86::VMASKMOVDQU:
         case llvm::X86::VMASKMOVDQU64:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool unsupportedRead(const llvm::MCInst& inst) {
+
+    switch (inst.getOpcode()) {
+        case llvm::X86::VGATHERDPDYrm:
+        case llvm::X86::VGATHERDPDrm:
+        case llvm::X86::VGATHERDPSYrm:
+        case llvm::X86::VGATHERDPSrm:
+        case llvm::X86::VGATHERQPDYrm:
+        case llvm::X86::VGATHERQPDrm:
+        case llvm::X86::VGATHERQPSYrm:
+        case llvm::X86::VGATHERQPSrm:
+        case llvm::X86::VPGATHERDDYrm:
+        case llvm::X86::VPGATHERDDrm:
+        case llvm::X86::VPGATHERDQYrm:
+        case llvm::X86::VPGATHERDQrm:
+        case llvm::X86::VPGATHERQDYrm:
+        case llvm::X86::VPGATHERQDrm:
+        case llvm::X86::VPGATHERQQYrm:
+        case llvm::X86::VPGATHERQQrm:
             return true;
         default:
             return false;

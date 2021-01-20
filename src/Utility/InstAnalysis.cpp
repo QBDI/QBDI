@@ -363,7 +363,7 @@ const InstAnalysis* analyzeInstMetadata(const InstMetadata& instMetadata, Analys
         instAnalysis->isPredicable      = desc.isPredicable();
         instAnalysis->loadSize          = getReadSize(inst);
         instAnalysis->storeSize         = getWriteSize(inst);
-        instAnalysis->mayLoad           = instAnalysis->loadSize != 0;
+        instAnalysis->mayLoad           = instAnalysis->loadSize != 0 || unsupportedRead(inst);
         instAnalysis->mayStore          = instAnalysis->storeSize != 0;
         instAnalysis->mayLoad_LLVM      = desc.mayLoad();
         instAnalysis->mayStore_LLVM     = desc.mayStore();

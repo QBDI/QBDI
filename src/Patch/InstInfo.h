@@ -39,6 +39,8 @@ unsigned getImmediateSize(const llvm::MCInst& inst, const llvm::MCInstrDesc& des
 // when the method return True.
 bool useAllRegisters(const llvm::MCInst& inst);
 
+bool unsupportedRead(const llvm::MCInst& inst);
+
 };
 
 #endif // INSTCLASSES_H

@@ -117,10 +117,10 @@ const std::set<unsigned> unsupportedInst {
     KMOVQmk,
     KMOVWkm,
     KMOVWmk,
-    // specific addressing operation
+    // MPX feature
     BNDLDXrm,
     BNDSTXmr,
-    // TODO support VSIB addressing
+    // complex & conditionnal memory access
     VGATHERDPDYrm,
     VGATHERDPDrm,
     VGATHERDPSYrm,
