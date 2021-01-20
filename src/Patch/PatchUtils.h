@@ -18,6 +18,8 @@
 #ifndef PATCHUTILS_H
 #define PATCHUTILS_H
 
+#include <algorithm>
+#include <iterator>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -37,58 +39,69 @@ class PatchGenerator;
 
 // Helper template
 
-template<typename T, typename U> class AutoAlloc {
+// helper to create a object as a unique_ptr
+template<typename T, typename U> class AutoUnique : public T {
 public:
 
-    operator std::shared_ptr<T>() {
-        return std::shared_ptr<T>(new U(*static_cast<U*>(this)));
-    }
+    template<typename ... Args>
+    AutoUnique(Args&&... args): T(std::forward<Args>(args)...) {}
 
-    operator std::unique_ptr<T>() {
-        return std::make_unique<U>(*static_cast<U*>(this));
-    }
+    template<typename ... Args>
+    inline static std::unique_ptr<T> unique(Args&&... args) {
+        return std::make_unique<U>(std::forward<Args>(args)...);
+    };
 };
 
-template<class T, class U>
-void _conv_unique(std::vector<std::unique_ptr<T>>& vec, U&& u) {
-    vec.push_back(std::make_unique<U>(std::forward<U>(u)));
+// helper to clone object, when the copy is possible
+template<typename T, typename U> class AutoClone : public AutoUnique<T, U> {
+public:
+
+    template<typename ... Args>
+    AutoClone(Args&&... args): AutoUnique<T, U>(std::forward<Args>(args)...) {}
+
+    inline std::unique_ptr<T> clone() const override {
+        return std::make_unique<U>(*static_cast<const U*>(this));
+    };
+};
+
+template<class T>
+inline void _conv_unique(std::vector<std::unique_ptr<T>>& vec, std::unique_ptr<T>&& u) {
+    vec.push_back(std::forward<std::unique_ptr<T>>(u));
 }
 
-template<class T, class U, class ... Args>
-void _conv_unique(std::vector<std::unique_ptr<T>>& vec, U&& u, Args... args) {
-    vec.push_back(std::make_unique<U>(std::forward<U>(u)));
+template<class T, class ... Args>
+inline void _conv_unique(std::vector<std::unique_ptr<T>>& vec, std::unique_ptr<T>&& u, Args... args) {
+    vec.push_back(std::forward<std::unique_ptr<T>>(u));
     _conv_unique<T>(vec, std::forward<Args>(args)...);
 }
 
 template<class T, class ... Args>
-std::vector<std::unique_ptr<T>> conv_unique(Args... args) {
+inline std::vector<std::unique_ptr<T>> conv_unique(Args... args) {
     std::vector<std::unique_ptr<T>> vec;
     _conv_unique<T>(vec, std::forward<Args>(args)...);
     return vec;
 }
 
-void inline append(std::vector<std::shared_ptr<RelocatableInst>> &u, const std::vector<std::shared_ptr<RelocatableInst>> v) {
-    u.insert(u.end(), v.begin(), v.end());
+template<class T>
+inline std::vector<std::unique_ptr<T>> cloneVec(const std::vector<std::unique_ptr<T>>& u) {
+    std::vector<std::unique_ptr<T>> v;
+    std::transform(u.cbegin(), u.cend(), std::back_inserter(v),
+        [](const std::unique_ptr<T>& c) {
+            if (c) return c->clone();
+            return std::unique_ptr<T>();
+        });
+    return v;
 }
 
-void inline prepend(std::vector<std::shared_ptr<RelocatableInst>> &u, const std::vector<std::shared_ptr<RelocatableInst>> v) {
-    u.insert(u.begin(), v.begin(), v.end());
+template<class T>
+inline void append(std::vector<std::unique_ptr<T>> &u, std::vector<std::unique_ptr<T>> v) {
+    std::move(v.begin(), v.end(), std::back_inserter(u));
 }
 
-void inline insert(std::vector<std::shared_ptr<RelocatableInst>> &u, size_t pos, const std::vector<std::shared_ptr<RelocatableInst>> v) {
-    u.insert(u.begin() + pos, v.begin(), v.end());
-}
-
-void inline append(std::vector<std::shared_ptr<PatchGenerator>> &u, const std::vector<std::shared_ptr<PatchGenerator>> v) {
-    u.insert(u.end(), v.begin(), v.end());
-}
-
-void inline prepend(std::vector<std::shared_ptr<PatchGenerator>> &u, const std::vector<std::shared_ptr<PatchGenerator>> v) {
-    u.insert(u.begin(), v.begin(), v.end());
-}
-
-void inline insert(std::vector<std::shared_ptr<PatchGenerator>> &u, size_t pos, const std::vector<std::shared_ptr<PatchGenerator>> v) {
-    u.insert(u.begin() + pos, v.begin(), v.end());
+template<class T>
+inline void prepend(std::vector<std::unique_ptr<T>> &u, std::vector<std::unique_ptr<T>> v) {
+    std::move(u.begin(), u.end(), std::back_inserter(v));
+    u.swap(v);
 }
 
 // Helper classes

@@ -26,7 +26,7 @@
 namespace QBDI {
 
 void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI,
-                           const PatchGenerator::SharedPtrVec patchGen, bool breakToHost, InstPosition position) const {
+                           const PatchGenerator::UniquePtrVec& patchGen, bool breakToHost, InstPosition position) const {
 
     if (patchGen.size() == 0 && breakToHost == false) {
         return;
@@ -36,11 +36,11 @@ void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const ll
      * be either prepended or appended to the patch and, in each case, can trigger a break to
      * host.
     */
-    RelocatableInst::SharedPtrVec instru;
+    RelocatableInst::UniquePtrVec instru;
     TempManager tempManager(patch.metadata.inst, MCII, MRI, true);
 
     // Generate the instrumentation code from the original instruction context
-    for(const PatchGenerator::SharedPtr& g : patchGen) {
+    for(const PatchGenerator::UniquePtr& g : patchGen) {
         append(instru,
             g->generate(&patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII, &tempManager, nullptr)
         );
@@ -117,9 +117,9 @@ void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const ll
 
     // The resulting instrumentation is either appended or prepended as per the InstPosition
     if(position == PREINST) {
-        patch.prepend(instru);
+        patch.prepend(std::move(instru));
     } else if(position == POSTINST) {
-        patch.append(instru);
+        patch.append(std::move(instru));
     } else {
         LogError("InstrRule::Instrument", "Invalid position 0x%x", position);
         abort();

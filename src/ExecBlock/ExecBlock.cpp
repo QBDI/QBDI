@@ -52,8 +52,8 @@
 namespace QBDI {
 
 uint32_t ExecBlock::epilogueSize = 0;
-RelocatableInst::SharedPtrVec ExecBlock::execBlockPrologue = RelocatableInst::SharedPtrVec();
-RelocatableInst::SharedPtrVec ExecBlock::execBlockEpilogue = RelocatableInst::SharedPtrVec();
+RelocatableInst::UniquePtrVec ExecBlock::execBlockPrologue = RelocatableInst::UniquePtrVec();
+RelocatableInst::UniquePtrVec ExecBlock::execBlockEpilogue = RelocatableInst::UniquePtrVec();
 void (*ExecBlock::runCodeBlockFct)(void*) = NULL;
 
 ExecBlock::ExecBlock(const Assembly &assembly, VMInstanceRef vminstance) : vminstance(vminstance), assembly(assembly) {
@@ -265,7 +265,7 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
                     seqIt->metadata.patchSize, this, seqIt->metadata.address, disass.c_str());
         });
         // Attempt to write a complete patch. If not, rollback to the last complete patch written
-        for(const RelocatableInst::SharedPtr& inst : seqIt->insts) {
+        for(const RelocatableInst::UniquePtr& inst : seqIt->insts) {
             if(getEpilogueOffset() > MINIMAL_BLOCK_SIZE) {
                 assembly.writeInstruction(inst->reloc(this), codeStream.get());
             }
@@ -309,14 +309,14 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
     // If it's a rollback or a non-exit sequence, add a terminator
     if((seqType & SeqType::Exit) == 0) {
         LogDebug("ExecBlock::writeBasicBlock", "Writting terminator to ExecBlock %p to finish non-exit sequence", this);
-        RelocatableInst::SharedPtrVec terminator = getTerminator(seqIt->metadata.address);
-        for(RelocatableInst::SharedPtr &inst : terminator) {
+        RelocatableInst::UniquePtrVec terminator = getTerminator(seqIt->metadata.address);
+        for(const RelocatableInst::UniquePtr &inst : terminator) {
             assembly.writeInstruction(inst->reloc(this), codeStream.get());
         }
     }
     // JIT the jump to epilogue
-    RelocatableInst::SharedPtrVec jmpEpilogue = JmpEpilogue();
-    for(RelocatableInst::SharedPtr &inst : jmpEpilogue) {
+    RelocatableInst::UniquePtrVec jmpEpilogue = JmpEpilogue();
+    for(const RelocatableInst::UniquePtr &inst : jmpEpilogue) {
         assembly.writeInstruction(inst->reloc(this), codeStream.get());
     }
     // Register sequence

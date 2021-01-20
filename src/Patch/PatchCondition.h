@@ -39,10 +39,10 @@ namespace QBDI {
 class PatchCondition {
 public:
 
-    using SharedPtr    = std::shared_ptr<PatchCondition>;
-    using SharedPtrVec = std::vector<std::shared_ptr<PatchCondition>>;
-    using UniqPtr      = std::unique_ptr<PatchCondition>;
-    using UniqPtrVec   = std::vector<std::unique_ptr<PatchCondition>>;
+    using UniquePtr    = std::unique_ptr<PatchCondition>;
+    using UniquePtrVec = std::vector<std::unique_ptr<PatchCondition>>;
+
+    virtual std::unique_ptr<PatchCondition> clone() const =0;
 
     virtual bool test(const llvm::MCInst& inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const = 0;
 
@@ -55,7 +55,7 @@ public:
     virtual ~PatchCondition() = default;
 };
 
-class MnemonicIs : public PatchCondition, public AutoAlloc<PatchCondition, MnemonicIs> {
+class MnemonicIs : public AutoClone<PatchCondition, MnemonicIs> {
     std::string mnemonic;
 
 public:
@@ -69,7 +69,7 @@ public:
     bool test(const llvm::MCInst& inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
-class OpIs : public PatchCondition, public AutoAlloc<PatchCondition, OpIs> {
+class OpIs : public AutoClone<PatchCondition, OpIs> {
     unsigned int op;
 
 public:
@@ -83,7 +83,7 @@ public:
     bool test(const llvm::MCInst& inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
-class RegIs : public PatchCondition, public AutoAlloc<PatchCondition, RegIs> {
+class RegIs : public AutoClone<PatchCondition, RegIs> {
     Operand opn;
     Reg reg;
 
@@ -99,7 +99,7 @@ public:
     bool test(const llvm::MCInst& inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
-class UseReg : public PatchCondition, public AutoAlloc<PatchCondition, UseReg> {
+class UseReg : public AutoClone<PatchCondition, UseReg> {
     Reg reg;
 
 public:
@@ -113,7 +113,7 @@ public:
     bool test(const llvm::MCInst& inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
-class InstructionInRange : public PatchCondition, public AutoAlloc<PatchCondition, InstructionInRange> {
+class InstructionInRange : public AutoClone<PatchCondition, InstructionInRange> {
     Range<rword> range;
 
 public:
@@ -136,7 +136,7 @@ public:
     }
 };
 
-class AddressIs : public PatchCondition, public AutoAlloc<PatchCondition, AddressIs> {
+class AddressIs : public AutoClone<PatchCondition, AddressIs> {
     rword breakpoint;
 
 public:
@@ -156,7 +156,7 @@ public:
     }
 };
 
-class OperandIsReg : public PatchCondition, public AutoAlloc<PatchCondition, OperandIsReg> {
+class OperandIsReg : public AutoClone<PatchCondition, OperandIsReg> {
     Operand opn;
 
 public:
@@ -170,7 +170,7 @@ public:
     bool test(const llvm::MCInst& inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
-class OperandIsImm : public PatchCondition, public AutoAlloc<PatchCondition, OperandIsImm> {
+class OperandIsImm : public AutoClone<PatchCondition, OperandIsImm> {
     Operand opn;
 
 public:
@@ -184,8 +184,8 @@ public:
     bool test(const llvm::MCInst& inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
-class And : public PatchCondition, public AutoAlloc<PatchCondition, And> {
-    PatchCondition::SharedPtrVec conditions;
+class And : public AutoUnique<PatchCondition, And> {
+    PatchCondition::UniquePtrVec conditions;
 
 public:
 
@@ -193,11 +193,11 @@ public:
      *
      * @param[in] conditions List of conditions to evaluate.
     */
-    And(PatchCondition::SharedPtrVec conditions) : conditions(conditions) {};
+    And(PatchCondition::UniquePtrVec&& conditions) : conditions(std::forward<PatchCondition::UniquePtrVec>(conditions)) {};
 
     bool test(const llvm::MCInst& inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override {
         return std::all_of(conditions.begin(), conditions.end(),
-                            [&](const PatchCondition::SharedPtr& cond) {
+                            [&](const PatchCondition::UniquePtr& cond) {
                                 return cond->test(inst, address, instSize, MCII);
                             });
     }
@@ -210,10 +210,14 @@ public:
         }
         return r;
     }
+
+    inline std::unique_ptr<PatchCondition> clone() const override {
+        return And::unique(cloneVec(conditions));
+    };
 };
 
-class Or : public PatchCondition, public AutoAlloc<PatchCondition, Or> {
-    PatchCondition::SharedPtrVec conditions;
+class Or : public AutoUnique<PatchCondition, Or> {
+    PatchCondition::UniquePtrVec conditions;
 
 public:
 
@@ -221,11 +225,11 @@ public:
      *
      * @param[in] conditions List of conditions to evaluate.
     */
-    Or(PatchCondition::SharedPtrVec conditions) : conditions(conditions) {};
+    Or(PatchCondition::UniquePtrVec&& conditions) : conditions(std::forward<PatchCondition::UniquePtrVec>(conditions)) {};
 
     bool test(const llvm::MCInst& inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override {
         return std::any_of(conditions.begin(), conditions.end(),
-                            [&](const PatchCondition::SharedPtr& cond) {
+                            [&](const PatchCondition::UniquePtr& cond) {
                                 return cond->test(inst, address, instSize, MCII);
                             });
     }
@@ -237,10 +241,14 @@ public:
         }
         return r;
     }
+
+    inline std::unique_ptr<PatchCondition> clone() const override {
+        return Or::unique(cloneVec(conditions));
+    };
 };
 
-class Not : public PatchCondition, public AutoAlloc<PatchCondition, Not> {
-    PatchCondition::SharedPtr condition;
+class Not : public AutoUnique<PatchCondition, Not> {
+    PatchCondition::UniquePtr condition;
 
 public:
 
@@ -248,14 +256,18 @@ public:
      *
      * @param[in] condition Condition to evaluate.
     */
-    Not(PatchCondition::SharedPtr condition) : condition(condition) {};
+    Not(PatchCondition::UniquePtr&& condition) : condition(std::forward<PatchCondition::UniquePtr>(condition)) {};
 
     bool test(const llvm::MCInst& inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override {
         return !condition->test(inst, address, instSize, MCII);
     }
+
+    inline std::unique_ptr<PatchCondition> clone() const override {
+        return Not::unique(condition->clone());
+    };
 };
 
-class True : public PatchCondition, public AutoAlloc<PatchCondition, True> {
+class True : public AutoClone<PatchCondition, True> {
 public:
 
     /*! Return true.
@@ -267,7 +279,7 @@ public:
     }
 };
 
-class DoesReadAccess : public PatchCondition, public AutoAlloc<PatchCondition, DoesReadAccess> {
+class DoesReadAccess : public AutoClone<PatchCondition, DoesReadAccess> {
 public:
 
     /*! Return true if the instruction read data from memory.
@@ -277,7 +289,7 @@ public:
     bool test(const llvm::MCInst& inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
-class DoesWriteAccess : public PatchCondition, public AutoAlloc<PatchCondition, DoesWriteAccess> {
+class DoesWriteAccess : public AutoClone<PatchCondition, DoesWriteAccess> {
 public:
 
     /*! Return true if the instruction write data to memory.
@@ -287,7 +299,7 @@ public:
     bool test(const llvm::MCInst& inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
-class ReadAccessSizeIs : public PatchCondition, public AutoAlloc<PatchCondition, ReadAccessSizeIs> {
+class ReadAccessSizeIs : public AutoClone<PatchCondition, ReadAccessSizeIs> {
 public:
 
     Constant size;
@@ -301,7 +313,7 @@ public:
     bool test(const llvm::MCInst& inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
-class WriteAccessSizeIs : public PatchCondition, public AutoAlloc<PatchCondition, WriteAccessSizeIs> {
+class WriteAccessSizeIs : public AutoClone<PatchCondition, WriteAccessSizeIs> {
 public:
 
     Constant size;
@@ -315,7 +327,7 @@ public:
     bool test(const llvm::MCInst& inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
-class IsStackRead : public PatchCondition, public AutoAlloc<PatchCondition, IsStackRead> {
+class IsStackRead : public AutoClone<PatchCondition, IsStackRead> {
 public:
 
     /*! Return true if the instruction is reading data from the stack.
@@ -325,7 +337,7 @@ public:
     bool test(const llvm::MCInst& inst, rword address, rword instSize, const llvm::MCInstrInfo* MCII) const override;
 };
 
-class IsStackWrite : public PatchCondition, public AutoAlloc<PatchCondition, IsStackWrite> {
+class IsStackWrite : public AutoClone<PatchCondition, IsStackWrite> {
 public:
 
     /*! Return true if the instruction is writing data to the stack.

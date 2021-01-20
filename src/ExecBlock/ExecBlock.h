@@ -88,8 +88,8 @@ private:
     enum PageState {RX, RW};
 
     static uint32_t                                      epilogueSize;
-    static std::vector<std::shared_ptr<RelocatableInst>> execBlockPrologue;
-    static std::vector<std::shared_ptr<RelocatableInst>> execBlockEpilogue;
+    static std::vector<std::unique_ptr<RelocatableInst>> execBlockPrologue;
+    static std::vector<std::unique_ptr<RelocatableInst>> execBlockEpilogue;
     static void (*runCodeBlockFct)(void*);
 
     VMInstanceRef                     vminstance;

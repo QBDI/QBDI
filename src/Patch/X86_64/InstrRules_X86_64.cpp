@@ -29,15 +29,15 @@ namespace QBDI {
  * break to host. It receive in argument a temporary reg which will be used for computations then
  * finally restored.
 */
-RelocatableInst::SharedPtrVec getBreakToHost(Reg temp) {
-    RelocatableInst::SharedPtrVec breakToHost;
+RelocatableInst::UniquePtrVec getBreakToHost(Reg temp) {
+    RelocatableInst::UniquePtrVec breakToHost;
 
     // Use the temporary register to compute RIP + offset which is the address which will follow this
     // patch and where the execution needs to be resumed
     if constexpr(is_x86)
-        breakToHost.push_back(HostPCRel(mov32ri(temp, 0), 1, 22));
+        breakToHost.push_back(HostPCRel::unique(mov32ri(temp, 0), 1, 22));
     else
-        breakToHost.push_back(HostPCRel(mov64ri(temp, 0), 1, 29));
+        breakToHost.push_back(HostPCRel::unique(mov64ri(temp, 0), 1, 29));
     // Set the selector to this address so the execution can be resumed when the exec block will be
     // reexecuted
     append(breakToHost, SaveReg(temp, Offset(offsetof(Context, hostState.selector))));

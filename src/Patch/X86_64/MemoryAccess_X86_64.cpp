@@ -212,157 +212,174 @@ void analyseMemoryAccess(const ExecBlock& curExecBlock, uint16_t instID, bool af
     }
 }
 
-static PatchGenerator::SharedPtrVec generatePreReadInstrumentPatch(Patch &patch, const llvm::MCInstrInfo* MCII,
-                                                                   const llvm::MCRegisterInfo* MRI) {
+static const PatchGenerator::UniquePtrVec& generatePreReadInstrumentPatch(Patch &patch, const llvm::MCInstrInfo* MCII,
+                                                                          const llvm::MCRegisterInfo* MRI) {
 
     // REP prefix
     if (hasREPPrefix(patch.metadata.inst)) {
         if (isDoubleRead(patch.metadata.inst)) {
-            return {
-                        GetReadAddress(Temp(0), 0),
-                        WriteTemp(Temp(0), Shadow(MEM_READ_0_BEGIN_ADDRESS_TAG)),
-                        GetReadAddress(Temp(0), 1),
-                        WriteTemp(Temp(0), Shadow(MEM_READ_1_BEGIN_ADDRESS_TAG)),
-                    };
+            static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
+                        GetReadAddress::unique(Temp(0), 0),
+                        WriteTemp::unique(Temp(0), Shadow(MEM_READ_0_BEGIN_ADDRESS_TAG)),
+                        GetReadAddress::unique(Temp(0), 1),
+                        WriteTemp::unique(Temp(0), Shadow(MEM_READ_1_BEGIN_ADDRESS_TAG))
+                );
+            return r;
         } else {
-            return {
-                        GetReadAddress(Temp(0)),
-                        WriteTemp(Temp(0), Shadow(MEM_READ_0_BEGIN_ADDRESS_TAG)),
-                    };
+            static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
+                        GetReadAddress::unique(Temp(0)),
+                        WriteTemp::unique(Temp(0), Shadow(MEM_READ_0_BEGIN_ADDRESS_TAG))
+                );
+            return r;
         }
     }
     // instruction with double read
     else if (isDoubleRead(patch.metadata.inst)) {
         if (getReadSize(patch.metadata.inst) > sizeof(rword)) {
-            return {
-                        GetReadAddress(Temp(0), 0),
-                        WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
-                        GetReadAddress(Temp(0), 1),
-                        WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
-                    };
+            static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
+                        GetReadAddress::unique(Temp(0), 0),
+                        WriteTemp::unique(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+                        GetReadAddress::unique(Temp(0), 1),
+                        WriteTemp::unique(Temp(0), Shadow(MEM_READ_ADDRESS_TAG))
+                );
+            return r;
         } else {
-            return {
-                        GetReadAddress(Temp(0), 0),
-                        WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
-                        GetReadValue(Temp(0), 0),
-                        WriteTemp(Temp(0), Shadow(MEM_READ_VALUE_TAG)),
-                        GetReadAddress(Temp(0), 1),
-                        WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
-                        GetReadValue(Temp(0), 1),
-                        WriteTemp(Temp(0), Shadow(MEM_READ_VALUE_TAG)),
-                    };
+            static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
+                        GetReadAddress::unique(Temp(0), 0),
+                        WriteTemp::unique(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+                        GetReadValue::unique(Temp(0), 0),
+                        WriteTemp::unique(Temp(0), Shadow(MEM_READ_VALUE_TAG)),
+                        GetReadAddress::unique(Temp(0), 1),
+                        WriteTemp::unique(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+                        GetReadValue::unique(Temp(0), 1),
+                        WriteTemp::unique(Temp(0), Shadow(MEM_READ_VALUE_TAG))
+                );
+            return r;
         }
     } else {
         if (getReadSize(patch.metadata.inst) > sizeof(rword)) {
-            return {
-                        GetReadAddress(Temp(0)),
-                        WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
-                    };
+            static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
+                        GetReadAddress::unique(Temp(0)),
+                        WriteTemp::unique(Temp(0), Shadow(MEM_READ_ADDRESS_TAG))
+                );
+            return r;
         } else {
-            return {
-                        GetReadAddress(Temp(0)),
-                        WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
-                        GetReadValue(Temp(0)),
-                        WriteTemp(Temp(0), Shadow(MEM_READ_VALUE_TAG)),
-                    };
+            static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
+                        GetReadAddress::unique(Temp(0)),
+                        WriteTemp::unique(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+                        GetReadValue::unique(Temp(0)),
+                        WriteTemp::unique(Temp(0), Shadow(MEM_READ_VALUE_TAG))
+                );
+            return r;
         }
     }
 }
 
-static PatchGenerator::SharedPtrVec generatePostReadInstrumentPatch(Patch &patch, const llvm::MCInstrInfo* MCII,
-                                                                   const llvm::MCRegisterInfo* MRI) {
+static const PatchGenerator::UniquePtrVec& generatePostReadInstrumentPatch(Patch &patch, const llvm::MCInstrInfo* MCII,
+                                                                           const llvm::MCRegisterInfo* MRI) {
 
     // REP prefix
     if (hasREPPrefix(patch.metadata.inst)) {
         if (isDoubleRead(patch.metadata.inst)) {
-            return {
-                        GetReadAddress(Temp(0), 0),
-                        WriteTemp(Temp(0), Shadow(MEM_READ_0_END_ADDRESS_TAG)),
-                        GetReadAddress(Temp(0), 1),
-                        WriteTemp(Temp(0), Shadow(MEM_READ_1_END_ADDRESS_TAG)),
-                    };
+            static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
+                        GetReadAddress::unique(Temp(0), 0),
+                        WriteTemp::unique(Temp(0), Shadow(MEM_READ_0_END_ADDRESS_TAG)),
+                        GetReadAddress::unique(Temp(0), 1),
+                        WriteTemp::unique(Temp(0), Shadow(MEM_READ_1_END_ADDRESS_TAG))
+                );
+            return r;
         } else {
-            return {
-                        GetReadAddress(Temp(0)),
-                        WriteTemp(Temp(0), Shadow(MEM_READ_0_END_ADDRESS_TAG)),
-                    };
+            static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
+                        GetReadAddress::unique(Temp(0)),
+                        WriteTemp::unique(Temp(0), Shadow(MEM_READ_0_END_ADDRESS_TAG))
+                );
+            return r;
         }
     } else {
-        return {};
+        static const PatchGenerator::UniquePtrVec r;
+        return r;
     }
 }
 
-static PatchGenerator::SharedPtrVec generatePreWriteInstrumentPatch(Patch &patch, const llvm::MCInstrInfo* MCII,
-                                                                    const llvm::MCRegisterInfo* MRI) {
+static const PatchGenerator::UniquePtrVec& generatePreWriteInstrumentPatch(Patch &patch, const llvm::MCInstrInfo* MCII,
+                                                                           const llvm::MCRegisterInfo* MRI) {
 
     const llvm::MCInstrDesc& desc = MCII->get(patch.metadata.inst.getOpcode());
 
     if (hasREPPrefix(patch.metadata.inst)) {
-        return {
-                    GetWriteAddress(Temp(0)),
-                    WriteTemp(Temp(0), Shadow(MEM_WRITE_BEGIN_ADDRESS_TAG)),
-                };
+        static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
+                    GetWriteAddress::unique(Temp(0)),
+                    WriteTemp::unique(Temp(0), Shadow(MEM_WRITE_BEGIN_ADDRESS_TAG))
+            );
+        return r;
     }
     // Some instruction need to have the address get before the instruction
     else if (mayChangeWriteAddr(patch.metadata.inst, desc) && !isStackWrite(patch.metadata.inst)) {
-        return {
-                    GetWriteAddress(Temp(0)),
-                    WriteTemp(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
-                };
+        static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
+                    GetWriteAddress::unique(Temp(0)),
+                    WriteTemp::unique(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG))
+            );
+        return r;
     } else {
-        return {};
+        static const PatchGenerator::UniquePtrVec r;
+        return r;
     }
 }
 
-static PatchGenerator::SharedPtrVec generatePostWriteInstrumentPatch(Patch &patch, const llvm::MCInstrInfo* MCII,
-                                                                     const llvm::MCRegisterInfo* MRI) {
+static const PatchGenerator::UniquePtrVec& generatePostWriteInstrumentPatch(Patch &patch, const llvm::MCInstrInfo* MCII,
+                                                                            const llvm::MCRegisterInfo* MRI) {
 
     const llvm::MCInstrDesc& desc = MCII->get(patch.metadata.inst.getOpcode());
 
     if (hasREPPrefix(patch.metadata.inst)) {
-        return {
-                    GetWriteAddress(Temp(0)),
-                    WriteTemp(Temp(0), Shadow(MEM_WRITE_END_ADDRESS_TAG)),
-                };
+        static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
+                    GetWriteAddress::unique(Temp(0)),
+                    WriteTemp::unique(Temp(0), Shadow(MEM_WRITE_END_ADDRESS_TAG))
+            );
+        return r;
     }
     // Some instruction need to have the address get before the instruction
     else if (mayChangeWriteAddr(patch.metadata.inst, desc) && !isStackWrite(patch.metadata.inst)) {
         if (getWriteSize(patch.metadata.inst) > sizeof(rword)) {
-            return {};
+            static const PatchGenerator::UniquePtrVec r;
+            return r;
         } else {
-            return {
-                        ReadTemp(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
-                        GetWriteValue(Temp(0)),
-                        WriteTemp(Temp(0), Shadow(MEM_WRITE_VALUE_TAG)),
-                    };
+            static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
+                        ReadTemp::unique(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
+                        GetWriteValue::unique(Temp(0)),
+                        WriteTemp::unique(Temp(0), Shadow(MEM_WRITE_VALUE_TAG))
+                );
+            return r;
         }
     } else {
         if (getWriteSize(patch.metadata.inst) > sizeof(rword)) {
-            return {
-                        GetWriteAddress(Temp(0)),
-                        WriteTemp(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
-                    };
+            static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
+                        GetWriteAddress::unique(Temp(0)),
+                        WriteTemp::unique(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG))
+                );
+            return r;
         } else {
-            return {
-                        GetWriteAddress(Temp(0)),
-                        WriteTemp(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
-                        GetWriteValue(Temp(0)),
-                        WriteTemp(Temp(0), Shadow(MEM_WRITE_VALUE_TAG)),
-                    };
+            static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
+                        GetWriteAddress::unique(Temp(0)),
+                        WriteTemp::unique(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
+                        GetWriteValue::unique(Temp(0)),
+                        WriteTemp::unique(Temp(0), Shadow(MEM_WRITE_VALUE_TAG))
+                );
+            return r;
         }
     }
 }
 
 std::vector<std::unique_ptr<InstrRule>> getInstrRuleMemAccessRead() {
     return conv_unique<InstrRule>(
-        InstrRuleDynamic(
-            DoesReadAccess(),
+        InstrRuleDynamic::unique(
+            DoesReadAccess::unique(),
             generatePreReadInstrumentPatch,
             PREINST,
             false,
             0x8000 /* first PREINST */),
-        InstrRuleDynamic(
-            DoesReadAccess(),
+        InstrRuleDynamic::unique(
+            DoesReadAccess::unique(),
             generatePostReadInstrumentPatch,
             POSTINST,
             false,
@@ -372,14 +389,14 @@ std::vector<std::unique_ptr<InstrRule>> getInstrRuleMemAccessRead() {
 
 std::vector<std::unique_ptr<InstrRule>> getInstrRuleMemAccessWrite() {
     return conv_unique<InstrRule>(
-        InstrRuleDynamic(
-            DoesWriteAccess(),
+        InstrRuleDynamic::unique(
+            DoesWriteAccess::unique(),
             generatePreWriteInstrumentPatch,
             PREINST,
             false,
             0x8000 /* first PRETINST */),
-        InstrRuleDynamic(
-            DoesWriteAccess(),
+        InstrRuleDynamic::unique(
+            DoesWriteAccess::unique(),
             generatePostWriteInstrumentPatch,
             POSTINST,
             false,

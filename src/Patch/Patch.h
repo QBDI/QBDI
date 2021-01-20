@@ -19,6 +19,7 @@
 #define PATCH_H
 
 #include <vector>
+#include <iterator>
 
 #include "llvm/MC/MCInst.h"
 
@@ -34,7 +35,7 @@ class Patch {
 public:
 
     InstMetadata metadata;
-    RelocatableInst::SharedPtrVec insts;
+    RelocatableInst::UniquePtrVec insts;
 
     using Vec = std::vector<Patch>;
 
@@ -61,23 +62,26 @@ public:
         metadata.instSize = instSize;
     }
 
-    void append(const RelocatableInst::SharedPtrVec v) {
-        insts.insert(insts.end(), v.begin(), v.end());
+    void append(RelocatableInst::UniquePtrVec v) {
         metadata.patchSize += v.size();
+        std::move(v.begin(), v.end(), std::back_inserter(insts));
     }
 
-    void prepend(const RelocatableInst::SharedPtrVec v) {
-        insts.insert(insts.begin(), v.begin(), v.end());
+    void prepend(RelocatableInst::UniquePtrVec v) {
         metadata.patchSize += v.size();
+        // front iterator on std::vector may need to move all value at each move
+        // use a back_inserter in v and swap the vector at the end
+        std::move(insts.begin(), insts.end(), std::back_inserter(v));
+        v.swap(insts);
     }
 
-    void append(const RelocatableInst::SharedPtr r) {
-        insts.push_back(r);
+    void append(RelocatableInst::UniquePtr&& r) {
+        insts.push_back(std::forward<RelocatableInst::UniquePtr>(r));
         metadata.patchSize += 1;
     }
 
-    void prepend(const RelocatableInst::SharedPtr r) {
-        insts.insert(insts.begin(), r);
+    void prepend(RelocatableInst::UniquePtr&& r) {
+        insts.insert(insts.begin(), std::forward<RelocatableInst::UniquePtr>(r));
         metadata.patchSize += 1;
     }
 };

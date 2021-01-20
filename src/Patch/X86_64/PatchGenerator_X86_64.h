@@ -23,7 +23,7 @@
 
 namespace QBDI {
 
-class GetPCOffset : public PatchGenerator, public AutoAlloc<PatchGenerator, GetPCOffset> {
+class GetPCOffset : public AutoClone<PatchGenerator, GetPCOffset> {
 
     Temp temp;
     Constant cst;
@@ -61,11 +61,11 @@ public:
      * MOV REG64 temp, IMM64 (op + address + instSize)
      *
     */
-    std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
+    std::vector<std::unique_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) const override;
 };
 
-class SimulateCall : public PatchGenerator, public AutoAlloc<PatchGenerator, SimulateCall> {
+class SimulateCall : public AutoClone<PatchGenerator, SimulateCall> {
 
     Temp temp;
 
@@ -86,13 +86,13 @@ public:
      * MOV REG64 temp, IMM64 (address + InstSize)
      * PUSH REG64 temp
     */
-    std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
+    std::vector<std::unique_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) const override;
 
     bool modifyPC() const override {return true;}
 };
 
-class SimulateRet : public PatchGenerator, public AutoAlloc<PatchGenerator, SimulateRet> {
+class SimulateRet : public AutoClone<PatchGenerator, SimulateRet> {
 
     Temp temp;
 
@@ -116,13 +116,13 @@ public:
      * ADD RSP, IMM64 deallocation # Optional
      * MOV MEM64 DataBlock[Offset(RIP)], REG64 temp
     */
-    std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
+    std::vector<std::unique_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) const override;
 
     bool modifyPC() const override {return true;}
 };
 
-class GetReadAddress : public PatchGenerator, public AutoAlloc<PatchGenerator, GetReadAddress> {
+class GetReadAddress : public AutoClone<PatchGenerator, GetReadAddress> {
 
     Temp temp;
     size_t index;
@@ -146,11 +146,11 @@ public:
      * else:
      * LEA REG64 temp, MEM64 addr
      */
-    std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
+    std::vector<std::unique_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) const override;
 };
 
-class GetWriteAddress : public PatchGenerator, public AutoAlloc<PatchGenerator, GetWriteAddress> {
+class GetWriteAddress : public AutoClone<PatchGenerator, GetWriteAddress> {
 
     Temp temp;
 
@@ -172,11 +172,11 @@ public:
      * else:
      * LEA REG64 temp, MEM64 addr
      */
-    std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
+    std::vector<std::unique_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) const override;
 };
 
-class GetReadValue : public PatchGenerator, public AutoAlloc<PatchGenerator, GetReadValue> {
+class GetReadValue : public AutoClone<PatchGenerator, GetReadValue> {
 
     Temp temp;
     size_t index;
@@ -196,11 +196,11 @@ public:
      *
      * MOV REG64 temp, MEM64 val
      */
-    std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-         rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
+    std::vector<std::unique_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
+         rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) const override;
 };
 
-class GetWriteValue : public PatchGenerator, public AutoAlloc<PatchGenerator, GetWriteValue> {
+class GetWriteValue : public AutoClone<PatchGenerator, GetWriteValue> {
 
     Temp temp;
 
@@ -218,8 +218,8 @@ public:
      *
      * MOV REG64 temp, MEM64 val
      */
-    std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
+    std::vector<std::unique_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) const override;
 };
 
 }

@@ -38,9 +38,9 @@ class RelocatableInst;
  * @param[in] cbk   Pointer to a user callback
  * @param[in] data  Opaque pointer to user callback data
  */
-std::vector<std::shared_ptr<PatchGenerator>> getCallbackGenerator(InstCallback cbk, void* data);
+std::vector<std::unique_ptr<PatchGenerator>> getCallbackGenerator(InstCallback cbk, void* data);
 
-std::vector<std::shared_ptr<RelocatableInst>> getBreakToHost(Reg temp);
+std::vector<std::unique_ptr<RelocatableInst>> getBreakToHost(Reg temp);
 }
 
 #endif

@@ -122,39 +122,39 @@ llvm::MCInst jmpm(unsigned int base, rword offset);
 
 // high level layer 2
 
-std::shared_ptr<RelocatableInst> Mov(Reg dst, Reg src);
+std::unique_ptr<RelocatableInst> Mov(Reg dst, Reg src);
 
-std::shared_ptr<RelocatableInst> Mov(Reg reg, Constant cst);
+std::unique_ptr<RelocatableInst> Mov(Reg reg, Constant cst);
 
-std::shared_ptr<RelocatableInst> Mov(Offset offset, Reg reg);
+std::unique_ptr<RelocatableInst> Mov(Offset offset, Reg reg);
 
-std::shared_ptr<RelocatableInst> Mov(Shadow shadow, Reg reg, bool create=true);
+std::unique_ptr<RelocatableInst> Mov(Shadow shadow, Reg reg, bool create=true);
 
-std::shared_ptr<RelocatableInst> Mov(Reg reg, Offset offset);
+std::unique_ptr<RelocatableInst> Mov(Reg reg, Offset offset);
 
-std::shared_ptr<RelocatableInst> Mov(Reg reg, Shadow shadow);
+std::unique_ptr<RelocatableInst> Mov(Reg reg, Shadow shadow);
 
-std::shared_ptr<RelocatableInst> JmpM(Offset offset);
+std::unique_ptr<RelocatableInst> JmpM(Offset offset);
 
-std::shared_ptr<RelocatableInst> Fxsave(Offset offset);
+std::unique_ptr<RelocatableInst> Fxsave(Offset offset);
 
-std::shared_ptr<RelocatableInst> Fxrstor(Offset offset);
+std::unique_ptr<RelocatableInst> Fxrstor(Offset offset);
 
-std::shared_ptr<RelocatableInst> Vextractf128(Offset offset, unsigned int src, Constant regoffset);
+std::unique_ptr<RelocatableInst> Vextractf128(Offset offset, unsigned int src, Constant regoffset);
 
-std::shared_ptr<RelocatableInst> Vinsertf128(unsigned int dst, Offset offset, Constant regoffset);
+std::unique_ptr<RelocatableInst> Vinsertf128(unsigned int dst, Offset offset, Constant regoffset);
 
-std::shared_ptr<RelocatableInst> Pushr(Reg reg);
+std::unique_ptr<RelocatableInst> Pushr(Reg reg);
 
-std::shared_ptr<RelocatableInst> Popr(Reg reg);
+std::unique_ptr<RelocatableInst> Popr(Reg reg);
 
-std::shared_ptr<RelocatableInst> Add(Reg reg, Constant cst);
+std::unique_ptr<RelocatableInst> Add(Reg reg, Constant cst);
 
-std::shared_ptr<RelocatableInst> Pushf();
+std::unique_ptr<RelocatableInst> Pushf();
 
-std::shared_ptr<RelocatableInst> Popf();
+std::unique_ptr<RelocatableInst> Popf();
 
-std::shared_ptr<RelocatableInst> Ret();
+std::unique_ptr<RelocatableInst> Ret();
 
 }
 
