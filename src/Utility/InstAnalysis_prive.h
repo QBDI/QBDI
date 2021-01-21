@@ -45,6 +45,7 @@ const InstAnalysis* analyzeInstMetadata(const InstMetadata& instMetadata, Analys
 // X86 specific
 void analyseCondition(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const llvm::MCInstrDesc& desc);
 bool isSupportedOperandType(unsigned opType);
+unsigned getBias(const llvm::MCInstrDesc& desc);
 
 }
 

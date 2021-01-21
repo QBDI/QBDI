@@ -288,11 +288,26 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86_64-xchgrr") {
           /* loadSize */ 0, /* storeSize */ 0, /* condition */ QBDI::CONDITION_NONE});
     checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
         {
-            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 1, "RBX", QBDI::REGISTER_WRITE},
-            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 2, "RCX", QBDI::REGISTER_WRITE},
-            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 1, "RBX", QBDI::REGISTER_READ},
-            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 2, "RCX", QBDI::REGISTER_READ},
+            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 1, "RBX", QBDI::REGISTER_READ_WRITE},
+            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 2, "RCX", QBDI::REGISTER_READ_WRITE},
         }, QBDI::REGISTER_UNUSED);
+}
+
+TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86_64-addrr") {
+
+    QBDI::rword addr = writeASM("add %rcx, %rbx\n");
+
+    checkInst(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
+        ExpectedInstAnalysis { "ADD64rr", addr,
+          /* instSize */ 3, /* affectControlFlow */ false, /* isBranch */ false,
+          /* isCall */ false, /* isReturn */ false, /* isCompare */ false,
+          /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ false,
+          /* loadSize */ 0, /* storeSize */ 0, /* condition */ QBDI::CONDITION_NONE});
+    checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
+        {
+            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 1, "RBX", QBDI::REGISTER_READ_WRITE},
+            {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 2, "RCX", QBDI::REGISTER_READ},
+        }, QBDI::REGISTER_WRITE);
 }
 
 TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86_64-movsb") {
@@ -580,8 +595,7 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86_64-paddb") {
           /* loadSize */ 0, /* storeSize */ 0, /* condition */ QBDI::CONDITION_NONE});
     checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
         {
-            {QBDI::OPERAND_FPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 32, "MM0", QBDI::REGISTER_WRITE},
-            {QBDI::OPERAND_FPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 32, "MM0", QBDI::REGISTER_READ},
+            {QBDI::OPERAND_FPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 32, "MM0", QBDI::REGISTER_READ_WRITE},
             {QBDI::OPERAND_FPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 48, "MM1", QBDI::REGISTER_READ},
         }, QBDI::REGISTER_UNUSED);
 }

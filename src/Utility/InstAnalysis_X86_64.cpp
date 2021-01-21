@@ -73,4 +73,8 @@ bool isSupportedOperandType(unsigned opType) {
     }
 }
 
+unsigned getBias(const llvm::MCInstrDesc& desc) {
+    return llvm::X86II::getOperandBias(desc);
+}
+
 }
