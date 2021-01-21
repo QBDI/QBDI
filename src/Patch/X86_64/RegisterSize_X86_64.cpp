@@ -26,7 +26,7 @@
 namespace QBDI {
 namespace {
 
-uint16_t REGISTER_1BYTE[] = {
+constexpr uint16_t REGISTER_1BYTE[] = {
     llvm::X86::AL,
     llvm::X86::BL,
     llvm::X86::CL,
@@ -62,9 +62,9 @@ uint16_t REGISTER_1BYTE[] = {
     llvm::X86::R15BH,
 };
 
-size_t REGISTER_1BYTE_SIZE = sizeof(REGISTER_1BYTE)/sizeof(uint16_t);
+constexpr size_t REGISTER_1BYTE_SIZE = sizeof(REGISTER_1BYTE)/sizeof(uint16_t);
 
-uint16_t REGISTER_2BYTES[] = {
+constexpr uint16_t REGISTER_2BYTES[] = {
     llvm::X86::AX,
     llvm::X86::BX,
     llvm::X86::CX,
@@ -111,9 +111,9 @@ uint16_t REGISTER_2BYTES[] = {
     llvm::X86::SS,
 };
 
-size_t REGISTER_2BYTES_SIZE = sizeof(REGISTER_2BYTES)/sizeof(uint16_t);
+constexpr size_t REGISTER_2BYTES_SIZE = sizeof(REGISTER_2BYTES)/sizeof(uint16_t);
 
-uint16_t REGISTER_4BYTES[] = {
+constexpr uint16_t REGISTER_4BYTES[] = {
     llvm::X86::EAX,
     llvm::X86::EBX,
     llvm::X86::ECX,
@@ -139,9 +139,9 @@ uint16_t REGISTER_4BYTES[] = {
 #endif
 };
 
-size_t REGISTER_4BYTES_SIZE = sizeof(REGISTER_4BYTES)/sizeof(uint16_t);
+constexpr size_t REGISTER_4BYTES_SIZE = sizeof(REGISTER_4BYTES)/sizeof(uint16_t);
 
-uint16_t REGISTER_8BYTES[] = {
+constexpr uint16_t REGISTER_8BYTES[] = {
     llvm::X86::RAX,
     llvm::X86::RBX,
     llvm::X86::RCX,
@@ -173,9 +173,9 @@ uint16_t REGISTER_8BYTES[] = {
 #endif
 };
 
-size_t REGISTER_8BYTES_SIZE = sizeof(REGISTER_8BYTES)/sizeof(uint16_t);
+constexpr size_t REGISTER_8BYTES_SIZE = sizeof(REGISTER_8BYTES)/sizeof(uint16_t);
 
-uint16_t REGISTER_10BYTES[] = {
+constexpr uint16_t REGISTER_10BYTES[] = {
     llvm::X86::ST0,
     llvm::X86::ST1,
     llvm::X86::ST2,
@@ -186,9 +186,9 @@ uint16_t REGISTER_10BYTES[] = {
     llvm::X86::ST7,
 };
 
-size_t REGISTER_10BYTES_SIZE = sizeof(REGISTER_10BYTES)/sizeof(uint16_t);
+constexpr size_t REGISTER_10BYTES_SIZE = sizeof(REGISTER_10BYTES)/sizeof(uint16_t);
 
-uint16_t REGISTER_16BYTES[] = {
+constexpr uint16_t REGISTER_16BYTES[] = {
     llvm::X86::XMM0,
     llvm::X86::XMM1,
     llvm::X86::XMM2,
@@ -223,9 +223,9 @@ uint16_t REGISTER_16BYTES[] = {
     llvm::X86::XMM31,
 };
 
-size_t REGISTER_16BYTES_SIZE = sizeof(REGISTER_16BYTES)/sizeof(uint16_t);
+constexpr size_t REGISTER_16BYTES_SIZE = sizeof(REGISTER_16BYTES)/sizeof(uint16_t);
 
-uint16_t REGISTER_32BYTES[] = {
+constexpr uint16_t REGISTER_32BYTES[] = {
     llvm::X86::YMM0,
     llvm::X86::YMM1,
     llvm::X86::YMM2,
@@ -260,9 +260,9 @@ uint16_t REGISTER_32BYTES[] = {
     llvm::X86::YMM31,
 };
 
-size_t REGISTER_32BYTES_SIZE = sizeof(REGISTER_32BYTES)/sizeof(uint16_t);
+constexpr size_t REGISTER_32BYTES_SIZE = sizeof(REGISTER_32BYTES)/sizeof(uint16_t);
 
-uint16_t REGISTER_64BYTES[] = {
+constexpr uint16_t REGISTER_64BYTES[] = {
     llvm::X86::ZMM0,
     llvm::X86::ZMM1,
     llvm::X86::ZMM2,
@@ -297,45 +297,53 @@ uint16_t REGISTER_64BYTES[] = {
     llvm::X86::ZMM31,
 };
 
-size_t REGISTER_64BYTES_SIZE = sizeof(REGISTER_64BYTES)/sizeof(uint16_t);
+constexpr size_t REGISTER_64BYTES_SIZE = sizeof(REGISTER_64BYTES)/sizeof(uint16_t);
 
-uint16_t REGISTER_SIZE_TABLE[llvm::X86::NUM_TARGET_REGS] = {0};
+struct RegisterSizeArray {
+    uint8_t arr[llvm::X86::NUM_TARGET_REGS] = {0};
+
+    constexpr RegisterSizeArray() {
+        for(size_t i = 0; i < REGISTER_1BYTE_SIZE; i++) {
+            arr[REGISTER_1BYTE[i]] = 1;
+        }
+        for(size_t i = 0; i < REGISTER_2BYTES_SIZE; i++) {
+            arr[REGISTER_2BYTES[i]] = 2;
+        }
+        for(size_t i = 0; i < REGISTER_4BYTES_SIZE; i++) {
+            arr[REGISTER_4BYTES[i]] = 4;
+        }
+        for(size_t i = 0; i < REGISTER_8BYTES_SIZE; i++) {
+            arr[REGISTER_8BYTES[i]] = 8;
+        }
+        for(size_t i = 0; i < REGISTER_10BYTES_SIZE; i++) {
+            arr[REGISTER_10BYTES[i]] = 10;
+        }
+        for(size_t i = 0; i < REGISTER_16BYTES_SIZE; i++) {
+            arr[REGISTER_16BYTES[i]] = 16;
+        }
+        for(size_t i = 0; i < REGISTER_32BYTES_SIZE; i++) {
+            arr[REGISTER_32BYTES[i]] = 32;
+        }
+        for(size_t i = 0; i < REGISTER_64BYTES_SIZE; i++) {
+            arr[REGISTER_64BYTES[i]] = 64;
+        }
+    }
+
+    inline uint8_t get(size_t reg) const {
+        if(reg < llvm::X86::NUM_TARGET_REGS)
+            return arr[reg];
+
+        LogError("RegisterSizeArray.get", "No register %u", reg);
+        return 0;
+    }
+};
 
 } // anonymous namespace
 
-void initRegisterSize() {
-    for(size_t i = 0; i < REGISTER_1BYTE_SIZE; i++) {
-        REGISTER_SIZE_TABLE[REGISTER_1BYTE[i]] = 1;
-    }
-    for(size_t i = 0; i < REGISTER_2BYTES_SIZE; i++) {
-        REGISTER_SIZE_TABLE[REGISTER_2BYTES[i]] = 2;
-    }
-    for(size_t i = 0; i < REGISTER_4BYTES_SIZE; i++) {
-        REGISTER_SIZE_TABLE[REGISTER_4BYTES[i]] = 4;
-    }
-    for(size_t i = 0; i < REGISTER_8BYTES_SIZE; i++) {
-        REGISTER_SIZE_TABLE[REGISTER_8BYTES[i]] = 8;
-    }
-    for(size_t i = 0; i < REGISTER_10BYTES_SIZE; i++) {
-        REGISTER_SIZE_TABLE[REGISTER_10BYTES[i]] = 10;
-    }
-    for(size_t i = 0; i < REGISTER_16BYTES_SIZE; i++) {
-        REGISTER_SIZE_TABLE[REGISTER_16BYTES[i]] = 16;
-    }
-    for(size_t i = 0; i < REGISTER_32BYTES_SIZE; i++) {
-        REGISTER_SIZE_TABLE[REGISTER_32BYTES[i]] = 32;
-    }
-    for(size_t i = 0; i < REGISTER_64BYTES_SIZE; i++) {
-        REGISTER_SIZE_TABLE[REGISTER_64BYTES[i]] = 64;
-    }
-}
+uint8_t getRegisterSize(unsigned reg) {
+    static constexpr RegisterSizeArray arraySize;
 
-uint16_t getRegisterSize(unsigned reg) {
-    if(reg < llvm::X86::NUM_TARGET_REGS)
-        return REGISTER_SIZE_TABLE[reg];
-
-    LogError("getRegisterSize", "No register %u", reg);
-    return 0;
+    return arraySize.get(reg);
 }
 
 } // namespace QBDI

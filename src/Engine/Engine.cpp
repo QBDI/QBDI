@@ -78,8 +78,6 @@ void Engine::init() {
         llvm::InitializeAllTargetMCs();
         llvm::InitializeAllAsmParsers();
         llvm::InitializeAllDisassemblers();
-        initMemAccessInfo();
-        initRegisterSize();
     }
 
     // Build features string
