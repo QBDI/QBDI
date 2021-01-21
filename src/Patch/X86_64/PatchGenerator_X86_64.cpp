@@ -80,7 +80,7 @@ RelocatableInst::UniquePtrVec GetReadAddress::generate(const llvm::MCInst* inst,
         const llvm::MCInstrDesc& desc = MCII->get(inst->getOpcode());
         uint64_t TSFlags = desc.TSFlags;
         unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
-        unsigned memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
+        int memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
 
         Reg dest = temp_manager->getRegForTemp(temp);
         // If it is a stack read, return RSP value
@@ -132,40 +132,40 @@ RelocatableInst::UniquePtrVec GetReadAddress::generate(const llvm::MCInst* inst,
         }
         // Else replace the instruction with a LEA on the same address
         else if (memIndex >= 0) {
-            // Scan for LLVM X86 address encoding
-            for(unsigned i = memIndex; i + 4 <= inst->getNumOperands(); i++) {
-                if(inst->getOperand(i + 0).isReg() && inst->getOperand(i + 1).isImm() &&
-                   inst->getOperand(i + 2).isReg() && inst->getOperand(i + 3).isImm() &&
-                   inst->getOperand(i + 4).isReg()) {
-                    // If it uses PC as a base register, substitute PC
-                    if(inst->getOperand(i + 0).getReg() == Reg(REG_PC)) {
-                        return conv_unique<RelocatableInst>(
-                            Mov(
-                                temp_manager->getRegForTemp(0xFFFFFFFF),
-                                Constant(address + instSize)
-                            ),
-                            NoReloc::unique(lea(
-                                dest,
-                                temp_manager->getRegForTemp(0xFFFFFFFF),
-                                inst->getOperand(i + 1).getImm(),
-                                inst->getOperand(i + 2).getReg(),
-                                inst->getOperand(i + 3).getImm(),
-                                inst->getOperand(i + 4).getReg())
-                            )
-                            );
-                    }
-                    else {
-                        return conv_unique<RelocatableInst>(
-                            NoReloc::unique(lea(
-                                dest,
-                                inst->getOperand(i + 0).getReg(),
-                                inst->getOperand(i + 1).getImm(),
-                                inst->getOperand(i + 2).getReg(),
-                                inst->getOperand(i + 3).getImm(),
-                                inst->getOperand(i + 4).getReg()
-                            ))
-                            );
-                    }
+            unsigned realMemIndex = memIndex + llvm::X86II::getOperandBias(desc);
+
+            if(inst->getNumOperands() >= realMemIndex + 4 &&
+               inst->getOperand(realMemIndex + 0).isReg() && inst->getOperand(realMemIndex + 1).isImm() &&
+               inst->getOperand(realMemIndex + 2).isReg() && inst->getOperand(realMemIndex + 3).isImm() &&
+               inst->getOperand(realMemIndex + 4).isReg()) {
+                // If it uses PC as a base register, substitute PC
+                if(inst->getOperand(realMemIndex + 0).getReg() == Reg(REG_PC)) {
+                    return conv_unique<RelocatableInst>(
+                        Mov(
+                            temp_manager->getRegForTemp(0xFFFFFFFF),
+                            Constant(address + instSize)
+                        ),
+                        NoReloc::unique(lea(
+                            dest,
+                            temp_manager->getRegForTemp(0xFFFFFFFF),
+                            inst->getOperand(realMemIndex + 1).getImm(),
+                            inst->getOperand(realMemIndex + 2).getReg(),
+                            inst->getOperand(realMemIndex + 3).getImm(),
+                            inst->getOperand(realMemIndex + 4).getReg())
+                        )
+                        );
+                }
+                else {
+                    return conv_unique<RelocatableInst>(
+                        NoReloc::unique(lea(
+                            dest,
+                            inst->getOperand(realMemIndex + 0).getReg(),
+                            inst->getOperand(realMemIndex + 1).getImm(),
+                            inst->getOperand(realMemIndex + 2).getReg(),
+                            inst->getOperand(realMemIndex + 3).getImm(),
+                            inst->getOperand(realMemIndex + 4).getReg()
+                        ))
+                        );
                 }
             }
             RequireAction("GetReadAddress::generate", false && "No memory address found in the instruction", abort());
@@ -182,7 +182,7 @@ RelocatableInst::UniquePtrVec GetWriteAddress::generate(const llvm::MCInst* inst
         const llvm::MCInstrDesc& desc = MCII->get(inst->getOpcode());
         uint64_t TSFlags = desc.TSFlags;
         unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
-        unsigned memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
+        int memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
         unsigned opcode = inst->getOpcode();
 
         Reg dest = temp_manager->getRegForTemp(temp);
@@ -231,40 +231,40 @@ RelocatableInst::UniquePtrVec GetWriteAddress::generate(const llvm::MCInst* inst
         }
         // Else replace the instruction with a LEA on the same address
         else if (memIndex >= 0) {
-            // Scan for LLVM X86 address encoding
-            for(unsigned i = memIndex; i + 4 <= inst->getNumOperands(); i++) {
-                if(inst->getOperand(i + 0).isReg() && inst->getOperand(i + 1).isImm() &&
-                   inst->getOperand(i + 2).isReg() && inst->getOperand(i + 3).isImm() &&
-                   inst->getOperand(i + 4).isReg()) {
-                    // If it uses PC as a base register, substitute PC
-                    if(inst->getOperand(i + 0).getReg() == Reg(REG_PC)) {
-                        return conv_unique<RelocatableInst>(
-                            Mov(
-                                temp_manager->getRegForTemp(0xFFFFFFFF),
-                                Constant(address + instSize)
-                            ),
-                            NoReloc::unique(lea(
-                                dest,
-                                temp_manager->getRegForTemp(0xFFFFFFFF),
-                                inst->getOperand(i + 1).getImm(),
-                                inst->getOperand(i + 2).getReg(),
-                                inst->getOperand(i + 3).getImm(),
-                                inst->getOperand(i + 4).getReg())
-                            )
-                            );
-                    }
-                    else {
-                        return conv_unique<RelocatableInst>(
-                            NoReloc::unique(lea(
-                                dest,
-                                inst->getOperand(i + 0).getReg(),
-                                inst->getOperand(i + 1).getImm(),
-                                inst->getOperand(i + 2).getReg(),
-                                inst->getOperand(i + 3).getImm(),
-                                inst->getOperand(i + 4).getReg()
-                            ))
-                            );
-                    }
+            unsigned realMemIndex = memIndex + llvm::X86II::getOperandBias(desc);
+
+            if(inst->getNumOperands() >= realMemIndex + 4 &&
+               inst->getOperand(realMemIndex + 0).isReg() && inst->getOperand(realMemIndex + 1).isImm() &&
+               inst->getOperand(realMemIndex + 2).isReg() && inst->getOperand(realMemIndex + 3).isImm() &&
+               inst->getOperand(realMemIndex + 4).isReg()) {
+                // If it uses PC as a base register, substitute PC
+                if(inst->getOperand(realMemIndex + 0).getReg() == Reg(REG_PC)) {
+                    return conv_unique<RelocatableInst>(
+                        Mov(
+                            temp_manager->getRegForTemp(0xFFFFFFFF),
+                            Constant(address + instSize)
+                        ),
+                        NoReloc::unique(lea(
+                            dest,
+                            temp_manager->getRegForTemp(0xFFFFFFFF),
+                            inst->getOperand(realMemIndex + 1).getImm(),
+                            inst->getOperand(realMemIndex + 2).getReg(),
+                            inst->getOperand(realMemIndex + 3).getImm(),
+                            inst->getOperand(realMemIndex + 4).getReg())
+                        )
+                        );
+                }
+                else {
+                    return conv_unique<RelocatableInst>(
+                        NoReloc::unique(lea(
+                            dest,
+                            inst->getOperand(realMemIndex + 0).getReg(),
+                            inst->getOperand(realMemIndex + 1).getImm(),
+                            inst->getOperand(realMemIndex + 2).getReg(),
+                            inst->getOperand(realMemIndex + 3).getImm(),
+                            inst->getOperand(realMemIndex + 4).getReg()
+                        ))
+                        );
                 }
             }
             RequireAction("GetWriteAddress::generate", false && "No memory address found in the instruction", abort());
@@ -280,7 +280,7 @@ RelocatableInst::UniquePtrVec GetReadValue::generate(const llvm::MCInst* inst,
         const llvm::MCInstrDesc& desc = MCII->get(inst->getOpcode());
         uint64_t TSFlags = desc.TSFlags;
         unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
-        unsigned memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
+        int memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
 
         unsigned dst = temp_manager->getRegForTemp(temp);
         if(is_bits_64 && size < sizeof(rword)) {
@@ -361,49 +361,51 @@ RelocatableInst::UniquePtrVec GetReadValue::generate(const llvm::MCInst* inst,
                 NoReloc::unique(mov32rm8(dest, reg, 1, dest, 0, 0))
                 );
         } else if (memIndex >= 0) {
-            for(unsigned i = memIndex; i + 4 <= inst->getNumOperands(); i++) {
-                if(inst->getOperand(i + 0).isReg() && inst->getOperand(i + 1).isImm() &&
-                   inst->getOperand(i + 2).isReg() && inst->getOperand(i + 3).isImm() &&
-                   inst->getOperand(i + 4).isReg()) {
-                    llvm::MCInst readinst;
+            unsigned realMemIndex = memIndex + llvm::X86II::getOperandBias(desc);
 
-                    unsigned base = inst->getOperand(i + 0).getReg();
-                    rword scale = inst->getOperand(i + 1).getImm();
-                    unsigned offset = inst->getOperand(i + 2).getReg();
-                    rword displacement = inst->getOperand(i + 3).getImm();
-                    unsigned seg = inst->getOperand(i + 4).getReg();
+            if(inst->getNumOperands() >= realMemIndex + 4 &&
+               inst->getOperand(realMemIndex + 0).isReg() && inst->getOperand(realMemIndex + 1).isImm() &&
+               inst->getOperand(realMemIndex + 2).isReg() && inst->getOperand(realMemIndex + 3).isImm() &&
+               inst->getOperand(realMemIndex + 4).isReg()) {
 
-                    if(inst->getOperand(i + 0).getReg() == Reg(REG_PC)) {
-                        base = temp_manager->getRegForTemp(0xFFFFFFFF);
-                    }
+                llvm::MCInst readinst;
 
-                    if(size == 8) {
-                        readinst = mov64rm(dst, base, scale, offset, displacement, seg);
-                    }
-                    else if(size == 4) {
-                        readinst = mov32rm(dst, base, scale, offset, displacement, seg);
-                    }
-                    else if(size == 2) {
-                        readinst = mov32rm16(dst, base, scale, offset, displacement, seg);
-                    }
-                    else if(size == 1) {
-                        readinst = mov32rm8(dst, base, scale, offset, displacement, seg);
-                    }
+                unsigned base = inst->getOperand(realMemIndex + 0).getReg();
+                rword scale = inst->getOperand(realMemIndex + 1).getImm();
+                unsigned offset = inst->getOperand(realMemIndex + 2).getReg();
+                rword displacement = inst->getOperand(realMemIndex + 3).getImm();
+                unsigned seg = inst->getOperand(realMemIndex + 4).getReg();
 
-                    if(inst->getOperand(i + 0).getReg() == Reg(REG_PC)) {
-                        return conv_unique<RelocatableInst>(
-                            Mov(
-                                temp_manager->getRegForTemp(0xFFFFFFFF),
-                                Constant(address + instSize)
-                            ),
-                            NoReloc::unique(std::move(readinst))
-                            );
-                    }
-                    else {
-                        return conv_unique<RelocatableInst>(
-                            NoReloc::unique(std::move(readinst))
-                            );
-                    }
+                if(inst->getOperand(realMemIndex + 0).getReg() == Reg(REG_PC)) {
+                    base = temp_manager->getRegForTemp(0xFFFFFFFF);
+                }
+
+                if(size == 8) {
+                    readinst = mov64rm(dst, base, scale, offset, displacement, seg);
+                }
+                else if(size == 4) {
+                    readinst = mov32rm(dst, base, scale, offset, displacement, seg);
+                }
+                else if(size == 2) {
+                    readinst = mov32rm16(dst, base, scale, offset, displacement, seg);
+                }
+                else if(size == 1) {
+                    readinst = mov32rm8(dst, base, scale, offset, displacement, seg);
+                }
+
+                if(inst->getOperand(realMemIndex + 0).getReg() == Reg(REG_PC)) {
+                    return conv_unique<RelocatableInst>(
+                        Mov(
+                            temp_manager->getRegForTemp(0xFFFFFFFF),
+                            Constant(address + instSize)
+                        ),
+                        NoReloc::unique(std::move(readinst))
+                        );
+                }
+                else {
+                    return conv_unique<RelocatableInst>(
+                        NoReloc::unique(std::move(readinst))
+                        );
                 }
             }
             RequireAction("GetReadValue::generate", false && "No memory address found in the instruction", abort());
@@ -419,7 +421,7 @@ RelocatableInst::UniquePtrVec GetWriteValue::generate(const llvm::MCInst* inst,
         const llvm::MCInstrDesc& desc = MCII->get(inst->getOpcode());
         uint64_t TSFlags = desc.TSFlags;
         unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
-        unsigned memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
+        int memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
 
         unsigned src_addr = temp_manager->getRegForTemp(temp);
         unsigned dst = src_addr;
@@ -479,25 +481,26 @@ RelocatableInst::UniquePtrVec GetWriteValue::generate(const llvm::MCInst* inst,
                 }
             }
         } else if (memIndex >= 0) {
-            for(unsigned i = memIndex; i + 4 <= inst->getNumOperands(); i++) {
-                if(inst->getOperand(i + 0).isReg() && inst->getOperand(i + 1).isImm() &&
-                   inst->getOperand(i + 2).isReg() && inst->getOperand(i + 3).isImm() &&
-                   inst->getOperand(i + 4).isReg()) {
+            unsigned realMemIndex = memIndex + llvm::X86II::getOperandBias(desc);
 
-                    unsigned seg = inst->getOperand(i + 4).getReg();
+            if(inst->getNumOperands() >= realMemIndex + 4 &&
+               inst->getOperand(realMemIndex + 0).isReg() && inst->getOperand(realMemIndex + 1).isImm() &&
+               inst->getOperand(realMemIndex + 2).isReg() && inst->getOperand(realMemIndex + 3).isImm() &&
+               inst->getOperand(realMemIndex + 4).isReg()) {
 
-                    if(size == 8) {
-                        return conv_unique<RelocatableInst>(NoReloc::unique(mov64rm(dst, src_addr, 1, 0, 0, seg)));
-                    }
-                    else if(size == 4) {
-                        return conv_unique<RelocatableInst>(NoReloc::unique(mov32rm(dst, src_addr, 1, 0, 0, seg)));
-                    }
-                    else if(size == 2) {
-                        return conv_unique<RelocatableInst>(NoReloc::unique(mov32rm16(dst, src_addr, 1, 0, 0, seg)));
-                    }
-                    else if(size == 1) {
-                        return conv_unique<RelocatableInst>(NoReloc::unique(mov32rm8(dst, src_addr, 1, 0, 0, seg)));
-                    }
+                unsigned seg = inst->getOperand(realMemIndex + 4).getReg();
+
+                if(size == 8) {
+                    return conv_unique<RelocatableInst>(NoReloc::unique(mov64rm(dst, src_addr, 1, 0, 0, seg)));
+                }
+                else if(size == 4) {
+                    return conv_unique<RelocatableInst>(NoReloc::unique(mov32rm(dst, src_addr, 1, 0, 0, seg)));
+                }
+                else if(size == 2) {
+                    return conv_unique<RelocatableInst>(NoReloc::unique(mov32rm16(dst, src_addr, 1, 0, 0, seg)));
+                }
+                else if(size == 1) {
+                    return conv_unique<RelocatableInst>(NoReloc::unique(mov32rm8(dst, src_addr, 1, 0, 0, seg)));
                 }
             }
             RequireAction("GetWriteValue::generate", false && "No memory address found in the instruction", abort());
