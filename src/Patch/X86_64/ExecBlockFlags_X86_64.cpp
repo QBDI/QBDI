@@ -21,27 +21,44 @@
 #include "Patch/Types.h"
 #include "Patch/InstInfo.h"
 #include "Patch/ExecBlockFlags.h"
+#include "Utility/LogSys.h"
 
 namespace QBDI {
+namespace {
+
+struct ExecBlockFlagsArray {
+    uint8_t arr[llvm::X86::NUM_TARGET_REGS];
+
+    constexpr ExecBlockFlagsArray() : arr() {
+        for (unsigned i = 0; i < llvm::X86::NUM_TARGET_REGS; i++) {
+            if (llvm::X86::YMM0 <= i && i <= llvm::X86::YMM15) {
+                arr[i] = ExecBlockFlags::needAVX | ExecBlockFlags::needFPU;
+            } else if (    (llvm::X86::XMM0<= i && i <= llvm::X86::XMM15) ||
+                           (llvm::X86::ST0<= i && i <= llvm::X86::ST7) ||
+                           (llvm::X86::MM0<= i && i <= llvm::X86::MM7) ||
+                           llvm::X86::FPSW == i || llvm::X86::FPCW == i) {
+                arr[i] = ExecBlockFlags::needFPU;
+            } else {
+                arr[i] = 0;
+            }
+        }
+    }
+
+    inline uint8_t get(size_t reg) const {
+        if(reg < llvm::X86::NUM_TARGET_REGS)
+            return arr[reg];
+
+        LogError("ExecBlockFlagsArray.get", "No register %u", reg);
+        return 0;
+    }
+};
+
+}
 
 const uint8_t defaultExecuteFlags = ExecBlockFlags::needAVX | ExecBlockFlags::needFPU;
 
-static inline uint8_t getRegisterFlags(unsigned int op) {
-    uint8_t flags = 0;
-
-    if (llvm::X86::YMM0 <= op && op <= llvm::X86::YMM15)
-        flags |= ExecBlockFlags::needAVX | ExecBlockFlags::needFPU;
-
-    if (    (llvm::X86::XMM0<= op && op <= llvm::X86::XMM15) ||
-            (llvm::X86::ST0<= op && op <= llvm::X86::ST7) ||
-            (llvm::X86::MM0<= op && op <= llvm::X86::MM7) ||
-            llvm::X86::FPSW == op || llvm::X86::FPCW == op)
-        flags |= ExecBlockFlags::needFPU;
-
-    return flags;
-}
-
 uint8_t getExecBlockFlags(const llvm::MCInst& inst, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI) {
+    static constexpr ExecBlockFlagsArray cache;
 
     const llvm::MCInstrDesc &desc = MCII->get(inst.getOpcode());
     uint8_t flags = 0;
@@ -50,17 +67,17 @@ uint8_t getExecBlockFlags(const llvm::MCInst& inst, const llvm::MCInstrInfo* MCI
     for (size_t i=0; i < inst.getNumOperands(); i++) {
         const llvm::MCOperand& op = inst.getOperand(i);
         if (op.isReg()) {
-            flags |= getRegisterFlags(op.getReg());
+            flags |= cache.get(op.getReg());
         }
     }
 
     const uint16_t* implicitRegs = desc.getImplicitDefs();
     for (; implicitRegs && *implicitRegs; implicitRegs++) {
-        flags |= getRegisterFlags(*implicitRegs);
+        flags |= cache.get(*implicitRegs);
     }
     implicitRegs = desc.getImplicitUses();
     for (; implicitRegs && *implicitRegs; implicitRegs++) {
-        flags |= getRegisterFlags(*implicitRegs);
+        flags |= cache.get(*implicitRegs);
     }
 
     // detect implicit FPU instruction
