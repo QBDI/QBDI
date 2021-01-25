@@ -14,23 +14,31 @@ supported by QBDI. This estimation is far from complete because the other instru
 probably never encountered in the test
 suite.
 
-Instructions below are listed using their LLVM MC naming. This naming convention distinguishes
+Instructions below are listed using their mnemonic (or LLVM MC opcode). This naming convention distinguishes
 between size and operand variants of the same mnemonic: ``ADD64rm`` is a 64 bits add of a memory
-value to a register while ``ADD32ri8`` is a 32 bits add of a 8 bits immediate to a register.
+value to a register while ``ADD32ri8`` is a 32 bits add of an 8 bits immediate to a register.
 
 Intel x86-64
 ------------
 
-The x86-64 support is complete and mature although there are still some rare bugs linked to problems
-in the assembly and disassembly backend of LLVM. Only a small part of SIMD instructions are covered
+The x86-64 support is complete and mature. Only a small part of SIMD instructions are covered
 by our tests but we do not expect any problems with the uncovered ones because their semantic are
-closely related with the covered ones.
+closely related to the covered ones. We currently don't support the followed features:
 
-Memory access information is provided for general and SIMD instructions, except:
+- AVX512: the register of this extension isn't supported and will not be restored/backup during the execution
+- privileged instruction: QBDI is an userland (ring3) application and privileged registers aren't managed
+- CET feature: shadow stack is not implemented and the current instrumentation doesn't support
+  indirect branch tracking.
+- HLE and RTM features and any instructions for multithreading: QBDI allows inserting callbacks
+  at any position and cannot guarantee that instructions of the same transactions unit will not be split.
+- MPX feature: bound registers aren't supported.
+- XOP instructions for ADM processors: The instructions are never been tested.
 
-- privileged instructions
-- instructions of CET, RTM, MPX, XOP or AVX512 features
-- VGATHER* and VPGATHER* instructions of AVX2
+The memory access information is provided for most of general and SIMD instructions.
+The information is missing for:
+
+- The instructions include in an unsupported feature
+- VGATHER* and VPGATHER* instructions of AVX2.
 
 Instruction Coverage
 ^^^^^^^^^^^^^^^^^^^^
@@ -99,7 +107,8 @@ Instruction Coverage
 Intel x86
 ---------
 
-The x86 support is based on x86-64.
+The x86 support is based on x86_64 and has the same limitations. However, his integration is more recent than X86_64
+and has been less tested.
 
 Instruction Coverage
 ^^^^^^^^^^^^^^^^^^^^

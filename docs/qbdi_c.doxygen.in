@@ -315,7 +315,7 @@ OPTIMIZE_OUTPUT_SLICE  = NO
 # Note that for custom extensions you also need to set FILE_PATTERNS otherwise
 # the files are not read by doxygen.
 
-EXTENSION_MAPPING      =
+EXTENSION_MAPPING      =  in=C
 
 # If the MARKDOWN_SUPPORT tag is enabled then doxygen pre-processes all comments
 # according to the Markdown format, which allows for more readable
@@ -864,6 +864,7 @@ INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.c \
                          *.cpp \
                          *.h \
+                         *.h.in \
                          *.hpp
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
@@ -2146,6 +2147,7 @@ INCLUDE_FILE_PATTERNS  =
 # This tag requires that the tag ENABLE_PREPROCESSING is set to YES.
 
 PREDEFINED             = QBDI_ARCH_X86_64 \
+                         QBDI_ARCH_X86 \
                          QBDI_ARCH_ARM \
                          "QBDI_EXPORT="
 

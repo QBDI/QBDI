@@ -3,7 +3,9 @@
 Get Started with Frida/QBDI
 ===========================
 
-To be able to use QBDI bindings while injecting into a process, it is necessary to understand a bit of Frida to perform some common tasks. Through this simple example based on *qbdi-frida-template* we will explain a basic usage of Frida & QBDI.
+To be able to use QBDI bindings while injecting into a process,
+it is necessary to understand a bit of Frida to perform some common tasks.
+Through this simple example based on *qbdi-frida-template* we will explain a basic usage of Frida & QBDI.
 
 Common tasks
 ------------
@@ -55,8 +57,8 @@ Initialize a QBDI object
 ++++++++++++++++++++++++
 
 If `frida-qbdi.js` (or a script requiring it) is successfully loaded in Frida,
-a new QBDI object become available.
-It provides an object oriented access to the framework features.
+a new QBDI object becomes available.
+It provides an object-oriented access to the framework features.
 
 .. code-block:: javascript
 
@@ -70,7 +72,7 @@ Instrument a function with QBDI
 +++++++++++++++++++++++++++++++
 
 You can instrument a function using QBDI bindings. They are really close to the C++ ones,
-with more information is available in Frida/QBDI :ref:`frida-bindins-api` documentation.
+with more information is available in Frida/QBDI :ref:`frida-qbdi-api` documentation.
 
 .. code-block:: javascript
 
@@ -88,7 +90,7 @@ with more information is available in Frida/QBDI :ref:`frida-bindins-api` docume
     vm.call(functionPtr, []);
 
 
-If you ever want to pass argument to your callback, this can be done via the **data** argument :
+If you ever want to pass arguments to your callback, this can be done via the **data** argument :
 
 .. code-block:: javascript
 
@@ -122,6 +124,21 @@ It will be possible to load it in Frida in place of `frida-qbdi.js`, allowing to
 easily create custom instrumentation tools with in-process scripts written in
 JavaScript and external control in Python (or any language supported by `Frida`).
 
+Run Frida/QBDI
+++++++++++++++
+
+To use QBDI on an already existing process you can use the following syntax:
+
+.. code:: bash
+
+    $ frida -n processName -l frida-qbdi.js
+
+You can also spawn the process using Frida to instrument it with QBDI as soon as it starts:
+
+.. code:: bash
+
+    $ frida -f binaryPath Arguments -l frida-qbdi.js
+
 
 Complete example
 ----------------
@@ -141,3 +158,28 @@ Instrumentation code
 
 .. literalinclude:: ../../templates/qbdi_frida_template/FridaQBDI_sample.js
     :language: javascript
+
+Template
+--------
+
+If you want to get started using QBDI bindings, you can create a new default project doing:
+
+.. code:: bash
+
+    make NewProject
+    cd NewProject
+    qbdi-frida-template
+
+    # If you want to build the demo binary
+    mkdir build && cd build
+    cmake ..
+    make
+
+    # If frida-compile is not installed
+    npm install frida-compile babelify
+    ./node_modules/.bin/frida-compile ../FridaQBDI_sample.js -o RunMe.js
+    # else
+    frida-compile ../FridaQBDI_sample.js -o RunMe.js
+
+    frida -f ./demo.bin -l ./RunMe.js
+

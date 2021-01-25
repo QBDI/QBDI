@@ -12,15 +12,6 @@ target_link_libraries(modules_cpp QBDI)
 set_target_properties(modules_cpp PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON)
 add_signature(modules_cpp)
 
-add_executable(fibonacci_cpp fibonacci.cpp)
-target_link_libraries(fibonacci_cpp QBDI)
-set_target_properties(fibonacci_cpp PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON)
-add_signature(fibonacci_cpp)
-
-add_executable(fibonacci_c fibonacci.c)
-target_link_libraries(fibonacci_c QBDI)
-add_signature(fibonacci_c)
-
 add_executable(thedude_c thedude.c)
 target_link_libraries(thedude_c QBDI)
 add_signature(thedude_c)
@@ -38,3 +29,6 @@ add_signature(cryptolock_cpp)
 add_executable(cryptolock_c cryptolock.c)
 target_link_libraries(cryptolock_c QBDI)
 add_signature(cryptolock_c)
+
+add_subdirectory(c)
+add_subdirectory(cpp)

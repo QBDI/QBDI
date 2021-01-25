@@ -23,20 +23,15 @@ Introduction
 
 QuarkslaB Dynamic binary Instrumentation (QBDI) is a modular, cross-platform and cross-architecture
 DBI framework. It aims to support Linux, macOS, Android, iOS and Windows operating systems running on
-x86, x86-64, ARM and AArch64 architectures. Information about what is a DBI framework and how QBDI
+x86, x86-64, ARM and AArch64 architectures. In addition of C/C++ API, Python and JS/frida bindings are
+available to script QBDI. Information about what is a DBI framework and how QBDI
 works can be found in the user documentation introduction (`User Documentation <https://qbdi.readthedocs.io/en/stable/user.html>`_).
 
 QBDI modularity means it doesn't contain a preferred injection method and it is designed to be
 used in conjunction with an external injection tool. QBDI includes a tiny (``LD_PRELOAD`` based)
-Linux and macOS injector for dynamic executables (QBDIPreload), which acts as the foundation for our
-Python bindings (pyQBDI).
+Linux and macOS injector for dynamic executables (QBDIPreload).
 QBDI is also fully integrated with `Frida <https://frida.re>`_, a reference dynamic instrumentation toolkit,
 allowing anybody to use their combined powers.
-
-x86-64 support is mature (even if SIMD memory access are not yet reported). The support of x86
-is new and some bug may occur. ARM architecture is
-a work in progress but already sufficient to execute simple CLI program like *ls* or *cat*.
-AArch64 is planned, but currently unsupported.
 
 A current limitation is that QBDI doesn't handle signals, multithreading (it doesn't deal with new
 threads creation) and C++ exception mechanisms.
@@ -44,7 +39,7 @@ However, those system-dependent features will probably not be part of the core l
 and should be integrated as a new layer (to be determined how).
 
 Status
-------
+++++++
 
 .. role:: green
 .. role:: yellow
@@ -107,12 +102,12 @@ Installation
 ============
 
 C/C++/Frida API
----------------
++++++++++++++++
 
 Each new version of QBDI is compiled and available on Github release page (https://github.com/QBDI/QBDI/releases).
 
 Python API (PyQBDI)
--------------------
++++++++++++++++++++
 
 PyQBDI is available on Pypi. The wheel package can be downloaded (https://pypi.org/project/PyQBDI/#files) or installed with pip command.::
 
@@ -120,21 +115,33 @@ PyQBDI is available on Pypi. The wheel package can be downloaded (https://pypi.o
 
 PyQBDI package is independent of C/C++ package.
 
+Devel Packages
+++++++++++++++
+
+The devloppment of QBDI doesn't have a fixed timeline and periodic release.
+All new features and fixs are merged in dev-next branch. Some package devel package can be download at:
+
+- In artefacts of `Appveyor <https://ci.appveyor.com/project/QBDI/qbdi/branch/dev-next>`_ for windows packages (C/C++ API and PyQBDI)
+- In artefacts of `Github Actions <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Tests+and+Package+Linux%22+branch%3Adev-next>`_ for Linux C/C++/frida API (based on ubuntu)
+- In artefacts of `Github Actions <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22PyQBDI+Linux+package%22+branch%3Adev-next>`_ for linux PyQBDI
+- In artefacts of `Github Actions <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Package+Android%22+branch%3Adev-next>`_ for android C/C++/frida API
+
 Compilation
 ===========
 .. compil
 
-To build this project the following dependencies are needed on your system: cmake, make (for Linux
-and macOS), ninja (for Android), Visual Studio (for Windows) and a C++11 toolchain for the platform of
-your choice.
+To build this project the following dependencies are needed on your system:
+
+- cmake >= 3.5
+- ninja or make
+- C++17 toolchain (gcc, clang, Visual Studio 2019, ...)
 
 The compilation is a two-step process:
 
-* A local binary distribution of the dependencies is built.
-* QBDI is built using those binaries.
+* local library distribution of LLVM is built.
+* QBDI is built using llvm library.
 
-The current dependencies which need to be built are LLVM and Google Test. This local built of
-LLVM is required because QBDI uses private APIs not exported by regular LLVM installations and
+This local built of LLVM is required because QBDI uses private APIs not exported by regular LLVM installations and
 because our code is only compatible with a specific version of those APIs. This first step is
 cached and only needs to be run once, subsequent builds only need to repeat the second step.
 
@@ -144,7 +151,7 @@ this step we provide shell scripts for common build configurations which follow 
 cross compile QBDI.
 
 Linux
------
++++++
 
 x86-64
 ^^^^^^
@@ -172,7 +179,7 @@ x86
 The previous step can be follow but using the ``config-linux-X86.sh`` configuration script instead.
 
 macOS
------
++++++
 
 Compiling QBDI on macOS requires a few things:
 
@@ -201,7 +208,7 @@ then relaunch the build script from above and compile::
     make -j4
 
 Windows
--------
++++++++
 
 Building on Windows requires a pure Windows installation of *Python 3*
 (from the official packages, this is mandatory) in order to build our dependencies
@@ -231,7 +238,7 @@ then relaunch the build script from above and compile::
     ninja
 
 Android
--------
++++++++
 
 Cross-compiling for Android requires the Android NDK and has only been tested under Linux. The
 ``config-android-X86-64.sh`` configuration script should be customized to match your NDK installation
@@ -241,10 +248,24 @@ and target platform:
 
 From that point on the Linux guide can be followed using this configuration script.
 
+PyQBDI compilation
+++++++++++++++++++
+
+The PyQDBI library (not the wheel package) will be build '-DQBDI_TOOLS_PYQBDI=ON' is provided to cmake.
+
+To build the wheel package, you need to build llvm libraries, then run::
+
+    python -m pip install --upgrade pip
+    python -m pip install setuptools wheel
+    python setup.py bdist_wheel
+
+A 32bits version of Python is required for X86 architecture, where Python 64bits is required for X64 architecture.
+
+.. compil-end
+
 About ARM support
 =================
 
 QBDI have some support for ARM achitecture up to version `0.6.2 <https://github.com/QBDI/QBDI/releases/tag/v0.6.2>`_.
 The ARM architecture hasn't been tested with more recent release and is now depreciated.
 
-.. compil-end

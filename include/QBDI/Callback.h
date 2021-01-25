@@ -168,6 +168,7 @@ typedef void* InstrumentDataVec;
  * @param[in] vm                VM instance of the callback.
  * @param[in] inst              AnalysisType of the current instrumented Instruction.
  * @param[in] cbks              An object to add the callback to apply for this instruction.
+ *                              InstCallback can be add with qbdi_addInstrumentData
  * @param[in] data              User defined data which can be defined when registering the callback.
  */
 typedef void (*InstrumentCallbackC)(VMInstanceRef vm, const InstAnalysis *inst, InstrumentDataVec cbks, void* data);

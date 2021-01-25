@@ -21,6 +21,10 @@ target_include_directories(QBDIPreload PRIVATE
     $<INSTALL_INTERFACE:include>
 )
 
+target_include_directories(QBDIPreload INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+)
+
 install(TARGETS QBDIPreload
         EXPORT QBDIPreload_targets
         ARCHIVE DESTINATION lib)
