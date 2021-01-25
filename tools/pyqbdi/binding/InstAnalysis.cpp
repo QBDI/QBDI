@@ -42,12 +42,15 @@ py::object get_InstAnalysis_member(const InstAnalysis& obj, char* InstAnalysis::
 
 void init_binding_InstAnalysis(py::module_& m) {
 
-    py::enum_<RegisterAccessType>(m, "RegisterAccessType", py::arithmetic(), "Access type (R/W/RW) of a register operand")
+    py::enum_<RegisterAccessType>(m, "RegisterAccessType", "Access type (R/W/RW) of a register operand")
         .value("REGISTER_UNUSED", RegisterAccessType::REGISTER_UNUSED, "Unused register")
         .value("REGISTER_READ", RegisterAccessType::REGISTER_READ, "Register read access")
         .value("REGISTER_WRITE", RegisterAccessType::REGISTER_WRITE, "Register write access")
         .value("REGISTER_READ_WRITE", RegisterAccessType::REGISTER_READ_WRITE, "Register read/write access")
-        .export_values();
+        .export_values()
+        .def("__xor__", [](const RegisterAccessType p, const RegisterAccessType other) {return static_cast<RegisterAccessType>(p ^ other);})
+        .def("__and__", [](const RegisterAccessType p, const RegisterAccessType other) {return static_cast<RegisterAccessType>(p & other);})
+        .def("__or__", [](const RegisterAccessType p, const RegisterAccessType other) {return static_cast<RegisterAccessType>(p | other);});
 
     py::enum_<ConditionType>(m, "ConditionType", "Condition type")
         .value("CONDITION_NONE", ConditionType::CONDITION_NONE, "The instruction is unconditionnal")
@@ -80,20 +83,26 @@ void init_binding_InstAnalysis(py::module_& m) {
         .value("OPERAND_SEG", OperandType::OPERAND_SEG, "Segment or unsupported register operand")
         .export_values();
 
-    py::enum_<OperandFlag>(m, "OperandFlag", py::arithmetic(), "Operand flag")
+    py::enum_<OperandFlag>(m, "OperandFlag", "Operand flag")
         .value("OPERANDFLAG_NONE", OperandFlag::OPERANDFLAG_NONE, "No flag")
         .value("OPERANDFLAG_ADDR", OperandFlag::OPERANDFLAG_ADDR, "The operand is used to compute an address")
         .value("OPERANDFLAG_PCREL", OperandFlag::OPERANDFLAG_PCREL, "The value of the operand is PC relative")
         .value("OPERANDFLAG_UNDEFINED_EFFECT", OperandFlag::OPERANDFLAG_UNDEFINED_EFFECT, "The operand role isn’t fully defined")
         .value("OPERANDFLAG_IMPLICIT", OperandFlag::OPERANDFLAG_IMPLICIT, "The operand is implicit")
-        .export_values();
+        .export_values()
+        .def("__xor__", [](const OperandFlag p, const OperandFlag other) {return static_cast<OperandFlag>(p ^ other);})
+        .def("__and__", [](const OperandFlag p, const OperandFlag other) {return static_cast<OperandFlag>(p & other);})
+        .def("__or__", [](const OperandFlag p, const OperandFlag other) {return static_cast<OperandFlag>(p | other);});
 
-    py::enum_<AnalysisType>(m, "AnalysisType", py::arithmetic(), "Instruction analysis type")
+    py::enum_<AnalysisType>(m, "AnalysisType", "Instruction analysis type")
         .value("ANALYSIS_INSTRUCTION", AnalysisType::ANALYSIS_INSTRUCTION, "Instruction analysis (address, mnemonic, ...)")
         .value("ANALYSIS_DISASSEMBLY", AnalysisType::ANALYSIS_DISASSEMBLY, "Instruction disassembly")
         .value("ANALYSIS_OPERANDS", AnalysisType::ANALYSIS_OPERANDS, "Instruction operands analysis")
         .value("ANALYSIS_SYMBOL", AnalysisType::ANALYSIS_SYMBOL, "Instruction symbol")
-        .export_values();
+        .export_values()
+        .def("__xor__", [](const AnalysisType p, const AnalysisType other) {return static_cast<AnalysisType>(p ^ other);})
+        .def("__and__", [](const AnalysisType p, const AnalysisType other) {return static_cast<AnalysisType>(p & other);})
+        .def("__or__", [](const AnalysisType p, const AnalysisType other) {return static_cast<AnalysisType>(p | other);});
 
     py::class_<OperandAnalysis>(m, "OperandAnalysis")
         .def_readonly("type", &OperandAnalysis::type, "Operand type")

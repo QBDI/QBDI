@@ -39,7 +39,7 @@ void init_binding_Callback(py::module_& m) {
         .value("POSTINST", InstPosition::POSTINST, "Positioned after the instruction.")
         .export_values();
 
-    py::enum_<VMEvent>(m, "VMEvent", py::arithmetic())
+    py::enum_<VMEvent>(m, "VMEvent")
         .value("SEQUENCE_ENTRY", VMEvent::SEQUENCE_ENTRY, "Triggered when the execution enters a sequence.")
         .value("SEQUENCE_EXIT", VMEvent::SEQUENCE_EXIT, "Triggered when the execution exits from the current sequence.")
         .value("BASIC_BLOCK_ENTRY", VMEvent::BASIC_BLOCK_ENTRY, "Triggered when the execution enters a basic block.")
@@ -67,13 +67,19 @@ void init_binding_Callback(py::module_& m) {
                         res += "|VMEvent.EXEC_TRANSFER_RETURN";
                     res.erase(0, 1);
                     return res;
-                });
+                })
+        .def("__xor__", [](const VMEvent p, const VMEvent other) {return static_cast<VMEvent>(p ^ other);})
+        .def("__and__", [](const VMEvent p, const VMEvent other) {return static_cast<VMEvent>(p & other);})
+        .def("__or__", [](const VMEvent p, const VMEvent other) {return static_cast<VMEvent>(p | other);});
 
-    py::enum_<MemoryAccessType>(m, "MemoryAccessType", "Memory access type (read / write / ...)", py::arithmetic())
+    py::enum_<MemoryAccessType>(m, "MemoryAccessType", "Memory access type (read / write / ...)")
         .value("MEMORY_READ", MemoryAccessType::MEMORY_READ, "Memory read access")
         .value("MEMORY_WRITE", MemoryAccessType::MEMORY_WRITE, "Memory write access")
         .value("MEMORY_READ_WRITE", MemoryAccessType::MEMORY_READ_WRITE, "Memory read/write access")
-        .export_values();
+        .export_values()
+        .def("__xor__", [](const MemoryAccessType p, const MemoryAccessType other) {return static_cast<MemoryAccessType>(p ^ other);})
+        .def("__and__", [](const MemoryAccessType p, const MemoryAccessType other) {return static_cast<MemoryAccessType>(p & other);})
+        .def("__or__", [](const MemoryAccessType p, const MemoryAccessType other) {return static_cast<MemoryAccessType>(p | other);});
 
     py::class_<VMState>(m, "VMState")
         .def_readonly("event", &VMState::event,
@@ -87,12 +93,15 @@ void init_binding_Callback(py::module_& m) {
         .def_readonly("sequenceEnd", &VMState::sequenceEnd,
                 "The current sequence end address which can also be the execution transfer destination.");
 
-    py::enum_<MemoryAccessFlags>(m, "MemoryAccessFlags", "Memory access flags", py::arithmetic())
+    py::enum_<MemoryAccessFlags>(m, "MemoryAccessFlags", "Memory access flags")
         .value("MEMORY_NO_FLAGS", MemoryAccessFlags::MEMORY_NO_FLAGS, "Empty flags")
         .value("MEMORY_UNKNOWN_SIZE", MemoryAccessFlags::MEMORY_UNKNOWN_SIZE, "The size of the access isn't known.")
         .value("MEMORY_MINIMUM_SIZE", MemoryAccessFlags::MEMORY_MINIMUM_SIZE, "The given size is a minimum size.")
         .value("MEMORY_UNKNOWN_VALUE", MemoryAccessFlags::MEMORY_UNKNOWN_VALUE, "The value of the access is unknown or hasn't been retrived.")
-        .export_values();
+        .export_values()
+        .def("__xor__", [](const MemoryAccessFlags p, const MemoryAccessFlags other) {return static_cast<MemoryAccessFlags>(p ^ other);})
+        .def("__and__", [](const MemoryAccessFlags p, const MemoryAccessFlags other) {return static_cast<MemoryAccessFlags>(p & other);})
+        .def("__or__", [](const MemoryAccessFlags p, const MemoryAccessFlags other) {return static_cast<MemoryAccessFlags>(p | other);});
 
     py::class_<MemoryAccess>(m, "MemoryAccess")
         .def_readwrite("instAddress", &MemoryAccess::instAddress, "Address of instruction making the access")

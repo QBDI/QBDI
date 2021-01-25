@@ -23,7 +23,7 @@ namespace pyQBDI {
 
 void init_binding_Memory(py::module_& m) {
 
-    py::enum_<Permission>(m, "Permission", py::arithmetic(), "Memory access rights.")
+    py::enum_<Permission>(m, "Permission", "Memory access rights.")
         .value("PF_NONE", Permission::PF_NONE, "No access")
         .value("PF_READ", Permission::PF_READ, "Read access")
         .value("PF_WRITE", Permission::PF_WRITE, "Write access")
@@ -42,7 +42,11 @@ void init_binding_Memory(py::module_& m) {
                         res += "|Permission.PF_EXEC";
                     res.erase(0, 1);
                     return res;
-                });
+                })
+        .def("__xor__", [](const Permission p, const Permission other) {return static_cast<Permission>(p ^ other);})
+        .def("__and__", [](const Permission p, const Permission other) {return static_cast<Permission>(p & other);})
+        .def("__or__", [](const Permission p, const Permission other) {return static_cast<Permission>(p | other);});
+
 
 
     py::class_<MemoryMap>(m, "MemoryMap")
