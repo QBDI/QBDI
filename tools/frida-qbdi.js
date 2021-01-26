@@ -714,7 +714,7 @@ var Options = Object.freeze({
 
 class InstrumentDataCBK {
     /**
-     * Object to define an :js:func:`InstCallback` in an :js:func:`InstrRuleCallback`
+     * Object to define an :js:func:`InstCallback` in an :js:func:`InstrumentCallback`
      *
      * @param {InstPosition} pos    Relative position of the callback (PreInst / PostInst).
      * @param {InstCallback} cbk    A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
@@ -1190,9 +1190,9 @@ class QBDI {
     /**
      * Add a custom instrumentation rule to the VM.
      *
-     * @param {InstrRuleCallback} cbk    A **native** InstrRuleCallback returned by :js:func:`QBDI.newInstrRuleCallback`.
-     * @param {AnalysisType}      type   Analyse type needed for this instruction function pointer to the callback
-     * @param {Object}            data   User defined data passed to the callback.
+     * @param {InstrumentCallback} cbk    A **native** InstrumentCallback returned by :js:func:`QBDI.newInstrumentCallback`.
+     * @param {AnalysisType}       type   Analyse type needed for this instruction function pointer to the callback
+     * @param {Object}             data   User defined data passed to the callback.
      *
      * @return {Number} The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
      */
@@ -1206,11 +1206,11 @@ class QBDI {
     /**
      * Add a custom instrumentation rule to the VM for a range of address.
      *
-     * @param {String|Number}     start  Begin of the range of address where apply the rule
-     * @param {String|Number}     end    End of the range of address where apply the rule
-     * @param {InstrRuleCallback} cbk    A **native** InstrRuleCallback returned by :js:func:`QBDI.newInstrRuleCallback`.
-     * @param {AnalysisType}      type   Analyse type needed for this instruction function pointer to the callback
-     * @param {Object}            data   User defined data passed to the callback.
+     * @param {String|Number}      start  Begin of the range of address where apply the rule
+     * @param {String|Number}      end    End of the range of address where apply the rule
+     * @param {InstrumentCallback} cbk    A **native** InstrumentCallback returned by :js:func:`QBDI.newInstrumentCallback`.
+     * @param {AnalysisType}       type   Analyse type needed for this instruction function pointer to the callback
+     * @param {Object}             data   User defined data passed to the callback.
      *
      * @return {Number} The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
      */
@@ -1503,16 +1503,16 @@ class QBDI {
      * Create a native **Instruction rule callback** from a JS function.
      *
      * Example:
-     *       >>> var icbk = vm.newInstrRuleCallback(function(vm, ana, data) {
+     *       >>> var icbk = vm.newInstrumentCallback(function(vm, ana, data) {
      *       >>>   console.log("0x" + ana.address.toString(16) + " " + ana.disassembly);
      *       >>>   return [new InstrumentDataCBK(InstPosition.POSTINST, printCB, ana.disassembly)];
      *       >>> });
      *
-     * @param {InstrRuleCallback} cbk an instruction callback (ex: function(vm, ana, data) {};)
+     * @param {InstrumentCallback} cbk an instruction callback (ex: function(vm, ana, data) {};)
      *
-     * @return an native InstrRuleCallback
+     * @return an native InstrumentCallback
      */
-    newInstrRuleCallback(cbk) {
+    newInstrumentCallback(cbk) {
         if (typeof(cbk) !== 'function' || cbk.length !== 3) {
             return undefined;
         }
