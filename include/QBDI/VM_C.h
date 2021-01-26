@@ -41,6 +41,7 @@ extern "C" {
  *                      CPU model is used (see LLVM documentation for more details).
  * @param[in]  mattrs   A NULL terminated array of C strings specifying the attributes of the cpu
  *                      model. If NULL, no additional features are specified.
+ * @param[in]  opts     The options to enable in the VM
  */
 QBDI_EXPORT void qbdi_initVM(VMInstanceRef* instance, const char* cpu, const char** mattrs, Options opts);
 
@@ -232,7 +233,7 @@ QBDI_EXPORT void qbdi_setOptions(VMInstanceRef instance, Options options);
  * @return The id of the registered instrumentation (or VMError::INVALID_EVENTID
  * in case of failure).
  */
-QBDI_EXPORT uint32_t qbdi_addInstrRule(VMInstanceRef instance, QBDI_InstrumentCallback cbk, AnalysisType type, void* data);
+QBDI_EXPORT uint32_t qbdi_addInstrRule(VMInstanceRef instance, InstrumentCallbackC cbk, AnalysisType type, void* data);
 
 /*! Add a custom instrumentation rule to the VM for a range of address
  *
@@ -246,7 +247,7 @@ QBDI_EXPORT uint32_t qbdi_addInstrRule(VMInstanceRef instance, QBDI_InstrumentCa
  * @return The id of the registered instrumentation (or VMError::INVALID_EVENTID
  * in case of failure).
  */
-QBDI_EXPORT uint32_t qbdi_addInstrRuleRange(VMInstanceRef instance, rword start, rword end, QBDI_InstrumentCallback cbk, AnalysisType type, void* data);
+QBDI_EXPORT uint32_t qbdi_addInstrRuleRange(VMInstanceRef instance, rword start, rword end, InstrumentCallbackC cbk, AnalysisType type, void* data);
 
 /*! Add a callback for the current instruction
  *

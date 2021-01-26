@@ -257,12 +257,12 @@ void qbdi_clearCache(VMInstanceRef instance, rword start, rword end) {
     static_cast<VM*>(instance)->clearCache(start, end);
 }
 
-uint32_t qbdi_addInstrRule(VMInstanceRef instance, QBDI_InstrumentCallback cbk, AnalysisType type, void* data) {
+uint32_t qbdi_addInstrRule(VMInstanceRef instance, InstrumentCallbackC cbk, AnalysisType type, void* data) {
     RequireAction("VM_C::addInstrRule", instance, return VMError::INVALID_EVENTID);
     return static_cast<VM*>(instance)->addInstrRule(cbk, type, data);
 }
 
-uint32_t qbdi_addInstrRuleRange(VMInstanceRef instance, rword start, rword end, QBDI_InstrumentCallback cbk, AnalysisType type, void* data) {
+uint32_t qbdi_addInstrRuleRange(VMInstanceRef instance, rword start, rword end, InstrumentCallbackC cbk, AnalysisType type, void* data) {
     RequireAction("VM_C::addInstrRuleRange", instance, return VMError::INVALID_EVENTID);
     return static_cast<VM*>(instance)->addInstrRuleRange(start, end, cbk, type, data);
 }

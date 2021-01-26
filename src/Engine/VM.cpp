@@ -44,7 +44,7 @@ struct MemCBInfo {
 
 struct InstrCBInfo {
     Range<rword> range;
-    QBDI_InstrumentCallback cbk;
+    InstrumentCallbackC cbk;
     AnalysisType type;
     void* data;
 };
@@ -311,7 +311,7 @@ uint32_t VM::addInstrRule(InstrumentCallback cbk, AnalysisType type, void* data)
     return engine->addInstrRule(InstrRuleUser::unique(cbk, type, data, this, r));
 }
 
-uint32_t VM::addInstrRule(QBDI_InstrumentCallback cbk, AnalysisType type, void* data) {
+uint32_t VM::addInstrRule(InstrumentCallbackC cbk, AnalysisType type, void* data) {
     InstrCBInfo* _data = new InstrCBInfo{Range<rword>(0, (rword) -1), cbk, type, data};
     uint32_t id = addInstrRule(InstrCBGateC, type, _data);
     instrCBInfos->emplace_back(id, _data);
@@ -324,7 +324,7 @@ uint32_t VM::addInstrRuleRange(rword start, rword end, InstrumentCallback cbk, A
     return engine->addInstrRule(InstrRuleUser::unique(cbk, type, data, this, r));
 }
 
-uint32_t VM::addInstrRuleRange(rword start, rword end, QBDI_InstrumentCallback cbk, AnalysisType type, void* data) {
+uint32_t VM::addInstrRuleRange(rword start, rword end, InstrumentCallbackC cbk, AnalysisType type, void* data) {
     InstrCBInfo* _data = new InstrCBInfo{Range<rword>(start, end), cbk, type, data};
     uint32_t id = addInstrRuleRange(start, end, InstrCBGateC, type, _data);
     instrCBInfos->emplace_back(id, _data);

@@ -57,6 +57,7 @@ public:
      *
      * @param[in] cpu    The name of the CPU
      * @param[in] mattrs A list of additional attributes
+     * @param[in] opts   The options to enable in the VM
      */
     VM(const std::string& cpu = "", const std::vector<std::string>& mattrs = {}, Options opts = Options::NO_OPT);
 
@@ -256,7 +257,7 @@ public:
     uint32_t addInstrRule(InstrumentCallback cbk, AnalysisType type, void* data);
 
     // register C like InstrumentCallback
-    uint32_t addInstrRule(QBDI_InstrumentCallback cbk, AnalysisType type, void* data);
+    uint32_t addInstrRule(InstrumentCallbackC cbk, AnalysisType type, void* data);
 
     /*! Add a custom instrumentation rule to the VM on a specify range
      *
@@ -272,7 +273,7 @@ public:
     uint32_t addInstrRuleRange(rword start, rword end, InstrumentCallback cbk, AnalysisType type, void* data);
 
     // register C like InstrumentCallback
-    uint32_t addInstrRuleRange(rword start, rword end, QBDI_InstrumentCallback cbk, AnalysisType type, void* data);
+    uint32_t addInstrRuleRange(rword start, rword end, InstrumentCallbackC cbk, AnalysisType type, void* data);
 
     /*! Add a custom instrumentation rule to the VM on a specify set of range
      *
