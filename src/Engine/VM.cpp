@@ -52,21 +52,23 @@ struct InstrCBInfo {
 static VMAction memReadGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
     std::vector<std::pair<uint32_t, MemCBInfo>>* memCBInfos = static_cast<std::vector<std::pair<uint32_t, MemCBInfo>>*>(data);
     std::vector<MemoryAccess> memAccesses = vm->getInstMemoryAccess();
-    VMAction action = VMAction::CONTINUE;
+    RangeSet<rword> readRange;
     for(const MemoryAccess& memAccess : memAccesses) {
-        Range<rword> accessRange(memAccess.accessAddress, memAccess.accessAddress + memAccess.size);
-        for(size_t i = 0; i < memCBInfos->size(); i++) {
-            // Check access type
-            if((*memCBInfos)[i].second.type == MEMORY_READ && (memAccess.type & (*memCBInfos)[i].second.type)) {
-                // Check access range
-                if((*memCBInfos)[i].second.range.overlaps(accessRange)) {
-                    // Forward to virtual callback
-                    VMAction ret = (*memCBInfos)[i].second.cbk(vm, gprState, fprState, (*memCBInfos)[i].second.data);
-                    // Always keep the most extreme action as the return
-                    if(ret > action) {
-                        action = ret;
-                    }
-                }
+        if (memAccess.type & MEMORY_READ) {
+            Range<rword> accessRange(memAccess.accessAddress, memAccess.accessAddress + memAccess.size);
+            readRange.add(accessRange);
+        }
+    }
+
+    VMAction action = VMAction::CONTINUE;
+    for(size_t i = 0; i < memCBInfos->size(); i++) {
+        // Check access type and range
+        if((*memCBInfos)[i].second.type == MEMORY_READ && readRange.overlaps((*memCBInfos)[i].second.range)) {
+            // Forward to virtual callback
+            VMAction ret = (*memCBInfos)[i].second.cbk(vm, gprState, fprState, (*memCBInfos)[i].second.data);
+            // Always keep the most extreme action as the return
+            if(ret > action) {
+                action = ret;
             }
         }
     }
@@ -76,21 +78,31 @@ static VMAction memReadGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprS
 static VMAction memWriteGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
     std::vector<std::pair<uint32_t, MemCBInfo>>* memCBInfos = static_cast<std::vector<std::pair<uint32_t, MemCBInfo>>*>(data);
     std::vector<MemoryAccess> memAccesses = vm->getInstMemoryAccess();
-    VMAction action = VMAction::CONTINUE;
+    RangeSet<rword> readRange;
+    RangeSet<rword> writeRange;
     for(const MemoryAccess& memAccess : memAccesses) {
         Range<rword> accessRange(memAccess.accessAddress, memAccess.accessAddress + memAccess.size);
-        for(size_t i = 0; i < memCBInfos->size(); i++) {
-            // Check access type
-            if(((*memCBInfos)[i].second.type & MEMORY_WRITE) && (memAccess.type & (*memCBInfos)[i].second.type)) {
-                // Check access range
-                if((*memCBInfos)[i].second.range.overlaps(accessRange)) {
-                    // Forward to virtual callback
-                    VMAction ret = (*memCBInfos)[i].second.cbk(vm, gprState, fprState, (*memCBInfos)[i].second.data);
-                    // Always keep the most extreme action as the return
-                    if(ret > action) {
-                        action = ret;
-                    }
-                }
+        if (memAccess.type & MEMORY_READ) {
+            readRange.add(accessRange);
+        }
+        if (memAccess.type & MEMORY_WRITE) {
+            writeRange.add(accessRange);
+        }
+    }
+
+    VMAction action = VMAction::CONTINUE;
+    for(size_t i = 0; i < memCBInfos->size(); i++) {
+        // Check accessCB
+        // 1. has MEMORY_WRITE and write range overlaps
+        // 2. is MEMORY_READ_WRITE and read range overlaps
+        // note: the case with MEMORY_READ only is managed by memReadGate
+        if(     (((*memCBInfos)[i].second.type & MEMORY_WRITE) && writeRange.overlaps((*memCBInfos)[i].second.range)) ||
+                ((*memCBInfos)[i].second.type == MEMORY_READ_WRITE && readRange.overlaps((*memCBInfos)[i].second.range))) {
+            // Forward to virtual callback
+            VMAction ret = (*memCBInfos)[i].second.cbk(vm, gprState, fprState, (*memCBInfos)[i].second.data);
+            // Always keep the most extreme action as the return
+            if(ret > action) {
+                action = ret;
             }
         }
     }
