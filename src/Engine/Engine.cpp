@@ -57,7 +57,8 @@
 namespace QBDI {
 
 Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs, VMInstanceRef vminstance)
-    : cpu(_cpu), mattrs(_mattrs), vminstance(vminstance), instrRulesCounter(0), vmCallbacksCounter(0), running(false) {
+    : cpu(_cpu), mattrs(_mattrs), vminstance(vminstance), instrRulesCounter(0), vmCallbacksCounter(0),
+    eventMask(static_cast<VMEvent>(0)), running(false) {
     init();
 }
 
@@ -155,6 +156,7 @@ void Engine::reinit(const std::string& cpu_, const std::vector<std::string>& mat
     vmCallbacks.clear();
     instrRulesCounter = 0;
     vmCallbacksCounter = 0;
+    eventMask = static_cast<VMEvent>(0);
 
     // clear state
     gprState.reset();
@@ -206,6 +208,7 @@ Engine& Engine::operator=(const Engine& other) {
     vmCallbacks = other.vmCallbacks;
     instrRulesCounter = other.instrRulesCounter;
     vmCallbacksCounter = other.vmCallbacksCounter;
+    eventMask = other.eventMask;
 
     // copy instrumentation range
     execBroker->setInstrumentedRange(other.execBroker->getInstrumentedRange());
@@ -427,15 +430,19 @@ bool Engine::run(rword start, rword stop) {
 
     // Execute basic block per basic block
     do {
+        VMAction action = CONTINUE;
+
         // If this PC is not instrumented try to transfer execution
         if(execBroker->isInstrumented(currentPC) == false &&
            execBroker->canTransferExecution(curGPRState)) {
             curExecBlock = nullptr;
             LogDebug("Engine::run", "Executing 0x%" PRIRWORD " through execBroker", currentPC);
+            action = signalEvent(EXEC_TRANSFER_CALL, currentPC, curGPRState, curFPRState);
             // transfer execution
-            signalEvent(EXEC_TRANSFER_CALL, currentPC, curGPRState, curFPRState);
-            execBroker->transferExecution(currentPC, curGPRState, curFPRState);
-            signalEvent(EXEC_TRANSFER_RETURN, currentPC, curGPRState, curFPRState);
+            if (action == CONTINUE) {
+                execBroker->transferExecution(currentPC, curGPRState, curFPRState);
+                action = signalEvent(EXEC_TRANSFER_RETURN, currentPC, curGPRState, curFPRState);
+            }
         }
         // Else execute through DBI
         else {
@@ -473,34 +480,30 @@ bool Engine::run(rword start, rword stop) {
             curGPRState = &(curExecBlock->getContext()->gprState);
             curFPRState = &(curExecBlock->getContext()->fprState);
 
-            // Signal events
-            if ((curExecBlock->getSeqType(curExecBlock->getCurrentSeqID()) & SeqType::Entry) > 0) {
-                event |= BASIC_BLOCK_ENTRY;
-            }
-            signalEvent(event, currentPC, curGPRState, curFPRState);
-
-            // Execute
-            hasRan = true;
-            switch(curExecBlock->execute()) {
-                case CONTINUE:
-                case BREAK_TO_VM:
-                    break;
-                case STOP:
-                    *gprState = *curGPRState;
-                    *fprState = *curFPRState;
-                    curGPRState = gprState.get();
-                    curFPRState = fprState.get();
-                    curExecBlock = nullptr;
-                    running = false;
-                    return hasRan;
+            // Signal events. Doesn't call getSeqType when no event match the current one
+            if ((eventMask & (event | BASIC_BLOCK_ENTRY)) != 0) {
+                if ((curExecBlock->getSeqType(curExecBlock->getCurrentSeqID()) & SeqType::Entry) > 0) {
+                    event |= BASIC_BLOCK_ENTRY;
+                }
+                action = signalEvent(event, currentPC, curGPRState, curFPRState);
             }
 
-            // Signal events
-            event = SEQUENCE_EXIT;
-            if ((curExecBlock->getSeqType(curExecBlock->getCurrentSeqID()) & SeqType::Exit) > 0) {
-                event |= BASIC_BLOCK_EXIT;
+            if (action == CONTINUE) {
+                hasRan = true;
+                action = curExecBlock->execute();
+                // Signal events if normal exit
+                if (action == CONTINUE && (eventMask & (SEQUENCE_EXIT | BASIC_BLOCK_EXIT)) != 0) {
+                    event = SEQUENCE_EXIT;
+                    if ((curExecBlock->getSeqType(curExecBlock->getCurrentSeqID()) & SeqType::Exit) > 0) {
+                        event |= BASIC_BLOCK_EXIT;
+                    }
+                    action = signalEvent(event, currentPC, curGPRState, curFPRState);
+                }
             }
-            signalEvent(event, currentPC, curGPRState, curFPRState);
+        }
+        if (action == STOP) {
+            LogDebug("Engine::run", "Receive STOP Action");
+            break;
         }
         // Get next block PC
         currentPC = QBDI_GPR_GET(curGPRState, REG_PC);
@@ -540,12 +543,19 @@ uint32_t Engine::addVMEventCB(VMEvent mask, VMCallback cbk, void *data) {
     uint32_t id = vmCallbacksCounter++;
     RequireAction("Engine::addVMEventCB", id < EVENTID_VM_MASK, return VMError::INVALID_EVENTID);
     vmCallbacks.emplace_back(id, CallbackRegistration {mask, cbk, data});
+    eventMask |= mask;
     return id | EVENTID_VM_MASK;
 }
 
-void Engine::signalEvent(VMEvent event, rword currentPC, GPRState *gprState, FPRState *fprState) {
+VMAction Engine::signalEvent(VMEvent event, rword currentPC, GPRState *gprState, FPRState *fprState) {
     static VMState vmState;
     static rword lastUpdatePC = 0;
+
+    if ((event & eventMask) == 0) {
+        return CONTINUE;
+    }
+
+    VMAction action = CONTINUE;
 
     for(const auto& item : vmCallbacks) {
         const QBDI::CallbackRegistration& r = item.second;
@@ -564,9 +574,13 @@ void Engine::signalEvent(VMEvent event, rword currentPC, GPRState *gprState, FPR
                 }
             }
             vmState.event = event;
-            r.cbk(vminstance, &vmState, gprState, fprState, r.data);
+            VMAction res = r.cbk(vminstance, &vmState, gprState, fprState, r.data);
+            if (res > action) {
+                action = res;
+            }
         }
     }
+    return action;
 }
 
 const InstAnalysis* Engine::getInstAnalysis(rword address, AnalysisType type) const {
@@ -611,6 +625,7 @@ void Engine::deleteAllInstrumentations() {
     vmCallbacks.clear();
     instrRulesCounter = 0;
     vmCallbacksCounter = 0;
+    eventMask = static_cast<VMEvent>(0);
 }
 
 void Engine::clearAllCache() {
