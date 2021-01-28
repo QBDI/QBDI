@@ -47,7 +47,6 @@ struct InstLoc {
 struct SeqLoc {
     uint16_t blockIdx;
     uint16_t seqID;
-    rword bbStart;
     rword bbEnd;
     rword seqStart;
     rword seqEnd;
@@ -99,7 +98,7 @@ class ExecBlockManager {
 
     void printCacheStatistics(FILE* output) const;
 
-    ExecBlock* getProgrammedExecBlock(rword address);
+    ExecBlock* getProgrammedExecBlock(rword address, SeqLoc* programmedSeqLock=nullptr);
 
     const ExecBlock* getExecBlock(rword address) const;
 

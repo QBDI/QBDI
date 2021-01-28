@@ -226,7 +226,7 @@ VMAction ExecBlock::execute() {
     return CONTINUE;
 }
 
-SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt, std::vector<Patch>::const_iterator seqEnd, SeqType seqType) {
+SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt, std::vector<Patch>::const_iterator seqEnd) {
     rword startOffset = (rword)codeStream->current_pos();
     uint16_t startInstID = getNextInstID();
     uint16_t seqID = getNextSeqID();
@@ -246,8 +246,10 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
     LogDebug("ExecBlock::writeBasicBlock", "Attempting to write %zu patches to ExecBlock %p", std::distance(seqIt, seqEnd), this);
     // Pages are RWX on iOS
     // Ensure code block is RW
-    if constexpr(not is_ios)
+    if constexpr(not is_ios) {
         makeRW();
+    }
+    bool needTerminator = true;
     // JIT the basic block instructions patch per patch
     // A patch correspond to an original instruction and should be written in its entierty
     while(seqIt != seqEnd) {
@@ -288,8 +290,7 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
                 LogDebug("ExecBlock::writeBasicBlock", "NULL rollback, nothing written to ExecBlock %p", this);
                 return {EXEC_BLOCK_FULL, 0, 0};
             }
-            // Because we didn't wrote the full sequence, only keep the Entry bit
-            seqType = static_cast<SeqType>(seqType & SeqType::Entry);
+            needTerminator = true;
             break;
         }
         else {
@@ -302,14 +303,15 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
                                              static_cast<uint16_t>(rollbackShadowRegistry),
                                              static_cast<uint16_t>(shadowRegistry.size() - rollbackShadowRegistry)});
             // Update indexes
+            needTerminator = not seqIt->metadata.modifyPC;
             seqIt++;
             patchWritten += 1;
         }
     }
-    // If it's a rollback or a non-exit sequence, add a terminator
-    if((seqType & SeqType::Exit) == 0) {
+    // The last instruction of the sequence doesn't end with a change of RIP/PC, add a Terminator
+    if (needTerminator) {
         LogDebug("ExecBlock::writeBasicBlock", "Writting terminator to ExecBlock %p to finish non-exit sequence", this);
-        RelocatableInst::UniquePtrVec terminator = getTerminator(seqIt->metadata.address);
+        RelocatableInst::UniquePtrVec terminator = getTerminator(instMetadata.back().endAddress());
         for(const RelocatableInst::UniquePtr &inst : terminator) {
             assembly.writeInstruction(inst->reloc(this), codeStream.get());
         }
@@ -321,7 +323,7 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
     }
     // Register sequence
     uint16_t endInstID = getNextInstID() - 1;
-    seqRegistry.push_back(SeqInfo {startInstID, endInstID, seqType});
+    seqRegistry.push_back(SeqInfo {startInstID, endInstID});
     // Return write results
     unsigned bytesWritten = static_cast<unsigned>(codeStream->current_pos() - startOffset);
     return SeqWriteResult {seqID, bytesWritten, patchWritten};
@@ -333,7 +335,6 @@ uint16_t ExecBlock::splitSequence(uint16_t instID) {
     seqRegistry.push_back(SeqInfo {
         instID,
         seqRegistry[seqID].endInstID,
-        static_cast<SeqType>(SeqType::Entry | seqRegistry[seqID].type)
     });
     return getNextSeqID() - 1;
 }
@@ -445,11 +446,6 @@ uint16_t ExecBlock::getSeqID(rword address) const {
 uint16_t ExecBlock::getSeqID(uint16_t instID) const {
     Require("ExecBlock::getSeqID", instID < instRegistry.size());
     return instRegistry[instID].seqID;
-}
-
-SeqType ExecBlock::getSeqType(uint16_t seqID) const {
-    Require("ExecBlock::getSeqType", seqID < seqRegistry.size());
-    return seqRegistry[seqID].type;
 }
 
 uint16_t ExecBlock::getSeqStart(uint16_t seqID) const {

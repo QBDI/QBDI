@@ -53,6 +53,7 @@ class PatchRule;
 class InstrRule;
 class Patch;
 class InstMetadata;
+struct SeqLoc;
 
 struct CallbackRegistration {
     VMEvent    mask;
@@ -102,7 +103,7 @@ private:
     void instrument(std::vector<Patch> &basicBlock, size_t patchEnd);
     void handleNewBasicBlock(rword pc);
 
-    VMAction signalEvent(VMEvent kind, rword currentBasicBlock, GPRState *gprState, FPRState *fprState);
+    VMAction signalEvent(VMEvent kind, rword currentPC, const SeqLoc* seqLoc, rword basicBlockBegin, GPRState *gprState, FPRState *fprState);
 
 public:
 

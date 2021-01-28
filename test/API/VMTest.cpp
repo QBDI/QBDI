@@ -59,6 +59,26 @@ QBDI_NOINLINE int dummyFunCall(int arg0) {
     return dummyFun1(arg0);
 }
 
+QBDI_NOINLINE int dummyFunBB(int arg0, int arg1, int arg2, int (*f0)(int), int (*f1)(int), int (*f2)(int)) {
+    int r = 0;
+    if (arg0 & 1) {
+        r = f1(f0(arg1)) + arg2;
+        r ^= arg0;
+    } else {
+        r = f0(f1(arg2)) + arg1;
+        r ^= arg0;
+    }
+    r = f2(r + arg0 + arg1 + arg2);
+    if (arg0 & 2) {
+        r += f1(f0(arg2 + r)) + arg1;
+        r ^= arg0;
+    } else {
+        r += f0(f1(arg1 + r)) + arg2;
+        r ^= arg0;
+    }
+    return r;
+}
+
 
 #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
 #define MNEM_COUNT 5u
@@ -483,6 +503,58 @@ TEST_CASE_METHOD(VMTest, "VMTest-VMEvent_ExecTransfer") {
     REQUIRE(ret == (QBDI::rword) 42);
     REQUIRE(4 == s);
     vm->deleteAllInstrumentations();
+}
+
+struct CheckBasicBlockData {
+    bool waitingEnd;
+    QBDI::rword BBStart;
+    QBDI::rword BBEnd;
+    size_t count;
+};
+
+static QBDI::VMAction checkBasicBlock(QBDI::VMInstanceRef vm, const QBDI::VMState *vmState, QBDI::GPRState *gprState, QBDI::FPRState *fprState, void *data_) {
+    CheckBasicBlockData* data = static_cast<CheckBasicBlockData*>(data_);
+    CHECK((vmState->event & (QBDI::BASIC_BLOCK_ENTRY | QBDI::BASIC_BLOCK_EXIT)) != 0);
+    CHECK((vmState->event & (QBDI::BASIC_BLOCK_ENTRY | QBDI::BASIC_BLOCK_EXIT)) != (QBDI::BASIC_BLOCK_ENTRY | QBDI::BASIC_BLOCK_EXIT));
+    if (vmState->event & QBDI::BASIC_BLOCK_ENTRY) {
+        CHECK_FALSE(data->waitingEnd);
+        CHECK(vmState->basicBlockStart == vmState->sequenceStart);
+        *data = {true, vmState->basicBlockStart, vmState->basicBlockEnd, data->count};
+    } else if (vmState->event & QBDI::BASIC_BLOCK_EXIT) {
+        CHECK(data->waitingEnd);
+        CHECK(data->BBStart == vmState->basicBlockStart);
+        CHECK(data->BBEnd == vmState->basicBlockEnd);
+        CHECK(vmState->basicBlockEnd == vmState->sequenceEnd);
+        data->waitingEnd = false;
+        data->count ++;
+    }
+    return QBDI::VMAction::CONTINUE;
+}
+
+TEST_CASE_METHOD(VMTest, "VMTest-VMEvent_BasicBlock") {
+    CheckBasicBlockData data {false, 0, 0, 0};
+    vm->addVMEventCB(QBDI::BASIC_BLOCK_ENTRY | QBDI::BASIC_BLOCK_EXIT, checkBasicBlock, &data);
+
+    // backup GPRState to have the same state before each run
+    QBDI::GPRState backup = *(vm->getGPRState());
+
+    for (QBDI::rword j = 0; j < 4; j++) {
+        for (QBDI::rword i = 0; i < 8; i++) {
+            vm->setGPRState(&backup);
+
+            data.waitingEnd = false;
+            data.count = 0;
+            QBDI::rword retval;
+            bool ran = vm->call(&retval, reinterpret_cast<QBDI::rword>(dummyFunBB), {i ^ j, 5, 13,
+                                reinterpret_cast<QBDI::rword>(dummyFun1), reinterpret_cast<QBDI::rword>(dummyFun1),
+                                reinterpret_cast<QBDI::rword>(dummyFun1)});
+            CHECK(ran);
+            CHECK_FALSE(data.waitingEnd);
+            CHECK(data.count != 0);
+
+        }
+        vm->clearAllCache();
+    }
 }
 
 TEST_CASE_METHOD(VMTest, "VMTest-CacheInvalidation") {

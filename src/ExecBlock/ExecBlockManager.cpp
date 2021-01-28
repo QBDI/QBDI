@@ -79,7 +79,7 @@ void ExecBlockManager::printCacheStatistics(FILE* output) const {
     fprintf(output, "\tRegion overflow count: %zu\n", region_overflow);
 }
 
-ExecBlock* ExecBlockManager::getProgrammedExecBlock(rword address) {
+ExecBlock* ExecBlockManager::getProgrammedExecBlock(rword address, SeqLoc* programmedSeqLock) {
     LogDebug("ExecBlockManager::getProgrammedExecBlock", "Looking up sequence at address %" PRIRWORD, address);
 
     size_t r = searchRegion(address);
@@ -92,6 +92,10 @@ ExecBlock* ExecBlockManager::getProgrammedExecBlock(rword address) {
         if(seqLoc != region.sequenceCache.end()) {
             LogDebug("ExecBlockManager::getProgrammedExecBlock", "Found sequence 0x%" PRIRWORD " in ExecBlock %p as seqID %" PRIu16,
                      address, region.blocks[seqLoc->second.blockIdx].get(), seqLoc->second.seqID);
+            // copy current sequence info
+            if (programmedSeqLock != nullptr) {
+                *programmedSeqLock = seqLoc->second;
+            }
             // Select sequence and return execBlock
             region.blocks[seqLoc->second.blockIdx]->selectSeq(seqLoc->second.seqID);
             return region.blocks[seqLoc->second.blockIdx].get();
@@ -109,13 +113,16 @@ ExecBlock* ExecBlockManager::getProgrammedExecBlock(rword address) {
             regions[r].sequenceCache[address] = SeqLoc {
                 instLoc->second.blockIdx,
                 newSeqID,
-                address,
                 existingSeqLoc.bbEnd,
                 address,
                 existingSeqLoc.seqEnd,
             };
             LogDebug("ExecBlockManager::getProgrammedExecBlock", "Splitted seqID %" PRIu16 " at instID %" PRIu16 " in ExecBlock %p as new sequence with seqID %" PRIu16,
                      existingSeqId, instLoc->second.instID, block, newSeqID);
+            // copy current sequence info
+            if (programmedSeqLock != nullptr) {
+                *programmedSeqLock = regions[r].sequenceCache[address];
+            }
             block->selectSeq(newSeqID);
             return block;
         }
@@ -216,19 +223,14 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock, siz
                 RequireAction("ExecBlockManager::writeBasicBlock", i < (1<<16), abort());
                 region.blocks.emplace_back(std::make_unique<ExecBlock>(assembly, vminstance));
             }
-            // Determine sequence type
-            SeqType seqType = (SeqType) 0;
-            if(patchIdx == 0) seqType = static_cast<SeqType>(seqType | SeqType::Entry);
-            if(patchEnd == basicBlock.size()) seqType = static_cast<SeqType>(seqType | SeqType::Exit);
             // Write sequence
-            SeqWriteResult res = region.blocks[i]->writeSequence(basicBlock.begin() + patchIdx, basicBlock.begin() + patchEnd, seqType);
+            SeqWriteResult res = region.blocks[i]->writeSequence(basicBlock.begin() + patchIdx, basicBlock.begin() + patchEnd);
             // Successful write
             if(res.seqID != EXEC_BLOCK_FULL) {
                 // Saving sequence in the sequence cache
                 regions[r].sequenceCache[basicBlock[patchIdx].metadata.address] = SeqLoc {
                     static_cast<uint16_t>(i),
                     res.seqID,
-                    bbStart,
                     bbEnd,
                     basicBlock[patchIdx].metadata.address,
                     basicBlock[patchIdx + res.patchWritten - 1].metadata.endAddress(),
@@ -305,7 +307,6 @@ void ExecBlockManager::mergeRegion(size_t i) {
         regions[i].sequenceCache[it.first] = SeqLoc {
                 static_cast<uint16_t>(it.second.blockIdx + regions[i].blocks.size()),
                 it.second.seqID,
-                it.second.bbStart,
                 it.second.bbEnd,
                 it.second.seqStart,
                 it.second.seqEnd

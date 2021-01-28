@@ -426,6 +426,9 @@ bool Engine::run(rword start, rword stop) {
     curGPRState = gprState.get();
     curFPRState = fprState.get();
 
+    rword basicBlockBeginAddr = 0;
+    rword basicBlockEndAddr = 0;
+
     // Start address is out of range
     if (!execBroker->isInstrumented(start)) {
         return false;
@@ -440,13 +443,17 @@ bool Engine::run(rword start, rword stop) {
         // If this PC is not instrumented try to transfer execution
         if(execBroker->isInstrumented(currentPC) == false &&
            execBroker->canTransferExecution(curGPRState)) {
+
             curExecBlock = nullptr;
+            basicBlockBeginAddr = 0;
+            basicBlockEndAddr = 0;
+
             LogDebug("Engine::run", "Executing 0x%" PRIRWORD " through execBroker", currentPC);
-            action = signalEvent(EXEC_TRANSFER_CALL, currentPC, curGPRState, curFPRState);
+            action = signalEvent(EXEC_TRANSFER_CALL, currentPC, nullptr, 0, curGPRState, curFPRState);
             // transfer execution
             if (action == CONTINUE) {
                 execBroker->transferExecution(currentPC, curGPRState, curFPRState);
-                action = signalEvent(EXEC_TRANSFER_RETURN, currentPC, curGPRState, curFPRState);
+                action = signalEvent(EXEC_TRANSFER_RETURN, currentPC, nullptr, 0, curGPRState, curFPRState);
             }
         }
         // Else execute through DBI
@@ -466,15 +473,22 @@ bool Engine::run(rword start, rword stop) {
             }
 
             // Test if we have it in cache
-            curExecBlock = blockManager->getProgrammedExecBlock(currentPC);
+            SeqLoc currentSequence;
+            curExecBlock = blockManager->getProgrammedExecBlock(currentPC, &currentSequence);
             if(curExecBlock == nullptr) {
                 LogDebug("Engine::run", "Cache miss for 0x%" PRIRWORD ", patching & instrumenting new basic block", currentPC);
                 handleNewBasicBlock(currentPC);
                 // Signal a new basic block
                 event |= BASIC_BLOCK_NEW;
                 // Set new basic block as current
-                curExecBlock = blockManager->getProgrammedExecBlock(currentPC);
+                curExecBlock = blockManager->getProgrammedExecBlock(currentPC, &currentSequence);
                 RequireAction("Engine::run", curExecBlock != nullptr, abort());
+            }
+
+            if (basicBlockEndAddr == 0) {
+                event |= BASIC_BLOCK_ENTRY;
+                basicBlockEndAddr = currentSequence.bbEnd;
+                basicBlockBeginAddr = currentPC;
             }
 
             // Set context if necessary
@@ -485,30 +499,30 @@ bool Engine::run(rword start, rword stop) {
             curGPRState = &(curExecBlock->getContext()->gprState);
             curFPRState = &(curExecBlock->getContext()->fprState);
 
-            // Signal events. Doesn't call getSeqType when no event match the current one
-            if ((eventMask & (event | BASIC_BLOCK_ENTRY)) != 0) {
-                if ((curExecBlock->getSeqType(curExecBlock->getCurrentSeqID()) & SeqType::Entry) > 0) {
-                    event |= BASIC_BLOCK_ENTRY;
-                }
-                action = signalEvent(event, currentPC, curGPRState, curFPRState);
-            }
+            action = signalEvent(event, currentPC, &currentSequence, basicBlockBeginAddr, curGPRState, curFPRState);
 
             if (action == CONTINUE) {
                 hasRan = true;
                 action = curExecBlock->execute();
                 // Signal events if normal exit
-                if (action == CONTINUE && (eventMask & (SEQUENCE_EXIT | BASIC_BLOCK_EXIT)) != 0) {
-                    event = SEQUENCE_EXIT;
-                    if ((curExecBlock->getSeqType(curExecBlock->getCurrentSeqID()) & SeqType::Exit) > 0) {
-                        event |= BASIC_BLOCK_EXIT;
+                if (action == CONTINUE) {
+                    if (basicBlockEndAddr == currentSequence.seqEnd) {
+                        action = signalEvent(SEQUENCE_EXIT | BASIC_BLOCK_EXIT, currentPC, &currentSequence, basicBlockBeginAddr, curGPRState, curFPRState);
+                        basicBlockBeginAddr = 0;
+                        basicBlockEndAddr = 0;
+                    } else {
+                        action = signalEvent(SEQUENCE_EXIT, currentPC, &currentSequence, basicBlockBeginAddr, curGPRState, curFPRState);
                     }
-                    action = signalEvent(event, currentPC, curGPRState, curFPRState);
                 }
             }
         }
         if (action == STOP) {
             LogDebug("Engine::run", "Receive STOP Action");
             break;
+        }
+        if (action == BREAK_TO_VM) {
+            basicBlockBeginAddr = 0;
+            basicBlockEndAddr = 0;
         }
         // Get next block PC
         currentPC = QBDI_GPR_GET(curGPRState, REG_PC);
@@ -552,32 +566,23 @@ uint32_t Engine::addVMEventCB(VMEvent mask, VMCallback cbk, void *data) {
     return id | EVENTID_VM_MASK;
 }
 
-VMAction Engine::signalEvent(VMEvent event, rword currentPC, GPRState *gprState, FPRState *fprState) {
-    static VMState vmState;
-    static rword lastUpdatePC = 0;
-
+VMAction Engine::signalEvent(VMEvent event, rword currentPC, const SeqLoc* seqLoc, rword basicBlockBegin, GPRState *gprState, FPRState *fprState) {
     if ((event & eventMask) == 0) {
         return CONTINUE;
     }
 
-    VMAction action = CONTINUE;
+    VMState vmState {event, currentPC, currentPC, currentPC, currentPC, 0};
+    if(seqLoc != nullptr) {
+        vmState.basicBlockStart = basicBlockBegin;
+        vmState.basicBlockEnd   = seqLoc->bbEnd;
+        vmState.sequenceStart   = seqLoc->seqStart;
+        vmState.sequenceEnd     = seqLoc->seqEnd;
+    }
 
+    VMAction action = CONTINUE;
     for(const auto& item : vmCallbacks) {
         const QBDI::CallbackRegistration& r = item.second;
         if(event & r.mask) {
-            if(lastUpdatePC != currentPC) {
-                lastUpdatePC = currentPC;
-                if(curExecBlock != nullptr) {
-                    const SeqLoc* seqLoc    = blockManager->getSeqLoc(currentPC);
-                    vmState.basicBlockStart = seqLoc->bbStart;
-                    vmState.basicBlockEnd   = seqLoc->bbEnd;
-                    vmState.sequenceStart   = seqLoc->seqStart;
-                    vmState.sequenceEnd     = seqLoc->seqEnd;
-                }
-                else {
-                    vmState = VMState {event, currentPC, currentPC, currentPC, currentPC, 0};
-                }
-            }
             vmState.event = event;
             VMAction res = r.cbk(vminstance, &vmState, gprState, fprState, r.data);
             if (res > action) {
