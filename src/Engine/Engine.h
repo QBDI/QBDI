@@ -99,7 +99,7 @@ private:
     void initGPRState();
     void initFPRState();
 
-    void instrument(std::vector<Patch> &basicBlock);
+    void instrument(std::vector<Patch> &basicBlock, size_t patchEnd);
     void handleNewBasicBlock(rword pc);
 
     VMAction signalEvent(VMEvent kind, rword currentBasicBlock, GPRState *gprState, FPRState *fprState);

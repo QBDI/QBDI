@@ -364,10 +364,13 @@ std::vector<Patch> Engine::patch(rword start) {
     return basicBlock;
 }
 
-void Engine::instrument(std::vector<Patch> &basicBlock) {
-    LogDebug("Engine::instrument", "Instrumenting basic block [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
+void Engine::instrument(std::vector<Patch> &basicBlock, size_t patchEnd) {
+    LogDebug("Engine::instrument", "Instrumenting sequence [0x%" PRIRWORD ", 0x%" PRIRWORD "] in basic block [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
+             basicBlock.front().metadata.address, basicBlock[patchEnd - 1].metadata.address,
              basicBlock.front().metadata.address, basicBlock.back().metadata.address);
-    for(Patch& patch : basicBlock) {
+
+    for(size_t i = 0; i < patchEnd; i++) {
+        Patch& patch = basicBlock[i];
         LogCallback(LogPriority::DEBUG, "Engine::instrument", [&] (FILE *log) -> void {
             std::string disass;
             llvm::raw_string_ostream disassOs(disass);
@@ -389,10 +392,12 @@ void Engine::instrument(std::vector<Patch> &basicBlock) {
 void Engine::handleNewBasicBlock(rword pc) {
     // disassemble and patch new basic block
     Patch::Vec basicBlock = patch(pc);
-    // instrument it
-    instrument(basicBlock);
-    // Write it in the cache
-    blockManager->writeBasicBlock(basicBlock);
+    // Reserve cache and get uncached instruction
+    size_t patchEnd = blockManager->preWriteBasicBlock(basicBlock);
+    // instrument uncached instruction
+    instrument(basicBlock, patchEnd);
+    // Write in the cache
+    blockManager->writeBasicBlock(basicBlock, patchEnd);
 }
 
 

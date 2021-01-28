@@ -155,10 +155,29 @@ const SeqLoc* ExecBlockManager::getSeqLoc(rword address) const {
     return nullptr;
 }
 
-void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock) {
+size_t ExecBlockManager::preWriteBasicBlock(const std::vector<Patch>& basicBlock) {
+    // prereserve the region in the cache and return the instruction that are already in the cache for this basicBlock
+
+    // Locating an approriate cache region
+    const Range<rword> bbRange {basicBlock.front().metadata.address, basicBlock.back().metadata.endAddress()};
+    size_t r = findRegion(bbRange);
+    ExecRegion& region = regions[r];
+
+    // detect cached instruction
+    size_t patchEnd = basicBlock.size();
+
+    while (patchEnd > 0 && region.instCache.count(basicBlock[patchEnd - 1].metadata.address) != 0) {
+        patchEnd--;
+    }
+
+    return patchEnd;
+}
+
+
+void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock, size_t patchEnd) {
     unsigned translated = 0;
     unsigned translation = 0;
-    size_t patchIdx = 0, patchEnd = basicBlock.size();
+    size_t patchIdx = 0;
     const Patch& firstPatch = basicBlock.front();
     const Patch& lastPatch = basicBlock.back();
     rword bbStart = firstPatch.metadata.address;
@@ -169,13 +188,16 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock) {
     size_t r = findRegion(bbRange);
     ExecRegion& region = regions[r];
 
-    // Basic block truncation to prevent dedoubled sequence
-    for(size_t i = 0; i < basicBlock.size(); i++) {
-        if(region.sequenceCache.count(basicBlock[i].metadata.address) != 0) {
-            patchEnd = i;
-            break;
-        }
+    // Basic block truncation to prevent dedoubled instruction
+    // patchEnd must be the number of instruction that wasn't in the cache for this basicblock
+    RequireAction("ExecBlockManager::writeBasicBlock", patchEnd <= basicBlock.size(), abort());
+    RequireAction("ExecBlockManager::writeBasicBlock", patchEnd == basicBlock.size() || region.instCache.count(basicBlock[patchEnd].metadata.address) == 1, abort());
+
+    while (patchEnd > 0 && region.instCache.count(basicBlock[patchEnd - 1].metadata.address) != 0) {
+        // should never happen if preWriteBasicBlock is used
+        patchEnd--;
     }
+
     // Cache integrity safeguard, should never happen
     if(patchEnd == 0) {
         LogDebug("ExecBlockManager::writeBasicBlock", "Cache hit, basic block 0x%" PRIRWORD " already exist", firstPatch.metadata.address);

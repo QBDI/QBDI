@@ -105,7 +105,9 @@ class ExecBlockManager {
 
     const SeqLoc* getSeqLoc(rword address) const;
 
-    void writeBasicBlock(const std::vector<Patch>& basicBlock);
+    size_t preWriteBasicBlock(const std::vector<Patch>& basicBlock);
+
+    void writeBasicBlock(const std::vector<Patch>& basicBlock, size_t patchEnd);
 
     bool isFlushPending() { return needFlush; }
 
