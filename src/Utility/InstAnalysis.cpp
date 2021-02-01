@@ -182,9 +182,11 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
     }
     instAnalysis->numOperands = 0; // updated later because we could skip some
     instAnalysis->operands = NULL;
+    // number of first def operand that are tied to a later used operand
+    unsigned operandBias = getBias(desc);
     // Analysis of instruction operands
     uint8_t numOperands = inst.getNumOperands();
-    uint8_t numOperandsMax = numOperands + desc.getNumImplicitDefs() + desc.getNumImplicitUses();
+    uint8_t numOperandsMax = numOperands + desc.getNumImplicitDefs() + desc.getNumImplicitUses() - operandBias;
     // (R|E)SP are missing for RET and CALL in x86
     if constexpr((is_x86_64 or is_x86)) {
         if ((desc.isReturn() and isStackRead(inst)) or (desc.isCall() and isStackWrite(inst)))
@@ -206,7 +208,7 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
         }
     }
     // for each instruction operands
-    for (uint8_t i = 0; i < numOperands; i++) {
+    for (uint8_t i = operandBias; i < numOperands; i++) {
         const llvm::MCOperand& op = inst.getOperand(i);
         const llvm::MCOperandInfo& opdesc = desc.OpInfo[i];
         // fill a new operand analysis
@@ -243,6 +245,14 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
             }
             if (regNo != 0) {
                 opa.regAccess = regWrites.test(i) ? REGISTER_WRITE : REGISTER_READ;
+
+                if (operandBias != 0) {
+                    // verify if the register is allocate in the same place as anothe register
+                    int tied_to = desc.getOperandConstraint(i, llvm::MCOI::TIED_TO);
+                    if (tied_to != -1) {
+                        opa.regAccess |= regWrites.test(tied_to) ? REGISTER_WRITE : REGISTER_READ;
+                    }
+                }
             }
             instAnalysis->numOperands++;
         } else if (op.isImm()) {

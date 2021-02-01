@@ -33,17 +33,17 @@ namespace QBDI {
 class InstTransform {
 public:
 
-    using SharedPtr    = std::shared_ptr<InstTransform>;
-    using SharedPtrVec = std::vector<std::shared_ptr<InstTransform>>;
-    using UniqPtr      = std::unique_ptr<PatchGenerator>;
-    using UniqPtrVec   = std::vector<std::unique_ptr<PatchGenerator>>;
+    using UniquePtr      = std::unique_ptr<InstTransform>;
+    using UniquePtrVec   = std::vector<std::unique_ptr<InstTransform>>;
+
+    virtual std::unique_ptr<InstTransform> clone() const =0;
 
     virtual void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const = 0;
 
     virtual ~InstTransform() = default;
 };
 
-class SetOperand : public InstTransform, public AutoAlloc<InstTransform, SetOperand> {
+class SetOperand : public AutoClone<InstTransform, SetOperand> {
     Operand opn;
     enum {
         TempOperandType,
@@ -83,8 +83,7 @@ public:
     void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const override;
 };
 
-class SubstituteWithTemp : public InstTransform,
-                           public AutoAlloc<InstTransform, SubstituteWithTemp> {
+class SubstituteWithTemp : public AutoClone<InstTransform, SubstituteWithTemp> {
     Reg  reg;
     Temp temp;
 
@@ -100,7 +99,7 @@ public:
     void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const override;
 };
 
-class AddOperand : public InstTransform, public AutoAlloc<InstTransform, AddOperand> {
+class AddOperand : public AutoClone<InstTransform, AddOperand> {
 
     Operand opn;
     enum {
@@ -141,7 +140,7 @@ public:
     void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const override;
 };
 
-class RemoveOperand : public InstTransform, public AutoAlloc<InstTransform, RemoveOperand> {
+class RemoveOperand : public AutoClone<InstTransform, RemoveOperand> {
 
     Reg reg;
 
@@ -157,7 +156,7 @@ public:
 };
 
 
-class SetOpcode : public InstTransform, public AutoAlloc<InstTransform, SetOpcode> {
+class SetOpcode : public AutoClone<InstTransform, SetOpcode> {
 
     unsigned int opcode;
 

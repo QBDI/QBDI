@@ -28,8 +28,8 @@
 
 namespace QBDI {
 
-RelocatableInst::SharedPtrVec getExecBlockPrologue() {
-    RelocatableInst::SharedPtrVec prologue;
+RelocatableInst::UniquePtrVec getExecBlockPrologue() {
+    RelocatableInst::UniquePtrVec prologue;
 
 
     // Save host BP, SP
@@ -73,8 +73,8 @@ RelocatableInst::SharedPtrVec getExecBlockPrologue() {
     return prologue;
 }
 
-RelocatableInst::SharedPtrVec getExecBlockEpilogue() {
-    RelocatableInst::SharedPtrVec epilogue;
+RelocatableInst::UniquePtrVec getExecBlockEpilogue() {
+    RelocatableInst::UniquePtrVec epilogue;
 
     // Save GPR
     for(unsigned int i = 0; i < NUM_GPR-1; i++)
@@ -125,24 +125,24 @@ std::vector<PatchRule> getDefaultPatchRules() {
      * Patch:   Output the unmodified MCInst but flag the patch as "do not instrument".
     */
     rules.emplace_back(
-        Or({
-            OpIs(llvm::X86::LOCK_PREFIX),
-            OpIs(llvm::X86::REX64_PREFIX),
-            OpIs(llvm::X86::REP_PREFIX),
-            OpIs(llvm::X86::REPNE_PREFIX),
-            OpIs(llvm::X86::DATA16_PREFIX),
-            OpIs(llvm::X86::CS_PREFIX),
-            OpIs(llvm::X86::SS_PREFIX),
-            OpIs(llvm::X86::DS_PREFIX),
-            OpIs(llvm::X86::ES_PREFIX),
-            OpIs(llvm::X86::FS_PREFIX),
-            OpIs(llvm::X86::GS_PREFIX),
-            OpIs(llvm::X86::XACQUIRE_PREFIX),
-            OpIs(llvm::X86::XRELEASE_PREFIX)
-        }),
+        Or::unique(conv_unique<PatchCondition>(
+            OpIs::unique(llvm::X86::LOCK_PREFIX),
+            OpIs::unique(llvm::X86::REX64_PREFIX),
+            OpIs::unique(llvm::X86::REP_PREFIX),
+            OpIs::unique(llvm::X86::REPNE_PREFIX),
+            OpIs::unique(llvm::X86::DATA16_PREFIX),
+            OpIs::unique(llvm::X86::CS_PREFIX),
+            OpIs::unique(llvm::X86::SS_PREFIX),
+            OpIs::unique(llvm::X86::DS_PREFIX),
+            OpIs::unique(llvm::X86::ES_PREFIX),
+            OpIs::unique(llvm::X86::FS_PREFIX),
+            OpIs::unique(llvm::X86::GS_PREFIX),
+            OpIs::unique(llvm::X86::XACQUIRE_PREFIX),
+            OpIs::unique(llvm::X86::XRELEASE_PREFIX)
+        )),
         conv_unique<PatchGenerator>(
-            DoNotInstrument(),
-            ModifyInstruction({})
+            DoNotInstrument::unique(),
+            ModifyInstruction::unique(InstTransform::UniquePtrVec())
         )
     );
 
@@ -153,18 +153,18 @@ std::vector<PatchRule> getDefaultPatchRules() {
      *          DataBlock[Offset(RIP)] := Temp(1)
     */
     rules.emplace_back(
-        And({
-            OpIs(llvm::X86::JMP64m),
-            UseReg(Reg(REG_PC))
-        }),
+        And::unique(conv_unique<PatchCondition>(
+            OpIs::unique(llvm::X86::JMP64m),
+            UseReg::unique(Reg(REG_PC))
+        )),
         conv_unique<PatchGenerator>(
-            GetPCOffset(Temp(0), Constant(0)),
-            ModifyInstruction({
-                SubstituteWithTemp(Reg(REG_PC), Temp(0)),
-                SetOpcode(llvm::X86::MOV64rm),
-                AddOperand(Operand(0), Temp(1))
-            }),
-            WriteTemp(Temp(1), Offset(Reg(REG_PC)))
+            GetPCOffset::unique(Temp(0), Constant(0)),
+            ModifyInstruction::unique(conv_unique<InstTransform>(
+                SubstituteWithTemp::unique(Reg(REG_PC), Temp(0)),
+                SetOpcode::unique(llvm::X86::MOV64rm),
+                AddOperand::unique(Operand(0), Temp(1))
+            )),
+            WriteTemp::unique(Temp(1), Offset(Reg(REG_PC)))
         )
     );
 
@@ -175,18 +175,18 @@ std::vector<PatchRule> getDefaultPatchRules() {
      *          SimulateCall(Temp(1))
     */
     rules.emplace_back(
-        And({
-            OpIs(llvm::X86::CALL64m),
-            UseReg(Reg(REG_PC))
-        }),
+        And::unique(conv_unique<PatchCondition>(
+            OpIs::unique(llvm::X86::CALL64m),
+            UseReg::unique(Reg(REG_PC))
+        )),
         conv_unique<PatchGenerator>(
-            GetPCOffset(Temp(0), Constant(0)),
-            ModifyInstruction({
-                SubstituteWithTemp(Reg(REG_PC), Temp(0)),
-                SetOpcode(llvm::X86::MOV64rm),
-                AddOperand(Operand(0), Temp(1))
-            }),
-            SimulateCall(Temp(1))
+            GetPCOffset::unique(Temp(0), Constant(0)),
+            ModifyInstruction::unique(conv_unique<InstTransform>(
+                SubstituteWithTemp::unique(Reg(REG_PC), Temp(0)),
+                SetOpcode::unique(llvm::X86::MOV64rm),
+                AddOperand::unique(Operand(0), Temp(1))
+            )),
+            SimulateCall::unique(Temp(1))
         )
     );
 
@@ -196,12 +196,12 @@ std::vector<PatchRule> getDefaultPatchRules() {
      *          LEA RAX, [RIP + IMM] --> LEA RAX, [Temp(0) + IMM]
     */
     rules.emplace_back(
-        UseReg(Reg(REG_PC)),
+        UseReg::unique(Reg(REG_PC)),
         conv_unique<PatchGenerator>(
-            GetPCOffset(Temp(0), Constant(0)),
-            ModifyInstruction({
-                SubstituteWithTemp(Reg(REG_PC), Temp(0))
-            })
+            GetPCOffset::unique(Temp(0), Constant(0)),
+            ModifyInstruction::unique(conv_unique<InstTransform>(
+                SubstituteWithTemp::unique(Reg(REG_PC), Temp(0))
+            ))
         )
     );
 
@@ -211,16 +211,16 @@ std::vector<PatchRule> getDefaultPatchRules() {
      *          DataBlock[Offset(RIP)] := Temp(0)
     */
     rules.emplace_back(
-        Or({
-            OpIs(llvm::X86::JMP32m),
-            OpIs(llvm::X86::JMP64m)
-        }),
+        Or::unique(conv_unique<PatchCondition>(
+            OpIs::unique(llvm::X86::JMP32m),
+            OpIs::unique(llvm::X86::JMP64m)
+        )),
         conv_unique<PatchGenerator>(
-            ModifyInstruction({
-                SetOpcode(is_x86 ? llvm::X86::MOV32rm : llvm::X86::MOV64rm),
-                AddOperand(Operand(0), Temp(0))
-            }),
-            WriteTemp(Temp(0), Offset(Reg(REG_PC)))
+            ModifyInstruction::unique(conv_unique<InstTransform>(
+                SetOpcode::unique(is_x86 ? llvm::X86::MOV32rm : llvm::X86::MOV64rm),
+                AddOperand::unique(Operand(0), Temp(0))
+            )),
+            WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))
         )
     );
 
@@ -230,16 +230,16 @@ std::vector<PatchRule> getDefaultPatchRules() {
      *          SimulateCall(Temp(1))
     */
     rules.emplace_back(
-        Or({
-            OpIs(llvm::X86::CALL32m),
-            OpIs(llvm::X86::CALL64m)
-        }),
+        Or::unique(conv_unique<PatchCondition>(
+            OpIs::unique(llvm::X86::CALL32m),
+            OpIs::unique(llvm::X86::CALL64m)
+        )),
         conv_unique<PatchGenerator>(
-            ModifyInstruction({
-                SetOpcode(is_x86 ? llvm::X86::MOV32rm : llvm::X86::MOV64rm),
-                AddOperand(Operand(0), Temp(0))
-            }),
-            SimulateCall(Temp(0))
+            ModifyInstruction::unique(conv_unique<InstTransform>(
+                SetOpcode::unique(is_x86 ? llvm::X86::MOV32rm : llvm::X86::MOV64rm),
+                AddOperand::unique(Operand(0), Temp(0))
+            )),
+            SimulateCall::unique(Temp(0))
         )
     );
 
@@ -249,14 +249,14 @@ std::vector<PatchRule> getDefaultPatchRules() {
      *          DataBlock[Offset(RIP)] := Temp(0)
     */
     rules.emplace_back(
-        Or({
-            OpIs(llvm::X86::JMP_1),
-            OpIs(llvm::X86::JMP_2),
-            OpIs(llvm::X86::JMP_4)
-        }),
+        Or::unique(conv_unique<PatchCondition>(
+            OpIs::unique(llvm::X86::JMP_1),
+            OpIs::unique(llvm::X86::JMP_2),
+            OpIs::unique(llvm::X86::JMP_4)
+        )),
         conv_unique<PatchGenerator>(
-            GetPCOffset(Temp(0), Operand(0)),
-            WriteTemp(Temp(0), Offset(Reg(REG_PC)))
+            GetPCOffset::unique(Temp(0), Operand(0)),
+            WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))
         )
     );
 
@@ -266,13 +266,13 @@ std::vector<PatchRule> getDefaultPatchRules() {
      *          DataBlock[Offset(RIP)] := Temp(0)
     */
     rules.emplace_back(
-        Or({
-            OpIs(llvm::X86::JMP32r),
-            OpIs(llvm::X86::JMP64r)
-        }),
+        Or::unique(conv_unique<PatchCondition>(
+            OpIs::unique(llvm::X86::JMP32r),
+            OpIs::unique(llvm::X86::JMP64r)
+        )),
         conv_unique<PatchGenerator>(
-            GetOperand(Temp(0), Operand(0)),
-            WriteTemp(Temp(0), Offset(Reg(REG_PC)))
+            GetOperand::unique(Temp(0), Operand(0)),
+            WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))
         )
     );
 
@@ -283,13 +283,13 @@ std::vector<PatchRule> getDefaultPatchRules() {
      *          SimulateCall(Temp(0))
     */
     rules.emplace_back(
-        Or({
-            OpIs(llvm::X86::CALL32r),
-            OpIs(llvm::X86::CALL64r),
-        }),
+        Or::unique(conv_unique<PatchCondition>(
+            OpIs::unique(llvm::X86::CALL32r),
+            OpIs::unique(llvm::X86::CALL64r)
+        )),
         conv_unique<PatchGenerator>(
-            GetOperand(Temp(0), Operand(0)),
-            SimulateCall(Temp(0))
+            GetOperand::unique(Temp(0), Operand(0)),
+            SimulateCall::unique(Temp(0))
         )
     );
 
@@ -302,14 +302,14 @@ std::vector<PatchRule> getDefaultPatchRules() {
      *         -->END: DataBlock[Offset(RIP)] := Temp(0)
     */
     rules.emplace_back(
-        OpIs(llvm::X86::JCC_1),
+        OpIs::unique(llvm::X86::JCC_1),
         conv_unique<PatchGenerator>(
-            GetPCOffset(Temp(0), Operand(0)),
-            ModifyInstruction({
-                SetOperand(Operand(0), Constant(is_x86 ? 6 : 11)) // Offset to jump the next load.
-            }),
-            GetPCOffset(Temp(0), Constant(0)),
-            WriteTemp(Temp(0), Offset(Reg(REG_PC)))
+            GetPCOffset::unique(Temp(0), Operand(0)),
+            ModifyInstruction::unique(conv_unique<InstTransform>(
+                SetOperand::unique(Operand(0), Constant(is_x86 ? 6 : 11)) // Offset to jump the next load.
+            )),
+            GetPCOffset::unique(Temp(0), Constant(0)),
+            WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))
         )
     );
 
@@ -321,14 +321,14 @@ std::vector<PatchRule> getDefaultPatchRules() {
      *         -->END: DataBlock[Offset(RIP)] := Temp(0)
     */
     rules.emplace_back(
-        OpIs(llvm::X86::JCC_2),
+        OpIs::unique(llvm::X86::JCC_2),
         conv_unique<PatchGenerator>(
-            GetPCOffset(Temp(0), Operand(0)),
-            ModifyInstruction({
-                SetOperand(Operand(0), Constant(is_x86 ? 7 : 12))
-            }),
-            GetPCOffset(Temp(0), Constant(0)),
-            WriteTemp(Temp(0), Offset(Reg(REG_PC)))
+            GetPCOffset::unique(Temp(0), Operand(0)),
+            ModifyInstruction::unique(conv_unique<InstTransform>(
+                SetOperand::unique(Operand(0), Constant(is_x86 ? 7 : 12))
+            )),
+            GetPCOffset::unique(Temp(0), Constant(0)),
+            WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))
         )
     );
 
@@ -340,14 +340,14 @@ std::vector<PatchRule> getDefaultPatchRules() {
      *         -->END: DataBlock[Offset(RIP)] := Temp(0)
     */
     rules.emplace_back(
-        OpIs(llvm::X86::JCC_4),
+        OpIs::unique(llvm::X86::JCC_4),
         conv_unique<PatchGenerator>(
-            GetPCOffset(Temp(0), Operand(0)),
-            ModifyInstruction({
-                SetOperand(Operand(0), Constant(is_x86 ? 9 : 14))
-            }),
-            GetPCOffset(Temp(0), Constant(0)),
-            WriteTemp(Temp(0), Offset(Reg(REG_PC)))
+            GetPCOffset::unique(Temp(0), Operand(0)),
+            ModifyInstruction::unique(conv_unique<InstTransform>(
+                SetOperand::unique(Operand(0), Constant(is_x86 ? 9 : 14))
+            )),
+            GetPCOffset::unique(Temp(0), Constant(0)),
+            WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))
         )
     );
 
@@ -357,14 +357,14 @@ std::vector<PatchRule> getDefaultPatchRules() {
      *           SimulateCall(Temp(0))
     */
     rules.emplace_back(
-        Or({
-            OpIs(llvm::X86::CALL64pcrel32),
-            OpIs(llvm::X86::CALLpcrel16),
-            OpIs(llvm::X86::CALLpcrel32),
-        }),
+        Or::unique(conv_unique<PatchCondition>(
+            OpIs::unique(llvm::X86::CALL64pcrel32),
+            OpIs::unique(llvm::X86::CALLpcrel16),
+            OpIs::unique(llvm::X86::CALLpcrel32)
+        )),
         conv_unique<PatchGenerator>(
-            GetPCOffset(Temp(0), Operand(0)),
-            SimulateCall(Temp(0))
+            GetPCOffset::unique(Temp(0), Operand(0)),
+            SimulateCall::unique(Temp(0))
         )
     );
 
@@ -373,16 +373,16 @@ std::vector<PatchRule> getDefaultPatchRules() {
      * Patch:    SimulateRet(Temp(0))
     */
     rules.emplace_back(
-        Or({
-            OpIs(llvm::X86::RETL),
-            OpIs(llvm::X86::RETQ),
-            OpIs(llvm::X86::RETW),
-            OpIs(llvm::X86::RETIL),
-            OpIs(llvm::X86::RETIQ),
-            OpIs(llvm::X86::RETIW)
-        }),
+        Or::unique(conv_unique<PatchCondition>(
+            OpIs::unique(llvm::X86::RETL),
+            OpIs::unique(llvm::X86::RETQ),
+            OpIs::unique(llvm::X86::RETW),
+            OpIs::unique(llvm::X86::RETIL),
+            OpIs::unique(llvm::X86::RETIQ),
+            OpIs::unique(llvm::X86::RETIW)
+        )),
         conv_unique<PatchGenerator>(
-            SimulateRet(Temp(0))
+            SimulateRet::unique(Temp(0))
         )
     );
 
@@ -390,17 +390,17 @@ std::vector<PatchRule> getDefaultPatchRules() {
      * Target:   *
      * Patch:    Output original unmodified instructions.
     */
-    rules.emplace_back(True(), conv_unique<PatchGenerator>( ModifyInstruction({}) ));
+    rules.emplace_back(True::unique(), conv_unique<PatchGenerator>( ModifyInstruction::unique( InstTransform::UniquePtrVec() ) ));
 
     return rules;
 }
 
 // Patch allowing to terminate a basic block early by writing address into DataBlock[Offset(RIP)]
-RelocatableInst::SharedPtrVec getTerminator(rword address) {
-    RelocatableInst::SharedPtrVec terminator;
+RelocatableInst::UniquePtrVec getTerminator(rword address) {
+    RelocatableInst::UniquePtrVec terminator;
 
     append(terminator, SaveReg(Reg(0), Offset(Reg(0))));
-    terminator.push_back(NoReloc(movri(Reg(0), address)));
+    terminator.push_back(NoReloc::unique(movri(Reg(0), address)));
     append(terminator, SaveReg(Reg(0), Offset(Reg(REG_PC))));
     append(terminator, LoadReg(Reg(0), Offset(Reg(0))));
 

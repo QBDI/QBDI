@@ -36,7 +36,7 @@ class PatchGenerator;
 /*! A patch rule written in PatchDSL.
 */
 class PatchRule {
-    PatchCondition::UniqPtr                       condition;
+    PatchCondition::UniquePtr                     condition;
     std::vector<std::unique_ptr<PatchGenerator>>  generators;
 
 public:
@@ -46,7 +46,7 @@ public:
      * @param[in] condition   A PatchCondition which determine wheter or not this PatchRule applies.
      * @param[in] generators  A vector of PatchGenerator which will produce the patch instructions.
     */
-    PatchRule(PatchCondition::UniqPtr&& condition, std::vector<std::unique_ptr<PatchGenerator>>&& generators);
+    PatchRule(PatchCondition::UniquePtr&& condition, std::vector<std::unique_ptr<PatchGenerator>>&& generators);
 
     PatchRule(PatchRule&&);
 
@@ -77,12 +77,12 @@ public:
      * @param[in] MRI       A LLVM::MCRegisterInfo classes used for internal architecture specific
      *                      queries.
      * @param[in] toMerge   An eventual previous patch which is to be merged with the current
-     *                      instruction.
+     *                      instruction. The patch is empty after the merge.
      *
      * @return A Patch which is composed of the input context and a series of RelocatableInst.
     */
     Patch generate(const llvm::MCInst &inst, rword address, rword instSize,
-        const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI, const Patch* toMerge = nullptr) const;
+        const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI, Patch* toMerge = nullptr) const;
 };
 
 }

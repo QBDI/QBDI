@@ -22,9 +22,7 @@
 
 namespace QBDI {
 
-void initRegisterSize();
-
-uint16_t getRegisterSize(unsigned reg);
+uint8_t getRegisterSize(unsigned reg);
 
 };
 

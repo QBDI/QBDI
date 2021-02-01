@@ -35,33 +35,35 @@ protected:
 
 public:
 
-    using SharedPtr    = std::shared_ptr<RelocatableInst>;
-    using SharedPtrVec = std::vector<std::shared_ptr<RelocatableInst>>;
+    using UniquePtr    = std::unique_ptr<RelocatableInst>;
+    using UniquePtrVec = std::vector<std::unique_ptr<RelocatableInst>>;
 
-    RelocatableInst(llvm::MCInst&& inst) : inst(std::move(inst)) {}
+    RelocatableInst(llvm::MCInst&& inst) : inst(std::forward<llvm::MCInst>(inst)) {}
+
+    virtual std::unique_ptr<RelocatableInst> clone() const =0;
 
     virtual llvm::MCInst reloc(ExecBlock *exec_block) const =0;
 
     virtual ~RelocatableInst() = default;
 };
 
-class NoReloc : public RelocatableInst, public AutoAlloc<RelocatableInst, NoReloc> {
+class NoReloc : public AutoClone<RelocatableInst, NoReloc> {
 public:
 
-    NoReloc(llvm::MCInst&& inst) : RelocatableInst(std::move(inst)) {}
+    NoReloc(llvm::MCInst&& inst) : AutoClone<RelocatableInst, NoReloc>(std::forward<llvm::MCInst>(inst)) {}
 
     llvm::MCInst reloc(ExecBlock *exec_block) const override {
         return inst;
     }
 };
 
-class DataBlockRel : public RelocatableInst, public AutoAlloc<RelocatableInst, DataBlockRel> {
+class DataBlockRel : public AutoClone<RelocatableInst, DataBlockRel> {
     unsigned int opn;
     rword        offset;
 
 public:
     DataBlockRel(llvm::MCInst&& inst, unsigned int opn, rword offset)
-        : RelocatableInst(std::move(inst)), opn(opn), offset(offset) {};
+        : AutoClone<RelocatableInst, DataBlockRel>(std::forward<llvm::MCInst>(inst)), opn(opn), offset(offset) {};
 
     llvm::MCInst reloc(ExecBlock *exec_block) const override {
         llvm::MCInst res = inst;
@@ -70,13 +72,13 @@ public:
     }
 };
 
-class DataBlockAbsRel : public RelocatableInst, public AutoAlloc<RelocatableInst, DataBlockAbsRel> {
+class DataBlockAbsRel : public AutoClone<RelocatableInst, DataBlockAbsRel> {
     unsigned int opn;
     rword        offset;
 
 public:
     DataBlockAbsRel(llvm::MCInst&& inst, unsigned int opn, rword offset)
-        : RelocatableInst(std::move(inst)), opn(opn), offset(offset) {};
+        : AutoClone<RelocatableInst, DataBlockAbsRel>(std::forward<llvm::MCInst>(inst)), opn(opn), offset(offset) {};
 
     llvm::MCInst reloc(ExecBlock *exec_block) const override {
         llvm::MCInst res = inst;
@@ -85,13 +87,13 @@ public:
     }
 };
 
-class EpilogueRel : public RelocatableInst, public AutoAlloc<RelocatableInst, EpilogueRel> {
+class EpilogueRel : public AutoClone<RelocatableInst, EpilogueRel> {
     unsigned int opn;
     rword        offset;
 
 public:
     EpilogueRel(llvm::MCInst&& inst, unsigned int opn, rword offset)
-        : RelocatableInst(std::move(inst)), opn(opn), offset(offset) {};
+        : AutoClone<RelocatableInst, EpilogueRel>(std::forward<llvm::MCInst>(inst)), opn(opn), offset(offset) {};
 
     llvm::MCInst reloc(ExecBlock *exec_block) const override {
         llvm::MCInst res = inst;

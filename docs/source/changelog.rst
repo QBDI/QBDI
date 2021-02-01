@@ -60,11 +60,12 @@ Internal update:
 * Update LLVM to LLVM 10.0.1 (`#104 <https://github.com/QBDI/QBDI/pull/104>`_ and `#139 <https://github.com/QBDI/QBDI/pull/139>`_)
 * Reduce LLVM library included in QBDI static library and reduce QBDI package size (`#139 <https://github.com/QBDI/QBDI/pull/139>`_ and `#70 <https://github.com/QBDI/QBDI/issues/70>`_)
 * Replace GTest by `Catch2 <https://github.com/catchorg/Catch2>`_ (`#140 <https://github.com/QBDI/QBDI/pull/140>`_)
-* Refactor code and switch to cpp17 (`#140 <https://github.com/QBDI/QBDI/pull/140>`_)
+* Refactor code and switch to cpp17 (`#140 <https://github.com/QBDI/QBDI/pull/140>`_ and `#155 <https://github.com/QBDI/QBDI/pull/155>`_)
 * Use Github Actions to build dev-next package of QBDI (linux and android) and PyQBDI (linux) (`#147 <https://github.com/QBDI/QBDI/pull/147>`_)
 * Rewrite frida-qbdi.js and use sphinx-js for frida-QBDI documentation (`#146 <https://github.com/QBDI/QBDI/pull/146>`_).
   A version of frida greater or equals to 14.0 is needed to run frida-qbdi.js (need support of ES2019).
 * Refactor MemoryAccess Code and add new tests (`#154 <https://github.com/QBDI/QBDI/pull/154>`_)
+* Handle VMCallback return value (`#155 <https://github.com/QBDI/QBDI/pull/155>`_)
 
 Version 0.7.1
 -------------

@@ -21,8 +21,9 @@
 #include <memory>
 #include <vector>
 
-#include "Patch/PatchUtils.h"
 #include "Patch/PatchCondition.h"
+#include "Patch/PatchGenerator.h"
+#include "Patch/PatchUtils.h"
 
 #include "Callback.h"
 
@@ -52,8 +53,6 @@ class InstrRule {
     InstrRule(int priority = 0) : priority(priority) {}
 
     virtual ~InstrRule() = default;
-
-    virtual operator std::unique_ptr<InstrRule>() =0;
 
     // virtual copy constructor used to duplicate the object
     virtual std::unique_ptr<InstrRule> clone() const =0;
@@ -88,14 +87,14 @@ class InstrRule {
      *                   queries.
     */
     void instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI,
-                    const std::vector<std::shared_ptr<PatchGenerator>> patchGen, bool breakToHost, InstPosition position) const;
+                    const PatchGenerator::UniquePtrVec& patchGen, bool breakToHost, InstPosition position) const;
 };
 
 
-class InstrRuleBasic : public InstrRule {
+class InstrRuleBasic : public AutoUnique<InstrRule, InstrRuleBasic> {
 
-    PatchCondition::SharedPtr                     condition;
-    std::vector<std::shared_ptr<PatchGenerator>>  patchGen;
+    PatchCondition::UniquePtr     condition;
+    PatchGenerator::UniquePtrVec  patchGen;
     InstPosition    position;
     bool            breakToHost;
 
@@ -112,18 +111,15 @@ class InstrRuleBasic : public InstrRule {
      * @param[in] breakToHost  A boolean determining whether this instrumentation should end with
      *                         a break to host (in the case of a callback for example).
     */
-    InstrRuleBasic(PatchCondition::SharedPtr condition, std::vector<std::shared_ptr<PatchGenerator>> patchGen,
-                   InstPosition position, bool breakToHost, int priority = 0) : InstrRule(priority), condition(condition), patchGen(patchGen),
-        position(position), breakToHost(breakToHost) {}
+    InstrRuleBasic(PatchCondition::UniquePtr&& condition, PatchGenerator::UniquePtrVec&& patchGen,
+                   InstPosition position, bool breakToHost, int priority = 0)
+        : AutoUnique<InstrRule, InstrRuleBasic>(priority), condition(std::forward<PatchCondition::UniquePtr>(condition)),
+        patchGen(std::forward<PatchGenerator::UniquePtrVec>(patchGen)), position(position), breakToHost(breakToHost) {}
 
     ~InstrRuleBasic() override = default;
 
-    inline operator std::unique_ptr<InstrRule>() override {
-        return std::make_unique<InstrRuleBasic>(*this);
-    }
-
     inline std::unique_ptr<InstrRule> clone() const override {
-        return std::make_unique<InstrRuleBasic>(*this);
+        return InstrRuleBasic::unique(condition->clone(), cloneVec(patchGen), position, breakToHost, priority);
     };
 
     inline InstPosition getPosition() const { return position; }
@@ -152,12 +148,12 @@ class InstrRuleBasic : public InstrRule {
     }
 };
 
-typedef std::vector<std::shared_ptr<PatchGenerator>> (*PatchGenMethod)(Patch &patch, const llvm::MCInstrInfo* MCII,
-                                                      const llvm::MCRegisterInfo* MRI);
+typedef const std::vector<std::unique_ptr<PatchGenerator>>& (*PatchGenMethod)(Patch &patch, const llvm::MCInstrInfo* MCII,
+                                                            const llvm::MCRegisterInfo* MRI);
 
-class InstrRuleDynamic : public InstrRule {
+class InstrRuleDynamic : public AutoUnique<InstrRule, InstrRuleDynamic> {
 
-    PatchCondition::SharedPtr     condition;
+    PatchCondition::UniquePtr     condition;
     PatchGenMethod                patchGenMethod;
     InstPosition                  position;
     bool                          breakToHost;
@@ -175,18 +171,15 @@ public:
      * @param[in] breakToHost      A boolean determining whether this instrumentation should end with
      *                             a break to host (in the case of a callback for example).
     */
-    InstrRuleDynamic(PatchCondition::SharedPtr condition, PatchGenMethod patchGenMethod,
-                     InstPosition position, bool breakToHost, int priority = 0) : InstrRule(priority),
-        condition(condition), patchGenMethod(patchGenMethod), position(position), breakToHost(breakToHost) {}
+    InstrRuleDynamic(PatchCondition::UniquePtr&& condition, PatchGenMethod patchGenMethod,
+                     InstPosition position, bool breakToHost, int priority = 0)
+        : AutoUnique<InstrRule, InstrRuleDynamic>(priority), condition(std::forward<PatchCondition::UniquePtr>(condition)),
+        patchGenMethod(patchGenMethod), position(position), breakToHost(breakToHost) {}
 
     ~InstrRuleDynamic() override = default;
 
-    inline operator std::unique_ptr<InstrRule>() override {
-        return std::make_unique<InstrRuleDynamic>(*this);
-    }
-
     inline std::unique_ptr<InstrRule> clone() const override {
-      return std::make_unique<InstrRuleDynamic>(*this);
+        return InstrRuleDynamic::unique(condition->clone(), patchGenMethod, position, breakToHost, priority);
     };
 
     inline InstPosition getPosition() const { return position; }
@@ -215,7 +208,7 @@ public:
     }
 };
 
-class InstrRuleUser : public InstrRule {
+class InstrRuleUser : public AutoClone<InstrRule, InstrRuleUser> {
 
     InstrumentCallback cbk;
     AnalysisType analysisType;
@@ -227,18 +220,11 @@ class InstrRuleUser : public InstrRule {
 
     InstrRuleUser(InstrumentCallback cbk, AnalysisType analysisType,
                   void* cbk_data, VMInstanceRef vm, RangeSet<rword> range,
-                  int priority = 0) : InstrRule(priority),
-        cbk(cbk), analysisType(analysisType), cbk_data(cbk_data), vm(vm), range(range) {}
+                  int priority = 0)
+        : AutoClone<InstrRule, InstrRuleUser>(priority), cbk(cbk),
+        analysisType(analysisType), cbk_data(cbk_data), vm(vm), range(range) {}
 
     ~InstrRuleUser() override = default;
-
-    inline operator std::unique_ptr<InstrRule>() override {
-        return std::make_unique<InstrRuleUser>(*this);
-    }
-
-    inline std::unique_ptr<InstrRule> clone() const override {
-        return std::make_unique<InstrRuleUser>(*this);
-    };
 
     inline void changeVMInstanceRef(VMInstanceRef vminstance) override {
         vm = vminstance;

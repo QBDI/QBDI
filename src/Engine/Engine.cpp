@@ -57,7 +57,8 @@
 namespace QBDI {
 
 Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs, VMInstanceRef vminstance)
-    : cpu(_cpu), mattrs(_mattrs), vminstance(vminstance), instrRulesCounter(0), vmCallbacksCounter(0) {
+    : cpu(_cpu), mattrs(_mattrs), vminstance(vminstance), instrRulesCounter(0), vmCallbacksCounter(0),
+    eventMask(VMEvent::NO_EVENT), running(false) {
     init();
 }
 
@@ -78,8 +79,6 @@ void Engine::init() {
         llvm::InitializeAllTargetMCs();
         llvm::InitializeAllAsmParsers();
         llvm::InitializeAllDisassemblers();
-        initMemAccessInfo();
-        initRegisterSize();
     }
 
     // Build features string
@@ -150,13 +149,14 @@ void Engine::init() {
 }
 
 void Engine::reinit(const std::string& cpu_, const std::vector<std::string>& mattrs_) {
-    RequireAction("Engine::reinit", curExecBlock == nullptr && "Cannot reInit a running Engine", abort());
+    RequireAction("Engine::reinit", not running && "Cannot reInit a running Engine", abort());
 
     // clear callbacks
     instrRules.clear();
     vmCallbacks.clear();
     instrRulesCounter = 0;
     vmCallbacksCounter = 0;
+    eventMask = static_cast<VMEvent>(0);
 
     // clear state
     gprState.reset();
@@ -187,12 +187,13 @@ void Engine::reinit(const std::string& cpu_, const std::vector<std::string>& mat
 }
 
 Engine::Engine(const Engine& other)
-    : cpu(other.cpu), mattrs(other.mattrs), vminstance(nullptr) {
+    : cpu(other.cpu), mattrs(other.mattrs), vminstance(nullptr), running(false) {
     this->init();
     *this = other;
 }
 
 Engine& Engine::operator=(const Engine& other) {
+    RequireAction("Engine::operator=", not running && "Cannot assign a running Engine", abort());
     this->clearAllCache();
 
     if (cpu != other.cpu || mattrs != other.mattrs) {
@@ -207,6 +208,7 @@ Engine& Engine::operator=(const Engine& other) {
     vmCallbacks = other.vmCallbacks;
     instrRulesCounter = other.instrRulesCounter;
     vmCallbacksCounter = other.vmCallbacksCounter;
+    eventMask = other.eventMask;
 
     // copy instrumentation range
     execBroker->setInstrumentedRange(other.execBroker->getInstrumentedRange());
@@ -219,6 +221,7 @@ Engine& Engine::operator=(const Engine& other) {
 }
 
 void Engine::changeVMInstanceRef(VMInstanceRef vminstance) {
+    RequireAction("Engine::changeVMInstanceRef", not running && "Cannot changeVMInstanceRef on a running Engine", abort());
     this->vminstance = vminstance;
 
     blockManager->changeVMInstanceRef(vminstance);
@@ -361,10 +364,13 @@ std::vector<Patch> Engine::patch(rword start) {
     return basicBlock;
 }
 
-void Engine::instrument(std::vector<Patch> &basicBlock) {
-    LogDebug("Engine::instrument", "Instrumenting basic block [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
+void Engine::instrument(std::vector<Patch> &basicBlock, size_t patchEnd) {
+    LogDebug("Engine::instrument", "Instrumenting sequence [0x%" PRIRWORD ", 0x%" PRIRWORD "] in basic block [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
+             basicBlock.front().metadata.address, basicBlock[patchEnd - 1].metadata.address,
              basicBlock.front().metadata.address, basicBlock.back().metadata.address);
-    for(Patch& patch : basicBlock) {
+
+    for(size_t i = 0; i < patchEnd; i++) {
+        Patch& patch = basicBlock[i];
         LogCallback(LogPriority::DEBUG, "Engine::instrument", [&] (FILE *log) -> void {
             std::string disass;
             llvm::raw_string_ostream disassOs(disass);
@@ -386,14 +392,17 @@ void Engine::instrument(std::vector<Patch> &basicBlock) {
 void Engine::handleNewBasicBlock(rword pc) {
     // disassemble and patch new basic block
     Patch::Vec basicBlock = patch(pc);
-    // instrument it
-    instrument(basicBlock);
-    // Write it in the cache
-    blockManager->writeBasicBlock(basicBlock);
+    // Reserve cache and get uncached instruction
+    size_t patchEnd = blockManager->preWriteBasicBlock(basicBlock);
+    // instrument uncached instruction
+    instrument(basicBlock, patchEnd);
+    // Write in the cache
+    blockManager->writeBasicBlock(basicBlock, patchEnd);
 }
 
 
 bool Engine::precacheBasicBlock(rword pc) {
+    RequireAction("Engine::precacheBasicBlock", not running && "Cannot precacheBasicBlock on a running Engine", abort());
     if(blockManager->isFlushPending()) {
         // Commit the flush
         blockManager->flushCommit();
@@ -402,33 +411,50 @@ bool Engine::precacheBasicBlock(rword pc) {
         // already in cache
         return false;
     }
+    running = true;
     handleNewBasicBlock(pc);
+    running = false;
     return true;
 }
 
 
 bool Engine::run(rword start, rword stop) {
+    RequireAction("Engine::precacheBasicBlock", not running && "Cannot run an already running Engine", abort());
+
     rword         currentPC = start;
     bool          hasRan = false;
     curGPRState = gprState.get();
     curFPRState = fprState.get();
+
+    rword basicBlockBeginAddr = 0;
+    rword basicBlockEndAddr = 0;
 
     // Start address is out of range
     if (!execBroker->isInstrumented(start)) {
         return false;
     }
 
+    running = true;
+
     // Execute basic block per basic block
     do {
+        VMAction action = CONTINUE;
+
         // If this PC is not instrumented try to transfer execution
         if(execBroker->isInstrumented(currentPC) == false &&
            execBroker->canTransferExecution(curGPRState)) {
+
             curExecBlock = nullptr;
+            basicBlockBeginAddr = 0;
+            basicBlockEndAddr = 0;
+
             LogDebug("Engine::run", "Executing 0x%" PRIRWORD " through execBroker", currentPC);
+            action = signalEvent(EXEC_TRANSFER_CALL, currentPC, nullptr, 0, curGPRState, curFPRState);
             // transfer execution
-            signalEvent(EXEC_TRANSFER_CALL, currentPC, curGPRState, curFPRState);
-            execBroker->transferExecution(currentPC, curGPRState, curFPRState);
-            signalEvent(EXEC_TRANSFER_RETURN, currentPC, curGPRState, curFPRState);
+            if (action == CONTINUE) {
+                execBroker->transferExecution(currentPC, curGPRState, curFPRState);
+                action = signalEvent(EXEC_TRANSFER_RETURN, currentPC, nullptr, 0, curGPRState, curFPRState);
+            }
         }
         // Else execute through DBI
         else {
@@ -447,15 +473,22 @@ bool Engine::run(rword start, rword stop) {
             }
 
             // Test if we have it in cache
-            curExecBlock = blockManager->getProgrammedExecBlock(currentPC);
+            SeqLoc currentSequence;
+            curExecBlock = blockManager->getProgrammedExecBlock(currentPC, &currentSequence);
             if(curExecBlock == nullptr) {
                 LogDebug("Engine::run", "Cache miss for 0x%" PRIRWORD ", patching & instrumenting new basic block", currentPC);
                 handleNewBasicBlock(currentPC);
                 // Signal a new basic block
                 event |= BASIC_BLOCK_NEW;
                 // Set new basic block as current
-                curExecBlock = blockManager->getProgrammedExecBlock(currentPC);
+                curExecBlock = blockManager->getProgrammedExecBlock(currentPC, &currentSequence);
                 RequireAction("Engine::run", curExecBlock != nullptr, abort());
+            }
+
+            if (basicBlockEndAddr == 0) {
+                event |= BASIC_BLOCK_ENTRY;
+                basicBlockEndAddr = currentSequence.bbEnd;
+                basicBlockBeginAddr = currentPC;
             }
 
             // Set context if necessary
@@ -466,32 +499,30 @@ bool Engine::run(rword start, rword stop) {
             curGPRState = &(curExecBlock->getContext()->gprState);
             curFPRState = &(curExecBlock->getContext()->fprState);
 
-            // Signal events
-            if ((curExecBlock->getSeqType(curExecBlock->getCurrentSeqID()) & SeqType::Entry) > 0) {
-                event |= BASIC_BLOCK_ENTRY;
-            }
-            signalEvent(event, currentPC, curGPRState, curFPRState);
+            action = signalEvent(event, currentPC, &currentSequence, basicBlockBeginAddr, curGPRState, curFPRState);
 
-            // Execute
-            hasRan = true;
-            switch(curExecBlock->execute()) {
-                case CONTINUE:
-                case BREAK_TO_VM:
-                    break;
-                case STOP:
-                    *gprState = *curGPRState;
-                    *fprState = *curFPRState;
-                    curGPRState = gprState.get();
-                    curFPRState = fprState.get();
-                    return hasRan;
+            if (action == CONTINUE) {
+                hasRan = true;
+                action = curExecBlock->execute();
+                // Signal events if normal exit
+                if (action == CONTINUE) {
+                    if (basicBlockEndAddr == currentSequence.seqEnd) {
+                        action = signalEvent(SEQUENCE_EXIT | BASIC_BLOCK_EXIT, currentPC, &currentSequence, basicBlockBeginAddr, curGPRState, curFPRState);
+                        basicBlockBeginAddr = 0;
+                        basicBlockEndAddr = 0;
+                    } else {
+                        action = signalEvent(SEQUENCE_EXIT, currentPC, &currentSequence, basicBlockBeginAddr, curGPRState, curFPRState);
+                    }
+                }
             }
-
-            // Signal events
-            event = SEQUENCE_EXIT;
-            if ((curExecBlock->getSeqType(curExecBlock->getCurrentSeqID()) & SeqType::Exit) > 0) {
-                event |= BASIC_BLOCK_EXIT;
-            }
-            signalEvent(event, currentPC, curGPRState, curFPRState);
+        }
+        if (action == STOP) {
+            LogDebug("Engine::run", "Receive STOP Action");
+            break;
+        }
+        if (action == BREAK_TO_VM) {
+            basicBlockBeginAddr = 0;
+            basicBlockEndAddr = 0;
         }
         // Get next block PC
         currentPC = QBDI_GPR_GET(curGPRState, REG_PC);
@@ -503,6 +534,8 @@ bool Engine::run(rword start, rword stop) {
     *fprState = *curFPRState;
     curGPRState = gprState.get();
     curFPRState = fprState.get();
+    curExecBlock = nullptr;
+    running = false;
 
     return hasRan;
 }
@@ -529,33 +562,35 @@ uint32_t Engine::addVMEventCB(VMEvent mask, VMCallback cbk, void *data) {
     uint32_t id = vmCallbacksCounter++;
     RequireAction("Engine::addVMEventCB", id < EVENTID_VM_MASK, return VMError::INVALID_EVENTID);
     vmCallbacks.emplace_back(id, CallbackRegistration {mask, cbk, data});
+    eventMask |= mask;
     return id | EVENTID_VM_MASK;
 }
 
-void Engine::signalEvent(VMEvent event, rword currentPC, GPRState *gprState, FPRState *fprState) {
-    static VMState vmState;
-    static rword lastUpdatePC = 0;
+VMAction Engine::signalEvent(VMEvent event, rword currentPC, const SeqLoc* seqLoc, rword basicBlockBegin, GPRState *gprState, FPRState *fprState) {
+    if ((event & eventMask) == 0) {
+        return CONTINUE;
+    }
 
+    VMState vmState {event, currentPC, currentPC, currentPC, currentPC, 0};
+    if(seqLoc != nullptr) {
+        vmState.basicBlockStart = basicBlockBegin;
+        vmState.basicBlockEnd   = seqLoc->bbEnd;
+        vmState.sequenceStart   = seqLoc->seqStart;
+        vmState.sequenceEnd     = seqLoc->seqEnd;
+    }
+
+    VMAction action = CONTINUE;
     for(const auto& item : vmCallbacks) {
         const QBDI::CallbackRegistration& r = item.second;
         if(event & r.mask) {
-            if(lastUpdatePC != currentPC) {
-                lastUpdatePC = currentPC;
-                if(curExecBlock != nullptr) {
-                    const SeqLoc* seqLoc    = blockManager->getSeqLoc(currentPC);
-                    vmState.basicBlockStart = seqLoc->bbStart;
-                    vmState.basicBlockEnd   = seqLoc->bbEnd;
-                    vmState.sequenceStart   = seqLoc->seqStart;
-                    vmState.sequenceEnd     = seqLoc->seqEnd;
-                }
-                else {
-                    vmState = VMState {event, currentPC, currentPC, currentPC, currentPC, 0};
-                }
-            }
             vmState.event = event;
-            r.cbk(vminstance, &vmState, gprState, fprState, r.data);
+            VMAction res = r.cbk(vminstance, &vmState, gprState, fprState, r.data);
+            if (res > action) {
+                action = res;
+            }
         }
     }
+    return action;
 }
 
 const InstAnalysis* Engine::getInstAnalysis(rword address, AnalysisType type) const {
@@ -600,22 +635,23 @@ void Engine::deleteAllInstrumentations() {
     vmCallbacks.clear();
     instrRulesCounter = 0;
     vmCallbacksCounter = 0;
+    eventMask = static_cast<VMEvent>(0);
 }
 
 void Engine::clearAllCache() {
-    blockManager->clearCache(curExecBlock == nullptr);
+    blockManager->clearCache(not running);
 }
 
 void Engine::clearCache(rword start, rword end) {
     blockManager->clearCache(Range<rword>(start, end));
-    if (curExecBlock == nullptr && blockManager->isFlushPending()) {
+    if (not running && blockManager->isFlushPending()) {
         blockManager->flushCommit();
     }
 }
 
 void Engine::clearCache(RangeSet<rword> rangeSet) {
     blockManager->clearCache(rangeSet);
-    if (curExecBlock == nullptr && blockManager->isFlushPending()) {
+    if (not running && blockManager->isFlushPending()) {
         blockManager->flushCommit();
     }
 }

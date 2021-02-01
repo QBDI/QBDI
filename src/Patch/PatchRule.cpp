@@ -21,7 +21,7 @@
 
 namespace QBDI {
 
-PatchRule::PatchRule(PatchCondition::UniqPtr&& condition, std::vector<std::unique_ptr<PatchGenerator>>&& generators)
+PatchRule::PatchRule(PatchCondition::UniquePtr&& condition, std::vector<std::unique_ptr<PatchGenerator>>&& generators)
         : condition(std::move(condition)), generators(std::move(generators)) {};
 
 PatchRule::~PatchRule() = default;
@@ -29,7 +29,7 @@ PatchRule::~PatchRule() = default;
 PatchRule::PatchRule(PatchRule&&) = default;
 
 Patch PatchRule::generate(const llvm::MCInst &inst, rword address,
-    rword instSize, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI, const Patch* toMerge) const {
+    rword instSize, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI, Patch* toMerge) const {
 
     Patch patch(inst, address, instSize);
     if(toMerge != nullptr) {

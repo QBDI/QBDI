@@ -32,7 +32,7 @@ TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest-EmptyBasicBlock") {
     QBDI::ExecBlock execBlock(*assembly);
     // Write an empty basic block
     QBDI::Patch::Vec empty;
-    QBDI::SeqWriteResult res = execBlock.writeSequence(empty.begin(), empty.end(), QBDI::SeqType::Exit);
+    QBDI::SeqWriteResult res = execBlock.writeSequence(empty.begin(), empty.end());
     REQUIRE(res.seqID == QBDI::EXEC_BLOCK_FULL);
 }
 
@@ -45,9 +45,11 @@ TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest-MultipleBasicBlock") {
     terminator1.push_back(QBDI::Patch());
     terminator2.push_back(QBDI::Patch());
     terminator1[0].append(QBDI::getTerminator(0x42424242));
+    terminator1[0].metadata.modifyPC = true;
     terminator2[0].append(QBDI::getTerminator(0x13371337));
-    QBDI::SeqWriteResult block1 = execBlock.writeSequence(terminator1.begin(), terminator1.end(), QBDI::SeqType::Exit);
-    QBDI::SeqWriteResult block2 = execBlock.writeSequence(terminator2.begin(), terminator2.end(), QBDI::SeqType::Exit);
+    terminator2[0].metadata.modifyPC = true;
+    QBDI::SeqWriteResult block1 = execBlock.writeSequence(terminator1.begin(), terminator1.end());
+    QBDI::SeqWriteResult block2 = execBlock.writeSequence(terminator2.begin(), terminator2.end());
     // Are the seqID valid?
     REQUIRE(block2.seqID > block1.seqID);
     // Execute the two basic block and get the value of PC from the data block
@@ -72,7 +74,7 @@ TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest-BasicBlockOverload") {
     QBDI::SeqWriteResult res;
     uint32_t i = 0;
 
-    while((res = execBlock.writeSequence(empty.begin(), empty.end(), QBDI::SeqType::Exit)).seqID != 0xFFFF) {
+    while((res = execBlock.writeSequence(empty.begin(), empty.end())).seqID != 0xFFFF) {
         REQUIRE(res.seqID == i);
         REQUIRE(execBlock.getEpilogueOffset() >= (uint32_t) 0);
         execBlock.selectSeq(res.seqID);

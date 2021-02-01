@@ -27,13 +27,15 @@
 #include "Config.h"
 #include "State.h"
 
+#define CHECK_TABLE 0
+
 namespace QBDI {
 /* TODO instruction (no yet supported)
  * See test/Patch/MemoryAccessTable_X86_64.cpp
  */
 namespace {
 
-const unsigned READ_8[] = {
+constexpr unsigned READ_8[] = {
     llvm::X86::ADC8mi,
     llvm::X86::ADC8mi8,
     llvm::X86::ADC8mr,
@@ -139,9 +141,9 @@ const unsigned READ_8[] = {
     llvm::X86::XOR8rm,
 };
 
-const size_t READ_8_SIZE = sizeof(READ_8)/sizeof(unsigned);
+constexpr size_t READ_8_SIZE = sizeof(READ_8)/sizeof(unsigned);
 
-const unsigned READ_16[] = {
+constexpr unsigned READ_16[] = {
     llvm::X86::ADC16mi,
     llvm::X86::ADC16mi8,
     llvm::X86::ADC16mr,
@@ -301,9 +303,9 @@ const unsigned READ_16[] = {
     llvm::X86::XOR16rm,
 };
 
-const size_t READ_16_SIZE = sizeof(READ_16)/sizeof(unsigned);
+constexpr size_t READ_16_SIZE = sizeof(READ_16)/sizeof(unsigned);
 
-const unsigned READ_32[] = {
+constexpr unsigned READ_32[] = {
     llvm::X86::ADC32mi,
     llvm::X86::ADC32mi8,
     llvm::X86::ADC32mr,
@@ -620,9 +622,9 @@ const unsigned READ_32[] = {
     llvm::X86::XOR32rm,
 };
 
-const size_t READ_32_SIZE = sizeof(READ_32)/sizeof(unsigned);
+constexpr size_t READ_32_SIZE = sizeof(READ_32)/sizeof(unsigned);
 
-const unsigned READ_64[] = {
+constexpr unsigned READ_64[] = {
     llvm::X86::ADC64mi32,
     llvm::X86::ADC64mi8,
     llvm::X86::ADC64mr,
@@ -1036,16 +1038,16 @@ const unsigned READ_64[] = {
     llvm::X86::XOR64rm,
 };
 
-const size_t READ_64_SIZE = sizeof(READ_64)/sizeof(unsigned);
+constexpr size_t READ_64_SIZE = sizeof(READ_64)/sizeof(unsigned);
 
-const unsigned READ_80[] = {
+constexpr unsigned READ_80[] = {
     llvm::X86::FBLDm,
     llvm::X86::LD_F80m,
 };
 
-const size_t READ_80_SIZE = sizeof(READ_80)/sizeof(unsigned);
+constexpr size_t READ_80_SIZE = sizeof(READ_80)/sizeof(unsigned);
 
-const unsigned READ_128[] = {
+constexpr unsigned READ_128[] = {
     llvm::X86::ADDPDrm,
     llvm::X86::ADDPSrm,
     llvm::X86::ADDSUBPDrm,
@@ -1509,15 +1511,15 @@ const unsigned READ_128[] = {
     llvm::X86::XORPSrm,
 };
 
-const size_t READ_128_SIZE = sizeof(READ_128)/sizeof(unsigned);
+constexpr size_t READ_128_SIZE = sizeof(READ_128)/sizeof(unsigned);
 
-const unsigned READ_224[] = {
+constexpr unsigned READ_224[] = {
     llvm::X86::FLDENVm,
 };
 
-const size_t READ_224_SIZE = sizeof(READ_224)/sizeof(unsigned);
+constexpr size_t READ_224_SIZE = sizeof(READ_224)/sizeof(unsigned);
 
-const unsigned READ_256[] = {
+constexpr unsigned READ_256[] = {
     llvm::X86::VADDPDYrm,
     llvm::X86::VADDPSYrm,
     llvm::X86::VADDSUBPDYrm,
@@ -1765,15 +1767,15 @@ const unsigned READ_256[] = {
     llvm::X86::VXORPSYrm,
 };
 
-const size_t READ_256_SIZE = sizeof(READ_256)/sizeof(unsigned);
+constexpr size_t READ_256_SIZE = sizeof(READ_256)/sizeof(unsigned);
 
-const unsigned READ_864[] = {
+constexpr unsigned READ_864[] = {
     llvm::X86::FRSTORm,
 };
 
-const size_t READ_864_SIZE = sizeof(READ_864)/sizeof(unsigned);
+constexpr size_t READ_864_SIZE = sizeof(READ_864)/sizeof(unsigned);
 
-const unsigned READ_4096[] = {
+constexpr unsigned READ_4096[] = {
     llvm::X86::FXRSTOR,
     llvm::X86::FXRSTOR64,
     llvm::X86::MOVDIR64B16,
@@ -1781,9 +1783,9 @@ const unsigned READ_4096[] = {
     llvm::X86::MOVDIR64B64,
 };
 
-const size_t READ_4096_SIZE = sizeof(READ_4096)/sizeof(unsigned);
+constexpr size_t READ_4096_SIZE = sizeof(READ_4096)/sizeof(unsigned);
 
-const unsigned READ_4608[] = {
+constexpr unsigned READ_4608[] = {
     llvm::X86::XRSTOR,
     llvm::X86::XRSTOR64,
     llvm::X86::XRSTORS,
@@ -1798,9 +1800,9 @@ const unsigned READ_4608[] = {
     llvm::X86::XSAVES64,
 };
 
-const size_t READ_4608_SIZE = sizeof(READ_4608)/sizeof(unsigned);
+constexpr size_t READ_4608_SIZE = sizeof(READ_4608)/sizeof(unsigned);
 
-const unsigned WRITE_8[] = {
+constexpr unsigned WRITE_8[] = {
     llvm::X86::ADC8mi,
     llvm::X86::ADC8mi8,
     llvm::X86::ADC8mr,
@@ -1875,9 +1877,9 @@ const unsigned WRITE_8[] = {
     llvm::X86::XOR8mr,
 };
 
-const size_t WRITE_8_SIZE = sizeof(WRITE_8)/sizeof(unsigned);
+constexpr size_t WRITE_8_SIZE = sizeof(WRITE_8)/sizeof(unsigned);
 
-const unsigned WRITE_16[] = {
+constexpr unsigned WRITE_16[] = {
     llvm::X86::ADC16mi,
     llvm::X86::ADC16mi8,
     llvm::X86::ADC16mr,
@@ -1977,9 +1979,9 @@ const unsigned WRITE_16[] = {
     llvm::X86::XOR16mr,
 };
 
-const size_t WRITE_16_SIZE = sizeof(WRITE_16)/sizeof(unsigned);
+constexpr size_t WRITE_16_SIZE = sizeof(WRITE_16)/sizeof(unsigned);
 
-const unsigned WRITE_32[] = {
+constexpr unsigned WRITE_32[] = {
     llvm::X86::ADC32mi,
     llvm::X86::ADC32mi8,
     llvm::X86::ADC32mr,
@@ -2088,9 +2090,9 @@ const unsigned WRITE_32[] = {
     llvm::X86::XOR32mr,
 };
 
-const size_t WRITE_32_SIZE = sizeof(WRITE_32)/sizeof(unsigned);
+constexpr size_t WRITE_32_SIZE = sizeof(WRITE_32)/sizeof(unsigned);
 
-const unsigned WRITE_64[] = {
+constexpr unsigned WRITE_64[] = {
     llvm::X86::ADC64mi32,
     llvm::X86::ADC64mi8,
     llvm::X86::ADC64mr,
@@ -2207,16 +2209,16 @@ const unsigned WRITE_64[] = {
     llvm::X86::XOR64mr,
 };
 
-const size_t WRITE_64_SIZE = sizeof(WRITE_64)/sizeof(unsigned);
+constexpr size_t WRITE_64_SIZE = sizeof(WRITE_64)/sizeof(unsigned);
 
-const unsigned WRITE_80[] = {
+constexpr unsigned WRITE_80[] = {
     llvm::X86::FBSTPm,
     llvm::X86::ST_FP80m,
 };
 
-const size_t WRITE_80_SIZE = sizeof(WRITE_80)/sizeof(unsigned);
+constexpr size_t WRITE_80_SIZE = sizeof(WRITE_80)/sizeof(unsigned);
 
-const unsigned WRITE_128[] = {
+constexpr unsigned WRITE_128[] = {
     llvm::X86::BNDMOV64mr,
     llvm::X86::CMPXCHG16B,
     llvm::X86::LCMPXCHG16B,
@@ -2251,16 +2253,16 @@ const unsigned WRITE_128[] = {
     llvm::X86::VPMASKMOVQmr,
 };
 
-const size_t WRITE_128_SIZE = sizeof(WRITE_128)/sizeof(unsigned);
+constexpr size_t WRITE_128_SIZE = sizeof(WRITE_128)/sizeof(unsigned);
 
-const unsigned WRITE_224[] = {
+constexpr unsigned WRITE_224[] = {
     llvm::X86::FSTENVm,
 
 };
 
-const size_t WRITE_224_SIZE = sizeof(WRITE_224)/sizeof(unsigned);
+constexpr size_t WRITE_224_SIZE = sizeof(WRITE_224)/sizeof(unsigned);
 
-const unsigned WRITE_256[] = {
+constexpr unsigned WRITE_256[] = {
     llvm::X86::VMASKMOVPDYmr,
     llvm::X86::VMASKMOVPSYmr,
     llvm::X86::VMOVAPDYmr,
@@ -2276,15 +2278,15 @@ const unsigned WRITE_256[] = {
     llvm::X86::VPMASKMOVQYmr,
 };
 
-const size_t WRITE_256_SIZE = sizeof(WRITE_256)/sizeof(unsigned);
+constexpr size_t WRITE_256_SIZE = sizeof(WRITE_256)/sizeof(unsigned);
 
-const unsigned WRITE_864[] = {
+constexpr unsigned WRITE_864[] = {
     llvm::X86::FSAVEm,
 };
 
-const size_t WRITE_864_SIZE = sizeof(WRITE_864)/sizeof(unsigned);
+constexpr size_t WRITE_864_SIZE = sizeof(WRITE_864)/sizeof(unsigned);
 
-const unsigned WRITE_4096[] = {
+constexpr unsigned WRITE_4096[] = {
     llvm::X86::FXSAVE,
     llvm::X86::FXSAVE64,
     llvm::X86::MOVDIR64B16,
@@ -2292,9 +2294,9 @@ const unsigned WRITE_4096[] = {
     llvm::X86::MOVDIR64B64,
 };
 
-const size_t WRITE_4096_SIZE = sizeof(WRITE_4096)/sizeof(unsigned);
+constexpr size_t WRITE_4096_SIZE = sizeof(WRITE_4096)/sizeof(unsigned);
 
-const unsigned WRITE_4608[] = {
+constexpr unsigned WRITE_4608[] = {
     llvm::X86::XSAVE,
     llvm::X86::XSAVE64,
     llvm::X86::XSAVEC,
@@ -2305,9 +2307,9 @@ const unsigned WRITE_4608[] = {
     llvm::X86::XSAVES64,
 };
 
-const size_t WRITE_4608_SIZE = sizeof(WRITE_4608)/sizeof(unsigned);
+constexpr size_t WRITE_4608_SIZE = sizeof(WRITE_4608)/sizeof(unsigned);
 
-const unsigned STACK_WRITE_16[] = {
+constexpr unsigned STACK_WRITE_16[] = {
     llvm::X86::PUSH16i8,
     llvm::X86::PUSH16r,
     llvm::X86::PUSH16rmm,
@@ -2316,9 +2318,9 @@ const unsigned STACK_WRITE_16[] = {
     llvm::X86::PUSHi16,
 };
 
-const size_t STACK_WRITE_16_SIZE = sizeof(STACK_WRITE_16)/sizeof(unsigned);
+constexpr size_t STACK_WRITE_16_SIZE = sizeof(STACK_WRITE_16)/sizeof(unsigned);
 
-const unsigned STACK_WRITE_32[] = {
+constexpr unsigned STACK_WRITE_32[] = {
 #ifdef QBDI_ARCH_X86
     llvm::X86::CALL16m,
     llvm::X86::CALL16m_NT,
@@ -2345,9 +2347,9 @@ const unsigned STACK_WRITE_32[] = {
     llvm::X86::PUSHi32,
 };
 
-const size_t STACK_WRITE_32_SIZE = sizeof(STACK_WRITE_32)/sizeof(unsigned);
+constexpr size_t STACK_WRITE_32_SIZE = sizeof(STACK_WRITE_32)/sizeof(unsigned);
 
-const unsigned STACK_WRITE_64[] = {
+constexpr unsigned STACK_WRITE_64[] = {
 #ifdef QBDI_ARCH_X86_64
     llvm::X86::CALL16m,
     llvm::X86::CALL16m_NT,
@@ -2374,30 +2376,30 @@ const unsigned STACK_WRITE_64[] = {
     llvm::X86::PUSHF64,
 };
 
-const size_t STACK_WRITE_64_SIZE = sizeof(STACK_WRITE_64)/sizeof(unsigned);
+constexpr size_t STACK_WRITE_64_SIZE = sizeof(STACK_WRITE_64)/sizeof(unsigned);
 
-const unsigned STACK_WRITE_128[] = {
+constexpr unsigned STACK_WRITE_128[] = {
     llvm::X86::PUSHA16,
 };
 
-const size_t STACK_WRITE_128_SIZE = sizeof(STACK_WRITE_128)/sizeof(unsigned);
+constexpr size_t STACK_WRITE_128_SIZE = sizeof(STACK_WRITE_128)/sizeof(unsigned);
 
-const unsigned STACK_WRITE_256[] = {
+constexpr unsigned STACK_WRITE_256[] = {
     llvm::X86::PUSHA32,
 };
 
-const size_t STACK_WRITE_256_SIZE = sizeof(STACK_WRITE_256)/sizeof(unsigned);
+constexpr size_t STACK_WRITE_256_SIZE = sizeof(STACK_WRITE_256)/sizeof(unsigned);
 
-const unsigned STACK_READ_16[] = {
+constexpr unsigned STACK_READ_16[] = {
     llvm::X86::POP16r,
     llvm::X86::POP16rmm,
     llvm::X86::POP16rmr,
     llvm::X86::POPF16,
 };
 
-const size_t STACK_READ_16_SIZE = sizeof(STACK_READ_16)/sizeof(unsigned);
+constexpr size_t STACK_READ_16_SIZE = sizeof(STACK_READ_16)/sizeof(unsigned);
 
-const unsigned STACK_READ_32[] = {
+constexpr unsigned STACK_READ_32[] = {
 #ifdef QBDI_ARCH_X86
     llvm::X86::LEAVE,
     llvm::X86::LRETIL,
@@ -2421,9 +2423,9 @@ const unsigned STACK_READ_32[] = {
 #endif
 };
 
-const size_t STACK_READ_32_SIZE = sizeof(STACK_READ_32)/sizeof(unsigned);
+constexpr size_t STACK_READ_32_SIZE = sizeof(STACK_READ_32)/sizeof(unsigned);
 
-const unsigned STACK_READ_64[] = {
+constexpr unsigned STACK_READ_64[] = {
 #ifdef QBDI_ARCH_X86_64
     llvm::X86::LEAVE,
 #endif
@@ -2450,21 +2452,21 @@ const unsigned STACK_READ_64[] = {
 #endif
 };
 
-const size_t STACK_READ_64_SIZE = sizeof(STACK_READ_64)/sizeof(unsigned);
+constexpr size_t STACK_READ_64_SIZE = sizeof(STACK_READ_64)/sizeof(unsigned);
 
-const unsigned STACK_READ_128[] = {
+constexpr unsigned STACK_READ_128[] = {
     llvm::X86::POPA16,
 };
 
-const size_t STACK_READ_128_SIZE = sizeof(STACK_READ_128)/sizeof(unsigned);
+constexpr size_t STACK_READ_128_SIZE = sizeof(STACK_READ_128)/sizeof(unsigned);
 
-const unsigned STACK_READ_256[] = {
+constexpr unsigned STACK_READ_256[] = {
     llvm::X86::POPA32,
 };
 
-const size_t STACK_READ_256_SIZE = sizeof(STACK_READ_256)/sizeof(unsigned);
+constexpr size_t STACK_READ_256_SIZE = sizeof(STACK_READ_256)/sizeof(unsigned);
 
-const unsigned MIN_SIZE_READ[] = {
+constexpr unsigned MIN_SIZE_READ[] = {
     llvm::X86::XRSTOR,
     llvm::X86::XRSTOR64,
     llvm::X86::XRSTORS,
@@ -2479,9 +2481,9 @@ const unsigned MIN_SIZE_READ[] = {
     llvm::X86::XSAVES64,
 };
 
-const size_t MIN_SIZE_READ_SIZE = sizeof(MIN_SIZE_READ)/sizeof(unsigned);
+constexpr size_t MIN_SIZE_READ_SIZE = sizeof(MIN_SIZE_READ)/sizeof(unsigned);
 
-const unsigned MIN_SIZE_WRITE[] = {
+constexpr unsigned MIN_SIZE_WRITE[] = {
     llvm::X86::XSAVE,
     llvm::X86::XSAVE64,
     llvm::X86::XSAVEC,
@@ -2492,7 +2494,7 @@ const unsigned MIN_SIZE_WRITE[] = {
     llvm::X86::XSAVES64,
 };
 
-const size_t MIN_SIZE_WRITE_SIZE = sizeof(MIN_SIZE_WRITE)/sizeof(unsigned);
+constexpr size_t MIN_SIZE_WRITE_SIZE = sizeof(MIN_SIZE_WRITE)/sizeof(unsigned);
 
 /* Highest 16 bits are the write access, lowest 16 bits are the read access. For each 16 bits part: the
  * highest bit stores if the access is a stack access or not while the lowest 12 bits store the
@@ -2525,128 +2527,175 @@ constexpr uint32_t IS_STACK_WRITE(uint32_t v) {return ((v>>WRITE_POSITION) & STA
 constexpr uint32_t IS_MIN_SIZE_READ(uint32_t v) {return (v & ACCESS_MIN_SIZE_FLAG) == ACCESS_MIN_SIZE_FLAG;}
 constexpr uint32_t IS_MIN_SIZE_WRITE(uint32_t v) {return ((v>>WRITE_POSITION) & ACCESS_MIN_SIZE_FLAG) == ACCESS_MIN_SIZE_FLAG;}
 
+struct MemAccessArray {
+    uint32_t arr[llvm::X86::INSTRUCTION_LIST_END] = {0};
 
-uint32_t MEMACCESS_INFO_TABLE[llvm::X86::INSTRUCTION_LIST_END] = {0};
-
-inline void _initMemAccessRead(const unsigned buff[], size_t buff_size, uint32_t len) {
-    for(size_t i = 0; i < buff_size; i++) {
-        #if defined(_QBDI_LOG_DEBUG)
-        RequireAction("_initMemAccessRead", GET_READ_SIZE(MEMACCESS_INFO_TABLE[buff[i]]) == 0, {
-            LogError("_initMemAccessRead", "%d already have value %d\n", buff[i], GET_READ_SIZE(MEMACCESS_INFO_TABLE[buff[i]]));
-            abort();
-        });
-        #endif
-        MEMACCESS_INFO_TABLE[buff[i]] |= READ(len);
+    constexpr inline void _initMemAccessRead(const unsigned buff[], size_t buff_size, uint32_t len) {
+        for(size_t i = 0; i < buff_size; i++) {
+            arr[buff[i]] |= READ(len);
+        }
     }
-}
 
-inline void _initMemAccessWrite(const unsigned buff[], size_t buff_size, uint32_t len) {
-    for(size_t i = 0; i < buff_size; i++) {
-        #if defined(_QBDI_LOG_DEBUG)
-        RequireAction("_initMemAccessWrite", GET_WRITE_SIZE(MEMACCESS_INFO_TABLE[buff[i]]) == 0, {
-            LogError("_initMemAccessWrite", "%d already have value %d\n", buff[i], GET_WRITE_SIZE(MEMACCESS_INFO_TABLE[buff[i]]));
-            abort();
-        });
-        #endif
-        MEMACCESS_INFO_TABLE[buff[i]] |= WRITE(len);
+    constexpr inline void _initMemAccessWrite(const unsigned buff[], size_t buff_size, uint32_t len) {
+        for(size_t i = 0; i < buff_size; i++) {
+            arr[buff[i]] |= WRITE(len);
+        }
     }
-}
 
-inline void _initMemAccessStackRead(const unsigned buff[], size_t buff_size, uint32_t len) {
-    for(size_t i = 0; i < buff_size; i++) {
-        #if defined(_QBDI_LOG_DEBUG)
-        RequireAction("_initMemAccessStackRead", GET_READ_SIZE(MEMACCESS_INFO_TABLE[buff[i]]) == 0, {
-            LogError("_initMemAccessStackRead", "%d already have value %d\n", buff[i], GET_READ_SIZE(MEMACCESS_INFO_TABLE[buff[i]]));
-            abort();
-        });
-        #endif
-        MEMACCESS_INFO_TABLE[buff[i]] |= STACK_READ(len);
+    constexpr inline void _initMemAccessStackRead(const unsigned buff[], size_t buff_size, uint32_t len) {
+        for(size_t i = 0; i < buff_size; i++) {
+            arr[buff[i]] |= STACK_READ(len);
+        }
     }
-}
 
-inline void _initMemAccessStackWrite(const unsigned buff[], size_t buff_size, uint32_t len) {
-    for(size_t i = 0; i < buff_size; i++) {
-        #if defined(_QBDI_LOG_DEBUG)
-        RequireAction("_initMemAccessStackWrite", GET_WRITE_SIZE(MEMACCESS_INFO_TABLE[buff[i]]) == 0, {
-            LogError("_initMemAccessStackWrite", "%d already have value %d\n", buff[i], GET_WRITE_SIZE(MEMACCESS_INFO_TABLE[buff[i]]));
-            abort();
-        });
-        #endif
-        MEMACCESS_INFO_TABLE[buff[i]] |= STACK_WRITE(len);
+    constexpr inline void _initMemAccessStackWrite(const unsigned buff[], size_t buff_size, uint32_t len) {
+        for(size_t i = 0; i < buff_size; i++) {
+            arr[buff[i]] |= STACK_WRITE(len);
+        }
     }
-}
+
+    constexpr MemAccessArray() {
+        // read
+        _initMemAccessRead(READ_8, READ_8_SIZE, 1);
+        _initMemAccessRead(READ_16, READ_16_SIZE, 2);
+        _initMemAccessRead(READ_32, READ_32_SIZE, 4);
+        _initMemAccessRead(READ_64, READ_64_SIZE, 8);
+        _initMemAccessRead(READ_80, READ_80_SIZE, 10);
+        _initMemAccessRead(READ_128, READ_128_SIZE, 16);
+        _initMemAccessRead(READ_224, READ_224_SIZE, 28);
+        _initMemAccessRead(READ_256, READ_256_SIZE, 32);
+        _initMemAccessRead(READ_864, READ_864_SIZE, 108);
+        _initMemAccessRead(READ_4096, READ_4096_SIZE, 512);
+        _initMemAccessRead(READ_4608, READ_4608_SIZE, 576);
+        // write
+        _initMemAccessWrite(WRITE_8, WRITE_8_SIZE, 1);
+        _initMemAccessWrite(WRITE_16, WRITE_16_SIZE, 2);
+        _initMemAccessWrite(WRITE_32, WRITE_32_SIZE, 4);
+        _initMemAccessWrite(WRITE_64, WRITE_64_SIZE, 8);
+        _initMemAccessWrite(WRITE_80, WRITE_80_SIZE, 10);
+        _initMemAccessWrite(WRITE_128, WRITE_128_SIZE, 16);
+        _initMemAccessWrite(WRITE_224, WRITE_224_SIZE, 28);
+        _initMemAccessWrite(WRITE_256, WRITE_256_SIZE, 32);
+        _initMemAccessWrite(WRITE_864, WRITE_864_SIZE, 108);
+        _initMemAccessWrite(WRITE_4096, WRITE_4096_SIZE, 512);
+        _initMemAccessWrite(WRITE_4608, WRITE_4608_SIZE, 576);
+        // read stack
+        _initMemAccessStackRead(STACK_READ_16, STACK_READ_16_SIZE, 2);
+        _initMemAccessStackRead(STACK_READ_32, STACK_READ_32_SIZE, 4);
+        _initMemAccessStackRead(STACK_READ_64, STACK_READ_64_SIZE, 8);
+        _initMemAccessStackRead(STACK_READ_128, STACK_READ_128_SIZE, 16);
+        _initMemAccessStackRead(STACK_READ_256, STACK_READ_256_SIZE, 32);
+        // write stack
+        _initMemAccessStackWrite(STACK_WRITE_16, STACK_WRITE_16_SIZE, 2);
+        _initMemAccessStackWrite(STACK_WRITE_32, STACK_WRITE_32_SIZE, 4);
+        _initMemAccessStackWrite(STACK_WRITE_64, STACK_WRITE_64_SIZE, 8);
+        _initMemAccessStackWrite(STACK_WRITE_128, STACK_WRITE_128_SIZE, 16);
+        _initMemAccessStackWrite(STACK_WRITE_256, STACK_WRITE_256_SIZE, 32);
+        // min size read
+        for(size_t i = 0; i < MIN_SIZE_READ_SIZE; i++) {
+            arr[MIN_SIZE_READ[i]] |= ACCESS_MIN_SIZE_FLAG;
+        }
+        // min size write
+        for(size_t i = 0; i < MIN_SIZE_WRITE_SIZE; i++) {
+            arr[MIN_SIZE_WRITE[i]] |= (ACCESS_MIN_SIZE_FLAG<<WRITE_POSITION);
+        }
+    }
+
+#if CHECK_TABLE
+    void check_table(const unsigned buff[], size_t buff_size, uint32_t value, uint32_t mask) const {
+        for(size_t i = 0; i < buff_size; i++) {
+            if ((arr[buff[i]] & mask) != value) {
+                fprintf(stderr, "[MemAccessArray::check_table], opcode %d, mask %x, expected %x, found %x\n", buff[i], mask, value, (arr[buff[i]] & mask));
+                abort();
+            }
+        }
+    }
+
+    int check() const {
+        // read
+        check_table(READ_8, READ_8_SIZE, READ(1), 0xfff);
+        check_table(READ_16, READ_16_SIZE, READ(2), 0xfff);
+        check_table(READ_32, READ_32_SIZE, READ(4), 0xfff);
+        check_table(READ_64, READ_64_SIZE, READ(8), 0xfff);
+        check_table(READ_80, READ_80_SIZE, READ(10), 0xfff);
+        check_table(READ_128, READ_128_SIZE, READ(16), 0xfff);
+        check_table(READ_224, READ_224_SIZE, READ(28), 0xfff);
+        check_table(READ_256, READ_256_SIZE, READ(32), 0xfff);
+        check_table(READ_864, READ_864_SIZE, READ(108), 0xfff);
+        check_table(READ_4096, READ_4096_SIZE, READ(512), 0xfff);
+        check_table(READ_4608, READ_4608_SIZE, READ(576), 0xfff);
+        // write
+        check_table(WRITE_8, WRITE_8_SIZE, WRITE(1), 0xfff<<WRITE_POSITION);
+        check_table(WRITE_16, WRITE_16_SIZE, WRITE(2), 0xfff<<WRITE_POSITION);
+        check_table(WRITE_32, WRITE_32_SIZE, WRITE(4), 0xfff<<WRITE_POSITION);
+        check_table(WRITE_64, WRITE_64_SIZE, WRITE(8), 0xfff<<WRITE_POSITION);
+        check_table(WRITE_80, WRITE_80_SIZE, WRITE(10), 0xfff<<WRITE_POSITION);
+        check_table(WRITE_128, WRITE_128_SIZE, WRITE(16), 0xfff<<WRITE_POSITION);
+        check_table(WRITE_224, WRITE_224_SIZE, WRITE(28), 0xfff<<WRITE_POSITION);
+        check_table(WRITE_256, WRITE_256_SIZE, WRITE(32), 0xfff<<WRITE_POSITION);
+        check_table(WRITE_864, WRITE_864_SIZE, WRITE(108), 0xfff<<WRITE_POSITION);
+        check_table(WRITE_4096, WRITE_4096_SIZE, WRITE(512), 0xfff<<WRITE_POSITION);
+        check_table(WRITE_4608, WRITE_4608_SIZE, WRITE(576), 0xfff<<WRITE_POSITION);
+        // read stack
+        check_table(STACK_READ_16, STACK_READ_16_SIZE, STACK_READ(2), 0x8fff);
+        check_table(STACK_READ_32, STACK_READ_32_SIZE, STACK_READ(4), 0x8fff);
+        check_table(STACK_READ_64, STACK_READ_64_SIZE, STACK_READ(8), 0x8fff);
+        check_table(STACK_READ_128, STACK_READ_128_SIZE, STACK_READ(16), 0x8fff);
+        check_table(STACK_READ_256, STACK_READ_256_SIZE, STACK_READ(32), 0x8fff);
+        // write stack
+        check_table(STACK_WRITE_16, STACK_WRITE_16_SIZE, STACK_WRITE(2), 0x8fff<<WRITE_POSITION);
+        check_table(STACK_WRITE_32, STACK_WRITE_32_SIZE, STACK_WRITE(4), 0x8fff<<WRITE_POSITION);
+        check_table(STACK_WRITE_64, STACK_WRITE_64_SIZE, STACK_WRITE(8), 0x8fff<<WRITE_POSITION);
+        check_table(STACK_WRITE_128, STACK_WRITE_128_SIZE, STACK_WRITE(16), 0x8fff<<WRITE_POSITION);
+        check_table(STACK_WRITE_256, STACK_WRITE_256_SIZE, STACK_WRITE(32), 0x8fff<<WRITE_POSITION);
+        // min size read
+        check_table(MIN_SIZE_READ, MIN_SIZE_READ_SIZE, ACCESS_MIN_SIZE_FLAG, ACCESS_MIN_SIZE_FLAG);
+        // min size write
+        check_table(MIN_SIZE_WRITE, MIN_SIZE_WRITE_SIZE, ACCESS_MIN_SIZE_FLAG<<WRITE_POSITION, ACCESS_MIN_SIZE_FLAG<<WRITE_POSITION);
+        return 0;
+    }
+#endif
+
+    inline uint32_t get(size_t op) const {
+        if (op < llvm::X86::INSTRUCTION_LIST_END) {
+            return arr[op];
+        }
+
+        LogError("MemAccessArray.get", "No opcode %u", op);
+        return 0;
+    }
+};
+
+static constexpr MemAccessArray memAccessCache;
+
+#if CHECK_TABLE
+static int __check_debug = memAccessCache.check();
+#endif
 
 } // anonymous namespace
 
-void initMemAccessInfo() {
-    // read
-    _initMemAccessRead(READ_8, READ_8_SIZE, 1);
-    _initMemAccessRead(READ_16, READ_16_SIZE, 2);
-    _initMemAccessRead(READ_32, READ_32_SIZE, 4);
-    _initMemAccessRead(READ_64, READ_64_SIZE, 8);
-    _initMemAccessRead(READ_80, READ_80_SIZE, 10);
-    _initMemAccessRead(READ_128, READ_128_SIZE, 16);
-    _initMemAccessRead(READ_224, READ_224_SIZE, 28);
-    _initMemAccessRead(READ_256, READ_256_SIZE, 32);
-    _initMemAccessRead(READ_864, READ_864_SIZE, 108);
-    _initMemAccessRead(READ_4096, READ_4096_SIZE, 512);
-    _initMemAccessRead(READ_4608, READ_4608_SIZE, 576);
-    // write
-    _initMemAccessWrite(WRITE_8, WRITE_8_SIZE, 1);
-    _initMemAccessWrite(WRITE_16, WRITE_16_SIZE, 2);
-    _initMemAccessWrite(WRITE_32, WRITE_32_SIZE, 4);
-    _initMemAccessWrite(WRITE_64, WRITE_64_SIZE, 8);
-    _initMemAccessWrite(WRITE_80, WRITE_80_SIZE, 10);
-    _initMemAccessWrite(WRITE_128, WRITE_128_SIZE, 16);
-    _initMemAccessWrite(WRITE_224, WRITE_224_SIZE, 28);
-    _initMemAccessWrite(WRITE_256, WRITE_256_SIZE, 32);
-    _initMemAccessWrite(WRITE_864, WRITE_864_SIZE, 108);
-    _initMemAccessWrite(WRITE_4096, WRITE_4096_SIZE, 512);
-    _initMemAccessWrite(WRITE_4608, WRITE_4608_SIZE, 576);
-    // read stack
-    _initMemAccessStackRead(STACK_READ_16, STACK_READ_16_SIZE, 2);
-    _initMemAccessStackRead(STACK_READ_32, STACK_READ_32_SIZE, 4);
-    _initMemAccessStackRead(STACK_READ_64, STACK_READ_64_SIZE, 8);
-    _initMemAccessStackRead(STACK_READ_128, STACK_READ_128_SIZE, 16);
-    _initMemAccessStackRead(STACK_READ_256, STACK_READ_256_SIZE, 32);
-    // write stack
-    _initMemAccessStackWrite(STACK_WRITE_16, STACK_WRITE_16_SIZE, 2);
-    _initMemAccessStackWrite(STACK_WRITE_32, STACK_WRITE_32_SIZE, 4);
-    _initMemAccessStackWrite(STACK_WRITE_64, STACK_WRITE_64_SIZE, 8);
-    _initMemAccessStackWrite(STACK_WRITE_128, STACK_WRITE_128_SIZE, 16);
-    _initMemAccessStackWrite(STACK_WRITE_256, STACK_WRITE_256_SIZE, 32);
-    // min size read
-    for(size_t i = 0; i < MIN_SIZE_READ_SIZE; i++) {
-        MEMACCESS_INFO_TABLE[MIN_SIZE_READ[i]] |= ACCESS_MIN_SIZE_FLAG;
-    }
-    // min size write
-    for(size_t i = 0; i < MIN_SIZE_WRITE_SIZE; i++) {
-        MEMACCESS_INFO_TABLE[MIN_SIZE_WRITE[i]] |= (ACCESS_MIN_SIZE_FLAG<<WRITE_POSITION);
-    }
-}
-
 unsigned getReadSize(const llvm::MCInst& inst) {
-    return GET_READ_SIZE(MEMACCESS_INFO_TABLE[inst.getOpcode()]);
+    return GET_READ_SIZE(memAccessCache.get(inst.getOpcode()));
 }
 
 unsigned getWriteSize(const llvm::MCInst& inst) {
-    return GET_WRITE_SIZE(MEMACCESS_INFO_TABLE[inst.getOpcode()]);
+    return GET_WRITE_SIZE(memAccessCache.get(inst.getOpcode()));
 }
 
 bool isStackRead(const llvm::MCInst& inst) {
-    return IS_STACK_READ(MEMACCESS_INFO_TABLE[inst.getOpcode()]);
+    return IS_STACK_READ(memAccessCache.get(inst.getOpcode()));
 }
 
 bool isStackWrite(const llvm::MCInst& inst) {
-    return IS_STACK_WRITE(MEMACCESS_INFO_TABLE[inst.getOpcode()]);
+    return IS_STACK_WRITE(memAccessCache.get(inst.getOpcode()));
 }
 
 bool isMinSizeRead(const llvm::MCInst& inst) {
-    return IS_MIN_SIZE_READ(MEMACCESS_INFO_TABLE[inst.getOpcode()]);
+    return IS_MIN_SIZE_READ(memAccessCache.get(inst.getOpcode()));
 }
 
 bool isMinSizeWrite(const llvm::MCInst& inst) {
-    return IS_MIN_SIZE_WRITE(MEMACCESS_INFO_TABLE[inst.getOpcode()]);
+    return IS_MIN_SIZE_WRITE(memAccessCache.get(inst.getOpcode()));
 }
 
 unsigned getImmediateSize(const llvm::MCInst& inst, const llvm::MCInstrDesc& desc) {

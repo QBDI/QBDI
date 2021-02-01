@@ -45,11 +45,6 @@ class Patch;
 
 struct Context;
 
-enum SeqType {
-    Entry = 1,
-    Exit  = 1<<1,
-};
-
 struct InstInfo {
     uint16_t seqID;
     uint16_t offset;
@@ -60,7 +55,6 @@ struct InstInfo {
 struct SeqInfo {
     uint16_t startInstID;
     uint16_t endInstID;
-    SeqType  type;
 };
 
 struct SeqWriteResult {
@@ -88,8 +82,8 @@ private:
     enum PageState {RX, RW};
 
     static uint32_t                                      epilogueSize;
-    static std::vector<std::shared_ptr<RelocatableInst>> execBlockPrologue;
-    static std::vector<std::shared_ptr<RelocatableInst>> execBlockEpilogue;
+    static std::vector<std::unique_ptr<RelocatableInst>> execBlockPrologue;
+    static std::vector<std::unique_ptr<RelocatableInst>> execBlockEpilogue;
     static void (*runCodeBlockFct)(void*);
 
     VMInstanceRef                     vminstance;
@@ -169,7 +163,7 @@ public:
      *
      * @return A structure detailling the write operation result.
      */
-    SeqWriteResult writeSequence(std::vector<Patch>::const_iterator seqStart, std::vector<Patch>::const_iterator seqEnd, SeqType seqType);
+    SeqWriteResult writeSequence(std::vector<Patch>::const_iterator seqStart, std::vector<Patch>::const_iterator seqEnd);
 
     /*! Split an existing sequence at instruction instID to create a new sequence.
      *
@@ -298,14 +292,6 @@ public:
      * @return The ID of the current sequence.
      */
     uint16_t getCurrentSeqID() const { return currentSeq; }
-
-    /* Obtain the sequence type for a specific sequence ID.
-     *
-     * @param seqID The sequence ID.
-     *
-     * @return The type of the sequence.
-     */
-    SeqType getSeqType(uint16_t seqID) const;
 
     /*! Obtain the sequence start address for a specific sequence ID.
      *

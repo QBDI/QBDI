@@ -27,7 +27,6 @@ namespace llvm {
 
 namespace QBDI {
 
-void initMemAccessInfo();
 unsigned getReadSize(const llvm::MCInst& inst);
 unsigned getWriteSize(const llvm::MCInst& inst);
 bool isStackRead(const llvm::MCInst& inst);

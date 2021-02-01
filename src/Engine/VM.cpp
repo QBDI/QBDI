@@ -52,21 +52,23 @@ struct InstrCBInfo {
 static VMAction memReadGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
     std::vector<std::pair<uint32_t, MemCBInfo>>* memCBInfos = static_cast<std::vector<std::pair<uint32_t, MemCBInfo>>*>(data);
     std::vector<MemoryAccess> memAccesses = vm->getInstMemoryAccess();
-    VMAction action = VMAction::CONTINUE;
+    RangeSet<rword> readRange;
     for(const MemoryAccess& memAccess : memAccesses) {
-        Range<rword> accessRange(memAccess.accessAddress, memAccess.accessAddress + memAccess.size);
-        for(size_t i = 0; i < memCBInfos->size(); i++) {
-            // Check access type
-            if((*memCBInfos)[i].second.type == MEMORY_READ && (memAccess.type & (*memCBInfos)[i].second.type)) {
-                // Check access range
-                if((*memCBInfos)[i].second.range.overlaps(accessRange)) {
-                    // Forward to virtual callback
-                    VMAction ret = (*memCBInfos)[i].second.cbk(vm, gprState, fprState, (*memCBInfos)[i].second.data);
-                    // Always keep the most extreme action as the return
-                    if(ret > action) {
-                        action = ret;
-                    }
-                }
+        if (memAccess.type & MEMORY_READ) {
+            Range<rword> accessRange(memAccess.accessAddress, memAccess.accessAddress + memAccess.size);
+            readRange.add(accessRange);
+        }
+    }
+
+    VMAction action = VMAction::CONTINUE;
+    for(size_t i = 0; i < memCBInfos->size(); i++) {
+        // Check access type and range
+        if((*memCBInfos)[i].second.type == MEMORY_READ && readRange.overlaps((*memCBInfos)[i].second.range)) {
+            // Forward to virtual callback
+            VMAction ret = (*memCBInfos)[i].second.cbk(vm, gprState, fprState, (*memCBInfos)[i].second.data);
+            // Always keep the most extreme action as the return
+            if(ret > action) {
+                action = ret;
             }
         }
     }
@@ -76,21 +78,31 @@ static VMAction memReadGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprS
 static VMAction memWriteGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
     std::vector<std::pair<uint32_t, MemCBInfo>>* memCBInfos = static_cast<std::vector<std::pair<uint32_t, MemCBInfo>>*>(data);
     std::vector<MemoryAccess> memAccesses = vm->getInstMemoryAccess();
-    VMAction action = VMAction::CONTINUE;
+    RangeSet<rword> readRange;
+    RangeSet<rword> writeRange;
     for(const MemoryAccess& memAccess : memAccesses) {
         Range<rword> accessRange(memAccess.accessAddress, memAccess.accessAddress + memAccess.size);
-        for(size_t i = 0; i < memCBInfos->size(); i++) {
-            // Check access type
-            if(((*memCBInfos)[i].second.type & MEMORY_WRITE) && (memAccess.type & (*memCBInfos)[i].second.type)) {
-                // Check access range
-                if((*memCBInfos)[i].second.range.overlaps(accessRange)) {
-                    // Forward to virtual callback
-                    VMAction ret = (*memCBInfos)[i].second.cbk(vm, gprState, fprState, (*memCBInfos)[i].second.data);
-                    // Always keep the most extreme action as the return
-                    if(ret > action) {
-                        action = ret;
-                    }
-                }
+        if (memAccess.type & MEMORY_READ) {
+            readRange.add(accessRange);
+        }
+        if (memAccess.type & MEMORY_WRITE) {
+            writeRange.add(accessRange);
+        }
+    }
+
+    VMAction action = VMAction::CONTINUE;
+    for(size_t i = 0; i < memCBInfos->size(); i++) {
+        // Check accessCB
+        // 1. has MEMORY_WRITE and write range overlaps
+        // 2. is MEMORY_READ_WRITE and read range overlaps
+        // note: the case with MEMORY_READ only is managed by memReadGate
+        if(     (((*memCBInfos)[i].second.type & MEMORY_WRITE) && writeRange.overlaps((*memCBInfos)[i].second.range)) ||
+                ((*memCBInfos)[i].second.type == MEMORY_READ_WRITE && readRange.overlaps((*memCBInfos)[i].second.range))) {
+            // Forward to virtual callback
+            VMAction ret = (*memCBInfos)[i].second.cbk(vm, gprState, fprState, (*memCBInfos)[i].second.data);
+            // Always keep the most extreme action as the return
+            if(ret > action) {
+                action = ret;
             }
         }
     }
@@ -282,7 +294,7 @@ bool VM::callV(rword* retval, rword function, uint32_t argNum, va_list ap) {
 uint32_t VM::addInstrRule(InstrumentCallback cbk, AnalysisType type, void* data) {
     RangeSet<rword> r;
     r.add(Range<rword>(0, (rword) -1));
-    return engine->addInstrRule(InstrRuleUser(cbk, type, data, this, r));
+    return engine->addInstrRule(InstrRuleUser::unique(cbk, type, data, this, r));
 }
 
 uint32_t VM::addInstrRule(QBDI_InstrumentCallback cbk, AnalysisType type, void* data) {
@@ -295,7 +307,7 @@ uint32_t VM::addInstrRule(QBDI_InstrumentCallback cbk, AnalysisType type, void* 
 uint32_t VM::addInstrRuleRange(rword start, rword end, InstrumentCallback cbk, AnalysisType type, void* data) {
     RangeSet<rword> r;
     r.add(Range<rword>(start, end));
-    return engine->addInstrRule(InstrRuleUser(cbk, type, data, this, r));
+    return engine->addInstrRule(InstrRuleUser::unique(cbk, type, data, this, r));
 }
 
 uint32_t VM::addInstrRuleRange(rword start, rword end, QBDI_InstrumentCallback cbk, AnalysisType type, void* data) {
@@ -306,14 +318,14 @@ uint32_t VM::addInstrRuleRange(rword start, rword end, QBDI_InstrumentCallback c
 }
 
 uint32_t VM::addInstrRuleRangeSet(RangeSet<rword> range, InstrumentCallback cbk, AnalysisType type, void* data) {
-    return engine->addInstrRule(InstrRuleUser(cbk, type, data, this, range));
+    return engine->addInstrRule(InstrRuleUser::unique(cbk, type, data, this, range));
 }
 
 uint32_t VM::addMnemonicCB(const char* mnemonic, InstPosition pos, InstCallback cbk, void *data) {
     RequireAction("VM::addMnemonicCB", mnemonic != nullptr, return VMError::INVALID_EVENTID);
     RequireAction("VM::addMnemonicCB", cbk != nullptr, return VMError::INVALID_EVENTID);
-    return engine->addInstrRule(InstrRuleBasic(
-        MnemonicIs(mnemonic),
+    return engine->addInstrRule(InstrRuleBasic::unique(
+        MnemonicIs::unique(mnemonic),
         getCallbackGenerator(cbk, data),
         pos,
         true
@@ -322,8 +334,8 @@ uint32_t VM::addMnemonicCB(const char* mnemonic, InstPosition pos, InstCallback 
 
 uint32_t VM::addCodeCB(InstPosition pos, InstCallback cbk, void *data) {
     RequireAction("VM::addCodeCB", cbk != nullptr, return VMError::INVALID_EVENTID);
-    return engine->addInstrRule(InstrRuleBasic(
-        True(),
+    return engine->addInstrRule(InstrRuleBasic::unique(
+        True::unique(),
         getCallbackGenerator(cbk, data),
         pos,
         true
@@ -332,8 +344,8 @@ uint32_t VM::addCodeCB(InstPosition pos, InstCallback cbk, void *data) {
 
 uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk, void *data) {
     RequireAction("VM::addCodeAddrCB", cbk != nullptr, return VMError::INVALID_EVENTID);
-    return engine->addInstrRule(InstrRuleBasic(
-        AddressIs(address),
+    return engine->addInstrRule(InstrRuleBasic::unique(
+        AddressIs::unique(address),
         getCallbackGenerator(cbk, data),
         pos,
         true
@@ -343,8 +355,8 @@ uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk, vo
 uint32_t VM::addCodeRangeCB(rword start, rword end, InstPosition pos, InstCallback cbk, void *data) {
     RequireAction("VM::addCodeRangeCB", start < end, return VMError::INVALID_EVENTID);
     RequireAction("VM::addCodeRangeCB", cbk != nullptr, return VMError::INVALID_EVENTID);
-    return engine->addInstrRule(InstrRuleBasic(
-        InstructionInRange(start, end),
+    return engine->addInstrRule(InstrRuleBasic::unique(
+        InstructionInRange::unique(start, end),
         getCallbackGenerator(cbk, data),
         pos,
         true
@@ -356,25 +368,25 @@ uint32_t VM::addMemAccessCB(MemoryAccessType type, InstCallback cbk, void *data)
     recordMemoryAccess(type);
     switch(type) {
         case MEMORY_READ:
-            return engine->addInstrRule(InstrRuleBasic(
-                DoesReadAccess(),
+            return engine->addInstrRule(InstrRuleBasic::unique(
+                DoesReadAccess::unique(),
                 getCallbackGenerator(cbk, data),
                 InstPosition::PREINST,
                 true
             ));
         case MEMORY_WRITE:
-            return engine->addInstrRule(InstrRuleBasic(
-                DoesWriteAccess(),
+            return engine->addInstrRule(InstrRuleBasic::unique(
+                DoesWriteAccess::unique(),
                 getCallbackGenerator(cbk, data),
                 InstPosition::POSTINST,
                 true
             ));
         case MEMORY_READ_WRITE:
-            return engine->addInstrRule(InstrRuleBasic(
-                Or({
-                    DoesReadAccess(),
-                    DoesWriteAccess(),
-                }),
+            return engine->addInstrRule(InstrRuleBasic::unique(
+                Or::unique(conv_unique<PatchCondition>(
+                    DoesReadAccess::unique(),
+                    DoesWriteAccess::unique()
+                )),
                 getCallbackGenerator(cbk, data),
                 InstPosition::POSTINST,
                 true
