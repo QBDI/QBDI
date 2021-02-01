@@ -58,7 +58,7 @@ namespace QBDI {
 
 Engine::Engine(const std::string& _cpu, const std::vector<std::string>& _mattrs, VMInstanceRef vminstance)
     : cpu(_cpu), mattrs(_mattrs), vminstance(vminstance), instrRulesCounter(0), vmCallbacksCounter(0),
-    eventMask(static_cast<VMEvent>(0)), running(false) {
+    eventMask(VMEvent::NO_EVENT), running(false) {
     init();
 }
 

@@ -380,7 +380,7 @@ uint16_t ExecBlock::newShadow(uint16_t tag) {
 uint16_t ExecBlock::getLastShadow(uint16_t tag) {
     uint16_t nextInstID = getNextInstID();
 
-    for (auto it = shadowRegistry.crbegin(); it != shadowRegistry.crend(); it++)  {
+    for (auto it = shadowRegistry.crbegin(); it != shadowRegistry.crend(); ++it)  {
         if (it->instID == nextInstID && it->tag == tag) {
             return it->shadowID;
         }

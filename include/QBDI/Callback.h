@@ -71,6 +71,7 @@ typedef enum {
 } InstPosition;
 
 typedef enum {
+    _QBDI_EI(NO_EVENT)              = 0,
     _QBDI_EI(SEQUENCE_ENTRY)        = 1,    /*!< Triggered when the execution enters a sequence.*/
     _QBDI_EI(SEQUENCE_EXIT)         = 1<<1, /*!< Triggered when the execution exits from the current sequence.*/
     _QBDI_EI(BASIC_BLOCK_ENTRY)     = 1<<2, /*!< Triggered when the execution enters a basic block.*/
