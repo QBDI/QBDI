@@ -44,7 +44,6 @@ InMemoryObject ComparedExecutor_X86_64::compileWithContextSwitch(const char* sou
                    "mov " << offsetof(QBDI::Context, gprState.r13) << "(%rdi), %r13\n"
                    "mov " << offsetof(QBDI::Context, gprState.r14) << "(%rdi), %r14\n"
                    "mov " << offsetof(QBDI::Context, gprState.r15) << "(%rdi), %r15\n"
-                   "mov %rbp, " << offsetof(QBDI::Context, hostState.bp) << "(%rdi)\n"
                    "mov %rsp, " << offsetof(QBDI::Context, hostState.sp) << "(%rdi)\n"
                    "mov " << offsetof(QBDI::Context, gprState.rbp) << "(%rdi), %rbp\n"
                    "mov " << offsetof(QBDI::Context, gprState.rsp) << "(%rdi), %rsp\n"
@@ -67,7 +66,6 @@ InMemoryObject ComparedExecutor_X86_64::compileWithContextSwitch(const char* sou
                    "mov %r14, " << offsetof(QBDI::Context, gprState.r14) << "(%rsp)\n"
                    "mov %r15, " << offsetof(QBDI::Context, gprState.r15) << "(%rsp)\n"
                    "mov %rbp, " << offsetof(QBDI::Context, gprState.rbp) << "(%rsp)\n"
-                   "mov " << offsetof(QBDI::Context, hostState.bp) << "(%rsp), %rbp\n"
                    "mov %rsp, %rdi\n"
                    "mov " << offsetof(QBDI::Context, hostState.sp) << "(%rsp), %rsp\n"
                    "pushfq\n"
@@ -139,7 +137,10 @@ QBDI::Context ComparedExecutor_X86_64::realExec(llvm::ArrayRef<uint8_t> code,
     #else
     __asm__ volatile(
         "mov %1, %%rdi;"
-        "call *%0;"
+        "mov %0, %%rsi;"
+        "push %%rbp;"
+        "call *%%rsi;"
+        "pop %%rbp;"
         :
         :"rm"(code.data()), "rm" (ctxBlock.base())
         :"rax", "rbx", "rcx", "rdx", "rdi", "rsi", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"

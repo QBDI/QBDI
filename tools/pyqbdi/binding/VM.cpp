@@ -128,6 +128,7 @@ void init_binding_VM(py::module_& m) {
         .def(py::init<const std::string&, const std::vector<std::string>&>(),
                 "Construct a new VM for a given CPU with specific attributes",
                 "cpu"_a = "", "mattrs"_a = std::vector<std::string>())
+        .def_property("options", &VM::getOptions, &VM::setOptions, "Options of the VM")
         .def("getGPRState", &VM::getGPRState, py::return_value_policy::reference_internal,
                 "Obtain the current general purpose register state.")
         .def("getFPRState", &VM::getFPRState, py::return_value_policy::reference_internal,

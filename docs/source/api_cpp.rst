@@ -9,11 +9,19 @@ Initialization
 --------------
 
 The :cpp:func:`QBDI::VM::VM` constructor is used to create a new VM instance, using host
-CPU as a reference::
+CPU as a reference and with default QBDI options::
 
     QBDI::VM *vm = new QBDI::VM();
 
-.. doxygenfunction:: QBDI::VM::VM(const std::string &cpu = "", const std::vector<std::string> &mattrs = {})
+.. doxygenfunction:: QBDI::VM::VM(const std::string &cpu = "", const std::vector<std::string> &mattrs = {}, Options opts = Options::NO_OPT)
+
+The options can be changed later if needed.
+
+.. doxygenenum:: QBDI::Options
+
+.. doxygenfunction:: QBDI::VM::getOptions
+
+.. doxygenfunction:: QBDI::VM::setOptions
 
 State Management
 ----------------

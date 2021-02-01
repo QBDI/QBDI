@@ -273,8 +273,10 @@ function hexPointer(ptr) {
 //
 var QBDI_C = Object.freeze({
     // VM
-    initVM: _qbdibinder.bind('qbdi_initVM', 'void', ['pointer', 'pointer', 'pointer']),
+    initVM: _qbdibinder.bind('qbdi_initVM', 'void', ['pointer', 'pointer', 'pointer', rword]),
     terminateVM: _qbdibinder.bind('qbdi_terminateVM', 'void', ['pointer']),
+    getOptions: _qbdibinder.bind('qbdi_getOptions', rword, ['pointer']),
+    setOptions: _qbdibinder.bind('qbdi_setOptions', 'void', ['pointer', rword]),
     addInstrumentedRange: _qbdibinder.bind('qbdi_addInstrumentedRange', 'void', ['pointer', rword, rword]),
     addInstrumentedModule: _qbdibinder.bind('qbdi_addInstrumentedModule', 'uchar', ['pointer', 'pointer']),
     addInstrumentedModuleFromAddr: _qbdibinder.bind('qbdi_addInstrumentedModuleFromAddr', 'uchar', ['pointer', rword]),
@@ -686,6 +688,32 @@ var AnalysisType = Object.freeze({
     ANALYSIS_SYMBOL : 1<<3
 });
 
+/**
+ * QBDI VM Options
+ */
+var Options = Object.freeze({
+    /**
+     * Default value
+     */
+    NO_OPT : 0,
+    /**
+     * Disable all operation on FPU (SSE, AVX, SIMD).
+     * May break the execution if the target use the FPU.
+     */
+    OPT_DISABLE_FPR : 1<<0,
+    /**
+     * Disable context switch optimisation when the target
+     * execblock doesn't used FPR.
+     */
+    OPT_DISABLE_OPTIONAL_FPR : 1<<1,
+    /**
+     * Used the AT&T syntax for instruction disassembly (for X86 and X86_64)
+     */
+    OPT_ATT_SYNTAX : 1<<24
+});
+
+
+
 class State {
     constructor(state) {
         if (!NativePointer.prototype.isPrototypeOf(state) || state.isNull()) {
@@ -931,6 +959,24 @@ class QBDI {
         version.patch = vInt & 0xf;
         Object.freeze(version);
         return version;
+    }
+
+    /**
+     * Get the current options of the VM
+     *
+     * @return    The current option
+     */
+    getOptions() {
+        return QBDI_C.getOptions(this.#vm);
+    }
+
+    /**
+     * Set the options of the VM
+     *
+     * @param options  The new options of the VM.
+     */
+    setOptions(options) {
+        QBDI_C.setOptions(this.#vm, options);
     }
 
     /**
@@ -1590,7 +1636,7 @@ class QBDI {
 
     _initVM() {
         var vmPtr = Memory.alloc(Process.pointerSize);
-        QBDI_C.initVM(vmPtr, NULL, NULL);
+        QBDI_C.initVM(vmPtr, NULL, NULL, 0);
         return Memory.readPointer(vmPtr);
     }
 

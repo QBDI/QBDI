@@ -23,7 +23,7 @@
 
 namespace QBDI {
 
-void qbdi_initVM(VMInstanceRef* instance, const char* cpu, const char** mattrs) {
+void qbdi_initVM(VMInstanceRef* instance, const char* cpu, const char** mattrs, Options opts) {
     RequireAction("VM_C::initVM", instance, return);
 
     *instance = nullptr;
@@ -40,7 +40,7 @@ void qbdi_initVM(VMInstanceRef* instance, const char* cpu, const char** mattrs) 
         }
     }
 
-    *instance = static_cast<VMInstanceRef>(new VM(cpuStr, mattrsStr));
+    *instance = static_cast<VMInstanceRef>(new VM(cpuStr, mattrsStr, opts));
 }
 
 
@@ -128,9 +128,19 @@ void qbdi_setGPRState(VMInstanceRef instance, GPRState* gprState) {
     static_cast<VM*>(instance)->setGPRState(gprState);
 }
 
-void qbdi_setFPRState(VMInstanceRef instance, FPRState* gprState) {
+void qbdi_setFPRState(VMInstanceRef instance, FPRState* fprState) {
     RequireAction("VM_C::setFPRState", instance, return);
-    static_cast<VM*>(instance)->setFPRState(gprState);
+    static_cast<VM*>(instance)->setFPRState(fprState);
+}
+
+Options qbdi_getOptions(VMInstanceRef instance) {
+    RequireAction("VM_C::getOptions", instance, return Options::NO_OPT);
+    return static_cast<VM*>(instance)->getOptions();
+}
+
+void qbdi_setOptions(VMInstanceRef instance, Options options) {
+    RequireAction("VM_C::setOptions", instance, return);
+    static_cast<VM*>(instance)->setOptions(options);
 }
 
 uint32_t qbdi_addMnemonicCB(VMInstanceRef instance, const char* mnemonic, InstPosition pos, InstCallback cbk, void *data) {

@@ -30,6 +30,7 @@
 
 #include "Callback.h"
 #include "InstAnalysis.h"
+#include "Options.h"
 #include "State.h"
 #include "Range.h"
 
@@ -89,11 +90,12 @@ private:
     GPRState*                                                       curGPRState;
     FPRState*                                                       curFPRState;
     ExecBlock*                                                      curExecBlock;
+    Options                                                         options;
     VMEvent                                                         eventMask;
     bool                                                            running;
 
     void init();
-    void reinit(const std::string& cpu, const std::vector<std::string>& mattrs);
+    void reinit(const std::string& cpu, const std::vector<std::string>& mattrs, Options opts);
 
     std::vector<Patch> patch(rword start);
 
@@ -113,7 +115,8 @@ public:
      * @param[in] mattrs     A list of additional attributes
      * @param[in] vminstance Pointer to public engine interface
      */
-    Engine(const std::string& cpu = "", const std::vector<std::string>& mattrs = {}, VMInstanceRef vminstance = nullptr);
+    Engine(const std::string& cpu = "", const std::vector<std::string>& mattrs = {},
+            Options opts = Options::NO_OPT, VMInstanceRef vminstance = nullptr);
 
     ~Engine();
 
@@ -148,11 +151,23 @@ public:
      */
     void        setGPRState(const GPRState* gprState);
 
-    /*! Set the GPR state
+    /*! Set the FPR state
      *
      * @param[in] fprState A structure containing the FPR state.
      */
     void        setFPRState(const FPRState* fprState);
+
+    /*! Get the current Options
+     */
+    Options     getOptions() const { return options; }
+
+    /*! Set the option
+     *
+     * If the new options mismatch the current one, clearAllCache will be called.
+     *
+     * @param[in] options  New options of the engine.
+     */
+    void        setOptions(Options options);
 
     /*! Add an address range to the set of instrumented address ranges.
      *

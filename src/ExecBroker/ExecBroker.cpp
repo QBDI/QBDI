@@ -17,6 +17,7 @@
  */
 #include "ExecBroker/ExecBroker.h"
 #include "Utility/LogSys.h"
+#include "Patch/ExecBlockFlags.h"
 
 namespace QBDI {
 
@@ -133,6 +134,7 @@ bool ExecBroker::transferExecution(rword addr, GPRState *gprState, FPRState *fpr
     transferBlock.getContext()->gprState = *gprState;
     transferBlock.getContext()->fprState = *fprState;
     transferBlock.getContext()->hostState.selector = addr;
+    transferBlock.getContext()->hostState.executeFlags = defaultExecuteFlags;
     // Execute transfer
     LogDebug("ExecBroker::transferExecution", "Transfering execution to 0x%" PRIRWORD " using transferBlock %p", addr, &transferBlock);
     transferBlock.run();

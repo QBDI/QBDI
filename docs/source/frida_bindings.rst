@@ -13,6 +13,10 @@ Initialization
 ^^^^^^^^^^^^^^
 .. js:autoclass:: QBDI
 
+.. js:autofunction:: QBDI#getOptions
+
+.. js:autofunction:: QBDI#setOptions
+
 State Management
 ^^^^^^^^^^^^^^^^
 
@@ -396,6 +400,13 @@ Globals
   .. js:autoattribute:: CONDITION_NOT_OVERFLOW
   .. js:autoattribute:: CONDITION_SIGN
   .. js:autoattribute:: CONDITION_NOT_SIGN
+
+.. js:autoclass:: Options
+
+    .. js:autoattribute:: NO_OPT
+    .. js:autoattribute:: OPT_DISABLE_FPR
+    .. js:autoattribute:: OPT_DISABLE_OPTIONAL_FPR
+    .. js:autoattribute:: OPT_ATT_SYNTAX
 
 Register values
 ---------------

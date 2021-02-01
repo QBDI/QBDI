@@ -121,9 +121,12 @@ static VMAction stopCallback(VMInstanceRef vm, GPRState* gprState, FPRState* fpr
     return VMAction::STOP;
 }
 
-VM::VM(const std::string& cpu, const std::vector<std::string>& mattrs) :
+VM::VM(const std::string& cpu, const std::vector<std::string>& mattrs, Options opts) :
     memoryLoggingLevel(0), memCBID(0), memReadGateCBID(VMError::INVALID_EVENTID), memWriteGateCBID(VMError::INVALID_EVENTID) {
-    engine = std::make_unique<Engine>(cpu, mattrs, this);
+    #if defined(_QBDI_ASAN_ENABLED_)
+    opts |= Options::OPT_DISABLE_FPR;
+    #endif
+    engine = std::make_unique<Engine>(cpu, mattrs, opts, this);
     memCBInfos = std::make_unique<std::vector<std::pair<uint32_t, MemCBInfo>>>();
     instrCBInfos = std::make_unique<std::vector<std::pair<uint32_t, std::unique_ptr<InstrCBInfo>>>>();
 }
@@ -210,6 +213,17 @@ void VM::setGPRState(const GPRState* gprState) {
 void VM::setFPRState(const FPRState* fprState) {
     RequireAction("VM::setFPRState", fprState != nullptr, return);
     engine->setFPRState(fprState);
+}
+
+Options VM::getOptions() const {
+    return engine->getOptions();
+}
+
+void VM::setOptions(Options options) {
+    #if defined(_QBDI_ASAN_ENABLED_)
+    options |= Options::OPT_DISABLE_FPR;
+    #endif
+    engine->setOptions(options);
 }
 
 void VM::addInstrumentedRange(rword start, rword end) {

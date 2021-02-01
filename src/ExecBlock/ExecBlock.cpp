@@ -20,6 +20,7 @@
 #include "llvm/Support/Format.h"
 
 #include "ExecBlock.h"
+#include "Patch/ExecBlockFlags.h"
 #include "Patch/Patch.h"
 #include "Patch/PatchGenerator.h"
 #include "Patch/PatchRule.h"
@@ -31,32 +32,23 @@
 #include "Utility/System.h"
 
 #include "Memory.hpp"
+#include "Options.h"
 #include "Platform.h"
 
 #if defined(QBDI_PLATFORM_WINDOWS)
-    #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
-        extern "C" void qbdi_runCodeBlockSSE(void *codeBlock);
-        extern "C" void qbdi_runCodeBlockAVX(void *codeBlock);
-    #else
-        extern "C" void qbdi_runCodeBlock(void *codeBlock);
-    #endif
+    extern "C" void qbdi_runCodeBlock(void *codeBlock, QBDI::rword execflags);
 #else
-    #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
-        extern void qbdi_runCodeBlockSSE(void *codeBlock) asm ("__qbdi_runCodeBlockSSE");
-        extern void qbdi_runCodeBlockAVX(void *codeBlock) asm ("__qbdi_runCodeBlockAVX");
-    #else
-        extern void qbdi_runCodeBlock(void *codeBlock) asm ("__qbdi_runCodeBlock");
-    #endif
+    extern void qbdi_runCodeBlock(void *codeBlock, QBDI::rword execflags) asm ("__qbdi_runCodeBlock");
 #endif
 
 namespace QBDI {
 
-uint32_t ExecBlock::epilogueSize = 0;
-RelocatableInst::UniquePtrVec ExecBlock::execBlockPrologue = RelocatableInst::UniquePtrVec();
-RelocatableInst::UniquePtrVec ExecBlock::execBlockEpilogue = RelocatableInst::UniquePtrVec();
-void (*ExecBlock::runCodeBlockFct)(void*) = NULL;
+ExecBlock::ExecBlock(const Assembly& assembly, VMInstanceRef vminstance,
+                     const std::vector<std::unique_ptr<RelocatableInst>>* execBlockPrologue,
+                     const std::vector<std::unique_ptr<RelocatableInst>>* execBlockEpilogue,
+                     uint32_t epilogueSize_)
+      : vminstance(vminstance), assembly(assembly), epilogueSize(epilogueSize_) {
 
-ExecBlock::ExecBlock(const Assembly &assembly, VMInstanceRef vminstance) : vminstance(vminstance), assembly(assembly) {
     // Allocate memory blocks
     std::error_code ec;
     // iOS now use 16k superpages, but as JIT mecanisms are totally differents
@@ -85,37 +77,35 @@ ExecBlock::ExecBlock(const Assembly &assembly, VMInstanceRef vminstance) : vmins
     codeStream = std::make_unique<memory_ostream>(codeBlock);
     pageState = RW;
 
-    // Epilogue and prologue management.
-    // If epilogueSize == 0 then static members are not yet initialized
+    std::vector<std::unique_ptr<RelocatableInst>> execBlockPrologue_;
+    std::vector<std::unique_ptr<RelocatableInst>> execBlockEpilogue_;
+
+    if (execBlockPrologue == nullptr) {
+        execBlockPrologue_ = getExecBlockPrologue(assembly.getOptions());
+        execBlockPrologue = &execBlockPrologue_;
+    }
+    if (execBlockEpilogue == nullptr) {
+        execBlockEpilogue_ = getExecBlockEpilogue(assembly.getOptions());
+        execBlockEpilogue = &execBlockEpilogue_;
+    }
     if(epilogueSize == 0) {
-        execBlockPrologue = getExecBlockPrologue();
-        execBlockEpilogue = getExecBlockEpilogue();
         // Only way to know the epilogue size is to JIT is somewhere
-        for(auto &inst: execBlockEpilogue) {
+        for(const auto &inst: *execBlockEpilogue) {
             assembly.writeInstruction(inst->reloc(this), codeStream.get());
         }
         epilogueSize = codeStream->current_pos();
         codeStream->seek(0);
-        // runCodeBlock variant selection
-        #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
-        if(isHostCPUFeaturePresent("avx")) {
-            LogDebug("ExecBlock::ExecBlock", "AVX support enabled in host context switches");
-            runCodeBlockFct = qbdi_runCodeBlockAVX;
-        }
-        else {
-            runCodeBlockFct = qbdi_runCodeBlockSSE;
-        }
-        #else
-        runCodeBlockFct = qbdi_runCodeBlock;
-        #endif
+        LogDebug("ExecBlock::ExecBlock", "Detect Epilogue size: %d", epilogueSize);
     }
     // JIT prologue and epilogue
     codeStream->seek(codeBlock.allocatedSize() - epilogueSize);
-    for(auto &inst: execBlockEpilogue) {
+    for(const auto &inst: *execBlockEpilogue) {
         assembly.writeInstruction(inst->reloc(this), codeStream.get());
     }
+    RequireAction("ExecBlock::ExecBlock", codeStream->current_pos() == codeBlock.allocatedSize() && "Wrong Epilogue Size", abort());
+
     codeStream->seek(0);
-    for(auto &inst: execBlockPrologue) {
+    for(const auto &inst: *execBlockPrologue) {
         assembly.writeInstruction(inst->reloc(this), codeStream.get());
     }
 }
@@ -173,6 +163,7 @@ void ExecBlock::selectSeq(uint16_t seqID) {
     currentSeq = seqID;
     currentInst = seqRegistry[currentSeq].startInstID;
     context->hostState.selector = reinterpret_cast<rword>(codeBlock.base()) + static_cast<rword>(instRegistry[seqRegistry[seqID].startInstID].offset);
+    context->hostState.executeFlags = seqRegistry[currentSeq].executeFlags;
 }
 
 void ExecBlock::run() {
@@ -181,7 +172,7 @@ void ExecBlock::run() {
         llvm::sys::Memory::InvalidateInstructionCache(codeBlock.base(), codeBlock.allocatedSize());
     else
         makeRX();
-    runCodeBlockFct(codeBlock.base());
+    qbdi_runCodeBlock(codeBlock.base(), context->hostState.executeFlags);
 }
 
 VMAction ExecBlock::execute() {
@@ -230,6 +221,7 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
     rword startOffset = (rword)codeStream->current_pos();
     uint16_t startInstID = getNextInstID();
     uint16_t seqID = getNextSeqID();
+    uint8_t executeFlags = 0;
     unsigned patchWritten = 0;
 
     // Refuse to write empty sequence
@@ -292,8 +284,7 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
             }
             needTerminator = true;
             break;
-        }
-        else {
+        } else {
             // Complete instruction was written, we add the metadata
             // Move the analysis of the instruction in the cached metadata
             instMetadata.push_back(seqIt->metadata.lightCopy());
@@ -304,6 +295,7 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
                                              static_cast<uint16_t>(shadowRegistry.size() - rollbackShadowRegistry)});
             // Update indexes
             needTerminator = not seqIt->metadata.modifyPC;
+            executeFlags |= seqIt->metadata.execblockFlags;
             seqIt++;
             patchWritten += 1;
         }
@@ -321,11 +313,18 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
     for(const RelocatableInst::UniquePtr &inst : jmpEpilogue) {
         assembly.writeInstruction(inst->reloc(this), codeStream.get());
     }
+    // change the flag of the basicblock
+    if (assembly.getOptions() & Options::OPT_DISABLE_FPR) {
+        executeFlags = 0;
+    } else if (assembly.getOptions() & Options::OPT_DISABLE_OPTIONAL_FPR) {
+        executeFlags = defaultExecuteFlags;
+    }
     // Register sequence
     uint16_t endInstID = getNextInstID() - 1;
-    seqRegistry.push_back(SeqInfo {startInstID, endInstID});
+    seqRegistry.push_back(SeqInfo {startInstID, endInstID, executeFlags});
     // Return write results
     unsigned bytesWritten = static_cast<unsigned>(codeStream->current_pos() - startOffset);
+    LogDebug("ExecBlock::writeBasicBlock", "End write sequence in basicblock %p with execFlags : %x", this, executeFlags);
     return SeqWriteResult {seqID, bytesWritten, patchWritten};
 }
 
@@ -335,6 +334,7 @@ uint16_t ExecBlock::splitSequence(uint16_t instID) {
     seqRegistry.push_back(SeqInfo {
         instID,
         seqRegistry[seqID].endInstID,
+        seqRegistry[seqID].executeFlags
     });
     return getNextSeqID() - 1;
 }

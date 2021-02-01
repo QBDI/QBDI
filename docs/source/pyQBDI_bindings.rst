@@ -28,6 +28,7 @@ VM
     :special-members: __init__
     :members:
 
+.. autodata:: pyqbdi.Options
 
 Callback
 --------

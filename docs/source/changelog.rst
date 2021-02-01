@@ -55,6 +55,18 @@ Next Version
 
   * Fix MemoryAccess for some generic instruction.
 
+* Add VM Options. (`#144 <https://github.com/QBDI/QBDI/pull/144>`_)
+
+  Some options can be provided to the VM to enable or disable some features:
+
+  * :cpp:enumerator:`QBDI::Options::OPT_DISABLE_FPR`: Disable FPRState backup and restore in context switches.
+    Only the GPRState will be used.
+  * :cpp:enumerator:`QBDI::Options::OPT_DISABLE_OPTIONAL_FPR`: When :cpp:enumerator:`QBDI::Options::OPT_DISABLE_FPR` isn't selected,
+    QBDI will detect if a BasicBlock needs FPRState. When BasicBlock doesn't need FPRState, the state will not be restored.
+    This option forces the restoration and backup of FPRState to every BasicBlock.
+  * :cpp:enumerator:`QBDI::Options::OPT_ATT_SYNTAX` for X86 and X86_64: :cpp:member:`QBDI::InstAnalysis::disassembly` will be in
+    AT&T syntax instead of Intel Syntax.
+
 Internal update:
 
 * Update LLVM to LLVM 10.0.1 (`#104 <https://github.com/QBDI/QBDI/pull/104>`_ and `#139 <https://github.com/QBDI/QBDI/pull/139>`_)
@@ -66,6 +78,7 @@ Internal update:
   A version of frida greater or equals to 14.0 is needed to run frida-qbdi.js (need support of ES2019).
 * Refactor MemoryAccess Code and add new tests (`#154 <https://github.com/QBDI/QBDI/pull/154>`_)
 * Handle VMCallback return value (`#155 <https://github.com/QBDI/QBDI/pull/155>`_)
+* Optimize Context Switch and FPRState restoration (`#144 <https://github.com/QBDI/QBDI/pull/144>`_)
 
 Version 0.7.1
 -------------

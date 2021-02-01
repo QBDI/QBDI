@@ -172,6 +172,26 @@ llvm::MCInst movzx64rr8(unsigned int dst, unsigned int src) {
     return inst;
 }
 
+llvm::MCInst test32ri(unsigned int base, uint32_t imm) {
+    llvm::MCInst inst;
+
+    inst.setOpcode(llvm::X86::TEST32ri);
+    inst.addOperand(llvm::MCOperand::createReg(base));
+    inst.addOperand(llvm::MCOperand::createImm(imm));
+
+    return inst;
+}
+
+llvm::MCInst test64ri32(unsigned int base, uint32_t imm) {
+    llvm::MCInst inst;
+
+    inst.setOpcode(llvm::X86::TEST64ri32);
+    inst.addOperand(llvm::MCOperand::createReg(base));
+    inst.addOperand(llvm::MCOperand::createImm(imm));
+
+    return inst;
+}
+
 llvm::MCInst jmp32m(unsigned int base, rword offset) {
     llvm::MCInst inst;
 
@@ -197,6 +217,27 @@ llvm::MCInst jmp64m(unsigned int base, rword offset) {
 
     return inst;
 }
+
+llvm::MCInst je(int32_t offset) {
+    llvm::MCInst inst;
+
+    inst.setOpcode(llvm::X86::JCC_4);
+    inst.addOperand(llvm::MCOperand::createImm(offset));
+    inst.addOperand(llvm::MCOperand::createImm(llvm::X86::CondCode::COND_E));
+
+    return inst;
+}
+
+llvm::MCInst jne(int32_t offset) {
+    llvm::MCInst inst;
+
+    inst.setOpcode(llvm::X86::JCC_4);
+    inst.addOperand(llvm::MCOperand::createImm(offset));
+    inst.addOperand(llvm::MCOperand::createImm(llvm::X86::CondCode::COND_NE));
+
+    return inst;
+}
+
 
 llvm::MCInst jmp(rword offset) {
     llvm::MCInst inst;
@@ -415,6 +456,13 @@ llvm::MCInst movzxrr8(unsigned int dst, unsigned int src) {
         return movzx32rr8(dst, src);
 }
 
+llvm::MCInst testri(unsigned int base, uint32_t imm) {
+    if constexpr(is_x86_64)
+        return test64ri32(base, imm);
+    else
+        return test32ri(base, imm);
+}
+
 llvm::MCInst pushr(unsigned int reg) {
     if constexpr(is_x86_64)
         return push64r(reg);
@@ -530,6 +578,18 @@ RelocatableInst::UniquePtr Popf() {
 
 RelocatableInst::UniquePtr Ret() {
     return NoReloc::unique(ret());
+}
+
+RelocatableInst::UniquePtr Test(Reg reg, unsigned int value) {
+    return NoReloc::unique(testri(reg, value));
+}
+
+RelocatableInst::UniquePtr Je(int32_t offset) {
+    return NoReloc::unique(je(offset));
+}
+
+RelocatableInst::UniquePtr Jne(int32_t offset) {
+    return NoReloc::unique(jne(offset));
 }
 
 }

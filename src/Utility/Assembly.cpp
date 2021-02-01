@@ -37,19 +37,19 @@
 namespace QBDI {
 
 Assembly::Assembly(llvm::MCContext &MCTX, std::unique_ptr<llvm::MCAsmBackend> MAB, llvm::MCInstrInfo &MCII,
-                   const llvm::Target &target, llvm::MCSubtargetInfo &MSTI)
-    : MCII(MCII), MRI(*MCTX.getRegisterInfo()), MAI(*MCTX.getAsmInfo()), MSTI(MSTI) {
+                   const llvm::Target *target, llvm::MCSubtargetInfo &MSTI, Options options)
+    : target(target), MCII(MCII), MRI(*MCTX.getRegisterInfo()), MAI(*MCTX.getAsmInfo()), MSTI(MSTI), options(options) {
 
     unsigned int variant = 0;
 
     null_ostream = std::make_unique<llvm::raw_null_ostream>();
 
     disassembler = std::unique_ptr<llvm::MCDisassembler>(
-        target.createMCDisassembler(MSTI, MCTX)
+        target->createMCDisassembler(MSTI, MCTX)
     );
 
     auto codeEmitter = std::unique_ptr<llvm::MCCodeEmitter>(
-        target.createMCCodeEmitter(MCII, MRI, MCTX)
+        target->createMCCodeEmitter(MCII, MRI, MCTX)
     );
 
     auto objectWriter = std::unique_ptr<llvm::MCObjectWriter>(
@@ -60,20 +60,33 @@ Assembly::Assembly(llvm::MCContext &MCTX, std::unique_ptr<llvm::MCAsmBackend> MA
         MCTX, std::move(MAB), std::move(codeEmitter), std::move(objectWriter)
     );
 
-    // TODO: find better way to handle variant
-    if constexpr(is_x86_64 or is_x86)
-        variant = 1; // Force Intel
-    else
-        variant = MAI.getAssemblerDialect();
+    #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+    variant = ((options & Options::OPT_ATT_SYNTAX) == 0)?1:0;
+    #else
+    variant = MAI.getAssemblerDialect();
+    #endif
 
     asmPrinter = std::unique_ptr<llvm::MCInstPrinter>(
-        target.createMCInstPrinter(MSTI.getTargetTriple(), variant, MAI, MCII, MRI)
+        target->createMCInstPrinter(MSTI.getTargetTriple(), variant, MAI, MCII, MRI)
     );
     asmPrinter->setPrintImmHex(true);
     asmPrinter->setPrintImmHex(llvm::HexStyle::C);
 }
 
 Assembly::~Assembly() = default;
+
+void Assembly::setOptions(Options opts) {
+    #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+    if (((opts ^ options) & Options::OPT_ATT_SYNTAX) != 0) {
+        asmPrinter = std::unique_ptr<llvm::MCInstPrinter>(
+            target->createMCInstPrinter(MSTI.getTargetTriple(), ((opts & Options::OPT_ATT_SYNTAX) == 0)?1:0, MAI, MCII, MRI)
+        );
+        asmPrinter->setPrintImmHex(true);
+        asmPrinter->setPrintImmHex(llvm::HexStyle::C);
+    }
+    #endif
+    options = opts;
+}
 
 llvm::MCDisassembler::DecodeStatus Assembly::getInstruction(llvm::MCInst &instr, uint64_t &size,
                                          llvm::ArrayRef< uint8_t > bytes, uint64_t address) const {

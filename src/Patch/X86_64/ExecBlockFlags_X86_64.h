@@ -15,37 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef INSTMETADATA_H
-#define INSTMETADATA_H
+#ifndef ExecBlockFlags_X86_64_H
+#define ExecBlockFlags_X86_64_H
 
-#include "llvm/MC/MCInst.h"
-
-#include "Utility/InstAnalysis_prive.h"
-
-#include "State.h"
+#include <memory>
+#include <vector>
 
 namespace QBDI {
 
-class InstMetadata {
-public:
-    llvm::MCInst inst;
-    rword address;
-    uint32_t instSize;
-    uint32_t patchSize;
-    bool modifyPC;
-    bool merge;
-    uint8_t execblockFlags;
-    mutable InstAnalysisPtr analysis;
-
-    inline rword endAddress() const {
-        return address + instSize;
-    }
-
-    inline InstMetadata lightCopy() const {
-        return {inst, address, instSize, patchSize, modifyPC, merge, execblockFlags, nullptr};
-    }
-};
+typedef enum : uint8_t {
+    needAVX = 1<<0,
+    needFPU = 1<<1
+} ExecBlockFlags;
 
 }
 
-#endif // INSTMETADATA_H
+#endif

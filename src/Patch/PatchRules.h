@@ -21,6 +21,7 @@
 #include <memory>
 #include <vector>
 
+#include "Options.h"
 #include "State.h"
 
 namespace QBDI {
@@ -28,9 +29,9 @@ namespace QBDI {
 class PatchRule;
 class RelocatableInst;
 
-std::vector<std::unique_ptr<RelocatableInst>> getExecBlockPrologue();
+std::vector<std::unique_ptr<RelocatableInst>> getExecBlockPrologue(Options opts);
 
-std::vector<std::unique_ptr<RelocatableInst>> getExecBlockEpilogue();
+std::vector<std::unique_ptr<RelocatableInst>> getExecBlockEpilogue(Options opts);
 
 std::vector<std::unique_ptr<RelocatableInst>> getTerminator(rword address);
 

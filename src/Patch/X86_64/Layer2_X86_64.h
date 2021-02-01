@@ -54,6 +54,14 @@ llvm::MCInst mov64rm(unsigned int dst, unsigned int base, rword scale, unsigned 
 
 llvm::MCInst movzx64rr8(unsigned int dst, unsigned int src);
 
+llvm::MCInst test32ri(unsigned int base, uint32_t imm);
+
+llvm::MCInst test64ri32(unsigned int base, uint32_t imm);
+
+llvm::MCInst je(int32_t offset);
+
+llvm::MCInst jne(int32_t offset);
+
 llvm::MCInst jmp32m(unsigned int base, rword offset);
 
 llvm::MCInst jmp64m(unsigned int base, rword offset);
@@ -106,6 +114,8 @@ llvm::MCInst movrm(unsigned int dst, unsigned int base, rword scale, unsigned in
 
 llvm::MCInst movzxrr8(unsigned int dst, unsigned int src);
 
+llvm::MCInst testri(unsigned int base, uint32_t imm);
+
 llvm::MCInst pushr(unsigned int reg);
 
 llvm::MCInst popr(unsigned int reg);
@@ -155,6 +165,12 @@ std::unique_ptr<RelocatableInst> Pushf();
 std::unique_ptr<RelocatableInst> Popf();
 
 std::unique_ptr<RelocatableInst> Ret();
+
+std::unique_ptr<RelocatableInst> Test(Reg reg, unsigned int value);
+
+std::unique_ptr<RelocatableInst> Je(int32_t offset);
+
+std::unique_ptr<RelocatableInst> Jne(int32_t offset);
 
 }
 
