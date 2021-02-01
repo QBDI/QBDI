@@ -58,13 +58,19 @@ class TaggedShadow : public RelocatableInst, public AutoAlloc<RelocatableInst, T
     unsigned int opn;
     uint16_t tag;
     rword inst_size;
+    bool create;
 
 public:
-    TaggedShadow(llvm::MCInst&& inst, unsigned int opn, uint16_t tag, rword inst_size)
-        : RelocatableInst(std::move(inst)), opn(opn), tag(tag), inst_size(inst_size) {};
+    TaggedShadow(llvm::MCInst&& inst, unsigned int opn, uint16_t tag, rword inst_size, bool create=true)
+        : RelocatableInst(std::move(inst)), opn(opn), tag(tag), inst_size(inst_size), create(create) {};
 
     llvm::MCInst reloc(ExecBlock *exec_block) const override {
-        uint16_t id = exec_block->newShadow(tag);
+        uint16_t id;
+        if (create) {
+            id = exec_block->newShadow(tag);
+        } else {
+            id = exec_block->getLastShadow(tag);
+        }
         llvm::MCInst res = inst;
         res.getOperand(opn).setImm(
             exec_block->getDataBlockOffset() + exec_block->getShadowOffset(id) - inst_size
@@ -77,13 +83,19 @@ class TaggedShadowAbs : public RelocatableInst, public AutoAlloc<RelocatableInst
 
     unsigned int opn;
     uint16_t tag;
+    bool create;
 
 public:
-    TaggedShadowAbs(llvm::MCInst&& inst, unsigned int opn, uint16_t tag)
-        : RelocatableInst(std::move(inst)), opn(opn), tag(tag) {};
+    TaggedShadowAbs(llvm::MCInst&& inst, unsigned int opn, uint16_t tag, bool create=true)
+        : RelocatableInst(std::move(inst)), opn(opn), tag(tag), create(create) {};
 
     llvm::MCInst reloc(ExecBlock *exec_block) const override {
-        uint16_t id = exec_block->newShadow(tag);
+        uint16_t id;
+        if (create) {
+            id = exec_block->newShadow(tag);
+        } else {
+            id = exec_block->getLastShadow(tag);
+        }
         llvm::MCInst res = inst;
         res.getOperand(opn).setImm(
             exec_block->getDataBlockBase() + exec_block->getShadowOffset(id)
@@ -92,25 +104,24 @@ public:
     }
 };
 
-inline std::shared_ptr<RelocatableInst> DataBlockRelx86(llvm::MCInst&& inst, unsigned int opn, rword offset, unsigned int opn2, rword inst_size) {
+inline std::shared_ptr<RelocatableInst> DataBlockRelx86(llvm::MCInst&& inst, unsigned int opn, rword offset, rword inst_size) {
     if constexpr(is_x86_64) {
-        inst.getOperand(opn2).setReg(Reg(REG_PC));
-        return DataBlockRel(std::move(inst), opn, offset - inst_size);
+        inst.getOperand(opn /* AddrBaseReg */).setReg(Reg(REG_PC));
+        return DataBlockRel(std::move(inst), opn + 3 /* AddrDisp */, offset - inst_size);
     } else {
-        inst.getOperand(opn2).setReg(0);
-        return DataBlockAbsRel(std::move(inst), opn, offset);
+        inst.getOperand(opn /* AddrBaseReg */).setReg(0);
+        return DataBlockAbsRel(std::move(inst), opn + 3 /* AddrDisp */, offset);
     }
 }
 
-inline std::shared_ptr<RelocatableInst> TaggedShadowx86(llvm::MCInst&& inst, unsigned int opn, uint16_t tag, unsigned int opn2, rword inst_size) {
+inline std::shared_ptr<RelocatableInst> TaggedShadowx86(llvm::MCInst&& inst, unsigned int opn, uint16_t tag, rword inst_size, bool create=true) {
     if constexpr(is_x86_64) {
-        inst.getOperand(opn2).setReg(Reg(REG_PC));
-        return TaggedShadow(std::move(inst), opn, tag, inst_size);
+        inst.getOperand(opn /* AddrBaseReg */).setReg(Reg(REG_PC));
+        return TaggedShadow(std::move(inst), opn + 3 /* AddrDisp */, tag, inst_size, create);
     } else {
-        inst.getOperand(opn2).setReg(0);
-        return TaggedShadowAbs(std::move(inst), opn, tag);
+        inst.getOperand(opn /* AddrBaseReg */).setReg(0);
+        return TaggedShadowAbs(std::move(inst), opn + 3 /* AddrDisp */, tag, create);
     }
-
 }
 
 }

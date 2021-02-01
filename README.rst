@@ -54,8 +54,8 @@ Status
 =======   ==============================   ======================   =================================
 CPU       Operating Systems                Execution                Memory Access Information
 =======   ==============================   ======================   =================================
-x86-64    Android, Linux, macOS, Windows   :green:`Supported`       :yellow:`Partial (only non SIMD)`
-x86       Android, Linux, macOS, Windows   :green:`Supported`       :yellow:`Partial (only non SIMD)`
+x86-64    Android, Linux, macOS, Windows   :green:`Supported`       :green:`Supported`
+x86       Android, Linux, macOS, Windows   :green:`Supported`       :green:`Supported`
 ARM       Linux, Android, iOS              :orange:`Planned (*)`    :orange:`Planned (*)`
 AArch64   Android                          :orange:`Planned (*)`    :orange:`Planned (*)`
 =======   ==============================   ======================   =================================

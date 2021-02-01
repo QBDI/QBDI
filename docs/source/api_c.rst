@@ -506,6 +506,9 @@ shows how to use those APIs to log the memory writes.
 .. doxygenenum:: MemoryAccessType
    :project: QBDI_C
 
+.. doxygenenum:: MemoryAccessFlags
+   :project: QBDI_C
+
 .. doxygenfunction:: qbdi_getInstMemoryAccess
    :project: QBDI_C
 

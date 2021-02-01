@@ -33,7 +33,7 @@ template<typename T> class PureEval {
 public:
 
     operator std::vector<std::shared_ptr<RelocatableInst>>() {
-        return (static_cast<T*>(this))->generate(nullptr, 0, 0, nullptr, nullptr);
+        return (static_cast<T*>(this))->generate(nullptr, 0, 0, nullptr, nullptr, nullptr);
     }
 };
 
@@ -46,7 +46,7 @@ public:
     using UniqPtrVec   = std::vector<std::unique_ptr<PatchGenerator>>;
 
     virtual std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const = 0;
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const = 0;
 
     virtual ~PatchGenerator() = default;
 
@@ -72,7 +72,7 @@ public:
      *   (depends on the current instructions and transforms)
     */
     std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 class DoNotInstrument : public PatchGenerator, public AutoAlloc<PatchGenerator, DoNotInstrument>
@@ -90,7 +90,7 @@ public:
      *   (none)
     */
     std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override {
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override {
         return {};
     }
 
@@ -118,7 +118,7 @@ public:
      * MOV REG64 temp, REG64 reg
     */
     std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 class GetOperand : public PatchGenerator, public AutoAlloc<PatchGenerator, GetOperand> {
@@ -141,7 +141,7 @@ public:
      *   MOV REG64 temp, IMM64/REG64 op
     */
     std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 
@@ -163,104 +163,43 @@ public:
      * MOV REG64 temp, IMM64 cst
     */
     std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
+class ReadTemp : public PatchGenerator, public AutoAlloc<PatchGenerator, ReadTemp> {
 
-class GetReadAddress : public PatchGenerator, public AutoAlloc<PatchGenerator, GetReadAddress> {
+    Temp  temp;
+    enum {
+        OffsetType,
+        ShadowType
+    } type;
 
-    Temp temp;
+    Offset offset;
+    Shadow shadow;
 
 public:
 
-    /*! Resolve the memory address where the instructions will read its value and copy the address in a
-     * temporary. This PatchGenerator is only guaranteed to work before the instruction has been
-     * executed.
+    /*! Write a temporary value in the data block at the specified offset. This can be used to overwrite
+     * register values in the context part of the data block.
      *
-     * @param[in] temp   A temporary where the memory address will be copied.
+     * @param[in] temp      A temporary to store the shadow value.
+     * @param[in] offset    The offset in the data block where the temporary will be read.
     */
-    GetReadAddress(Temp temp) : temp(temp) {}
+    ReadTemp(Temp temp, Offset offset): temp(temp), type(OffsetType), offset(offset), shadow(0) {}
+
+    /*! Read a temporary value from the last shadow with the same tag for this instruction.
+     *
+     * @param[in] temp      A temporary to store the shadow value.
+     * @param[in] shadow    The shadow in the data block where the temporary will be read.
+    */
+    ReadTemp(Temp temp, Shadow shadow): temp(temp), type(ShadowType), offset(0), shadow(shadow) {}
 
     /*! Output:
      *
-     * if stack access:
-     * MOV REG64 temp, REG64 RSP
-     *
-     * else:
-     * LEA REG64 temp, MEM64 addr
+     * MOV REG64 temp, MEM64 DataBlock[offset]
     */
     std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
-};
-
-class GetWriteAddress : public PatchGenerator, public AutoAlloc<PatchGenerator, GetWriteAddress> {
-
-    Temp temp;
-
-public:
-
-    /*! Resolve the memory address where the instructions will write its value and copy the address in a
-     * temporary. This PatchGenerator is only guaranteed to work before the instruction has been
-     * executed.
-     *
-     * @param[in] temp   A temporary where the memory address will be copied.
-    */
-    GetWriteAddress(Temp temp) : temp(temp) {}
-
-    /*! Output:
-     *
-     * if stack access:
-     * MOV REG64 temp, REG64 RSP
-     *
-     * else:
-     * LEA REG64 temp, MEM64 addr
-    */
-    std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
-};
-
-class GetReadValue : public PatchGenerator, public AutoAlloc<PatchGenerator, GetReadValue> {
-
-    Temp temp;
-
- public:
-
-    /*! Resolve the memory address where the instructions will read its value and copy the value in a
-     * temporary. This PatchGenerator is only guaranteed to work before the instruction has been
-     * executed.
-     *
-     * @param[in] temp   A temporary where the memory value will be copied.
-    */
-    GetReadValue(Temp temp) : temp(temp) {}
-
-    /*! Output:
-     *
-     * MOV REG64 temp, MEM64 val
-    */
-    std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-         rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
-};
-
-class GetWriteValue : public PatchGenerator, public AutoAlloc<PatchGenerator, GetWriteValue> {
-
-    Temp temp;
-
-public:
-
-    /*! Resolve the memory address where the instructions has written its value and copy back the value
-     * in a temporary. This PatchGenerator is only guaranteed to work after the instruction has been
-     * executed.
-     *
-     * @param[in] temp   A temporary where the memory value will be copied.
-    */
-    GetWriteValue(Temp temp) : temp(temp) {}
-
-    /*! Output:
-     *
-     * MOV REG64 temp, MEM64 val
-    */
-    std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-         rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 class WriteTemp : public PatchGenerator, public AutoAlloc<PatchGenerator, WriteTemp> {
@@ -281,14 +220,14 @@ public:
     /*! Write a temporary value in the data block at the specified offset. This can be used to overwrite
      * register values in the context part of the data block.
      *
-     * @param[in] temp    A temporary which will be written.
+     * @param[in] temp    A temporary which will be written.  The value of the temporary is unchanged.
      * @param[in] offset  The offset in the data block where the temporary will be written.
     */
     WriteTemp(Temp temp, Offset offset): temp(temp), type(OffsetType), offset(offset), shadow(0) {}
 
     /*! Write a temporary value in a shadow in the data block.
      *
-     * @param[in] temp      A temporary which will be written.
+     * @param[in] temp      A temporary which will be written. The value of the temporary is unchanged.
      * @param[in] shadow    The shadow use to store the value.
     */
     WriteTemp(Temp temp, Shadow shadow): temp(temp), type(ShadowType), offset(0), shadow(shadow) {}
@@ -298,7 +237,7 @@ public:
      * MOV MEM64 DataBlock[offset], REG64 temp
     */
     std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
 
     bool modifyPC() const override {return offset == Offset(Reg(REG_PC));}
 };
@@ -324,7 +263,7 @@ public:
      * MOV MEM64 DataBlock[offset], REG64 reg
     */
     std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 class LoadReg : public PatchGenerator, public AutoAlloc<PatchGenerator, LoadReg>,
@@ -348,7 +287,7 @@ public:
      * MOV REG64 reg, MEM64 DataBlock[offset]
     */
     std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 class GetInstId : public PatchGenerator, public AutoAlloc<PatchGenerator, GetInstId> {
@@ -370,7 +309,7 @@ public:
      * MOV REG64 temp, IMM64 instID
     */
     std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 class JmpEpilogue : public PatchGenerator, public AutoAlloc<PatchGenerator, JmpEpilogue>,
@@ -387,7 +326,7 @@ public:
      * JMP Offset(Epilogue)
     */
     std::vector<std::shared_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) const override;
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, const Patch *toMerge) const override;
 };
 
 

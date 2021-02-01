@@ -249,14 +249,14 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
             // fill the operand analysis
             switch (opdesc.OperandType) {
                 case llvm::MCOI::OPERAND_IMMEDIATE:
-                    opa.size = getImmediateSize(inst, &desc);
+                    opa.size = getImmediateSize(inst, desc);
                     break;
                 case llvm::MCOI::OPERAND_MEMORY:
                     opa.flag |= OPERANDFLAG_ADDR;
                     opa.size = sizeof(rword);
                     break;
                 case llvm::MCOI::OPERAND_PCREL:
-                    opa.size = getImmediateSize(inst, &desc);
+                    opa.size = getImmediateSize(inst, desc);
                     opa.flag |= OPERANDFLAG_PCREL;
                     break;
                 case llvm::MCOI::OPERAND_UNKNOWN:
@@ -363,7 +363,7 @@ const InstAnalysis* analyzeInstMetadata(const InstMetadata& instMetadata, Analys
         instAnalysis->isPredicable      = desc.isPredicable();
         instAnalysis->loadSize          = getReadSize(inst);
         instAnalysis->storeSize         = getWriteSize(inst);
-        instAnalysis->mayLoad           = instAnalysis->loadSize != 0;
+        instAnalysis->mayLoad           = instAnalysis->loadSize != 0 || unsupportedRead(inst);
         instAnalysis->mayStore          = instAnalysis->storeSize != 0;
         instAnalysis->mayLoad_LLVM      = desc.mayLoad();
         instAnalysis->mayStore_LLVM     = desc.mayStore();

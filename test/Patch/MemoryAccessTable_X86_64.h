@@ -15,24 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef QBDITEST_MEMORYACCESSTABLE
+#define QBDITEST_MEMORYACCESSTABLE
 
-#ifndef QBDITEST_MEMORYACCESSTEST_H
-#define QBDITEST_MEMORYACCESSTEST_H
+#include "TestSetup/LLVMTestEnv.h"
 
-#include <memory>
-
-#include "VM.h"
-
-class MemoryAccessTest {
-    protected:
-        MemoryAccessTest();
-        ~MemoryAccessTest();
-
-        bool runOnASM(QBDI::rword* retval, const char* source, const std::vector<QBDI::rword>& args = {});
-
-        QBDI::VM vm;
-        QBDI::GPRState* state;
-        uint8_t* fakestack;
+class MemoryAccessTable_X86_64 : public LLVMTestEnv {
 };
 
-#endif /* QBDITEST_MEMORYACCESSTEST_H */
+#endif /* QBDITEST_MEMORYACCESSTABLE */

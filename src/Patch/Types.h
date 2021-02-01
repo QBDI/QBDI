@@ -82,6 +82,16 @@ public:
 
 };
 
+enum ShadowReservedTag : uint16_t {
+
+    // MemoryAccess Tag
+    MEMORY_TAG_BEGIN  = 0xffe0,
+    MEMORY_TAG_END    = 0xfff0,
+
+    // also defined in Callback.h
+    Untagged = 0xffff,
+};
+
 /*! Structure representing a constant value in PatchDSL.
 */
 struct Constant {

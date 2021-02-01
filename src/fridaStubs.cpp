@@ -21,13 +21,14 @@ struct StructDesc {
 QBDI_EXPORT const StructDesc* qbdi_getMemoryAccessStructDesc() {
     static const StructDesc MemoryAccessDesc {
         sizeof(MemoryAccess),
-        5,
+        6,
         {
             offsetof(MemoryAccess, instAddress),
             offsetof(MemoryAccess, accessAddress),
             offsetof(MemoryAccess, value),
             offsetof(MemoryAccess, size),
-            offsetof(MemoryAccess, type)
+            offsetof(MemoryAccess, type),
+            offsetof(MemoryAccess, flags),
         }
     };
 

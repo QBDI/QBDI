@@ -19,6 +19,10 @@
 #include "MemoryAccessTest.h"
 
 #include "inttypes.h"
+#include <string>
+#include <sstream>
+
+#include "TestSetup/InMemoryAssembler.h"
 
 #include "Platform.h"
 #include "Memory.hpp"
@@ -178,6 +182,22 @@ MemoryAccessTest::~MemoryAccessTest() {
     QBDI::alignedFree(fakestack);
 }
 
+bool MemoryAccessTest::runOnASM(QBDI::rword* retval, const char* source, const std::vector<QBDI::rword>& args) {
+    std::ostringstream      finalSource;
+
+    finalSource << source << "\n"
+                << "ret\n";
+
+    InMemoryObject object = InMemoryObject(finalSource.str().c_str());
+
+    const llvm::ArrayRef<uint8_t>& code = object.getCode();
+    llvm::sys::Memory::InvalidateInstructionCache(code.data(), code.size());
+
+    vm.addInstrumentedRange((QBDI::rword) code.data(), (QBDI::rword) code.data() + code.size());
+    vm.clearCache((QBDI::rword) code.data(), (QBDI::rword) code.data() + code.size());
+
+    return vm.call(retval, (QBDI::rword) code.data(), args);
+}
 
 QBDI::VMAction checkArrayRead8(QBDI::VMInstanceRef vm, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* data) {
 

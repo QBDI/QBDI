@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "Patch/InstrRule.h"
 #include "Patch/InstrRules.h"
 #include "Patch/Patch.h"
@@ -28,6 +27,11 @@ namespace QBDI {
 
 void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI,
                            const PatchGenerator::SharedPtrVec patchGen, bool breakToHost, InstPosition position) const {
+
+    if (patchGen.size() == 0 && breakToHost == false) {
+        return;
+    }
+
     /* The instrument function needs to handle several different cases. An instrumentation can
      * be either prepended or appended to the patch and, in each case, can trigger a break to
      * host.
@@ -38,7 +42,7 @@ void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const ll
     // Generate the instrumentation code from the original instruction context
     for(const PatchGenerator::SharedPtr& g : patchGen) {
         append(instru,
-            g->generate(&patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, &tempManager, nullptr)
+            g->generate(&patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII, &tempManager, nullptr)
         );
     }
 
@@ -58,6 +62,7 @@ void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const ll
                                 &patch.metadata.inst,
                                 patch.metadata.address,
                                 patch.metadata.instSize,
+                                MCII,
                                 &tempManager,
                                 nullptr
                            )
@@ -73,6 +78,7 @@ void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const ll
                                 &patch.metadata.inst,
                                 patch.metadata.address,
                                 patch.metadata.instSize,
+                                MCII,
                                 &tempManager,
                                 nullptr
                            )
@@ -121,6 +127,10 @@ void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const ll
 }
 
 bool InstrRuleBasic::canBeApplied(const Patch &patch, const llvm::MCInstrInfo* MCII) const {
+    return condition->test(patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII);
+}
+
+bool InstrRuleDynamic::canBeApplied(const Patch &patch, const llvm::MCInstrInfo* MCII) const {
     return condition->test(patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII);
 }
 

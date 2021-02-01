@@ -40,6 +40,21 @@ Next Version
   The call order of the callback has changed for the PREINST callback. If an instruction has multiple callbacks in PREINST position, they will be called
   in the reverse order of registration.
 
+* Support SIMD MemoryAccess and change :cpp:struct:`QBDI::MemoryAccess` structure (`#154 <https://github.com/QBDI/QBDI/pull/154>`_)
+
+  * Add :cpp:member:`QBDI::MemoryAccess::flags`. In some cases, QBDI cannot provide all information about the access. This field
+    describes the limitation for each access. Three limitations may be reached:
+
+    * :cpp:enumerator:`QBDI::MemoryAccessFlags::MEMORY_UNKNOWN_SIZE`: the size of the access isn't known. Only the address is valid.
+      The flag is only set for instruction with REP prefix before the execution of the instruction.
+    * :cpp:enumerator:`QBDI::MemoryAccessFlags::MEMORY_MINIMUM_SIZE`: the size isn't the real size of the access, but the expected minimal size.
+      This flag is used for instruction with complex access like ``XSAVE`` and ``XRSTOR``.
+    * :cpp:enumerator:`QBDI::MemoryAccessFlags::MEMORY_UNKNOWN_VALUE`: the value of the access hasn't been saved.
+      The more common reason is that the access size is greater than the size of :cpp:member:`QBDI::MemoryAccess::value`.
+      This flag is also used for instruction with REP prefix when the access size cannot be determined during the instrumentation.
+
+  * Fix MemoryAccess for some generic instruction.
+
 Internal update:
 
 * Update LLVM to LLVM 10.0.1 (`#104 <https://github.com/QBDI/QBDI/pull/104>`_ and `#139 <https://github.com/QBDI/QBDI/pull/139>`_)
@@ -49,6 +64,7 @@ Internal update:
 * Use Github Actions to build dev-next package of QBDI (linux and android) and PyQBDI (linux) (`#147 <https://github.com/QBDI/QBDI/pull/147>`_)
 * Rewrite frida-qbdi.js and use sphinx-js for frida-QBDI documentation (`#146 <https://github.com/QBDI/QBDI/pull/146>`_).
   A version of frida greater or equals to 14.0 is needed to run frida-qbdi.js (need support of ES2019).
+* Refactor MemoryAccess Code and add new tests (`#154 <https://github.com/QBDI/QBDI/pull/154>`_)
 
 Version 0.7.1
 -------------

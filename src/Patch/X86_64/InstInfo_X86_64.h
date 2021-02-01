@@ -15,24 +15,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef INSTINFO_X86_64_H
+#define INSTINFO_X86_64_H
 
-#ifndef QBDITEST_MEMORYACCESSTEST_H
-#define QBDITEST_MEMORYACCESSTEST_H
+#include "Patch/InstInfo.h"
 
-#include <memory>
+namespace QBDI {
 
-#include "VM.h"
+bool isMinSizeRead(const llvm::MCInst& inst);
 
-class MemoryAccessTest {
-    protected:
-        MemoryAccessTest();
-        ~MemoryAccessTest();
+bool isMinSizeWrite(const llvm::MCInst& inst);
 
-        bool runOnASM(QBDI::rword* retval, const char* source, const std::vector<QBDI::rword>& args = {});
+bool isDoubleRead(const llvm::MCInst& inst);
 
-        QBDI::VM vm;
-        QBDI::GPRState* state;
-        uint8_t* fakestack;
-};
+// does the instruction may change the value of register used to address a strore
+bool mayChangeWriteAddr(const llvm::MCInst& inst, const llvm::MCInstrDesc& desc);
 
-#endif /* QBDITEST_MEMORYACCESSTEST_H */
+bool hasREPPrefix(const llvm::MCInst& instr);
+
+bool implicitDSIAccess(const llvm::MCInst& inst, const llvm::MCInstrDesc& desc);
+
+}
+
+#endif

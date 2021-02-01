@@ -15,24 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef PATCH_MEMORYACCESS_H
+#define PATCH_MEMORYACCESS_H
 
-#ifndef QBDITEST_MEMORYACCESSTEST_H
-#define QBDITEST_MEMORYACCESSTEST_H
+#include "Patch/InstrRule.h"
 
-#include <memory>
+#include "Callback.h"
 
-#include "VM.h"
+namespace QBDI {
 
-class MemoryAccessTest {
-    protected:
-        MemoryAccessTest();
-        ~MemoryAccessTest();
+class ExecBlock;
 
-        bool runOnASM(QBDI::rword* retval, const char* source, const std::vector<QBDI::rword>& args = {});
+void analyseMemoryAccess(const ExecBlock& currentExecBlock, uint16_t instID, bool afterInst, std::vector<MemoryAccess>& dest);
 
-        QBDI::VM vm;
-        QBDI::GPRState* state;
-        uint8_t* fakestack;
-};
 
-#endif /* QBDITEST_MEMORYACCESSTEST_H */
+std::vector<std::unique_ptr<InstrRule>> getInstrRuleMemAccessRead();
+
+std::vector<std::unique_ptr<InstrRule>> getInstrRuleMemAccessWrite();
+
+}
+
+#endif

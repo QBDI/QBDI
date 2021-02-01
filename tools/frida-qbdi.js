@@ -486,6 +486,28 @@ var MemoryAccessType = Object.freeze({
 });
 
 /**
+ * Memory access flags
+ */
+var MemoryAccessFlags = Object.freeze({
+    /**
+     * Empty flag.
+     */
+    MEMORY_NO_FLAGS : 0,
+    /**
+     * The size of the access isn't known.
+     */
+    MEMORY_UNKNOWN_SIZE : 1<<0,
+    /**
+     * The given size is a minimum size.
+     */
+    MEMORY_MINIMUM_SIZE : 1<<1,
+    /**
+     * The value of the access is unknown or hasn't been retrived.
+     */
+    MEMORY_UNKNOWN_VALUE : 1<<2
+});
+
+/**
  * Register access type (read / write / rw)
  */
 var RegisterAccessType = Object.freeze({
@@ -1685,9 +1707,11 @@ class QBDI {
         p = ptr.add(this.#memoryAccessDesc.offsets[2]);
         access.value = Memory.readRword(p);
         p = ptr.add(this.#memoryAccessDesc.offsets[3]);
-        access.size = Memory.readU8(p);
+        access.size = Memory.readU16(p);
         p = ptr.add(this.#memoryAccessDesc.offsets[4]);
         access.type = Memory.readU8(p);
+        p = ptr.add(this.#memoryAccessDesc.offsets[5]);
+        access.flags = Memory.readU8(p);
         Object.freeze(access);
         return access;
     }

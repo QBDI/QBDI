@@ -245,6 +245,10 @@ Analysis
 
       Value read from / written to memory
 
+  .. js:attribute:: flags
+
+      Memory access flags
+
 .. js:class:: VMState
 
   Object that describes the current VM state
@@ -334,6 +338,13 @@ Globals
     .. js:autoattribute:: MEMORY_READ
     .. js:autoattribute:: MEMORY_WRITE
     .. js:autoattribute:: MEMORY_READ_WRITE
+
+.. js:autoclass:: MemoryAccessFlags
+
+    .. js:autoattribute:: MEMORY_NO_FLAGS
+    .. js:autoattribute:: MEMORY_UNKNOWN_SIZE
+    .. js:autoattribute:: MEMORY_MINIMUM_SIZE
+    .. js:autoattribute:: MEMORY_UNKNOWN_VALUE
 
 .. js:autoclass:: SyncDirection
 
