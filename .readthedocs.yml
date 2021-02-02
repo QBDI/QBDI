@@ -7,10 +7,14 @@ build:
 sphinx:
   configuration: docs/source/conf.py
 
-formats: all
+formats:
+  - htmlzip
+  - pdf
 
 python:
   version: 3.7
   install:
     - requirements: docs/requirements.txt
-    - requirements: docs/requirements.pyqbdi.txt
+    - requirements: docs/requirements.readthedocs.txt
+    - method: setuptools
+      path: docs/rtd_pyqbdi_artifact

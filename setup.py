@@ -122,7 +122,11 @@ setup(
         "Topic :: Software Development :: Debuggers",
     ],
     python_requires='>=3.6',
-    url="https://qbdi.quarkslab.com/",
+    project_urls={
+        'Documentation': 'https://qbdi.readthedocs.io/',
+        'Source': 'https://github.com/QBDI/QBDI',
+        'Homepage': 'https://qbdi.quarkslab.com/',
+    },
     ext_modules=[CMakeExtension('pyqbdi')],
     cmdclass=dict(build_ext=CMakeBuild),
     zip_safe=False,
