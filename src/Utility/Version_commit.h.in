@@ -15,16 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "Version.h"
-#include "Utility/Version_commit.h"
+#ifndef QBDI_VERSION_COMMIT_H_
+#define QBDI_VERSION_COMMIT_H_
 
-namespace QBDI {
+#define QBDI_VERSION_FULL_STRING "@QBDI_VERSION_FULL_STRING@"
 
-const char* qbdi_getVersion(uint32_t* version) {
-    if (version != nullptr) {
-        *version = QBDI_VERSION;
-    }
-    return QBDI_VERSION_FULL_STRING;
-}
-
-};
+#endif /* QBDI_VERSION_COMMIT_H_ */
