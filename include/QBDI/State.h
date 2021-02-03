@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef _STATE_H_
-#define _STATE_H_
+#ifndef QBDI_STATE_H_
+#define QBDI_STATE_H_
 
 #include <stdint.h>
 #include <inttypes.h>
@@ -401,4 +401,4 @@ static const unsigned int REG_FLAG = 16;
 
 #endif
 
-#endif // _STATE_H_
+#endif // QBDI_STATE_H_

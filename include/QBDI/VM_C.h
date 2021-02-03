@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef _VM_C_H_
-#define _VM_C_H_
+#ifndef QBDI_VM_C_H_
+#define QBDI_VM_C_H_
 
 #include <stdlib.h>
 #include <stdarg.h>
@@ -465,4 +465,4 @@ QBDI_EXPORT void qbdi_clearAllCache(VMInstanceRef instance);
 } // QBDI::
 #endif
 
-#endif // _VM_C_H_
+#endif // QBDI_VM_C_H_

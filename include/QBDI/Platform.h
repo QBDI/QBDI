@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef _PLATFORM_H_
-#define _PLATFORM_H_
+#ifndef QBDI_PLATFORM_H_
+#define QBDI_PLATFORM_H_
 
 #include "Config.h"
 
@@ -48,4 +48,4 @@
 #define _QBDI_EI(X) QBDI_##X
 #endif
 
-#endif // _PLATFORM_H_
+#endif // QBDI_PLATFORM_H_

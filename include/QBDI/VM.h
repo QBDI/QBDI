@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef _VM_H_
-#define _VM_H_
+#ifndef QBDI_VM_H_
+#define QBDI_VM_H_
 
 #include <string>
 #include <utility>
@@ -476,4 +476,4 @@ public:
 
 } // QBDI::
 
-#endif // _VM_H_
+#endif // QBDI_VM_H_

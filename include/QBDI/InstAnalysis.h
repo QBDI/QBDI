@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef _INSTANALYSIS_H_
-#define _INSTANALYSIS_H_
+#ifndef QBDI_INSTANALYSIS_H_
+#define QBDI_INSTANALYSIS_H_
 
 #include <stdbool.h>
 
@@ -151,4 +151,4 @@ typedef struct {
 }
 #endif
 
-#endif // _INSTANALYSIS_H_
+#endif // QBDI_INSTANALYSIS_H_
