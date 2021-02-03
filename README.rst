@@ -77,14 +77,11 @@ AArch64   Android                          :orange:`Planned (*)`    :orange:`Pla
 .. image:: https://ci.appveyor.com/api/projects/status/s2qvpu8k8yiau647/branch/master?svg=true
     :target: https://ci.appveyor.com/project/QBDI/qbdi/branch/master
 
-.. image:: https://github.com/QBDI/QBDI/workflows/Package%20Android/badge.svg?branch=master
-    :target: https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Package+Android%22+branch%3Amaster
-
 .. image:: https://github.com/QBDI/QBDI/workflows/Tests%20and%20Package%20Linux/badge.svg?branch=master
     :target: https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Tests+and+Package+Linux%22+branch%3Amaster
 
-.. image:: https://github.com/QBDI/QBDI/workflows/PyQBDI%20Linux%20package/badge.svg?branch=master
-    :target: https://github.com/QBDI/QBDI/actions?query=workflow%3A%22PyQBDI+Linux+package%22+branch%3Amaster
+.. image:: https://github.com/QBDI/QBDI/workflows/Tests%20and%20Package%20OSX/badge.svg?branch=master
+    :target: https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Tests+and+Package+OSX%22+branch%3Amaster
 
 **dev**
 
@@ -98,14 +95,11 @@ AArch64   Android                          :orange:`Planned (*)`    :orange:`Pla
 .. image:: https://ci.appveyor.com/api/projects/status/s2qvpu8k8yiau647/branch/dev-next?svg=true
     :target: https://ci.appveyor.com/project/QBDI/qbdi/branch/dev-next
 
-.. image:: https://github.com/QBDI/QBDI/workflows/Package%20Android/badge.svg?branch=dev-next
-    :target: https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Package+Android%22+branch%3Adev-next
-
 .. image:: https://github.com/QBDI/QBDI/workflows/Tests%20and%20Package%20Linux/badge.svg?branch=dev-next
     :target: https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Tests+and+Package+Linux%22+branch%3Adev-next
 
-.. image:: https://github.com/QBDI/QBDI/workflows/PyQBDI%20Linux%20package/badge.svg?branch=dev-next
-    :target: https://github.com/QBDI/QBDI/actions?query=workflow%3A%22PyQBDI+Linux+package%22+branch%3Adev-next
+.. image:: https://github.com/QBDI/QBDI/workflows/Tests%20and%20Package%20OSX/badge.svg?branch=dev-next
+    :target: https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Tests+and+Package+OSX%22+branch%3Adev-next
 
 .. intro-end
 
