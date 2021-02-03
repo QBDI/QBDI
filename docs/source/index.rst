@@ -17,8 +17,8 @@ Contents
    :maxdepth: 2
 
     Introduction <intro>
-    Installation and integration <installation_and_integration>
-    Get Started <get_started>
+    Installation and Integration <installation_and_integration>
+    Getting Started <get_started>
     API Reference <api>
     Architecture Support <architecture_support>
     Developer Documentation <dev>

@@ -1,15 +1,14 @@
-Get Started
-===========
+Getting Started
+===============
 
-The followed sections contain the different steps to initialize and execute QBDI
-to print an execution trace.
+The following sections explain how one can take advantage of QBDI through different use cases.
 
 .. toctree::
     :maxdepth: 2
 
-    Get started with C API <get_started-c>
-    Get started with C++ API <get_started-cpp>
-    Get started with PyQBDI <get_started-pyqbdi>
-    Get started with Frida/QBDI <get_started-frida>
-    Get started with QBDIPreload <get_started-QBDIPreload>
-    Get started with PyQBDIPreload <get_started-PyQBDIPreload>
+    C API <get_started-c>
+    C++ API <get_started-cpp>
+    PyQBDI <get_started-pyqbdi>
+    Frida/QBDI <get_started-frida>
+    QBDIPreload <get_started-QBDIPreload>
+    PyQBDIPreload <get_started-PyQBDIPreload>
