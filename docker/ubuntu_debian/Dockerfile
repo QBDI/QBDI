@@ -20,8 +20,9 @@ RUN apt-get update && \
         cmake \
         g++ \
         g++-multilib \
+        git \
         libstdc++-8-dev \
-        make \
+        ninja-build \
         pkg-config \
         wget \
         ca-certificates \
@@ -70,7 +71,8 @@ RUN sudo chown -R $USER:$USER . && \
     # build
     mkdir build && \
     cd build && \
-    cmake -DCMAKE_BUILD_TYPE=Release \
+    cmake -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_CROSSCOMPILING=FALSE \
           -DQBDI_PLATFORM=$QBDI_PLATFORM \
           -DQBDI_ARCH=$QBDI_ARCH \
@@ -79,7 +81,7 @@ RUN sudo chown -R $USER:$USER . && \
           -DQBDI_CCACHE=OFF \
           $CMAKE_ARGUMENT \
           ../ && \
-    make -j4 && \
+    ninja && \
     # test
     ./test/QBDITest && \
     # create package and install
