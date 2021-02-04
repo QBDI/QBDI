@@ -1,20 +1,23 @@
-Get started with QBDIPreload
-============================
+QBDIPreload
+===========
 
 QBDIPreload is a small utility library that provides code injection capabilities using dynamic library injection.
-It works on Linux with ``LD_PRELOAD`` mechanism and on MacOS with ``DYLD_INSERT_LIBRARIES`` mechanism.
+It works on Linux and macOS respectively with the ``LD_PRELOAD`` and ``DYLD_INSERT_LIBRARIES`` mechanisms.
 
-With QBDIPreload, you can instrument the main method of an executable dynamically linked.
+Thanks to QBDIPreload, you can instrument the main function of an executable that has been dynamically linked.
+You can also define various callbacks that are called at specific times throughout the execution.
 
 Main hook process
 -----------------
 
-With QBDIPreload, the user must define a constructor and some method that will be called during the hook
-of the main function.
+To use QBDIPreload, you must have a minimal codebase: a constructor and several *hook* functions.
+Like callbacks, hook functions are directly called by QBDIPreload.
 
-The constructor of QBDIPreload is defined in the macro :c:var:`QBDIPRELOAD_INIT`. The macro must be placed
-once in the user code. The user function :cpp:func:`qbdipreload_on_start` and :cpp:func:`qbdipreload_on_premain`
-are called during the hook. They must return :c:var:`QBDIPRELOAD_NOT_HANDLED` when you don't change the hook process.
+First of all, the constructor of QBDIPreload has to be initialised through declaring the macro :c:var:`QBDIPRELOAD_INIT`.
+It's worth noting that this macro must be only defined once in your code.
+
+The :cpp:func:`qbdipreload_on_start` and :cpp:func:`qbdipreload_on_premain` hook functions are called at different stages during the execution of the programme.
+They only need to return :c:var:`QBDIPRELOAD_NOT_HANDLED` if you don't want to modify the hook procedure.
 
 .. code:: c
 
@@ -30,14 +33,14 @@ are called during the hook. They must return :c:var:`QBDIPRELOAD_NOT_HANDLED` wh
         return QBDIPRELOAD_NOT_HANDLED;
     }
 
-Main Hook and instrumentation
------------------------------
+Instrumentation
+---------------
 
-Once the main method is hooked, two methods are called: :cpp:func:`qbdipreload_on_main` and :cpp:func:`qbdipreload_on_run`.
-The user may capture the executable arguments with :cpp:func:`qbdipreload_on_main`.
-:cpp:func:`qbdipreload_on_run` is called after :cpp:func:`qbdipreload_on_main` with ready to run virtual machine.
-The user needs to add his callback before running the provided VM.
+Once the main function is hooked by QBDIPreload, two methods are called: :cpp:func:`qbdipreload_on_main` and :cpp:func:`qbdipreload_on_run`.
 
+At this point, you are able to capture the executable arguments inside of the :cpp:func:`qbdipreload_on_main` scope.
+The :cpp:func:`qbdipreload_on_run` function is called right afterwards with a ready-to-run QBDI virtual machine as first argument.
+Obviously, don't forget to register your callback(s) prior to running the VM.
 
 .. code:: c
 
@@ -63,14 +66,13 @@ The user needs to add his callback before running the provided VM.
    QBDIPreload automatically takes care of blacklisting instrumentation of the C standard library
    and the OS loader as described in :ref:`intro_limitations`.
 
-Exit Hook
+Exit hook
 ---------
 
-QBDIPreload includes a hook on standard exit method (``exit`` and ``_exit``). The hook isn't triggers if the
-executable exits with a direct syscall, or segfault.
-
-The method :cpp:func:`qbdipreload_on_exit` is called during the hook and allows to properly save the recorded data
-when the executable exit.
+QBDIPreload also intercepts the calls on standard exit functions (``exit`` and ``_exit``).
+Typically, these are called when the executable is about to terminate.
+If so, the :cpp:func:`qbdipreload_on_exit` method is called and can be used to save some data about the execution you want to keep before exiting.
+Note that the hook function is not called if the executable exits with a direct system call or a segmentation fault.
 
 .. code:: c
 
@@ -78,57 +80,57 @@ when the executable exit.
         return QBDIPRELOAD_NO_ERROR;
     }
 
-Compilation and Execution
+Compilation and execution
 -------------------------
 
-Your preload script should be statically linked with QBDIPreload library and QBDI library.
+Finally, you need to compile your source code to a dynamic library.
+Your output binary has to be statically linked with both the QBDIPreload library and the QBDI library.
 
-To execute your script, run the following command:
+Then, in order to test it against a target, simply running the following command should do the job:
 
 .. code:: bash
 
-    # On Linux
-    $ LD_PRELOAD=./libqbdi_mytracer.so <executable> [<parameters> ...]
+    # on Linux
+    LD_PRELOAD=./libqbdi_mytracer.so <executable> [<parameters> ...]
 
-    # On MacOS
-    $ sudo DYLD_INSERT_LIBRARIES=./libqbdi_mytracer.so <executable> [<parameters> ...]
+    # on macOS
+    sudo DYLD_INSERT_LIBRARIES=./libqbdi_mytracer.so <executable> [<parameters> ...]
 
+Full example
+------------
 
-Fully working example
----------------------
-
-You can find a fully working example below, based on the precedent explanations.
+Merging everything we have learnt throughout this tutorial, we are now able to write our C/C++ source code files.
+In the following examples, we aim at displaying every executed instruction of the binary we are running against.
 
 .. _get_started-preload-c:
 
-C preload
-+++++++++
+QBDIPreload in C
+++++++++++++++++
 
 .. include:: ../../examples/c/tracer_preload.c
    :code:
 
 .. _get_started-preload-cpp:
 
-C++ preload
-+++++++++++
+QBDIPreload in C++
+++++++++++++++++++
 
 .. include:: ../../examples/cpp/tracer_preload.cpp
    :code:
 
 .. _qbdi_preload_template:
 
-Template
---------
+Generate a template
+-------------------
 
-A simple template of QBDIPreload is included in the package with QBDIPreload. To begin a new project with QBDIPreload, you can run the follow commands:
+A QBDI template can be considered as a baseline project, a minimal component you can modify and build your instrumentation tool on.
+They are provided to help you effortlessly start off a new QBDI based project.
+The binary responsible for generating a template is shipped in the release packages and can be used as follows:
 
 .. code:: bash
 
-    $ mkdir QBDIPreload && cd QBDIPreload
-    $ qbdi-preload-template
-    $ mkdir build && cd build
-    $ cmake ..
-    $ make
-
-This will simply build the default QBDIPreload template (which prints instruction address and disassembly)
-
+    mkdir QBDIPreload && cd QBDIPreload
+    qbdi-preload-template
+    mkdir build && cd build
+    cmake ..
+    make

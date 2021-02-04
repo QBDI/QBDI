@@ -1,19 +1,22 @@
 .. currentmodule:: pyqbdi
 
-Get started with PyQBDI
-=======================
+PyQBDI
+======
 
-PyQBDI is a Python3 binding of QBDI. He can be to script QBDI but has some limitations:
+PyQBDI brings Python3 bindings over the QBDI API.
+That way, you can take advantage of the QBDI features directly from your Python scripts without bothering using C/C++.
+It may be pretty useful if you need to build something quickly.
+However, it introduces some limitations:
 
-- PyQBDI cannot be used to instrument Python process;
-- The performances are lower than C/C++ API;
-- The Python runtime must have the same architecture as the target.
+- PyQBDI cannot be used to instrument a Python process
+- The performances are poorer than when using the C/C++ APIs
+- The Python runtime's and the target's architectures must be the same
 
-Memory Allocation
+Memory allocation
 -----------------
 
-Unless C/C++ API, the memory cannot be allocated, read and write easily in Python.
-PyQBDI includes helpers methods to allocate, free, read and write memory.
+Unlike the C/C++ APIs, interacting with the process' memory is much more complicated while in Python -- that is, memory regions cannot be allocated, read or written.
+Luckily, PyQBDI offers helpers to allow users perform these actions.
 
 .. code:: python
 
@@ -27,11 +30,11 @@ PyQBDI includes helpers methods to allocate, free, read and write memory.
     assert value == value2
     pyqbdi.freeMemory(addr)
 
-Target code loading
--------------------
+Load the target code
+--------------------
 
-The first step is to be able to run the target code inside our process. In this tutorial, we
-will load a shared library ``mylib.so`` and execute the method ``foo``.
+In this tutorial, we aim at executing the ``foo`` function which lies in a shared library whose name is ``mylib.so``, in the context of QBDI.
+PyQBDI will give us a hand doing so.
 
 .. code:: python
 
@@ -41,13 +44,13 @@ will load a shared library ``mylib.so`` and execute the method ``foo``.
     mylib = ctypes.cdll.LoadLibrary("mylib.so")
     funcPtr = ctypes.cast(mylib.foo, ctypes.c_void_p).value
 
+Note that if you want to instrument a whole binary, PyQBDIPreload should be preferred (see :ref:`get_started-pyqbdipreload`).
 
-To instrument a whole executable, PyQBDIPreload can be used (see :ref:`get_started-pyqbdipreload`).
-
-Virtual Machine initialization
+Initialise the virtual machine
 ------------------------------
 
-We then need to initialize the Virtual Machine (:class:`VM`) itself.
+First off, we need to initialise the virtual machine (:class:`VM`) itself.
+Calling the :func:`pyqbdi.VM` is needed to craft a new instance.
 
 .. code:: python
 
@@ -56,10 +59,9 @@ We then need to initialize the Virtual Machine (:class:`VM`) itself.
 Allocate a virtual stack
 ------------------------
 
-The virtual machine will not run on the same stack as QBDI. It will need a separate stack to run.
-We can allocate and initialize a virtual stack with :func:`pyqbdi.allocateVirtualStack`. This function will
-allocate an aligned memory space, set the stack pointer register to the last aligned address of the allocated memory
-and return the top address of the aligned memory.
+The virtual machine does not work with the regular stack that your process uses -- instead, QBDI needs its own stack.
+Therefore, we have to ask for a virtual stack using :func:`pyqbdi.allocateVirtualStack`. This function is
+responsible for allocating an aligned memory space, set the stack pointer register accordingly and return the top address of this brand-new memory region.
 
 .. code:: python
 
@@ -68,8 +70,8 @@ and return the top address of the aligned memory.
     assert fakestack != None
 
 
-Our first callback function
----------------------------
+Write our first callback function
+---------------------------------
 
 Now that the virtual machine has been set up, we can start playing with QBDI core features.
 
@@ -99,11 +101,11 @@ An :func:`InstCallback <pyqbdi.InstCallback>` must always return an action (:dat
 continue or stop. In most cases :data:`CONTINUE <pyqbdi.VMAction>`
 should be returned to continue the execution.
 
-Register a Callback
+Register a callback
 -------------------
 
 The callback must be registered in the VM. The function :func:`pyqbdi.VM.addCodeCB` allows registering
-a callback for every instruction. The callback can be registered before the instruction
+a callback for every instruction. The callback can be called before the instruction
 (:data:`pyqbdi.PREINST <pyqbdi.InstPosition>`) or after the instruction
 (:data:`pyqbdi.POSTINST <pyqbdi.InstPosition>`).
 
@@ -115,10 +117,10 @@ a callback for every instruction. The callback can be registered before the inst
 The function returns a callback ID or the special ID :data:`pyqbdi.INVALID_EVENTID <pyqbdi.VMError>` if
 the registration fails. The callback ID can be kept if you want to unregister the callback later.
 
-Set instrumented range
-----------------------
+Set instrumented ranges
+-----------------------
 
-QBDI needs a range of address where the code should be instrumented. If the execution goes out of this range,
+QBDI needs a range of addresses where the code should be instrumented. If the execution goes out of this scope,
 QBDI will try to restore an uninstrumented execution.
 
 In our example, we need to include the method in the instrumented range. The method :func:`pyqbdi.VM.addInstrumentedModuleFromAddr`
@@ -132,8 +134,8 @@ Run the instrumentation
 -----------------------
 
 We can finally run the instrumentation using the :func:`pyqbdi.VM.call` function.
-This method will align the stack, push the argument (if needed) and a fake return address and
-call the method through QBDI. The execution will stop when the instrumented code returns to the
+It aligns the stack, sets the argument(s) (if needed) and a fake return address and
+calls the target function through QBDI. The execution stops when the instrumented code returns to the
 fake address.
 
 .. code:: python
@@ -141,25 +143,26 @@ fake address.
     asrun, retval = vm.call(funcPtr, [args1, args2])
     assert asrun
 
-:func:`pyqbdi.VM.call` returns if the method has run and the return register value (value of ``RAX`` for X86_64).
+:func:`pyqbdi.VM.call` returns if the function has completely run in the context of QBDI.
+The first argument has been filled with the value of the return register (e.g. ``RAX`` for X86_64).
 
-If the convention call used by :func:`pyqbdi.VM.call` doesn't match your need, you can initialize the stack yourself
-and use :func:`pyqbdi.VM.run`.
+It may turn out that the function does not expect the calling convention :func:`pyqbdi.VM.call` uses.
+In this precise case, you must set up the proper context and the stack yourself and call :func:`pyqbdi.VM.run` afterwards.
 
-End program properly
---------------------
+Terminate the execution properly
+--------------------------------
 
-Finally, we need to free allocated stack and exit the virtual machine properly using :func:`pyqbdi.alignedFree`.
+At last, before exiting, we need to free up the virtual stack we have allocated calling :func:`pyqbdi.alignedFree`.
 
 .. code:: python
 
     pyqbdi.alignedFree(fakestack)
 
-Fully working example
----------------------
+Full example
+------------
 
-You can find a fully working example below, based on the precedent explanations. The example traces the ``sin``
-method and uses :func:`pyqbdi.simulateCall` and :func:`pyqbdi.VM.run` to push the return address and run the method.
+Merging everything we have learnt throughout this tutorial, we are now able to solve real problems.
+For instance, the following example shows how one can generate an execution trace of the ``sin`` function by using a PyQBDI script:
 
 .. include:: ../../examples/pyqbdi/trace_sin.py
    :code:

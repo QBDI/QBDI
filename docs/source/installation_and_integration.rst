@@ -5,9 +5,8 @@ Installation and Integration
 C/C++ API installation
 ----------------------
 
-When a new stable version of QBDI is released, prebuilt packages can be downloaded through the `release page <https://github.com/QBDI/QBDI/releases>`_ on Github.
+When a new stable version of QBDI is released, prebuilt packages can be downloaded through the `release page <https://github.com/QBDI/QBDI/releases>`_ on Github. In order to make sure you have downloaded the right package, you can verify its integrity with the file ``SHA256``.
 
-In order to make sure you have downloaded the right package, you can verify its integrity with the file ``SHA256``.
 A GPG signature of ``SHA256`` by our `developer key (2763 2215 DED8 D717 AD08 477D 874D 3F16 4D45 2193) <https://qbdi.quarkslab.com/qbdi.asc>`_ is available in ``SHA256.sig``.
 
 .. code-block:: bash

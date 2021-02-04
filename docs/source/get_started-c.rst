@@ -1,7 +1,7 @@
 C API
 =====
 
-A step-by-step example illustrating a basic (yet powerful) usage of QBDI C APIs.
+A step-by-step example illustrating a basic (yet powerful) usage of the QBDI C API.
 
 Load the target code
 --------------------
@@ -29,7 +29,7 @@ Note that if you want to instrument a whole binary, QBDIPreload should be prefer
 Initialise the virtual machine
 ------------------------------
 
-First off, we need to initialise the Virtual Machine (often referred to as VM) itself. The type ``VMInstanceRef`` represents an instance of the VM.
+First off, we need to initialise the virtual machine (often referred to as VM) itself. The type ``VMInstanceRef`` represents an instance of the VM.
 The :cpp:func:`qbdi_initVM` function needs to be called to set the instance up.
 The second, third and fourth arguments are used to customise the instance depending on what you want to do.
 
@@ -188,7 +188,7 @@ Merging everything we have learnt throughout this tutorial, we are now able to w
 Generate a template
 -------------------
 
-A QBDI template can be considered as a baseline project, a minimal component you can build your instrumentation tool on.
+A QBDI template can be considered as a baseline project, a minimal component you can modify and build your instrumentation tool on.
 They are provided to help you effortlessly start off a new QBDI based project.
 The binary responsible for generating a template is shipped in the release packages and can be used as follows:
 

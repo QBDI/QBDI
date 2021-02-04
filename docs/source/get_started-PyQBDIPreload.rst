@@ -2,29 +2,29 @@
 
 .. _get_started-pyqbdipreload:
 
-Get started with PyQBDI
-=======================
+PyQBDIPreload
+=============
 
-PyQBDIPreload is an implementation of QBDIPreload for PyQBDI. It allows
-injecting the python runtime in the target process and to execute an instruction script.
-The limitations are the same as QBDIPreload and PyQBDI:
+PyQBDIPreload is an implementation of QBDIPreload for PyQBDI.
+It allows users to inject the Python runtime into a target process and execute their own script in it.
+The limitations are pretty much the same as those we face on QBDIPreload and PyQBDI:
 
-- Only Linux and MacOS are currently supported;
-- The executable should be injectable with ``LD_PRELOAD`` or ``DYLD_INSERT_LIBRARIES``;
-- PyQBDIPreload cannot be injected in a Python process;
-- The Python runtime must have the same architecture as the target.
-- The :class:`VM` mustn't be created. A ready-to-run :class:`VM` will be provided to the method :func:`pyqbdipreload_on_run`.
+- Only Linux and macOS are currently supported
+- The executable should be injectable with ``LD_PRELOAD`` or ``DYLD_INSERT_LIBRARIES``
+- PyQBDIPreload cannot be injected in a Python process
+- The Python runtime and the target must share the same architecture
+- An extra :class:`VM` must not be created. An already prepared :class:`VM` is provided to :func:`pyqbdipreload_on_run`.
 
 .. note::
 
-    The python library ``libpython3.x.so`` must be installed.
+    The Python library ``libpython3.x.so`` must be installed.
 
 Main hook process
 -----------------
 
-Unlike QBDIPreload, the hook of the main function cannot be customize the hook process. The
-Python interpreter is initialized once the main function is hooked and the script is loaded.
-The environment of the interpreter is modified before the script is loaded and :
+Unlike QBDIPreload, the hook of the main function cannot be customised so you are unable to alter the hook process.
+The Python interpreter is only initialised once the main function is hooked and the script is loaded.
+Furthermore, some modifications are made on the environment of the interpreter before the user script loading:
 
 - ``sys.argv`` are the argument of the executable
 - ``LD_PRELOAD`` or ``DYLD_INSERT_LIBRARIES`` are removed from ``os.environ``
@@ -33,8 +33,8 @@ The environment of the interpreter is modified before the script is loaded and :
 Instrumentation
 ---------------
 
-Once the script is loaded, the method :func:`pyqbdipreload_on_run` is called with a ready-to-run :class:`VM`.
-Any user callback should be added to the :class:`VM`, then the VM can be run with :func:`pyqbdi.VM.run`.
+Once the script is loaded, the :func:`pyqbdipreload_on_run` function is called with a ready-to-run :class:`VM`.
+Any user callbacks should be registered to the :class:`VM`, then the VM can be run with :func:`pyqbdi.VM.run`.
 
 .. code:: python
 
@@ -48,7 +48,7 @@ Any user callback should be added to the :class:`VM`, then the VM can be run wit
         vm.addCodeCB(pyqbdi.PREINST, showInstruction, None)
         vm.run(start, stop)
 
-Exit Hook
+Exit hook
 ---------
 
 The ``atexit`` module is triggered when the execution is finished, or when ``exit`` or ``_exit`` are called.
@@ -60,16 +60,18 @@ The ``atexit`` module is triggered when the execution is finished, or when ``exi
 Execution
 ---------
 
-A script ``pyqbdipreload.py`` is provided to setup the environment and run the executable.
-The first parameter must be the preload script. The second is the binary followed by his parameters.
+A script called ``pyqbdipreload.py`` is brought to set the environment up and run the executable.
+The first parameter is the PyQBDIPreload script. Next are the binary followed by its respective arguments if any.
 
 .. code:: bash
 
-    $ python3 -m pyqbdipreload <script> <executable> [<parameters> ...]
+    python3 -m pyqbdipreload <script> <executable> [<arguments> ...]
 
+Full example
+------------
 
-Fully working example
----------------------
+Merging everything we have learnt throughout this tutorial, we are now able to write our Python script
+which prints the instructions that are being executed by the target executable.
 
 .. include:: ../../examples/pyqbdi/trace_preload.py
    :code:
