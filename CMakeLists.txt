@@ -90,6 +90,7 @@ endif()
 
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI/Version.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/QBDI/Version.h" @ONLY)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI/Config.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/QBDI/Config.h" @ONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/Utility/Version_commit.h.in" "${CMAKE_CURRENT_BINARY_DIR}/src/Utility/Version_commit.h" @ONLY)
 
 # Add dependency build targets
 
@@ -233,6 +234,7 @@ if(${DEPENDENCY_SATISFIED})
         "${CMAKE_CURRENT_BINARY_DIR}/include/QBDI"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI"
         "${CMAKE_CURRENT_SOURCE_DIR}/src"
+        "${CMAKE_CURRENT_BINARY_DIR}/src"
         "${CMAKE_CURRENT_SOURCE_DIR}/deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/include"
         "${CMAKE_CURRENT_SOURCE_DIR}/deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/lib/Target/${QBDI_LLVM_ARCH}"
         )

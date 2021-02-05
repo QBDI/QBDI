@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef _CALLBACK_H_
-#define _CALLBACK_H_
+#ifndef QBDI_CALLBACK_H_
+#define QBDI_CALLBACK_H_
 
 #include "Platform.h"
 #include "State.h"

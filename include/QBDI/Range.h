@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef _RANGE_H_
-#define _RANGE_H_
+#ifndef QBDI_RANGE_H_
+#define QBDI_RANGE_H_
 
 #include <vector>
 #include <ostream>
@@ -356,4 +356,4 @@ public:
 
 }
 
-#endif // _RANGE_H_
+#endif // QBDI_RANGE_H_

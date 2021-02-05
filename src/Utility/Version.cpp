@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 #include "Version.h"
+#include "Utility/Version_commit.h"
 
 namespace QBDI {
 
@@ -23,7 +24,7 @@ const char* qbdi_getVersion(uint32_t* version) {
     if (version != nullptr) {
         *version = QBDI_VERSION;
     }
-    return QBDI_VERSION_STRING;
+    return QBDI_VERSION_FULL_STRING;
 }
 
 };

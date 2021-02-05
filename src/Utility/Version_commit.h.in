@@ -15,18 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef QBDI_H_
-#define QBDI_H_
+#ifndef QBDI_VERSION_COMMIT_H_
+#define QBDI_VERSION_COMMIT_H_
 
-#ifdef __cplusplus
-#include "QBDI/VM.h"
-#include "QBDI/Memory.hpp"
-#else
-#include "QBDI/VM_C.h"
-#include "QBDI/Memory.h"
-#endif
+#define QBDI_VERSION_FULL_STRING "@QBDI_VERSION_FULL_STRING@"
 
-#include "QBDI/Logs.h"
-#include "QBDI/Version.h"
-
-#endif // QBDI_H_
+#endif /* QBDI_VERSION_COMMIT_H_ */

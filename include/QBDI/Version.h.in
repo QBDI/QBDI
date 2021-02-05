@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef _VERSION_H_
-#define _VERSION_H_
+#ifndef QBDI_VERSION_H_
+#define QBDI_VERSION_H_
 
 #include <stdint.h>
 #include "Platform.h"
@@ -56,4 +56,4 @@ inline const char* getVersion(uint32_t* version) {
 } // QBDI::
 #endif
 
-#endif // _VERSION_H_
+#endif // QBDI_VERSION_H_

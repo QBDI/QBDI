@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef _ERRORS_H_
-#define _ERRORS_H_
+#ifndef QBDI_ERRORS_H_
+#define QBDI_ERRORS_H_
 
 #include "Platform.h"
 
@@ -34,4 +34,4 @@ typedef enum {
 }
 #endif
 
-#endif // _ERRORS_H_
+#endif // QBDI_ERRORS_H_
