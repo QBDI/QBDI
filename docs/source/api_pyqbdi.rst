@@ -6,18 +6,18 @@ PyQBDI API
 Introduction
 ------------
 
-We propose bindings for Python, the whole C/C++ API is available through them, but they are also backed up by helpers that fluidify script writing.
+We offer bindings for Python, the whole C/C++ API is available through them, but they are also backed up by plenty of helpers that fluidify the script writing.
 
-On Linux and MacOS, PyQBDI supports QBDIPreload as :ref:`PyQBDIPreload <pyqbdipreload_api>`.
+On Linux and macOS, PyQBDI supports QBDIPreload as :ref:`PyQBDIPreload <pyqbdipreload_api>`.
 
-PyQBDI has some limitation:
+However, you must be aware that PyQBDI has some limitations:
 
-- The library can handle only one :py:class:`VM` at time.
-- The :py:class:`VM` must not be used in atexit module.
-- A 32 bits of PyQBDI and Python are needed to instrument 32 bits target.
-- PyQBDI cannot be used to instrument a python process as both the **host** and the **target** will used the python runtime.
+- The library can handle only one :py:class:`VM` at a time.
+- The :py:class:`VM` must not be used in the ``atexit`` module.
+- 32-bit versions of PyQBDI and Python are needed to instrument 32-bit targets.
+- PyQBDI cannot be used to instrument a Python process since both the **host** and the **target** will use the Python runtime.
 
-VM Class
+VM class
 --------
 
 .. autoclass:: pyqbdi.VM
@@ -32,7 +32,7 @@ VM Class
 
 .. _state-management-pyqbdi:
 
-State Management
+State management
 ++++++++++++++++
 
 .. autofunction:: pyqbdi.VM.getGPRState
@@ -45,7 +45,7 @@ State Management
 
 .. _instrumentation-range-pyqbdi:
 
-Instrumentation Range
+Instrumentation range
 +++++++++++++++++++++
 
 Addition
@@ -70,7 +70,7 @@ Removal
 
 .. autofunction:: pyqbdi.VM.removeAllInstrumentedRanges
 
-Callback Management
+Callback management
 +++++++++++++++++++
 
 .. _instcallback-management-pyqbdi:
@@ -147,7 +147,7 @@ MemoryAccess
 
 .. autofunction:: pyqbdi.VM.recordMemoryAccess
 
-Cache Management
+Cache management
 ++++++++++++++++
 
 .. autofunction:: pyqbdi.VM.precacheBasicBlock
@@ -158,7 +158,7 @@ Cache Management
 
 .. _register-state-pyqbdi:
 
-Register State
+Register state
 --------------
 
 .. autoclass:: pyqbdi.GPRState
@@ -302,7 +302,7 @@ Exploration
 
 .. autodata:: pyqbdi.Permission
 
-Other Globals
+Other globals
 -------------
 
 .. autodata:: pyqbdi.Options
@@ -312,7 +312,7 @@ Other Globals
 Miscellaneous
 -------------
 
-Version & Info
+Version & info
 ++++++++++++++
 
 .. data:: pyqbdi.__arch__
@@ -351,7 +351,7 @@ Memory helpers
 .. autofunction:: pyqbdi.allocateMemory
 .. autofunction:: pyqbdi.freeMemory
 
-Float Helpers
+Float helpers
 -------------
 
 .. autofunction:: pyqbdi.encodeFloat
@@ -363,4 +363,4 @@ Float Helpers
 .. autofunction:: pyqbdi.encodeDoubleU
 .. autofunction:: pyqbdi.decodeDoubleU
 
-For more conversion, you may want to use the `struct library <https://docs.python.org/3/library/struct.html>`_ of Python.
+For more conversion utilities, check out the Python's `struct library <https://docs.python.org/3/library/struct.html>`_.

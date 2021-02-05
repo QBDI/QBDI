@@ -8,7 +8,7 @@ Introduction
 
 QBDIPreload is a small utility library that provides code injection capabilities using dynamic
 library injection. It currently only works under **Linux** using the ``LD_PRELOAD`` mechanism and
-**MacOS** using the ``DYLD_INSERT_LIBRARIES`` mechanism. For other platforms please look into using
+**macOS** using the ``DYLD_INSERT_LIBRARIES`` mechanism. For other platforms please check out
 :ref:`frida-qbdi-api` instead.
 
 QBDIPreload exploits these library injection mechanisms to hijack the normal program startup.
@@ -18,7 +18,7 @@ your instrumentation. The compilation should produce a dynamic library (``.so`` 
 (``LD_PRELOAD`` under **Linux** and ``DYLD_INSERT_LIBRARIES`` under **macOS**) when running the
 target binary.
 
-You can look at the :ref:`qbdi_preload_template` for a working example with build and usage
+You can look at :ref:`qbdi_preload_template` for a working example with build and usage
 instructions.
 
 .. note::
@@ -30,18 +30,18 @@ instructions.
    (inside the loader and the library constructors / init) as explained in :ref:`intro_limitations`.
 
 .. note::
-   QBDIPreload is used with ``LD_PRELOAD`` or ``DYLD_INSERT_LIBRARIES`` mechanism to inject in the target
-   process. The limitations of these mechanisms are applied on QBDIPreload (cannot inject suid binary, ...).
+   QBDIPreload is supposed to be used with ``LD_PRELOAD`` or ``DYLD_INSERT_LIBRARIES`` mechanisms to inject some code into the target
+   process. Hence, the limitations of these also affect QBDIPreload (cannot inject suid binary, ...).
 
 
-Initialization
+Initialisation
 --------------
 
 .. doxygendefine:: QBDIPRELOAD_INIT
     :project: QBDIPRELOAD
 
 
-Return Codes
+Return codes
 ------------
 
 .. doxygendefine:: QBDIPRELOAD_NO_ERROR

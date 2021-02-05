@@ -6,16 +6,16 @@ Frida/QBDI API
 Introduction
 ------------
 
-We propose bindings for Frida, most C/C++ API is available through them, but they are also backed up by helpers that fluidify script writing.
+We provide bindings for Frida, most C/C++ APIs are exported and available through them, but they are also backed up by plenty of helpers that fluidify the script writing.
 
-Frida/QBDI API has the followed difference with C++ API:
+Nevertheless, this API slightly differs from the C++ API:
 
-- All callback must be created as a native function.
-  The Frida-API can be done with :js:func:`QBDI.newInstCallback`, :js:func:`QBDI.newVMCallback` and :js:func:`QBDI.newInstrumentCallback`.
-- The QBDI class is the equivalent of VM in C++ API.
+- Every callback must be created as a native function.
+  The callback registration can be done through calling :js:func:`QBDI.newInstCallback`, :js:func:`QBDI.newVMCallback` and :js:func:`QBDI.newInstrumentCallback`.
+- The *QBDI* class is the equivalent of the *VM* class we have in the C++ API.
 
 
-QBDI Class
+QBDI class
 ----------
 
 With Frida API, the QBDI object is the equivalent of the VM object in C++ API.
@@ -40,7 +40,7 @@ Options
 
 .. _state-management-js:
 
-State Management
+State management
 ++++++++++++++++
 
 .. js:autofunction:: QBDI#getGPRState
@@ -53,7 +53,7 @@ State Management
 
 .. _instrumentation-range-js:
 
-Instrumentation Range
+Instrumentation range
 +++++++++++++++++++++
 
 Addition
@@ -78,7 +78,7 @@ Removal
 
 .. js:autofunction:: QBDI#removeAllInstrumentedRanges
 
-Callback Management
+Callback management
 +++++++++++++++++++
 
 Creation
@@ -137,7 +137,7 @@ Removal
 
 .. js:autofunction:: QBDI#deleteAllInstrumentations
 
-Memory Management
+Memory management
 +++++++++++++++++
 
 Allocation
@@ -184,7 +184,7 @@ MemoryAccess
 
 .. js:autofunction:: QBDI#recordMemoryAccess
 
-Cache Management
+Cache management
 ++++++++++++++++
 
 .. js:autofunction:: QBDI#precacheBasicBlock
@@ -195,7 +195,7 @@ Cache Management
 
 .. _register-state-js:
 
-Register State
+Register state
 --------------
 
 .. js:autoclass:: GPRState
@@ -540,7 +540,7 @@ VMEvent
 
     Not implemented.
 
-Other Globals
+Other globals
 -------------
 
 .. js:autoattribute:: QBDI_LIB_FULLPATH

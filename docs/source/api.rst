@@ -2,13 +2,13 @@
 API
 ===
 
-This section contains the documentation of each API.
+This section contains the documentation of every QBDI API.
 
 
 .. toctree::
     :maxdepth: 2
 
-    API Description         <api_description>
+    API description         <api_description>
     C API                   <api_c>
     C++ API                 <api_cpp>
     PyQBDI API              <api_pyqbdi>

@@ -1,5 +1,7 @@
 .. currentmodule:: pyqbdi
 
+.. _get_started-pyqbdi:
+
 PyQBDI
 ======
 

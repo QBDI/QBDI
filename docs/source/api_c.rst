@@ -6,11 +6,11 @@ C API
 Introduction
 ------------
 
-The C API is a binding to C++ API. All the method of VM class is replaced by C function that gets one VMInstanceRef as a first parameter.
+The C API offers bindings over the C++ API. The VM class' methods are replaced by C functions that receive an object of type ``VMInstanceRef`` as a first parameter.
 
-The API is compatible with :ref:`QBDIPreload <qbdipreload_api>` on Linux and MacOS.
+This API is compatible with :ref:`QBDIPreload <qbdipreload_api>` on Linux and macOS.
 
-VM Object
+VM object
 ---------
 
 ..
@@ -41,7 +41,7 @@ Options
 
 .. _state-management-c:
 
-State Management
+State management
 ++++++++++++++++
 
 .. doxygenfunction:: qbdi_getGPRState
@@ -58,7 +58,7 @@ State Management
 
 .. _instrumentation-range-c:
 
-Instrumentation Range
+Instrumentation range
 +++++++++++++++++++++
 
 Addition
@@ -91,7 +91,7 @@ Removal
 .. doxygenfunction:: qbdi_removeAllInstrumentedRanges
     :project: QBDI_C
 
-Callback Management
+Callback management
 +++++++++++++++++++
 
 .. _instcallback-management-c:
@@ -193,7 +193,7 @@ MemoryAccess
 .. doxygenfunction:: qbdi_recordMemoryAccess
     :project: QBDI_C
 
-Cache Management
+Cache management
 ++++++++++++++++
 
 .. doxygenfunction:: qbdi_precacheBasicBlock
@@ -207,7 +207,7 @@ Cache Management
 
 .. _register-state-c:
 
-Register State
+Register state
 --------------
 
 .. cpp:type:: rword
@@ -360,7 +360,7 @@ VMEvent
     :project: QBDI_C
     :members:
 
-Memory Management
+Memory management
 -----------------
 
 Allocation
@@ -406,7 +406,7 @@ Exploration
 .. doxygenenum:: qbdi_Permission
     :project: QBDI_C
 
-Other Globals
+Other globals
 -------------
 
 .. doxygenenum:: Options

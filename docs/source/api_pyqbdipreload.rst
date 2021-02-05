@@ -6,16 +6,16 @@ PyQBDIPreload API
 Introduction
 ------------
 
-PyQBDIPreload is composed of two components:
+PyQBDIPreload consists of two main components:
 
-- QBDIPreload script included in PyQBDI library.
-  It will load the python runtime and executes the user script to instrument the target.
-- A injector script `pyqbdipreload.py` that set up the environment variable to inject the library and the Python runtime.
+- The QBDIPreload script included in the PyQBDI library.
+  It will load the Python runtime and execute the user script in order to instrument the target.
+- An injector script called `pyqbdipreload.py` that sets up the environment variables to inject the library and the Python runtime.
 
 .. note::
-    PyQBDIPreload shares the limitations of QBDIPreload and PyQBDI.
+    PyQBDIPreload has the same limitations as QBDIPreload and PyQBDI.
 
-User Callback
+User callback
 -------------
 
 .. function:: pyqbdipreload_on_run(vm: pyqbdi.VM, start: int, end: int)
@@ -26,22 +26,22 @@ User Callback
     :param int start: Start address of the range (included).
     :param int end:   End address of the range (excluded).
 
-QBDIPreload step
-----------------
+QBDIPreload steps
+-----------------
 
-:cpp:func:`qbdipreload_on_start` and :cpp:func:`qbdipreload_on_premain` are not available with PyQBDIPreload.
+:cpp:func:`qbdipreload_on_start` and :cpp:func:`qbdipreload_on_premain` are not available on PyQBDIPreload.
 
-The python interpreter and the preloaded script are loaded during :cpp:func:`qbdipreload_on_main`.
+The Python interpreter and the preloaded script are loaded while executing :cpp:func:`qbdipreload_on_main`.
 
-The method :py:func:`pyqbdipreload_on_run` is called during :cpp:func:`qbdipreload_on_main`.
+The :py:func:`pyqbdipreload_on_run` method is called while executing :cpp:func:`qbdipreload_on_main`.
 
-The interpreter is shutdown during :cpp:func:`qbdipreload_on_exit`, after calling all registered methods of
+The interpreter is shut down while executing :cpp:func:`qbdipreload_on_exit`, after calling all the registered methods of
 `atexit <https://docs.python.org/fr/3/library/atexit.html>`_ module.
 
 PyQBDIPreload script
 --------------------
 
-The usage of `pyqbdipreload.py` is the follow:
+You can use `pyqbdipreload.py` as follows:
 
 .. code-block:: bash
 
@@ -49,6 +49,6 @@ The usage of `pyqbdipreload.py` is the follow:
 
 with:
 
-- ``script``: The python script to preload.
-- ``target``: The binary to execute.
-- ``args``: Any arguments to be provided to the binary
+- ``script``: The Python script
+- ``target``: The binary you are targeting
+- ``args``: Argument(s) to be passed to the binary (if any)

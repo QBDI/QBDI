@@ -6,10 +6,10 @@ C++ API
 Introduction
 ------------
 
-The C++ API is primary API of QBDI. The API is compatible with :ref:`QBDIPreload <qbdipreload_api>` on Linux and MacOS.
+The C++ API is the primary API of QBDI. The API is compatible with :ref:`QBDIPreload <qbdipreload_api>` on Linux and macOS.
 
 
-VM Class
+VM class
 --------
 
 .. doxygenclass:: QBDI::VM
@@ -24,7 +24,7 @@ Options
 
 .. _state-management-cpp:
 
-State Management
+State management
 ++++++++++++++++
 
 .. doxygenfunction:: QBDI::VM::getGPRState
@@ -37,7 +37,7 @@ State Management
 
 .. _instrumentation-range-cpp:
 
-Instrumentation Range
+Instrumentation range
 +++++++++++++++++++++
 
 Addition
@@ -62,7 +62,7 @@ Removal
 
 .. doxygenfunction:: QBDI::VM::removeAllInstrumentedRanges
 
-Callback Management
+Callback management
 +++++++++++++++++++
 
 .. _instcallback-management-cpp:
@@ -145,7 +145,7 @@ MemoryAccess
 
 .. doxygenfunction:: QBDI::VM::recordMemoryAccess
 
-Cache Management
+Cache management
 ++++++++++++++++
 
 .. doxygenfunction:: QBDI::VM::precacheBasicBlock
@@ -156,7 +156,7 @@ Cache Management
 
 .. _register-state-cpp:
 
-Register State
+Register state
 --------------
 
 .. cpp:type:: QBDI::rword
@@ -288,7 +288,7 @@ VMEvent
 .. doxygenstruct:: QBDI::VMState
     :members:
 
-Memory Management
+Memory management
 -----------------
 
 Allocation
@@ -320,7 +320,7 @@ Exploration
 
 .. doxygenenum:: QBDI::Permission
 
-Other Globals
+Other globals
 -------------
 
 .. doxygenenum:: QBDI::Options
