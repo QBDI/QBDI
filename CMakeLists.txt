@@ -473,6 +473,9 @@ if(${DEPENDENCY_SATISFIED})
     endif()
 
     # DEPENDENCY_SATISFIED
+else()
+    # raise an erreur if the compilation is run without llvm
+    add_custom_target(missing-llvm ALL cmake -E false)
 endif()
 
 # Add documentation

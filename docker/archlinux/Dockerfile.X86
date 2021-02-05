@@ -16,6 +16,7 @@ RUN echo "[multilib]" >> /etc/pacman.conf && \
         base-devel \
         sudo \
         gcc \
+        git \
         make \
         cmake \
         python3 \
@@ -61,7 +62,7 @@ RUN sudo chown -R $USER:$USER . && \
     cd build && \
     cp ../docker/archlinux/PKGBUILD.$QBDI_ARCH PKGBUILD && \
     makepkg -fc && \
-    sudo pacman -U --noconfirm QBDI-*.pkg.tar.xz
+    sudo pacman -U --noconfirm QBDI-*.pkg.tar.zst
 
 WORKDIR "$HOME/"
 CMD ["/bin/bash"]

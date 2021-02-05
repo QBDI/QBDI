@@ -40,9 +40,9 @@ jobs:
         id: cache-llvm
         with:
           path: |
-            deps/llvm/linux-${{ matrix.QBDI_ARCH }}/include
-            deps/llvm/linux-${{ matrix.QBDI_ARCH }}/lib
-          key: llvm-${{ runner.os }}-android-${{ matrix.QBDI_ARCH }}-${{ hashFiles('deps/llvm/build.py') }}
+            deps/llvm/android-${{ matrix.QBDI_ARCH }}/include
+            deps/llvm/android-${{ matrix.QBDI_ARCH }}/lib
+          key: llvm-android-${{ matrix.QBDI_ARCH }}-${{ hashFiles('deps/llvm/build.py') }}-ndk-${{ env.NDK_VERSION }}
       - name: Install dependencies
         run: sudo apt-get install build-essential ccache cmake g++ libstdc++-8-dev make ninja-build pkg-config python3 unzip wget zlib1g-dev
       - name: Install android NDK ${{ env.NDK_VERSION }}

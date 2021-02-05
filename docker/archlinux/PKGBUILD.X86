@@ -2,7 +2,7 @@
 # Maintainer: QBDI Team <qbdi@quarkslab.com>
 
 pkgname=QBDI-X86
-pkgver=0.7.2_devel
+pkgver=0.8.0_devel
 pkgrel=1
 epoch=
 pkgdesc="QuarkslaB Dynamic binary Instrumentation for linux-X86"
@@ -11,7 +11,7 @@ url="https://qbdi.quarkslab.com/"
 license=('apache2')
 depends=('lib32-zlib')
 options=(staticlibs)
-makedepends=('cmake' 'make' 'gcc' 'python')
+makedepends=('cmake' 'make' 'gcc' 'python' 'git')
 
 prepare() {
     mkdir "$pkgname-$pkgver"
@@ -25,6 +25,7 @@ build() {
           -DQBDI_ARCH=X86 \
           -DCMAKE_INSTALL_PREFIX=/usr \
           -DQBDI_TOOLS_PYQBDI=OFF \
+          -DQBDI_CCACHE=OFF \
           ../../../
     [[ -d "../../../deps/llvm/linux-X86" ]] || make llvm
     cmake -DCMAKE_BUILD_TYPE=Release \
@@ -33,6 +34,7 @@ build() {
           -DQBDI_ARCH=X86 \
           -DCMAKE_INSTALL_PREFIX=/usr \
           -DQBDI_TOOLS_PYQBDI=OFF \
+          -DQBDI_CCACHE=OFF \
           ../../../
     make -j4
 }
