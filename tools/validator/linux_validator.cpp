@@ -85,7 +85,6 @@ int QBDI::qbdipreload_on_start(void *main) {
     setvbuf(stdin, NULL, _IONBF, 0);
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
-    signal(SIGCHLD, SIG_IGN);
 
     int ctrlfds[2];
     int datafds[2];
@@ -102,6 +101,7 @@ int QBDI::qbdipreload_on_start(void *main) {
         close(ctrlfds[1]);
         close(datafds[0]);
 
+        signal(SIGCHLD, SIG_IGN);
         INSTRUMENTED = true;
         return QBDIPRELOAD_NOT_HANDLED;
     }
@@ -112,15 +112,12 @@ int QBDI::qbdipreload_on_start(void *main) {
         // debugged and the instrumented process
         close(ctrlfds[1]);
         close(datafds[0]);
+        signal(SIGCHLD, SIG_IGN);
 
         ptrace(PTRACE_TRACEME, 0, NULL, NULL);
+        raise(SIGSTOP);
         return QBDIPRELOAD_NO_ERROR;
     }
-
-    ctrlfd = ctrlfds[1];
-    datafd = datafds[0];
-    close(ctrlfds[0]);
-    close(datafds[1]);
 
     if (ptrace(PTRACE_ATTACH, debugged, NULL, NULL) == -1) {
         fprintf(stderr, "validator: fatal error, PTRACE_ATTACH failed !\n\n");
@@ -129,6 +126,17 @@ int QBDI::qbdipreload_on_start(void *main) {
         exit(0);
     }
 
+    ctrlfd = ctrlfds[1];
+    datafd = datafds[0];
+    close(ctrlfds[0]);
+    close(datafds[1]);
+
+    int wstatus;
+    do {
+        waitpid(debugged, &wstatus, WUNTRACED | WCONTINUED);
+    } while (!WIFSTOPPED(wstatus));
+
+    signal(SIGCHLD, SIG_IGN);
     MASTER = true;
     atexit(killChild);
     return QBDIPRELOAD_NOT_HANDLED;

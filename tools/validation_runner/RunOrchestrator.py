@@ -68,7 +68,7 @@ class RunOrchestrator:
         async_res = []
         # Schedule validation on multiple process
         for idx in range(len(tests)):
-            env = dict(os.environ, LD_PRELOAD=self.run_cfg.validator_path, VALIDATOR_VERBOSITY='Detail')
+            env = dict(os.environ, LD_PRELOAD=self.run_cfg.validator_path, VALIDATOR_VERBOSITY='Detail', LD_BIND_NOW='1')
             async_res.append(pool.apply_async(run_test, (tests[idx], env, idx)))
         test_results = []
         for idx in range(len(tests)):
