@@ -23,7 +23,7 @@ Intel x86-64
 
 The x86-64 support is complete and mature. Only a small part of SIMD instructions are covered
 by our tests but we do not expect any problems with the uncovered ones because their semantic are
-closely related to the covered ones. We currently don't support the followed features:
+closely related to the covered ones. We currently don't support the following features:
 
 - AVX512: the register of this extension isn't supported and will not be restored/backup during the execution
 - privileged instruction: QBDI is an userland (ring3) application and privileged registers aren't managed
@@ -128,8 +128,8 @@ Instruction Coverage
 Intel x86
 ---------
 
-The x86 support is based on x86_64 and has the same limitations. However, his integration is more recent than X86_64
-and has been less tested.
+The x86 support is based on x86_64 and has the same limitations. However, its integration is more recent than X86_64
+and has less been tested.
 
 Instruction Coverage
 ^^^^^^^^^^^^^^^^^^^^
