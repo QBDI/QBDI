@@ -93,10 +93,13 @@ Then, in order to test it against a target, simply running the following command
 .. code:: bash
 
     # on Linux
-    LD_PRELOAD=./libqbdi_mytracer.so <executable> [<parameters> ...]
+    LD_BIND_NOW=1 LD_PRELOAD=./libqbdi_mytracer.so <executable> [<parameters> ...]
 
     # on macOS
-    sudo DYLD_INSERT_LIBRARIES=./libqbdi_mytracer.so <executable> [<parameters> ...]
+    sudo DYLD_BIND_AT_LAUNCH=1 DYLD_INSERT_LIBRARIES=./libqbdi_mytracer.so <executable> [<parameters> ...]
+
+As the loader is not in the instrumentation range, we recommend setting ``LD_BIND_NOW`` or ``DYLD_BIND_AT_LAUNCH``
+in order to resolve and bind all symbols before the instrumentation.
 
 Full example
 ------------
