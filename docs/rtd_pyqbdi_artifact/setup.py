@@ -21,7 +21,7 @@ default_headers = {"Accept":"application/vnd.github.v3+json",
 workflow_name = "PyQBDI Linux package"
 default_per_page = 100
 
-if platform.architecture()[0] == '64bit':
+if sys.maxsize > 2**32:
     artifact_name = "PyQBDI linux X86_64"
     is_64bits = True
 else:

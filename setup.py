@@ -21,16 +21,16 @@ def detect_QBDI_platform():
 
     if platform.machine() in ['AMD64', 'AMD', 'x64', 'x86_64', 'x86', 'i386', 'i686']:
         # intel arch
-        if platform.architecture()[0] == '32bit':
-            arch = "X86"
-        elif platform.architecture()[0] == '64bit':
+        if sys.maxsize > 2**32:
             arch = "X86_64"
+        else:
+            arch = "X86"
 
     if os and arch:
         return (os, arch)
 
-    raise RuntimeError("Cannot determine the QBDI platform : system={}, machine={}, architecture={}".format(
-                            platform.system(), platform.machine(), platform.architecture()[0]))
+    raise RuntimeError("Cannot determine the QBDI platform : system={}, machine={}, is64bits={}".format(
+                            platform.system(), platform.machine(), sys.maxsize > 2**32))
 
 
 class CMakeExtension(Extension):
