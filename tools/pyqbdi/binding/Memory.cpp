@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#include "Enum.hpp"
 #include "pyqbdi.hpp"
 
 namespace QBDI {
@@ -23,30 +24,14 @@ namespace pyQBDI {
 
 void init_binding_Memory(py::module_& m) {
 
-    py::enum_<Permission>(m, "Permission", "Memory access rights.")
+    enum_int_flag_<Permission>(m, "Permission", "Memory access rights.", py::arithmetic())
         .value("PF_NONE", Permission::PF_NONE, "No access")
         .value("PF_READ", Permission::PF_READ, "Read access")
         .value("PF_WRITE", Permission::PF_WRITE, "Write access")
         .value("PF_EXEC", Permission::PF_EXEC, "Execution access")
         .export_values()
-        .def("__str__",
-                [](const Permission p) {
-                    if (!(p & (Permission::PF_READ|Permission::PF_WRITE|Permission::PF_EXEC)))
-                        return std::string("Permission.PF_NONE");
-                    std::string res;
-                    if (p & Permission::PF_READ)
-                        res += "|Permission.PF_READ";
-                    if (p & Permission::PF_WRITE)
-                        res += "|Permission.PF_WRITE";
-                    if (p & Permission::PF_EXEC)
-                        res += "|Permission.PF_EXEC";
-                    res.erase(0, 1);
-                    return res;
-                })
-        .def("__xor__", [](const Permission p, const Permission other) {return static_cast<Permission>(p ^ other);})
-        .def("__and__", [](const Permission p, const Permission other) {return static_cast<Permission>(p & other);})
-        .def("__or__", [](const Permission p, const Permission other) {return static_cast<Permission>(p | other);});
-
+        .def_invert()
+        .def_repr_str();
 
 
     py::class_<MemoryMap>(m, "MemoryMap")
