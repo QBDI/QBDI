@@ -36,7 +36,7 @@ struct InstrumentDataCBKPython {
         cbk(cbk), data(data), position(position) {}
 };
 
-using PyInstrRuleCallback = std::function<std::vector<InstrumentDataCBKPython>(VMInstanceRef, const InstAnalysis*, py::object&)>;
+using PyInstrumentCallback = std::function<std::vector<InstrumentDataCBKPython>(VMInstanceRef, const InstAnalysis*, py::object&)>;
 
 }
 }

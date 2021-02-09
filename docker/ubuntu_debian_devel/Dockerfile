@@ -103,7 +103,7 @@ RUN sudo chown -R $USER:$USER . && \
     # create package and install
     rm -f QBDI-*-$QBDI_PLATFORM.deb && \
     cpack -G DEB && \
-    sudo dpkg -i QBDI-*-$QBDI_PLATFORM.deb
+    sudo dpkg -i QBDI-*-$QBDI_PLATFORM-$QBDI_ARCH.deb
 
 WORKDIR $HOME
 

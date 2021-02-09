@@ -414,11 +414,11 @@ var VMAction = Object.freeze({
  */
 var InstPosition = Object.freeze({
     /**
-     * Positioned **before** the instruction..
+     * Positioned **before** the instruction.
      */
     PREINST: 0,
     /**
-     * Positioned **after** the instruction..
+     * Positioned **after** the instruction.
      */
     POSTINST: 1
 });
@@ -712,7 +712,20 @@ var Options = Object.freeze({
     OPT_ATT_SYNTAX : 1<<24
 });
 
-
+class InstrumentDataCBK {
+    /**
+     * Object to define an :js:func:`InstCallback` in an :js:func:`InstrumentCallback`
+     *
+     * @param {InstPosition} pos    Relative position of the callback (PreInst / PostInst).
+     * @param {InstCallback} cbk    A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
+     * @param {Object}       data   User defined data passed to the callback.
+     */
+    constructor(pos, cbk, data) {
+        this.position = pos;
+        this.cbk = cbk;
+        this.data = data;
+    }
+}
 
 class State {
     constructor(state) {
@@ -752,7 +765,7 @@ class GPRState extends State  {
     /**
      * This function is used to get the value of a specific register.
      *
-     * @param rid Register (register name or ID can be used e.g : "RAX", "rax", 0)
+     * @param {String|Number} rid Register (register name or ID can be used e.g : "RAX", "rax", 0)
      *
      * @return GPR value (ex: 0x42)
      */
@@ -767,8 +780,8 @@ class GPRState extends State  {
     /**
      * This function is used to set the value of a specific register.
      *
-     * @param rid   Register (register name or ID can be used e.g : "RAX", "rax", 0)
-     * @param value Register value (use **strings** for big integers)
+     * @param {String|Number} rid   Register (register name or ID can be used e.g : "RAX", "rax", 0)
+     * @param {String|Number} value Register value (use **strings** for big integers)
      */
     setRegister(rid, value) {
         var rid = this._getGPRId(rid);
@@ -808,9 +821,9 @@ class GPRState extends State  {
      *
      * .. warning:: Currently QBDI_TO_FRIDA is experimental. (E.G : RIP cannot be synchronized)
      *
-     * @param FridaCtx   Frida context
-     * @param rid        Register (register name or ID can be used e.g : "RAX", "rax", 0)
-     * @param direction  Synchronization direction. (:js:data:`FRIDA_TO_QBDI` or :js:data:`QBDI_TO_FRIDA`)
+     * @param                   FridaCtx   Frida context
+     * @param {String|Number}   rid        Register (register name or ID can be used e.g : "RAX", "rax", 0)
+     * @param {SyncDirection}   direction  Synchronization direction. (:js:data:`FRIDA_TO_QBDI` or :js:data:`QBDI_TO_FRIDA`)
      */
     synchronizeRegister(FridaCtx, rid, direction) {
         if (direction === SyncDirection.FRIDA_TO_QBDI) {
@@ -826,8 +839,8 @@ class GPRState extends State  {
      *
      * .. warning:: Currently QBDI_TO_FRIDA is not implemented (due to Frida limitations).
      *
-     * @param FridaCtx   Frida context
-     * @param direction  Synchronization direction. (:js:data:`FRIDA_TO_QBDI` or :js:data:`QBDI_TO_FRIDA`)
+     * @param                   FridaCtx   Frida context
+     * @param {SyncDirection}   direction  Synchronization direction. (:js:data:`FRIDA_TO_QBDI` or :js:data:`QBDI_TO_FRIDA`)
      */
     synchronizeContext(FridaCtx, direction) {
         for (var i in GPR_NAMES) {
@@ -844,7 +857,7 @@ class GPRState extends State  {
     /**
      * Pretty print QBDI context.
      *
-     * @param [color] Will print a colored version of the context if set.
+     * @param {bool} [color] Will print a colored version of the context if set.
      *
      * @return dump of all GPRs in a pretty format
      */
@@ -872,7 +885,7 @@ class GPRState extends State  {
     /**
      * Pretty print and log QBDI context.
      *
-     * @param [color] Will print a colored version of the context if set.
+     * @param {bool} [color] Will print a colored version of the context if set.
      */
     dump(color) {
         console.log(this.pp(color));
@@ -964,7 +977,7 @@ class QBDI {
     /**
      * Get the current options of the VM
      *
-     * @return    The current option
+     * @return  {Options}  The current option
      */
     getOptions() {
         return QBDI_C.getOptions(this.#vm);
@@ -973,7 +986,7 @@ class QBDI {
     /**
      * Set the options of the VM
      *
-     * @param options  The new options of the VM.
+     * @param  {Options}  options  The new options of the VM.
      */
     setOptions(options) {
         QBDI_C.setOptions(this.#vm, options);
@@ -982,8 +995,8 @@ class QBDI {
     /**
      * Add an address range to the set of instrumented address ranges.
      *
-     * @param start  Start address of the range (included).
-     * @param end    End address of the range (excluded).
+     * @param {String|Number} start  Start address of the range (included).
+     * @param {String|Number} end    End address of the range (excluded).
      */
     addInstrumentedRange(start, end) {
         QBDI_C.addInstrumentedRange(this.#vm, start.toRword(), end.toRword());
@@ -992,9 +1005,9 @@ class QBDI {
     /**
      * Add the executable address ranges of a module to the set of instrumented address ranges.
      *
-     * @param name   The module's name.
+     * @param  {String} name   The module's name.
      *
-     * @return   True if at least one range was added to the instrumented ranges.
+     * @return {bool} True if at least one range was added to the instrumented ranges.
      */
     addInstrumentedModule(name) {
         var namePtr = Memory.allocUtf8String(name);
@@ -1004,9 +1017,9 @@ class QBDI {
     /**
      * Add the executable address ranges of a module to the set of instrumented address ranges. using an address belonging to the module.
      *
-     * @param addr An address contained by module's range.
+     * @param  {String|Number} addr An address contained by module's range.
      *
-     * @return     True if at least one range was removed from the instrumented ranges.
+     * @return {bool} True if at least one range was removed from the instrumented ranges.
      */
     addInstrumentedModuleFromAddr(addr) {
         return QBDI_C.addInstrumentedModuleFromAddr(this.#vm, addr.toRword()) == true;
@@ -1015,7 +1028,7 @@ class QBDI {
     /**
      * Adds all the executable memory maps to the instrumented range set.
      *
-     * @return   True if at least one range was added to the instrumented ranges.
+     * @return {bool} True if at least one range was added to the instrumented ranges.
      */
     instrumentAllExecutableMaps() {
         return QBDI_C.instrumentAllExecutableMaps(this.#vm) == true;
@@ -1024,8 +1037,8 @@ class QBDI {
     /**
      * Remove an address range from the set of instrumented address ranges.
      *
-     * @param start  Start address of the range (included).
-     * @param end    End address of the range (excluded).
+     * @param {String|Number} start  Start address of the range (included).
+     * @param {String|Number} end    End address of the range (excluded).
      */
     removeInstrumentedRange(start, end) {
         QBDI_C.removeInstrumentedRange(this.#vm, start.toRword(), end.toRword());
@@ -1034,9 +1047,9 @@ class QBDI {
     /**
      * Remove the executable address ranges of a module from the set of instrumented address ranges.
      *
-     * @param name   The module's name.
+     * @param {String} name   The module's name.
      *
-     * @return   True if at least one range was added to the instrumented ranges.
+     * @return {bool} True if at least one range was added to the instrumented ranges.
      */
     removeInstrumentedModule(name) {
         var namePtr = Memory.allocUtf8String(name);
@@ -1046,9 +1059,9 @@ class QBDI {
     /**
      * Remove the executable address ranges of a module from the set of instrumented address ranges using an address belonging to the module.
      *
-     * @param addr: An address contained by module's range.
+     * @param {String|Number} addr: An address contained by module's range.
      *
-     * @return   True if at least one range was added to the instrumented ranges.
+     * @return {bool} True if at least one range was added to the instrumented ranges.
      */
     removeInstrumentedModuleFromAddr(addr) {
         return QBDI_C.removeInstrumentedModuleFromAddr(this.#vm, addr.toRword()) == true;
@@ -1064,10 +1077,10 @@ class QBDI {
     /**
      * Start the execution by the DBI from a given address (and stop when another is reached).
      *
-     * @param start  Address of the first instruction to execute.
-     * @param stop   Stop the execution when this instruction is reached.
+     * @param {String|Number} start  Address of the first instruction to execute.
+     * @param {String|Number} stop   Stop the execution when this instruction is reached.
      *
-     * @return   True if at least one block has been executed.
+     * @return {bool} True if at least one block has been executed.
      */
     run(start, stop) {
         return QBDI_C.run(this.#vm, start.toRword(), stop.toRword()) == true;
@@ -1076,7 +1089,7 @@ class QBDI {
     /**
      * Obtain the current general register state.
      *
-     * @return   An object containing the General Purpose Registers state.
+     * @return {GPRState} An object containing the General Purpose Registers state.
      */
     getGPRState() {
         return new GPRState(QBDI_C.getGPRState(this.#vm));
@@ -1085,7 +1098,7 @@ class QBDI {
     /**
      * Obtain the current floating point register state.
      *
-     * @return   An object containing the Floating point Purpose Registers state.
+     * @return {FPRState} An object containing the Floating point Purpose Registers state.
      */
     getFPRState() {
         return new FPRState(QBDI_C.getFPRState(this.#vm));
@@ -1094,7 +1107,7 @@ class QBDI {
     /**
      * Set the GPR state
      *
-     * @param state  Array of register values
+     * @param {GPRState} state  Array of register values
      */
     setGPRState(state) {
         GPRState.validOrThrow(state);
@@ -1104,7 +1117,7 @@ class QBDI {
     /**
      * Set the FPR state
      *
-     * @param state  Array of register values
+     * @param {FPRState} state  Array of register values
      */
     setFPRState(state) {
         FPRState.validOrThrow(state);
@@ -1114,9 +1127,9 @@ class QBDI {
     /**
      * Pre-cache a known basic block.
      *
-     * @param pc  Start address of a basic block
+     * @param {String|Number} pc  Start address of a basic block
      *
-     * @return True if basic block has been inserted in cache.
+     * @return {bool} True if basic block has been inserted in cache.
      */
     precacheBasicBlock(pc) {
         return QBDI_C.precacheBasicBlock(this.#vm, pc) == true
@@ -1125,8 +1138,8 @@ class QBDI {
     /**
      * Clear a specific address range from the translation cache.
      *
-     * @param start  Start of the address range to clear from the cache.
-     * @param end    End of the address range to clear from the cache.
+     * @param {String|Number}  start  Start of the address range to clear from the cache.
+     * @param {String|Number}  end    End of the address range to clear from the cache.
      */
     clearCache(start, end) {
         QBDI_C.clearCache(this.#vm, start, end)
@@ -1143,12 +1156,12 @@ class QBDI {
     /**
      * Register a callback event if the instruction matches the mnemonic.
      *
-     * @param mnem   Mnemonic to match.
-     * @param pos    Relative position of the event callback (PreInst / PostInst).
-     * @param cbk    A function pointer to the callback.
-     * @param data   User defined data passed to the callback.
+     * @param {String}       mnem   Mnemonic to match.
+     * @param {InstPosition} pos    Relative position of the callback (PreInst / PostInst).
+     * @param {InstCallback} cbk    A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
+     * @param {Object}       data   User defined data passed to the callback.
      *
-     * @return   The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
+     * @return {Number} The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
      */
     addMnemonicCB(mnem, pos, cbk, data) {
         var mnemPtr = Memory.allocUtf8String(mnem);
@@ -1161,11 +1174,11 @@ class QBDI {
     /**
      * Register a callback event for every memory access matching the type bitfield made by the instruction in the range codeStart to codeEnd.
      *
-     * @param type   A mode bitfield: either MEMORY_READ, MEMORY_WRITE or both (MEMORY_READ_WRITE).
-     * @param cbk    A function pointer to the callback.
-     * @param data   User defined data passed to the callback.
+     * @param {MemoryAccessType} type   A mode bitfield: either MEMORY_READ, MEMORY_WRITE or both (MEMORY_READ_WRITE).
+     * @param {InstCallback}     cbk    A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
+     * @param {Object}           data   User defined data passed to the callback.
      *
-     * @return   The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
+     * @return {Number} The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
      */
     addMemAccessCB(type, cbk, data) {
         var vm = this.#vm;
@@ -1177,11 +1190,11 @@ class QBDI {
     /**
      * Add a custom instrumentation rule to the VM.
      *
-     * @param cbk    A function pointer to the instrument callback.
-     * @param type   Analyse type needed for this instruction function pointer to the callback
-     * @param data   User defined data passed to the callback.
+     * @param {InstrumentCallback} cbk    A **native** InstrumentCallback returned by :js:func:`QBDI.newInstrumentCallback`.
+     * @param {AnalysisType}       type   Analyse type needed for this instruction function pointer to the callback
+     * @param {Object}             data   User defined data passed to the callback.
      *
-     * @return   The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
+     * @return {Number} The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
      */
     addInstrRule(cbk, type, data) {
         var vm = this.#vm;
@@ -1193,18 +1206,18 @@ class QBDI {
     /**
      * Add a custom instrumentation rule to the VM for a range of address.
      *
-     * @param start  Begin of the range of address where apply the rule
-     * @param end    End of the range of address where apply the rule
-     * @param cbk    A function pointer to the instrument callback.
-     * @param type   Analyse type needed for this instruction function pointer to the callback
-     * @param data   User defined data passed to the callback.
+     * @param {String|Number}      start  Begin of the range of address where apply the rule
+     * @param {String|Number}      end    End of the range of address where apply the rule
+     * @param {InstrumentCallback} cbk    A **native** InstrumentCallback returned by :js:func:`QBDI.newInstrumentCallback`.
+     * @param {AnalysisType}       type   Analyse type needed for this instruction function pointer to the callback
+     * @param {Object}             data   User defined data passed to the callback.
      *
-     * @return   The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
+     * @return {Number} The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
      */
     addInstrRuleRange(start, end, cbk, type, data) {
         var vm = this.#vm;
         return this._retainUserDataForInstrRuleCB(data, function (dataPtr) {
-            return QBDI_C.addInstrRuleRange(vm, start, end, cbk, type, dataPtr);
+            return QBDI_C.addInstrRuleRange(vm, start.toRword(), end.toRword(), cbk, type, dataPtr);
         });
     }
 
@@ -1212,12 +1225,12 @@ class QBDI {
      * Add a virtual callback which is triggered for any memory access at a specific address matching the access type.
      * Virtual callbacks are called via callback forwarding by a gate callback triggered on every memory access. This incurs a high performance cost.
      *
-     * @param addr   Code address which will trigger the callback.
-     * @param type   A mode bitfield: either MEMORY_READ, MEMORY_WRITE or both (MEMORY_READ_WRITE).
-     * @param cbk    A function pointer to the callback.
-     * @param data   User defined data passed to the callback.
+     * @param {String|Number}     addr   Code address which will trigger the callback.
+     * @param {MemoryAccessType}  type   A mode bitfield: either MEMORY_READ, MEMORY_WRITE or both (MEMORY_READ_WRITE).
+     * @param {InstCallback}      cbk    A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
+     * @param {Object}            data   User defined data passed to the callback.
      *
-     * @return   The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
+     * @return {Number} The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
      */
     addMemAddrCB(addr, type, cbk, data) {
         var vm = this.#vm;
@@ -1230,13 +1243,13 @@ class QBDI {
      * Add a virtual callback which is triggered for any memory access in a specific address range matching the access type.
      * Virtual callbacks are called via callback forwarding by a gate callback triggered on every memory access. This incurs a high performance cost.
      *
-     * @param start    Start of the address range which will trigger the callback.
-     * @param end      End of the address range which will trigger the callback.
-     * @param type     A mode bitfield: either MEMORY_READ, MEMORY_WRITE or both (MEMORY_READ_WRITE).
-     * @param cbk      A function pointer to the callback.
-     * @param data     User defined data passed to the callback.
+     * @param {String|Number}     start    Start of the address range which will trigger the callback.
+     * @param {String|Number}     end      End of the address range which will trigger the callback.
+     * @param {MemoryAccessType}  type     A mode bitfield: either MEMORY_READ, MEMORY_WRITE or both (MEMORY_READ_WRITE).
+     * @param {InstCallback}      cbk      A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
+     * @param {Object}            data     User defined data passed to the callback.
      *
-     * @return   The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
+     * @return {Number} The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
      */
     addMemRangeCB(start, end, type, cbk, data) {
         var vm = this.#vm;
@@ -1248,11 +1261,11 @@ class QBDI {
     /**
      * Register a callback event for a specific instruction event.
      *
-     * @param pos    Relative position of the event callback (PreInst / PostInst).
-     * @param cbk    A function pointer to the callback.
-     * @param data   User defined data passed to the callback.
+     * @param {InstPosition} pos    Relative position of the callback (PreInst / PostInst).
+     * @param {InstCallback} cbk    A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
+     * @param {Object}       data   User defined data passed to the callback.
      *
-     * @return   The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
+     * @return {Number} The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
      */
     addCodeCB(pos, cbk, data) {
         var vm = this.#vm;
@@ -1264,12 +1277,12 @@ class QBDI {
     /**
      * Register a callback for when a specific address is executed.
      *
-     * @param addr   Code address which will trigger the callback.
-     * @param pos    Relative position of the event callback (PreInst / PostInst).
-     * @param cbk    A function pointer to the callback.
-     * @param data   User defined data passed to the callback.
+     * @param {String|Number} addr   Code address which will trigger the callback.
+     * @param {InstPosition}  pos    Relative position of the callback (PreInst / PostInst).
+     * @param {InstCallback}  cbk    A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
+     * @param {Object}        data   User defined data passed to the callback.
      *
-     * @return   The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
+     * @return {Number} The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
      */
     addCodeAddrCB(addr, pos, cbk, data) {
         var vm = this.#vm;
@@ -1281,13 +1294,13 @@ class QBDI {
     /**
      * Register a callback for when a specific address range is executed.
      *
-     * @param start  Start of the address range which will trigger the callback.
-     * @param end    End of the address range which will trigger the callback.
-     * @param pos    Relative position of the event callback (PreInst / PostInst).
-     * @param cbk    A function pointer to the callback.
-     * @param data   User defined data passed to the callback.
+     * @param {String|Number} start  Start of the address range which will trigger the callback.
+     * @param {String|Number} end    End of the address range which will trigger the callback.
+     * @param {InstPosition}  pos    Relative position of the callback (PreInst / PostInst).
+     * @param {InstCallback}  cbk    A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
+     * @param {Object}        data   User defined data passed to the callback.
      *
-     * @return   The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
+     * @return {Number} The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
      */
     addCodeRangeCB(start, end, pos, cbk, data) {
         var vm = this.#vm;
@@ -1299,11 +1312,11 @@ class QBDI {
     /**
      * Register a callback event for a specific VM event.
      *
-     * @param mask   A mask of VM event type which will trigger the callback.
-     * @param cbk    A function pointer to the callback.
-     * @param data   User defined data passed to the callback.
+     * @param {VMEvent}    mask   A mask of VM event type which will trigger the callback.
+     * @param {VMCallback} cbk    A **native** VMCallback returned by :js:func:`QBDI.newVMCallback`.
+     * @param {Object}     data   User defined data passed to the callback.
      *
-     * @return   The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
+     * @return {Number} The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
      */
     addVMEventCB(mask, cbk, data) {
         var vm = this.#vm;
@@ -1315,8 +1328,8 @@ class QBDI {
     /**
      * Remove an instrumentation.
      *
-     * @param id   The id of the instrumentation to remove.
-     * @return     True if instrumentation has been removed.
+     * @param   {Number} id   The id of the instrumentation to remove.
+     * @return  {bool} True if instrumentation has been removed.
      */
     deleteInstrumentation(id) {
         this._releaseUserData(id);
@@ -1335,9 +1348,9 @@ class QBDI {
      * Obtain the analysis of the current instruction. Analysis results are cached in the VM.
      * The validity of the returned pointer is only guaranteed until the end of the callback, else a deepcopy of the structure is required.
      *
-     * @param [type] Properties to retrieve during analysis (default to ANALYSIS_INSTRUCTION | ANALYSIS_DISASSEMBLY).
+     * @param {AnalysisType} [type] Properties to retrieve during analysis (default to ANALYSIS_INSTRUCTION | ANALYSIS_DISASSEMBLY).
      *
-     * @return  A InstAnalysis object containing the analysis result.
+     * @return {InstAnalysis} A :js:class:`InstAnalysis` object containing the analysis result.
      */
     getInstAnalysis(type) {
         type = type || (AnalysisType.ANALYSIS_INSTRUCTION | AnalysisType.ANALYSIS_DISASSEMBLY);
@@ -1352,14 +1365,14 @@ class QBDI {
      * Obtain the analysis of a cached instruction. Analysis results are cached in the VM.
      * The validity of the returned pointer is only guaranteed until the end of the callback, else a deepcopy of the structure is required.
      *
-     * @param  addr   The address of the instruction to analyse.
-     * @param [type]  Properties to retrieve during analysis (default to ANALYSIS_INSTRUCTION | ANALYSIS_DISASSEMBLY).
+     * @param {String|Number} addr    The address of the instruction to analyse.
+     * @param {AnalysisType}  [type]  Properties to retrieve during analysis (default to ANALYSIS_INSTRUCTION | ANALYSIS_DISASSEMBLY).
      *
-     * @return A InstAnalysis object containing the analysis result. null if the instruction isn't in the cache.
+     * @return {InstAnalysis} A :js:class:`InstAnalysis` object containing the analysis result. null if the instruction isn't in the cache.
      */
     getCachedInstAnalysis(addr, type) {
         type = type || (AnalysisType.ANALYSIS_INSTRUCTION | AnalysisType.ANALYSIS_DISASSEMBLY);
-        var analysis = QBDI_C.getCachedInstAnalysis(this.#vm, addr, type);
+        var analysis = QBDI_C.getCachedInstAnalysis(this.#vm, addr.toRword(), type);
         if (analysis.isNull()) {
             return NULL;
         }
@@ -1369,7 +1382,7 @@ class QBDI {
     /**
      * Obtain the memory accesses made by the last executed instruction. Return NULL and a size of 0 if the instruction made no memory access.
      *
-     * @param type Memory mode bitfield to activate the logging for: either MEMORY_READ, MEMORY_WRITE or both (MEMORY_READ_WRITE).
+     * @param {MemoryAccessType} type Memory mode bitfield to activate the logging for: either MEMORY_READ, MEMORY_WRITE or both (MEMORY_READ_WRITE).
      */
     recordMemoryAccess(type) {
         return QBDI_C.recordMemoryAccess(this.#vm, type) == true;
@@ -1378,16 +1391,16 @@ class QBDI {
     /**
      * Obtain the memory accesses made by the last executed instruction. Return NULL and a size of 0 if the instruction made no memory access.
      *
-     * @return An array of memory accesses made by the instruction.
+     * @return {MemoryAccess[]} An array of :js:class:`MemoryAccess` made by the instruction.
      */
     getInstMemoryAccess() {
         return this._getMemoryAccess(QBDI_C.getInstMemoryAccess);
     }
 
     /**
-     * Obtain the memory accesses made by the last executed basic block. Return NULL and a size of 0 if the basic block made no memory access.
+     * Obtain the memory accesses made by the last executed sequence. Return NULL and a size of 0 if the basic block made no memory access.
      *
-     * @return   An array of memory accesses made by the basic block.
+     * @return {MemoryAccess[]} An array of :js:class:`MemoryAccess` made by the sequence.
      */
     getBBMemoryAccess() {
         return this._getMemoryAccess(QBDI_C.getBBMemoryAccess);
@@ -1398,8 +1411,10 @@ class QBDI {
     /**
      * Allocate a new stack and setup the GPRState accordingly. The allocated stack needs to be freed with alignedFree().
      *
-     * @param state      Array of register values
-     * @param stackSize  Size of the stack to be allocated.
+     * @param {GPRState} state      Array of register values
+     * @param {Number}   stackSize  Size of the stack to be allocated.
+     *
+     * @return  Pointer (rword) to the allocated memory or NULL in case an error was encountered.
      */
     allocateVirtualStack(state, stackSize) {
         GPRState.validOrThrow(state);
@@ -1415,8 +1430,8 @@ class QBDI {
     /**
      * Allocate a block of memory of a specified sized with an aligned base address.
      *
-     * @param size   Allocation size in bytes.
-     * @param align  Base address alignement in bytes.
+     * @param {Number} size   Allocation size in bytes.
+     * @param {Number} align  Base address alignement in bytes.
      *
      * @return  Pointer (rword) to the allocated memory or NULL in case an error was encountered.
      */
@@ -1424,6 +1439,11 @@ class QBDI {
         return QBDI_C.alignedAlloc(size, align);
     }
 
+    /**
+     * Free a block of aligned memory allocated with alignedAlloc or allocateVirtualStack
+     *
+     * @param {NativePtr} ptr  Pointer to the allocated memory.
+     */
     alignedFree(ptr) {
         QBDI_C.alignedFree(ptr);
     }
@@ -1431,9 +1451,9 @@ class QBDI {
     /**
      * Simulate a call by modifying the stack and registers accordingly.
      *
-     * @param state     Array of register values
-     * @param retAddr   Return address of the call to simulate.
-     * @param args      A variadic list of arguments.
+     * @param {GPRState}                state     Array of register values
+     * @param {String|Number}           retAddr   Return address of the call to simulate.
+     * @param {StringArray|NumberArray} args      A variadic list of arguments.
      */
     simulateCall(state, retAddr, args) {
         GPRState.validOrThrow(state);
@@ -1483,16 +1503,16 @@ class QBDI {
      * Create a native **Instruction rule callback** from a JS function.
      *
      * Example:
-     *       >>> var icbk = vm.newInstrRuleCallback(function(vm, ana, data) {
+     *       >>> var icbk = vm.newInstrumentCallback(function(vm, ana, data) {
      *       >>>   console.log("0x" + ana.address.toString(16) + " " + ana.disassembly);
-     *       >>>   return [{cbk: printCB, data: ana.disassembly, position: InstPosition.POSTINST}];
+     *       >>>   return [new InstrumentDataCBK(InstPosition.POSTINST, printCB, ana.disassembly)];
      *       >>> });
      *
-     * @param cbk an instruction callback (ex: function(vm, ana, data) {};)
+     * @param {InstrumentCallback} cbk an instruction callback (ex: function(vm, ana, data) {};)
      *
-     * @return an instruction rule callback
+     * @return an native InstrumentCallback
      */
-    newInstrRuleCallback(cbk) {
+    newInstrumentCallback(cbk) {
         if (typeof(cbk) !== 'function' || cbk.length !== 3) {
             return undefined;
         }
@@ -1530,9 +1550,9 @@ class QBDI {
      *       >>>   return VMAction.CONTINUE;
      *       >>> });
      *
-     * @param cbk an instruction callback (ex: function(vm, gpr, fpr, data) {};)
+     * @param {InstCallback} cbk an instruction callback (ex: function(vm, gpr, fpr, data) {};)
      *
-     * @return an instruction callback
+     * @return an native InstCallback
      */
     newInstCallback(cbk) {
         if (typeof(cbk) !== 'function' || cbk.length !== 4) {
@@ -1560,9 +1580,9 @@ class QBDI {
      *       >>>   return VMAction.CONTINUE;
      *       >>> });
      *
-     * @param cbk a VM callback (ex: function(vm, state, gpr, fpr, data) {};)
+     * @param {VMCallback} cbk a VM callback (ex: function(vm, state, gpr, fpr, data) {};)
      *
-     * @return a VM callback
+     * @return a native VMCallback
      */
     newVMCallback(cbk) {
         if (typeof(cbk) !== 'function' || cbk.length !== 5) {
@@ -1594,8 +1614,8 @@ class QBDI {
      *       >>> vm.addInstrumentedModuleFromAddr(aFunction);
      *       >>> vm.call(aFunction, [42]);
      *
-     * @param address function address (or Frida ``NativePointer``).
-     * @param [args]  optional list of arguments
+     * @param {String|Number}           address function address (or Frida ``NativePointer``).
+     * @param {StringArray|NumberArray} [args]  optional list of arguments
      */
     call(address, args) {
         address = address.toRword();
@@ -1895,22 +1915,27 @@ class QBDI {
 // nodejs export
 if (typeof(module) !== "undefined") {
     var exports = module.exports = {
-        QBDI_LIB_FULLPATH: QBDI_LIB_FULLPATH,
-        QBDI: QBDI,
-        rword: rword,
-        GPR_NAMES: GPR_NAMES,
-        REG_RETURN: REG_RETURN,
-        REG_PC: REG_PC,
-        REG_SP: REG_SP,
-        VMError: VMError,
-        InstPosition: InstPosition,
-        VMAction: VMAction,
-        VMEvent: VMEvent,
         AnalysisType: AnalysisType,
-        OperandType: OperandType,
-        RegisterAccessType: RegisterAccessType,
+        ConditionType: ConditionType,
+        GPR_NAMES: GPR_NAMES,
+        InstPosition: InstPosition,
+        InstrumentDataCBK: InstrumentDataCBK,
+        MemoryAccessFlags: MemoryAccessFlags,
         MemoryAccessType: MemoryAccessType,
+        OperandFlag: OperandFlag,
+        OperandType: OperandType,
+        Options: Options,
+        QBDI: QBDI,
+        QBDI_LIB_FULLPATH: QBDI_LIB_FULLPATH,
+        REG_PC: REG_PC,
+        REG_RETURN: REG_RETURN,
+        REG_SP: REG_SP,
+        RegisterAccessType: RegisterAccessType,
         SyncDirection: SyncDirection,
+        VMAction: VMAction,
+        VMError: VMError,
+        VMEvent: VMEvent,
+        rword: rword,
 
         // Allow automagic exposure of QBDI interface in nodejs GLOBAL
         import: function() {

@@ -14,23 +14,31 @@ supported by QBDI. This estimation is far from complete because the other instru
 probably never encountered in the test
 suite.
 
-Instructions below are listed using their LLVM MC naming. This naming convention distinguishes
+Instructions below are listed using their mnemonic (or LLVM MC opcode). This naming convention distinguishes
 between size and operand variants of the same mnemonic: ``ADD64rm`` is a 64 bits add of a memory
-value to a register while ``ADD32ri8`` is a 32 bits add of a 8 bits immediate to a register.
+value to a register while ``ADD32ri8`` is a 32 bits add of an 8 bits immediate to a register.
 
 Intel x86-64
 ------------
 
-The x86-64 support is complete and mature although there are still some rare bugs linked to problems
-in the assembly and disassembly backend of LLVM. Only a small part of SIMD instructions are covered
+The x86-64 support is complete and mature. Only a small part of SIMD instructions are covered
 by our tests but we do not expect any problems with the uncovered ones because their semantic are
-closely related with the covered ones.
+closely related to the covered ones. We currently don't support the following features:
 
-Memory access information is provided for general and SIMD instructions, except:
+- AVX512: the register of this extension isn't supported and will not be restored/backup during the execution
+- privileged instruction: QBDI is an userland (ring3) application and privileged registers aren't managed
+- CET feature: shadow stack is not implemented and the current instrumentation doesn't support
+  indirect branch tracking.
+- HLE and RTM features and any instructions for multithreading: QBDI allows inserting callbacks
+  at any position and cannot guarantee that instructions of the same transactions unit will not be split.
+- MPX feature: bound registers aren't supported.
+- XOP instructions for ADM processors: The instructions are never been tested.
 
-- privileged instructions
-- instructions of CET, RTM, MPX, XOP or AVX512 features
-- VGATHER* and VPGATHER* instructions of AVX2
+The memory access information is provided for most of general and SIMD instructions.
+The information is missing for:
+
+- The instructions include in an unsupported feature
+- VGATHER* and VPGATHER* instructions of AVX2.
 
 Instruction Coverage
 ^^^^^^^^^^^^^^^^^^^^
@@ -38,68 +46,90 @@ Instruction Coverage
 .. code-block:: bash
 
     ADC32mi8 ADC64mi8
-    ADD16mi8 ADD16mr ADD16rm ADD32i32 ADD32mi8 ADD32mr ADD32ri ADD32ri8 ADD32rm ADD32rr ADD64i32 ADD64mi32 ADD64mi8 ADD64mr ADD64ri32 ADD64ri8 ADD64rm ADD64rr ADD8rr ADDSDrm
+    ADD16mi8 ADD16mr ADD16rm ADD32i32 ADD32mi8 ADD32mr ADD32ri ADD32ri8 ADD32rm ADD32rr ADD64i32 ADD64mi32 ADD64mi8 ADD64mr ADD64ri32 ADD64ri8 ADD64rm ADD64rr ADD8rr ADDSDrm_Int ADDSDrr_Int
     AESENCLASTrr AESENCrr
-    AND16mi AND16mr AND32i32 AND32mi8 AND32mr AND32ri AND32ri8 AND32rm AND32rr AND64mi8 AND64mr AND64ri8 AND64rr AND8mi AND8mr AND8ri AND8rm AND8rr ANDPDrr
-    BSWAP32r BSWAP64r
-    BT64rr
+    AND16mi AND16mr AND32i32 AND32mi8 AND32mr AND32ri AND32ri8 AND32rm AND32rr AND64mi8 AND64mr AND64ri8 AND64rr AND8mi AND8mr AND8ri AND8rm AND8rr ANDNPDrr ANDPDrm ANDPDrr
+    BSWAP32r BSWAP64r BT64rr
     CALL64m CALL64pcrel32 CALL64r
-    CDQ
-    CDQE
-    CMOVA32rr CMOVA64rr CMOVAE32rm CMOVAE32rr CMOVAE64rr CMOVB32rr CMOVB64rr CMOVBE32rr CMOVBE64rm CMOVBE64rr CMOVE32rm CMOVE32rr CMOVE64rr CMOVG32rr CMOVG64rr CMOVGE32rr CMOVL32rr CMOVLE32rr CMOVNE32rm CMOVNE32rr CMOVNE64rm CMOVNE64rr CMOVNS32rr CMOVNS64rr CMOVS32rr CMOVS64rr
-    CMP16mi8 CMP16mr CMP16rm CMP16rr CMP32i32 CMP32mi CMP32mi8 CMP32mr CMP32ri CMP32ri8 CMP32rm CMP32rr CMP64i32 CMP64mi32 CMP64mi8 CMP64mr CMP64ri32 CMP64ri8 CMP64rm CMP64rr CMP8i8 CMP8mi CMP8mr CMP8ri CMP8rm CMP8rr CMPSB
+    CDQ CDQE
+    CMOV32rm CMOV32rr CMOV64rm CMOV64rr
+    CMP16mi8 CMP16mr CMP16rm CMP16rr CMP32i32 CMP32mi CMP32mi8 CMP32mr CMP32ri CMP32ri8 CMP32rm CMP32rr CMP64i32 CMP64mi32 CMP64mi8 CMP64mr CMP64ri32 CMP64ri8 CMP64rm CMP64rr CMP8i8 CMP8mi CMP8mr CMP8ri CMP8rm CMP8rr
+    CMPSB
+    CMPSDrr_Int
     CMPXCHG32rm CMPXCHG64rm
     COMISDrm COMISDrr
     CQO
-    CVTSI2SDrr CVTSI642SDrr CVTTSD2SI64rr CVTTSD2SIrr
-    DEC32r
-    DIV64m DIV64r DIVSDrm DIVSDrr IDIV32m IDIV32r IDIV64r
+    CVTSI2SDrr_Int CVTSI642SDrm_Int CVTSI642SDrr_Int CVTTSD2SI64rr_Int CVTTSD2SIrr_Int
+    DEC32m DEC32r
+    DIV32r DIV64m DIV64r DIVSDrm_Int DIVSDrr_Int
+    IDIV32m IDIV32r IDIV64r
     IMUL32r IMUL32rm IMUL32rr IMUL64rmi8 IMUL64rr IMUL64rri32
-    JA_1 JA_4 JAE_1 JAE_4 JB_1 JB_4 JBE_1 JBE_4 JE_1 JE_4 JG_1 JG_4 JGE_1 JGE_4 JL_1 JL_4 JLE_1 JLE_4 JMP_1 JMP_4 JMP64m JMP64r JNE_1 JNE_4 JNP_1 JNS_1 JNS_4 JS_1 JS_4
+    JCC_1 JCC_4
+    JMP64m JMP64r
+    JMP_1 JMP_4
     LEA64_32r LEA64r
     MFENCE
-    MOV16mi MOV16mr MOV32mi MOV32mr MOV32ri MOV32rm MOV32rr MOV64mi32 MOV64mr MOV64ri MOV64ri32 MOV64rm MOV64rr MOV8mi MOV8mr MOVAPDrr MOVAPSmr MOVDQArm MOVDQArr MOVDQUmr MOVDQUrm MOVQI2PQIrm MOVSDmr MOVSDrm MOVSL MOVSQ MOVSX32rm8 MOVSX32rr8 MOVSX64rm32 MOVSX64rm8 MOVSX64rr16 MOVSX64rr32 MOVSX64rr8 MOVUPSmr MOVUPSrm MOVZX32rm16 MOVZX32rm8 MOVZX32rr16 MOVZX32rr8
-    MUL32r MUL64r MULSDrr
+    MOV16mi MOV16mr MOV32mi MOV32mr MOV32ri MOV32rm MOV32rr MOV64mi32 MOV64mr MOV64ri MOV64ri32 MOV64rm MOV64rr MOV8mi MOV8mr
+    MOVAPDrr MOVAPSmr
+    MOVDQArm MOVDQArr
+    MOVDQUmr MOVDQUrm
+    MOVQI2PQIrm
+    MOVSDmr MOVSDrm
+    MOVSL MOVSQ
+    MOVSX32rm8 MOVSX32rr8 MOVSX64rm32 MOVSX64rm8 MOVSX64rr16 MOVSX64rr32 MOVSX64rr8
+    MOVUPSmr MOVUPSrm
+    MOVZX32rm16 MOVZX32rm8 MOVZX32rr16 MOVZX32rr8
+    MUL32r MUL64r MULSDrr_Int
     NEG32r NEG64r
-    NOOP NOOPL NOOPW
+    NOOP NOOP NOOPW
     NOT32r NOT64m NOT64r
-    OR16rm OR32i32 OR32mi OR32mi8 OR32mr OR32ri8 OR32rm OR32rr OR64i32 OR64ri8 OR64rm OR64rr OR8i8 OR8mi OR8mr OR8rm OR8rr
+    OR16rm OR32i32 OR32mi OR32mi8 OR32mr OR32ri OR32ri8 OR32rm OR32rr OR64i32 OR64ri8 OR64rm OR64rr OR8i8 OR8mi OR8mr OR8ri OR8rm OR8rr
+    ORPDrr
     POP64r
     PSHUFBrr PSHUFDri
     PSLLDQri PSLLDri
-    PUSH64i32 PUSH64i8 PUSH64r PUSH64rmm
+    PUSH64i8 PUSH64r PUSH64rmm
     PXORrr
     RETQ
     ROL32r1 ROL32ri ROL64r1 ROL64ri
     ROR32ri ROR64r1 ROR64ri
+    ROUNDSDr_Int
     SAR32r1 SAR32rCL SAR32ri SAR64r1 SAR64ri
     SBB32ri8 SBB32rr SBB64ri8 SBB64rr SBB8i8 SBB8ri
     SCASB
-    SETAEr SETAr SETBEr SETBr SETEm SETEr SETGr SETLEr SETLr SETNEm SETNEr SETOr
+    SETCCm SETCCr
     SHL32rCL SHL32ri SHL64rCL SHL64ri
     SHR16ri SHR32r1 SHR32rCL SHR32ri SHR64r1 SHR64rCL SHR64ri SHR8r1 SHR8ri
     STOSQ
-    SUB32i32 SUB32mr SUB32ri SUB32ri8 SUB32rm SUB32rr SUB64mi8 SUB64mr SUB64ri32 SUB64ri8 SUB64rm SUB64rr
-    SUB8mr
+    SUB32mi8 SUB32mr SUB32ri SUB32ri8 SUB32rm SUB32rr SUB64mi8 SUB64mr SUB64ri32 SUB64ri8 SUB64rm SUB64rr SUB8mr SUBSDrm_Int SUBSDrr_Int
     SYSCALL
     TEST16mi TEST16ri TEST16rr TEST32i32 TEST32mi TEST32mr TEST32ri TEST32rr TEST64ri32 TEST64rr TEST8i8 TEST8mi TEST8ri TEST8rr
     UCOMISDrr
-    VADDSDrm VADDSDrr
-    VCVTSI2SDrr
-    VFMADD132SDm VFMADD132SDr VFMADD213SDm VFMADD231SDm
-    VFMSUB132SDr
-    VMOVAPDrr VMOVPQIto64rr VMOVSDrm
-    VMULSDrm VMULSDrr
-    VSUBSDrr
+    VADDSDrm_Int VADDSDrr_Int
+    VANDPDrr
+    VCOMISDrr
+    VFMADD132SDm_Int VFMADD132SDr_Int VFMADD213SDm_Int VFMADD231SDr_Int
+    VFNMADD231SDm_Int
+    VMOVAPDrr
+    VMOVPDI2DIrr
+    VMOVPQIto64rr
+    VMOVQI2PQIrm
+    VMOVSDrm
+    VMULSDrm_Int VMULSDrr_Int
+    VSTMXCSR
+    VSUBSDrm_Int VSUBSDrr_Int
+    VUCOMISDrm VUCOMISDrr
     VXORPDrr
     XADD32rm
     XCHG32rm XCHG64rr
-    XOR32ri XOR32ri8 XOR32rm XOR32rr XOR64rm XOR64rr XOR8rm XORPSrr
+    XOR32ri XOR32ri8 XOR32rm XOR32rr XOR64rm XOR64rr XOR8rm
+    XORPSrr
 
 Intel x86
 ---------
 
-The x86 support is based on x86-64.
+The x86 support is based on x86_64 and has the same limitations. However, its integration is more recent than X86_64
+and has less been tested.
 
 Instruction Coverage
 ^^^^^^^^^^^^^^^^^^^^
@@ -108,7 +138,8 @@ Instruction Coverage
 
     ABS_F
     ADC32mi8 ADC32mr ADC32ri ADC32ri8 ADC32rm ADC32rr
-    ADD16mi8 ADD16mr ADD16ri ADD16rm ADD32i32 ADD32mi ADD32mi8 ADD32mr ADD32ri ADD32ri8 ADD32rm ADD32rr ADD8rr ADD_F32m
+    ADD16mi8 ADD16mr ADD16ri ADD16rm ADD32i32 ADD32mi ADD32mi8 ADD32mr ADD32ri ADD32ri8 ADD32rm ADD32rr ADD8rr
+    ADD_F32m ADD_FPrST0 ADD_FrST0
     AESENCLASTrr AESENCrr
     AND16mi AND16mr AND32i32 AND32mi8 AND32mr AND32ri AND32ri8 AND32rm AND32rr AND8mi AND8mr AND8ri AND8rm AND8rr
     BSWAP32r
@@ -117,35 +148,52 @@ Instruction Coverage
     CDQ
     CHS_F
     CLD
-    CMOVA32rr CMOVAE32rm CMOVAE32rr CMOVB32rm CMOVB32rr CMOVBE32rm CMOVBE32rr CMOVE32rm CMOVE32rr CMOVG32rm CMOVG32rr CMOVGE32rr CMOVL32rr CMOVLE32rr CMOVNE32rm CMOVNE32rr CMOVNS32rm CMOVNS32rr CMOVS32rr
-    CMP16mi8 CMP16mr CMP16rm CMP16rr CMP32i32 CMP32mi CMP32mi8 CMP32mr CMP32ri CMP32ri8 CMP32rm CMP32rr CMP8i8 CMP8mi CMP8mr CMP8ri CMP8rm CMP8rr CMPSB CMPSW CMPXCHG32rm
-    COM_FIPr COM_FIr
+    CMOV32rm CMOV32rr
+    CMOVE_F
+    CMP16mi8 CMP16mr CMP16rm CMP32i32 CMP32mi CMP32mi8 CMP32mr CMP32ri CMP32ri8 CMP32rm CMP32rr CMP8i8 CMP8mi CMP8mr CMP8ri CMP8rm CMP8rr
+    CMPSB CMPSW
+    CMPXCHG32rm
+    COM_FIPr
+    COM_FIr
     DEC32r_alt
-    DIV32m DIV32r DIV_F64m DIV_FPrST0 DIVR_F32m DIVR_F64m
+    DIV32m DIV32r
+    DIVR_F32m DIVR_F64m
+    DIV_F32m DIV_F64m
+    DIV_FPrST0
     FCOMP64m
     FLDCW16m
+    FLDENVm
     FNSTCW16m FNSTSW16r
+    FRNDINT
+    FSTENVm
     FXAM
     IDIV32m
-    ILD_F32m
-    ILD_F64m
+    ILD_F32m ILD_F64m
     IMUL32r IMUL32rm IMUL32rmi8 IMUL32rr IMUL32rri
     INC32r_alt
     IST_FP32m IST_FP64m
-    JA_1 JA_4 JAE_1 JAE_4 JB_1 JB_4 JBE_1 JBE_4 JE_1 JE_4 JG_1 JG_4 JGE_1 JGE_4 JL_1 JL_4 JLE_1 JLE_4 JMP_1 JMP32m JMP32r JMP_4 JNE_1 JNE_4 JNP_1 JNS_1 JNS_4 JS_1 JS_4
+    JCC_1 JCC_4
+    JMP32m JMP32r
+    JMP_1 JMP_4
     LD_F0 LD_F1 LD_F32m LD_F64m LD_F80m LD_Frr
     LEA32r
-    MOV16mi MOV16mr MOV16o32a MOV16rm MOV32ao32 MOV32mi MOV32mr MOV32o32a MOV32ri MOV32rm MOV32rr MOV8mi MOV8mr MOV8o32a MOV8rm MOV8rr MOVAPSrr MOVDQArm MOVDQArr MOVDQUmr MOVSB MOVSL MOVSX32rm8 MOVSX32rr16 MOVSX32rr8 MOVUPSmr MOVUPSrm MOVZX32rm16 MOVZX32rm8 MOVZX32rr16 MOVZX32rr8
-    MUL32m MUL32r MUL_F32m MUL_FPrST0 MUL_FST0r
+    MOV16mi MOV16mr MOV16rm MOV32ao32 MOV32mi MOV32mr MOV32o32a MOV32ri MOV32rm MOV32rr MOV8mi MOV8mr MOV8rm MOV8rr
+    MOVAPSrr
+    MOVDQArm MOVDQArr
+    MOVDQUmr
+    MOVSB MOVSL
+    MOVSX32rm8 MOVSX32rr16 MOVSX32rr8
+    MOVUPSmr MOVUPSrm
+    MOVZX32rm16 MOVZX32rm8 MOVZX32rr16 MOVZX32rr8
+    MUL32m MUL32r
+    MUL_F32m MUL_FPrST0 MUL_FST0r
     NEG32r
     NOOP
     NOT32m NOT32r
-    OR16rm OR32i32 OR32mi OR32mi8 OR32mr OR32ri8 OR32rm OR32rr OR8i8 OR8mi OR8mr OR8ri OR8rm OR8rr
+    OR16ri OR16rm OR32i32 OR32mi OR32mi8 OR32mr OR32ri OR32ri8 OR32rm OR32rr OR8i8 OR8mi OR8mr OR8ri OR8rm OR8rr
     POP32r
-    PSHUFBrr
-    PSHUFDri
-    PSLLDQri
-    PSLLDri
+    PSHUFBrr PSHUFDri
+    PSLLDQri PSLLDri
     PUSH32i8 PUSH32r PUSH32rmm PUSHi32
     PXORrr
     RETL
@@ -155,16 +203,20 @@ Instruction Coverage
     SAR32r1 SAR32rCL SAR32ri
     SBB32mi8 SBB32ri8 SBB32rm SBB32rr SBB8i8 SBB8ri
     SCASB
-    SETAEr SETAr SETBEr SETBr SETEm SETEr SETGr SETLEr SETLr SETNEm SETNEr SETOr
-    SHL32rCL SHL32ri SHLD32rrCL SHLD32rri8
-    SHR16ri SHR32r1 SHR32rCL SHR32ri SHR8m1 SHR8r1 SHR8ri SHRD32rri8
-    ST_F64m ST_FP64m ST_FP80m ST_FPrr
+    SETCCm SETCCr
+    SHL32rCL SHL32ri
+    SHLD32rrCL SHLD32rri8
+    SHR16ri SHR32r1 SHR32rCL SHR32ri SHR8m1 SHR8ri
+    SHRD32rri8
     STOSL
+    ST_F64m ST_FP64m ST_FP80m ST_FPrr
     SUB32i32 SUB32mi8 SUB32mr SUB32ri SUB32ri8 SUB32rm SUB32rr SUB8mr SUB8ri SUB8rm
+    SUBR_F64m SUBR_FPrST0
+    SUB_FPrST0 SUB_FrST0
     TEST16mi TEST16ri TEST16rr TEST32i32 TEST32mi TEST32mr TEST32ri TEST32rr TEST8i8 TEST8mi TEST8mr TEST8ri TEST8rr
     UCOM_FIr UCOM_FPr
     XADD32rm
-    XCH_F
     XCHG32ar XCHG32rm XCHG32rr
-    XOR16rr XOR32i32 XOR32mr XOR32ri XOR32ri8 XOR32rm XOR32rr XOR8rm XORPSrr
-
+    XCH_F
+    XOR16rr XOR32i32 XOR32mr XOR32ri XOR32ri8 XOR32rm XOR32rr XOR8rm
+    XORPSrr

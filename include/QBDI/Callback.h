@@ -163,14 +163,15 @@ using InstrumentDataVec = std::vector<InstrumentDataCBK>*;
 typedef void* InstrumentDataVec;
 #endif
 
-/*! Instrument callback function type.
+/*! Instrument callback function type for C API.
  *
  * @param[in] vm                VM instance of the callback.
  * @param[in] inst              AnalysisType of the current instrumented Instruction.
  * @param[in] cbks              An object to add the callback to apply for this instruction.
+ *                              InstCallback can be add with qbdi_addInstrumentData
  * @param[in] data              User defined data which can be defined when registering the callback.
  */
-typedef void (*QBDI_InstrumentCallback)(VMInstanceRef vm, const InstAnalysis *inst, InstrumentDataVec cbks, void* data);
+typedef void (*InstrumentCallbackC)(VMInstanceRef vm, const InstAnalysis *inst, InstrumentDataVec cbks, void* data);
 
 #ifdef __cplusplus
 

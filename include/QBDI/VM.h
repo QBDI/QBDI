@@ -57,6 +57,7 @@ public:
      *
      * @param[in] cpu    The name of the CPU
      * @param[in] mattrs A list of additional attributes
+     * @param[in] opts   The options to enable in the VM
      */
     VM(const std::string& cpu = "", const std::vector<std::string>& mattrs = {}, Options opts = Options::NO_OPT);
 
@@ -73,6 +74,7 @@ public:
     /*! Move assignment operator
      *  All the cache is keep.
      *  All registered callbacks will be called with the new pointer of the VM.
+     *  This operator mustn't be called when the target VM runs.
      *
      * @param[in] vm     The VM to move
      */
@@ -89,6 +91,7 @@ public:
     /*! Copy assignment operator
      *  The state and the configuration is copied. The cache isn't duplicate.
      *  The assigned VM begin with an empty cache.
+     *  This operator mustn't be called when the target VM runs.
      *
      * @param[in] vm     The VM to copy
      */
@@ -127,6 +130,7 @@ public:
     Options     getOptions() const;
 
     /*! Set the Options of the VM
+     *  This method mustn't be called when the VM runs.
      *
      * @param[in] options  the new options of the VM
      *
@@ -192,6 +196,7 @@ public:
     void         removeAllInstrumentedRanges();
 
     /*! Start the execution by the DBI.
+     *  This method mustn't be called if the VM already runs.
      *
      * @param[in] start  Address of the first instruction to execute.
      * @param[in] stop   Stop the execution when this instruction is reached.
@@ -201,6 +206,7 @@ public:
     bool        run(rword start, rword stop);
 
     /*! Call a function using the DBI (and its current state).
+     *  This method mustn't be called if the VM already runs.
      *
      * @param[in] [retval]   Pointer to the returned value (optional).
      * @param[in] function   Address of the function start instruction.
@@ -223,6 +229,7 @@ public:
     bool        call(rword* retval, rword function, const std::vector<rword>& args = {});
 
     /*! Call a function using the DBI (and its current state).
+     *  This method mustn't be called if the VM already runs.
      *
      * @param[in] [retval]   Pointer to the returned value (optional).
      * @param[in] function   Address of the function start instruction.
@@ -234,6 +241,7 @@ public:
     bool        callA(rword* retval, rword function, uint32_t argNum, const rword* args);
 
     /*! Call a function using the DBI (and its current state).
+     *  This method mustn't be called if the VM already runs.
      *
      * @param[in] [retval]   Pointer to the returned value (optional).
      * @param[in] function   Address of the function start instruction.
@@ -256,7 +264,7 @@ public:
     uint32_t addInstrRule(InstrumentCallback cbk, AnalysisType type, void* data);
 
     // register C like InstrumentCallback
-    uint32_t addInstrRule(QBDI_InstrumentCallback cbk, AnalysisType type, void* data);
+    uint32_t addInstrRule(InstrumentCallbackC cbk, AnalysisType type, void* data);
 
     /*! Add a custom instrumentation rule to the VM on a specify range
      *
@@ -272,7 +280,7 @@ public:
     uint32_t addInstrRuleRange(rword start, rword end, InstrumentCallback cbk, AnalysisType type, void* data);
 
     // register C like InstrumentCallback
-    uint32_t addInstrRuleRange(rword start, rword end, QBDI_InstrumentCallback cbk, AnalysisType type, void* data);
+    uint32_t addInstrRuleRange(rword start, rword end, InstrumentCallbackC cbk, AnalysisType type, void* data);
 
     /*! Add a custom instrumentation rule to the VM on a specify set of range
      *
@@ -453,6 +461,7 @@ public:
     std::vector<MemoryAccess> getBBMemoryAccess() const;
 
     /*! Pre-cache a known basic block
+     *  This method mustn't be called if the VM already runs.
      *
      * @param[in] pc   Start address of a basic block
      *

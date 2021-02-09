@@ -341,10 +341,6 @@ breathe_projects = {
     "QBDIPRELOAD":"../doxygen_qbdipreload/xml/",
 }
 
-breathe_domain_by_file_pattern = {
-    "include/VM_C.h" : "c",
-}
-
 breathe_use_project_refids = True
 
 # -- Sphinx-JS ------------------------------------------------------------

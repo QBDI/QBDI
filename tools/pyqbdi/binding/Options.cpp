@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#include "Enum.hpp"
 #include "pyqbdi.hpp"
 
 namespace QBDI {
@@ -23,7 +24,7 @@ namespace pyQBDI {
 
 void init_binding_Options(py::module_& m) {
 
-    py::enum_<Options>(m, "Options", "VM options", py::arithmetic())
+    enum_int_flag_<Options>(m, "Options", "VM options", py::arithmetic())
         .value("NO_OPT", Options::NO_OPT, "Default value")
         .value("OPT_DISABLE_FPR", Options::OPT_DISABLE_FPR,
                 "Disable all operation on FPU (SSE, AVX, SIMD). May break the execution if the target use the FPU.")
@@ -32,7 +33,9 @@ void init_binding_Options(py::module_& m) {
    #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
         .value("OPT_ATT_SYNTAX", Options::OPT_ATT_SYNTAX, "Used the AT&T syntax for instruction disassembly")
    #endif
-        .export_values();
+        .export_values()
+        .def_invert()
+        .def_repr_str();
 
 }
 
