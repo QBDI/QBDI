@@ -1,8 +1,10 @@
 CHANGELOG
 =========
 
-Next Version
-------------
+Version 0.8.0
+-------------
+
+2021-02-XX QBDI Team <qbdi@quarkslab.com>
 
 * Fix android compilation (`#126 <https://github.com/QBDI/QBDI/pull/126>`_)
 * Fix instrumentation of Pusha and Popa on X86 (`#127 <https://github.com/QBDI/QBDI/pull/127>`_)
@@ -67,18 +69,21 @@ Next Version
   * :cpp:enumerator:`QBDI::Options::OPT_ATT_SYNTAX` for X86 and X86_64: :cpp:member:`QBDI::InstAnalysis::disassembly` will be in
     AT&T syntax instead of Intel Syntax.
 
+* Rework documentation (`#156 <https://github.com/QBDI/QBDI/pull/156>`_)
+
 Internal update:
 
 * Update LLVM to LLVM 10.0.1 (`#104 <https://github.com/QBDI/QBDI/pull/104>`_ and `#139 <https://github.com/QBDI/QBDI/pull/139>`_)
 * Reduce LLVM library included in QBDI static library and reduce QBDI package size (`#139 <https://github.com/QBDI/QBDI/pull/139>`_ and `#70 <https://github.com/QBDI/QBDI/issues/70>`_)
 * Replace GTest by `Catch2 <https://github.com/catchorg/Catch2>`_ (`#140 <https://github.com/QBDI/QBDI/pull/140>`_)
 * Refactor code and switch to cpp17 (`#140 <https://github.com/QBDI/QBDI/pull/140>`_ and `#155 <https://github.com/QBDI/QBDI/pull/155>`_)
-* Use Github Actions to build dev-next package of QBDI (linux and android) and PyQBDI (linux) (`#147 <https://github.com/QBDI/QBDI/pull/147>`_)
+* Use Github Actions to build dev-next package of QBDI (linux, osx and android) and PyQBDI (linux and osx) (`#147 <https://github.com/QBDI/QBDI/pull/147>`_, `#159 <https://github.com/QBDI/QBDI/pull/159>`_)
 * Rewrite frida-qbdi.js and use sphinx-js for frida-QBDI documentation (`#146 <https://github.com/QBDI/QBDI/pull/146>`_).
   A version of frida greater or equals to 14.0 is needed to run frida-qbdi.js (need support of ES2019).
 * Refactor MemoryAccess Code and add new tests (`#154 <https://github.com/QBDI/QBDI/pull/154>`_)
 * Handle VMCallback return value (`#155 <https://github.com/QBDI/QBDI/pull/155>`_)
 * Optimize Context Switch and FPRState restoration (`#144 <https://github.com/QBDI/QBDI/pull/144>`_)
+* Add commit hash in devel version (`#158 <https://github.com/QBDI/QBDI/pull/158>`_)
 
 Version 0.7.1
 -------------
