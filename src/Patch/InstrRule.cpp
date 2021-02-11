@@ -144,7 +144,7 @@ bool InstrRuleUser::tryInstrument(Patch &patch, const llvm::MCInstrInfo* MCII, c
 
     const InstAnalysis* ana = analyzeInstMetadata(patch.metadata, analysisType, *assembly);
 
-    std::vector<InstrumentDataCBK> vec = cbk(vm, ana, cbk_data);
+    std::vector<InstrRuleDataCBK> vec = cbk(vm, ana, cbk_data);
 
     LogDebug("InstrRuleUser::tryInstrument", "InstrCB return %u callback(s)", vec.size());
 
@@ -152,7 +152,7 @@ bool InstrRuleUser::tryInstrument(Patch &patch, const llvm::MCInstrInfo* MCII, c
         return false;
     }
 
-    for (const InstrumentDataCBK& cbkToAdd : vec) {
+    for (const InstrRuleDataCBK& cbkToAdd : vec) {
         instrument(patch, MCII, MRI, getCallbackGenerator(cbkToAdd.cbk, cbkToAdd.data), true, cbkToAdd.position);
     }
 

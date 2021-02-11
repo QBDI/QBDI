@@ -257,18 +257,18 @@ void qbdi_clearCache(VMInstanceRef instance, rword start, rword end) {
     static_cast<VM*>(instance)->clearCache(start, end);
 }
 
-uint32_t qbdi_addInstrRule(VMInstanceRef instance, InstrumentCallbackC cbk, AnalysisType type, void* data) {
+uint32_t qbdi_addInstrRule(VMInstanceRef instance, InstrRuleCallbackC cbk, AnalysisType type, void* data) {
     RequireAction("VM_C::addInstrRule", instance, return VMError::INVALID_EVENTID);
     return static_cast<VM*>(instance)->addInstrRule(cbk, type, data);
 }
 
-uint32_t qbdi_addInstrRuleRange(VMInstanceRef instance, rword start, rword end, InstrumentCallbackC cbk, AnalysisType type, void* data) {
+uint32_t qbdi_addInstrRuleRange(VMInstanceRef instance, rword start, rword end, InstrRuleCallbackC cbk, AnalysisType type, void* data) {
     RequireAction("VM_C::addInstrRuleRange", instance, return VMError::INVALID_EVENTID);
     return static_cast<VM*>(instance)->addInstrRuleRange(start, end, cbk, type, data);
 }
 
-void qbdi_addInstrumentData(InstrumentDataVec cbks, InstPosition position, InstCallback cbk, void* data) {
-    RequireAction("VM_C::qbdi_addInstrumentData", cbks, return);
+void qbdi_addInstrRuleData(InstrRuleDataVec cbks, InstPosition position, InstCallback cbk, void* data) {
+    RequireAction("VM_C::qbdi_addInstrRuleData", cbks, return);
     cbks->emplace_back(position, cbk, data);
 }
 

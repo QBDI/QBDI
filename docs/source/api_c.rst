@@ -133,15 +133,15 @@ MemoryAccess
 .. doxygenfunction:: qbdi_addMemRangeCB
     :project: QBDI_C
 
-.. _instrumentcallback-management-c:
+.. _instrrulecallback-management-c:
 
-InstrumentCallback
-^^^^^^^^^^^^^^^^^^
+InstrRuleCallback
+^^^^^^^^^^^^^^^^^
 
-.. doxygenfunction:: qbdi_addInstrRule(InstrumentCallback cbk, AnalysisType type, void* data)
+.. doxygenfunction:: qbdi_addInstrRule(InstrRuleCallback cbk, AnalysisType type, void* data)
     :project: QBDI_C
 
-.. doxygenfunction:: qbdi_addInstrRuleRange(rword start, rword end, InstrumentCallback cbk, AnalysisType type, void* data)
+.. doxygenfunction:: qbdi_addInstrRuleRange(rword start, rword end, InstrRuleCallback cbk, AnalysisType type, void* data)
     :project: QBDI_C
 
 Removal
@@ -289,13 +289,13 @@ Callback
 .. doxygentypedef:: VMCallback
     :project: QBDI_C
 
-.. doxygentypedef:: InstrumentCallbackC
+.. doxygentypedef:: InstrRuleCallbackC
     :project: QBDI_C
 
-.. doxygenfunction:: qbdi_addInstrumentData
+.. doxygenfunction:: qbdi_addInstrRuleData
     :project: QBDI_C
 
-.. cpp:type:: InstrumentDataVec
+.. cpp:type:: InstrRuleDataVec
 
     An abstract type to append InstCallback for the current instruction
 

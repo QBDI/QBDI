@@ -1,2 +1,2 @@
 #!/bin/sh
-cp @RESOURCES_PREFIX@/qbdi_template/* .
+cp @CMAKE_INSTALL_PREFIX@/@RESOURCES_PREFIX@/qbdi_template/* .

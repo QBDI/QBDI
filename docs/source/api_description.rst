@@ -189,20 +189,20 @@ Unlike with the instruction callback registration, the position of a memory call
 If a memory callback is solely registered for read accesses, it will be called **before** the instruction.
 Otherwise, it will be called **after** executing the instruction.
 
-Instrument callbacks
-++++++++++++++++++++
-- Global APIs: :ref:`C <instrumentcallback-management-c>`, :ref:`C++ <instrumentcallback-management-cpp>`, :ref:`PyQBDI <instrumentcallback-management-pyqbdi>`, :ref:`Frida/QBDI <instrumentcallback-management-js>`
+Instrumentation rule callbacks
+++++++++++++++++++++++++++++++
+- Global APIs: :ref:`C <instrrulecallback-management-c>`, :ref:`C++ <instrrulecallback-management-cpp>`, :ref:`PyQBDI <instrrulecallback-management-pyqbdi>`, :ref:`Frida/QBDI <instrrulecallback-management-js>`
 
-Instrument callbacks are an advanced feature of QBDI. It allows users to define a callback (``InstrumentCallback``) that will be called during the instrumentation process.
+Instrumentation rule callbacks are an advanced feature of QBDI. It allows users to define a callback (``InstrRuleCallback``) that will be called during the instrumentation process.
 The callback will be called for each instruction and can define an ``InstCallback`` to call before or after the current instruction.
 An argument contains an ``InstAnalysis`` of the current instruction and can be used to define the callback to insert for this instruction.
 
-An ``InstrumentCallback`` can be registered for all instructions (``addInstrRule``) or only for a specific range (``addInstrRuleRange``).
+An ``InstrRuleCallback`` can be registered for all instructions (``addInstrRule``) or only for a specific range (``addInstrRuleRange``).
 
 .. note::
 
     The instrumentation process of QBDI responsible of *JITing* instructions may analyse more than once the same instruction.
-    Consequently, the instrument callback must always return the same result even though the instruction has already been instrumented.
+    Consequently, the instrumentation rule callback must always return the same result even though the instruction has already been instrumented.
 
 Instruction analysis
 --------------------

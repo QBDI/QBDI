@@ -1,2 +1,2 @@
 #!/bin/sh
-cp @PRELOAD_RESOURCES_PREFIX@/qbdi_preload_template/* .
+cp @CMAKE_INSTALL_PREFIX@/@PRELOAD_RESOURCES_PREFIX@/qbdi_preload_template/* .

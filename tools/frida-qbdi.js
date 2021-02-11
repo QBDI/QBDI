@@ -296,7 +296,7 @@ var QBDI_C = Object.freeze({
     addMemAccessCB: _qbdibinder.bind('qbdi_addMemAccessCB', 'uint32', ['pointer', 'uint32', 'pointer', 'pointer']),
     addInstrRule: _qbdibinder.bind('qbdi_addInstrRule', 'uint32', ['pointer', 'pointer', 'uint32', 'pointer']),
     addInstrRuleRange: _qbdibinder.bind('qbdi_addInstrRuleRange', 'uint32', ['pointer', rword, rword, 'pointer', 'uint32', 'pointer']),
-    addInstrumentData: _qbdibinder.bind('qbdi_addInstrumentData', 'void', ['pointer', 'uint32', 'pointer', 'pointer']),
+    addInstrRuleData: _qbdibinder.bind('qbdi_addInstrRuleData', 'void', ['pointer', 'uint32', 'pointer', 'pointer']),
     addMemAddrCB: _qbdibinder.bind('qbdi_addMemAddrCB', 'uint32', ['pointer', rword, 'uint32', 'pointer', 'pointer']),
     addMemRangeCB: _qbdibinder.bind('qbdi_addMemRangeCB', 'uint32', ['pointer', rword, rword, 'uint32', 'pointer', 'pointer']),
     addCodeCB: _qbdibinder.bind('qbdi_addCodeCB', 'uint32', ['pointer', 'uint32', 'pointer', 'pointer']),
@@ -712,9 +712,9 @@ var Options = Object.freeze({
     OPT_ATT_SYNTAX : 1<<24
 });
 
-class InstrumentDataCBK {
+class InstrRuleDataCBK {
     /**
-     * Object to define an :js:func:`InstCallback` in an :js:func:`InstrumentCallback`
+     * Object to define an :js:func:`InstCallback` in an :js:func:`InstrRuleCallback`
      *
      * @param {InstPosition} pos    Relative position of the callback (PreInst / PostInst).
      * @param {InstCallback} cbk    A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
@@ -1190,7 +1190,7 @@ class QBDI {
     /**
      * Add a custom instrumentation rule to the VM.
      *
-     * @param {InstrumentCallback} cbk    A **native** InstrumentCallback returned by :js:func:`QBDI.newInstrumentCallback`.
+     * @param {InstrRuleCallback}  cbk    A **native** InstrRuleCallback returned by :js:func:`QBDI.newInstrRuleCallback`.
      * @param {AnalysisType}       type   Analyse type needed for this instruction function pointer to the callback
      * @param {Object}             data   User defined data passed to the callback.
      *
@@ -1208,7 +1208,7 @@ class QBDI {
      *
      * @param {String|Number}      start  Begin of the range of address where apply the rule
      * @param {String|Number}      end    End of the range of address where apply the rule
-     * @param {InstrumentCallback} cbk    A **native** InstrumentCallback returned by :js:func:`QBDI.newInstrumentCallback`.
+     * @param {InstrRuleCallback}  cbk    A **native** InstrRuleCallback returned by :js:func:`QBDI.newInstrRuleCallback`.
      * @param {AnalysisType}       type   Analyse type needed for this instruction function pointer to the callback
      * @param {Object}             data   User defined data passed to the callback.
      *
@@ -1503,16 +1503,16 @@ class QBDI {
      * Create a native **Instruction rule callback** from a JS function.
      *
      * Example:
-     *       >>> var icbk = vm.newInstrumentCallback(function(vm, ana, data) {
+     *       >>> var icbk = vm.newInstrRuleCallback(function(vm, ana, data) {
      *       >>>   console.log("0x" + ana.address.toString(16) + " " + ana.disassembly);
-     *       >>>   return [new InstrumentDataCBK(InstPosition.POSTINST, printCB, ana.disassembly)];
+     *       >>>   return [new InstrRuleDataCBK(InstPosition.POSTINST, printCB, ana.disassembly)];
      *       >>> });
      *
-     * @param {InstrumentCallback} cbk an instruction callback (ex: function(vm, ana, data) {};)
+     * @param {InstrRuleCallback} cbk an instruction callback (ex: function(vm, ana, data) {};)
      *
-     * @return an native InstrumentCallback
+     * @return an native InstrRuleCallback
      */
-    newInstrumentCallback(cbk) {
+    newInstrRuleCallback(cbk) {
         if (typeof(cbk) !== 'function' || cbk.length !== 3) {
             return undefined;
         }
@@ -1526,14 +1526,14 @@ class QBDI {
                 return;
             }
             if (!Array.isArray(res)) {
-                throw new TypeError('Invalid InstrumentDataCBK Array');
+                throw new TypeError('Invalid InstrRuleDataCBK Array');
             }
             if (res.length === 0) {
                 return;
             }
             for (var i = 0; i < res.length; i++) {
                 var d = vm._retainUserDataForInstrRuleCB2(res[i].data, data.id);
-                QBDI_C.addInstrumentData(cbksPtr, res[i].position, res[i].cbk, d);
+                QBDI_C.addInstrRuleData(cbksPtr, res[i].position, res[i].cbk, d);
             }
         }
         return new NativeCallback(jcbk, 'void', ['pointer', 'pointer', 'pointer', 'pointer']);
@@ -1919,7 +1919,7 @@ if (typeof(module) !== "undefined") {
         ConditionType: ConditionType,
         GPR_NAMES: GPR_NAMES,
         InstPosition: InstPosition,
-        InstrumentDataCBK: InstrumentDataCBK,
+        InstrRuleDataCBK: InstrRuleDataCBK,
         MemoryAccessFlags: MemoryAccessFlags,
         MemoryAccessType: MemoryAccessType,
         OperandFlag: OperandFlag,
