@@ -1,142 +1,51 @@
 language: cpp 
 
-addons:
-  homebrew:
-    packages:
-      - ccache
-      - g++
-      - python3
-
-_linux_target: &linux_target
-  os: linux
-  dist: xenial
-  compiler: gcc
-  env:
-    QBDI_PLATFORM="linux-X86_64"
-
-_linux_target32: &linux_target32
-  os: linux
-  dist: xenial
-  compiler: gcc
-  env:
-    QBDI_PLATFORM="linux-X86"
-
 _osx_target: &osx_target
   os: osx
   osx_image: xcode9.4
   env:
-    - QBDI_PLATFORM="macOS-X86_64"
-    - CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=${QBDI_PLATFORM} -DTOOLS_VALIDATOR=TRUE -DEXAMPLES=TRUE"
+    - QBDI_PLATFORM="osx"
+    - QBDI_ARCH="X86_64"
+    - CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DQBDI_PLATFORM=${QBDI_PLATFORM} -DQBDI_ARCH=${QBDI_ARCH} -DQBDI_TOOLS_VALIDATOR=ON -DQBDI_EXAMPLES=ON"
+  before_script:
+    - HOMEBREW_NO_AUTO_UPDATE=1 brew install ccache python3
 
 _osx_target32: &osx_target32
   os: osx
   osx_image: xcode9.4
   env:
-    - QBDI_PLATFORM="macOS-X86"
-    - CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DPLATFORM=${QBDI_PLATFORM} -DTOOLS_VALIDATOR=TRUE -DEXAMPLES=TRUE"
-
-_install_llvm: &install_llvm
-  script:
-    - mkdir build && cd build
-    - cmake .. ${CMAKE_ARGS}
-    - eval '[[ -n "$(find ../deps/llvm/${QBDI_PLATFORM}/lib -type f -print -quit)" && -n "$(find ../deps/llvm/${QBDI_PLATFORM}/include -type f -print -quit)" ]] || make llvm'
-  before_cache:
-    # Reduce cache size
-    - python3 ../deps/llvm/build.py clean ${QBDI_PLATFORM}
-
-_install_gtest: &install_gtest
-  script:
-    - mkdir build && cd build
-    - cmake .. ${CMAKE_ARGS}
-    - eval '[[ -n "$(find ../deps/gtest/${QBDI_PLATFORM}/lib -type f -print -quit)" && -n "$(find ../deps/gtest/${QBDI_PLATFORM}/include -type f -print -quit)" ]] || make gtest'
-  before_cache:
-    # Reduce cache size
-    - sh ../deps/gtest/${QBDI_PLATFORM}/build.sh clean
-
-_docker_llvm: &docker_llvm
-  services:
-    - docker
-  script:
-    - bash ./docker/travis_linux/llvm.sh
-
-_docker_gtest: &docker_gtest
-  services:
-    - docker
-  script:
-    - bash ./docker/travis_linux/gtest.sh
+    - QBDI_PLATFORM="osx"
+    - QBDI_ARCH="X86"
+    - CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DQBDI_PLATFORM=${QBDI_PLATFORM} -DQBDI_ARCH=${QBDI_ARCH} -DQBDI_TOOLS_VALIDATOR=ON -DQBDI_EXAMPLES=ON"
+  before_script:
+    - HOMEBREW_NO_AUTO_UPDATE=1 brew install ccache python3
 
 _compile_and_test: &compile_and_test
   script:
     - mkdir build && cd build
     - cmake .. ${CMAKE_ARGS}
+    - eval '[[ -n "$(find ../deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/lib -type f -print -quit)" && -n "$(find ../deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/include -type f -print -quit)" ]] || make llvm'
+    - cmake .. ${CMAKE_ARGS}
     - make -j2
     - ./test/QBDITest
-
-_docker_compile_and_test: &docker_compile_and_test
-  services:
-    - docker
-  script:
-    - bash ./docker/travis_linux/qbdi.sh
+  before_cache:
+    # Reduce cache size
+    - python3 ../deps/llvm/build.py clean ${QBDI_PLATFORM}-${QBDI_ARCH}
 
 cache:
   apt: TRUE
   ccache: TRUE
   directories:
-    - deps/llvm/linux-X86_64/include
-    - deps/llvm/linux-X86_64/lib
-    - deps/llvm/linux-X86/include
-    - deps/llvm/linux-X86/lib
-    - deps/llvm/macOS-X86_64/include
-    - deps/llvm/macOS-X86_64/lib
-    - deps/llvm/macOS-X86/include
-    - deps/llvm/macOS-X86/lib
-    - deps/gtest/linux-X86_64/include
-    - deps/gtest/linux-X86_64/lib
-    - deps/gtest/linux-X86/include
-    - deps/gtest/linux-X86/lib
-    - deps/gtest/macOS-X86_64/include
-    - deps/gtest/macOS-X86_64/lib
-    - deps/gtest/macOS-X86/include
-    - deps/gtest/macOS-X86/lib
-    - tools/validation_runner/travis_db
+    - deps/llvm/osx-X86_64/include
+    - deps/llvm/osx-X86_64/lib
+    - deps/llvm/osx-X86/include
+    - deps/llvm/osx-X86/lib
 
 jobs:
   include:
-    - stage: deps_llvm
-      <<: *osx_target
-      <<: *install_llvm
-    - stage: deps_llvm
-      <<: *osx_target32
-      <<: *install_llvm
-    - stage: deps_llvm
-      <<: *linux_target
-      <<: *docker_llvm
-    - stage: deps_llvm
-      <<: *linux_target32
-      <<: *docker_llvm
-
-    - stage: deps_gtest
-      <<: *osx_target
-      <<: *install_gtest
-    - stage: deps_gtest
-      <<: *osx_target32
-      <<: *install_gtest
-    - stage: deps_gtest
-      <<: *linux_target
-      <<: *docker_gtest
-    - stage: deps_gtest
-      <<: *linux_target32
-      <<: *docker_gtest
-
     - stage: qbdi
       <<: *osx_target
       <<: *compile_and_test
     - stage: qbdi
       <<: *osx_target32
       <<: *compile_and_test
-    - stage: qbdi
-      <<: *linux_target
-      <<: *docker_compile_and_test
-    - stage: qbdi
-      <<: *linux_target32
-      <<: *docker_compile_and_test

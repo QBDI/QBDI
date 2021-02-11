@@ -26,7 +26,7 @@ InMemoryObject ComparedExecutor_ARM::compileWithContextSwitch(const char* source
     finalSource << "push {lr}\n";
     finalSource << "push {r7}\n"; // can't trust globbers for ARM frame pointer
     for(uint32_t i = 0; i < QBDI_NUM_FPR; i++) {
-        finalSource << "vldr s" << i << ", [r1, #" << 
+        finalSource << "vldr s" << i << ", [r1, #" <<
                       offsetof(QBDI::Context, fprState) + i*sizeof(float) << "]\n";
     }
     finalSource << "ldr r0, [r1, #" << offsetof(QBDI::Context, gprState.cpsr) << "]\n"
@@ -68,7 +68,7 @@ InMemoryObject ComparedExecutor_ARM::compileWithContextSwitch(const char* source
                    "ldr fp, [r1, #" << offsetof(QBDI::Context, hostState.fp) << "]\n"
                    "ldr sp, [r1, #" << offsetof(QBDI::Context, hostState.sp) << "]\n";
     for(uint32_t i = 0; i < QBDI_NUM_FPR; i++) {
-        finalSource << "vstr s" << i << ", [r1, #" << 
+        finalSource << "vstr s" << i << ", [r1, #" <<
                     offsetof(QBDI::Context, fprState) + i*sizeof(float) << "]\n";
     }
     finalSource << "pop {r7}\n";
@@ -77,7 +77,7 @@ InMemoryObject ComparedExecutor_ARM::compileWithContextSwitch(const char* source
     return InMemoryObject(finalSource.str().c_str(), CPU, MATTRS);
 }
 
-QBDI::Context ComparedExecutor_ARM::jitExec(llvm::ArrayRef<uint8_t> code, QBDI::Context &inputState, 
+QBDI::Context ComparedExecutor_ARM::jitExec(llvm::ArrayRef<uint8_t> code, QBDI::Context &inputState,
                        llvm::sys::MemoryBlock &stack) {
     QBDI::Context           outputState;
     QBDI::Context           outerState;
@@ -85,19 +85,19 @@ QBDI::Context ComparedExecutor_ARM::jitExec(llvm::ArrayRef<uint8_t> code, QBDI::
     llvm::sys::MemoryBlock  outerStack;
     std::error_code         ec;
 
-    ctxBlock = llvm::sys::Memory::allocateMappedMemory(4096, nullptr, 
+    ctxBlock = llvm::sys::Memory::allocateMappedMemory(4096, nullptr,
                                                        PF::MF_READ | PF::MF_WRITE, ec);
-    outerStack = llvm::sys::Memory::allocateMappedMemory(4096, nullptr, 
+    outerStack = llvm::sys::Memory::allocateMappedMemory(4096, nullptr,
                                                          PF::MF_READ | PF::MF_WRITE, ec);
     memset((void*)&outerState, 0, sizeof(QBDI::Context));
     // Put the inputState on the stack
-    inputState.gprState.fp = (QBDI::rword) stack.base() + stack.size();
-    inputState.gprState.sp = (QBDI::rword) stack.base() + stack.size();
+    inputState.gprState.fp = (QBDI::rword) stack.base() + stack.allocatedSize();
+    inputState.gprState.sp = (QBDI::rword) stack.base() + stack.allocatedSize();
 
     memcpy((void*)ctxBlock.base(), (void*)&inputState, sizeof(QBDI::Context));
     // Prepare the outerState to fake the realExec() action
-    outerState.gprState.fp = (QBDI::rword) outerStack.base() + outerStack.size();
-    outerState.gprState.sp = (QBDI::rword) outerStack.base() + outerStack.size();
+    outerState.gprState.fp = (QBDI::rword) outerStack.base() + outerStack.allocatedSize();
+    outerState.gprState.sp = (QBDI::rword) outerStack.base() + outerStack.allocatedSize();
     outerState.gprState.r1 = (QBDI::rword) ctxBlock.base();
     outerState.gprState.lr = (QBDI::rword) 0;
 
@@ -115,20 +115,20 @@ QBDI::Context ComparedExecutor_ARM::jitExec(llvm::ArrayRef<uint8_t> code, QBDI::
     return outputState;
 }
 
-QBDI::Context ComparedExecutor_ARM::realExec(llvm::ArrayRef<uint8_t> code, 
-                                                    QBDI::Context &inputState, 
+QBDI::Context ComparedExecutor_ARM::realExec(llvm::ArrayRef<uint8_t> code,
+                                                    QBDI::Context &inputState,
                                                     llvm::sys::MemoryBlock &stack) {
 
     QBDI::Context           outputState;
     std::error_code         ec;
     llvm::sys::MemoryBlock  ctxBlock;
 
-    ctxBlock = llvm::sys::Memory::allocateMappedMemory(4096, nullptr, 
+    ctxBlock = llvm::sys::Memory::allocateMappedMemory(4096, nullptr,
                                                        PF::MF_READ | PF::MF_WRITE, ec);
 
     // Put the inputState on the stack
-    inputState.gprState.fp = (QBDI::rword) stack.base() + stack.size();
-    inputState.gprState.sp = (QBDI::rword) stack.base() + stack.size();
+    inputState.gprState.fp = (QBDI::rword) stack.base() + stack.allocatedSize();
+    inputState.gprState.sp = (QBDI::rword) stack.base() + stack.allocatedSize();
 
     // Assemble the sources
     // Copy the input context

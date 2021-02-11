@@ -15,43 +15,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <gtest/gtest.h>
+#include <catch2/catch.hpp>
 
 #include "Utility/String.h"
 
 
-TEST(startsWithTest, SimpleMatches){
-    EXPECT_TRUE(QBDI::String::startsWith("JMP", "JMP64"));
-    EXPECT_FALSE(QBDI::String::startsWith("xMP", "JMP"));
-    EXPECT_FALSE(QBDI::String::startsWith("JMP64", "x"));
+TEST_CASE("startsWithTest-SimpleMatches"){
+    CHECK(QBDI::String::startsWith("JMP", "JMP64"));
+    CHECK_FALSE(QBDI::String::startsWith("xMP", "JMP"));
+    CHECK_FALSE(QBDI::String::startsWith("JMP64", "x"));
 }
 
 
-TEST(startsWithTest, NullPointers){
-    EXPECT_FALSE(QBDI::String::startsWith("JMP64", NULL));
-    EXPECT_FALSE(QBDI::String::startsWith(NULL, "x"));
-    EXPECT_FALSE(QBDI::String::startsWith(NULL, NULL));
+TEST_CASE("startsWithTest-NullPointers"){
+    CHECK_FALSE(QBDI::String::startsWith("JMP64", NULL));
+    CHECK_FALSE(QBDI::String::startsWith(NULL, "x"));
+    CHECK_FALSE(QBDI::String::startsWith(NULL, NULL));
 }
 
 
-TEST(startsWithTest, WildCardBasic){
-    EXPECT_TRUE(QBDI::String::startsWith("J*", "JMP"));
-    EXPECT_FALSE(QBDI::String::startsWith("J*", "xMP"));
+TEST_CASE("startsWithTest-WildCardBasic"){
+    CHECK(QBDI::String::startsWith("J*", "JMP"));
+    CHECK_FALSE(QBDI::String::startsWith("J*", "xMP"));
 }
 
 
-TEST(startsWithTest, WildCardAdvanced){
-    EXPECT_TRUE(QBDI::String::startsWith("J*P", "JMP"));
-    EXPECT_FALSE(QBDI::String::startsWith("J*P", "JMx"));
-    EXPECT_TRUE(QBDI::String::startsWith("JMP*", "JMP"));
-    EXPECT_TRUE(QBDI::String::startsWith("*", ""));
-    EXPECT_TRUE(QBDI::String::startsWith("*", "JMP"));
+TEST_CASE("startsWithTest-WildCardAdvanced"){
+    CHECK(QBDI::String::startsWith("J*P", "JMP"));
+    CHECK_FALSE(QBDI::String::startsWith("J*P", "JMx"));
+    CHECK(QBDI::String::startsWith("JMP*", "JMP"));
+    CHECK(QBDI::String::startsWith("*", ""));
+    CHECK(QBDI::String::startsWith("*", "JMP"));
 }
 
 
-TEST(startsWithTest, Prefix){
-    EXPECT_TRUE(QBDI::String::startsWith("B", "B64"));
-    EXPECT_TRUE(QBDI::String::startsWith("B*", "B64"));
-    EXPECT_FALSE(QBDI::String::startsWith("B", "BIQ"));
-    EXPECT_TRUE(QBDI::String::startsWith("B*", "BIQ"));
+TEST_CASE("startsWithTest-Prefix"){
+    CHECK(QBDI::String::startsWith("B", "B64"));
+    CHECK(QBDI::String::startsWith("B*", "B64"));
+    CHECK_FALSE(QBDI::String::startsWith("B", "BIQ"));
+    CHECK(QBDI::String::startsWith("B*", "BIQ"));
 }

@@ -21,7 +21,13 @@
 #include "Memory.hpp"
 
 #include "Engine/Engine.h"
+#include "ExecBlock/ExecBlock.h"
+#include "Patch/InstInfo.h"
+#include "Patch/InstrRule.h"
 #include "Patch/InstrRules.h"
+#include "Patch/MemoryAccess.h"
+#include "Patch/PatchCondition.h"
+#include "Patch/PatchGenerator.h"
 #include "Utility/LogSys.h"
 
 // Mask to identify Virtual Callback events
@@ -36,67 +42,158 @@ struct MemCBInfo {
     void* data;
 };
 
-VMAction memReadGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
+struct InstrCBInfo {
+    Range<rword> range;
+    InstrumentCallbackC cbk;
+    AnalysisType type;
+    void* data;
+};
+
+static VMAction memReadGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
     std::vector<std::pair<uint32_t, MemCBInfo>>* memCBInfos = static_cast<std::vector<std::pair<uint32_t, MemCBInfo>>*>(data);
     std::vector<MemoryAccess> memAccesses = vm->getInstMemoryAccess();
-    VMAction action = VMAction::CONTINUE;
+    RangeSet<rword> readRange;
     for(const MemoryAccess& memAccess : memAccesses) {
-        Range<rword> accessRange(memAccess.accessAddress, memAccess.accessAddress + memAccess.size);
-        for(size_t i = 0; i < memCBInfos->size(); i++) {
-            // Check access type
-            if((*memCBInfos)[i].second.type == MEMORY_READ && (memAccess.type & (*memCBInfos)[i].second.type)) {
-                // Check access range
-                if((*memCBInfos)[i].second.range.overlaps(accessRange)) {
-                    // Forward to virtual callback
-                    VMAction ret = (*memCBInfos)[i].second.cbk(vm, gprState, fprState, (*memCBInfos)[i].second.data);
-                    // Always keep the most extreme action as the return
-                    if(ret > action) {
-                        action = ret;
-                    }
-                }
+        if (memAccess.type & MEMORY_READ) {
+            Range<rword> accessRange(memAccess.accessAddress, memAccess.accessAddress + memAccess.size);
+            readRange.add(accessRange);
+        }
+    }
+
+    VMAction action = VMAction::CONTINUE;
+    for(size_t i = 0; i < memCBInfos->size(); i++) {
+        // Check access type and range
+        if((*memCBInfos)[i].second.type == MEMORY_READ && readRange.overlaps((*memCBInfos)[i].second.range)) {
+            // Forward to virtual callback
+            VMAction ret = (*memCBInfos)[i].second.cbk(vm, gprState, fprState, (*memCBInfos)[i].second.data);
+            // Always keep the most extreme action as the return
+            if(ret > action) {
+                action = ret;
             }
         }
     }
     return action;
 }
 
-VMAction memWriteGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
+static VMAction memWriteGate(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
     std::vector<std::pair<uint32_t, MemCBInfo>>* memCBInfos = static_cast<std::vector<std::pair<uint32_t, MemCBInfo>>*>(data);
     std::vector<MemoryAccess> memAccesses = vm->getInstMemoryAccess();
-    VMAction action = VMAction::CONTINUE;
+    RangeSet<rword> readRange;
+    RangeSet<rword> writeRange;
     for(const MemoryAccess& memAccess : memAccesses) {
         Range<rword> accessRange(memAccess.accessAddress, memAccess.accessAddress + memAccess.size);
-        for(size_t i = 0; i < memCBInfos->size(); i++) {
-            // Check access type
-            if(((*memCBInfos)[i].second.type & MEMORY_WRITE) && (memAccess.type & (*memCBInfos)[i].second.type)) {
-                // Check access range
-                if((*memCBInfos)[i].second.range.overlaps(accessRange)) {
-                    // Forward to virtual callback
-                    VMAction ret = (*memCBInfos)[i].second.cbk(vm, gprState, fprState, (*memCBInfos)[i].second.data);
-                    // Always keep the most extreme action as the return
-                    if(ret > action) {
-                        action = ret;
-                    }
-                }
+        if (memAccess.type & MEMORY_READ) {
+            readRange.add(accessRange);
+        }
+        if (memAccess.type & MEMORY_WRITE) {
+            writeRange.add(accessRange);
+        }
+    }
+
+    VMAction action = VMAction::CONTINUE;
+    for(size_t i = 0; i < memCBInfos->size(); i++) {
+        // Check accessCB
+        // 1. has MEMORY_WRITE and write range overlaps
+        // 2. is MEMORY_READ_WRITE and read range overlaps
+        // note: the case with MEMORY_READ only is managed by memReadGate
+        if(     (((*memCBInfos)[i].second.type & MEMORY_WRITE) && writeRange.overlaps((*memCBInfos)[i].second.range)) ||
+                ((*memCBInfos)[i].second.type == MEMORY_READ_WRITE && readRange.overlaps((*memCBInfos)[i].second.range))) {
+            // Forward to virtual callback
+            VMAction ret = (*memCBInfos)[i].second.cbk(vm, gprState, fprState, (*memCBInfos)[i].second.data);
+            // Always keep the most extreme action as the return
+            if(ret > action) {
+                action = ret;
             }
         }
     }
     return action;
 }
 
-VMAction stopCallback(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
+static std::vector<InstrumentDataCBK> InstrCBGateC(VMInstanceRef vm, const InstAnalysis *inst, void* _data) {
+    InstrCBInfo* data = static_cast<InstrCBInfo*>(_data);
+    std::vector<InstrumentDataCBK> vec {};
+    data->cbk(vm, inst, &vec, data->data);
+    return vec;
+}
+
+
+static VMAction stopCallback(VMInstanceRef vm, GPRState* gprState, FPRState* fprState, void* data) {
     return VMAction::STOP;
 }
 
-VM::VM(const std::string& cpu, const std::vector<std::string>& mattrs) :
+VM::VM(const std::string& cpu, const std::vector<std::string>& mattrs, Options opts) :
     memoryLoggingLevel(0), memCBID(0), memReadGateCBID(VMError::INVALID_EVENTID), memWriteGateCBID(VMError::INVALID_EVENTID) {
-    engine = new Engine(cpu, mattrs, this);
-    memCBInfos = new std::vector<std::pair<uint32_t, MemCBInfo>>;
+    #if defined(_QBDI_ASAN_ENABLED_)
+    opts |= Options::OPT_DISABLE_FPR;
+    #endif
+    engine = std::make_unique<Engine>(cpu, mattrs, opts, this);
+    memCBInfos = std::make_unique<std::vector<std::pair<uint32_t, MemCBInfo>>>();
+    instrCBInfos = std::make_unique<std::vector<std::pair<uint32_t, std::unique_ptr<InstrCBInfo>>>>();
 }
 
-VM::~VM() {
-    delete memCBInfos;
-    delete engine;
+VM::~VM() = default;
+
+VM::VM(VM&& vm) :
+        engine(std::move(vm.engine)),
+        memoryLoggingLevel(vm.memoryLoggingLevel),
+        memCBInfos(std::move(vm.memCBInfos)),
+        memCBID(vm.memCBID),
+        memReadGateCBID(vm.memReadGateCBID),
+        memWriteGateCBID(vm.memWriteGateCBID),
+        instrCBInfos(std::move(vm.instrCBInfos)) {
+
+    engine->changeVMInstanceRef(this);
+}
+
+VM& VM::operator=(VM&& vm) {
+    engine = std::move(vm.engine);
+    memoryLoggingLevel = vm.memoryLoggingLevel;
+    memCBInfos = std::move(vm.memCBInfos);
+    memCBID = vm.memCBID;
+    memReadGateCBID = vm.memReadGateCBID;
+    memWriteGateCBID = vm.memWriteGateCBID;
+    instrCBInfos = std::move(vm.instrCBInfos);
+
+    engine->changeVMInstanceRef(this);
+
+    return *this;
+}
+
+VM::VM(const VM& vm) :
+        engine(std::make_unique<Engine>(*vm.engine)),
+        memoryLoggingLevel(vm.memoryLoggingLevel),
+        memCBInfos(std::make_unique<std::vector<std::pair<uint32_t, MemCBInfo>>>(*vm.memCBInfos)),
+        memCBID(vm.memCBID),
+        memReadGateCBID(vm.memReadGateCBID),
+        memWriteGateCBID(vm.memWriteGateCBID) {
+
+    engine->changeVMInstanceRef(this);
+    instrCBInfos = std::make_unique<std::vector<std::pair<uint32_t, std::unique_ptr<InstrCBInfo>>>>();
+    for (const auto& p : *vm.instrCBInfos) {
+        engine->deleteInstrumentation(p.first);
+        addInstrRuleRange(p.second->range.start(), p.second->range.end(), p.second->cbk, p.second->type, p.second->data);
+    }
+}
+
+
+VM& VM::operator=(const VM& vm) {
+    *engine = *vm.engine;
+    *memCBInfos = *vm.memCBInfos;
+
+    memoryLoggingLevel = vm.memoryLoggingLevel;
+    memCBID = vm.memCBID;
+    memReadGateCBID = vm.memReadGateCBID;
+    memWriteGateCBID = vm.memWriteGateCBID;
+
+    instrCBInfos = std::make_unique<std::vector<std::pair<uint32_t, std::unique_ptr<InstrCBInfo>>>>();
+    for (const auto& p : *vm.instrCBInfos) {
+        engine->deleteInstrumentation(p.first);
+        addInstrRuleRange(p.second->range.start(), p.second->range.end(), p.second->cbk, p.second->type, p.second->data);
+    }
+
+    engine->changeVMInstanceRef(this);
+
+    return *this;
 }
 
 GPRState* VM::getGPRState() const {
@@ -108,14 +205,25 @@ FPRState* VM::getFPRState() const {
 }
 
 
-void VM::setGPRState(GPRState* gprState) {
+void VM::setGPRState(const GPRState* gprState) {
     RequireAction("VM::setGPRState", gprState != nullptr, return);
     engine->setGPRState(gprState);
 }
 
-void VM::setFPRState(FPRState* fprState) {
+void VM::setFPRState(const FPRState* fprState) {
     RequireAction("VM::setFPRState", fprState != nullptr, return);
     engine->setFPRState(fprState);
+}
+
+Options VM::getOptions() const {
+    return engine->getOptions();
+}
+
+void VM::setOptions(Options options) {
+    #if defined(_QBDI_ASAN_ENABLED_)
+    options |= Options::OPT_DISABLE_FPR;
+    #endif
+    engine->setOptions(options);
 }
 
 void VM::addInstrumentedRange(rword start, rword end) {
@@ -187,26 +295,51 @@ bool VM::call(rword* retval, rword function, const std::vector<rword>& args) {
 }
 
 bool VM::callV(rword* retval, rword function, uint32_t argNum, va_list ap) {
-    rword* args = new rword[argNum];
+  std::vector<rword> args (argNum);
     for(uint32_t i = 0; i < argNum; i++) {
         args[i] = va_arg(ap, rword);
     }
 
-    bool res = this->callA(retval, function, argNum, args);
+    bool res = this->callA(retval, function, argNum, args.data());
 
-    delete[] args;
     return res;
 }
 
-uint32_t VM::addInstrRule(InstrRule rule) {
-    return engine->addInstrRule(rule);
+uint32_t VM::addInstrRule(InstrumentCallback cbk, AnalysisType type, void* data) {
+    RangeSet<rword> r;
+    r.add(Range<rword>(0, (rword) -1));
+    return engine->addInstrRule(InstrRuleUser::unique(cbk, type, data, this, r));
+}
+
+uint32_t VM::addInstrRule(InstrumentCallbackC cbk, AnalysisType type, void* data) {
+    InstrCBInfo* _data = new InstrCBInfo{Range<rword>(0, (rword) -1), cbk, type, data};
+    uint32_t id = addInstrRule(InstrCBGateC, type, _data);
+    instrCBInfos->emplace_back(id, _data);
+    return id;
+}
+
+uint32_t VM::addInstrRuleRange(rword start, rword end, InstrumentCallback cbk, AnalysisType type, void* data) {
+    RangeSet<rword> r;
+    r.add(Range<rword>(start, end));
+    return engine->addInstrRule(InstrRuleUser::unique(cbk, type, data, this, r));
+}
+
+uint32_t VM::addInstrRuleRange(rword start, rword end, InstrumentCallbackC cbk, AnalysisType type, void* data) {
+    InstrCBInfo* _data = new InstrCBInfo{Range<rword>(start, end), cbk, type, data};
+    uint32_t id = addInstrRuleRange(start, end, InstrCBGateC, type, _data);
+    instrCBInfos->emplace_back(id, _data);
+    return id;
+}
+
+uint32_t VM::addInstrRuleRangeSet(RangeSet<rword> range, InstrumentCallback cbk, AnalysisType type, void* data) {
+    return engine->addInstrRule(InstrRuleUser::unique(cbk, type, data, this, range));
 }
 
 uint32_t VM::addMnemonicCB(const char* mnemonic, InstPosition pos, InstCallback cbk, void *data) {
     RequireAction("VM::addMnemonicCB", mnemonic != nullptr, return VMError::INVALID_EVENTID);
     RequireAction("VM::addMnemonicCB", cbk != nullptr, return VMError::INVALID_EVENTID);
-    return addInstrRule(InstrRule(
-        MnemonicIs(mnemonic),
+    return engine->addInstrRule(InstrRuleBasic::unique(
+        MnemonicIs::unique(mnemonic),
         getCallbackGenerator(cbk, data),
         pos,
         true
@@ -215,8 +348,8 @@ uint32_t VM::addMnemonicCB(const char* mnemonic, InstPosition pos, InstCallback 
 
 uint32_t VM::addCodeCB(InstPosition pos, InstCallback cbk, void *data) {
     RequireAction("VM::addCodeCB", cbk != nullptr, return VMError::INVALID_EVENTID);
-    return addInstrRule(InstrRule(
-        True(),
+    return engine->addInstrRule(InstrRuleBasic::unique(
+        True::unique(),
         getCallbackGenerator(cbk, data),
         pos,
         true
@@ -225,8 +358,8 @@ uint32_t VM::addCodeCB(InstPosition pos, InstCallback cbk, void *data) {
 
 uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk, void *data) {
     RequireAction("VM::addCodeAddrCB", cbk != nullptr, return VMError::INVALID_EVENTID);
-    return addInstrRule(InstrRule(
-        AddressIs(address),
+    return engine->addInstrRule(InstrRuleBasic::unique(
+        AddressIs::unique(address),
         getCallbackGenerator(cbk, data),
         pos,
         true
@@ -236,8 +369,8 @@ uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk, vo
 uint32_t VM::addCodeRangeCB(rword start, rword end, InstPosition pos, InstCallback cbk, void *data) {
     RequireAction("VM::addCodeRangeCB", start < end, return VMError::INVALID_EVENTID);
     RequireAction("VM::addCodeRangeCB", cbk != nullptr, return VMError::INVALID_EVENTID);
-    return addInstrRule(InstrRule(
-        InstructionInRange(start, end),
+    return engine->addInstrRule(InstrRuleBasic::unique(
+        InstructionInRange::unique(start, end),
         getCallbackGenerator(cbk, data),
         pos,
         true
@@ -249,25 +382,25 @@ uint32_t VM::addMemAccessCB(MemoryAccessType type, InstCallback cbk, void *data)
     recordMemoryAccess(type);
     switch(type) {
         case MEMORY_READ:
-            return addInstrRule(InstrRule(
-                DoesReadAccess(),
+            return engine->addInstrRule(InstrRuleBasic::unique(
+                DoesReadAccess::unique(),
                 getCallbackGenerator(cbk, data),
                 InstPosition::PREINST,
                 true
             ));
         case MEMORY_WRITE:
-            return addInstrRule(InstrRule(
-                DoesWriteAccess(),
+            return engine->addInstrRule(InstrRuleBasic::unique(
+                DoesWriteAccess::unique(),
                 getCallbackGenerator(cbk, data),
                 InstPosition::POSTINST,
                 true
             ));
         case MEMORY_READ_WRITE:
-            return addInstrRule(InstrRule(
-                Or({
-                    DoesReadAccess(),
-                    DoesWriteAccess(),
-                }),
+            return engine->addInstrRule(InstrRuleBasic::unique(
+                Or::unique(conv_unique<PatchCondition>(
+                    DoesReadAccess::unique(),
+                    DoesWriteAccess::unique()
+                )),
                 getCallbackGenerator(cbk, data),
                 InstPosition::POSTINST,
                 true
@@ -288,14 +421,14 @@ uint32_t VM::addMemRangeCB(rword start, rword end, MemoryAccessType type, InstCa
     RequireAction("VM::addMemRangeCB", type & MEMORY_READ_WRITE, return VMError::INVALID_EVENTID);
     RequireAction("VM::addMemRangeCB", cbk != nullptr, return VMError::INVALID_EVENTID);
     if((type == MEMORY_READ) && memReadGateCBID == VMError::INVALID_EVENTID) {
-        memReadGateCBID = addMemAccessCB(MEMORY_READ, memReadGate, memCBInfos);
+        memReadGateCBID = addMemAccessCB(MEMORY_READ, memReadGate, memCBInfos.get());
     }
     if((type & MEMORY_WRITE) && memWriteGateCBID == VMError::INVALID_EVENTID) {
-        memWriteGateCBID = addMemAccessCB(MEMORY_READ_WRITE, memWriteGate, memCBInfos);
+        memWriteGateCBID = addMemAccessCB(MEMORY_READ_WRITE, memWriteGate, memCBInfos.get());
     }
     uint32_t id = memCBID++;
     RequireAction("VM::addMemRangeCB", id < EVENTID_VIRTCB_MASK, return VMError::INVALID_EVENTID);
-    memCBInfos->push_back(std::make_pair(id, MemCBInfo {type, Range<rword>(start, end), cbk, data}));
+    memCBInfos->emplace_back(id, MemCBInfo {type, {start, end}, cbk, data});
     return id | EVENTID_VIRTCB_MASK;
 }
 
@@ -317,6 +450,12 @@ bool VM::deleteInstrumentation(uint32_t id) {
         return false;
     }
     else {
+        instrCBInfos->erase(std::remove_if(
+                  instrCBInfos->begin(), instrCBInfos->end(),
+                  [id](const std::pair<uint32_t, std::unique_ptr<InstrCBInfo>>& x){
+                      return x.first == id;
+                  }
+              ), instrCBInfos->end());
         return engine->deleteInstrumentation(id);
     }
 }
@@ -326,51 +465,38 @@ void VM::deleteAllInstrumentations() {
     memReadGateCBID = VMError::INVALID_EVENTID;
     memWriteGateCBID = VMError::INVALID_EVENTID;
     memCBInfos->clear();
+    instrCBInfos->clear();
     memoryLoggingLevel = 0;
 }
 
-const InstAnalysis* VM::getInstAnalysis(AnalysisType type) {
+const InstAnalysis* VM::getInstAnalysis(AnalysisType type) const {
     const ExecBlock* curExecBlock = engine->getCurExecBlock();
     RequireAction("VM::getInstAnalysis", curExecBlock != nullptr, return nullptr);
     uint16_t curInstID = curExecBlock->getCurrentInstID();
-    const InstMetadata* instMetadata = curExecBlock->getInstMetadata(curInstID);
-    return engine->analyzeInstMetadata(instMetadata, type);
+    return curExecBlock->getInstAnalysis(curInstID, type);
+}
+
+const InstAnalysis* VM::getCachedInstAnalysis(rword address, AnalysisType type) const {
+    return engine->getInstAnalysis(address, type);
 }
 
 bool VM::recordMemoryAccess(MemoryAccessType type) {
-#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+    if constexpr(not (is_x86_64 or is_x86))
+        return false;
+
     if(type & MEMORY_READ && !(memoryLoggingLevel & MEMORY_READ)) {
         memoryLoggingLevel |= MEMORY_READ;
-        addInstrRule(InstrRule(
-            DoesReadAccess(),
-            {
-                GetReadAddress(Temp(0)),
-                WriteTemp(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
-                GetReadValue(Temp(0)),
-                WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
-            },
-            PREINST,
-            false
-        ));
+        for (auto& r : getInstrRuleMemAccessRead()) {
+            engine->addInstrRule(std::move(r));
+        }
     }
     if(type & MEMORY_WRITE && !(memoryLoggingLevel & MEMORY_WRITE)) {
         memoryLoggingLevel |= MEMORY_WRITE;
-        addInstrRule(InstrRule(
-            DoesWriteAccess(),
-            {
-                GetWriteAddress(Temp(0)),
-                WriteTemp(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
-                GetWriteValue(Temp(0)),
-                WriteTemp(Temp(0), Shadow(MEM_VALUE_TAG)),
-            },
-            POSTINST,
-            false
-        ));
+        for (auto& r : getInstrRuleMemAccessWrite()) {
+            engine->addInstrRule(std::move(r));
+        }
     }
     return true;
-#else
-    return false;
-#endif
 }
 
 std::vector<MemoryAccess> VM::getInstMemoryAccess() const {
@@ -380,54 +506,7 @@ std::vector<MemoryAccess> VM::getInstMemoryAccess() const {
     }
     uint16_t instID = curExecBlock->getCurrentInstID();
     std::vector<MemoryAccess> memAccess;
-    std::vector<ShadowInfo> shadows = curExecBlock->queryShadowByInst(instID, ANY);
-    LogDebug("VM::getInstMemoryAccess", "Got %zu shadows for Instruction %" PRIu16, shadows.size(), instID);
-
-    size_t i = 0;
-    while(i < shadows.size()) {
-        auto access = MemoryAccess();
-
-        if(shadows[i].tag == MEM_READ_ADDRESS_TAG) {
-            access.type = MEMORY_READ;
-            access.size = getReadSize(curExecBlock->getOriginalMCInst(instID));
-        }
-        else if(engine->isPreInst() == false && shadows[i].tag == MEM_WRITE_ADDRESS_TAG) {
-            access.type = MEMORY_WRITE;
-            access.size = getWriteSize(curExecBlock->getOriginalMCInst(instID));
-        }
-        else {
-            i += 1;
-            continue;
-        }
-        access.accessAddress = curExecBlock->getShadow(shadows[i].shadowID);
-        access.instAddress = curExecBlock->getInstAddress(shadows[i].instID);
-        i += 1;
-
-        if(i >= shadows.size()) {
-            LogError(
-                "Engine::getInstMemoryAccess",
-                "An address shadow is not followed by a shadow for instruction at address %" PRIx64,
-                access.instAddress
-            );
-            continue;
-        }
-
-        if(shadows[i].tag == MEM_VALUE_TAG) {
-            access.value = curExecBlock->getShadow(shadows[i].shadowID);
-        }
-        else {
-            LogError(
-                "Engine::getInstMemoryAccess",
-                "An address shadow is not followed by a value shadow for instruction at address %" PRIx64,
-                access.instAddress
-            );
-            continue;
-        }
-
-        // we found our access and its value, record access
-        memAccess.push_back(access);
-        i += 1;
-    }
+    analyseMemoryAccess(*curExecBlock, instID, !engine->isPreInst(), memAccess);
     return memAccess;
 }
 
@@ -439,54 +518,15 @@ std::vector<MemoryAccess> VM::getBBMemoryAccess() const {
     uint16_t bbID = curExecBlock->getCurrentSeqID();
     uint16_t instID = curExecBlock->getCurrentInstID();
     std::vector<MemoryAccess> memAccess;
-    std::vector<ShadowInfo> shadows = curExecBlock->queryShadowBySeq(bbID, ANY);
-    LogDebug("VM::getBBMemoryAccess", "Got %zu shadows for Basic Block %" PRIu16 " stopping at Instruction %" PRIu16,
-             shadows.size(), bbID, instID);
+    LogDebug("VM::getBBMemoryAccess", "Search MemoryAccess for Basic Block %" PRIu16 " stopping at Instruction %" PRIu16,
+             bbID, instID);
 
-    size_t i = 0;
-    while(i < shadows.size() && shadows[i].instID <= instID) {
-        auto access = MemoryAccess();
+    uint16_t endInstID = curExecBlock->getSeqEnd(bbID);
+    for (uint16_t itInstID = curExecBlock->getSeqStart(bbID);
+            itInstID <= std::min(endInstID, instID);
+            itInstID ++) {
 
-        if(shadows[i].tag == MEM_READ_ADDRESS_TAG) {
-            access.type = MEMORY_READ;
-            access.size = getReadSize(curExecBlock->getOriginalMCInst(shadows[i].instID));
-        }
-        else if(engine->isPreInst() == false && shadows[i].tag == MEM_WRITE_ADDRESS_TAG) {
-            access.type = MEMORY_WRITE;
-            access.size = getWriteSize(curExecBlock->getOriginalMCInst(shadows[i].instID));
-        }
-        else {
-            i += 1;
-            continue;
-        }
-        access.instAddress = curExecBlock->getInstAddress(shadows[i].instID);
-        access.accessAddress = curExecBlock->getShadow(shadows[i].shadowID);
-        i += 1;
-
-        if(i >= shadows.size() || curExecBlock->getInstAddress(shadows[i-1].instID) != curExecBlock->getInstAddress(shadows[i].instID)) {
-            LogError(
-                "VM::getBBMemoryAccess",
-                "An address shadow is not followed by a shadow for instruction at address %" PRIx64,
-                access.instAddress
-            );
-            continue;
-        }
-
-        if(shadows[i].tag == MEM_VALUE_TAG) {
-            access.value = curExecBlock->getShadow(shadows[i].shadowID);
-        }
-        else {
-            LogError(
-                "Engine::getBBMemoryAccess",
-                "An address shadow is not followed by a value shadow for instruction at address %" PRIx64,
-                access.instAddress
-            );
-            continue;
-        }
-
-        // we found our access and its value, record access
-        memAccess.push_back(access);
-        i += 1;
+        analyseMemoryAccess(*curExecBlock, itInstID, itInstID != instID || !engine->isPreInst(), memAccess);
     }
     return memAccess;
 }

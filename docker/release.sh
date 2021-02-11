@@ -18,15 +18,11 @@ GITDIR=$(git rev-parse --show-toplevel)
 # ubuntu x86 => qbdi:x86_ubuntu_18.04
 "${BASEDIR}/ubuntu_debian/build.sh" "X86" "ubuntu:18.04"
 
-# ubuntu x64 => qbdi:x64_ubuntu_18.04
-"${BASEDIR}/ubuntu_debian/build.sh" "X64" "ubuntu:18.04"
+# ubuntu x64 => qbdi:x64_ubuntu_latest
+"${BASEDIR}/ubuntu_debian/build.sh" "X64" "ubuntu:latest"
 
-# ubuntu x86 => qbdi:x86_ubuntu_19.10
-"${BASEDIR}/ubuntu_debian/build.sh" "X86" "ubuntu:19.10"
-
-# ubuntu x64 => qbdi:x64_ubuntu_19.10
-"${BASEDIR}/ubuntu_debian/build.sh" "X64" "ubuntu:19.10"
-
+# ubuntu x64 => qbdi:x64_ubuntu_20.10
+"${BASEDIR}/ubuntu_debian/build.sh" "X64" "ubuntu:20.10"
 
 # push image
 
@@ -52,22 +48,21 @@ push_image "qbdi:x64_debian_buster" \
     "x64_debian"
 
 push_image "qbdi:x86_ubuntu_18.04" \
+    "x86_ubuntu_latest" \
     "x86_ubuntu_18.04" \
     "x86_ubuntu" \
     "x86"
 
-push_image "qbdi:x64_ubuntu_18.04" \
-    "x64_ubuntu_18.04" \
+push_image "qbdi:x64_ubuntu_latest" \
+    "x64_ubuntu_latest" \
+    "x64_ubuntu_20_04" \
     "x64_ubuntu" \
     "x64"
 
-push_image "qbdi:x86_ubuntu_19.10" \
-    "x86_ubuntu_19.10"
+push_image "qbdi:x64_ubuntu_20.10" \
+    "x64_ubuntu_20.10"
 
-push_image "qbdi:x64_ubuntu_19.10" \
-    "x64_ubuntu_19.10"
-
-docker tag "qbdi:x64_ubuntu_18.04" "${DOCKERHUB_REPO}:latest"
+docker tag "qbdi:x64_ubuntu_latest" "${DOCKERHUB_REPO}:latest"
 docker push "${DOCKERHUB_REPO}:latest"
 
 docker logout
@@ -83,8 +78,8 @@ print_hash() {
 echo -n "" > "$HASHFILE"
 print_hash "x86_debian_buster"
 print_hash "x64_debian_buster"
-print_hash "x86_ubuntu_18.04"
-print_hash "x64_ubuntu_18.04"
+print_hash "x86_ubuntu_latest"
+print_hash "x64_ubuntu_latest"
 print_hash "x86_ubuntu_19.04"
 print_hash "x64_ubuntu_19.04"
 

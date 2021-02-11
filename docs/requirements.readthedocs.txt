@@ -1,4 +1,4 @@
-Sphinx==1.6.7
-breathe==4.7.3
--e git+https://github.com/lunant/sphinxcontrib-autojs.git#egg=sphinxcontrib-autojs
-sphinx_rtd_theme
+python-dateutil
+pygit2
+requests
+

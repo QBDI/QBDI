@@ -1,8 +1,89 @@
 CHANGELOG
 =========
 
-Next Version
-------------
+Version 0.8.0
+-------------
+
+2021-02-XX QBDI Team <qbdi@quarkslab.com>
+
+* Fix android compilation (`#126 <https://github.com/QBDI/QBDI/pull/126>`_)
+* Fix instrumentation of Pusha and Popa on X86 (`#127 <https://github.com/QBDI/QBDI/pull/127>`_)
+* Fix getBBMemoryAccess (`#128 <https://github.com/QBDI/QBDI/pull/128>`_)
+
+  * Improve the documentation of getBBMemoryAccess
+  * Add recordMemoryAccess callback before any InstCallback
+
+* Refactor ExecBlockManager to work with unaligned instruction on X86 and X86-64 (`#129 <https://github.com/QBDI/QBDI/pull/129>`_)
+* Drop early support for ARM. The support hasn't been tested since 0.6.2.
+* Rework cmake package export to import X86 and X86_64 version of QBDI in one CMake (`#146 <https://github.com/QBDI/QBDI/pull/146>`_ and `#132 <https://github.com/QBDI/QBDI/pull/132>`_)
+* Add :cpp:func:`QBDI::VM::getCachedInstAnalysis` to retrieve an InstAnalysis from an address. The address must be cached in the VM. (`#148 <https://github.com/QBDI/QBDI/pull/148>`_)
+* Change in ``InstAnalysis`` and ``OperandAnalysis`` (`#153 <https://github.com/QBDI/QBDI/pull/153>`_):
+
+  * Add ``InstAnalysis.flagsAccess`` to determine if the instruction uses or sets the flags (``EFLAGS`` register). The analysis ``ANALYSIS_OPERANDS`` is needed to use this field.
+  * Change ``InstAnalysis.mayLoad`` and ``InstAnalysis.mayStore`` definition. The field will be true if QBDI detects memory access for the instruction.
+  * Add ``InstAnalysis.loadSize`` and ``InstAnalysis.storeSize``. If the instruction will read or write the memory, the expected size of the access is given by these fields.
+    The analysis ``ANALYSIS_INSTRUCTION`` is needed to use this field.
+  * Add ``InstAnalysis.condition``. With the update of LLVM, the mnemonic for conditional jump (like ``JE_4``) are merged in a unique mnemonic ``JCC_4``.
+    This new field will contain the condition.
+    The analysis ``ANALYSIS_INSTRUCTION`` is needed to use this field. A new enum ``ConditionType`` has all the possible value.
+  * Add ``OPERANDFLAG_IMPLICIT`` for ``OperandAnalysis.flag``. An operand will have this flag when a register is implicit to the instruction.
+  * Add ``OPERAND_FPR`` for ``OperandAnalysis.type``. This type is used for floating point registers.
+    For this type, ``OperandAnalysis.regCtxIdx`` is the offset in ``FPRState`` or -1 when an offset cannot be provided.
+  * Add ``OPERAND_SEG`` for ``OperandAnalysis.type``. This type is used for segments or other unsupported register (like ``SSP``).
+  * Change type of ``OperandAnalysis.regCtxIdx`` to signed integer. When the value is less than 0, the index is invalid.
+  * Change algorithm for ``OperandAnalysis``. The type ``OPERAND_INVALID`` may be present in the list of operands when a register is unset with the current instruction.
+    Many operands may describe the used of the same register when a register is used multiple times for different purposes by the instruction.
+
+* Add Instrumentation Callback :c:type:`QBDI_InstrumentDataCBK` and :cpp:type:`QBDI::InstrumentDataCBK` (`#151 <https://github.com/QBDI/QBDI/pull/151>`_)
+
+  The Instrumentation Callback receives an InstAnalysis of each instruction during the instrumentation process. Based on this analysis, the callback
+  may insert custom InstCallback for each instruction.
+
+  The call order of the callback has changed for the PREINST callback. If an instruction has multiple callbacks in PREINST position, they will be called
+  in the reverse order of registration.
+
+* Support SIMD MemoryAccess and change :cpp:struct:`QBDI::MemoryAccess` structure (`#154 <https://github.com/QBDI/QBDI/pull/154>`_)
+
+  * Add :cpp:member:`QBDI::MemoryAccess::flags`. In some cases, QBDI cannot provide all information about the access. This field
+    describes the limitation for each access. Three limitations may be reached:
+
+    * :cpp:enumerator:`QBDI::MemoryAccessFlags::MEMORY_UNKNOWN_SIZE`: the size of the access isn't known. Only the address is valid.
+      The flag is only set for instruction with REP prefix before the execution of the instruction.
+    * :cpp:enumerator:`QBDI::MemoryAccessFlags::MEMORY_MINIMUM_SIZE`: the size isn't the real size of the access, but the expected minimal size.
+      This flag is used for instruction with complex access like ``XSAVE`` and ``XRSTOR``.
+    * :cpp:enumerator:`QBDI::MemoryAccessFlags::MEMORY_UNKNOWN_VALUE`: the value of the access hasn't been saved.
+      The more common reason is that the access size is greater than the size of :cpp:member:`QBDI::MemoryAccess::value`.
+      This flag is also used for instruction with REP prefix when the access size cannot be determined during the instrumentation.
+
+  * Fix MemoryAccess for some generic instruction.
+
+* Add VM Options. (`#144 <https://github.com/QBDI/QBDI/pull/144>`_)
+
+  Some options can be provided to the VM to enable or disable some features:
+
+  * :cpp:enumerator:`QBDI::Options::OPT_DISABLE_FPR`: Disable FPRState backup and restore in context switches.
+    Only the GPRState will be used.
+  * :cpp:enumerator:`QBDI::Options::OPT_DISABLE_OPTIONAL_FPR`: When :cpp:enumerator:`QBDI::Options::OPT_DISABLE_FPR` isn't selected,
+    QBDI will detect if a BasicBlock needs FPRState. When BasicBlock doesn't need FPRState, the state will not be restored.
+    This option forces the restoration and backup of FPRState to every BasicBlock.
+  * :cpp:enumerator:`QBDI::Options::OPT_ATT_SYNTAX` for X86 and X86_64: :cpp:member:`QBDI::InstAnalysis::disassembly` will be in
+    AT&T syntax instead of Intel Syntax.
+
+* Rework documentation (`#156 <https://github.com/QBDI/QBDI/pull/156>`_)
+
+Internal update:
+
+* Update LLVM to LLVM 10.0.1 (`#104 <https://github.com/QBDI/QBDI/pull/104>`_ and `#139 <https://github.com/QBDI/QBDI/pull/139>`_)
+* Reduce LLVM library included in QBDI static library and reduce QBDI package size (`#139 <https://github.com/QBDI/QBDI/pull/139>`_ and `#70 <https://github.com/QBDI/QBDI/issues/70>`_)
+* Replace GTest by `Catch2 <https://github.com/catchorg/Catch2>`_ (`#140 <https://github.com/QBDI/QBDI/pull/140>`_)
+* Refactor code and switch to cpp17 (`#140 <https://github.com/QBDI/QBDI/pull/140>`_ and `#155 <https://github.com/QBDI/QBDI/pull/155>`_)
+* Use Github Actions to build dev-next package of QBDI (linux, osx and android) and PyQBDI (linux and osx) (`#147 <https://github.com/QBDI/QBDI/pull/147>`_, `#159 <https://github.com/QBDI/QBDI/pull/159>`_)
+* Rewrite frida-qbdi.js and use sphinx-js for frida-QBDI documentation (`#146 <https://github.com/QBDI/QBDI/pull/146>`_).
+  A version of frida greater or equals to 14.0 is needed to run frida-qbdi.js (need support of ES2019).
+* Refactor MemoryAccess Code and add new tests (`#154 <https://github.com/QBDI/QBDI/pull/154>`_)
+* Handle VMCallback return value (`#155 <https://github.com/QBDI/QBDI/pull/155>`_)
+* Optimize Context Switch and FPRState restoration (`#144 <https://github.com/QBDI/QBDI/pull/144>`_)
+* Add commit hash in devel version (`#158 <https://github.com/QBDI/QBDI/pull/158>`_)
 
 Version 0.7.1
 -------------

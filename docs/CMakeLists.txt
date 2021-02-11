@@ -1,6 +1,6 @@
 configure_file(qbdi_cpp.doxygen.in ${CMAKE_SOURCE_DIR}/docs/qbdi_cpp.doxygen)
 configure_file(qbdi_c.doxygen.in ${CMAKE_SOURCE_DIR}/docs/qbdi_c.doxygen)
-configure_file(tools.doxygen.in ${CMAKE_SOURCE_DIR}/docs/tools.doxygen)
+configure_file(qbdipreload.doxygen.in ${CMAKE_SOURCE_DIR}/docs/qbdipreload.doxygen)
 
 add_custom_target(docs
     DEPENDS docs-doxygen docs-sphinx
@@ -10,7 +10,7 @@ add_custom_target(docs-doxygen
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/docs
     COMMAND doxygen qbdi_cpp.doxygen
     COMMAND doxygen qbdi_c.doxygen
-    COMMAND doxygen tools.doxygen
+    COMMAND doxygen qbdipreload.doxygen
 )
 
 add_custom_target(docs-sphinx

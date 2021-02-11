@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import sys
 import math
@@ -7,34 +6,9 @@ import ctypes
 import pyqbdi
 import struct
 
-
-def vmCB(vm, evt, gpr, fpr, data):
-    if evt.event & pyqbdi.BASIC_BLOCK_ENTRY:
-        print("[*] Basic Block: 0x{:x} -> 0x{:x}".format(evt.basicBlockStart,
-                                                         evt.basicBlockEnd))
-    elif evt.event & pyqbdi.BASIC_BLOCK_EXIT:
-        for acs in vm.getBBMemoryAccess():
-            print("@ {:#x} {:#x}:{:#x}".format(acs.instAddress,
-                                               acs.accessAddress, acs.value))
-    return pyqbdi.CONTINUE
-
-
 def insnCB(vm, gpr, fpr, data):
-    data['insn'] += 1
-    types = pyqbdi.ANALYSIS_INSTRUCTION | pyqbdi.ANALYSIS_DISASSEMBLY
-    types |= pyqbdi.ANALYSIS_OPERANDS | pyqbdi.ANALYSIS_SYMBOL
-    inst = vm.getInstAnalysis(types)
-    print("{};0x{:x}: {}".format(inst.module, inst.address, inst.disassembly))
-    for op in inst.operands:
-        if op.type == pyqbdi.OPERAND_IMM:
-            print("const: {:d}".format(op.value))
-        elif op.type == pyqbdi.OPERAND_GPR:
-            print("reg: {:s}".format(op.regName))
-    return pyqbdi.CONTINUE
-
-
-def cmpCB(vm, gpr, fpr, data):
-    data['cmp'] += 1
+    instAnalysis = vm.getInstAnalysis()
+    print("0x{:x}: {}".format(instAnalysis.address, instAnalysis.disassembly))
     return pyqbdi.CONTINUE
 
 
@@ -62,11 +36,7 @@ def run():
     vm.recordMemoryAccess(pyqbdi.MEMORY_READ_WRITE)
 
     # add callbacks on instructions
-    udata = {"insn": 0, "cmp": 0}
-    vm.addCodeCB(pyqbdi.PREINST, insnCB, udata)
-    vm.addMnemonicCB("CMP*", pyqbdi.PREINST, cmpCB, udata)
-    vm.addVMEventCB(pyqbdi.BASIC_BLOCK_ENTRY | pyqbdi.BASIC_BLOCK_EXIT,
-                    vmCB, None)
+    vm.addCodeCB(pyqbdi.PREINST, insnCB, None)
 
     # Cast double arg to long and set FPR
     arg = 1.0
@@ -77,7 +47,6 @@ def run():
     # call sin(1.0)
     pyqbdi.simulateCall(state, 0x42424242)
     success = vm.run(funcPtr, 0x42424242)
-    print(udata)
 
     # Retrieve output FPR state
     fpr = vm.getFPRState()

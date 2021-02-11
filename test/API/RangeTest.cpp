@@ -16,12 +16,12 @@
  * limitations under the License.
  */
 #include <stdlib.h>
-#include <gtest/gtest.h>
+#include <catch2/catch.hpp>
 #include <vector>
 
 #include "Range.h"
 
-TEST(Range, StateIntegrity) {
+TEST_CASE("Range-StateIntegrity") {
     static const int N = 100;
     std::vector<QBDI::Range<int>> testRanges;
     QBDI::RangeSet<int> rangeSet;
@@ -36,10 +36,10 @@ TEST(Range, StateIntegrity) {
         rangeSet.add(r);
         delta += rangeSet.size();
 
-        EXPECT_GE(r.size(), delta);
-        EXPECT_TRUE(rangeSet.contains(r));
-        EXPECT_TRUE(rangeSet.contains(r.start));
-        EXPECT_TRUE(rangeSet.contains(r.end - 1));
+        CHECK(r.size() >= delta);
+        CHECK(rangeSet.contains(r));
+        CHECK(rangeSet.contains(r.start()));
+        CHECK(rangeSet.contains(r.end() - 1));
     }
 
     for(int i = 0; i < N; i++) {
@@ -50,12 +50,12 @@ TEST(Range, StateIntegrity) {
         rangeSet.remove(r);
         delta -= rangeSet.size();
 
-        EXPECT_GE(r.size(), delta);
-        EXPECT_FALSE(rangeSet.contains(r));
-        EXPECT_FALSE(rangeSet.contains(r.start));
-        EXPECT_FALSE(rangeSet.contains(r.end - 1));
+        CHECK(r.size() >= delta);
+        CHECK_FALSE(rangeSet.contains(r));
+        CHECK_FALSE(rangeSet.contains(r.start()));
+        CHECK_FALSE(rangeSet.contains(r.end() - 1));
     }
-    EXPECT_EQ(0, rangeSet.size());
+    CHECK(0 == rangeSet.size());
 }
 
 template<typename T> void randomPermutation(std::vector<T> &v) {
@@ -68,7 +68,7 @@ template<typename T> void randomPermutation(std::vector<T> &v) {
     }
 }
 
-TEST(Range, Commutativity) {
+TEST_CASE("Range-Commutativity") {
     static const int N = 100;
     std::vector<QBDI::Range<int>> testRanges;
     QBDI::RangeSet<int> rangeSet;
@@ -83,20 +83,20 @@ TEST(Range, Commutativity) {
 
     for(int c = 0; c < N; c++) {
         QBDI::RangeSet<int> permutedRangeSet;
-         
+
         randomPermutation(testRanges);
         for(int i = 0; i < N; i++) {
             permutedRangeSet.add(testRanges[i]);
         }
-        ASSERT_EQ(rangeSet.size(), permutedRangeSet.size());
+        REQUIRE(rangeSet.size() == permutedRangeSet.size());
         for(size_t i = 0; i < rangeSet.getRanges().size(); i++) {
-            ASSERT_EQ(rangeSet.getRanges()[i].start, permutedRangeSet.getRanges()[i].start);
-            ASSERT_EQ(rangeSet.getRanges()[i].end, permutedRangeSet.getRanges()[i].end);
+            REQUIRE(rangeSet.getRanges()[i].start() == permutedRangeSet.getRanges()[i].start());
+            REQUIRE(rangeSet.getRanges()[i].end() == permutedRangeSet.getRanges()[i].end());
         }
     }
 }
 
-TEST(Range, Intersection) {
+TEST_CASE("Range-Intersection") {
     static const int N = 100;
     QBDI::RangeSet<int> rangeSet1;
     QBDI::RangeSet<int> rangeSet2;
@@ -120,10 +120,34 @@ TEST(Range, Intersection) {
     intersection2.add(rangeSet2);
     intersection2.intersect(rangeSet1);
 
-    ASSERT_EQ(intersection1, intersection2);
+    REQUIRE(intersection1 == intersection2);
 
     for(QBDI::Range<int> r: intersection1.getRanges()) {
-        ASSERT_EQ(true, rangeSet1.contains(r));
-        ASSERT_EQ(true, rangeSet2.contains(r));
+        REQUIRE(true == rangeSet1.contains(r));
+        REQUIRE(true == rangeSet2.contains(r));
+    }
+}
+
+TEST_CASE("Range-IntersectionAndOverlaps") {
+    static const int N = 100;
+    std::vector<QBDI::Range<int>> testRanges;
+
+    for(int i = 0; i < N; i++) {
+        int start = rand()%900;
+        int end = start + rand()%100 + 1;
+        QBDI::Range<int> newRange {start, end};
+
+        for (const QBDI::Range<int>& r : testRanges) {
+            QBDI::RangeSet<int> set;
+            set.add(newRange);
+            set.add(r);
+
+            // if the two range overlaps, the
+            // size of set must be lesser than the sum of the size
+            REQUIRE( (set.size() < newRange.size() + r.size()) ==
+                     newRange.overlaps(r));
+            REQUIRE(r.overlaps(newRange) == newRange.overlaps(r));
+        }
+        testRanges.push_back(newRange);
     }
 }

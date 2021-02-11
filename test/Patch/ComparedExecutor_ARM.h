@@ -21,7 +21,6 @@
 #include <string.h>
 #include <string>
 #include <sstream>
-#include <gtest/gtest.h>
 
 #include "TestSetup/ShellcodeTester.h"
 #include "TestSetup/InMemoryAssembler.h"
@@ -40,10 +39,10 @@ class ComparedExecutor_ARM : public ShellcodeTester {
 public:
     ComparedExecutor_ARM() : ShellcodeTester(CPU_CPU, {CPU_MATTRS}) {}
 
-    QBDI::Context jitExec(llvm::ArrayRef<uint8_t> code, QBDI::Context &inputCtx, 
+    QBDI::Context jitExec(llvm::ArrayRef<uint8_t> code, QBDI::Context &inputCtx,
                           llvm::sys::MemoryBlock &stack);
 
-    QBDI::Context realExec(llvm::ArrayRef<uint8_t> code, QBDI::Context &inputCtx, 
+    QBDI::Context realExec(llvm::ArrayRef<uint8_t> code, QBDI::Context &inputCtx,
                            llvm::sys::MemoryBlock &stack);
 
     InMemoryObject compileWithContextSwitch(const char* source);

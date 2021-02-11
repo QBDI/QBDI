@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef _QBDI_H_
-#define _QBDI_H_
+#ifndef QBDI_H_
+#define QBDI_H_
 
 #ifdef __cplusplus
 #include "QBDI/VM.h"
@@ -29,4 +29,4 @@
 #include "QBDI/Logs.h"
 #include "QBDI/Version.h"
 
-#endif // _QBDI_H_
+#endif // QBDI_H_

@@ -15,58 +15,82 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#include "llvm/MC/MCAsmBackend.h"
+#include "llvm/MC/MCAsmInfo.h"
+#include "llvm/MC/MCAssembler.h"
+#include "llvm/MC/MCCodeEmitter.h"
+#include "llvm/MC/MCContext.h"
+#include "llvm/MC/MCInst.h"
+#include "llvm/MC/MCInstPrinter.h"
+#include "llvm/MC/MCObjectWriter.h"
+#include "llvm/MC/MCSubtargetInfo.h"
+#include "llvm/MC/MCValue.h"
+#include "llvm/Support/TargetRegistry.h"
+
 #include "Utility/Assembly.h"
 #include "Utility/LogSys.h"
-#include "Platform.h"
 
-#include "ExecBlock/ExecBlock.h"
+#include "Platform.h"
+#include "State.h"
 
 namespace QBDI {
 
-Assembly::Assembly(llvm::MCContext &MCTX, std::unique_ptr<llvm::MCAsmBackend> MAB, llvm::MCInstrInfo &MCII, 
-                   const llvm::Target &target, llvm::MCSubtargetInfo &MSTI) 
-    : MCII(MCII), MRI(*MCTX.getRegisterInfo()), MAI(*MCTX.getAsmInfo()), MSTI(MSTI) {
+Assembly::Assembly(llvm::MCContext &MCTX, std::unique_ptr<llvm::MCAsmBackend> MAB, llvm::MCInstrInfo &MCII,
+                   const llvm::Target *target, llvm::MCSubtargetInfo &MSTI, Options options)
+    : target(target), MCII(MCII), MRI(*MCTX.getRegisterInfo()), MAI(*MCTX.getAsmInfo()), MSTI(MSTI), options(options) {
 
     unsigned int variant = 0;
 
-    null_ostream = std::unique_ptr<llvm::raw_pwrite_stream>(
-        new llvm::raw_null_ostream()
-    );
+    null_ostream = std::make_unique<llvm::raw_null_ostream>();
 
     disassembler = std::unique_ptr<llvm::MCDisassembler>(
-        target.createMCDisassembler(MSTI, MCTX)
+        target->createMCDisassembler(MSTI, MCTX)
     );
 
     auto codeEmitter = std::unique_ptr<llvm::MCCodeEmitter>(
-        target.createMCCodeEmitter(MCII, MRI, MCTX)
+        target->createMCCodeEmitter(MCII, MRI, MCTX)
     );
 
     auto objectWriter = std::unique_ptr<llvm::MCObjectWriter>(
         MAB->createObjectWriter(*null_ostream)
     );
 
-    assembler = std::unique_ptr<llvm::MCAssembler>(
-        new llvm::MCAssembler(MCTX, std::move(MAB), std::move(codeEmitter), std::move(objectWriter))
+    assembler = std::make_unique<llvm::MCAssembler>(
+        MCTX, std::move(MAB), std::move(codeEmitter), std::move(objectWriter)
     );
 
-    // TODO: find better way to handle variant
     #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
-    variant = 1; // Force Intel
+    variant = ((options & Options::OPT_ATT_SYNTAX) == 0)?1:0;
     #else
     variant = MAI.getAssemblerDialect();
-    #endif // __x86_64__
+    #endif
 
     asmPrinter = std::unique_ptr<llvm::MCInstPrinter>(
-        target.createMCInstPrinter(MSTI.getTargetTriple(), variant, MAI, MCII, MRI)
+        target->createMCInstPrinter(MSTI.getTargetTriple(), variant, MAI, MCII, MRI)
     );
     asmPrinter->setPrintImmHex(true);
     asmPrinter->setPrintImmHex(llvm::HexStyle::C);
 }
 
+Assembly::~Assembly() = default;
 
-llvm::MCDisassembler::DecodeStatus Assembly::getInstruction(llvm::MCInst &instr, uint64_t &size, 
+void Assembly::setOptions(Options opts) {
+    #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+    if (((opts ^ options) & Options::OPT_ATT_SYNTAX) != 0) {
+        asmPrinter = std::unique_ptr<llvm::MCInstPrinter>(
+            target->createMCInstPrinter(MSTI.getTargetTriple(), ((opts & Options::OPT_ATT_SYNTAX) == 0)?1:0, MAI, MCII, MRI)
+        );
+        asmPrinter->setPrintImmHex(true);
+        asmPrinter->setPrintImmHex(llvm::HexStyle::C);
+    }
+    #endif
+    options = opts;
+}
+
+llvm::MCDisassembler::DecodeStatus Assembly::getInstruction(llvm::MCInst &instr, uint64_t &size,
                                          llvm::ArrayRef< uint8_t > bytes, uint64_t address) const {
-    return disassembler->getInstruction(instr, size, bytes, address, llvm::nulls(), llvm::nulls());
+    return disassembler->getInstruction(instr, size, bytes, address, llvm::nulls());
 }
 
 
@@ -78,9 +102,10 @@ void Assembly::writeInstruction(const llvm::MCInst inst, memory_ostream *stream)
     LogCallback(LogPriority::DEBUG, "Assembly::writeInstruction", [&] (FILE *log) -> void {
         std::string disass;
         llvm::raw_string_ostream disassOs(disass);
-        printDisasm(inst, disassOs);
+        uint64_t address = reinterpret_cast<uint64_t>(stream->get_ptr()) + pos;
+        printDisasm(inst, address, disassOs);
         disassOs.flush();
-        fprintf(log, "Assembling %s at 0x%" PRIRWORD, disass.c_str(), (rword) stream->get_ptr() + (rword) pos);
+        fprintf(log, "Assembling %s at 0x%" PRIx64, disass.c_str(), address);
     });
     assembler->getEmitter().encodeInstruction(inst, *stream, fixups, MSTI);
     uint64_t size = stream->current_pos() - pos;
@@ -107,9 +132,9 @@ void Assembly::writeInstruction(const llvm::MCInst inst, memory_ostream *stream)
 }
 
 
-void Assembly::printDisasm(const llvm::MCInst &inst, llvm::raw_ostream &out) const {
+void Assembly::printDisasm(const llvm::MCInst &inst, uint64_t address, llvm::raw_ostream &out) const {
     llvm::StringRef   unusedAnnotations;
-    asmPrinter->printInst(&inst, out, unusedAnnotations, MSTI);
+    asmPrinter->printInst(&inst, address, unusedAnnotations, MSTI, out);
 }
 
 }

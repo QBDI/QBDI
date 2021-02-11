@@ -21,43 +21,56 @@
 #include <memory>
 #include <vector>
 
-#include "llvm/MC/MCInst.h"
-
-#include "Patch/Patch.h"
-#include "Patch/Types.h"
-#include "Patch/PatchUtils.h"
-#include "Patch/RelocatableInst.h"
 #include "Patch/InstTransform.h"
+#include "Patch/PatchUtils.h"
+#include "Patch/Types.h"
 
 namespace QBDI {
+class RelocatableInst;
+class InstTransform;
+class Patch;
 
 template<typename T> class PureEval {
 public:
 
-    operator RelocatableInst::SharedPtrVec() {
-        return (static_cast<T*>(this))->generate(nullptr, 0, 0, nullptr, nullptr);
+    operator std::vector<std::unique_ptr<RelocatableInst>>() const {
+        return (static_cast<const T*>(this))->generate(nullptr, 0, 0, nullptr, nullptr, nullptr);
     }
 };
+
+template<class U>
+inline void append(std::vector<std::unique_ptr<RelocatableInst>> &t, const PureEval<U>& u) {
+    std::vector<std::unique_ptr<RelocatableInst>> v = u;
+    append(t, std::move(v));
+}
+
+template<class U>
+inline void prepend(std::vector<std::unique_ptr<RelocatableInst>> &t, const PureEval<U>& u) {
+    std::vector<std::unique_ptr<RelocatableInst>> v = u;
+    prepend(t, std::move(v));
+}
 
 class PatchGenerator {
 public:
 
-    using SharedPtr    = std::shared_ptr<PatchGenerator>;
-    using SharedPtrVec = std::vector<std::shared_ptr<PatchGenerator>>;
+    using UniquePtr    = std::unique_ptr<PatchGenerator>;
+    using UniquePtrVec = std::vector<std::unique_ptr<PatchGenerator>>;
 
-    virtual RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) = 0;
+    virtual std::vector<std::unique_ptr<RelocatableInst>> generate(const llvm::MCInst *inst,
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) const = 0;
 
-    virtual ~PatchGenerator() {};
+    virtual ~PatchGenerator() = default;
 
-    virtual bool modifyPC() { return false; }
+    virtual std::unique_ptr<PatchGenerator> clone() const =0;
 
-    virtual bool doNotInstrument() { return false; }
+    virtual inline bool modifyPC() const { return false; }
+
+    virtual inline bool doNotInstrument() const { return false; }
 };
 
-class ModifyInstruction : public PatchGenerator, public AutoAlloc<PatchGenerator, ModifyInstruction>
+class ModifyInstruction : public AutoUnique<PatchGenerator, ModifyInstruction>
 {
-    InstTransform::SharedPtrVec transforms;
+    InstTransform::UniquePtrVec transforms;
 
 public:
 
@@ -65,30 +78,22 @@ public:
      *
      * @param[in] transforms Vector of InstTransform to be applied.
     */
-    ModifyInstruction(InstTransform::SharedPtrVec transforms) : transforms(transforms) {};
+    ModifyInstruction(InstTransform::UniquePtrVec&& transforms) :
+            transforms(std::forward<InstTransform::UniquePtrVec>(transforms)) {};
+
+    inline std::unique_ptr<PatchGenerator> clone() const override {
+        return ModifyInstruction::unique(cloneVec(transforms));
+    };
 
     /*!
      * Output:
      *   (depends on the current instructions and transforms)
     */
-    RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-
-        llvm::MCInst a(*inst);
-        for(auto t: transforms) {
-            t->transform(a, address, instSize, temp_manager);
-        }
-
-        RelocatableInst::SharedPtrVec out;
-        if(toMerge != nullptr) {
-            append(out, toMerge->insts);
-        }
-        out.push_back(NoReloc(a));
-        return out;
-    }
+    std::vector<std::unique_ptr<RelocatableInst>> generate(const llvm::MCInst *inst,
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) const override;
 };
 
-class DoNotInstrument : public PatchGenerator, public AutoAlloc<PatchGenerator, DoNotInstrument>
+class DoNotInstrument : public AutoClone<PatchGenerator, DoNotInstrument>
 {
 
 public:
@@ -102,13 +107,244 @@ public:
      * Output:
      *   (none)
     */
-    RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge) {
-        return {};
-    }
+    std::vector<std::unique_ptr<RelocatableInst>> generate(const llvm::MCInst *inst,
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) const override;
 
-    bool doNotInstrument() { return true; }
+    inline bool doNotInstrument() const override { return true; }
 };
+
+
+// Target Specific Generator that must be available for each target
+
+class CopyReg : public AutoClone<PatchGenerator, CopyReg> {
+    Temp dst;
+    Reg src;
+
+public:
+
+    /*! Copy a register in a temporary.
+     *
+     * @param[in] dst    A temporary where the register will be copied.
+     * @param[in] src    The register which will be copied
+    */
+    CopyReg(Temp dst, Reg src) : dst(dst), src(src) {}
+
+    /*! Output:
+     *
+     * MOV REG64 temp, REG64 reg
+    */
+    std::vector<std::unique_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) const override;
+};
+
+class GetOperand : public AutoClone<PatchGenerator, GetOperand> {
+    Temp temp;
+    Operand op;
+
+public:
+
+    /*! Obtain the value of the operand op and copy it's value in a temporary. If op is an immediate
+     * the immediate value is copied, if op is a register the register value is copied.
+     *
+     * @param[in] temp   A temporary where the value will be copied.
+     * @param[in] op     The operand index (relative to the instruction LLVM MCInst representation)
+     *                   to be copied.
+    */
+    GetOperand(Temp temp, Operand op): temp(temp), op(op) {}
+
+    /*!
+     * Output:
+     *   MOV REG64 temp, IMM64/REG64 op
+    */
+    std::vector<std::unique_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) const override;
+};
+
+
+class GetConstant : public AutoClone<PatchGenerator, GetConstant> {
+    Temp temp;
+    Constant cst;
+
+public:
+
+    /*! Copy a constant in a temporary.
+     *
+     * @param[in] temp   A temporary where the value will be copied.
+     * @param[in] cst    The constant to copy.
+    */
+    GetConstant(Temp temp, Constant cst): temp(temp), cst(cst) {}
+
+    /*! Output:
+     *
+     * MOV REG64 temp, IMM64 cst
+    */
+    std::vector<std::unique_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) const override;
+};
+
+class ReadTemp : public AutoClone<PatchGenerator, ReadTemp> {
+
+    Temp  temp;
+    enum {
+        OffsetType,
+        ShadowType
+    } type;
+
+    Offset offset;
+    Shadow shadow;
+
+public:
+
+    /*! Write a temporary value in the data block at the specified offset. This can be used to overwrite
+     * register values in the context part of the data block.
+     *
+     * @param[in] temp      A temporary to store the shadow value.
+     * @param[in] offset    The offset in the data block where the temporary will be read.
+    */
+    ReadTemp(Temp temp, Offset offset): temp(temp), type(OffsetType), offset(offset), shadow(0) {}
+
+    /*! Read a temporary value from the last shadow with the same tag for this instruction.
+     *
+     * @param[in] temp      A temporary to store the shadow value.
+     * @param[in] shadow    The shadow in the data block where the temporary will be read.
+    */
+    ReadTemp(Temp temp, Shadow shadow): temp(temp), type(ShadowType), offset(0), shadow(shadow) {}
+
+    /*! Output:
+     *
+     * MOV REG64 temp, MEM64 DataBlock[offset]
+    */
+    std::vector<std::unique_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) const override;
+};
+
+class WriteTemp : public AutoClone<PatchGenerator, WriteTemp> {
+
+    Temp  temp;
+    enum {
+        OffsetType,
+        ShadowType
+    } type;
+    // Not working VS 2015
+    // union {
+        Offset offset;
+        Shadow shadow;
+    // }
+
+public:
+
+    /*! Write a temporary value in the data block at the specified offset. This can be used to overwrite
+     * register values in the context part of the data block.
+     *
+     * @param[in] temp    A temporary which will be written.  The value of the temporary is unchanged.
+     * @param[in] offset  The offset in the data block where the temporary will be written.
+    */
+    WriteTemp(Temp temp, Offset offset): temp(temp), type(OffsetType), offset(offset), shadow(0) {}
+
+    /*! Write a temporary value in a shadow in the data block.
+     *
+     * @param[in] temp      A temporary which will be written. The value of the temporary is unchanged.
+     * @param[in] shadow    The shadow use to store the value.
+    */
+    WriteTemp(Temp temp, Shadow shadow): temp(temp), type(ShadowType), offset(0), shadow(shadow) {}
+
+    /*! Output:
+     *
+     * MOV MEM64 DataBlock[offset], REG64 temp
+    */
+    std::vector<std::unique_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) const override;
+
+    inline bool modifyPC() const override {return offset == Offset(Reg(REG_PC));}
+};
+
+class SaveReg : public AutoClone<PatchGenerator, SaveReg>,
+    public PureEval<SaveReg> {
+
+    Reg   reg;
+    Offset offset;
+
+public:
+
+    /*! Save a register in the data block at the specified offset. This can be used to save
+     * register values in the context part of the data block.
+     *
+     * @param[in] reg     A register which will be saved.
+     * @param[in] offset  The offset in the data block where the register will be written.
+    */
+    SaveReg(Reg reg, Offset offset): reg(reg), offset(offset) {}
+
+    /*! Output:
+     *
+     * MOV MEM64 DataBlock[offset], REG64 reg
+    */
+    std::vector<std::unique_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) const override;
+};
+
+class LoadReg : public AutoClone<PatchGenerator, LoadReg>,
+    public PureEval<LoadReg> {
+
+    Reg   reg;
+    Offset offset;
+
+public:
+
+    /*! Load a register from the data block at the specified offset. This can be used to load
+     * register values from the context part of the data block.
+     *
+     * @param[in] reg     A register where the value will be loaded.
+     * @param[in] offset  The offset in the data block from where the value will be loaded.
+    */
+    LoadReg(Reg reg, Offset offset): reg(reg), offset(offset) {}
+
+    /*! Output:
+     *
+     * MOV REG64 reg, MEM64 DataBlock[offset]
+    */
+    std::vector<std::unique_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) const override;
+};
+
+class GetInstId : public AutoClone<PatchGenerator, GetInstId> {
+
+    Temp temp;
+
+public:
+
+    /*! Copy an ExecBlock specific id for the current instruction in a temporary. This id is used to
+     * identify the instruction responsible for a callback in the engine and is only meant for
+     * internal use.
+     *
+     * @param[in] temp   A temporary where the id will be copied.
+    */
+    GetInstId(Temp temp): temp(temp) {}
+
+    /*! Output:
+     *
+     * MOV REG64 temp, IMM64 instID
+    */
+    std::vector<std::unique_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) const override;
+};
+
+class JmpEpilogue : public AutoClone<PatchGenerator, JmpEpilogue>,
+    public PureEval<JmpEpilogue> {
+
+public:
+
+    /*! Generate a jump instruction which target the epilogue of the ExecBlock.
+    */
+    JmpEpilogue() {}
+
+    /*! Output:
+     *
+     * JMP Offset(Epilogue)
+    */
+    std::vector<std::unique_ptr<RelocatableInst>> generate(const llvm::MCInst* inst,
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) const override;
+};
+
 
 }
 

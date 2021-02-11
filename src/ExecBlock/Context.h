@@ -18,57 +18,33 @@
 #ifndef CONTEXT_H
 #define CONTEXT_H
 
+#include <map>
 #include "State.h"
-
-// ============================================================================
-// Anonymous definition to catch unimplemented platform.
-// ============================================================================
 
 namespace QBDI {
 
-struct HostState;
+extern const unsigned int GPR_ID[];
+extern const unsigned int FLAG_ID[];
+extern const unsigned int SEG_ID[];
+extern const std::map<unsigned int, int16_t> FPR_ID;
+extern const unsigned int size_GPR_ID;
+extern const unsigned int size_FLAG_ID;
+extern const unsigned int size_SEG_ID;
 
-struct Context;
-
-}
-
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 // ============================================================================
 // X86_64 Context
 // ============================================================================
 
-#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
-
-#include "X86InstrInfo.h"
-#include "X86RegisterInfo.h"
-
-namespace QBDI {
-
-#if defined(QBDI_ARCH_X86_64)
-static const unsigned int GPR_ID[] = {
-    llvm::X86::RAX, llvm::X86::RBX, llvm::X86::RCX, llvm::X86::RDX,
-    llvm::X86::RSI, llvm::X86::RDI, llvm::X86::R8,  llvm::X86::R9,
-    llvm::X86::R10, llvm::X86::R11, llvm::X86::R12, llvm::X86::R13,
-    llvm::X86::R14, llvm::X86::R15, llvm::X86::RBP, llvm::X86::RSP,
-    llvm::X86::RIP
-};
-
-#elif defined(QBDI_ARCH_X86)
-static const unsigned int GPR_ID[] = {
-    llvm::X86::EAX, llvm::X86::EBX, llvm::X86::ECX, llvm::X86::EDX,
-    llvm::X86::ESI, llvm::X86::EDI, llvm::X86::EBP, llvm::X86::ESP,
-    llvm::X86::EIP
-};
-#endif
-
 /*! X86 / X86_64 Host context.
  */
 struct HostState {
-    rword bp;
     rword sp;
     rword selector;
     rword callback;
     rword data;
     rword origin;
+    rword executeFlags;
 };
 
 /*! X86 / X86_64 Execution context.
@@ -84,27 +60,11 @@ public:
 
 };
 
-}
-
-#endif // QBDI_ARCH_X86_64
-
+#elif defined(QBDI_ARCH_ARM)
 // ============================================================================
 // ARM Context
 // ============================================================================
 
-#if defined(QBDI_ARCH_ARM)
-
-#include "ARMInstrInfo.h"
-#include "ARMRegisterInfo.h"
-
-namespace QBDI {
-
-static const unsigned int GPR_ID[] = {
-    llvm::ARM::R0, llvm::ARM::R1, llvm::ARM::R2,  llvm::ARM::R3,
-    llvm::ARM::R4, llvm::ARM::R5, llvm::ARM::R6,  llvm::ARM::R7,
-    llvm::ARM::R8, llvm::ARM::R9, llvm::ARM::R10, llvm::ARM::R12,
-    llvm::ARM::R11, llvm::ARM::SP, llvm::ARM::LR, llvm::ARM::PC
-};
 
 /*! ARM Host context.
 */
@@ -115,6 +75,7 @@ struct HostState {
     rword callback;
     rword data;
     rword origin;
+    rword executeFlags;
 };
 
 /*! ARM Execution context.
@@ -129,9 +90,8 @@ public:
     GPRState gprState;
 };
 
-}
-
 #endif // QBDI_ARCH_ARM
 
+} // QBDI
 
 #endif //CONTEXT_H

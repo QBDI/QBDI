@@ -15,25 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "Platform.h"
+#include <algorithm>
+#include <cstdint>
+
+#include "ExecBlock/ExecBlock.h"
 #include "ExecBlock/ExecBlockManager.h"
-#include "Patch/PatchRule.h"
+#include "Patch/Patch.h"
+#include "Patch/PatchRules.h"
+#include "Utility/Assembly.h"
 #include "Utility/LogSys.h"
 
-#include <cstdint>
-#include <algorithm>
-
-#ifndef QBDI_OS_WIN
-#if defined(QBDI_OS_LINUX) && !defined(__USE_GNU)
-#define __USE_GNU
-#endif
-#include <dlfcn.h>
-#endif
+#include "State.h"
 
 namespace QBDI {
 
-ExecBlockManager::ExecBlockManager(llvm::MCInstrInfo& MCII, llvm::MCRegisterInfo& MRI, Assembly& assembly, VMInstanceRef vminstance) :
-   total_translated_size(1), total_translation_size(1), vminstance(vminstance), MCII(MCII), MRI(MRI), assembly(assembly) {
+ExecBlockManager::ExecBlockManager(const Assembly& assembly, VMInstanceRef vminstance) :
+   total_translated_size(1), total_translation_size(1), vminstance(vminstance), assembly(assembly),
+   epilogueSize(0), execBlockPrologue(getExecBlockPrologue(assembly.getOptions())),
+   execBlockEpilogue(getExecBlockEpilogue(assembly.getOptions())) {
 }
 
 ExecBlockManager::~ExecBlockManager() {
@@ -41,6 +40,13 @@ ExecBlockManager::~ExecBlockManager() {
         this->printCacheStatistics(log);
     });
     clearCache();
+}
+
+void ExecBlockManager::changeVMInstanceRef(VMInstanceRef vminstance) {
+    this->vminstance = vminstance;
+    for (auto &reg : regions)
+        for (auto &block : reg.blocks)
+            block->changeVMInstanceRef(vminstance);
 }
 
 float ExecBlockManager::getExpansionRatio() const {
@@ -64,7 +70,11 @@ void ExecBlockManager::printCacheStatistics(FILE* output) const {
             occupation /= regions[i].blocks.size();
         }
         mean_occupation += occupation;
-        fprintf(output, "\t\t[0x%" PRIRWORD ", 0x%" PRIRWORD "]: %zu blocks, %f occupation ratio\n", regions[i].covered.start, regions[i].covered.end, regions[i].blocks.size(), occupation);
+        fprintf(output, "\t\t[0x%" PRIRWORD ", 0x%" PRIRWORD "]: %zu blocks, %f occupation ratio\n",
+                regions[i].covered.start(),
+                regions[i].covered.end(),
+                regions[i].blocks.size(),
+                occupation);
     }
     if(regions.size() > 0) {
         mean_occupation /= regions.size();
@@ -73,7 +83,7 @@ void ExecBlockManager::printCacheStatistics(FILE* output) const {
     fprintf(output, "\tRegion overflow count: %zu\n", region_overflow);
 }
 
-ExecBlock* ExecBlockManager::getProgrammedExecBlock(rword address) {
+ExecBlock* ExecBlockManager::getProgrammedExecBlock(rword address, SeqLoc* programmedSeqLock) {
     LogDebug("ExecBlockManager::getProgrammedExecBlock", "Looking up sequence at address %" PRIRWORD, address);
 
     size_t r = searchRegion(address);
@@ -85,36 +95,63 @@ ExecBlock* ExecBlockManager::getProgrammedExecBlock(rword address) {
         const std::map<rword, SeqLoc>::const_iterator seqLoc = region.sequenceCache.find(address);
         if(seqLoc != region.sequenceCache.end()) {
             LogDebug("ExecBlockManager::getProgrammedExecBlock", "Found sequence 0x%" PRIRWORD " in ExecBlock %p as seqID %" PRIu16,
-                     address, region.blocks[seqLoc->second.blockIdx], seqLoc->second.seqID);
+                     address, region.blocks[seqLoc->second.blockIdx].get(), seqLoc->second.seqID);
+            // copy current sequence info
+            if (programmedSeqLock != nullptr) {
+                *programmedSeqLock = seqLoc->second;
+            }
             // Select sequence and return execBlock
             region.blocks[seqLoc->second.blockIdx]->selectSeq(seqLoc->second.seqID);
-            return region.blocks[seqLoc->second.blockIdx];
+            return region.blocks[seqLoc->second.blockIdx].get();
         }
 
         // Attempting instCache resolution
         const std::map<rword, InstLoc>::const_iterator instLoc = region.instCache.find(address);
         if(instLoc != region.instCache.end()) {
             // Retrieving corresponding block and seqLoc
-            ExecBlock* block = region.blocks[instLoc->second.blockIdx];
+            ExecBlock* block = region.blocks[instLoc->second.blockIdx].get();
             uint16_t existingSeqId = block->getSeqID(instLoc->second.instID);
-            const SeqLoc& existingSeqLoc = region.sequenceCache[block->getInstMetadata(block->getSeqStart(existingSeqId))->address];
+            const SeqLoc& existingSeqLoc = region.sequenceCache[block->getInstMetadata(block->getSeqStart(existingSeqId)).address];
             // Creating a new sequence at that instruction and saving it in the sequenceCache
             uint16_t newSeqID = block->splitSequence(instLoc->second.instID);
             regions[r].sequenceCache[address] = SeqLoc {
                 instLoc->second.blockIdx,
                 newSeqID,
-                address,
                 existingSeqLoc.bbEnd,
                 address,
                 existingSeqLoc.seqEnd,
             };
             LogDebug("ExecBlockManager::getProgrammedExecBlock", "Splitted seqID %" PRIu16 " at instID %" PRIu16 " in ExecBlock %p as new sequence with seqID %" PRIu16,
                      existingSeqId, instLoc->second.instID, block, newSeqID);
+            // copy current sequence info
+            if (programmedSeqLock != nullptr) {
+                *programmedSeqLock = regions[r].sequenceCache[address];
+            }
             block->selectSeq(newSeqID);
             return block;
         }
     }
     LogDebug("ExecBlockManager::getProgrammedExecBlock", "Cache miss for sequence 0x%" PRIRWORD, address);
+    return nullptr;
+}
+
+const ExecBlock* ExecBlockManager::getExecBlock(rword address) const {
+    LogDebug("ExecBlockManager::getExecBlock", "Looking up address %" PRIRWORD, address);
+
+    size_t r = searchRegion(address);
+
+    if(r < regions.size() && regions[r].covered.contains(address)) {
+        const ExecRegion& region = regions[r];
+
+        // Attempting instCache resolution
+        const std::map<rword, InstLoc>::const_iterator instLoc = region.instCache.find(address);
+        if(instLoc != region.instCache.end()) {
+            LogDebug("ExecBlockManager::getExecBlock", "Found address 0x%" PRIRWORD " in ExecBlock %p",
+                     address, region.blocks[instLoc->second.blockIdx].get());
+            return region.blocks[instLoc->second.blockIdx].get();
+        }
+    }
+    LogDebug("ExecBlockManager::getExecBlock", "Cache miss for address 0x%" PRIRWORD, address);
     return nullptr;
 }
 
@@ -129,26 +166,49 @@ const SeqLoc* ExecBlockManager::getSeqLoc(rword address) const {
     return nullptr;
 }
 
-void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock) {
+size_t ExecBlockManager::preWriteBasicBlock(const std::vector<Patch>& basicBlock) {
+    // prereserve the region in the cache and return the instruction that are already in the cache for this basicBlock
+
+    // Locating an approriate cache region
+    const Range<rword> bbRange {basicBlock.front().metadata.address, basicBlock.back().metadata.endAddress()};
+    size_t r = findRegion(bbRange);
+    ExecRegion& region = regions[r];
+
+    // detect cached instruction
+    size_t patchEnd = basicBlock.size();
+
+    while (patchEnd > 0 && region.instCache.count(basicBlock[patchEnd - 1].metadata.address) != 0) {
+        patchEnd--;
+    }
+
+    return patchEnd;
+}
+
+
+void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock, size_t patchEnd) {
     unsigned translated = 0;
     unsigned translation = 0;
-    size_t patchIdx = 0, patchEnd = basicBlock.size();
+    size_t patchIdx = 0;
     const Patch& firstPatch = basicBlock.front();
     const Patch& lastPatch = basicBlock.back();
     rword bbStart = firstPatch.metadata.address;
     rword bbEnd = lastPatch.metadata.endAddress();
 
     // Locating an approriate cache region
-    size_t r = findRegion(Range<rword>(bbStart, bbEnd));
+    const Range<rword> bbRange {bbStart, bbEnd};
+    size_t r = findRegion(bbRange);
     ExecRegion& region = regions[r];
 
-    // Basic block truncation to prevent dedoubled sequence
-    for(size_t i = 0; i < basicBlock.size(); i++) {
-        if(region.sequenceCache.count(basicBlock[i].metadata.address) != 0) {
-            patchEnd = i;
-            break;
-        }
+    // Basic block truncation to prevent dedoubled instruction
+    // patchEnd must be the number of instruction that wasn't in the cache for this basicblock
+    RequireAction("ExecBlockManager::writeBasicBlock", patchEnd <= basicBlock.size(), abort());
+    RequireAction("ExecBlockManager::writeBasicBlock", patchEnd == basicBlock.size() || region.instCache.count(basicBlock[patchEnd].metadata.address) == 1, abort());
+
+    while (patchEnd > 0 && region.instCache.count(basicBlock[patchEnd - 1].metadata.address) != 0) {
+        // should never happen if preWriteBasicBlock is used
+        patchEnd--;
     }
+
     // Cache integrity safeguard, should never happen
     if(patchEnd == 0) {
         LogDebug("ExecBlockManager::writeBasicBlock", "Cache hit, basic block 0x%" PRIRWORD " already exist", firstPatch.metadata.address);
@@ -164,21 +224,20 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock) {
             // Optimally, a region should only have one ExecBlocks but misspredictions or oversized
             // basic blocks can cause overflows.
             if(i >= region.blocks.size()) {
-                region.blocks.push_back(new ExecBlock(assembly, vminstance));
+                RequireAction("ExecBlockManager::writeBasicBlock", i < (1<<16), abort());
+                region.blocks.emplace_back(std::make_unique<ExecBlock>(assembly, vminstance, &execBlockPrologue, &execBlockEpilogue, epilogueSize));
+                if (epilogueSize == 0) {
+                    epilogueSize = region.blocks[i]->getEpilogueSize();
+                }
             }
-            // Determine sequence type
-            SeqType seqType = (SeqType) 0;
-            if(patchIdx == 0) seqType = static_cast<SeqType>(seqType | SeqType::Entry);
-            if(patchEnd == basicBlock.size()) seqType = static_cast<SeqType>(seqType | SeqType::Exit);
             // Write sequence
-            SeqWriteResult res = region.blocks[i]->writeSequence(basicBlock.begin() + patchIdx, basicBlock.begin() + patchEnd, seqType);
+            SeqWriteResult res = region.blocks[i]->writeSequence(basicBlock.begin() + patchIdx, basicBlock.begin() + patchEnd);
             // Successful write
             if(res.seqID != EXEC_BLOCK_FULL) {
                 // Saving sequence in the sequence cache
                 regions[r].sequenceCache[basicBlock[patchIdx].metadata.address] = SeqLoc {
-                    (uint16_t) i,
+                    static_cast<uint16_t>(i),
                     res.seqID,
-                    bbStart,
                     bbEnd,
                     basicBlock[patchIdx].metadata.address,
                     basicBlock[patchIdx + res.patchWritten - 1].metadata.endAddress(),
@@ -192,7 +251,7 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock) {
                          "Sequence 0x%" PRIRWORD "-0x%" PRIRWORD " written in ExecBlock %p as seqID %" PRIu16,
                          basicBlock[patchIdx].metadata.address,
                          basicBlock[patchIdx + res.patchWritten - 1].metadata.endAddress(),
-                         region.blocks[i], res.seqID);
+                         region.blocks[i].get(), res.seqID);
                 // Updating counters
                 translated += basicBlock[patchIdx + res.patchWritten - 1].metadata.endAddress() - basicBlock[patchIdx].metadata.address;
                 translation += res.bytesWritten;
@@ -217,49 +276,153 @@ size_t ExecBlockManager::searchRegion(rword address) const {
     // Binary search of the first region to look at
     while(low + 1 != high) {
         size_t idx = (low + high) / 2;
-        if(regions[idx].covered.start > address) {
+        if(regions[idx].covered.start() > address) {
             high = idx;
         }
-        else if(regions[idx].covered.end <= address) {
+        else if(regions[idx].covered.end() <= address) {
             low = idx;
         }
         else {
             LogDebug("ExecBlockManager::searchRegion", "Exact match for region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
-                     idx, regions[idx].covered.start, regions[idx].covered.end);
+                     idx, regions[idx].covered.start(), regions[idx].covered.end());
             return idx;
         }
     }
     LogDebug("ExecBlockManager::searchRegion", "Low match for region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
-             low, regions[low].covered.start, regions[low].covered.end);
+             low, regions[low].covered.start(), regions[low].covered.end());
     return low;
 }
 
-size_t ExecBlockManager::findRegion(Range<rword> codeRange) {
+void ExecBlockManager::mergeRegion(size_t i) {
+
+    RequireAction("ExecBlockManager::mergeRegion", i + 1 < regions.size(), return);
+    RequireAction("ExecBlockManager::mergeRegion",
+            regions[i].blocks.size() + regions[i+1].blocks.size() < (1<<16), abort());
+
+    LogDebug(
+            "ExecBlockManager::mergeRegion",
+            "Merge region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "] and region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
+            i,
+            regions[i].covered.start(),
+            regions[i].covered.end(),
+            i+1,
+            regions[i+1].covered.start(),
+            regions[i+1].covered.end()
+            );
+    // SeqLoc
+    for (const auto& it: regions[i+1].sequenceCache) {
+        regions[i].sequenceCache[it.first] = SeqLoc {
+                static_cast<uint16_t>(it.second.blockIdx + regions[i].blocks.size()),
+                it.second.seqID,
+                it.second.bbEnd,
+                it.second.seqStart,
+                it.second.seqEnd
+            };
+    }
+    // InstLoc
+    for (const auto& it: regions[i+1].instCache) {
+        regions[i].instCache[it.first] = InstLoc {
+                static_cast<uint16_t>(it.second.blockIdx + regions[i].blocks.size()),
+                it.second.instID,
+            };
+    }
+
+    // range
+    regions[i].covered.setEnd(regions[i+1].covered.end());
+
+    // ExecBlock
+    std::move(regions[i+1].blocks.begin(), regions[i+1].blocks.end(),
+              std::back_inserter(regions[i].blocks));
+    // flush
+    regions[i].toFlush |= regions[i+1].toFlush;
+
+    regions.erase(regions.begin() + i + 1);
+}
+
+size_t ExecBlockManager::findRegion(const Range<rword>& codeRange) {
     size_t best_region = regions.size();
-    size_t low = searchRegion(codeRange.start);
+    size_t low = searchRegion(codeRange.start());
     unsigned best_cost = 0xFFFFFFFF;
-    for(size_t i = low; i < low + 2 && i < regions.size(); i++) {
+
+    // when low == 0, three cases:
+    //  - no regions => no loop
+    //  - codeRange.start is before the first region => 1 round of the loop to
+    //      determine if we create a region or create a new one
+    //  - codeRange.start is in or after the first region => 2 rounds to
+    //      determine if we create a region or use the first or the second one
+    size_t limit = 2;
+    if(low == 0 and regions.size() != 0 and codeRange.start() < regions[0].covered.start())
+        limit = 1;
+
+    for(size_t i = low; i < low + limit && i < regions.size(); i++) {
         unsigned cost = 0;
         // Easy case: the code range is inside one of the region, we can return immediately
         if(regions[i].covered.contains(codeRange)) {
             LogDebug(
                 "ExecBlockManager::findRegion",
                 "Basic block [0x%" PRIRWORD ", 0x%" PRIRWORD "] assigned to region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
-                codeRange.start,
-                codeRange.end,
+                codeRange.start(),
+                codeRange.end(),
                 i,
-                regions[i].covered.start,
-                regions[i].covered.end
+                regions[i].covered.start(),
+                regions[i].covered.end()
             );
             return i;
         }
+
+        // Medium case: the code range overlaps.
+        // This case may append when instrument unaligned code
+        // In order to avoid two regions to overlaps,
+        //  we must use the first region that overlaps
+        if(regions[i].covered.overlaps(codeRange)) {
+            LogDebug(
+                    "ExecBlockManager::findRegion",
+                    "Region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "] overlaps a part of basic block [0x%" PRIRWORD ", 0x%" PRIRWORD "], Try extend",
+                    i,
+                    regions[i].covered.start(),
+                    regions[i].covered.end(),
+                    codeRange.start(),
+                    codeRange.end()
+            );
+            // part 1, codeRange.start() must be on the regions[i] to avoid error with searchRegion
+            if(codeRange.start() < regions[i].covered.start()) {
+                // the previous region mustn't containt codeRange.start
+                // (should never happend as the iteration test the previous block first)
+                RequireAction("ExecBlockManager::findRegion",
+                        i == 0 or regions[i-1].covered.end() <= codeRange.start(),
+                        abort());
+                regions[i].covered.setStart(codeRange.start());
+            }
+
+            // part 2, codeRange.end() SHOULD be in the region.
+            if(regions[i].covered.end() < codeRange.end()) {
+                if(     i + 1 == regions.size() or
+                        codeRange.end() <= regions[i+1].covered.start()) {
+                    // extend the current region if no overlaps the next region
+                    regions[i].covered.setEnd(codeRange.end());
+                } else {
+                    // the range overlaps two region, merge them
+                    mergeRegion(i);
+                }
+            }
+            LogDebug(
+                    "ExecBlockManager::findRegion",
+                    "New Region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
+                    i,
+                    regions[i].covered.start(),
+                    regions[i].covered.end()
+            );
+
+            return i;
+        }
+
         // Hard case: it's in the available budget of one the region. Keep the lowest cost.
         // First compute the required cost for the region to cover this extended range.
-        if(regions[i].covered.end < codeRange.end) {
-            cost += (codeRange.end - regions[i].covered.end);
+        if(regions[i].covered.end() < codeRange.end()) {
+            cost += (codeRange.end() - regions[i].covered.end());
         }
-        if(regions[i].covered.start > codeRange.start) {
-            cost += (regions[i].covered.start - codeRange.start);
+        if(regions[i].covered.start() > codeRange.start()) {
+            cost += (regions[i].covered.start() - codeRange.start());
         }
         // Make sure that such cost is available and that it's better than previous candidates
         if(static_cast<unsigned>(cost * getExpansionRatio()) < regions[i].available && cost < best_cost) {
@@ -273,16 +436,16 @@ size_t ExecBlockManager::findRegion(Range<rword> codeRange) {
             "ExecBlockManager::findRegion",
             "Extending region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "] to cover basic block [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
             best_region,
-            regions[best_region].covered.start,
-            regions[best_region].covered.end,
-            codeRange.start,
-            codeRange.end
+            regions[best_region].covered.start(),
+            regions[best_region].covered.end(),
+            codeRange.start(),
+            codeRange.end()
         );
-        if(regions[best_region].covered.end < codeRange.end) {
-            regions[best_region].covered.end = codeRange.end;
+        if(regions[best_region].covered.end() < codeRange.end()) {
+            regions[best_region].covered.setEnd(codeRange.end());
         }
-        if(regions[best_region].covered.start > codeRange.start) {
-            regions[best_region].covered.start = codeRange.start;
+        if(regions[best_region].covered.start() > codeRange.start()) {
+            regions[best_region].covered.setStart(codeRange.start());
         }
         return best_region;
     }
@@ -290,7 +453,7 @@ size_t ExecBlockManager::findRegion(Range<rword> codeRange) {
     // Find a place to insert it
     size_t insert = low;
     for(; insert < regions.size(); insert++) {
-        if(regions[insert].covered.start > codeRange.start) {
+        if(regions[insert].covered.start() > codeRange.start()) {
             break;
         }
     }
@@ -298,10 +461,10 @@ size_t ExecBlockManager::findRegion(Range<rword> codeRange) {
         "ExecBlockManager::findRegion",
         "Creating new region %zu to cover basic block [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
         insert,
-        codeRange.start,
-        codeRange.end
+        codeRange.start(),
+        codeRange.end()
     );
-    regions.insert(regions.begin() + insert, ExecRegion {codeRange, 0, 0, std::vector<ExecBlock*>()});
+    regions.insert(regions.begin() + insert, {codeRange, 0, 0, {}});
     return insert;
 }
 
@@ -327,316 +490,6 @@ void ExecBlockManager::updateRegionStat(size_t r, rword translated) {
     }
 }
 
-static void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm::MCRegisterInfo& MRI) {
-    opa.regName = MRI.getName(regNo);
-    opa.value = regNo;
-    opa.size = 0;
-    opa.regOff = 0;
-    opa.regCtxIdx = 0;
-    opa.type = OPERAND_INVALID;
-    if (regNo == /* llvm::X86|ARM::NoRegister */ 0)
-        return;
-    // try to match register in our GPR context
-    for (uint16_t j = 0; j < NUM_GPR; j++) {
-        if (MRI.isSubRegisterEq(GPR_ID[j], regNo)) {
-            if (GPR_ID[j] != regNo) {
-                unsigned int subregidx = MRI.getSubRegIndex(GPR_ID[j], regNo);
-                opa.size = MRI.getSubRegIdxSize(subregidx) / CHAR_BIT; // size is in bits, we want bytes
-                opa.regOff = MRI.getSubRegIdxOffset(subregidx);
-            } else {
-                opa.size = sizeof(rword);
-            }
-            opa.regCtxIdx = j;
-            opa.type = OPERAND_GPR;
-            return;
-        }
-    }
-}
-
-static void tryMergeCurrentRegister(InstAnalysis* instAnalysis) {
-    OperandAnalysis& opa = instAnalysis->operands[instAnalysis->numOperands - 1];
-    if (opa.type != QBDI::OPERAND_GPR) {
-        return;
-    }
-    for (uint16_t j = 0; j < instAnalysis->numOperands - 1; j++) {
-        OperandAnalysis& pop = instAnalysis->operands[j];
-        if (pop.type != opa.type || pop.flag != opa.flag) {
-            continue;
-        }
-        if (pop.regCtxIdx == opa.regCtxIdx &&
-                pop.size == opa.size &&
-                pop.regOff == opa.regOff) {
-            // merge current one into previous one
-            pop.regAccess |= opa.regAccess;
-            memset(&opa, 0, sizeof(OperandAnalysis));
-            instAnalysis->numOperands--;
-            break;
-        }
-    }
-}
-
-static void analyseImplicitRegisters(InstAnalysis* instAnalysis, const uint16_t* implicitRegs, std::vector<unsigned int>& skipRegs,
-                                     RegisterAccessType type, const llvm::MCRegisterInfo& MRI) {
-    if (!implicitRegs) {
-        return;
-    }
-    // Iteration style copied from LLVM code
-    for (; *implicitRegs; ++implicitRegs) {
-        OperandAnalysis topa;
-        llvm::MCPhysReg regNo = *implicitRegs;
-        // skip register if in blacklist
-        if(std::find_if(skipRegs.begin(), skipRegs.end(),
-                [&regNo, &MRI](const unsigned int skipRegNo) {
-                    return MRI.isSubRegisterEq(skipRegNo, regNo);
-                }) != skipRegs.end()) {
-            continue;
-        }
-        analyseRegister(topa, *implicitRegs, MRI);
-        // we found a GPR (as size is only known for GPR)
-        // TODO: add support for more registers
-        if (topa.size != 0 && topa.type != OPERAND_INVALID) {
-            // fill a new operand analysis
-            OperandAnalysis& opa = instAnalysis->operands[instAnalysis->numOperands];
-            opa = topa;
-            opa.regAccess = type;
-            instAnalysis->numOperands++;
-            // try to merge with a previous one
-            tryMergeCurrentRegister(instAnalysis);
-        }
-    }
-}
-
-static void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const llvm::MCInstrDesc& desc, const llvm::MCRegisterInfo& MRI) {
-    if (!instAnalysis) {
-        // no instruction analysis
-        return;
-    }
-    instAnalysis->numOperands = 0; // updated later because we could skip some
-    instAnalysis->operands = NULL;
-    // Analysis of instruction operands
-    uint8_t numOperands = inst.getNumOperands();
-    uint8_t numOperandsMax = numOperands + desc.getNumImplicitDefs() + desc.getNumImplicitUses();
-    if (numOperandsMax == 0) {
-        // no operand to analyse
-        return;
-    }
-    instAnalysis->operands = new OperandAnalysis[numOperandsMax]();
-    // find written registers
-    std::bitset<16> regWrites;
-    for (unsigned i = 0,
-            e = desc.isVariadic() ? inst.getNumOperands() : desc.getNumDefs();
-            i != e; ++i) {
-        const llvm::MCOperand& op = inst.getOperand(i);
-        if (op.isReg()) {
-            regWrites.set(i, true);
-        }
-    }
-    std::vector<unsigned int> skipRegs;
-    // for each instruction operands
-    for (uint8_t i = 0; i < numOperands; i++) {
-        const llvm::MCOperand& op = inst.getOperand(i);
-        const llvm::MCOperandInfo& opdesc = desc.OpInfo[i];
-        // fill a new operand analysis
-        OperandAnalysis& opa = instAnalysis->operands[instAnalysis->numOperands];
-        if (!op.isValid()) {
-            continue;
-        }
-        if (op.isReg()) {
-            unsigned int regNo = op.getReg();
-            // validate that this is really a register operand, not
-            // something else (memory access)
-            if (regNo == 0)
-                continue;
-            // fill the operand analysis
-            analyseRegister(opa, regNo, MRI);
-            // we have'nt found a GPR (as size is only known for GPR)
-            if (opa.size == 0 || opa.type == OPERAND_INVALID) {
-                // TODO: add support for more registers
-                continue;
-            }
-            switch (opdesc.OperandType) {
-                case llvm::MCOI::OPERAND_REGISTER:
-                    break;
-                case llvm::MCOI::OPERAND_MEMORY:
-                    opa.flag |= OPERANDFLAG_ADDR;
-                    break;
-                case llvm::MCOI::OPERAND_UNKNOWN:
-                    opa.flag |= OPERANDFLAG_UNDEFINED_EFFECT;
-                    break;
-                default:
-                    LogWarning("ExecBlockManager::analyseOperands",
-                            "Not supported operandType %d for register operand", opdesc.OperandType);
-                    continue;
-            }
-            opa.regAccess = regWrites.test(i) ? REGISTER_WRITE : REGISTER_READ;
-            instAnalysis->numOperands++;
-            // try to merge with a previous one
-            tryMergeCurrentRegister(instAnalysis);
-        } else if (op.isImm()) {
-            // fill the operand analysis
-            switch (opdesc.OperandType) {
-                case llvm::MCOI::OPERAND_IMMEDIATE:
-                    opa.size = getImmediateSize(&inst, &desc);
-                    break;
-                case llvm::MCOI::OPERAND_MEMORY:
-                    opa.flag |= OPERANDFLAG_ADDR;
-                    opa.size = sizeof(rword);
-                    break;
-                case llvm::MCOI::OPERAND_PCREL:
-                    opa.size = getImmediateSize(&inst, &desc);
-                    opa.flag |= OPERANDFLAG_PCREL;
-                    break;
-                case llvm::MCOI::OPERAND_UNKNOWN:
-                    opa.flag |= OPERANDFLAG_UNDEFINED_EFFECT;
-                    opa.size = sizeof(rword);
-                    break;
-                default:
-                    LogWarning("ExecBlockManager::analyseOperands",
-                            "Not supported operandType %d for immediate operand", opdesc.OperandType);
-                    continue;
-            }
-            if (opdesc.isPredicate()) {
-                opa.type = OPERAND_PRED;
-            } else {
-                opa.type = OPERAND_IMM;
-            }
-            opa.value = static_cast<rword>(op.getImm());
-            instAnalysis->numOperands++;
-        }
-    }
-
-    // analyse implicit registers (R/W)
-    analyseImplicitRegisters(instAnalysis, desc.getImplicitDefs(), skipRegs, REGISTER_WRITE, MRI);
-    analyseImplicitRegisters(instAnalysis, desc.getImplicitUses(), skipRegs, REGISTER_READ, MRI);
-}
-
-
-static void freeInstAnalysis(InstAnalysis* analysis) {
-    if (analysis == nullptr) {
-        return;
-    }
-    delete[] analysis->operands;
-    delete[] analysis->disassembly;
-    delete analysis;
-}
-
-
-const InstAnalysis* ExecBlockManager::analyzeInstMetadata(const InstMetadata* instMetadata, AnalysisType type) {
-    InstAnalysis* instAnalysis = nullptr;
-    RequireAction("Engine::analyzeInstMetadata", instMetadata, return nullptr);
-
-    size_t r = searchRegion(instMetadata->address);
-
-    // Attempt to locate it in the sequenceCache
-    if(r < regions.size() && regions[r].covered.contains(instMetadata->address) &&
-       regions[r].analysisCache.count(instMetadata->address) == 1) {
-        LogDebug("ExecBlockManager::analyzeInstMetadata", "Analysis of instruction 0x%" PRIRWORD " found in sequenceCache of region %zu", instMetadata->address, r);
-        instAnalysis = regions[r].analysisCache[instMetadata->address];
-    }
-    // Do we have anything we want inside the cache ?
-    if ((instAnalysis != nullptr) &&
-        ((instAnalysis->analysisType & type) != type)) {
-        LogDebug("ExecBlockManager::analyzeInstMetadata", "Analysis of instruction 0x%" PRIRWORD " need to be rebuilt", instMetadata->address);
-        // Free current cache because we want more data
-        freeInstAnalysis(instAnalysis);
-        instAnalysis = nullptr;
-    }
-    // We have a usable cached analysis
-    if (instAnalysis != nullptr) {
-        return instAnalysis;
-    }
-    // Cache miss
-    const llvm::MCInst &inst = instMetadata->inst;
-    const llvm::MCInstrDesc &desc = MCII.get(inst.getOpcode());
-
-    instAnalysis = new InstAnalysis;
-    // set all values to NULL/0/false
-    memset(instAnalysis, 0, sizeof(InstAnalysis));
-
-    instAnalysis->analysisType      = type;
-
-    if (type & ANALYSIS_DISASSEMBLY) {
-        int len = 0;
-        std::string buffer;
-        llvm::raw_string_ostream bufferOs(buffer);
-        assembly.printDisasm(inst, bufferOs);
-        bufferOs.flush();
-        len = buffer.size() + 1;
-        instAnalysis->disassembly = new char[len];
-        strncpy(instAnalysis->disassembly, buffer.c_str(), len);
-        buffer.clear();
-    }
-
-    if (type & ANALYSIS_INSTRUCTION) {
-        instAnalysis->address           = instMetadata->address;
-        instAnalysis->instSize          = instMetadata->instSize;
-        instAnalysis->affectControlFlow = instMetadata->modifyPC;
-        instAnalysis->isBranch          = desc.isBranch();
-        instAnalysis->isCall            = desc.isCall();
-        instAnalysis->isReturn          = desc.isReturn();
-        instAnalysis->isCompare         = desc.isCompare();
-        instAnalysis->isPredicable      = desc.isPredicable();
-        instAnalysis->mayLoad           = desc.mayLoad();
-        instAnalysis->mayStore          = desc.mayStore();
-        instAnalysis->mnemonic          = MCII.getName(inst.getOpcode()).data();
-    }
-
-    if (type & ANALYSIS_OPERANDS) {
-        // analyse operands (immediates / registers)
-        analyseOperands(instAnalysis, inst, desc, MRI);
-    }
-
-    if (type & ANALYSIS_SYMBOL) {
-        // find nearest symbol (if any)
-#ifndef QBDI_OS_WIN
-        Dl_info info;
-        const char* ptr;
-
-        int ret = dladdr((void*) instAnalysis->address, &info);
-        if (ret != 0) {
-            if (info.dli_sname) {
-                instAnalysis->symbol = info.dli_sname;
-                instAnalysis->symbolOffset = instAnalysis->address - (rword) info.dli_saddr;
-            }
-            if (info.dli_fname) {
-                // dirty basename, but thead safe
-                if((ptr = strrchr(info.dli_fname, '/')) != nullptr) {
-                    instAnalysis->module = ptr + 1;
-                }
-            }
-        }
-#endif
-    }
-
-    // If its part of a region, put in in the region cache
-    if(r < regions.size() && regions[r].covered.contains(instMetadata->address)) {
-        LogDebug("ExecBlockManager::analyzeInstMetadata", "Analysis of instruction 0x%" PRIRWORD " cached in region %zu", instMetadata->address, r);
-        regions[r].analysisCache[instMetadata->address] = instAnalysis;
-    }
-    // Put it in the global cache. Should never happen under normal usage
-    else {
-        LogDebug("ExecBlockManager::analyzeInstMetadata", "Analysis of instruction 0x%" PRIRWORD " cached in global cache", instMetadata->address);
-        analysisCache[instMetadata->address] = instAnalysis;
-    }
-    return instAnalysis;
-}
-
-
-void ExecBlockManager::eraseRegion(size_t r) {
-    LogDebug("ExecBlockManager::eraseRegion", "Erasing region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
-             r, regions[r].covered.start, regions[r].covered.end);
-    // Delete cached blocks
-    for(ExecBlock* block: regions[r].blocks) {
-        LogDebug("ExecBlockManager::eraseRegion", "Dropping ExecBlock %p", block);
-        delete block;
-    }
-    // Delete cached analysis
-    for(std::pair<rword, InstAnalysis*> analysis: regions[r].analysisCache) {
-        freeInstAnalysis(analysis.second);
-    }
-    regions.erase(regions.begin() + r);
-}
-
 void ExecBlockManager::clearCache(RangeSet<rword> rangeSet) {
     const std::vector<Range<rword>>& ranges = rangeSet.getRanges();
     for(Range<rword> r: ranges) {
@@ -649,37 +502,42 @@ void ExecBlockManager::clearCache(RangeSet<rword> rangeSet) {
 
 void ExecBlockManager::flushCommit() {
     // It needs to be erased from last to first to preserve index validity
-    if(flushList.size() > 0) {
+    if(needFlush) {
         LogDebug("ExecBlockManager::flushCommit", "Flushing analysis caches");
-        std::sort(flushList.begin(), flushList.end(), std::greater<size_t>());
-        // Remove duplicates
-        flushList.erase(std::unique(flushList.begin(), flushList.end()), flushList.end());
-        for(size_t r: flushList) {
-            eraseRegion(r);
-        }
-        flushList.clear();
-        // Clear global cache
-        for(std::pair<rword, InstAnalysis*> analysis: analysisCache) {
-            freeInstAnalysis(analysis.second);
-        }
-        analysisCache.clear();
+        regions.erase(std::remove_if(regions.begin(), regions.end(),
+            [](const ExecRegion &r) -> bool {
+                if (r.toFlush)
+                    LogDebug("ExecBlockManager::flushCommit", "Erasing region [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
+                             r.covered.start(), r.covered.end());
+                return r.toFlush;
+            }), regions.end());
+        needFlush = false;
     }
 }
 
 void ExecBlockManager::clearCache(Range<rword> range) {
     size_t i = 0;
-    LogDebug("ExecBlockManager::clearCache", "Erasing range [0x%" PRIRWORD ", 0x%" PRIRWORD "]", range.start, range.end);
+    LogDebug("ExecBlockManager::clearCache", "Erasing range [0x%" PRIRWORD ", 0x%" PRIRWORD "]", range.start(), range.end());
     for(i = 0; i < regions.size(); i++) {
         if(regions[i].covered.overlaps(range)) {
-            flushList.push_back(i);
+            regions[i].toFlush = true;
+            needFlush = true;
         }
     }
 }
 
-void ExecBlockManager::clearCache() {
+void ExecBlockManager::clearCache(bool flushNow) {
     LogDebug("ExecBlockManager::clearCache", "Erasing all cache");
-    while(regions.size() > 0) {
-        eraseRegion(regions.size() - 1);
+    if (flushNow) {
+        regions.clear();
+        total_translated_size = 1;
+        total_translation_size = 1;
+        needFlush = false;
+    } else {
+        for(auto &r : regions) {
+            r.toFlush = true;
+            needFlush = true;
+        }
     }
 }
 

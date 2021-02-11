@@ -22,7 +22,7 @@
 
 namespace QBDI {
 
-class MemoryConstant: public RelocatableInst, public AutoAlloc<RelocatableInst, MemoryConstant> {
+class MemoryConstant: public AutoClone<RelocatableInst, MemoryConstant> {
     unsigned int opn;
     rword        value;
 
@@ -41,7 +41,7 @@ public:
     }
 };
 
-class HostPCRel : public RelocatableInst, public AutoAlloc<RelocatableInst, HostPCRel> {
+class HostPCRel : public AutoClone<RelocatableInst, HostPCRel> {
     unsigned int opn;
     rword        offset;
 
@@ -59,7 +59,7 @@ public:
     }
 };
 
-class InstId : public RelocatableInst, public AutoAlloc<RelocatableInst, InstId> {
+class InstId : public AutoClone<RelocatableInst, InstId> {
     unsigned int opn;
 
 public:

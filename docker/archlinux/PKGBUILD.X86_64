@@ -1,0 +1,50 @@
+# Maintainer: Charles Hubain <chubain@quarkslab.com>
+# Maintainer: QBDI Team <qbdi@quarkslab.com>
+
+pkgname=QBDI-X86_64
+pkgver=0.8.0_devel
+pkgrel=1
+epoch=
+pkgdesc="QuarkslaB Dynamic binary Instrumentation for linux-X86_64"
+arch=('x86_64')
+url="https://qbdi.quarkslab.com/"
+license=('apache2')
+depends=('zlib')
+options=(staticlibs)
+makedepends=('cmake' 'make' 'gcc' 'python2' 'python' 'git')
+
+prepare() {
+    mkdir "$pkgname-$pkgver"
+}
+
+build() {
+    cd "$pkgname-$pkgver"
+    cmake -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_CROSSCOMPILING=FALSE \
+          -DQBDI_PLATFORM=linux \
+          -DQBDI_ARCH=X86_64 \
+          -DCMAKE_INSTALL_PREFIX=/usr \
+          -DQBDI_TOOLS_PYQBDI=OFF \
+          -DQBDI_CCACHE=OFF \
+          ../../../
+    [[ -d "../../../deps/llvm/linux-X86_64" ]] || make llvm
+    cmake -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_CROSSCOMPILING=FALSE \
+          -DQBDI_PLATFORM=linux \
+          -DQBDI_ARCH=X86_64 \
+          -DCMAKE_INSTALL_PREFIX=/usr \
+          -DQBDI_TOOLS_PYQBDI=OFF \
+          -DQBDI_CCACHE=OFF \
+          ../../../
+    make -j4
+}
+
+check() {
+    cd "$pkgname-$pkgver"
+    ./test/QBDITest
+}
+
+package() {
+    cd "$pkgname-$pkgver"
+    make DESTDIR="$pkgdir/" install
+}

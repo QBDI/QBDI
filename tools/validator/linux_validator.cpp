@@ -23,6 +23,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include <dlfcn.h>
 #include <signal.h>
 #include <sys/mman.h>
@@ -33,9 +34,10 @@
 #include "Platform.h"
 #include "Utility/LogSys.h"
 
-static const size_t STACK_SIZE = 8388608;
 static bool INSTRUMENTED = false;
+static bool MASTER = false;
 static pid_t debugged, instrumented;
+int ctrlfd, datafd;
 
 QBDIPRELOAD_INIT;
 
@@ -48,7 +50,7 @@ int QBDI::qbdipreload_on_main(int argc, char** argv) {
     } else {
         LinuxProcess* debuggedProcess = nullptr;
         debuggedProcess = new LinuxProcess(debugged);
-        start_master(debuggedProcess, instrumented);
+        start_master(debuggedProcess, instrumented, ctrlfd, datafd);
         delete debuggedProcess;
         return QBDIPRELOAD_NO_ERROR;
     }
@@ -61,13 +63,20 @@ int QBDI::qbdipreload_on_premain(void *gprCtx, void *fpuCtx) {
 }
 
 int QBDI::qbdipreload_on_run(QBDI::VMInstanceRef vm, QBDI::rword start, QBDI::rword stop) {
-    start_instrumented(vm, start, stop);
+    start_instrumented(vm, start, stop, ctrlfd, datafd);
     return QBDIPRELOAD_NOT_HANDLED;
+}
+
+void killChild() {
+    kill(debugged, SIGKILL);
+    kill(instrumented, SIGKILL);
 }
 
 int QBDI::qbdipreload_on_exit(int status) {
     if(INSTRUMENTED) {
         cleanup_instrumentation();
+    } else if (MASTER) {
+        killChild();
     }
     return QBDIPRELOAD_NO_ERROR;
 }
@@ -77,16 +86,39 @@ int QBDI::qbdipreload_on_start(void *main) {
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
 
+    int ctrlfds[2];
+    int datafds[2];
+    if (pipe(ctrlfds) != 0 || pipe(datafds) != 0) {
+        fprintf(stderr, "validator: fatal error, fail create pipe for intrumented process !\n\n");
+        exit(0);
+    }
+
     instrumented = fork();
     if(instrumented == 0) {
+
+        ctrlfd = ctrlfds[0];
+        datafd = datafds[1];
+        close(ctrlfds[1]);
+        close(datafds[0]);
+
+        signal(SIGCHLD, SIG_IGN);
         INSTRUMENTED = true;
         return QBDIPRELOAD_NOT_HANDLED;
     }
+
     debugged = fork();
     if(debugged == 0) {
+        // don't close all pipe to have the same filedescriptor in the
+        // debugged and the instrumented process
+        close(ctrlfds[1]);
+        close(datafds[0]);
+        signal(SIGCHLD, SIG_IGN);
+
         ptrace(PTRACE_TRACEME, 0, NULL, NULL);
+        raise(SIGSTOP);
         return QBDIPRELOAD_NO_ERROR;
     }
+
     if (ptrace(PTRACE_ATTACH, debugged, NULL, NULL) == -1) {
         fprintf(stderr, "validator: fatal error, PTRACE_ATTACH failed !\n\n");
         kill(instrumented, SIGKILL);
@@ -94,5 +126,18 @@ int QBDI::qbdipreload_on_start(void *main) {
         exit(0);
     }
 
+    ctrlfd = ctrlfds[1];
+    datafd = datafds[0];
+    close(ctrlfds[0]);
+    close(datafds[1]);
+
+    int wstatus;
+    do {
+        waitpid(debugged, &wstatus, WUNTRACED | WCONTINUED);
+    } while (!WIFSTOPPED(wstatus));
+
+    signal(SIGCHLD, SIG_IGN);
+    MASTER = true;
+    atexit(killChild);
     return QBDIPRELOAD_NOT_HANDLED;
 }

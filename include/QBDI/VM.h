@@ -15,48 +15,91 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef _VM_H_
-#define _VM_H_
+#ifndef QBDI_VM_H_
+#define QBDI_VM_H_
 
 #include <string>
 #include <utility>
 #include <vector>
 #include <cstdarg>
+#include <memory>
 
 #include "Platform.h"
 #include "Callback.h"
 #include "Errors.h"
 #include "State.h"
 #include "InstAnalysis.h"
+#include "Range.h"
+#include "Options.h"
 
 namespace QBDI {
 
 // Forward declaration of engine class
 class Engine;
-// Foward declaration of (currently) private InstrRule
-class InstrRule;
 // Forward declaration of private memCBInfo
 struct MemCBInfo;
+// Forward declaration of private InstrCBInfo
+struct InstrCBInfo;
 
 class QBDI_EXPORT VM {
-    private:
+private:
     // Private internal engine
-    Engine*     engine;
+    std::unique_ptr<Engine> engine;
     uint8_t  memoryLoggingLevel;
-    std::vector<std::pair<uint32_t, MemCBInfo>>* memCBInfos;
+    std::unique_ptr<std::vector<std::pair<uint32_t, MemCBInfo>>> memCBInfos;
     uint32_t memCBID;
     uint32_t memReadGateCBID;
     uint32_t memWriteGateCBID;
+    std::unique_ptr<std::vector<std::pair<uint32_t, std::unique_ptr<InstrCBInfo>>>> instrCBInfos;
 
-    public:
+public:
     /*! Construct a new VM for a given CPU with specific attributes
      *
      * @param[in] cpu    The name of the CPU
      * @param[in] mattrs A list of additional attributes
+     * @param[in] opts   The options to enable in the VM
      */
-    VM(const std::string& cpu = "", const std::vector<std::string>& mattrs = {});
+    VM(const std::string& cpu = "", const std::vector<std::string>& mattrs = {}, Options opts = Options::NO_OPT);
 
     ~VM();
+
+    /*! Move constructors.
+     *  All the cache is keep.
+     *  All registered callbacks will be called with the new pointer of the VM.
+     *
+     * @param[in] vm     The VM to move
+     */
+    VM(VM&& vm);
+
+    /*! Move assignment operator
+     *  All the cache is keep.
+     *  All registered callbacks will be called with the new pointer of the VM.
+     *  This operator mustn't be called when the target VM runs.
+     *
+     * @param[in] vm     The VM to move
+     */
+    VM& operator=(VM&& vm);
+
+    /*! Copy constructors
+     *  The state and the configuration is copied. The cache isn't duplicate.
+     *  The assigned VM begin with an empty cache.
+     *
+     * @param[in] vm     The VM to copy
+     */
+    VM(const VM& vm);
+
+    /*! Copy assignment operator
+     *  The state and the configuration is copied. The cache isn't duplicate.
+     *  The assigned VM begin with an empty cache.
+     *  This operator mustn't be called when the target VM runs.
+     *
+     * @param[in] vm     The VM to copy
+     */
+    VM& operator=(const VM& vm);
+
+    // delete const move constructor and const move assignment operator
+    VM(const VM&& vm) = delete;
+    VM& operator=(const VM&& vm) = delete;
 
     /*! Obtain the current general purpose register state.
      *
@@ -74,13 +117,26 @@ class QBDI_EXPORT VM {
      *
      * @param[in] gprState A structure containing the GPR state.
      */
-    void        setGPRState(GPRState* gprState);
+    void        setGPRState(const GPRState* gprState);
 
     /*! Set the FPR state
      *
      * @param[in] fprState A structure containing the FPR state.
      */
-    void        setFPRState(FPRState* fprState);
+    void        setFPRState(const FPRState* fprState);
+
+    /*! Get the current Options of the VM
+     */
+    Options     getOptions() const;
+
+    /*! Set the Options of the VM
+     *  This method mustn't be called when the VM runs.
+     *
+     * @param[in] options  the new options of the VM
+     *
+     * If the new options is different that the current ones, the cache will be clear.
+     */
+    void        setOptions(Options options);
 
     /*! Add an address range to the set of instrumented address ranges.
      *
@@ -140,6 +196,7 @@ class QBDI_EXPORT VM {
     void         removeAllInstrumentedRanges();
 
     /*! Start the execution by the DBI.
+     *  This method mustn't be called if the VM already runs.
      *
      * @param[in] start  Address of the first instruction to execute.
      * @param[in] stop   Stop the execution when this instruction is reached.
@@ -149,6 +206,7 @@ class QBDI_EXPORT VM {
     bool        run(rword start, rword stop);
 
     /*! Call a function using the DBI (and its current state).
+     *  This method mustn't be called if the VM already runs.
      *
      * @param[in] [retval]   Pointer to the returned value (optional).
      * @param[in] function   Address of the function start instruction.
@@ -171,6 +229,7 @@ class QBDI_EXPORT VM {
     bool        call(rword* retval, rword function, const std::vector<rword>& args = {});
 
     /*! Call a function using the DBI (and its current state).
+     *  This method mustn't be called if the VM already runs.
      *
      * @param[in] [retval]   Pointer to the returned value (optional).
      * @param[in] function   Address of the function start instruction.
@@ -182,6 +241,7 @@ class QBDI_EXPORT VM {
     bool        callA(rword* retval, rword function, uint32_t argNum, const rword* args);
 
     /*! Call a function using the DBI (and its current state).
+     *  This method mustn't be called if the VM already runs.
      *
      * @param[in] [retval]   Pointer to the returned value (optional).
      * @param[in] function   Address of the function start instruction.
@@ -192,14 +252,47 @@ class QBDI_EXPORT VM {
      */
     bool        callV(rword* retval, rword function, uint32_t argNum, va_list ap);
 
-    /*! Add a custom instrumentation rule to the VM. Requires internal headers
+    /*! Add a custom instrumentation rule to the VM.
      *
-     * @param[in] rule  A custom instrumentation rule.
+     * @param[in] cbk       A function pointer to the callback
+     * @param[in] type      Analyse type needed for this instruction function pointer to the callback
+     * @param[in] data      User defined data passed to the callback.
      *
      * @return The id of the registered instrumentation (or VMError::INVALID_EVENTID
      * in case of failure).
      */
-    uint32_t addInstrRule(InstrRule rule);
+    uint32_t addInstrRule(InstrumentCallback cbk, AnalysisType type, void* data);
+
+    // register C like InstrumentCallback
+    uint32_t addInstrRule(InstrumentCallbackC cbk, AnalysisType type, void* data);
+
+    /*! Add a custom instrumentation rule to the VM on a specify range
+     *
+     * @param[in] start     Begin of the range of address where apply the rule
+     * @param[in] end       End of the range of address where apply the rule
+     * @param[in] cbk       A function pointer to the callback
+     * @param[in] type      Analyse type needed for this instruction function pointer to the callback
+     * @param[in] data      User defined data passed to the callback.
+     *
+     * @return The id of the registered instrumentation (or VMError::INVALID_EVENTID
+     * in case of failure).
+     */
+    uint32_t addInstrRuleRange(rword start, rword end, InstrumentCallback cbk, AnalysisType type, void* data);
+
+    // register C like InstrumentCallback
+    uint32_t addInstrRuleRange(rword start, rword end, InstrumentCallbackC cbk, AnalysisType type, void* data);
+
+    /*! Add a custom instrumentation rule to the VM on a specify set of range
+     *
+     * @param[in] range     Range of address where apply the rule
+     * @param[in] cbk       A function pointer to the callback
+     * @param[in] type      Analyse type needed for this instruction function pointer to the callback
+     * @param[in] data      User defined data passed to the callback.
+     *
+     * @return The id of the registered instrumentation (or VMError::INVALID_EVENTID
+     * in case of failure).
+     */
+    uint32_t addInstrRuleRangeSet(RangeSet<rword> range, InstrumentCallback cbk, AnalysisType type, void* data);
 
     /*! Register a callback event if the instruction matches the mnemonic.
      *
@@ -260,9 +353,9 @@ class QBDI_EXPORT VM {
      * in case of failure).
      */
     uint32_t    addMemAccessCB(MemoryAccessType type, InstCallback cbk, void *data);
-    
-    /*! Add a virtual callback which is triggered for any memory access at a specific address 
-     *  matching the access type. Virtual callbacks are called via callback forwarding by a 
+
+    /*! Add a virtual callback which is triggered for any memory access at a specific address
+     *  matching the access type. Virtual callbacks are called via callback forwarding by a
      *  gate callback triggered on every memory access. This incurs a high performance cost.
      *
      * @param[in] address  Code address which will trigger the callback.
@@ -276,8 +369,8 @@ class QBDI_EXPORT VM {
      */
     uint32_t    addMemAddrCB(rword address, MemoryAccessType type, InstCallback cbk, void *data);
 
-    /*! Add a virtual callback which is triggered for any memory access in a specific address range 
-     *  matching the access type. Virtual callbacks are called via callback forwarding by a 
+    /*! Add a virtual callback which is triggered for any memory access in a specific address range
+     *  matching the access type. Virtual callbacks are called via callback forwarding by a
      *  gate callback triggered on every memory access. This incurs a high performance cost.
      *
      * @param[in] start    Start of the address range which will trigger the callback.
@@ -317,9 +410,9 @@ class QBDI_EXPORT VM {
      */
     void        deleteAllInstrumentations();
 
-    /*! Obtain the analysis of an instruction metadata. Analysis results are cached in the VM.
-     *  The validity of the returned pointer is only guaranteed until the end of the callback, else 
-     *  a deepcopy of the structure is required.
+    /*! Obtain the analysis of the current instruction. Analysis results are cached in the VM.
+     *  The validity of the returned pointer is only guaranteed until the end of the callback, else
+     *  a deepcopy of the structure is required. This method must only be used in an InstCallback.
      *
      * @param[in] [type]         Properties to retrieve during analysis.
      *                           This argument is optional, defaulting to
@@ -327,7 +420,21 @@ class QBDI_EXPORT VM {
      *
      * @return A InstAnalysis structure containing the analysis result.
      */
-    const InstAnalysis* getInstAnalysis(AnalysisType type = ANALYSIS_INSTRUCTION | ANALYSIS_DISASSEMBLY);
+    const InstAnalysis* getInstAnalysis(AnalysisType type = ANALYSIS_INSTRUCTION | ANALYSIS_DISASSEMBLY) const;
+
+    /*! Obtain the analysis of a cached instruction. Analysis results are cached in the VM.
+     *  The validity of the returned pointer is only guaranteed until the end of the callback
+     *  or a call to a noconst method of the VM object.
+     *
+     * @param[in] address        The address of the instruction to analyse.
+     * @param[in] [type]         Properties to retrieve during analysis.
+     *                           This argument is optional, defaulting to
+     *                           QBDI::ANALYSIS_INSTRUCTION | QBDI::ANALYSIS_DISASSEMBLY.
+     *
+     * @return A InstAnalysis structure containing the analysis result.
+     *    null if the instruction isn't in the cache.
+     */
+    const InstAnalysis* getCachedInstAnalysis(rword address, AnalysisType type = ANALYSIS_INSTRUCTION | ANALYSIS_DISASSEMBLY) const;
 
     /*! Add instrumentation rules to log memory access using inline instrumentation and
      *  instruction shadows.
@@ -340,18 +447,21 @@ class QBDI_EXPORT VM {
     bool recordMemoryAccess(MemoryAccessType type);
 
     /*! Obtain the memory accesses made by the last executed instruction.
+     *  The method should be called in an InstCallback.
      *
      * @return List of memory access made by the instruction.
      */
     std::vector<MemoryAccess> getInstMemoryAccess() const;
 
     /*! Obtain the memory accesses made by the last executed basic block.
+     *  The method should be called in a VMCallback with VMEvent::SEQUENCE_EXIT.
      *
      * @return List of memory access made by the instruction.
      */
     std::vector<MemoryAccess> getBBMemoryAccess() const;
 
     /*! Pre-cache a known basic block
+     *  This method mustn't be called if the VM already runs.
      *
      * @param[in] pc   Start address of a basic block
      *
@@ -375,4 +485,4 @@ class QBDI_EXPORT VM {
 
 } // QBDI::
 
-#endif // _VM_H_
+#endif // QBDI_VM_H_

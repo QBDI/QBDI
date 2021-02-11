@@ -21,16 +21,16 @@
 namespace QBDI {
 namespace pyQBDI {
 
-void init_binding_Range(py::module& m) {
+void init_binding_Range(py::module_& m) {
     py::class_<Range<rword>>(m, "Range")
         .def(py::init<rword, rword>(),
                 "Create a new range",
                 "start"_a, "end"_a)
 
-        .def_readwrite("start", &Range<rword>::start,
+        .def_property("start", &Range<rword>::start, &Range<rword>::setStart,
                 "Range start value.")
 
-        .def_readwrite("end", &Range<rword>::end,
+        .def_property("end", &Range<rword>::end, &Range<rword>::setEnd,
                 "Range end value (always excluded).")
 
         .def("size", &Range<rword>::size,
@@ -40,19 +40,19 @@ void init_binding_Range(py::module& m) {
                 "Return True if two ranges are equal (same boundaries).",
                 "r"_a)
 
-        .def("contains", (bool (Range<rword>::*)(rword) const) &Range<rword>::contains,
+        .def("contains", (bool (Range<rword>::*)(const rword) const) &Range<rword>::contains,
                 "Return True if an value is inside current range boundaries.",
                 "t"_a)
 
-        .def("contains", (bool (Range<rword>::*)(Range<rword>) const) &Range<rword>::contains,
+        .def("contains", (bool (Range<rword>::*)(const Range<rword>&) const) &Range<rword>::contains,
                 "Return True if a range is inside current range boundaries.",
                 "r"_a)
 
-        .def("__contains__", (bool (Range<rword>::*)(rword) const) &Range<rword>::contains,
+        .def("__contains__", (bool (Range<rword>::*)(const rword) const) &Range<rword>::contains,
                 "Return True if an value is inside current range boundaries.",
                 "t"_a)
 
-        .def("__contains__", (bool (Range<rword>::*)(Range<rword>) const) &Range<rword>::contains,
+        .def("__contains__", (bool (Range<rword>::*)(const Range<rword>&) const) &Range<rword>::contains,
                 "Return True if a range is inside current range boundaries.",
                 "r"_a)
 
@@ -76,9 +76,9 @@ void init_binding_Range(py::module& m) {
         .def("__getitem__", [](const Range<rword> &r, int index) {
                                 switch (index) {
                                     case 0:
-                                        return r.start;
+                                        return r.start();
                                     case 1:
-                                        return r.end;
+                                        return r.end();
                                     default:
                                         throw std::out_of_range("Only two elements");
                                 }
@@ -86,9 +86,9 @@ void init_binding_Range(py::module& m) {
         .def("__setitem__", [](Range<rword> &r, int index, rword value) {
                                 switch (index) {
                                     case 0:
-                                        r.start = value;
+                                        r.setStart(value);
                                     case 1:
-                                        r.end = value;
+                                        r.setEnd(value);
                                     default:
                                         throw std::out_of_range("Only two elements");
                                 }

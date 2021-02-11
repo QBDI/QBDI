@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef _VERSION_H_
-#define _VERSION_H_
+#ifndef QBDI_VERSION_H_
+#define QBDI_VERSION_H_
 
 #include <stdint.h>
 #include "Platform.h"
@@ -34,20 +34,21 @@ extern "C" {
 #define QBDI_VERSION_PATCH @QBDI_VERSION_PATCH@
 #define QBDI_VERSION_DEV @QBDI_VERSION_DEV@
 
-#define QBDI_ARCHITECTURE_STRING "@ARCH@"
-#define QBDI_OS_STRING "@OS@"
-#define QBDI_PLATFORM_STRING "@PLATFORM@"
+#define QBDI_ARCHITECTURE_STRING "@QBDI_ARCH@"
+#define QBDI_PLATFORM_STRING "@QBDI_PLATFORM@"
 
 /*! Return QBDI version.
  *
- * @param[in] version    QBDI version encoded as an unsigned integer (0xMmp).
+ * @param[out] version    QBDI version encoded as an unsigned integer (0xMmp).
  * @return  QBDI version as a string (major.minor.patch).
  */
 QBDI_EXPORT const char* qbdi_getVersion(uint32_t* version);
 
 #ifdef __cplusplus
-/*
- * C API C++ bindings
+/*! Return QBDI version.
+ *
+ * @param[out] version    QBDI version encoded as an unsigned integer (0xMmp).
+ * @return  QBDI version as a string (major.minor.patch).
  */
 inline const char* getVersion(uint32_t* version) {
     return qbdi_getVersion(version);
@@ -57,4 +58,4 @@ inline const char* getVersion(uint32_t* version) {
 } // QBDI::
 #endif
 
-#endif // _VERSION_H_
+#endif // QBDI_VERSION_H_

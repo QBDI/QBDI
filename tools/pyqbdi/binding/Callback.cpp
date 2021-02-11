@@ -17,11 +17,13 @@
  */
 
 #include "pyqbdi.hpp"
+#include "Enum.hpp"
+#include "callback_python.h"
 
 namespace QBDI {
 namespace pyQBDI {
 
-void init_binding_Callback(py::module& m) {
+void init_binding_Callback(py::module_& m) {
 
     py::enum_<VMAction>(m, "VMAction", "The callback results.")
         .value("CONTINUE", VMAction::CONTINUE, "The execution of the basic block continues.")
@@ -38,7 +40,7 @@ void init_binding_Callback(py::module& m) {
         .value("POSTINST", InstPosition::POSTINST, "Positioned after the instruction.")
         .export_values();
 
-    py::enum_<VMEvent>(m, "VMEvent", py::arithmetic())
+    enum_int_flag_<VMEvent>(m, "VMEvent", py::arithmetic())
         .value("SEQUENCE_ENTRY", VMEvent::SEQUENCE_ENTRY, "Triggered when the execution enters a sequence.")
         .value("SEQUENCE_EXIT", VMEvent::SEQUENCE_EXIT, "Triggered when the execution exits from the current sequence.")
         .value("BASIC_BLOCK_ENTRY", VMEvent::BASIC_BLOCK_ENTRY, "Triggered when the execution enters a basic block.")
@@ -47,32 +49,15 @@ void init_binding_Callback(py::module& m) {
         .value("EXEC_TRANSFER_CALL", VMEvent::EXEC_TRANSFER_CALL, "Triggered when the ExecBroker executes an execution transfer.")
         .value("EXEC_TRANSFER_RETURN", VMEvent::EXEC_TRANSFER_RETURN, "Triggered when the ExecBroker returns from an execution transfer.")
         .export_values()
-        .def("__str__",
-                [](const VMEvent p) {
-                    std::string res;
-                    if (p & VMEvent::SEQUENCE_ENTRY)
-                        res += "|VMEvent.SEQUENCE_ENTRY";
-                    if (p & VMEvent::SEQUENCE_EXIT)
-                        res += "|VMEvent.SEQUENCE_EXIT";
-                    if (p & VMEvent::BASIC_BLOCK_ENTRY)
-                        res += "|VMEvent.BASIC_BLOCK_ENTRY";
-                    if (p & VMEvent::BASIC_BLOCK_EXIT)
-                        res += "|VMEvent.BASIC_BLOCK_EXIT";
-                    if (p & VMEvent::BASIC_BLOCK_NEW)
-                        res += "|VMEvent.BASIC_BLOCK_NEW";
-                    if (p & VMEvent::EXEC_TRANSFER_CALL)
-                        res += "|VMEvent.EXEC_TRANSFER_CALL";
-                    if (p & VMEvent::EXEC_TRANSFER_RETURN)
-                        res += "|VMEvent.EXEC_TRANSFER_RETURN";
-                    res.erase(0, 1);
-                    return res;
-                });
+        .def_invert()
+        .def_repr_str();
 
-    py::enum_<MemoryAccessType>(m, "MemoryAccessType", "Memory access type (read / write / ...)", py::arithmetic())
+    enum_int_flag_<MemoryAccessType>(m, "MemoryAccessType", "Memory access type (read / write / ...)", py::arithmetic())
         .value("MEMORY_READ", MemoryAccessType::MEMORY_READ, "Memory read access")
         .value("MEMORY_WRITE", MemoryAccessType::MEMORY_WRITE, "Memory write access")
         .value("MEMORY_READ_WRITE", MemoryAccessType::MEMORY_READ_WRITE, "Memory read/write access")
-        .export_values();
+        .export_values()
+        .def_invert();
 
     py::class_<VMState>(m, "VMState")
         .def_readonly("event", &VMState::event,
@@ -86,12 +71,28 @@ void init_binding_Callback(py::module& m) {
         .def_readonly("sequenceEnd", &VMState::sequenceEnd,
                 "The current sequence end address which can also be the execution transfer destination.");
 
+    enum_int_flag_<MemoryAccessFlags>(m, "MemoryAccessFlags", "Memory access flags", py::arithmetic())
+        .value("MEMORY_NO_FLAGS", MemoryAccessFlags::MEMORY_NO_FLAGS, "Empty flags")
+        .value("MEMORY_UNKNOWN_SIZE", MemoryAccessFlags::MEMORY_UNKNOWN_SIZE, "The size of the access isn't known.")
+        .value("MEMORY_MINIMUM_SIZE", MemoryAccessFlags::MEMORY_MINIMUM_SIZE, "The given size is a minimum size.")
+        .value("MEMORY_UNKNOWN_VALUE", MemoryAccessFlags::MEMORY_UNKNOWN_VALUE, "The value of the access is unknown or hasn't been retrived.")
+        .export_values()
+        .def_invert()
+        .def_repr_str();
+
     py::class_<MemoryAccess>(m, "MemoryAccess")
         .def_readwrite("instAddress", &MemoryAccess::instAddress, "Address of instruction making the access")
         .def_readwrite("accessAddress", &MemoryAccess::accessAddress, "Address of accessed memory")
         .def_readwrite("value", &MemoryAccess::value, "Value read from / written to memory")
         .def_readwrite("size", &MemoryAccess::size, "Size of memory access (in bytes)")
-        .def_readwrite("type", &MemoryAccess::type, "Memory access type (READ / WRITE)");
+        .def_readwrite("type", &MemoryAccess::type, "Memory access type (READ / WRITE)")
+        .def_readwrite("flags", &MemoryAccess::flags, "Memory access flags");
+
+    py::class_<InstrumentDataCBKPython>(m, "InstrumentDataCBK")
+        .def(py::init<PyInstCallback&, py::object&, InstPosition>(), "cbk"_a, "data"_a, "position"_a)
+        .def_readwrite("cbk", &InstrumentDataCBKPython::cbk, "Address of the function to call when the instruction is executed")
+        .def_readwrite("data", &InstrumentDataCBKPython::data, "User defined data which will be forward to cbk.")
+        .def_readwrite("position", &InstrumentDataCBKPython::position, "Relative position of the event callback (PREINST / POSTINST).");
 }
 
 }}

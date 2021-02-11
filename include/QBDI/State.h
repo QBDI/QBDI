@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef _STATE_H_
-#define _STATE_H_
+#ifndef QBDI_STATE_H_
+#define QBDI_STATE_H_
 
 #include <stdint.h>
 #include <inttypes.h>
@@ -78,9 +78,8 @@ typedef struct {
 
 typedef uint32_t rword;
 
-// SPHINX_X86_FPRSTATE_BEGIN
 /*! X86 Floating Point Register context.
- */
+ */ // SPHINX_X86_FPRSTATE_BEGIN
 typedef struct {
     union {
         FPControl     fcw;      /* x87 FPU control word */
@@ -130,9 +129,8 @@ typedef struct {
 // SPHINX_X86_FPRSTATE_END
 typedef char __compile_check_01__[sizeof(FPRState) == 640 ? 1 : -1];
 
-// SPHINX_X86_GPRSTATE_BEGIN
 /*! X86 General Purpose Register context.
- */
+ */ // SPHINX_X86_GPRSTATE_BEGIN
 typedef struct {
     rword eax;
     rword ebx;
@@ -166,6 +164,7 @@ static const unsigned int REG_RETURN = 0;
 static const unsigned int REG_BP = 6;
 static const unsigned int REG_SP = 7;
 static const unsigned int REG_PC = 8;
+static const unsigned int REG_FLAG = 9;
 
 #endif // QBDI_ARCH_X86
 
@@ -180,9 +179,8 @@ static const unsigned int REG_PC = 8;
 
 typedef uint64_t rword;
 
-// SPHINX_X86_64_FPRSTATE_BEGIN
 /*! X86_64 Floating Point Register context.
- */
+ */ // SPHINX_X86_64_FPRSTATE_BEGIN
 typedef struct {
     union {
         FPControl     fcw;      /* x87 FPU control word */
@@ -248,9 +246,8 @@ typedef struct {
 // SPHINX_X86_64_FPRSTATE_END
 typedef char __compile_check_01__[sizeof(FPRState) == 768 ? 1 : -1];
 
-// SPHINX_X86_64_GPRSTATE_BEGIN
 /*! X86_64 General Purpose Register context.
- */
+ */ // SPHINX_X86_64_GPRSTATE_BEGIN
 typedef struct {
     rword rax;
     rword rbx;
@@ -270,7 +267,6 @@ typedef struct {
     rword rsp;
     rword rip;
     rword eflags;
-
 } GPRState;
 // SPHINX_X86_64_GPRSTATE_END
 
@@ -301,6 +297,7 @@ static const unsigned int REG_RETURN = 0;
 static const unsigned int REG_BP = 14;
 static const unsigned int REG_SP = 15;
 static const unsigned int REG_PC = 16;
+static const unsigned int REG_FLAG = 17;
 
 #endif // QBDI_ARCH_X86_64
 
@@ -316,17 +313,15 @@ static const unsigned int REG_PC = 16;
 
 typedef uint32_t rword;
 
-// SPHINX_ARM_FPRSTATE_BEGIN
 /*! ARM Floating Point Register context.
- */
+ */ // SPHINX_ARM_FPRSTATE_BEGIN
 typedef struct {
     float s[QBDI_NUM_FPR];
 } FPRState;
 // SPHINX_ARM_FPRSTATE_END
 
-// SPHINX_ARM_GPRSTATE_BEGIN
 /*! ARM General Purpose Register context.
- */
+ */ // SPHINX_ARM_GPRSTATE_BEGIN
 typedef struct {
     rword r0;
     rword r1;
@@ -376,6 +371,7 @@ static const unsigned int REG_BP = 12;
 static const unsigned int REG_SP = 13;
 static const unsigned int REG_LR = 14;
 static const unsigned int REG_PC = 15;
+static const unsigned int REG_FLAG = 16;
 
 #endif // QBDI_ARCH_ARM
 
@@ -398,4 +394,4 @@ static const unsigned int REG_PC = 15;
 
 #endif
 
-#endif // _STATE_H_
+#endif // QBDI_STATE_H_

@@ -28,19 +28,21 @@
 #include <malloc.h>
 #endif
 
-#include "llvm/MC/MCAsmBackend.h"
-#include "llvm/MC/MCAsmInfo.h"
-#include "llvm/MC/MCContext.h"
-#include "llvm/MC/MCCodeEmitter.h"
-#include "llvm/MC/MCInstrInfo.h"
-#include "llvm/MC/MCObjectFileInfo.h"
-#include "llvm/MC/MCRegisterInfo.h"
-#include "llvm/MC/MCSubtargetInfo.h"
-
 #include "Callback.h"
 #include "InstAnalysis.h"
+#include "Options.h"
 #include "State.h"
-#include "Patch/Types.h"
+#include "Range.h"
+
+namespace llvm {
+    class MCAsmInfo;
+    class MCCodeEmitter;
+    class MCContext;
+    class MCInstrInfo;
+    class MCObjectFileInfo;
+    class MCRegisterInfo;
+    class MCSubtargetInfo;
+}
 
 namespace QBDI {
 
@@ -51,10 +53,8 @@ class ExecBroker;
 class PatchRule;
 class InstrRule;
 class Patch;
-
-const static uint16_t MEM_READ_ADDRESS_TAG  = 0xfff0;
-const static uint16_t MEM_WRITE_ADDRESS_TAG = 0xfff1;
-const static uint16_t MEM_VALUE_TAG         = 0xfff2;
+class InstMetadata;
+struct SeqLoc;
 
 struct CallbackRegistration {
     VMEvent    mask;
@@ -77,11 +77,11 @@ private:
     std::vector<std::string>                 mattrs;
     VMInstanceRef                            vminstance;
 
-    Assembly*                                                       assembly;
-    ExecBlockManager*                                               blockManager;
-    ExecBroker*                                                     execBroker;
-    std::vector<std::shared_ptr<PatchRule>>                         patchRules;
-    std::vector<std::pair<uint32_t, std::shared_ptr<InstrRule>>>    instrRules;
+    std::unique_ptr<Assembly>                                       assembly;
+    std::unique_ptr<ExecBlockManager>                               blockManager;
+    std::unique_ptr<ExecBroker>                                     execBroker;
+    std::vector<PatchRule>                                          patchRules;
+    std::vector<std::pair<uint32_t, std::unique_ptr<InstrRule>>>    instrRules;
     uint32_t                                                        instrRulesCounter;
     std::vector<std::pair<uint32_t, CallbackRegistration>>          vmCallbacks;
     uint32_t                                                        vmCallbacksCounter;
@@ -90,16 +90,22 @@ private:
     GPRState*                                                       curGPRState;
     FPRState*                                                       curFPRState;
     ExecBlock*                                                      curExecBlock;
+    Options                                                         options;
+    VMEvent                                                         eventMask;
+    bool                                                            running;
+
+    void init();
+    void reinit(const std::string& cpu, const std::vector<std::string>& mattrs, Options opts);
 
     std::vector<Patch> patch(rword start);
 
     void initGPRState();
     void initFPRState();
 
-    void instrument(std::vector<Patch> &basicBlock);
+    void instrument(std::vector<Patch> &basicBlock, size_t patchEnd);
     void handleNewBasicBlock(rword pc);
 
-    void signalEvent(VMEvent kind, rword currentBasicBlock, GPRState *gprState, FPRState *fprState);
+    VMAction signalEvent(VMEvent kind, rword currentPC, const SeqLoc* seqLoc, rword basicBlockBegin, GPRState *gprState, FPRState *fprState);
 
 public:
 
@@ -109,10 +115,24 @@ public:
      * @param[in] mattrs     A list of additional attributes
      * @param[in] vminstance Pointer to public engine interface
      */
-    Engine(const std::string& cpu = "", const std::vector<std::string>& mattrs = {}, VMInstanceRef vminstance = nullptr);
+    Engine(const std::string& cpu = "", const std::vector<std::string>& mattrs = {},
+            Options opts = Options::NO_OPT, VMInstanceRef vminstance = nullptr);
 
     ~Engine();
-    
+
+    Engine(const Engine&&) = delete;
+    Engine& operator=(const Engine&&) = delete;
+
+    Engine(const Engine&);
+    Engine& operator=(const Engine&);
+
+    /*! Change the pointer to vminstance. The new pointer will be used for
+     * future callback
+     *
+     * @param[in] vminstance   The new vminstance
+     */
+    void changeVMInstanceRef(VMInstanceRef vminstance);
+
     /*! Obtain the current general purpose register state.
      *
      * @return A structure containing the GPR state.
@@ -129,13 +149,25 @@ public:
      *
      * @param[in] gprState A structure containing the GPR state.
      */
-    void        setGPRState(GPRState* gprState);
+    void        setGPRState(const GPRState* gprState);
 
-    /*! Set the GPR state
+    /*! Set the FPR state
      *
      * @param[in] fprState A structure containing the FPR state.
      */
-    void        setFPRState(FPRState* fprState);
+    void        setFPRState(const FPRState* fprState);
+
+    /*! Get the current Options
+     */
+    Options     getOptions() const { return options; }
+
+    /*! Set the option
+     *
+     * If the new options mismatch the current one, clearAllCache will be called.
+     *
+     * @param[in] options  New options of the engine.
+     */
+    void        setOptions(Options options);
 
     /*! Add an address range to the set of instrumented address ranges.
      *
@@ -159,7 +191,7 @@ public:
      */
     bool         addInstrumentedModuleFromAddr(rword addr);
 
-    /*! Adds all the executable memory maps to the instrumented range set. 
+    /*! Adds all the executable memory maps to the instrumented range set.
      * @return  True if at least one range was added to the instrumented ranges.
      */
     bool         instrumentAllExecutableMaps();
@@ -205,7 +237,7 @@ public:
      * @return The id of the registered instrumentation (or VMError::INVALID_EVENTID
      * in case of failure).
      */
-    uint32_t addInstrRule(InstrRule rule);
+    uint32_t    addInstrRule(std::unique_ptr<InstrRule>&& rule);
 
     /*! Register a callback event for a specific VM event.
      *
@@ -230,17 +262,6 @@ public:
      */
     void        deleteAllInstrumentations();
 
-    /*! Obtain the analysis of an instruction metadata. Analysis results are cached in the VM.
-     *  The validity of the returned pointer is only guaranteed until the end of the callback, else 
-     *  a deepcopy of the structure is required.
-     *
-     * @param[in] instMetadata Metadata to analyze.
-     * @param[in] type         Properties to retrieve during analysis.
-     *
-     * @return A InstAnalysis structure containing the analysis result.
-     */
-    const InstAnalysis* analyzeInstMetadata(const InstMetadata* instMetadata, AnalysisType type);
-
     /*! Expose current ExecBlock
      *
      * @return A pointer to current ExecBlock
@@ -261,6 +282,17 @@ public:
      */
     bool precacheBasicBlock(rword pc);
 
+    /*! Return an InstAnalysis for a cached instruction.
+     * The pointer may be invalid by any noconst method call.
+     *
+     * @param[in] address Start address of the instruction
+     * @param[in] type    type of the Analysis
+     *
+     * @return A pointer to the Analysis or a null pointer if the instruction isn't
+     *    in the cache.
+     */
+    const InstAnalysis* getInstAnalysis(rword address, AnalysisType type) const;
+
     /*! Clear a specific address range from the translation cache.
      *
      * @param[in] start Start of the address range to clear from the cache.
@@ -268,6 +300,12 @@ public:
      *
     */
     void clearCache(rword start, rword end);
+
+    /*! Clear a specific address rangeSet from the translation cache.
+     *
+     * @param[in] rangeSet    The range set to clear from the cache.
+    */
+    void clearCache(RangeSet<rword> rangeSet);
 
     /*! Clear the entire translation cache.
     */

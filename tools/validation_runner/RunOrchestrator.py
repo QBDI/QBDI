@@ -26,30 +26,25 @@ from RunResult import RunResult
 def run_test(test, env, idx):
     print('[{}] Validating {}'.format(idx, test.command_line()))
     # Setup files
-    result_file = '.{}_result'.format(idx)
-    output_file = '.{}_output'.format(idx)
     coverage_file = '.{}_coverage'.format(idx)
     error = False
 
-    with open(result_file, 'w') as result:
-        with open(output_file, 'w') as output:
-            env['VALIDATOR_COVERAGE'] = coverage_file
-            # Execute
-            try:
-                process = subprocess.Popen([test.command] + test.arguments, stdout=output, stderr=result, env=env)
-                retcode = process.wait()
-            except OSError as e:
-                print('[{}] Failled to execute {} : {}'.format(idx, test.command_line(), e))
-                retcode = 255
-                error = True
+    env['VALIDATOR_COVERAGE'] = coverage_file
+    # Execute
+    try:
+        process = subprocess.run([test.command] + test.arguments, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, env=env)
+        retcode = process.returncode
+        result = process.stderr.decode('utf8')
+    except OSError as e:
+        print('[{}] Failled to execute {} : {}'.format(idx, test.command_line(), e))
+        retcode = 255
+        error = True
+        result = ""
 
     # Parse test results and remove test files
-    with open(result_file, 'r') as f:
-        result = f.read()
-
     if os.path.isfile(coverage_file):
-        with open(coverage_file, 'r') as f:
-            coverage = f.read()
+        with open(coverage_file, 'rb') as f:
+            coverage = f.read().decode('utf8')
         os.remove(coverage_file)
     else:
         coverage = ""
@@ -61,8 +56,6 @@ def run_test(test, env, idx):
     else:
         print('[{}] Failed validation {}'.format(idx, test.command_line()))
 
-    os.remove(result_file)
-    os.remove(output_file)
     return test_result
 
 class RunOrchestrator:
@@ -75,7 +68,7 @@ class RunOrchestrator:
         async_res = []
         # Schedule validation on multiple process
         for idx in range(len(tests)):
-            env = dict(os.environ, LD_PRELOAD=self.run_cfg.validator_path, VALIDATOR_VERBOSITY='Detail')
+            env = dict(os.environ, LD_PRELOAD=self.run_cfg.validator_path, VALIDATOR_VERBOSITY='Detail', LD_BIND_NOW='1')
             async_res.append(pool.apply_async(run_test, (tests[idx], env, idx)))
         test_results = []
         for idx in range(len(tests)):

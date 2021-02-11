@@ -1,61 +1,99 @@
-set(SOURCES
-    QBDITest.cpp
-    API/AllocTest.cpp
-    API/MemoryAccessTest.cpp
-    API/RangeTest.cpp
-    API/VMTest.cpp
-    ExecBlock/ExecBlockTest.cpp
-    ExecBlock/ExecBlockManagerTest.cpp
-    TestSetup/LLVMTestEnv.cpp
-    Patch/ComparedExecutor_${ARCH}.cpp
-    Patch/Instr_${BASE_ARCH}Test.cpp
-    Patch/Patch_${BASE_ARCH}Test.cpp
-    Miscs/StringTest.cpp
-    TestSetup/InMemoryAssembler.cpp
-    TestSetup/ShellcodeTester.cpp
-)
 
-if(${PLATFORM} STREQUAL "win-X86_64")
-    set(SOURCES ${SOURCES}
-        Patch/WIN64_RunRealExec.asm
+include(ExternalProject)
+
+ExternalProject_Add(Catch2
+    GIT_REPOSITORY      "https://github.com/catchorg/Catch2.git"
+    GIT_PROGRESS        "true"
+    GIT_TAG             "v2.9.2"
+    CONFIGURE_COMMAND   ""
+    BUILD_COMMAND       ""
+    INSTALL_COMMAND     "")
+
+ExternalProject_get_property(Catch2 SOURCE_DIR)
+set(Catch2_SOURCE_DIR "${SOURCE_DIR}")
+
+# test
+if (QBDI_TEST)
+
+    # Generate a new static qbdi archive with additionnal llvm
+    # needed for the test. The new library allows to remove the llvm library only
+    # used by QBDITest for libQBDI.a and avoid error when link QBDItest
+    set(_TEST_LLVM_LIBS
+        LLVMBitReader
+        LLVMBitstreamReader
+        LLVMCore
+        LLVMObject
+        LLVMRemarks
+        LLVMTextAPI
+      )
+
+    if(QBDI_PLATFORM_WINDOWS)
+      PREPEND(TEST_LLVM_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/ ".lib" ${_TEST_LLVM_LIBS})
+    else()
+      PREPEND(TEST_LLVM_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/lib ".a" ${_TEST_LLVM_LIBS})
+    endif()
+
+    MERGE_STATIC_LIBS(LLVM_static_test LLVM_static_test \${TEST_LLVM_LIBS})
+
+    add_executable(QBDITest "${CMAKE_CURRENT_LIST_DIR}/QBDITest.cpp")
+    add_signature(QBDITest)
+
+    include("${CMAKE_CURRENT_LIST_DIR}/API/CMakeLists.txt")
+    include("${CMAKE_CURRENT_LIST_DIR}/ExecBlock/CMakeLists.txt")
+    include("${CMAKE_CURRENT_LIST_DIR}/Patch/CMakeLists.txt")
+    include("${CMAKE_CURRENT_LIST_DIR}/Miscs/CMakeLists.txt")
+    include("${CMAKE_CURRENT_LIST_DIR}/TestSetup/CMakeLists.txt")
+
+    target_include_directories(QBDITest PRIVATE
+        "${CMAKE_BINARY_DIR}/include"
+        "${CMAKE_BINARY_DIR}/include/QBDI"
+        "${CMAKE_SOURCE_DIR}/include"
+        "${CMAKE_SOURCE_DIR}/include/QBDI"
+        "${CMAKE_CURRENT_SOURCE_DIR}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../src"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/lib/Target/${QBDI_LLVM_ARCH}"
+        "${Catch2_SOURCE_DIR}/single_include"
     )
-elseif (${PLATFORM} STREQUAL "win-X86")
-    set(SOURCES ${SOURCES}
-        Patch/WIN86_RunRealExec.asm
+
+    add_dependencies(QBDITest Catch2)
+    target_link_libraries(QBDITest
+        LLVM_static_test
+        QBDI_static
     )
-    set_source_files_properties("Patch/WIN86_RunRealExec.asm" PROPERTIES COMPILE_FLAGS "/safeseh")
+
+    set_target_properties(QBDITest
+        PROPERTIES
+            CXX_STANDARD 17
+            CXX_STANDARD_REQUIRED ON
+    )
 endif()
 
-add_executable(QBDITest ${SOURCES})
-add_signature(QBDITest)
+# Benchmark
+if(QBDI_BENCHMARK)
+    add_executable(QBDIBenchmark "${CMAKE_CURRENT_LIST_DIR}/QBDIBenchmark.cpp")
+    add_signature(QBDIBenchmark)
 
-target_include_directories(QBDITest PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../include/QBDI"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../src"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../deps/llvm/${PLATFORM}/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../deps/llvm/${PLATFORM}/lib/Target/${LLVM_ARCH}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../deps/gtest/${PLATFORM}/include"
-)
+    include("${CMAKE_CURRENT_LIST_DIR}/Benchmark/CMakeLists.txt")
 
-find_library(GTEST gtest PATHS
-    "${CMAKE_CURRENT_SOURCE_DIR}/../deps/gtest/${PLATFORM}/lib"
-    NO_DEFAULT_PATH)
-
-
-if (${GTEST} STREQUAL "GTEST-NOTFOUND")
-    target_link_libraries(QBDITest
-        QBDI_static
-        "${CMAKE_CURRENT_SOURCE_DIR}/../deps/gtest/${PLATFORM}/lib/libgtest.a"
+    target_include_directories(QBDIBenchmark PRIVATE
+        "${CMAKE_BINARY_DIR}/include"
+        "${CMAKE_BINARY_DIR}/include/QBDI"
+        "${CMAKE_SOURCE_DIR}/include"
+        "${CMAKE_SOURCE_DIR}/include/QBDI"
+        "${CMAKE_CURRENT_SOURCE_DIR}"
+        "${Catch2_SOURCE_DIR}/single_include"
     )
-else()
-    target_link_libraries(QBDITest
+
+    add_dependencies(QBDIBenchmark Catch2)
+    target_link_libraries(QBDIBenchmark
         QBDI_static
-        ${GTEST}
+        ${LLVM_LIBS}
+    )
+
+    set_target_properties(QBDIBenchmark
+        PROPERTIES
+            CXX_STANDARD 17
+            CXX_STANDARD_REQUIRED ON
     )
 endif()
-
-
-set_property(TARGET QBDITest PROPERTY CXX_STANDARD 11)
-set_property(TARGET QBDITest PROPERTY CXX_STANDARD_REQUIRED ON)

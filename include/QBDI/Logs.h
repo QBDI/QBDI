@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef _LOGS_H_
-#define _LOGS_H_
+#ifndef QBDI_LOGS_H_
+#define QBDI_LOGS_H_
 
 #include <stdio.h>
 
@@ -78,4 +78,4 @@ inline void addLogFilter(const char *tag, LogPriority priority) {
 } // QBDI::
 #endif
 
-#endif // _LOGS_H_
+#endif // QBDI_LOGS_H_

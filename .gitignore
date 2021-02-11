@@ -2,24 +2,32 @@
 TODO
 build*/*
 
-include/QBDI/Version.h
-
 deps/**
 !deps/CMakeLists.txt
 !deps/*
 !deps/*/*
 !deps/**/build.sh
 !deps/**/rename-object.py
-!deps/**/*.patch
 
 docs/build
 docs/doxygen_c
 docs/doxygen_cpp
+docs/doxygen_qbdipreload
 docs/qbdi_c.doxygen
 docs/qbdi_cpp.doxygen
-docs/doxygen_tools
-docs/tools.doxygen
+docs/qbdipreload.doxygen
 
 qbdi-deps.tar.gz
 qbdi.tar.gz
 package/QBDI-*
+
+tools/validation_runner/.*_coverage
+tools/validation_runner/.*_output
+tools/validation_runner/.*_result
+tools/validation_runner/*.db
+tools/validation_runner/travis_db
+
+__pycache__
+*.pyc
+*.egg-info
+

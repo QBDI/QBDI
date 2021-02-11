@@ -15,12 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "llvm/MC/MCInst.h"
 
 #include "Patch/InstTransform.h"
 
 namespace QBDI {
 
-void SetOperand::transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) {
+void SetOperand::transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const {
     switch(type) {
         case TempOperandType:
             inst.getOperand(opn).setReg(temp_manager->getRegForTemp(temp));
@@ -34,7 +35,7 @@ void SetOperand::transform(llvm::MCInst &inst, rword address, size_t instSize, T
     }
 }
 
-void SubstituteWithTemp::transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) {
+void SubstituteWithTemp::transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const {
     for(unsigned int i = 0; i < inst.getNumOperands(); i++) {
         llvm::MCOperand &op = inst.getOperand(i);
         if(op.isReg() && op.getReg() == reg) {
@@ -43,7 +44,7 @@ void SubstituteWithTemp::transform(llvm::MCInst &inst, rword address, size_t ins
     }
 }
 
-void AddOperand::transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) {
+void AddOperand::transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const {
     switch(type) {
         case TempOperandType:
             inst.insert(inst.begin() + opn, llvm::MCOperand::createReg(temp_manager->getRegForTemp(temp)));
@@ -57,7 +58,7 @@ void AddOperand::transform(llvm::MCInst &inst, rword address, size_t instSize, T
     }
 }
 
-void RemoveOperand::transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) {
+void RemoveOperand::transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const {
     for(auto it = inst.begin(); it != inst.end(); ++it) {
         if(it->isReg() && it->getReg() == reg) {
             inst.erase(it);
@@ -66,7 +67,7 @@ void RemoveOperand::transform(llvm::MCInst &inst, rword address, size_t instSize
     }
 }
 
-void SetOpcode::transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) {
+void SetOpcode::transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const {
     inst.setOpcode(opcode);
 }
 

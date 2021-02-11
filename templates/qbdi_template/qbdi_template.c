@@ -4,9 +4,7 @@
 
 #include <QBDI.h>
 
-#define FAKE_RET_ADDR 42
 #define STACK_SIZE 0x100000
-
 
 QBDI_NOINLINE int secretFunc(unsigned int value) {
     return value ^ 0x5c;
@@ -27,7 +25,7 @@ int main(int argc, char** argv) {
     uint8_t *fakestack = NULL;
 
     // init VM
-    qbdi_initVM(&vm, NULL, NULL);
+    qbdi_initVM(&vm, NULL, NULL, 0);
 
     // Get a pointer to the GPR state of the VM
     GPRState *state = qbdi_getGPRState(vm);
@@ -45,17 +43,14 @@ int main(int argc, char** argv) {
     res = qbdi_addInstrumentedModuleFromAddr(vm, (rword) &main);
     assert(res == true);
 
-    // Simulate a call in stack
-    qbdi_simulateCall(state, FAKE_RET_ADDR, 1, (rword) 666);
-
     // call secretFunc using VM, custom state and fake stack
     // eq: secretFunc(666);
-    res = qbdi_run(vm, (rword) secretFunc, (rword) FAKE_RET_ADDR);
+    rword retval;
+    res = qbdi_call(vm, &retval, (rword) secretFunc, 1, 666);
     assert(res == true);
 
     // get return value from current state
-    rword retval = QBDI_GPR_GET(state, REG_RETURN);
-    printf("[*] retval=0x%"PRIRWORD"\n", retval);
+    printf("[*] retval=0x%" PRIRWORD "\n", retval);
 
     // free everything
     qbdi_alignedFree(fakestack);

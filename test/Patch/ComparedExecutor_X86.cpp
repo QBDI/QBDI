@@ -36,7 +36,6 @@ InMemoryObject ComparedExecutor_X86::compileWithContextSwitch(const char* source
                    "mov " << offsetof(QBDI::Context, gprState.ecx) << "(%edi), %ecx\n"
                    "mov " << offsetof(QBDI::Context, gprState.edx) << "(%edi), %edx\n"
                    "mov " << offsetof(QBDI::Context, gprState.esi) << "(%edi), %esi\n"
-                   "mov %ebp, " << offsetof(QBDI::Context, hostState.bp) << "(%edi)\n"
                    "mov %esp, " << offsetof(QBDI::Context, hostState.sp) << "(%edi)\n"
                    "mov " << offsetof(QBDI::Context, gprState.ebp) << "(%edi), %ebp\n"
                    "mov " << offsetof(QBDI::Context, gprState.esp) << "(%edi), %esp\n"
@@ -51,7 +50,6 @@ InMemoryObject ComparedExecutor_X86::compileWithContextSwitch(const char* source
                    "mov %esi, " << offsetof(QBDI::Context, gprState.esi) << "(%esp)\n"
                    "mov %edi, " << offsetof(QBDI::Context, gprState.edi) << "(%esp)\n"
                    "mov %ebp, " << offsetof(QBDI::Context, gprState.ebp) << "(%esp)\n"
-                   "mov " << offsetof(QBDI::Context, hostState.bp) << "(%esp), %ebp\n"
                    "mov %esp, %edi\n"
                    "mov " << offsetof(QBDI::Context, hostState.sp) << "(%esp), %esp\n"
                    "pushf\n"
@@ -76,13 +74,13 @@ QBDI::Context ComparedExecutor_X86::jitExec(llvm::ArrayRef<uint8_t> code, QBDI::
                                                          PF::MF_READ | PF::MF_WRITE, ec);
     memset((void*)&outerState, 0, sizeof(QBDI::Context));
     // Put the inputState on the stack
-    inputState.gprState.ebp = (QBDI::rword) stack.base() + stack.size();
-    inputState.gprState.esp = (QBDI::rword) stack.base() + stack.size();
+    inputState.gprState.ebp = (QBDI::rword) stack.base() + stack.allocatedSize();
+    inputState.gprState.esp = (QBDI::rword) stack.base() + stack.allocatedSize();
 
     memcpy((void*)ctxBlock.base(), (void*)&inputState, sizeof(QBDI::Context));
     // Prepare the outerState to fake the realExec() action
-    outerState.gprState.ebp = (QBDI::rword) outerStack.base() + outerStack.size();
-    outerState.gprState.esp = (QBDI::rword) outerStack.base() + outerStack.size() - sizeof(QBDI::rword);
+    outerState.gprState.ebp = (QBDI::rword) outerStack.base() + outerStack.allocatedSize();
+    outerState.gprState.esp = (QBDI::rword) outerStack.base() + outerStack.allocatedSize() - sizeof(QBDI::rword);
     *((QBDI::rword*)outerState.gprState.esp) = (QBDI::rword) 0;
     outerState.gprState.edi = (QBDI::rword) ctxBlock.base();
 
@@ -112,8 +110,8 @@ QBDI::Context ComparedExecutor_X86::realExec(llvm::ArrayRef<uint8_t> code,
                                                        PF::MF_READ | PF::MF_WRITE, ec);
 
     // Put the inputState on the stack
-    QBDI_GPR_SET(&inputState.gprState, QBDI::REG_BP, (QBDI::rword) stack.base() + stack.size());
-    QBDI_GPR_SET(&inputState.gprState, QBDI::REG_SP, (QBDI::rword) stack.base() + stack.size());
+    QBDI_GPR_SET(&inputState.gprState, QBDI::REG_BP, (QBDI::rword) stack.base() + stack.allocatedSize());
+    QBDI_GPR_SET(&inputState.gprState, QBDI::REG_SP, (QBDI::rword) stack.base() + stack.allocatedSize());
 
     // Copy the input context
     memcpy(ctxBlock.base(), (void*) &inputState, sizeof(QBDI::Context));
@@ -123,7 +121,10 @@ QBDI::Context ComparedExecutor_X86::realExec(llvm::ArrayRef<uint8_t> code,
     #else
     __asm__ volatile(
         "mov %1, %%edi;"
-        "call *%0;"
+        "mov %0, %%esi;"
+        "push %%ebp;"
+        "call *%%esi;"
+        "pop %%ebp;"
         :
         :"rm"(code.data()), "rm" (ctxBlock.base())
         :"eax", "ebx", "ecx", "edx", "edi", "esi"
@@ -146,6 +147,8 @@ const char* GPRSave_s =
         "    mov $0x6, %edi\n";
 
 const char* GPRShuffle_s =
+        "    pushal\n"
+        "    popal\n"
         "    push %eax\n"
         "    push %ebx\n"
         "    push %ecx\n"

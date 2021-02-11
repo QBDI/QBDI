@@ -21,22 +21,11 @@
 #include <memory>
 #include <vector>
 
-#include "Patch/ARM/PatchGenerator_ARM.h"
+#include "Patch/PatchRules.h"
 
 namespace QBDI {
 
-class PatchRule;
-
 static const uint32_t MINIMAL_BLOCK_SIZE = 32;
-
-RelocatableInst::SharedPtrVec getExecBlockPrologue();
-
-RelocatableInst::SharedPtrVec getExecBlockEpilogue();
-
-RelocatableInst::SharedPtrVec getTerminator(rword address);
-
-std::vector<std::shared_ptr<PatchRule>> getDefaultPatchRules();
-
 
 }
 

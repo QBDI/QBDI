@@ -22,15 +22,21 @@
 #include <map>
 #include <vector>
 
-#include "Context.h"
-#include "InstAnalysis.h"
+#include "Callback.h"
 #include "Range.h"
-#include "Utility/Assembly.h"
-#include "ExecBlock/ExecBlock.h"
+#include "State.h"
 
+namespace llvm {
+  class MCInstrInfo;
+  class MCRegisterInfo;
+}
 
 namespace QBDI {
 
+class Assembly;
+class ExecBlock;
+class InstMetadata;
+class Patch;
 class RelocatableInst;
 
 struct InstLoc {
@@ -41,68 +47,77 @@ struct InstLoc {
 struct SeqLoc {
     uint16_t blockIdx;
     uint16_t seqID;
-    rword bbStart;
     rword bbEnd;
     rword seqStart;
     rword seqEnd;
 };
 
 struct ExecRegion {
-    Range<rword>                    covered;
-    unsigned                        translated; 
-    unsigned                        available;
-    std::vector<ExecBlock*>         blocks;
-    std::map<rword, SeqLoc>         sequenceCache;
-    std::map<rword, InstLoc>        instCache;
-    std::map<rword, InstAnalysis*>  analysisCache;
+    Range<rword>                             covered;
+    unsigned                                 translated;
+    unsigned                                 available;
+    std::vector<std::unique_ptr<ExecBlock>>  blocks;
+    std::map<rword, SeqLoc>                  sequenceCache;
+    std::map<rword, InstLoc>                 instCache;
+    bool                                     toFlush = false;
+
+    ExecRegion(ExecRegion&&) = default;
+    ExecRegion& operator=(ExecRegion&&) = default;
 };
 
 class ExecBlockManager {
-private:
+    private:
 
-    std::vector<ExecRegion>         regions;
-    std::map<rword, InstAnalysis*>  analysisCache;
-    std::vector<size_t>             flushList;
-    rword                           total_translated_size;
-    rword                           total_translation_size;
+    std::vector<ExecRegion>            regions;
+    rword                              total_translated_size;
+    rword                              total_translation_size;
+    bool                               needFlush;
 
-    VMInstanceRef              vminstance;
-    llvm::MCInstrInfo&         MCII;
-    llvm::MCRegisterInfo&      MRI;
-    Assembly&                  assembly;
+    VMInstanceRef                    vminstance;
+    const Assembly&                  assembly;
 
-    void eraseRegion(size_t r);
+    // cache ExecBlock prologue and epilogue
+    uint32_t                                            epilogueSize;
+    const std::vector<std::unique_ptr<RelocatableInst>> execBlockPrologue;
+    const std::vector<std::unique_ptr<RelocatableInst>> execBlockEpilogue;
 
     size_t searchRegion(rword start) const;
 
-    size_t findRegion(Range<rword> codeRange);
+    void mergeRegion(size_t i);
+
+    size_t findRegion(const Range<rword>& codeRange);
 
     void updateRegionStat(size_t r, rword translated);
 
     float getExpansionRatio() const;
 
+    public:
 
-public:
-
-    ExecBlockManager(llvm::MCInstrInfo& MCII, llvm::MCRegisterInfo& MRI, Assembly& assembly, VMInstanceRef vminstance = nullptr);
+    ExecBlockManager(const Assembly& assembly, VMInstanceRef vminstance = nullptr);
 
     ~ExecBlockManager();
 
+    ExecBlockManager(const ExecBlockManager&) = delete;
+
+    void changeVMInstanceRef(VMInstanceRef vminstance);
+
     void printCacheStatistics(FILE* output) const;
 
-    ExecBlock* getProgrammedExecBlock(rword address);
+    ExecBlock* getProgrammedExecBlock(rword address, SeqLoc* programmedSeqLock=nullptr);
+
+    const ExecBlock* getExecBlock(rword address) const;
 
     const SeqLoc* getSeqLoc(rword address) const;
 
-    void writeBasicBlock(const std::vector<Patch>& basicBlock);
+    size_t preWriteBasicBlock(const std::vector<Patch>& basicBlock);
 
-    const InstAnalysis* analyzeInstMetadata(const InstMetadata* instMetadata, AnalysisType type);
+    void writeBasicBlock(const std::vector<Patch>& basicBlock, size_t patchEnd);
 
-    bool isFlushPending() { return this->flushList.size() > 0; }
+    bool isFlushPending() { return needFlush; }
 
     void flushCommit();
 
-    void clearCache();
+    void clearCache(bool flushNow=true);
 
     void clearCache(Range<rword> range);
 

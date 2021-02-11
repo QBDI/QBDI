@@ -22,35 +22,40 @@
 #include <memory>
 #include <vector>
 
-#include "llvm/MC/MCInst.h"
+#include "llvm/ADT/APInt.h"
 #include "llvm/Support/Process.h"
 #include "llvm/Support/Memory.h"
 
-#include "Callback.h"
-#include "Context.h"
+#include "Patch/InstMetadata.h"
 #include "Patch/Types.h"
 #include "Utility/memory_ostream.h"
-#include "Utility/Assembly.h"
+
+#include "Callback.h"
+#include "State.h"
+
+namespace llvm {
+  class MCInst;
+}
 
 namespace QBDI {
 
+class Assembly;
 class RelocatableInst;
 class Patch;
 
-enum SeqType {
-    Entry = 1,
-    Exit  = 1<<1,
-};
+struct Context;
 
 struct InstInfo {
     uint16_t seqID;
     uint16_t offset;
+    uint16_t shadowOffset;
+    uint16_t shadowSize;
 };
 
 struct SeqInfo {
     uint16_t startInstID;
     uint16_t endInstID;
-    SeqType  type;
+    uint8_t executeFlags;
 };
 
 struct SeqWriteResult {
@@ -60,7 +65,6 @@ struct SeqWriteResult {
 };
 
 struct ShadowInfo {
-    uint16_t seqID;
     uint16_t instID;
     uint16_t tag;
     uint16_t shadowID;
@@ -78,26 +82,22 @@ private:
 
     enum PageState {RX, RW};
 
-    static uint32_t                                      epilogueSize;
-    static std::vector<std::shared_ptr<RelocatableInst>> execBlockPrologue;
-    static std::vector<std::shared_ptr<RelocatableInst>> execBlockEpilogue;
-    static void (*runCodeBlockFct)(void*);
-
-    VMInstanceRef               vminstance;
-    llvm::sys::MemoryBlock      codeBlock;
-    llvm::sys::MemoryBlock      dataBlock;
-    memory_ostream*             codeStream;
-    Assembly&                   assembly;
-    Context*                    context;
-    rword*                      shadows;
-    std::vector<ShadowInfo>     shadowRegistry;
-    uint16_t                    shadowIdx;
-    std::vector<InstMetadata>   instMetadata;
-    std::vector<InstInfo>       instRegistry;
-    std::vector<SeqInfo>        seqRegistry;
-    PageState                   pageState;
-    uint16_t                    currentSeq;
-    uint16_t                    currentInst;
+    VMInstanceRef                     vminstance;
+    llvm::sys::MemoryBlock            codeBlock;
+    llvm::sys::MemoryBlock            dataBlock;
+    std::unique_ptr<memory_ostream>   codeStream;
+    const Assembly&                   assembly;
+    Context*                          context;
+    rword*                            shadows;
+    std::vector<ShadowInfo>           shadowRegistry;
+    uint16_t                          shadowIdx;
+    std::vector<InstMetadata>         instMetadata;
+    std::vector<InstInfo>             instRegistry;
+    std::vector<SeqInfo>              seqRegistry;
+    PageState                         pageState;
+    uint16_t                          currentSeq;
+    uint16_t                          currentInst;
+    uint32_t                          epilogueSize;
 
     /*! Verify if the code block is in read execute mode.
      *
@@ -123,12 +123,24 @@ public:
 
     /*! Construct a new ExecBlock
      *
-     * @param[in] assembly    Assembly used to assemble instructions in the ExecBlock.
-     * @param[in] vminstance  Pointer to public engine interface
+     * @param[in] assembly           Assembly used to assemble instructions in the ExecBlock.
+     * @param[in] vminstance         Pointer to public engine interface
+     * @param[in] execBlockPrologue  cached prologue of ExecManager
+     * @param[in] execBlockEpilogue  cached epilogue of ExecManager
+     * @param[in] epilogueSize       size in bytes of the epilogue (0 is not know)
      */
-    ExecBlock(Assembly& assembly, VMInstanceRef vminstance = nullptr);
+    ExecBlock(const Assembly& assembly, VMInstanceRef vminstance = nullptr,
+              const std::vector<std::unique_ptr<RelocatableInst>>* execBlockPrologue = nullptr,
+              const std::vector<std::unique_ptr<RelocatableInst>>* execBlockEpilogue = nullptr,
+              uint32_t epilogueSize = 0);
 
     ~ExecBlock();
+
+    ExecBlock(const ExecBlock&) = delete;
+
+    /*! Change vminstance when VM object is moved
+     */
+    void changeVMInstanceRef(VMInstanceRef vminstance);
 
     /*! Display the content of an exec block to stderr.
      */
@@ -154,7 +166,7 @@ public:
      *
      * @return A structure detailling the write operation result.
      */
-    SeqWriteResult writeSequence(std::vector<Patch>::const_iterator seqStart, std::vector<Patch>::const_iterator seqEnd, SeqType seqType);
+    SeqWriteResult writeSequence(std::vector<Patch>::const_iterator seqStart, std::vector<Patch>::const_iterator seqEnd);
 
     /*! Split an existing sequence at instruction instID to create a new sequence.
      *
@@ -184,8 +196,14 @@ public:
      * @return The computed offset.
      */
     rword getEpilogueOffset() const {
-        return codeBlock.size() - epilogueSize - codeStream->current_pos();
+        return codeBlock.allocatedSize() - epilogueSize - codeStream->current_pos();
     }
+
+    /*! Get the size of the epilogue
+     *
+     * @return The size of the epilogue.
+     */
+    uint32_t getEpilogueSize() const { return epilogueSize; }
 
     /*! Obtain the value of the PC where the ExecBlock is currently writing instructions.
      *
@@ -224,7 +242,7 @@ public:
      *
      * @return The metadata of the instruction.
      */
-    const InstMetadata* getInstMetadata(uint16_t instID) const;
+    const InstMetadata& getInstMetadata(uint16_t instID) const;
 
     /*! Obtain the instruction address for a specific instruction ID.
      *
@@ -240,7 +258,18 @@ public:
      *
      * @return The original MCInst of the instruction.
      */
-    const llvm::MCInst* getOriginalMCInst(uint16_t instID) const;
+    const llvm::MCInst& getOriginalMCInst(uint16_t instID) const;
+
+    /*! Obtain the analysis of an instruction metadata. Analysis results are cached in the InstAnalysis.
+     *  The validity of the returned pointer is only guaranteed until the end of the callback, else
+     *  a deepcopy of the structure is required.
+     *
+     * @param[in] instMetadata Metadata to analyze.
+     * @param[in] type         Properties to retrieve during analysis.
+     *
+     * @return A InstAnalysis structure containing the analysis result.
+     */
+    const InstAnalysis* getInstAnalysis(uint16_t instID, AnalysisType type) const;
 
     /*! Obtain the next sequence ID.
      *
@@ -272,14 +301,6 @@ public:
      * @return The ID of the current sequence.
      */
     uint16_t getCurrentSeqID() const { return currentSeq; }
-
-    /* Obtain the sequence type for a specific sequence ID.
-     *
-     * @param seqID The sequence ID.
-     *
-     * @return The type of the sequence.
-     */
-    SeqType getSeqType(uint16_t seqID) const;
 
     /*! Obtain the sequence start address for a specific sequence ID.
      *
@@ -317,7 +338,16 @@ public:
      *
      *  @return The shadow id (which is its index within the shadow array).
      */
-    uint16_t newShadow(uint16_t tag = NO_REGISTRATION);
+    uint16_t newShadow(uint16_t tag = ShadowReservedTag::Untagged);
+
+    /*! Search the last Shadow with the tag for the current instruction.
+     *  Used by relocation to load or store data from the instrumented code.
+     *
+     *  @param tag The tag associated with the registration
+     *
+     *  @return The shadow id (which is its index within the shadow array).
+     */
+    uint16_t getLastShadow(uint16_t tag);
 
     /*! Set the value of a shadow.
      *
@@ -341,6 +371,14 @@ public:
      *  @return Offset of the shadow.
      */
     rword getShadowOffset(uint16_t id) const;
+
+    /* Get all registered shadows for an instruction
+     *
+     * @param instID  The id of the instruction in the ExecBlock
+     *
+     * @return a vector of shadowID matching the query
+     */
+    const llvm::ArrayRef<ShadowInfo> getShadowByInst(uint16_t instID) const;
 
     /* Query registered shadows and returns a vector of matching shadowID
      *

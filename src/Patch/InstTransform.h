@@ -21,25 +21,29 @@
 #include <memory>
 #include <vector>
 
-#include "llvm/MC/MCInst.h"
-
 #include "Patch/Types.h"
 #include "Patch/PatchUtils.h"
+
+namespace llvm {
+  class MCInst;
+}
 
 namespace QBDI {
 
 class InstTransform {
 public:
 
-    using SharedPtr    = std::shared_ptr<InstTransform>;
-    using SharedPtrVec = std::vector<std::shared_ptr<InstTransform>>;
+    using UniquePtr      = std::unique_ptr<InstTransform>;
+    using UniquePtrVec   = std::vector<std::unique_ptr<InstTransform>>;
 
-    virtual void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) = 0;
+    virtual std::unique_ptr<InstTransform> clone() const =0;
 
-    virtual ~InstTransform() {}
+    virtual void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const = 0;
+
+    virtual ~InstTransform() = default;
 };
 
-class SetOperand : public InstTransform, public AutoAlloc<InstTransform, SetOperand> {
+class SetOperand : public AutoClone<InstTransform, SetOperand> {
     Operand opn;
     enum {
         TempOperandType,
@@ -76,11 +80,10 @@ public:
     */
     SetOperand(Operand opn, Constant imm) : opn(opn), type(ImmOperandType), temp(0), reg(0), imm(imm) {}
 
-    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager);
+    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const override;
 };
 
-class SubstituteWithTemp : public InstTransform,
-                           public AutoAlloc<InstTransform, SubstituteWithTemp> {
+class SubstituteWithTemp : public AutoClone<InstTransform, SubstituteWithTemp> {
     Reg  reg;
     Temp temp;
 
@@ -93,10 +96,10 @@ public:
     */
     SubstituteWithTemp(Reg reg, Temp temp) : reg(reg), temp(temp) {};
 
-    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager);
+    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const override;
 };
 
-class AddOperand : public InstTransform, public AutoAlloc<InstTransform, AddOperand> {
+class AddOperand : public AutoClone<InstTransform, AddOperand> {
 
     Operand opn;
     enum {
@@ -134,10 +137,10 @@ public:
     */
     AddOperand(Operand opn, Constant imm) : opn(opn), type(ImmOperandType), temp(0), reg(0), imm(imm) {}
 
-    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager);
+    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const override;
 };
 
-class RemoveOperand : public InstTransform, public AutoAlloc<InstTransform, RemoveOperand> {
+class RemoveOperand : public AutoClone<InstTransform, RemoveOperand> {
 
     Reg reg;
 
@@ -149,11 +152,11 @@ public:
     */
     RemoveOperand(Reg reg) : reg(reg) {}
 
-    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager);
+    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const override;
 };
 
 
-class SetOpcode : public InstTransform, public AutoAlloc<InstTransform, SetOpcode> {
+class SetOpcode : public AutoClone<InstTransform, SetOpcode> {
 
     unsigned int opcode;
 
@@ -165,7 +168,7 @@ public:
     */
     SetOpcode(unsigned int opcode) : opcode(opcode) {}
 
-    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager);
+    void transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const override;
 };
 
 }

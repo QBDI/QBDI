@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef _BITMASK_H_
-#define _BITMASK_H_
+#ifndef QBDI_BITMASK_H_
+#define QBDI_BITMASK_H_
 
 #ifdef __cplusplus
 #include <type_traits>
@@ -42,12 +42,12 @@ operator |(Enum lhs, Enum rhs)
 
 template<typename Enum>
 typename std::enable_if<EnableBitMaskOperators<Enum>::enable, Enum>::type
-&operator |=(Enum &lhs, Enum rhs)  
+&operator |=(Enum &lhs, Enum rhs)
 {
     using underlying = typename std::underlying_type<Enum>::type;
     lhs = static_cast<Enum> (
         static_cast<underlying>(lhs) |
-        static_cast<underlying>(rhs)           
+        static_cast<underlying>(rhs)
     );
     return lhs;
 }
@@ -64,4 +64,4 @@ struct EnableBitMaskOperators<x>     \
 #define _QBDI_ENABLE_BITMASK_OPERATORS(x)
 #endif
 
-#endif // _BITMASK_H_
+#endif // QBDI_BITMASK_H_

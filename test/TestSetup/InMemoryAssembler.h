@@ -18,33 +18,8 @@
 #ifndef INMEMORYASSEMBLER_H
 #define INMEMORYASSEMBLER_H
 
-#include <gtest/gtest.h>
-
-#include "llvm/ADT/Triple.h"
-#include "llvm/ADT/SmallVector.h"
-#include "llvm/MC/MCAsmBackend.h"
-#include "llvm/MC/MCAsmInfo.h"
-#include "llvm/MC/MCContext.h"
-#include "llvm/MC/MCCodeEmitter.h"
-#include "llvm/MC/MCDisassembler/MCDisassembler.h"
-#include "llvm/MC/MCInstrInfo.h"
-#include "llvm/MC/MCObjectFileInfo.h"
-#include "llvm/MC/MCParser/MCAsmParser.h"
-#include "llvm/MC/MCRegisterInfo.h"
-#include "llvm/MC/MCTargetOptions.h"
-#include "llvm/MC/MCParser/MCTargetAsmParser.h"
-#include "llvm/MC/MCSubtargetInfo.h"
-#include "llvm/MC/MCStreamer.h"
-#include "llvm/MC/SubtargetFeature.h"
-#include "llvm/Object/ObjectFile.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/FileUtilities.h"
-#include "llvm/Support/ManagedStatic.h"
+#include "llvm/ADT/ArrayRef.h"
 #include "llvm/Support/Memory.h"
-#include "llvm/Support/Process.h"
-#include "llvm/Support/SourceMgr.h"
-#include "llvm/Support/TargetRegistry.h"
-#include "llvm/Support/TargetSelect.h"
 
 class InMemoryObject {
 
@@ -54,10 +29,17 @@ protected:
 
     llvm::sys::MemoryBlock                   objectBlock;
     llvm::ArrayRef<uint8_t>                  code;
-    
+
 public:
 
     InMemoryObject(const char* source, const char* cpu = "", const char** mattrs = nullptr);
+
+    InMemoryObject(const InMemoryObject& vm) = delete;
+    InMemoryObject(InMemoryObject&& vm) = default;
+    InMemoryObject& operator=(const InMemoryObject& vm) = delete;
+    InMemoryObject& operator=(const InMemoryObject&& vm) = delete;
+
+    ~InMemoryObject();
 
     llvm::ArrayRef<uint8_t> getCode() { return code; }
 };

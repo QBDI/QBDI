@@ -15,27 +15,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "Patch/InstrRule.h"
+#include "Patch/InstrRules.h"
+#include "Patch/Patch.h"
+#include "Patch/PatchGenerator.h"
+#include "Patch/RelocatableInst.h"
+#include "Utility/InstAnalysis_prive.h"
+#include "Utility/LogSys.h"
 
 namespace QBDI {
 
-bool InstrRule::canBeApplied(const Patch &patch, llvm::MCInstrInfo* MCII) {
-    return condition->test(&patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII);
-}
+void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI,
+                           const PatchGenerator::UniquePtrVec& patchGen, bool breakToHost, InstPosition position) const {
 
-void InstrRule::instrument(Patch &patch, llvm::MCInstrInfo* MCII, llvm::MCRegisterInfo* MRI) {
+    if (patchGen.size() == 0 && breakToHost == false) {
+        return;
+    }
+
     /* The instrument function needs to handle several different cases. An instrumentation can
      * be either prepended or appended to the patch and, in each case, can trigger a break to
      * host.
     */
-    RelocatableInst::SharedPtrVec instru;
-    TempManager tempManager(&patch.metadata.inst, MCII, MRI);
+    RelocatableInst::UniquePtrVec instru;
+    TempManager tempManager(patch.metadata.inst, MCII, MRI, true);
 
     // Generate the instrumentation code from the original instruction context
-    for(PatchGenerator::SharedPtr& g : patchGen) {
+    for(const PatchGenerator::UniquePtr& g : patchGen) {
         append(instru,
-            g->generate(&patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, &tempManager, nullptr)
+            g->generate(&patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII, &tempManager, nullptr)
         );
     }
 
@@ -55,6 +62,7 @@ void InstrRule::instrument(Patch &patch, llvm::MCInstrInfo* MCII, llvm::MCRegist
                                 &patch.metadata.inst,
                                 patch.metadata.address,
                                 patch.metadata.instSize,
+                                MCII,
                                 &tempManager,
                                 nullptr
                            )
@@ -70,6 +78,7 @@ void InstrRule::instrument(Patch &patch, llvm::MCInstrInfo* MCII, llvm::MCRegist
                                 &patch.metadata.inst,
                                 patch.metadata.address,
                                 patch.metadata.instSize,
+                                MCII,
                                 &tempManager,
                                 nullptr
                            )
@@ -108,11 +117,46 @@ void InstrRule::instrument(Patch &patch, llvm::MCInstrInfo* MCII, llvm::MCRegist
 
     // The resulting instrumentation is either appended or prepended as per the InstPosition
     if(position == PREINST) {
-        patch.prepend(instru);
+        patch.prepend(std::move(instru));
+    } else if(position == POSTINST) {
+        patch.append(std::move(instru));
+    } else {
+        LogError("InstrRule::Instrument", "Invalid position 0x%x", position);
+        abort();
     }
-    else if(position == POSTINST) {
-        patch.append(instru);
+}
+
+bool InstrRuleBasic::canBeApplied(const Patch &patch, const llvm::MCInstrInfo* MCII) const {
+    return condition->test(patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII);
+}
+
+bool InstrRuleDynamic::canBeApplied(const Patch &patch, const llvm::MCInstrInfo* MCII) const {
+    return condition->test(patch.metadata.inst, patch.metadata.address, patch.metadata.instSize, MCII);
+}
+
+bool InstrRuleUser::tryInstrument(Patch &patch, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI,
+                                  const Assembly* assembly) const {
+    if (!range.contains(Range<rword>(patch.metadata.address, patch.metadata.address + patch.metadata.instSize))) {
+        return false;
     }
+
+    LogDebug("InstrRuleUser::tryInstrument", "Call user InstrCB at %p with analysisType 0x%x", cbk, analysisType);
+
+    const InstAnalysis* ana = analyzeInstMetadata(patch.metadata, analysisType, *assembly);
+
+    std::vector<InstrumentDataCBK> vec = cbk(vm, ana, cbk_data);
+
+    LogDebug("InstrRuleUser::tryInstrument", "InstrCB return %u callback(s)", vec.size());
+
+    if (vec.size() == 0) {
+        return false;
+    }
+
+    for (const InstrumentDataCBK& cbkToAdd : vec) {
+        instrument(patch, MCII, MRI, getCallbackGenerator(cbkToAdd.cbk, cbkToAdd.data), true, cbkToAdd.position);
+    }
+
+    return true;
 }
 
 }

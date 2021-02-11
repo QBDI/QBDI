@@ -15,23 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <catch2/catch.hpp>
 #include "Patch/Patch_X86_64Test.h"
 
-TEST_F(Patch_X86_64Test, EmptyFunction) {
+TEST_CASE_METHOD(Patch_X86_64Test, "Patch_X86_64Test-EmptyFunction") {
     QBDI::Context inputState;
 
     memset(&inputState, 0, sizeof(QBDI::Context));
     comparedExec("", inputState, 4096);
 }
 
-TEST_F(Patch_X86_64Test, GPRSave) {
+TEST_CASE_METHOD(Patch_X86_64Test, "Patch_X86_64Test-GPRSave") {
     QBDI::Context inputState;
 
     memset(&inputState, 0, sizeof(QBDI::Context));
     comparedExec(GPRSave_s, inputState, 4096);
 }
 
-TEST_F(Patch_X86_64Test, GPRShuffle) {
+TEST_CASE_METHOD(Patch_X86_64Test, "Patch_X86_64Test-GPRShuffle") {
     QBDI::Context inputState;
 
     memset(&inputState, 0, sizeof(QBDI::Context));
@@ -40,7 +41,7 @@ TEST_F(Patch_X86_64Test, GPRShuffle) {
     comparedExec(GPRShuffle_s, inputState, 4096);
 }
 
-TEST_F(Patch_X86_64Test, RelativeAddressing) {
+TEST_CASE_METHOD(Patch_X86_64Test, "Patch_X86_64Test-RelativeAddressing") {
     QBDI::Context inputState;
 
     memset(&inputState, 0, sizeof(QBDI::Context));
@@ -54,7 +55,7 @@ TEST_F(Patch_X86_64Test, RelativeAddressing) {
     comparedExec(RelativeAddressing_s, inputState, 4096);
 }
 
-TEST_F(Patch_X86_64Test, ConditionalBranching) {
+TEST_CASE_METHOD(Patch_X86_64Test, "Patch_X86_64Test-ConditionalBranching") {
     QBDI::Context inputState;
 
     memset(&inputState, 0, sizeof(QBDI::Context));
@@ -72,7 +73,7 @@ TEST_F(Patch_X86_64Test, ConditionalBranching) {
     comparedExec(ConditionalBranching_s, inputState, 4096);
 }
 
-TEST_F(Patch_X86_64Test, FibonacciRecursion) {
+TEST_CASE_METHOD(Patch_X86_64Test, "Patch_X86_64Test-FibonacciRecursion") {
     QBDI::Context inputState;
 
     memset(&inputState, 0, sizeof(QBDI::Context));
@@ -84,7 +85,7 @@ TEST_F(Patch_X86_64Test, FibonacciRecursion) {
     comparedExec(FibonacciRecursion_s, inputState, 4096);
 }
 
-TEST_F(Patch_X86_64Test, StackTricks) {
+TEST_CASE_METHOD(Patch_X86_64Test, "Patch_X86_64Test-StackTricks") {
     QBDI::Context inputState;
 
     memset(&inputState, 0, sizeof(QBDI::Context));
@@ -95,3 +96,20 @@ TEST_F(Patch_X86_64Test, StackTricks) {
 #endif
     comparedExec(StackTricks_s, inputState, 4096);
 }
+
+#if defined(QBDI_ARCH_X86_64)
+// not implemented for X86
+TEST_CASE_METHOD(Patch_X86_64Test, "Patch_X86_64Test-UnalignedCodeForward") {
+    QBDI::Context inputState;
+
+    memset(&inputState, 0, sizeof(QBDI::Context));
+    comparedExec(UnalignedCodeForward_s, inputState, 4096);
+}
+
+TEST_CASE_METHOD(Patch_X86_64Test, "Patch_X86_64Test-UnalignedCodeBackward") {
+    QBDI::Context inputState;
+
+    memset(&inputState, 0, sizeof(QBDI::Context));
+    comparedExec(UnalignedCodeBackward_s, inputState, 4096);
+}
+#endif

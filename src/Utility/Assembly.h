@@ -20,29 +20,32 @@
 
 #include <memory>
 
-#include "llvm/MC/MCAsmBackend.h"
-#include "llvm/MC/MCAsmInfo.h"
-#include "llvm/MC/MCAssembler.h"
-#include "llvm/MC/MCContext.h"
-#include "llvm/MC/MCCodeEmitter.h"
+#include "llvm/ADT/APInt.h"
 #include "llvm/MC/MCDisassembler/MCDisassembler.h"
-#include "llvm/MC/MCInst.h"
-#include "llvm/MC/MCInstrInfo.h"
-#include "llvm/MC/MCInstPrinter.h"
-#include "llvm/MC/MCObjectWriter.h"
 #include "llvm/MC/MCRegisterInfo.h"
-#include "llvm/MC/MCSubtargetInfo.h"
-#include "llvm/MC/MCValue.h"
-#include "llvm/Support/TargetRegistry.h"
+#include "llvm/Support/raw_ostream.h"
 
-#include "ExecBlock/Context.h"
+#include "Options.h"
 #include "Utility/memory_ostream.h"
+
+namespace llvm {
+  class MCContext;
+  class MCAsmBackend;
+  class Target;
+  class MCInstrInfo;
+  class MCAsmInfo;
+  class MCSubtargetInfo;
+  class MCAssembler;
+  class MCInstPrinter;
+  class MCInst;
+}
 
 namespace QBDI {
 
 class Assembly {
 protected:
 
+    const llvm::Target                       *target;
     llvm::MCInstrInfo                        &MCII;
     const llvm::MCRegisterInfo               &MRI;
     const llvm::MCAsmInfo                    &MAI;
@@ -52,18 +55,29 @@ protected:
     std::unique_ptr<llvm::MCInstPrinter>     asmPrinter;
     std::unique_ptr<llvm::raw_pwrite_stream> null_ostream;
 
+    Options                                  options;
+
 public:
     Assembly(llvm::MCContext &context, std::unique_ptr<llvm::MCAsmBackend> MAB, llvm::MCInstrInfo &MCII,
-             const llvm::Target &target, llvm::MCSubtargetInfo &MSTI);
+             const llvm::Target *target, llvm::MCSubtargetInfo &MSTI, Options options);
+
+    ~Assembly();
 
     void writeInstruction(llvm::MCInst inst, memory_ostream* stream) const;
 
     llvm::MCDisassembler::DecodeStatus getInstruction(llvm::MCInst &inst, uint64_t &size,
                                             llvm::ArrayRef<uint8_t> bytes, uint64_t address) const;
 
-    void printDisasm(const llvm::MCInst &inst, llvm::raw_ostream &out = llvm::errs()) const;
+    void printDisasm(const llvm::MCInst &inst, uint64_t address, llvm::raw_ostream &out = llvm::errs()) const;
 
     const char* getRegisterName(unsigned int id) const {return MRI.getName(id); }
+
+    inline const llvm::MCInstrInfo& getMCII() const { return MCII; }
+
+    inline const llvm::MCRegisterInfo& getMRI() const { return MRI; }
+
+    Options getOptions() const {return options;}
+    void setOptions(Options opts);
 };
 
 }

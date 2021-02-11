@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <catch2/catch.hpp>
 #include "Instr_X86_64Test.h"
 
 QBDI::VMAction increment(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBDI::FPRState *fprState, void *data) {
@@ -22,7 +23,7 @@ QBDI::VMAction increment(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBDI:
     return QBDI::VMAction::CONTINUE;
 }
 
-TEST_F(Instr_X86_64Test, GPRSave_IC) {
+TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test-GPRSave_IC") {
     uint64_t count1 = 0;
     uint64_t count2 = 0;
 
@@ -34,14 +35,14 @@ TEST_F(Instr_X86_64Test, GPRSave_IC) {
     vm.addCodeCB(QBDI::POSTINST, increment, (void*) &count2);
 
     comparedExec(GPRSave_s, inputState, 4096);
-    
-    ASSERT_LT((uint64_t) 0, count1);
-    ASSERT_EQ(count1, count2);
 
-    printf("Took %" PRIu64 " instructions\n", count1);
+    REQUIRE((uint64_t) 0 < count1);
+    REQUIRE(count1 == count2);
+
+    INFO("Took " << count1 << " instructions");
 }
 
-TEST_F(Instr_X86_64Test, GPRShuffle_IC) {
+TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test-GPRShuffle_IC") {
     uint64_t count1 = 0;
     uint64_t count2 = 0;
 
@@ -56,13 +57,13 @@ TEST_F(Instr_X86_64Test, GPRShuffle_IC) {
 
     comparedExec(GPRShuffle_s, inputState, 4096);
 
-    ASSERT_LT((uint64_t) 0, count1);
-    ASSERT_EQ(count1, count2);
+    REQUIRE((uint64_t) 0 < count1);
+    REQUIRE(count1 == count2);
 
-    printf("Took %" PRIu64 " instructions\n", count1);
+    INFO("Took " << count1 << " instructions");
 }
 
-TEST_F(Instr_X86_64Test, RelativeAddressing_IC) {
+TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test-RelativeAddressing_IC") {
     uint64_t count1 = 0;
     uint64_t count2 = 0;
 
@@ -82,13 +83,13 @@ TEST_F(Instr_X86_64Test, RelativeAddressing_IC) {
 
     comparedExec(RelativeAddressing_s, inputState, 4096);
 
-    ASSERT_LT((uint64_t) 0, count1);
-    ASSERT_EQ(count1, count2);
+    REQUIRE((uint64_t) 0 < count1);
+    REQUIRE(count1 == count2);
 
-    printf("Took %" PRIu64 " instructions\n", count1);
+    INFO("Took " << count1 << " instructions");
 }
 
-TEST_F(Instr_X86_64Test, ConditionalBranching_IC) {
+TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test-ConditionalBranching_IC") {
     uint64_t count1 = 0;
     uint64_t count2 = 0;
 
@@ -112,13 +113,13 @@ TEST_F(Instr_X86_64Test, ConditionalBranching_IC) {
 
     comparedExec(ConditionalBranching_s, inputState, 4096);
 
-    ASSERT_LT((uint64_t) 0, count1);
-    ASSERT_EQ(count1, count2);
+    REQUIRE((uint64_t) 0 < count1);
+    REQUIRE(count1 == count2);
 
-    printf("Took %" PRIu64 " instructions\n", count1);
+    INFO("Took " << count1 << " instructions");
 }
 
-TEST_F(Instr_X86_64Test, FibonacciRecursion_IC) {
+TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test-FibonacciRecursion_IC") {
     uint64_t count1 = 0;
     uint64_t count2 = 0;
 
@@ -136,13 +137,13 @@ TEST_F(Instr_X86_64Test, FibonacciRecursion_IC) {
 
     comparedExec(FibonacciRecursion_s, inputState, 4096);
 
-    ASSERT_LT((uint64_t) 0, count1);
-    ASSERT_EQ(count1, count2);
+    REQUIRE((uint64_t) 0 < count1);
+    REQUIRE(count1 == count2);
 
-    printf("Took %" PRIu64 " instructions\n", count1);
+    INFO("Took " << count1 << " instructions");
 }
 
-TEST_F(Instr_X86_64Test, StackTricks_IC) {
+TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test-StackTricks_IC") {
 
     uint64_t count1 = 0;
     uint64_t count2 = 0;
@@ -161,8 +162,49 @@ TEST_F(Instr_X86_64Test, StackTricks_IC) {
 
     comparedExec(StackTricks_s, inputState, 4096);
 
-    ASSERT_LT((uint64_t) 0, count1);
-    ASSERT_EQ(count1, count2);
+    REQUIRE((uint64_t) 0 < count1);
+    REQUIRE(count1 == count2);
 
-    printf("Took %" PRIu64 " instructions\n", count1);
+    INFO("Took " << count1 << " instructions");
 }
+
+#if defined(QBDI_ARCH_X86_64)
+// not implemented for X86
+TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test-UnalignedCodeForward_IC") {
+    uint64_t count1 = 0;
+    uint64_t count2 = 0;
+
+    QBDI::Context inputState;
+    memset(&inputState, 0, sizeof(QBDI::Context));
+
+    vm.deleteAllInstrumentations();
+    vm.addCodeCB(QBDI::PREINST, increment, (void*) &count1);
+    vm.addCodeCB(QBDI::POSTINST, increment, (void*) &count2);
+
+    comparedExec(UnalignedCodeForward_s, inputState, 4096);
+
+    REQUIRE((uint64_t) 0 < count1);
+    REQUIRE(count1 == count2);
+
+    INFO("Took " << count1 << " instructions\n");
+}
+
+TEST_CASE_METHOD(Instr_X86_64Test, "Instr_X86_64Test-UnalignedCodeBackward_IC") {
+    uint64_t count1 = 0;
+    uint64_t count2 = 0;
+
+    QBDI::Context inputState;
+    memset(&inputState, 0, sizeof(QBDI::Context));
+
+    vm.deleteAllInstrumentations();
+    vm.addCodeCB(QBDI::PREINST, increment, (void*) &count1);
+    vm.addCodeCB(QBDI::POSTINST, increment, (void*) &count2);
+
+    comparedExec(UnalignedCodeBackward_s, inputState, 4096);
+
+    REQUIRE((uint64_t) 0 < count1);
+    REQUIRE(count1 == count2);
+
+    INFO("Took " << count1 << " instructions\n");
+}
+#endif

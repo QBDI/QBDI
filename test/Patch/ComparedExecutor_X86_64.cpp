@@ -44,7 +44,6 @@ InMemoryObject ComparedExecutor_X86_64::compileWithContextSwitch(const char* sou
                    "mov " << offsetof(QBDI::Context, gprState.r13) << "(%rdi), %r13\n"
                    "mov " << offsetof(QBDI::Context, gprState.r14) << "(%rdi), %r14\n"
                    "mov " << offsetof(QBDI::Context, gprState.r15) << "(%rdi), %r15\n"
-                   "mov %rbp, " << offsetof(QBDI::Context, hostState.bp) << "(%rdi)\n"
                    "mov %rsp, " << offsetof(QBDI::Context, hostState.sp) << "(%rdi)\n"
                    "mov " << offsetof(QBDI::Context, gprState.rbp) << "(%rdi), %rbp\n"
                    "mov " << offsetof(QBDI::Context, gprState.rsp) << "(%rdi), %rsp\n"
@@ -67,7 +66,6 @@ InMemoryObject ComparedExecutor_X86_64::compileWithContextSwitch(const char* sou
                    "mov %r14, " << offsetof(QBDI::Context, gprState.r14) << "(%rsp)\n"
                    "mov %r15, " << offsetof(QBDI::Context, gprState.r15) << "(%rsp)\n"
                    "mov %rbp, " << offsetof(QBDI::Context, gprState.rbp) << "(%rsp)\n"
-                   "mov " << offsetof(QBDI::Context, hostState.bp) << "(%rsp), %rbp\n"
                    "mov %rsp, %rdi\n"
                    "mov " << offsetof(QBDI::Context, hostState.sp) << "(%rsp), %rsp\n"
                    "pushfq\n"
@@ -92,13 +90,13 @@ QBDI::Context ComparedExecutor_X86_64::jitExec(llvm::ArrayRef<uint8_t> code, QBD
                                                          PF::MF_READ | PF::MF_WRITE, ec);
     memset((void*)&outerState, 0, sizeof(QBDI::Context));
     // Put the inputState on the stack
-    inputState.gprState.rbp = (QBDI::rword) stack.base() + stack.size();
-    inputState.gprState.rsp = (QBDI::rword) stack.base() + stack.size();
+    inputState.gprState.rbp = (QBDI::rword) stack.base() + stack.allocatedSize();
+    inputState.gprState.rsp = (QBDI::rword) stack.base() + stack.allocatedSize();
 
     memcpy((void*)ctxBlock.base(), (void*)&inputState, sizeof(QBDI::Context));
     // Prepare the outerState to fake the realExec() action
-    outerState.gprState.rbp = (QBDI::rword) outerStack.base() + outerStack.size();
-    outerState.gprState.rsp = (QBDI::rword) outerStack.base() + outerStack.size() - sizeof(QBDI::rword);
+    outerState.gprState.rbp = (QBDI::rword) outerStack.base() + outerStack.allocatedSize();
+    outerState.gprState.rsp = (QBDI::rword) outerStack.base() + outerStack.allocatedSize() - sizeof(QBDI::rword);
     *((QBDI::rword*)outerState.gprState.rsp) = (QBDI::rword) 0;
     outerState.gprState.rdi = (QBDI::rword) ctxBlock.base();
 
@@ -128,8 +126,8 @@ QBDI::Context ComparedExecutor_X86_64::realExec(llvm::ArrayRef<uint8_t> code,
                                                        PF::MF_READ | PF::MF_WRITE, ec);
 
     // Put the inputState on the stack
-    QBDI_GPR_SET(&inputState.gprState, QBDI::REG_BP, (QBDI::rword) stack.base() + stack.size());
-    QBDI_GPR_SET(&inputState.gprState, QBDI::REG_SP, (QBDI::rword) stack.base() + stack.size());
+    QBDI_GPR_SET(&inputState.gprState, QBDI::REG_BP, (QBDI::rword) stack.base() + stack.allocatedSize());
+    QBDI_GPR_SET(&inputState.gprState, QBDI::REG_SP, (QBDI::rword) stack.base() + stack.allocatedSize());
 
     // Copy the input context
     memcpy(ctxBlock.base(), (void*) &inputState, sizeof(QBDI::Context));
@@ -139,7 +137,10 @@ QBDI::Context ComparedExecutor_X86_64::realExec(llvm::ArrayRef<uint8_t> code,
     #else
     __asm__ volatile(
         "mov %1, %%rdi;"
-        "call *%0;"
+        "mov %0, %%rsi;"
+        "push %%rbp;"
+        "call *%%rsi;"
+        "pop %%rbp;"
         :
         :"rm"(code.data()), "rm" (ctxBlock.base())
         :"rax", "rbx", "rcx", "rdx", "rdi", "rsi", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"
@@ -311,3 +312,60 @@ const char* StackTricks_s =
         "   mov 0x8(%rsp), %rax\n"
         "   ret $0x8\n"
         "end:\n";
+
+
+#define UF1 \
+        "leaq 0x2(%rip), %rax\n" \
+        "movabsq    $0x11234bb48, %rbx\n" \
+        "jmp *%rax\n"
+
+#define UF16 UF1 UF1 UF1 UF1 UF1 UF1 UF1 UF1 UF1 UF1 UF1 UF1 UF1 UF1 UF1 UF1
+#define UF256 UF16 UF16 UF16 UF16 UF16 UF16 UF16 UF16 UF16 UF16 UF16 UF16 UF16 UF16 UF16 UF16
+
+const char* UnalignedCodeForward_s =
+    "    call f2\n"
+    "    call f1\n"
+    "    jmp end\n"
+    "f1:\n"
+    UF256
+    "f2:\n"
+    UF16
+    "    ret\n"
+    "end:\n";
+
+#undef UF1
+#undef UF16
+#undef UF256
+
+
+#define UB \
+        "movabsq    $0xc3c7489090909090, %rbx\n" \
+        "movabsq    $0xbbeb909090909090, %rbx\n" \
+        "leaq -0x2f(%rip), %rax\n" \
+        "movabsq    $0xc3c7489090909090, %rbx\n" \
+        "movabsq    $0xc3c7489090909090, %rbx\n"
+#define UB1 UB "jmp *%rax\n"
+#define UB16 UB1 UB1 UB1 UB1 UB1 UB1 UB1 UB1 UB1 UB1 UB1 UB1 UB1 UB1 UB1 UB1
+#define UB256 UB16 UB16 UB16 UB16 UB16 UB16 UB16 UB16 UB16 UB16 UB16 UB16 UB16 UB16 UB16 UB16
+
+const char* UnalignedCodeBackward_s =
+    "    leaq endret(%rip), %rdx\n"
+    "    call f1\n"
+    "    call f2\n"
+    "    jmp end\n"
+    UB
+    "jmp *%rdx\n"
+    UB16
+    "f1:\n"
+    UB256
+    "f2:\n"
+    UB1
+    "endret:\n"
+    "    ret\n"
+    "end:\n";
+
+#undef UB
+#undef UB1
+#undef UB16
+#undef UB256
+

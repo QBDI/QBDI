@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef _RANGE_H_
-#define _RANGE_H_
+#ifndef QBDI_RANGE_H_
+#define QBDI_RANGE_H_
 
 #include <vector>
 #include <ostream>
@@ -34,29 +34,42 @@ private:
         return a > b ? a : b;
     }
 
+    T _start;  /*!< Range start value. */
+    T _end;    /*!< Range end value (always excluded). */
+
 public:
 
-    T start;  /*!< Range start value. */
-    T end;    /*!< Range end value (always excluded). */
+    inline T start() const { return _start; }
+    inline T end() const { return _end; }
+    inline void setStart(const T start) {
+        _start = start;
+        if (_end < _start)
+            _end = _start;
+    }
+    inline void setEnd(const T end) {
+        _end = end;
+        if (_end < _start)
+            _start = _end;
+    }
 
     /*! Construct a new range.
      * @param[in] start  Range start value.
      * @param[in] end  Range end value (excluded).
      */
-    Range(T start, T end) {
+    Range(const T start, const T end) {
         if(start < end) {
-            this->start = start;
-            this->end = end;
+            this->_start = start;
+            this->_end = end;
         }
         else {
-            this->end = this->start = start;
+            this->_end = this->_start = start;
         }
     }
 
     /*! Return the total length of a range.
      */
     T size() const {
-        return end - start;
+        return end() - start();
     }
 
     /*! Return True if two ranges are equal (same boundaries).
@@ -66,7 +79,7 @@ public:
      * @return  True if equal.
      */
     bool operator == (const Range& r) const {
-        return r.start == start && r.end == end;
+        return r.start() == start() && r.end() == end();
     }
 
     /*! Return True if an value is inside current range boundaries.
@@ -75,8 +88,8 @@ public:
      *
      * @return  True if contained.
      */
-    bool contains(T t) const {
-        return (start <= t) && (t < end);
+    bool contains(const T t) const {
+        return (start() <= t) && (t < end());
     }
 
     /*! Return True if a range is inside current range boundaries.
@@ -85,8 +98,8 @@ public:
      *
      * @return  True if contained.
      */
-    bool contains(Range<T> r) const {
-        return (start <= r.start) && (r.end <= end);
+    bool contains(const Range<T>& r) const {
+        return (start() <= r.start()) && (r.end() <= end());
     }
 
     /*! Return True if a range is overlapping current range lower or/and upper boundary.
@@ -95,10 +108,8 @@ public:
      *
      * @return  True if overlapping.
      */
-    bool overlaps(Range<T> r) const {
-        return r.contains(*this) || this->contains(r) ||
-               ((start <= r.start) && (r.start < end)) || 
-               ((start < r.end) && (r.end <= end));
+    bool overlaps(const Range<T>& r) const {
+        return start() < r.end() && r.start() < end();
     }
 
     /*! Pretty print a range
@@ -106,7 +117,7 @@ public:
      * @param[in] os  An output stream.
      */
     void display(std::ostream &os) const {
-        os << "(0x" << std::hex << start << ", 0x" << end << ")";
+        os << "(0x" << std::hex << start() << ", 0x" << end() << ")";
     }
 
     /*! Return the intersection of two ranges.
@@ -115,15 +126,15 @@ public:
      *
      * @return  A new range.
      */
-    Range<T> intersect(Range<T> r) const {
-        return Range<T>(max(start, r.start), min(end, r.end));
+    Range<T> intersect(const Range<T>& r) const {
+        return Range<T>(max(start(), r.start()), min(end(), r.end()));
     }
 };
 
 template<typename T> class RangeSet {
 
 private:
-    
+
     std::vector<Range<T>> ranges;
 
 public:
@@ -141,56 +152,56 @@ public:
         return sum;
     }
 
-    bool contains(T t) const {
+    bool contains(const T t) const {
         for(const Range<T> &r : ranges) {
             if(r.contains(t)) {
                 return true;
             }
-            if(r.start > t) {
+            if(r.start() > t) {
                 return false;
             }
         }
         return false;
     }
 
-    bool contains(Range<T> t) const {
+    bool contains(const Range<T>& t) const {
         for(const Range<T> &r : ranges) {
             if(r.contains(t)) {
                 return true;
             }
-            if(r.start > t.end) {
+            if(r.start() > t.end()) {
                 return false;
             }
         }
         return false;
     }
 
-    bool overlaps(Range<T> t) const {
+    bool overlaps(const Range<T>& t) const {
         for(const Range<T> &r : ranges) {
             if(r.overlaps(t)) {
                 return true;
             }
-            if(r.end < t.start) {
+            if(r.end() < t.start()) {
                 return false;
             }
         }
         return false;
     }
 
-    void add(Range<T> t) {
+    void add(const Range<T>& t) {
         size_t i = 0;
         size_t r = 0;
 
         // Exception for empty ranges
-        if(t.end <= t.start) {
+        if(t.end() <= t.start()) {
             return;
         }
-        
+
         // Find start in sorted range list
         for(i = 0; i < ranges.size(); i++) {
-            if(ranges[i].end >= t.start) {
+            if(ranges[i].end() >= t.start()) {
                 // Add a new range before ranges[i]
-                if(ranges[i].start > t.start) {
+                if(ranges[i].start() > t.start()) {
                     ranges.insert(ranges.begin() + i, t);
                 }
                 // else extend ranges[i]
@@ -204,17 +215,17 @@ public:
             return;
         }
         // Determine range [r+1,i] of blocks that are covered by t and will be deleted
-        for(i = r; i < ranges.size() && t.end >= ranges[i].end; i++);
-        // If t.end is inside another range, merge it
-        if(i < ranges.size() && t.end >= ranges[i].start) {
-            ranges[r].end = ranges[i].end;
+        for(i = r; i < ranges.size() && t.end() >= ranges[i].end(); i++);
+        // If t.end() is inside another range, merge it
+        if(i < ranges.size() && t.end() >= ranges[i].start()) {
+            ranges[r].setEnd(ranges[i].end());
             if(i > r) {
                 ranges.erase(ranges.begin() + r + 1, ranges.begin() + i + 1);
             }
         }
         // Else finish normally
         else {
-            ranges[r].end = t.end;
+            ranges[r].setEnd(t.end());
             if(i > r + 1) {
                 ranges.erase(ranges.begin() + r + 1, ranges.begin() + i);
             }
@@ -222,34 +233,34 @@ public:
     }
 
     void add(const RangeSet<T>& t) {
-        for(Range<T> r: t.getRanges()) {
+        for(const Range<T> &r: t.getRanges()) {
             add(r);
         }
     }
 
-    void remove(Range<T> t) {
+    void remove(const Range<T>& t) {
         size_t i = 0;
         size_t r = 0;
 
         // Exception for empty ranges
-        if(t.end <= t.start) {
+        if(t.end() <= t.start()) {
             return;
         }
-        
+
         // Find deletion start
         for(i = 0; i < ranges.size(); i++) {
-            if(ranges[i].end >= t.start) {
+            if(ranges[i].end() >= t.start()) {
                 // start inside a range
-                if(ranges[i].start < t.start) {
+                if(ranges[i].start() < t.start()) {
                     // Split a range
-                    if(t.end < ranges[i].end) {
-                        ranges.insert(ranges.begin() + i, Range<T>(ranges[i].start, t.start));
-                        ranges[i+1].start = t.end;
+                    if(t.end() < ranges[i].end()) {
+                        ranges.insert(ranges.begin() + i, Range<T>(ranges[i].start(), t.start()));
+                        ranges[i+1].setStart(t.end());
                         return;
                     }
                     // Truncate a range
                     else {
-                        ranges[i].end = t.start;
+                        ranges[i].setEnd(t.start());
                         r = i + 1;
                         break;
                     }
@@ -264,10 +275,10 @@ public:
             return;
         }
         // Determine set of ranges contained inside t which will be deleted
-        for(i = r; i < ranges.size() && t.end >= ranges[i].end; i++);
+        for(i = r; i < ranges.size() && t.end() >= ranges[i].end(); i++);
         // Truncate a range
-        if(i < ranges.size() && t.end >= ranges[i].start) {
-            ranges[i].start = t.end;
+        if(i < ranges.size() && t.end() >= ranges[i].start()) {
+            ranges[i].setStart(t.end());
         }
         // Delete covered range
         if(i > r) {
@@ -276,7 +287,7 @@ public:
     }
 
     void remove(const RangeSet<T>& t) {
-        for(Range<T> r: t.getRanges()) {
+        for(const Range<T> &r: t.getRanges()) {
             remove(r);
         }
     }
@@ -298,7 +309,7 @@ public:
         ranges = intersected.getRanges();
     }
 
-    void intersect(Range<T> t) {
+    void intersect(const Range<T>& t) {
         RangeSet<T> intersected;
         for(size_t i = 0; i < ranges.size(); i++) {
             if(t.contains(ranges[i])) {
@@ -345,4 +356,4 @@ public:
 
 }
 
-#endif // _RANGE_H_
+#endif // QBDI_RANGE_H_

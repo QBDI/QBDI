@@ -15,69 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef _PLATFORM_H_
-#define _PLATFORM_H_
+#ifndef QBDI_PLATFORM_H_
+#define QBDI_PLATFORM_H_
 
-#if defined(_MSC_VER)
+#include "Config.h"
 
-    #define QBDI_OS_WIN
-    #define _QBDI_UNREACHABLE() __assume(0)
-
-    #if defined(_M_IX86)
-        #define QBDI_ARCH_X86
-        #define QBDI_BITS_32
-    #elif defined(_M_X64)
-        #define QBDI_ARCH_X86_64
-        #define QBDI_BITS_64
-    #endif
-
-#endif
-
-#if defined(__GNUC__) || defined(__clang__)
-
-    #define _QBDI_UNREACHABLE() __builtin_unreachable()
-
-    #if defined(__ANDROID__)
-        #define QBDI_OS_ANDROID
-    #elif defined(__APPLE__)
-        #define QBDI_OS_DARWIN
-        #if (defined(__arm__) || defined(__aarch64__))
-            #define QBDI_OS_IOS
-        #else
-            #define QBDI_OS_MACOS
-        #endif
-    #elif defined(__linux__)
-        #define QBDI_OS_LINUX
-    #elif defined(_WIN32)
-        #define QBDI_OS_WIN
-    #endif
-
-    #if defined(__i386__)
-        #define QBDI_ARCH_X86
-        #define QBDI_BITS_32
-    #elif defined(__x86_64__)
-        #define QBDI_ARCH_X86_64
-        #define QBDI_BITS_64
-    #elif defined(__aarch64__)
-        #define QBDI_ARCH_AARCH64
-        #define QBDI_BITS_64
-    #elif defined(__arm__)
-        #define QBDI_ARCH_ARM
-        #define QBDI_BITS_32
-    #endif
-
-#endif
-
-#if defined(_MSC_VER)
-# define QBDI_NOINLINE __declspec(noinline)
+#ifdef QBDI_PLATFORM_WINDOWS
+# define QBDI_ALIGNED(n) __declspec(align(n))
 # define QBDI_EXPORT __declspec(dllexport)
+# define QBDI_NOINLINE __declspec(noinline)
 # define QBDI_NOSTACKPROTECTOR
 # define _QBDI_FORCE_USE
-#else  // _MSC_VER
-# define QBDI_NOINLINE __attribute__((noinline))
+# define _QBDI_UNREACHABLE() __assume(0)
+#else
+# define QBDI_ALIGNED(n) __attribute__((aligned(n)))
 # define QBDI_EXPORT __attribute__ ((visibility ("default")))
+# define QBDI_NOINLINE __attribute__((noinline))
 # define QBDI_NOSTACKPROTECTOR __attribute__((no_stack_protector))
 # define _QBDI_FORCE_USE __attribute__((__used__))
+# define _QBDI_UNREACHABLE() __builtin_unreachable()
 #endif
 
 #if defined(__has_feature)
@@ -92,4 +48,4 @@
 #define _QBDI_EI(X) QBDI_##X
 #endif
 
-#endif // _PLATFORM_H_
+#endif // QBDI_PLATFORM_H_

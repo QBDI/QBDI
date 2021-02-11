@@ -21,7 +21,7 @@
 namespace QBDI {
 namespace pyQBDI {
 
-void init_binding_Errors(py::module& m) {
+void init_binding_Errors(py::module_& m) {
 
     py::enum_<VMError>(m, "VMError", "QBDI Error values")
         .value("INVALID_EVENTID", VMError::INVALID_EVENTID, "Mark a returned event id as invalid")

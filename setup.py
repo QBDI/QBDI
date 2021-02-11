@@ -3,6 +3,7 @@ import re
 import sys
 import platform
 import subprocess
+import shutil
 
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
@@ -12,24 +13,24 @@ def detect_QBDI_platform():
     os = None
     arch = None
     if platform.system() == 'Darwin':
-        os = 'macOS'
+        os = 'osx'
     elif platform.system() == 'Windows':
-        os = 'win'
+        os = 'windows'
     elif platform.system() == 'Linux':
         os = 'linux'
 
     if platform.machine() in ['AMD64', 'AMD', 'x64', 'x86_64', 'x86', 'i386', 'i686']:
         # intel arch
-        if platform.architecture()[0] == '32bit':
-            arch = "X86"
-        elif platform.architecture()[0] == '64bit':
+        if sys.maxsize > 2**32:
             arch = "X86_64"
+        else:
+            arch = "X86"
 
     if os and arch:
-        return '-'.join([os, arch])
+        return (os, arch)
 
-    raise RuntimeError("Cannot determine the QBDI platform : system={}, machine={}, architecture={}".format(
-                            platform.system(), platform.machine(), platform.architecture()[0]))
+    raise RuntimeError("Cannot determine the QBDI platform : system={}, machine={}, is64bits={}".format(
+                            platform.system(), platform.machine(), sys.maxsize > 2**32))
 
 
 class CMakeExtension(Extension):
@@ -39,6 +40,11 @@ class CMakeExtension(Extension):
 
 
 class CMakeBuild(build_ext):
+
+    @staticmethod
+    def has_ninja():
+        return bool(shutil.which('ninja'))
+
     def run(self):
         try:
             out = subprocess.check_output(['cmake', '--version'])
@@ -56,26 +62,27 @@ class CMakeBuild(build_ext):
 
     def build_extension(self, ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
+        detected_platform, detected_arch = detect_QBDI_platform()
         cmake_args = ['-DPYQBDI_OUTPUT_DIRECTORY=' + extdir,
                       '-DPYTHON_EXECUTABLE=' + sys.executable,
                       '-DCMAKE_BUILD_TYPE=Release',
-                      '-DPLATFORM=' + detect_QBDI_platform(),
-                      '-DTOOLS_PYQBDI=On',
-                      '-DTEST_QBDI=Off',
+                      '-DQBDI_PLATFORM=' + detected_platform,
+                      '-DQBDI_ARCH=' + detected_arch,
+                      '-DQBDI_TOOLS_PYQBDI=On',
+                      '-DQBDI_TEST=Off',
+                      '-DQBDI_BENCHMARK=Off',
+                      '-DQBDI_SHARED_LIBRARY=Off',
                      ]
         build_args = ['--config', 'Release']
 
         if platform.system() == "Windows":
-            build_args += ['--', '/m']
-            if sys.maxsize > 2**32:
-                cmake_args += ['-G', 'Visual Studio 14 2015 Win64', '-Thost=x64']
-                build_args += ["/p:Platform=X64"]
-            else:
-                cmake_args += ['-G', 'Visual Studio 14 2015']
-                build_args += ["/p:Platform=X86"]
+            cmake_args += ["-G", "Ninja"]
         else:
-            cmake_args += ['-DTOOLS_QBDIPRELOAD=On']
-            build_args += ['--', '-j4']
+            cmake_args += ['-DQBDI_TOOLS_QBDIPRELOAD=On']
+            if self.has_ninja():
+                cmake_args += ["-G", "Ninja"]
+            else:
+                build_args += ['--', '-j4']
 
         env = os.environ.copy()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
@@ -93,7 +100,7 @@ with open("README-pypi.rst", "r") as f:
 
 setup(
     name='PyQBDI',
-    version='0.7.1',
+    version='0.8.0b0',
     author='Nicolas Surbayrole',
     license = "apache2",
     author_email='qbdi@quarkslab.com',
@@ -107,15 +114,19 @@ setup(
         "Operating System :: MacOS",
         "Operating System :: POSIX :: Linux",
         "Programming Language :: C++",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Topic :: Security",
         "Topic :: Software Development :: Debuggers",
     ],
-    python_requires='>=3.5',
-    url="https://qbdi.quarkslab.com/",
+    python_requires='>=3.6',
+    project_urls={
+        'Documentation': 'https://qbdi.readthedocs.io/',
+        'Source': 'https://github.com/QBDI/QBDI',
+        'Homepage': 'https://qbdi.quarkslab.com/',
+    },
     ext_modules=[CMakeExtension('pyqbdi')],
     cmdclass=dict(build_ext=CMakeBuild),
     zip_safe=False,

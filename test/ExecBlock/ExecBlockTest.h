@@ -15,15 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <stdio.h>
-#include <gtest/gtest.h>
+
+#ifndef QBDITEST_EXECBLOCKTEST_H
+#define QBDITEST_EXECBLOCKTEST_H
 
 #include "TestSetup/LLVMTestEnv.h"
 
-#include "Utility/Assembly.h"
-#include "ExecBlock/ExecBlock.h"
-#include "Patch/PatchRule.h"
-#include "Patch/Patch.h"
-
 class ExecBlockTest : public LLVMTestEnv {
 };
+
+#endif /* QBDITEST_EXECBLOCKTEST_H */

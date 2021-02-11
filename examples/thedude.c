@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
 
     printf("Initializing VM ...\n");
     // Constructing a new QBDI VM
-    qbdi_initVM(&vm, NULL, NULL);
+    qbdi_initVM(&vm, NULL, NULL, 0);
     // Registering count() callback to be called after every instruction
     qbdi_addCodeCB(vm, QBDI_POSTINST, count, &counter);
 

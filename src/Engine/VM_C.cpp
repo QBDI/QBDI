@@ -23,7 +23,7 @@
 
 namespace QBDI {
 
-void qbdi_initVM(VMInstanceRef* instance, const char* cpu, const char** mattrs) {
+void qbdi_initVM(VMInstanceRef* instance, const char* cpu, const char** mattrs, Options opts) {
     RequireAction("VM_C::initVM", instance, return);
 
     *instance = nullptr;
@@ -36,11 +36,11 @@ void qbdi_initVM(VMInstanceRef* instance, const char* cpu, const char** mattrs) 
 
     if(mattrs != nullptr) {
         for(unsigned i = 0; mattrs[i] != nullptr; i++) {
-            mattrsStr.push_back(std::string(mattrs[i]));
+            mattrsStr.emplace_back(mattrs[i]);
         }
     }
 
-    *instance = static_cast<VMInstanceRef>(new VM(cpuStr, mattrsStr));
+    *instance = static_cast<VMInstanceRef>(new VM(cpuStr, mattrsStr, opts));
 }
 
 
@@ -128,9 +128,19 @@ void qbdi_setGPRState(VMInstanceRef instance, GPRState* gprState) {
     static_cast<VM*>(instance)->setGPRState(gprState);
 }
 
-void qbdi_setFPRState(VMInstanceRef instance, FPRState* gprState) {
+void qbdi_setFPRState(VMInstanceRef instance, FPRState* fprState) {
     RequireAction("VM_C::setFPRState", instance, return);
-    static_cast<VM*>(instance)->setFPRState(gprState);
+    static_cast<VM*>(instance)->setFPRState(fprState);
+}
+
+Options qbdi_getOptions(VMInstanceRef instance) {
+    RequireAction("VM_C::getOptions", instance, return Options::NO_OPT);
+    return static_cast<VM*>(instance)->getOptions();
+}
+
+void qbdi_setOptions(VMInstanceRef instance, Options options) {
+    RequireAction("VM_C::setOptions", instance, return);
+    static_cast<VM*>(instance)->setOptions(options);
 }
 
 uint32_t qbdi_addMnemonicCB(VMInstanceRef instance, const char* mnemonic, InstPosition pos, InstCallback cbk, void *data) {
@@ -183,9 +193,14 @@ void qbdi_deleteAllInstrumentations(VMInstanceRef instance) {
     static_cast<VM*>(instance)->deleteAllInstrumentations();
 }
 
-const InstAnalysis* qbdi_getInstAnalysis(VMInstanceRef instance, AnalysisType type) {
+const InstAnalysis* qbdi_getInstAnalysis(const VMInstanceRef instance, AnalysisType type) {
     RequireAction("VM_C::getInstAnalysis", instance, return nullptr);
-    return static_cast<VM*>(instance)->getInstAnalysis(type);
+    return static_cast<const VM*>(instance)->getInstAnalysis(type);
+}
+
+const InstAnalysis* qbdi_getCachedInstAnalysis(const VMInstanceRef instance, rword address, AnalysisType type) {
+    RequireAction("VM_C::getCachedInstAnalysis", instance, return nullptr);
+    return static_cast<const VM*>(instance)->getCachedInstAnalysis(address, type);
 }
 
 bool qbdi_recordMemoryAccess(VMInstanceRef instance, MemoryAccessType type) {
@@ -240,6 +255,21 @@ void qbdi_clearAllCache(VMInstanceRef instance) {
 
 void qbdi_clearCache(VMInstanceRef instance, rword start, rword end) {
     static_cast<VM*>(instance)->clearCache(start, end);
+}
+
+uint32_t qbdi_addInstrRule(VMInstanceRef instance, InstrumentCallbackC cbk, AnalysisType type, void* data) {
+    RequireAction("VM_C::addInstrRule", instance, return VMError::INVALID_EVENTID);
+    return static_cast<VM*>(instance)->addInstrRule(cbk, type, data);
+}
+
+uint32_t qbdi_addInstrRuleRange(VMInstanceRef instance, rword start, rword end, InstrumentCallbackC cbk, AnalysisType type, void* data) {
+    RequireAction("VM_C::addInstrRuleRange", instance, return VMError::INVALID_EVENTID);
+    return static_cast<VM*>(instance)->addInstrRuleRange(start, end, cbk, type, data);
+}
+
+void qbdi_addInstrumentData(InstrumentDataVec cbks, InstPosition position, InstCallback cbk, void* data) {
+    RequireAction("VM_C::qbdi_addInstrumentData", cbks, return);
+    cbks->emplace_back(position, cbk, data);
 }
 
 }

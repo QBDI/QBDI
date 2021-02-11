@@ -25,15 +25,15 @@ namespace pyQBDI {
 
 PYBIND11_MODULE(pyqbdi, m) {
     m.doc() = "python binding for QBDI";
-    m.attr("__version__") = QBDI_VERSION_STRING;
+    m.attr("__version__") = getVersion(nullptr);
     m.attr("__debug__") = PYQBDI_DEBUG;
     m.attr("__arch__") = QBDI_ARCHITECTURE_STRING;
     m.attr("__platform__") = QBDI_PLATFORM_STRING;
-    m.attr("__os__") = QBDI_OS_STRING;
     m.attr("__preload__") = false;
 
     init_binding_Range(m);
     init_binding_State(m);
+    init_binding_Options(m);
     init_binding_Memory(m);
     init_binding_InstAnalysis(m);
     init_binding_Callback(m);

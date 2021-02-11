@@ -9,7 +9,7 @@ GITDIR=$(git rev-parse --show-toplevel)
 
 ARCH="X86_64"
 DOCKER_IMG="ubuntu"
-TAG="18.04"
+TAG="latest"
 
 if [[ -n "$2" ]]; then
     TAG="${2##*:}"
@@ -30,7 +30,7 @@ DOCKER_TAG="qbdi:x${ARCH: -2}_${DOCKER_IMG##*/}_${TAG}_devel"
 prepare_archive
 
 docker build "${BASEDIR}" -t "${DOCKER_TAG}" --build-arg DOCKER_IMG="${DOCKER_IMG}:${TAG}" \
-                                             --build-arg QBDI_PLATFORM="linux-$ARCH" \
+                                             --build-arg QBDI_ARCH="$ARCH" \
                                              --build-arg CMAKE_ARGUMENT="$CMAKE_ARGUMENT"
 
 delete_archive

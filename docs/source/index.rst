@@ -11,14 +11,19 @@ QBDI Documentation
     :end-before: .. intro-end
 
 Contents
---------
+++++++++
 
 .. toctree::
    :maxdepth: 2
 
-   User Documentation <user>
-   Developer Documentation <dev>
-   Changelog <changelog>
+    Introduction <intro>
+    Installation and Integration <installation_and_integration>
+    Getting Started <get_started>
+    API Reference <api>
+    Architecture Support <architecture_support>
+    Developer Documentation <dev>
+    Changelog <changelog>
+    References <references>
 
 Indices and Tables
 ==================

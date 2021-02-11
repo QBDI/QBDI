@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#include "Enum.hpp"
 #include "pyqbdi.hpp"
 
 namespace QBDI {
@@ -40,13 +41,37 @@ py::object get_InstAnalysis_member(const InstAnalysis& obj, char* InstAnalysis::
     }
 }
 
-void init_binding_InstAnalysis(py::module& m) {
+void init_binding_InstAnalysis(py::module_& m) {
 
-    py::enum_<RegisterAccessType>(m, "RegisterAccessType", py::arithmetic(), "Access type (R/W/RW) of a register operand")
+    enum_int_flag_<RegisterAccessType>(m, "RegisterAccessType", "Access type (R/W/RW) of a register operand", py::arithmetic())
         .value("REGISTER_UNUSED", RegisterAccessType::REGISTER_UNUSED, "Unused register")
         .value("REGISTER_READ", RegisterAccessType::REGISTER_READ, "Register read access")
         .value("REGISTER_WRITE", RegisterAccessType::REGISTER_WRITE, "Register write access")
         .value("REGISTER_READ_WRITE", RegisterAccessType::REGISTER_READ_WRITE, "Register read/write access")
+        .export_values()
+        .def_invert()
+        .def_repr_str();
+
+    py::enum_<ConditionType>(m, "ConditionType", "Condition type")
+        .value("CONDITION_NONE", ConditionType::CONDITION_NONE, "The instruction is unconditionnal")
+        .value("CONDITION_ALWAYS", ConditionType::CONDITION_ALWAYS, "The instruction is always true")
+        .value("CONDITION_NEVER", ConditionType::CONDITION_NEVER, "The instruction is always false")
+        .value("CONDITION_EQUALS", ConditionType::CONDITION_EQUALS, "Equals ( '==' )")
+        .value("CONDITION_NOT_EQUALS", ConditionType::CONDITION_NOT_EQUALS, "Not Equals ( '!=' )")
+        .value("CONDITION_ABOVE", ConditionType::CONDITION_ABOVE, "Above ( '>' unsigned )")
+        .value("CONDITION_BELOW_EQUALS", ConditionType::CONDITION_BELOW_EQUALS, "Below or Equals ( '<=' unsigned )")
+        .value("CONDITION_ABOVE_EQUALS", ConditionType::CONDITION_ABOVE_EQUALS, "Above or Equals ( '>=' unsigned )")
+        .value("CONDITION_BELOW", ConditionType::CONDITION_BELOW, "Below ( '<' unsigned )")
+        .value("CONDITION_GREAT", ConditionType::CONDITION_GREAT, "Great ( '>' signed )")
+        .value("CONDITION_LESS_EQUALS", ConditionType::CONDITION_LESS_EQUALS, "Less or Equals ( '<=' signed )")
+        .value("CONDITION_GREAT_EQUALS", ConditionType::CONDITION_GREAT_EQUALS, "Great or Equals ( '>=' signed )")
+        .value("CONDITION_LESS", ConditionType::CONDITION_LESS, "Less ( '<' signed )")
+        .value("CONDITION_EVEN", ConditionType::CONDITION_EVEN, "Even")
+        .value("CONDITION_ODD", ConditionType::CONDITION_ODD, "Odd")
+        .value("CONDITION_OVERFLOW", ConditionType::CONDITION_OVERFLOW, "Overflow")
+        .value("CONDITION_NOT_OVERFLOW", ConditionType::CONDITION_NOT_OVERFLOW, "Not Overflow")
+        .value("CONDITION_SIGN", ConditionType::CONDITION_SIGN, "Sign")
+        .value("CONDITION_NOT_SIGN", ConditionType::CONDITION_NOT_SIGN, "Not Sign")
         .export_values();
 
     py::enum_<OperandType>(m, "OperandType", "Operand type")
@@ -54,21 +79,28 @@ void init_binding_InstAnalysis(py::module& m) {
         .value("OPERAND_IMM", OperandType::OPERAND_IMM, "Immediate operand")
         .value("OPERAND_GPR", OperandType::OPERAND_GPR, "Register operand")
         .value("OPERAND_PRED", OperandType::OPERAND_PRED, "Predicate operand")
+        .value("OPERAND_FPR", OperandType::OPERAND_FPR, "Float register operand ")
+        .value("OPERAND_SEG", OperandType::OPERAND_SEG, "Segment or unsupported register operand")
         .export_values();
 
-    py::enum_<OperandFlag>(m, "OperandFlag", py::arithmetic(), "Operand flag")
+    enum_int_flag_<OperandFlag>(m, "OperandFlag", "Operand flag", py::arithmetic())
         .value("OPERANDFLAG_NONE", OperandFlag::OPERANDFLAG_NONE, "No flag")
         .value("OPERANDFLAG_ADDR", OperandFlag::OPERANDFLAG_ADDR, "The operand is used to compute an address")
         .value("OPERANDFLAG_PCREL", OperandFlag::OPERANDFLAG_PCREL, "The value of the operand is PC relative")
         .value("OPERANDFLAG_UNDEFINED_EFFECT", OperandFlag::OPERANDFLAG_UNDEFINED_EFFECT, "The operand role isn’t fully defined")
-        .export_values();
+        .value("OPERANDFLAG_IMPLICIT", OperandFlag::OPERANDFLAG_IMPLICIT, "The operand is implicit")
+        .export_values()
+        .def_invert()
+        .def_repr_str();
 
-    py::enum_<AnalysisType>(m, "AnalysisType", py::arithmetic(), "Instruction analysis type")
+    enum_int_flag_<AnalysisType>(m, "AnalysisType", "Instruction analysis type", py::arithmetic())
         .value("ANALYSIS_INSTRUCTION", AnalysisType::ANALYSIS_INSTRUCTION, "Instruction analysis (address, mnemonic, ...)")
         .value("ANALYSIS_DISASSEMBLY", AnalysisType::ANALYSIS_DISASSEMBLY, "Instruction disassembly")
         .value("ANALYSIS_OPERANDS", AnalysisType::ANALYSIS_OPERANDS, "Instruction operands analysis")
         .value("ANALYSIS_SYMBOL", AnalysisType::ANALYSIS_SYMBOL, "Instruction symbol")
-        .export_values();
+        .export_values()
+        .def_invert()
+        .def_repr_str();
 
     py::class_<OperandAnalysis>(m, "OperandAnalysis")
         .def_readonly("type", &OperandAnalysis::type, "Operand type")
@@ -121,17 +153,33 @@ void init_binding_InstAnalysis(py::module& m) {
         .def_property_readonly("mayLoad",
                 [](const InstAnalysis& obj) {
                     return get_InstAnalysis_member(obj, &InstAnalysis::mayLoad, ANALYSIS_INSTRUCTION);
-                }, "True if instruction 'may' load data from memory (if ANALYSIS_INSTRUCTION)")
+                }, "True if QBDI detects a load for this instruction (if ANALYSIS_INSTRUCTION)")
         .def_property_readonly("mayStore",
                 [](const InstAnalysis& obj) {
                     return get_InstAnalysis_member(obj, &InstAnalysis::mayStore, ANALYSIS_INSTRUCTION);
-                }, "True if instruction 'may' store data to memory (if ANALYSIS_INSTRUCTION)")
+                }, "True if QBDI detects a store for this instruction (if ANALYSIS_INSTRUCTION)")
+        .def_property_readonly("loadSize",
+                [](const InstAnalysis& obj) {
+                    return get_InstAnalysis_member(obj, &InstAnalysis::loadSize, ANALYSIS_INSTRUCTION);
+                }, "size of the expected read access (if ANALYSIS_INSTRUCTION)")
+        .def_property_readonly("storeSize",
+                [](const InstAnalysis& obj) {
+                    return get_InstAnalysis_member(obj, &InstAnalysis::storeSize, ANALYSIS_INSTRUCTION);
+                }, "size of the expected write access (if ANALYSIS_INSTRUCTION)")
+        .def_property_readonly("condition",
+                [](const InstAnalysis& obj) {
+                    return get_InstAnalysis_member(obj, &InstAnalysis::condition, ANALYSIS_INSTRUCTION);
+                }, "Condition associated with the instruction (if ANALYSIS_INSTRUCTION)")
         // ANALYSIS_DISASSEMBLY
         .def_property_readonly("disassembly",
                 [](const InstAnalysis& obj) {
                     return get_InstAnalysis_member(obj, &InstAnalysis::disassembly, ANALYSIS_DISASSEMBLY);
                 }, "Instruction disassembly (if ANALYSIS_DISASSEMBLY)")
         // ANALYSIS_OPERANDS
+        .def_property_readonly("flagsAccess",
+                [](const InstAnalysis& obj) {
+                    return get_InstAnalysis_member(obj, &InstAnalysis::flagsAccess, ANALYSIS_OPERANDS);
+                }, "Flag access type (noaccess, r, w, rw) (if ANALYSIS_OPERANDS)")
         .def_property_readonly("numOperands",
                 [](const InstAnalysis& obj) {
                     return get_InstAnalysis_member(obj, &InstAnalysis::numOperands, ANALYSIS_OPERANDS);

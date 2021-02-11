@@ -29,19 +29,19 @@ std::vector<MemoryMap> getCurrentProcessMaps(bool full_path) {
 }
 
 std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path) {
-    static int BUFFER_SIZE = 256;
-    char* line = new char[BUFFER_SIZE];
+    static const int BUFFER_SIZE = 256;
+    char line[BUFFER_SIZE] = {0};
     FILE* mapfile = nullptr;
     std::vector<MemoryMap> maps;
 
     snprintf(line, BUFFER_SIZE, "/proc/%llu/maps", (unsigned long long) pid);
     mapfile = fopen(line, "r");
     LogDebug("getRemoteProcessMaps", "Querying memory maps from %s", line);
-    RequireAction("getRemoteProcessMaps", mapfile != nullptr, delete[] line; return maps);
+    RequireAction("getRemoteProcessMaps", mapfile != nullptr, return maps);
 
     // Process a memory map line in the form of
     // 00400000-0063c000 r-xp 00000000 fe:01 675628    /usr/bin/vim
-    while((line = fgets(line, BUFFER_SIZE, mapfile)) != nullptr) {
+    while(fgets(line, BUFFER_SIZE, mapfile) != nullptr) {
         char* ptr = nullptr;
         MemoryMap m;
 
@@ -53,9 +53,9 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path) {
         LogDebug("getRemoteProcessMaps", "Parsing line: %s", line);
 
         // Read range
-        m.range.start = strtoul(ptr, &ptr, 16);
+        m.range.setStart(strtoul(ptr, &ptr, 16));
         ptr++; // '-'
-        m.range.end = strtoul(ptr, &ptr, 16);
+        m.range.setEnd(strtoul(ptr, &ptr, 16));
 
         // skip the spaces
         while(isspace(*ptr)) ptr++;
@@ -106,7 +106,7 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path) {
 
 
         LogCallback(LogPriority::DEBUG, "getRemoteProcessMaps", [&] (FILE *out) -> void {
-            fprintf(out, "Read new map [%" PRIRWORD ", %" PRIRWORD "] %s ", m.range.start, m.range.end, m.name.c_str());
+            fprintf(out, "Read new map [%" PRIRWORD ", %" PRIRWORD "] %s ", m.range.start(), m.range.end(), m.name.c_str());
             if(m.permission & QBDI::PF_READ)  fprintf(out, "r");
             if(m.permission & QBDI::PF_WRITE) fprintf(out, "w");
             if(m.permission & QBDI::PF_EXEC)  fprintf(out, "x");
@@ -114,7 +114,6 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path) {
         maps.push_back(m);
     }
     fclose(mapfile);
-    delete[] line;
     return maps;
 }
 

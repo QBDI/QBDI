@@ -49,4 +49,8 @@ unsigned getImmediateSize(const llvm::MCInst* inst, const llvm::MCInstrDesc* des
     return sizeof(rword);
 }
 
+bool useAllRegisters(const llvm::MCInst* inst) {
+    return false;
+}
+
 };

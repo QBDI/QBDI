@@ -26,7 +26,7 @@
 
 namespace QBDI {
 
-class GetOperand : public PatchGenerator, public AutoAlloc<PatchGenerator, GetOperand> {
+class GetOperand : public AutoClone<PatchGenerator, GetOperand> {
 
     Temp temp;
     Operand op;
@@ -49,10 +49,10 @@ public:
      * LDR REG32 temp, MEM32 Shadow(IMM32 op)
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge);
 };
 
-class GetConstant : public PatchGenerator, public AutoAlloc<PatchGenerator, GetConstant> {
+class GetConstant : public AutoClone<PatchGenerator, GetConstant> {
 
     Temp temp;
     Constant cst;
@@ -71,10 +71,10 @@ public:
      * LDR REG32 temp, MEM32 Shadow(IMM32 op)
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge);
 };
 
-class GetPCOffset : public PatchGenerator, public AutoAlloc<PatchGenerator, GetPCOffset> {
+class GetPCOffset : public AutoClone<PatchGenerator, GetPCOffset> {
 
     Temp temp;
     Constant cst;
@@ -117,12 +117,12 @@ public:
      *
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge);
 };
 
 
 
-class GetInstId : public PatchGenerator, public AutoAlloc<PatchGenerator, GetInstId> {
+class GetInstId : public AutoClone<PatchGenerator, GetInstId> {
     Temp temp;
 
 public:
@@ -140,10 +140,10 @@ public:
      * LDR REG32 temp, MEM32 Shadow(IMM32 instID)
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge);
 };
 
-class CopyReg : public PatchGenerator, public AutoAlloc<PatchGenerator, CopyReg> {
+class CopyReg : public AutoClone<PatchGenerator, CopyReg> {
     Temp  temp;
     Reg reg;
 
@@ -161,10 +161,10 @@ public:
      * MOV REG32 temp, REG32 reg
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge);
 };
 
-class WriteTemp: public PatchGenerator, public AutoAlloc<PatchGenerator, WriteTemp> {
+class WriteTemp: public AutoClone<PatchGenerator, WriteTemp> {
     Temp  temp;
     Offset offset;
 
@@ -183,12 +183,12 @@ public:
      * STR MEM32 DataBlock[offset], REG32 temp
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge);
 
     bool modifyPC() {return offset == Offset(Reg(REG_PC));}
 };
 
-class SaveReg: public PatchGenerator, public AutoAlloc<PatchGenerator, SaveReg>,
+class SaveReg: public AutoClone<PatchGenerator, SaveReg>,
     public PureEval<SaveReg> {
 
     Reg   reg;
@@ -209,10 +209,10 @@ public:
      * STR MEM32 DataBlock[offset], REG32 reg
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge);
 };
 
-class LoadReg: public PatchGenerator, public AutoAlloc<PatchGenerator, LoadReg>,
+class LoadReg: public AutoClone<PatchGenerator, LoadReg>,
     public PureEval<LoadReg> {
 
     Reg   reg;
@@ -233,10 +233,10 @@ public:
      * LDR REG32 reg, MEM32 DataBlock[offset]
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge);
 };
 
-class JmpEpilogue : public PatchGenerator, public AutoAlloc<PatchGenerator, JmpEpilogue>,
+class JmpEpilogue : public AutoClone<PatchGenerator, JmpEpilogue>,
     public PureEval<JmpEpilogue> {
 
 public:
@@ -250,10 +250,10 @@ public:
      * B Offset(Epilogue)
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge);
 };
 
-class SimulateLink : public PatchGenerator, public AutoAlloc<PatchGenerator, SimulateLink> {
+class SimulateLink : public AutoClone<PatchGenerator, SimulateLink> {
     Temp  temp;
 
 public:
@@ -272,10 +272,10 @@ public:
      * MOV REG32 LR, REG32 temp
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge);
 };
 
-class SimulatePopPC : public PatchGenerator, public AutoAlloc<PatchGenerator, SimulatePopPC> {
+class SimulatePopPC : public AutoClone<PatchGenerator, SimulatePopPC> {
     Temp  temp;
 
 public:
@@ -296,7 +296,7 @@ public:
      *
     */
     RelocatableInst::SharedPtrVec generate(const llvm::MCInst *inst,
-        rword address, rword instSize, TempManager *temp_manager, const Patch *toMerge);
+        rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge);
 
     bool modifyPC() {return true;}
 };

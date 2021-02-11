@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef _VM_C_H_
-#define _VM_C_H_
+#ifndef QBDI_VM_C_H_
+#define QBDI_VM_C_H_
 
 #include <stdlib.h>
 #include <stdarg.h>
@@ -25,6 +25,7 @@
 #include "Callback.h"
 #include "Errors.h"
 #include "State.h"
+#include "Options.h"
 #include "InstAnalysis.h"
 
 #ifdef __cplusplus
@@ -40,10 +41,12 @@ extern "C" {
  *                      CPU model is used (see LLVM documentation for more details).
  * @param[in]  mattrs   A NULL terminated array of C strings specifying the attributes of the cpu
  *                      model. If NULL, no additional features are specified.
+ * @param[in]  opts     The options to enable in the VM
  */
-QBDI_EXPORT void qbdi_initVM(VMInstanceRef* instance, const char* cpu, const char** mattrs);
+QBDI_EXPORT void qbdi_initVM(VMInstanceRef* instance, const char* cpu, const char** mattrs, Options opts);
 
 /*! Destroy an instance of VM.
+ *  This method mustn't be called when the VM runs.
  *
  * @param[in] instance VM instance.
  */
@@ -76,7 +79,7 @@ QBDI_EXPORT bool qbdi_addInstrumentedModule(VMInstanceRef instance, const char* 
  */
 QBDI_EXPORT bool qbdi_addInstrumentedModuleFromAddr(VMInstanceRef instance, rword addr);
 
-/*! Adds all the executable memory maps to the instrumented range set. 
+/*! Adds all the executable memory maps to the instrumented range set.
  *
  * @param[in] instance VM instance.
  *
@@ -118,6 +121,7 @@ QBDI_EXPORT bool qbdi_removeInstrumentedModuleFromAddr(VMInstanceRef instance, r
 QBDI_EXPORT void qbdi_removeAllInstrumentedRanges(VMInstanceRef instance);
 
 /*! Start the execution by the DBI from a given address (and stop when another is reached).
+ *  This method mustn't be called when the VM already runs.
  *
  * @param[in] instance  VM instance.
  * @param[in] start     Address of the first instruction to execute.
@@ -128,6 +132,7 @@ QBDI_EXPORT void qbdi_removeAllInstrumentedRanges(VMInstanceRef instance);
 QBDI_EXPORT bool qbdi_run(VMInstanceRef instance, rword start, rword stop);
 
 /*! Call a function using the DBI (and its current state).
+ *  This method mustn't be called when the VM already runs.
  *
  * @param[in] instance   VM instance.
  * @param[in] [retval]   Pointer to the returned value (optional).
@@ -153,6 +158,7 @@ QBDI_EXPORT bool qbdi_run(VMInstanceRef instance, rword start, rword stop);
 QBDI_EXPORT bool qbdi_call(VMInstanceRef instance, rword* retval, rword function, uint32_t argNum, ...);
 
 /*! Call a function using the DBI (and its current state).
+ *  This method mustn't be called when the VM already runs.
  *
  * @param[in] instance   VM instance.
  * @param[in] [retval]   Pointer to the returned value (optional).
@@ -165,6 +171,7 @@ QBDI_EXPORT bool qbdi_call(VMInstanceRef instance, rword* retval, rword function
 QBDI_EXPORT bool qbdi_callV(VMInstanceRef instance, rword* retval, rword function, uint32_t argNum, va_list ap);
 
 /*! Call a function using the DBI (and its current state).
+ *  This method mustn't be called when the VM already runs.
  *
  * @param[in] instance   VM instance.
  * @param[in] [retval]   Pointer to the returned value (optional).
@@ -199,16 +206,67 @@ QBDI_EXPORT FPRState* qbdi_getFPRState(VMInstanceRef instance);
  */
 QBDI_EXPORT void qbdi_setGPRState(VMInstanceRef instance, GPRState* gprState);
 
-/*! Set the GPR state
+/*! Set the FPR state
  *
  * @param[in] instance  VM instance.
  * @param[in] fprState  A structure containing the Floating Point Registers state.
  */
 QBDI_EXPORT void qbdi_setFPRState(VMInstanceRef instance, FPRState* fprState);
 
-/*! Register a callback event for every memory access matching the type bitfield made by the instructions.
+/*! Get the current Options
  *
  * @param[in] instance  VM instance.
+ *
+ * @return              The current options of the VM
+ */
+QBDI_EXPORT Options qbdi_getOptions(VMInstanceRef instance);
+
+/*! Set the Options
+ *  This method mustn't be called when the VM runs.
+ *
+ * @param[in] instance  VM instance.
+ * @param[in] options   The new options of the VM.
+ */
+QBDI_EXPORT void qbdi_setOptions(VMInstanceRef instance, Options options);
+
+/*! Add a custom instrumentation rule to the VM.
+ *
+ * @param[in] instance   VM instance.
+ * @param[in] cbk       A function pointer to the callback
+ * @param[in] type      Analyse type needed for this instruction function pointer to the callback
+ * @param[in] data      User defined data passed to the callback.
+ *
+ * @return The id of the registered instrumentation (or VMError::INVALID_EVENTID
+ * in case of failure).
+ */
+QBDI_EXPORT uint32_t qbdi_addInstrRule(VMInstanceRef instance, InstrumentCallbackC cbk, AnalysisType type, void* data);
+
+/*! Add a custom instrumentation rule to the VM for a range of address
+ *
+ * @param[in] instance  VM instance.
+ * @param[in] start     Begin of the range of address where apply the rule
+ * @param[in] end       End of the range of address where apply the rule
+ * @param[in] cbk       A function pointer to the callback
+ * @param[in] type      Analyse type needed for this instruction function pointer to the callback
+ * @param[in] data      User defined data passed to the callback.
+ *
+ * @return The id of the registered instrumentation (or VMError::INVALID_EVENTID
+ * in case of failure).
+ */
+QBDI_EXPORT uint32_t qbdi_addInstrRuleRange(VMInstanceRef instance, rword start, rword end, InstrumentCallbackC cbk, AnalysisType type, void* data);
+
+/*! Add a callback for the current instruction
+ *
+ * @param[in] cbks      InstrumentDataVec given in argument
+ * @param[in] position  Relative position of the callback (QBDI_PREINST / QBDI_POSTINST).
+ * @param[in] cbk       A function pointer to the callback
+ * @param[in] data      User defined data passed to the callback.
+ */
+QBDI_EXPORT void qbdi_addInstrumentData(InstrumentDataVec cbks, InstPosition position, InstCallback cbk, void* data);
+
+/*! Register a callback event for every memory access matching the type bitfield made by the instructions.
+ *
+ * @param[in] instance   VM instance.
  * @param[in] type       A mode bitfield: either QBDI_MEMORY_READ, QBDI_MEMORY_WRITE or both (QBDI_MEMORY_READ_WRITE).
  * @param[in] cbk        A function pointer to the callback.
  * @param[in] data       User defined data passed to the callback.
@@ -218,8 +276,8 @@ QBDI_EXPORT void qbdi_setFPRState(VMInstanceRef instance, FPRState* fprState);
  */
 QBDI_EXPORT uint32_t qbdi_addMemAccessCB(VMInstanceRef instance, MemoryAccessType type, InstCallback cbk, void *data);
 
-/*! Add a virtual callback which is triggered for any memory access at a specific address 
- *  matching the access type. Virtual callbacks are called via callback forwarding by a 
+/*! Add a virtual callback which is triggered for any memory access at a specific address
+ *  matching the access type. Virtual callbacks are called via callback forwarding by a
  *  gate callback triggered on every memory access. This incurs a high performance cost.
  *
  * @param[in] instance  VM instance.
@@ -233,8 +291,8 @@ QBDI_EXPORT uint32_t qbdi_addMemAccessCB(VMInstanceRef instance, MemoryAccessTyp
  */
 QBDI_EXPORT uint32_t qbdi_addMemAddrCB(VMInstanceRef instance, rword address, MemoryAccessType type, InstCallback cbk, void *data);
 
-/*! Add a virtual callback which is triggered for any memory access in a specific address range 
- *  matching the access type. Virtual callbacks are called via callback forwarding by a 
+/*! Add a virtual callback which is triggered for any memory access in a specific address range
+ *  matching the access type. Virtual callbacks are called via callback forwarding by a
  *  gate callback triggered on every memory access. This incurs a high performance cost.
  *
  * @param[in] instance  VM instance.
@@ -328,22 +386,35 @@ QBDI_EXPORT bool qbdi_deleteInstrumentation(VMInstanceRef instance, uint32_t id)
  */
 QBDI_EXPORT void qbdi_deleteAllInstrumentations(VMInstanceRef instance);
 
- /*! Obtain the analysis of an instruction metadata. Analysis results are cached in the VM.
- *  The validity of the returned pointer is only guaranteed until the end of the callback, else 
- *  a deepcopy of the structure is required.
+/*! Obtain the analysis of the current instruction. Analysis results are cached in the VM.
+ *  The validity of the returned pointer is only guaranteed until the end of the callback, else
+ *  a deepcopy of the structure is required. This method must only be used in an InstCallback.
  *
  * @param[in] instance     VM instance.
  * @param[in] type         Properties to retrieve during analysis.
  *
  * @return A InstAnalysis structure containing the analysis result.
  */
-QBDI_EXPORT const InstAnalysis* qbdi_getInstAnalysis(VMInstanceRef instance, AnalysisType type);
+QBDI_EXPORT const InstAnalysis* qbdi_getInstAnalysis(const VMInstanceRef instance, AnalysisType type);
 
-/*! Add instrumentation rules to log memory access using inline instrumentation and 
+/*! Obtain the analysis of a cached instruction. Analysis results are cached in the VM.
+ *  The validity of the returned pointer is only guaranteed until the end of the callback
+ *  or a call to a noconst method of the VM instance.
+ *
+ * @param[in] instance     VM instance.
+ * @param[in] address      The address of the instruction to analyse.
+ * @param[in] type         Properties to retrieve during analysis.
+ *
+ * @return A InstAnalysis structure containing the analysis result.
+ *    null if the instruction isn't in the cache.
+ */
+QBDI_EXPORT const InstAnalysis* qbdi_getCachedInstAnalysis(const VMInstanceRef instance, rword address, AnalysisType type);
+
+/*! Add instrumentation rules to log memory access using inline instrumentation and
  *  instruction shadows.
 
  * @param[in] instance  VM instance.
- * @param[in] type      Memory mode bitfield to activate the logging for: either QBDI_MEMORY_READ, 
+ * @param[in] type      Memory mode bitfield to activate the logging for: either QBDI_MEMORY_READ,
  *                      QBDI_MEMORY_WRITE or both (QBDI_MEMORY_READ_WRITE).
  *
  * @return True if inline memory logging is supported, False if not or in case of error.
@@ -351,6 +422,7 @@ QBDI_EXPORT const InstAnalysis* qbdi_getInstAnalysis(VMInstanceRef instance, Ana
 QBDI_EXPORT bool qbdi_recordMemoryAccess(VMInstanceRef instance, MemoryAccessType type);
 
 /*! Obtain the memory accesses made by the last executed instruction.
+ *  The method should be called in an InstCallback.
  *  Return NULL and a size of 0 if the instruction made no memory access.
  *
  *  @param[in]  instance     VM instance.
@@ -361,6 +433,7 @@ QBDI_EXPORT bool qbdi_recordMemoryAccess(VMInstanceRef instance, MemoryAccessTyp
 QBDI_EXPORT MemoryAccess* qbdi_getInstMemoryAccess(VMInstanceRef instance, size_t* size);
 
 /*! Obtain the memory accesses made by the last executed basic block.
+ *  The method should be called in a VMCallback with QBDI_SEQUENCE_EXIT.
  *  Return NULL and a size of 0 if the basic block made no memory access.
  *
  *  @param[in]  instance     VM instance.
@@ -371,6 +444,7 @@ QBDI_EXPORT MemoryAccess* qbdi_getInstMemoryAccess(VMInstanceRef instance, size_
 QBDI_EXPORT MemoryAccess* qbdi_getBBMemoryAccess(VMInstanceRef instance, size_t* size);
 
 /*! Pre-cache a known basic block
+ *  This method mustn't be called when the VM runs.
  *
  *  @param[in]  instance     VM instance.
  *  @param[in]  pc           Start address of a basic block
@@ -399,4 +473,4 @@ QBDI_EXPORT void qbdi_clearAllCache(VMInstanceRef instance);
 } // QBDI::
 #endif
 
-#endif // _VM_C_H_
+#endif // QBDI_VM_C_H_

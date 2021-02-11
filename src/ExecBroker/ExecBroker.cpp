@@ -16,23 +16,30 @@
  * limitations under the License.
  */
 #include "ExecBroker/ExecBroker.h"
+#include "Utility/LogSys.h"
+#include "Patch/ExecBlockFlags.h"
 
 namespace QBDI {
 
-ExecBroker::ExecBroker(Assembly& assembly, VMInstanceRef vminstance) :
+ExecBroker::ExecBroker(const Assembly& assembly, VMInstanceRef vminstance) :
     transferBlock(assembly, vminstance) {
-    pageSize = llvm::sys::Process::getPageSize();
+    pageSize =
+      llvm::expectedToOptional(llvm::sys::Process::getPageSize()).getValueOr(4096);
+}
+
+void ExecBroker::changeVMInstanceRef(VMInstanceRef vminstance) {
+    transferBlock.changeVMInstanceRef(vminstance);
 }
 
 void ExecBroker::addInstrumentedRange(const Range<rword>& r) {
     LogDebug("ExecBroker::addInstrumentedRange", "Adding instrumented range [%" PRIRWORD ", %" PRIRWORD "]",
-             r.start, r.end);
+             r.start(), r.end());
     instrumented.add(r);
 }
 
 void ExecBroker::removeInstrumentedRange(const Range<rword>& r) {
     LogDebug("ExecBroker::removeInstrumentedRange", "Removing instrumented range [%" PRIRWORD ", %" PRIRWORD "]",
-             r.start, r.end);
+             r.start(), r.end());
     instrumented.remove(r);
 }
 
@@ -127,6 +134,7 @@ bool ExecBroker::transferExecution(rword addr, GPRState *gprState, FPRState *fpr
     transferBlock.getContext()->gprState = *gprState;
     transferBlock.getContext()->fprState = *fprState;
     transferBlock.getContext()->hostState.selector = addr;
+    transferBlock.getContext()->hostState.executeFlags = defaultExecuteFlags;
     // Execute transfer
     LogDebug("ExecBroker::transferExecution", "Transfering execution to 0x%" PRIRWORD " using transferBlock %p", addr, &transferBlock);
     transferBlock.run();

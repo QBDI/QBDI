@@ -16,16 +16,21 @@
  * limitations under the License.
  */
 
+#include "llvm/MC/MCInst.h"
+#include "llvm/MC/MCInstrInfo.h"
+
 #include "Platform.h"
 #include "Patch/PatchUtils.h"
+#include "Patch/InstInfo.h"
+#include "Patch/RegisterSize.h"
 #include "Utility/LogSys.h"
 
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 // skip RAX as it is very often used implicitly and LLVM
 // sometimes don't tell us...
-#define _QBDI_FIRST_FREE_REGISTER 1
+static constexpr unsigned int _QBDI_FIRST_FREE_REGISTER = 1;
 #else
-#define _QBDI_FIRST_FREE_REGISTER 0
+static constexpr unsigned int _QBDI_FIRST_FREE_REGISTER = 0;
 #endif
 
 
@@ -50,13 +55,13 @@ Reg TempManager::getRegForTemp(unsigned int id) {
         i = _QBDI_FIRST_FREE_REGISTER;
     }
 
-    const llvm::MCInstrDesc &desc = MCII->get(inst->getOpcode());
+    const llvm::MCInstrDesc &desc = MCII->get(inst.getOpcode());
     // Find a free register
     for(; i < AVAILABLE_GPR; i++) {
         bool free = true;
         // Check for explicit registers
-        for(unsigned int j = 0; inst && j < inst->getNumOperands(); j++) {
-            const llvm::MCOperand &op = inst->getOperand(j);
+        for(unsigned int j = 0; j < inst.getNumOperands(); j++) {
+            const llvm::MCOperand &op = inst.getOperand(j);
             if (op.isReg() && MRI->isSubRegisterEq(GPR_ID[i], op.getReg())) {
                 free = false;
                 break;
@@ -84,7 +89,22 @@ Reg TempManager::getRegForTemp(unsigned int id) {
         }
         if(free) {
             // store it and return it
-            temps.push_back(std::make_pair(id, i));
+            temps.emplace_back(id, i);
+            return Reg(i);
+        }
+    }
+
+    // bypass for pusha and popa. MemoryAccess will not work on theses instruction
+    if(allowInstRegister and useAllRegisters(inst)) {
+        if(temps.size() > 0) {
+            i = temps.back().second + 1;
+        }
+        else {
+            i = _QBDI_FIRST_FREE_REGISTER;
+        }
+        // store it and return it
+        if (i < AVAILABLE_GPR) {
+            temps.emplace_back(id, i);
             return Reg(i);
         }
     }
@@ -92,38 +112,28 @@ Reg TempManager::getRegForTemp(unsigned int id) {
     abort();
 }
 
-Reg::Vec TempManager::getUsedRegisters() {
+Reg::Vec TempManager::getUsedRegisters() const {
     Reg::Vec list;
     for(auto p: temps)
         list.push_back(Reg(p.second));
     return list;
 }
 
-size_t TempManager::getUsedRegisterNumber() {
+size_t TempManager::getUsedRegisterNumber() const {
     return temps.size();
 }
 
-unsigned TempManager::getRegSize(unsigned reg) {
-    for(unsigned i = 0; i < MRI->getNumRegClasses(); i++) {
-        if(MRI->getRegClass(i).contains(reg)) {
-            return MRI->getRegClass(i).getPhysRegSize();
-        }
-    }
-    LogError("TempManager::getRegSize", "Register class for register %u not found", reg);
-    return 0;
-}
-
-unsigned TempManager::getSizedSubReg(unsigned reg, unsigned size) {
-    if(getRegSize(reg) == size) {
+unsigned TempManager::getSizedSubReg(unsigned reg, unsigned size) const {
+    if(getRegisterSize(reg) == size) {
         return reg;
     }
     for(unsigned i = 1; i < MRI->getNumSubRegIndices(); i++) {
         unsigned subreg = MRI->getSubReg(reg, i);
-        if(subreg != 0 && getRegSize(subreg) == size) {
+        if(subreg != 0 && getRegisterSize(subreg) == size) {
             return subreg;
         }
     }
-    LogError("TempManager::getSizedSubReg", "No sub register of size %u found for register %u (%s)", size, reg, MRI->getName(reg), MRI->getRegClass(reg).getSize());
+    LogError("TempManager::getSizedSubReg", "No sub register of size %u found for register %u (%s)", size, reg, MRI->getName(reg));
     abort();
 }
 
