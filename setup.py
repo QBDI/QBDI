@@ -100,7 +100,7 @@ with open("README-pypi.rst", "r") as f:
 
 setup(
     name='PyQBDI',
-    version='0.8.0b0',
+    version='0.8.0',
     author='Nicolas Surbayrole',
     license = "apache2",
     author_email='qbdi@quarkslab.com',
@@ -108,7 +108,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/x-rst",
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: Microsoft :: Windows",
         "Operating System :: MacOS",

@@ -4,7 +4,7 @@ CHANGELOG
 Version 0.8.0
 -------------
 
-2021-02-XX QBDI Team <qbdi@quarkslab.com>
+2021-02-11 QBDI Team <qbdi@quarkslab.com>
 
 * Fix android compilation (`#126 <https://github.com/QBDI/QBDI/pull/126>`_)
 * Fix instrumentation of Pusha and Popa on X86 (`#127 <https://github.com/QBDI/QBDI/pull/127>`_)
