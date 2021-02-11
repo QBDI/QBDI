@@ -69,5 +69,5 @@ All the new features and fixes are merged onto the ``dev-next`` branch.
 Devel packages can be downloaded in the artefacts of:
 
 - `Appveyor <https://ci.appveyor.com/project/QBDI/qbdi/branch/dev-next>`_ for Windows packages PyQBDI
-- `Github Actions <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22PyQBDI+Linux+package%22+branch%3Adev-next>`_ for Linux PyQBDI
-- `Github Actions <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22PyQBDI+OSX+package%22+branch%3Adev-next>`_ for OSX PyQBDI
+- `Github Actions PyQBDI Linux <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22PyQBDI+Linux+package%22+branch%3Adev-next>`_ for Linux PyQBDI
+- `Github Actions PyQBDI OSX <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22PyQBDI+OSX+package%22+branch%3Adev-next>`_ for OSX PyQBDI
