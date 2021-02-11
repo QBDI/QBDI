@@ -24,7 +24,7 @@
  */
 var QBDI_MAJOR = 0;
 var QBDI_MINOR = 8;
-var QBDI_PATCH = 0;
+var QBDI_PATCH = 1;
 /**
  * Minimum version of QBDI to use Frida bindings
  */
