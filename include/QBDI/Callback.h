@@ -150,32 +150,32 @@ typedef struct {
 
 
 #ifdef __cplusplus
-struct InstrumentDataCBK {
+struct InstrRuleDataCBK {
     InstPosition position;  /*!< Relative position of the event callback (PREINST / POSTINST). */
     InstCallback cbk;       /*!< Address of the function to call when the instruction is executed */
     void* data;             /*!< User defined data which will be forward to cbk */
 
-    InstrumentDataCBK(InstPosition position, InstCallback cbk, void* data) : position(position), cbk(cbk), data(data) {}
+    InstrRuleDataCBK(InstPosition position, InstCallback cbk, void* data) : position(position), cbk(cbk), data(data) {}
 };
 
-using InstrumentDataVec = std::vector<InstrumentDataCBK>*;
+using InstrRuleDataVec = std::vector<InstrRuleDataCBK>*;
 #else
-typedef void* InstrumentDataVec;
+typedef void* InstrRuleDataVec;
 #endif
 
-/*! Instrument callback function type for C API.
+/*! Instrumentation rule callback function type for C API.
  *
  * @param[in] vm                VM instance of the callback.
  * @param[in] inst              AnalysisType of the current instrumented Instruction.
  * @param[in] cbks              An object to add the callback to apply for this instruction.
- *                              InstCallback can be add with qbdi_addInstrumentData
+ *                              InstCallback can be add with qbdi_addInstrRuleData
  * @param[in] data              User defined data which can be defined when registering the callback.
  */
-typedef void (*InstrumentCallbackC)(VMInstanceRef vm, const InstAnalysis *inst, InstrumentDataVec cbks, void* data);
+typedef void (*InstrRuleCallbackC)(VMInstanceRef vm, const InstAnalysis *inst, InstrRuleDataVec cbks, void* data);
 
 #ifdef __cplusplus
 
-/*! Instrument callback function type.
+/*! Instrumentation rule callback function type.
  *
  * @param[in] vm                VM instance of the callback.
  * @param[in] inst              AnalysisType of the current instrumented Instruction.
@@ -183,7 +183,7 @@ typedef void (*InstrumentCallbackC)(VMInstanceRef vm, const InstAnalysis *inst, 
  *
  * @return                      Return cbk to call when this instruction is run.
  */
-typedef std::vector<InstrumentDataCBK> (*InstrumentCallback)(VMInstanceRef vm, const InstAnalysis *inst, void* data);
+typedef std::vector<InstrRuleDataCBK> (*InstrRuleCallback)(VMInstanceRef vm, const InstAnalysis *inst, void* data);
 
 } // QBDI::
 #endif

@@ -96,14 +96,14 @@ MemoryAccess
 
 .. doxygenfunction:: QBDI::VM::addMemRangeCB
 
-.. _instrumentcallback-management-cpp:
+.. _instrrulecallback-management-cpp:
 
-InstrumentCallback
-^^^^^^^^^^^^^^^^^^
+InstrRuleCallback
+^^^^^^^^^^^^^^^^^
 
-.. doxygenfunction:: QBDI::VM::addInstrRule(InstrumentCallback cbk, AnalysisType type, void* data)
+.. doxygenfunction:: QBDI::VM::addInstrRule(InstrRuleCallback cbk, AnalysisType type, void* data)
 
-.. doxygenfunction:: QBDI::VM::addInstrRuleRange(rword start, rword end, InstrumentCallback cbk, AnalysisType type, void* data)
+.. doxygenfunction:: QBDI::VM::addInstrRuleRange(rword start, rword end, InstrRuleCallback cbk, AnalysisType type, void* data)
 
 .. doxygenfunction:: QBDI::VM::addInstrRuleRangeSet
 
@@ -235,10 +235,10 @@ Callback
 
 .. doxygentypedef:: QBDI::VMCallback
 
-.. doxygentypedef:: QBDI::InstrumentCallback
+.. doxygentypedef:: QBDI::InstrRuleCallback
 
 
-.. doxygenstruct:: QBDI::InstrumentDataCBK
+.. doxygenstruct:: QBDI::InstrRuleDataCBK
     :members:
 
 .. doxygenenum:: QBDI::InstPosition

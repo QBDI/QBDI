@@ -239,7 +239,7 @@ QBDI_EXPORT void qbdi_setOptions(VMInstanceRef instance, Options options);
  * @return The id of the registered instrumentation (or VMError::INVALID_EVENTID
  * in case of failure).
  */
-QBDI_EXPORT uint32_t qbdi_addInstrRule(VMInstanceRef instance, InstrumentCallbackC cbk, AnalysisType type, void* data);
+QBDI_EXPORT uint32_t qbdi_addInstrRule(VMInstanceRef instance, InstrRuleCallbackC cbk, AnalysisType type, void* data);
 
 /*! Add a custom instrumentation rule to the VM for a range of address
  *
@@ -253,16 +253,16 @@ QBDI_EXPORT uint32_t qbdi_addInstrRule(VMInstanceRef instance, InstrumentCallbac
  * @return The id of the registered instrumentation (or VMError::INVALID_EVENTID
  * in case of failure).
  */
-QBDI_EXPORT uint32_t qbdi_addInstrRuleRange(VMInstanceRef instance, rword start, rword end, InstrumentCallbackC cbk, AnalysisType type, void* data);
+QBDI_EXPORT uint32_t qbdi_addInstrRuleRange(VMInstanceRef instance, rword start, rword end, InstrRuleCallbackC cbk, AnalysisType type, void* data);
 
 /*! Add a callback for the current instruction
  *
- * @param[in] cbks      InstrumentDataVec given in argument
+ * @param[in] cbks      InstrRuleDataVec given in argument
  * @param[in] position  Relative position of the callback (QBDI_PREINST / QBDI_POSTINST).
  * @param[in] cbk       A function pointer to the callback
  * @param[in] data      User defined data passed to the callback.
  */
-QBDI_EXPORT void qbdi_addInstrumentData(InstrumentDataVec cbks, InstPosition position, InstCallback cbk, void* data);
+QBDI_EXPORT void qbdi_addInstrRuleData(InstrRuleDataVec cbks, InstPosition position, InstCallback cbk, void* data);
 
 /*! Register a callback event for every memory access matching the type bitfield made by the instructions.
  *

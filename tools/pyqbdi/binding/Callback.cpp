@@ -88,11 +88,11 @@ void init_binding_Callback(py::module_& m) {
         .def_readwrite("type", &MemoryAccess::type, "Memory access type (READ / WRITE)")
         .def_readwrite("flags", &MemoryAccess::flags, "Memory access flags");
 
-    py::class_<InstrumentDataCBKPython>(m, "InstrumentDataCBK")
+    py::class_<InstrRuleDataCBKPython>(m, "InstrRuleDataCBK")
         .def(py::init<PyInstCallback&, py::object&, InstPosition>(), "cbk"_a, "data"_a, "position"_a)
-        .def_readwrite("cbk", &InstrumentDataCBKPython::cbk, "Address of the function to call when the instruction is executed")
-        .def_readwrite("data", &InstrumentDataCBKPython::data, "User defined data which will be forward to cbk.")
-        .def_readwrite("position", &InstrumentDataCBKPython::position, "Relative position of the event callback (PREINST / POSTINST).");
+        .def_readwrite("cbk", &InstrRuleDataCBKPython::cbk, "Address of the function to call when the instruction is executed")
+        .def_readwrite("data", &InstrRuleDataCBKPython::data, "User defined data which will be forward to cbk.")
+        .def_readwrite("position", &InstrRuleDataCBKPython::position, "Relative position of the event callback (PREINST / POSTINST).");
 }
 
 }}
