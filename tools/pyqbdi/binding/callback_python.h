@@ -27,16 +27,16 @@ namespace pyQBDI {
 using PyInstCallback = std::function<VMAction(VMInstanceRef, GPRState*, FPRState*, py::object&)>;
 using PyVMCallback = std::function<VMAction(VMInstanceRef, const VMState*, GPRState*, FPRState*, py::object&)>;
 
-struct InstrumentDataCBKPython {
+struct InstrRuleDataCBKPython {
     PyInstCallback cbk;
     py::object data;
     InstPosition position;
 
-    InstrumentDataCBKPython(PyInstCallback& cbk, py::object& data, InstPosition position) :
+    InstrRuleDataCBKPython(PyInstCallback& cbk, py::object& data, InstPosition position) :
         cbk(cbk), data(data), position(position) {}
 };
 
-using PyInstrumentCallback = std::function<std::vector<InstrumentDataCBKPython>(VMInstanceRef, const InstAnalysis*, py::object&)>;
+using PyInstrRuleCallback = std::function<std::vector<InstrRuleDataCBKPython>(VMInstanceRef, const InstAnalysis*, py::object&)>;
 
 }
 }

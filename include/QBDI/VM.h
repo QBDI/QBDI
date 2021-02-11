@@ -261,10 +261,10 @@ public:
      * @return The id of the registered instrumentation (or VMError::INVALID_EVENTID
      * in case of failure).
      */
-    uint32_t addInstrRule(InstrumentCallback cbk, AnalysisType type, void* data);
+    uint32_t addInstrRule(InstrRuleCallback cbk, AnalysisType type, void* data);
 
-    // register C like InstrumentCallback
-    uint32_t addInstrRule(InstrumentCallbackC cbk, AnalysisType type, void* data);
+    // register C like InstrRuleCallback
+    uint32_t addInstrRule(InstrRuleCallbackC cbk, AnalysisType type, void* data);
 
     /*! Add a custom instrumentation rule to the VM on a specify range
      *
@@ -277,10 +277,10 @@ public:
      * @return The id of the registered instrumentation (or VMError::INVALID_EVENTID
      * in case of failure).
      */
-    uint32_t addInstrRuleRange(rword start, rword end, InstrumentCallback cbk, AnalysisType type, void* data);
+    uint32_t addInstrRuleRange(rword start, rword end, InstrRuleCallback cbk, AnalysisType type, void* data);
 
-    // register C like InstrumentCallback
-    uint32_t addInstrRuleRange(rword start, rword end, InstrumentCallbackC cbk, AnalysisType type, void* data);
+    // register C like InstrRuleCallback
+    uint32_t addInstrRuleRange(rword start, rword end, InstrRuleCallbackC cbk, AnalysisType type, void* data);
 
     /*! Add a custom instrumentation rule to the VM on a specify set of range
      *
@@ -292,7 +292,7 @@ public:
      * @return The id of the registered instrumentation (or VMError::INVALID_EVENTID
      * in case of failure).
      */
-    uint32_t addInstrRuleRangeSet(RangeSet<rword> range, InstrumentCallback cbk, AnalysisType type, void* data);
+    uint32_t addInstrRuleRangeSet(RangeSet<rword> range, InstrRuleCallback cbk, AnalysisType type, void* data);
 
     /*! Register a callback event if the instruction matches the mnemonic.
      *

@@ -718,7 +718,7 @@ static QBDI::VMAction allowedNewBlock(QBDI::VMInstanceRef vm, const QBDI::VMStat
     return QBDI::VMAction::CONTINUE;
 }
 
-static std::vector<QBDI::InstrumentDataCBK> instrumentCopyCB(QBDI::VMInstanceRef vm, const QBDI::InstAnalysis *inst, void* data_) {
+static std::vector<QBDI::InstrRuleDataCBK> instrumentCopyCB(QBDI::VMInstanceRef vm, const QBDI::InstAnalysis *inst, void* data_) {
     MoveCallbackStruct* data = static_cast<MoveCallbackStruct*>(data_);
     CHECK(data->expectedRef == vm);
     CHECK(data->allowedNewBlock);

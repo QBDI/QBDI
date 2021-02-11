@@ -11,7 +11,7 @@ We provide bindings for Frida, most C/C++ APIs are exported and available throug
 Nevertheless, this API slightly differs from the C++ API:
 
 - Every callback must be created as a native function.
-  The callback registration can be done through calling :js:func:`QBDI.newInstCallback`, :js:func:`QBDI.newVMCallback` and :js:func:`QBDI.newInstrumentCallback`.
+  The callback registration can be done through calling :js:func:`QBDI.newInstCallback`, :js:func:`QBDI.newVMCallback` and :js:func:`QBDI.newInstrRuleCallback`.
 - The *QBDI* class is the equivalent of the *VM* class we have in the C++ API.
 
 
@@ -22,7 +22,7 @@ With Frida API, the QBDI object is the equivalent of the VM object in C++ API.
 
 .. js:autoclass:: QBDI
    :members:
-   :exclude-members: newInstrumentCallback, newInstCallback, newVMCallback, addMnemonicCB,
+   :exclude-members: newInstrRuleCallback, newInstCallback, newVMCallback, addMnemonicCB,
                      addCodeCB, addCodeAddrCB, addCodeRangeCB, addVMEventCB, addMemAccessCB, addMemAddrCB, addMemRangeCB,
                      recordMemoryAccess, addInstrRule, addInstrRuleRange, deleteAllInstrumentations, deleteInstrumentation,
                      addInstrumentedModule, addInstrumentedModuleFromAddr, addInstrumentedRange, instrumentAllExecutableMaps,
@@ -86,7 +86,7 @@ Creation
 
 .. js:autofunction:: QBDI#newInstCallback
 
-.. js:autofunction:: QBDI#newInstrumentCallback
+.. js:autofunction:: QBDI#newInstrRuleCallback
 
 .. js:autofunction:: QBDI#newVMCallback
 
@@ -121,10 +121,10 @@ MemoryAccess
 
 .. js:autofunction:: QBDI#addMemRangeCB
 
-.. _instrumentcallback-management-js:
+.. _instrrulecallback-management-js:
 
-InstrumentCallback
-^^^^^^^^^^^^^^^^^^
+InstrRuleCallback
+^^^^^^^^^^^^^^^^^
 
 .. js:autofunction:: QBDI#addInstrRule
 
@@ -226,7 +226,7 @@ Callback
     - :js:func:`QBDI.addCodeCB`, :js:func:`QBDI.addCodeAddrCB` and :js:func:`QBDI.addCodeRangeCB`
     - :js:func:`QBDI.addMnemonicCB`
     - :js:func:`QBDI.addMemAccessCB`, :js:func:`QBDI.addMemAddrCB` and :js:func:`QBDI.addMemRangeCB`
-    - :js:class:`InstrumentDataCBK`.
+    - :js:class:`InstrRuleDataCBK`.
 
     The function must be registered with :js:func:`QBDI.newInstCallback`.
 
@@ -250,18 +250,18 @@ Callback
 
     :return: the :js:class:`VMAction` to continue or stop the execution
 
-.. js:function:: InstrumentCallback(vm, ana, data)
+.. js:function:: InstrRuleCallback(vm, ana, data)
 
     This is the prototype of a function callback for :js:func:`QBDI.addInstrRule` and :js:func:`QBDI.addInstrRuleRange`.
-    The function must be registered with :js:func:`QBDI.newInstrumentCallback`.
+    The function must be registered with :js:func:`QBDI.newInstrRuleCallback`.
 
     :param QBDI         vm:   The current QBDI object
     :param InstAnalysis ana:  The current QBDI object
     :param Object       data: A user-defined object
 
-    :return: An Array of :js:class:`InstrumentDataCBK`
+    :return: An Array of :js:class:`InstrRuleDataCBK`
 
-.. js:autoclass:: InstrumentDataCBK
+.. js:autoclass:: InstrRuleDataCBK
 
 .. js:autoclass:: VMAction
 

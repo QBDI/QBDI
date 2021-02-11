@@ -44,7 +44,7 @@ struct MemCBInfo {
 
 struct InstrCBInfo {
     Range<rword> range;
-    InstrumentCallbackC cbk;
+    InstrRuleCallbackC cbk;
     AnalysisType type;
     void* data;
 };
@@ -109,9 +109,9 @@ static VMAction memWriteGate(VMInstanceRef vm, GPRState* gprState, FPRState* fpr
     return action;
 }
 
-static std::vector<InstrumentDataCBK> InstrCBGateC(VMInstanceRef vm, const InstAnalysis *inst, void* _data) {
+static std::vector<InstrRuleDataCBK> InstrCBGateC(VMInstanceRef vm, const InstAnalysis *inst, void* _data) {
     InstrCBInfo* data = static_cast<InstrCBInfo*>(_data);
-    std::vector<InstrumentDataCBK> vec {};
+    std::vector<InstrRuleDataCBK> vec {};
     data->cbk(vm, inst, &vec, data->data);
     return vec;
 }
@@ -305,33 +305,33 @@ bool VM::callV(rword* retval, rword function, uint32_t argNum, va_list ap) {
     return res;
 }
 
-uint32_t VM::addInstrRule(InstrumentCallback cbk, AnalysisType type, void* data) {
+uint32_t VM::addInstrRule(InstrRuleCallback cbk, AnalysisType type, void* data) {
     RangeSet<rword> r;
     r.add(Range<rword>(0, (rword) -1));
     return engine->addInstrRule(InstrRuleUser::unique(cbk, type, data, this, r));
 }
 
-uint32_t VM::addInstrRule(InstrumentCallbackC cbk, AnalysisType type, void* data) {
+uint32_t VM::addInstrRule(InstrRuleCallbackC cbk, AnalysisType type, void* data) {
     InstrCBInfo* _data = new InstrCBInfo{Range<rword>(0, (rword) -1), cbk, type, data};
     uint32_t id = addInstrRule(InstrCBGateC, type, _data);
     instrCBInfos->emplace_back(id, _data);
     return id;
 }
 
-uint32_t VM::addInstrRuleRange(rword start, rword end, InstrumentCallback cbk, AnalysisType type, void* data) {
+uint32_t VM::addInstrRuleRange(rword start, rword end, InstrRuleCallback cbk, AnalysisType type, void* data) {
     RangeSet<rword> r;
     r.add(Range<rword>(start, end));
     return engine->addInstrRule(InstrRuleUser::unique(cbk, type, data, this, r));
 }
 
-uint32_t VM::addInstrRuleRange(rword start, rword end, InstrumentCallbackC cbk, AnalysisType type, void* data) {
+uint32_t VM::addInstrRuleRange(rword start, rword end, InstrRuleCallbackC cbk, AnalysisType type, void* data) {
     InstrCBInfo* _data = new InstrCBInfo{Range<rword>(start, end), cbk, type, data};
     uint32_t id = addInstrRuleRange(start, end, InstrCBGateC, type, _data);
     instrCBInfos->emplace_back(id, _data);
     return id;
 }
 
-uint32_t VM::addInstrRuleRangeSet(RangeSet<rword> range, InstrumentCallback cbk, AnalysisType type, void* data) {
+uint32_t VM::addInstrRuleRangeSet(RangeSet<rword> range, InstrRuleCallback cbk, AnalysisType type, void* data) {
     return engine->addInstrRule(InstrRuleUser::unique(cbk, type, data, this, range));
 }
 

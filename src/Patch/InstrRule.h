@@ -210,7 +210,7 @@ public:
 
 class InstrRuleUser : public AutoClone<InstrRule, InstrRuleUser> {
 
-    InstrumentCallback cbk;
+    InstrRuleCallback cbk;
     AnalysisType analysisType;
     void* cbk_data;
     VMInstanceRef vm;
@@ -218,7 +218,7 @@ class InstrRuleUser : public AutoClone<InstrRule, InstrRuleUser> {
 
     public:
 
-    InstrRuleUser(InstrumentCallback cbk, AnalysisType analysisType,
+    InstrRuleUser(InstrRuleCallback cbk, AnalysisType analysisType,
                   void* cbk_data, VMInstanceRef vm, RangeSet<rword> range,
                   int priority = 0)
         : AutoClone<InstrRule, InstrRuleUser>(priority), cbk(cbk),

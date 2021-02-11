@@ -54,13 +54,13 @@ static py::object addTrampData(uint32_t n, std::map<uint32_t, std::unique_ptr<Tr
 // Map of python callback <=> QBDI number
 static std::map<uint32_t, std::unique_ptr<TrampData<PyInstCallback>>> InstCallbackMap;
 static std::map<uint32_t, std::unique_ptr<TrampData<PyVMCallback>>> VMCallbackMap;
-static std::map<uint32_t, std::unique_ptr<TrampData<PyInstrumentCallback>>> InstrumentCallbackMap;
+static std::map<uint32_t, std::unique_ptr<TrampData<PyInstrRuleCallback>>> InstrRuleCallbackMap;
 static std::map<uint32_t, std::vector<std::unique_ptr<TrampData<PyInstCallback>>>> InstrumentInstCallbackMap;
 
 static void clearTrampDataMap() {
     InstCallbackMap.clear();
     VMCallbackMap.clear();
-    InstrumentCallbackMap.clear();
+    InstrRuleCallbackMap.clear();
     InstrumentInstCallbackMap.clear();
 }
 
@@ -89,16 +89,16 @@ static VMAction trampoline_VMCallback(VMInstanceRef vm, const VMState *vmState, 
     return res;
 }
 
-static std::vector<InstrumentDataCBK> trampoline_InstrumentCallback(VMInstanceRef vm, const InstAnalysis *analysis, void *data) {
-    TrampData<PyInstrumentCallback>* cbk = static_cast<TrampData<PyInstrumentCallback>*>(data);
-    std::vector<InstrumentDataCBKPython> resCB;
+static std::vector<InstrRuleDataCBK> trampoline_InstrRuleCallback(VMInstanceRef vm, const InstAnalysis *analysis, void *data) {
+    TrampData<PyInstrRuleCallback>* cbk = static_cast<TrampData<PyInstrRuleCallback>*>(data);
+    std::vector<InstrRuleDataCBKPython> resCB;
     try {
         resCB = cbk->cbk(vm, analysis, cbk->obj);
     } catch (const std::exception& e) {
-        std::cerr << "Error during InstrumentCallback : " << e.what() << std::endl;
+        std::cerr << "Error during InstrRuleCallback : " << e.what() << std::endl;
         exit(1);
     }
-    std::vector<InstrumentDataCBK> res;
+    std::vector<InstrRuleDataCBK> res;
     if (resCB.size() == 0) {
         return res;
     }
@@ -109,7 +109,7 @@ static std::vector<InstrumentDataCBK> trampoline_InstrumentCallback(VMInstanceRe
     assert(it == InstrumentInstCallbackMap.end());
     auto& vec = it->second;
 
-    for (const InstrumentDataCBKPython& cb: resCB) {
+    for (const InstrRuleDataCBKPython& cb: resCB) {
         std::unique_ptr<TrampData<PyInstCallback>> data {new TrampData<PyInstCallback>(cb.cbk, cb.data)};
         data->id = cbk->id;
         res.emplace_back(cb.position, trampoline_InstCallback, static_cast<void*>(data.get()) );
@@ -175,20 +175,20 @@ void init_binding_VM(py::module_& m) {
                 "Call a function using the DBI (and its current state).",
                 "function"_a, "args"_a)
         .def("addInstrRule",
-                [](VM& vm, PyInstrumentCallback& cbk, AnalysisType type, py::object& obj) {
-                    std::unique_ptr<TrampData<PyInstrumentCallback>> data {new TrampData<PyInstrumentCallback>(cbk, obj)};
-                    uint32_t n = vm.addInstrRule(&trampoline_InstrumentCallback, type, static_cast<void*>(data.get()));
+                [](VM& vm, PyInstrRuleCallback& cbk, AnalysisType type, py::object& obj) {
+                    std::unique_ptr<TrampData<PyInstrRuleCallback>> data {new TrampData<PyInstrRuleCallback>(cbk, obj)};
+                    uint32_t n = vm.addInstrRule(&trampoline_InstrRuleCallback, type, static_cast<void*>(data.get()));
                     data->id = n;
-                    return addTrampData(n, InstrumentCallbackMap, std::move(data));
+                    return addTrampData(n, InstrRuleCallbackMap, std::move(data));
                 },
                 "Add a custom instrumentation rule to the VM.",
                 "cbk"_a, "type"_a, "data"_a)
         .def("addInstrRuleRange",
-                [](VM& vm, rword start, rword end, PyInstrumentCallback& cbk, AnalysisType type, py::object& obj) {
-                    std::unique_ptr<TrampData<PyInstrumentCallback>> data {new TrampData<PyInstrumentCallback>(cbk, obj)};
-                    uint32_t n = vm.addInstrRuleRange(start, end, &trampoline_InstrumentCallback, type, static_cast<void*>(data.get()));
+                [](VM& vm, rword start, rword end, PyInstrRuleCallback& cbk, AnalysisType type, py::object& obj) {
+                    std::unique_ptr<TrampData<PyInstrRuleCallback>> data {new TrampData<PyInstrRuleCallback>(cbk, obj)};
+                    uint32_t n = vm.addInstrRuleRange(start, end, &trampoline_InstrRuleCallback, type, static_cast<void*>(data.get()));
                     data->id = n;
-                    return addTrampData(n, InstrumentCallbackMap, std::move(data));
+                    return addTrampData(n, InstrRuleCallbackMap, std::move(data));
                 },
                 "Add a custom instrumentation rule to the VM on a specify range.",
                 "start"_a, "end"_a, "cbk"_a, "type"_a, "data"_a)
@@ -272,7 +272,7 @@ void init_binding_VM(py::module_& m) {
                     vm.deleteInstrumentation(id);
                     removeTrampData(id, InstCallbackMap);
                     removeTrampData(id, VMCallbackMap);
-                    removeTrampData(id, InstrumentCallbackMap);
+                    removeTrampData(id, InstrRuleCallbackMap);
                     removeTrampData(id, InstrumentInstCallbackMap);
                 },
                 "Remove an instrumentation.",

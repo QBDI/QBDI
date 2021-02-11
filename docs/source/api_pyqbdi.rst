@@ -104,10 +104,10 @@ MemoryAccess
 
 .. autofunction:: pyqbdi.VM.addMemRangeCB
 
-.. _instrumentcallback-management-pyqbdi:
+.. _instrrulecallback-management-pyqbdi:
 
-InstrumentCallback
-^^^^^^^^^^^^^^^^^^
+InstrRuleCallback
+^^^^^^^^^^^^^^^^^
 
 .. autofunction:: pyqbdi.VM.addInstrRule
 
@@ -192,7 +192,7 @@ Callback
     - :py:func:`pyqbdi.VM.addCodeCB`, :py:func:`pyqbdi.VM.addCodeAddrCB` and :py:func:`pyqbdi.VM.addCodeRangeCB`
     - :py:func:`pyqbdi.VM.addMnemonicCB`
     - :py:func:`pyqbdi.VM.addMemAccessCB`, :py:func:`pyqbdi.VM.addMemAddrCB` and :py:func:`pyqbdi.VM.addMemRangeCB`
-    - :py:class:`pyqbdi.InstrumentDataCBK`.
+    - :py:class:`pyqbdi.InstrRuleDataCBK`.
 
     :param VM       vm:    The current QBDI object
     :param GPRState gpr:   The current GPRState
@@ -213,7 +213,7 @@ Callback
 
     :return: the :py:data:`VMAction` to continue or stop the execution
 
-.. function:: pyqbdi.InstrumentCallback(vm: pyqbdi.VM, ana: pyqbdi.InstAnalysis, data: object) -> List[pyqbdi.InstrumentDataCBK]
+.. function:: pyqbdi.InstrRuleCallback(vm: pyqbdi.VM, ana: pyqbdi.InstAnalysis, data: object) -> List[pyqbdi.InstrRuleDataCBK]
 
     This is the prototype of a function callback for :py:func:`pyqbdi.VM.addInstrRule` and :py:func:`pyqbdi.VM.addInstrRuleRange`.
 
@@ -221,9 +221,9 @@ Callback
     :param InstAnalysis ana:  The current QBDI object
     :param Object       data: A user-defined object
 
-    :return: A list of :py:class:`pyqbdi.InstrumentDataCBK`
+    :return: A list of :py:class:`pyqbdi.InstrRuleDataCBK`
 
-.. autoclass:: pyqbdi.InstrumentDataCBK
+.. autoclass:: pyqbdi.InstrRuleDataCBK
     :special-members: __init__
     :members:
 
