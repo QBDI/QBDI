@@ -99,7 +99,7 @@ class enum_int_flag_ : public pybind11::enum_<Type> {
             return "0";
         }
         std::string res;
-        for (int i = 0; i < sizeof(Scalar) * 8 && v != 0; i++) {
+        for (unsigned int i = 0; i < sizeof(Scalar) * 8 && v != 0; i++) {
             if ((v & (1<<i)) != 0) {
                 const auto it = members_names.find(1<<i);
                 if (it != members_names.end()) {
