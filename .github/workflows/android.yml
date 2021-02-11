@@ -3,7 +3,7 @@ name: Package Android
 on:
   push:
     branches:
-      - main
+      - master
       - dev-next
   workflow_dispatch:
 

@@ -3,7 +3,7 @@ name: PyQBDI OSX package
 on:
   push:
     branches:
-      - main
+      - master
       - dev-next
   workflow_dispatch:
 
