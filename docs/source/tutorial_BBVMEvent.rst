@@ -1,6 +1,6 @@
 .. currentmodule:: pyqbdi
 
-BasicBlock VMEvent
+Basic block events
 ==================
 
 Introduction
@@ -14,15 +14,15 @@ For some traces, a higher-level callback can have better performances.
 The :ref:`api_desc_VMCallback` is called when some conditions are reached during the execution. This tutorial
 introduces 3 `VMEvent`:
 
-- ``BASIC_BLOCK_NEW`` : this event is triggered when a new BasicBlock has been instrumented and add to the cache. It can be used to create
+- ``BASIC_BLOCK_NEW`` : this event is triggered when a new basic block has been instrumented and add to the cache. It can be used to create
   coverage of the execution.
 - ``BASIC_BLOCK_ENTRY``: this event is triggered before the execution of a basic block.
 - ``BASIC_BLOCK_EXIT``: this event is triggered after the execution of a basic block.
 
-A Basic Block in QBDI
+A basic block in QBDI
 ---------------------
 
-QBDI doesn't analyse the whole program before the run. Basic blocks are detected dynamically and may not match the BasicBlock given by other tools.
+QBDI doesn't analyse the whole program before the run. Basic blocks are detected dynamically and may not match the basic block given by other tools.
 In QBDI, a basic block is a sequence of consecutive instructions that doesn't change the instruction pointer except the last one.
 Any instruction that may change the instruction pointer (method call, jump, conditional jump, method return, ...) are always the
 last instruction of a basic block.
@@ -30,7 +30,7 @@ last instruction of a basic block.
 QBDI detects the beginning of a basic block:
 
 - when the instruction is the first to be executed in QBDI;
-- after the end of the previous BasicBlock;
+- after the end of the previous basic block;
 - potentially if the user changes the callback during the execution (add a new callback, clear the cache, return ``BREAK_TO_VM``, ...)
 
 Due to the dynamic detection of the basic block, some basic block can overlap others.
@@ -76,10 +76,10 @@ If the first jump isn't taken:
     // 111f:
 
 
-Get BasicBlock Information
---------------------------
+Get basic block information
+---------------------------
 
-To receive BasicBlock information, a ``VMCallback`` should be registered to the VM with ``addVMEventCB`` for
+To receive basic block information, a ``VMCallback`` should be registered to the VM with ``addVMEventCB`` for
 one of ``BASIC_BLOCK_*`` events. Once a registered event occurs, the callback is called with a description of the VM (``VMState``).
 
 The address of the current basic block can be retrieved with ``VMState.basicBlockStart`` and ``VMState.basicBlockEnd``.
@@ -91,8 +91,8 @@ The address of the current basic block can be retrieved with ``VMState.basicBloc
 
 The follow example registers the three events in the VM and displays the basic block's address when one event triggers.
 
-C BasicBlock Information
-++++++++++++++++++++++++
+C basic block information
++++++++++++++++++++++++++
 
 Reference: :cpp:type:`VMCallback`, :cpp:func:`qbdi_addVMEventCB`, :cpp:struct:`VMState`
 
@@ -111,8 +111,8 @@ Reference: :cpp:type:`VMCallback`, :cpp:func:`qbdi_addVMEventCB`, :cpp:struct:`V
 
     qbdi_addVMEventCB(vm, QBDI_BASIC_BLOCK_NEW | QBDI_BASIC_BLOCK_ENTRY | QBDI_BASIC_BLOCK_EXIT, vmcbk, NULL);
 
-C++ BasicBlock Information
-++++++++++++++++++++++++++
+C++ basic block information
++++++++++++++++++++++++++++
 
 Reference: :cpp:type:`QBDI::VMCallback`, :cpp:func:`QBDI::VM::addVMEventCB`, :cpp:struct:`QBDI::VMState`
 
@@ -137,8 +137,8 @@ Reference: :cpp:type:`QBDI::VMCallback`, :cpp:func:`QBDI::VM::addVMEventCB`, :cp
 
     vm.addVMEventCB(QBDI::BASIC_BLOCK_NEW | QBDI::BASIC_BLOCK_ENTRY | QBDI::BASIC_BLOCK_EXIT, vmcbk, nullptr);
 
-PyQBDI BasicBlock Information
-+++++++++++++++++++++++++++++
+PyQBDI basic block information
+++++++++++++++++++++++++++++++
 
 Reference: :py:func:`pyqbdi.VMCallback`, :py:func:`pyqbdi.VM.addVMEventCB`, :py:class:`pyqbdi.VMState`
 
@@ -155,8 +155,8 @@ Reference: :py:func:`pyqbdi.VMCallback`, :py:func:`pyqbdi.VM.addVMEventCB`, :py:
 
     vm.addVMEventCB(pyqbdi.BASIC_BLOCK_NEW | pyqbdi.BASIC_BLOCK_ENTRY | pyqbdi.BASIC_BLOCK_EXIT, vmcbk, None)
 
-Frida/QBDI BasicBlock Information
-+++++++++++++++++++++++++++++++++
+Frida/QBDI basic block information
+++++++++++++++++++++++++++++++++++
 
 Reference: :js:func:`VMCallback`, :js:func:`QBDI.addVMEventCB`, :js:class:`VMState`
 
@@ -180,20 +180,20 @@ Reference: :js:func:`VMCallback`, :js:func:`QBDI.addVMEventCB`, :js:class:`VMSta
     vm.addVMEventCB(VMEvent.BASIC_BLOCK_NEW | VMEvent.BASIC_BLOCK_ENTRY | VMEvent.BASIC_BLOCK_EXIT, vmcbk, null);
 
 
-BasicBlock coverage
--------------------
+Basic block coverage
+--------------------
 
 To perform a code coverage, ``BASIC_BLOCK_NEW`` can be used to detect the new basic block JITed by QBDI.
 Some precautions should be taken:
 
 - If a vm is reused to different coverage, the cache must be clear between each run to have independent coverage.
   However, if you reused the vm to perform incremental coverage, we can keep the cache between runs.
-- The coverage will only cover the instrumented range.
+- The coverage only covers the instrumented range.
 - This method supposes that the execution of the basic block won't trigger an interruption (exception, signal, ...).
 - Code has no overlapping instructions or other forms of obfuscation.
 
 For more precise coverage, ``BASIC_BLOCK_ENTRY`` or ``BASIC_BLOCK_EXIT`` can be used instead of ``BASIC_BLOCK_NEW``, but
-the callback may be called more than once for each BasicBlock.
+the callback may be called more than once for each basic block.
 
 
 C coverage
@@ -295,4 +295,10 @@ Frida/QBDI coverage
     for(var c in cov){
         console.log("0x" + cov[c][0].toString(16) + " to 0x" + cov[c][1].toString(16));
     }
+
+Edge coverage
+-------------
+
+The ``BASIC_BLOCK_EXIT`` event can be used to detect the edge between basic block. As the event is triggered after the execution of the basic block,
+the next address can be found in the GPRState. The address pair ``(state.basicBlockEnd, gpr.rip)`` is the edge to store in the coverage.
 
