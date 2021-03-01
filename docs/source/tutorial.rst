@@ -9,4 +9,5 @@ This section contains some tutorials on specifics points of QBDI
     :maxdepth: 2
 
     BasicBlock VMEvent <tutorial_BBVMEvent>
+    Execution transfert event <tutorial_ExecBrokerEvent>
 
