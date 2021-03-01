@@ -110,8 +110,12 @@ bool ExecBroker::instrumentAllExecutableMaps() {
     return instrumented;
 }
 
-bool ExecBroker::canTransferExecution(GPRState *gprState) const {
-    return getReturnPoint(gprState) ? true : false;
+bool ExecBroker::canTransferExecution(GPRState *gprState, rword** ptr) const {
+    rword* retaddr = getReturnPoint(gprState);
+    if (ptr != NULL) {
+        *ptr = retaddr;
+    }
+    return retaddr != nullptr;
 }
 
 bool ExecBroker::transferExecution(rword addr, GPRState *gprState, FPRState *fprState) {

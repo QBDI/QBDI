@@ -70,7 +70,7 @@ public:
 
     bool instrumentAllExecutableMaps();
 
-    bool canTransferExecution(GPRState* gprState) const;
+    bool canTransferExecution(GPRState* gprState, rword** ptr=nullptr) const;
 
     bool transferExecution(rword addr, GPRState *gprState, FPRState *fprState);
 };

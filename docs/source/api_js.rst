@@ -536,6 +536,14 @@ VMEvent
 
     The current sequence end address which can also be the execution transfer destination.
 
+  .. js:attribute:: returnAddressPtr
+
+    The address of the return address detected during EXEC_TRANSFER_CALL.
+
+  .. js:attribute:: returnAddressValue
+
+    The return address detected during EXEC_TRANSFER_CALL.
+
   .. js:attribute:: lastSignal
 
     Not implemented.

@@ -462,21 +462,22 @@ bool Engine::run(rword start, rword stop) {
     // Execute basic block per basic block
     do {
         VMAction action = CONTINUE;
+        rword* returnAddr = nullptr;
 
         // If this PC is not instrumented try to transfer execution
         if(execBroker->isInstrumented(currentPC) == false &&
-           execBroker->canTransferExecution(curGPRState)) {
+           execBroker->canTransferExecution(curGPRState, &returnAddr)) {
 
             curExecBlock = nullptr;
             basicBlockBeginAddr = 0;
             basicBlockEndAddr = 0;
 
             LogDebug("Engine::run", "Executing 0x%" PRIRWORD " through execBroker", currentPC);
-            action = signalEvent(EXEC_TRANSFER_CALL, currentPC, nullptr, 0, curGPRState, curFPRState);
+            action = signalEvent(EXEC_TRANSFER_CALL, currentPC, nullptr, 0, returnAddr, curGPRState, curFPRState);
             // transfer execution
             if (action == CONTINUE) {
                 execBroker->transferExecution(currentPC, curGPRState, curFPRState);
-                action = signalEvent(EXEC_TRANSFER_RETURN, currentPC, nullptr, 0, curGPRState, curFPRState);
+                action = signalEvent(EXEC_TRANSFER_RETURN, currentPC, nullptr, 0, nullptr, curGPRState, curFPRState);
             }
         }
         // Else execute through DBI
@@ -522,7 +523,7 @@ bool Engine::run(rword start, rword stop) {
             curGPRState = &(curExecBlock->getContext()->gprState);
             curFPRState = &(curExecBlock->getContext()->fprState);
 
-            action = signalEvent(event, currentPC, &currentSequence, basicBlockBeginAddr, curGPRState, curFPRState);
+            action = signalEvent(event, currentPC, &currentSequence, basicBlockBeginAddr, nullptr, curGPRState, curFPRState);
 
             if (action == CONTINUE) {
                 hasRan = true;
@@ -530,11 +531,11 @@ bool Engine::run(rword start, rword stop) {
                 // Signal events if normal exit
                 if (action == CONTINUE) {
                     if (basicBlockEndAddr == currentSequence.seqEnd) {
-                        action = signalEvent(SEQUENCE_EXIT | BASIC_BLOCK_EXIT, currentPC, &currentSequence, basicBlockBeginAddr, curGPRState, curFPRState);
+                        action = signalEvent(SEQUENCE_EXIT | BASIC_BLOCK_EXIT, currentPC, &currentSequence, basicBlockBeginAddr, nullptr, curGPRState, curFPRState);
                         basicBlockBeginAddr = 0;
                         basicBlockEndAddr = 0;
                     } else {
-                        action = signalEvent(SEQUENCE_EXIT, currentPC, &currentSequence, basicBlockBeginAddr, curGPRState, curFPRState);
+                        action = signalEvent(SEQUENCE_EXIT, currentPC, &currentSequence, basicBlockBeginAddr, nullptr, curGPRState, curFPRState);
                     }
                 }
             }
@@ -589,17 +590,21 @@ uint32_t Engine::addVMEventCB(VMEvent mask, VMCallback cbk, void *data) {
     return id | EVENTID_VM_MASK;
 }
 
-VMAction Engine::signalEvent(VMEvent event, rword currentPC, const SeqLoc* seqLoc, rword basicBlockBegin, GPRState *gprState, FPRState *fprState) {
+VMAction Engine::signalEvent(VMEvent event, rword currentPC, const SeqLoc* seqLoc, rword basicBlockBegin, rword* retaddr, GPRState *gprState, FPRState *fprState) {
     if ((event & eventMask) == 0) {
         return CONTINUE;
     }
 
-    VMState vmState {event, currentPC, currentPC, currentPC, currentPC, 0};
+    VMState vmState {event, currentPC, currentPC, currentPC, currentPC, 0, 0, 0};
     if(seqLoc != nullptr) {
         vmState.basicBlockStart = basicBlockBegin;
         vmState.basicBlockEnd   = seqLoc->bbEnd;
         vmState.sequenceStart   = seqLoc->seqStart;
         vmState.sequenceEnd     = seqLoc->seqEnd;
+    }
+    if (retaddr != nullptr) {
+        vmState.returnAddressPtr = reinterpret_cast<rword>(retaddr);
+        vmState.returnAddressValue = *retaddr;
     }
 
     VMAction action = CONTINUE;
