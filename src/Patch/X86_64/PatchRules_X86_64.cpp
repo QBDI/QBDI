@@ -122,6 +122,26 @@ RelocatableInst::UniquePtrVec getExecBlockPrologue(Options opts) {
        // target je needAVX
     }
   }
+#if defined(QBDI_ARCH_X86_64)
+  // if enable FS GS
+  if ((opts & Options::OPT_ENABLE_FS_GS) == Options::OPT_ENABLE_FS_GS) {
+    QBDI_REQUIRE_ACTION(isHostCPUFeaturePresent("fsgsbase"), abort());
+
+    append(prologue,
+           LoadReg(Reg(0), Offset(offsetof(Context, hostState.executeFlags))));
+    prologue.push_back(Test(Reg(0), ExecBlockFlags::needFSGS));
+    prologue.push_back(Je(5 * 4 + 7 * 4 + 4));
+
+    append(prologue, LoadReg(Reg(3), Offset(offsetof(Context, gprState.fs))));
+    append(prologue, LoadReg(Reg(4), Offset(offsetof(Context, gprState.gs))));
+    prologue.push_back(Rdfsbase(Reg(1)));
+    prologue.push_back(Rdgsbase(Reg(2)));
+    prologue.push_back(Wrfsbase(Reg(3)));
+    prologue.push_back(Wrgsbase(Reg(4)));
+    append(prologue, SaveReg(Reg(1), Offset(offsetof(Context, hostState.fs))));
+    append(prologue, SaveReg(Reg(2), Offset(offsetof(Context, hostState.gs))));
+  }
+#endif // QBDI_ARCH_X86_64
   // Restore EFLAGS
   append(prologue, LoadReg(Reg(0), Offset(offsetof(Context, gprState.eflags))));
   prologue.push_back(Pushr(Reg(0)));
@@ -148,6 +168,26 @@ RelocatableInst::UniquePtrVec getExecBlockEpilogue(Options opts) {
   epilogue.push_back(Pushf());
   epilogue.push_back(Popr(Reg(0)));
   append(epilogue, SaveReg(Reg(0), Offset(offsetof(Context, gprState.eflags))));
+#if defined(QBDI_ARCH_X86_64)
+  // if enable FS GS
+  if ((opts & Options::OPT_ENABLE_FS_GS) == Options::OPT_ENABLE_FS_GS) {
+    QBDI_REQUIRE_ACTION(isHostCPUFeaturePresent("fsgsbase"), abort());
+
+    append(epilogue,
+           LoadReg(Reg(0), Offset(offsetof(Context, hostState.executeFlags))));
+    epilogue.push_back(Test(Reg(0), ExecBlockFlags::needFSGS));
+    epilogue.push_back(Je(5 * 4 + 7 * 4 + 4));
+
+    append(epilogue, LoadReg(Reg(3), Offset(offsetof(Context, hostState.fs))));
+    append(epilogue, LoadReg(Reg(4), Offset(offsetof(Context, hostState.gs))));
+    epilogue.push_back(Rdfsbase(Reg(1)));
+    epilogue.push_back(Rdgsbase(Reg(2)));
+    epilogue.push_back(Wrfsbase(Reg(3)));
+    epilogue.push_back(Wrgsbase(Reg(4)));
+    append(epilogue, SaveReg(Reg(1), Offset(offsetof(Context, gprState.fs))));
+    append(epilogue, SaveReg(Reg(2), Offset(offsetof(Context, gprState.gs))));
+  }
+#endif // QBDI_ARCH_X86_64
   // Save FPR
   if ((opts & Options::OPT_DISABLE_FPR) == 0) {
     if ((opts & Options::OPT_DISABLE_OPTIONAL_FPR) == 0) {

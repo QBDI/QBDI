@@ -337,7 +337,7 @@ if (Process.arch === 'x64') {
     /**
      * An array holding register names.
      */
-    var GPR_NAMES = ["RAX","RBX","RCX","RDX","RSI","RDI","R8","R9","R10","R11","R12","R13","R14","R15","RBP","RSP","RIP","EFLAGS"];
+    var GPR_NAMES = ["RAX","RBX","RCX","RDX","RSI","RDI","R8","R9","R10","R11","R12","R13","R14","R15","RBP","RSP","RIP","EFLAGS","FS","GS"];
     /**
      * A constant string representing the register carrying the return value of a function.
      */
@@ -728,7 +728,13 @@ var Options = Object.freeze({
     /**
      * Used the AT&T syntax for instruction disassembly (for X86 and X86_64)
      */
-    OPT_ATT_SYNTAX : 1<<24
+    OPT_ATT_SYNTAX : 1<<24,
+    /**
+     * Enable Backup/Restore of FS/GS segment. 
+     * This option uses the instructions (RD|WR)(FS|GS)BASE that must be 
+     * supported by the operating system.
+     */
+    OPT_ENABLE_FS_GS : 1<<25
 });
 
 class InstrRuleDataCBK {
@@ -865,7 +871,7 @@ class GPRState extends State  {
      */
     synchronizeContext(FridaCtx, direction) {
         for (var i in GPR_NAMES) {
-            if (GPR_NAMES[i] === "EFLAGS") {
+            if (GPR_NAMES[i] === "EFLAGS" || GPR_NAMES[i] === "FS" || GPR_NAMES[i] === "GS") {
                 continue;
             }
             this.synchronizeRegister(FridaCtx, GPR_NAMES[i], direction);

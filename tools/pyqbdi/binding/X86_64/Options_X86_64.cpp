@@ -34,6 +34,10 @@ void init_binding_Options(py::module_ &m) {
              "doesn't used FPR")
       .value("OPT_ATT_SYNTAX", Options::OPT_ATT_SYNTAX,
              "Used the AT&T syntax for instruction disassembly")
+      .value("OPT_ENABLE_FS_GS", Options::OPT_ENABLE_FS_GS,
+             "Enable Backup/Restore of FS/GS segment. This option uses the "
+             "instructions (RD|WR)(FS|GS)BASE that must be supported by the "
+             "operating system.")
       .export_values()
       .def_invert()
       .def_repr_str();

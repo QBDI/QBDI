@@ -515,6 +515,8 @@ void init_binding_State(py::module_ &m) {
       .def_readwrite("rsp", &GPRState::rsp)
       .def_readwrite("rip", &GPRState::rip)
       .def_readwrite("eflags", &GPRState::eflags)
+      .def_readwrite("fs", &GPRState::fs)
+      .def_readwrite("gs", &GPRState::gs)
       // cross architecture access
       .def_readwrite("REG_RETURN", &GPRState::rax, "shadow of rax")
       .def_readwrite("AVAILABLE_GPR", &GPRState::rbp, "shadow of rbp")
@@ -550,6 +552,8 @@ void init_binding_State(py::module_ &m) {
                  << "rsp    : 0x" << std::setw(r) << obj.rsp << std::endl
                  << "rip    : 0x" << std::setw(r) << obj.rip << std::endl
                  << "eflags : 0x" << std::setw(r) << obj.eflags << std::endl
+                 << "fs     : 0x" << std::setw(r) << obj.fs << std::endl
+                 << "gs     : 0x" << std::setw(r) << obj.gs << std::endl
                  << "=== GPRState end ===" << std::endl;
              return oss.str();
            })

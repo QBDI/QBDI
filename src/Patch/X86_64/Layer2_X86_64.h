@@ -116,6 +116,14 @@ llvm::MCInst popf64();
 
 llvm::MCInst ret();
 
+llvm::MCInst rdfsbase(unsigned int reg);
+
+llvm::MCInst rdgsbase(unsigned int reg);
+
+llvm::MCInst wrfsbase(unsigned int reg);
+
+llvm::MCInst wrgsbase(unsigned int reg);
+
 // low level layer 2 architecture abtraction
 
 llvm::MCInst movrr(unsigned int dst, unsigned int src);
@@ -191,6 +199,14 @@ std::unique_ptr<RelocatableInst> Test(Reg reg, unsigned int value);
 std::unique_ptr<RelocatableInst> Je(int32_t offset);
 
 std::unique_ptr<RelocatableInst> Jne(int32_t offset);
+
+std::unique_ptr<RelocatableInst> Rdfsbase(Reg reg);
+
+std::unique_ptr<RelocatableInst> Rdgsbase(Reg reg);
+
+std::unique_ptr<RelocatableInst> Wrfsbase(Reg reg);
+
+std::unique_ptr<RelocatableInst> Wrgsbase(Reg reg);
 
 } // namespace QBDI
 

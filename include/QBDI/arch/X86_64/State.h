@@ -163,12 +163,15 @@ typedef struct QBDI_ALIGNED(8) {
   rword rsp;
   rword rip;
   rword eflags;
+  // Only backup and restore with OPT_ENABLE_FS_GS
+  rword fs;
+  rword gs;
 } GPRState;
 // SPHINX_X86_64_GPRSTATE_END
 
 static const char *const GPR_NAMES[] = {
-    "RAX", "RBX", "RCX", "RDX", "RSI", "RDI", "R8",  "R9",  "R10",
-    "R11", "R12", "R13", "R14", "R15", "RBP", "RSP", "RIP", "EFLAGS"};
+    "RAX", "RBX", "RCX", "RDX", "RSI", "RDI", "R8",  "R9",     "R10", "R11",
+    "R12", "R13", "R14", "R15", "RBP", "RSP", "RIP", "EFLAGS", "FS",  "GS"};
 
 static const unsigned int NUM_GPR = 17;
 static const unsigned int AVAILABLE_GPR = 14;

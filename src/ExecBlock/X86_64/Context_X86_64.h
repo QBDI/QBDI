@@ -26,6 +26,8 @@ namespace QBDI {
  */
 struct QBDI_ALIGNED(8) HostState {
   rword sp;
+  rword fs;
+  rword gs;
   rword selector;
   rword callback;
   rword data;
