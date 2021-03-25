@@ -21,7 +21,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 
-#include "Platform.h"
+#include "QBDI/Platform.h"
 
 #ifdef __cplusplus
 namespace QBDI {

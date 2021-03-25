@@ -20,7 +20,7 @@
 
 #include <memory>
 
-#include "InstAnalysis.h"
+#include "QBDI/InstAnalysis.h"
 
 namespace llvm {
   class MCInstrDesc;

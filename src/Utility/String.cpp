@@ -22,8 +22,8 @@ namespace QBDI {
 namespace String {
 
 bool startsWith(const char* prefix, const char* str){
-    RequireAction("String::startsWith", prefix != nullptr, return false);
-    RequireAction("String::startsWith", str != nullptr, return false);
+    QBDI_REQUIRE_ACTION(prefix != nullptr, return false);
+    QBDI_REQUIRE_ACTION(str != nullptr, return false);
 
     while (*prefix && *str) {
         // Wildcard matching : "*" until the character following the wildcard matches a character in the str

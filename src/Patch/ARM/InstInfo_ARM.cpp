@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "InstInfo_ARM.h"
+#include "Patch/ARM/InstInfo_ARM.h"
 #include "Utility/LogSys.h"
 
 namespace QBDI {

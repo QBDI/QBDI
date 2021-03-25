@@ -29,7 +29,6 @@
 int main(int argc, char** argv) {
 
     srand(time(nullptr));
-    QBDI::addLogFilter("*", QBDI::LogPriority::WARNING);
 
     setvbuf(stdout, nullptr, _IONBF, 0);
     setvbuf(stderr, nullptr, _IONBF, 0);

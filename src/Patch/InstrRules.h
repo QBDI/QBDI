@@ -23,7 +23,7 @@
 
 #include "Patch/Types.h"
 
-#include "Callback.h"
+#include "QBDI/Callback.h"
 
 namespace QBDI {
 

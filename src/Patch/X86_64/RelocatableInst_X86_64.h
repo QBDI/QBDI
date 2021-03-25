@@ -20,7 +20,7 @@
 
 #include "Patch/RelocatableInst.h"
 
-#include "Config.h"
+#include "QBDI/Config.h"
 
 namespace QBDI {
 

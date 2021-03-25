@@ -20,7 +20,7 @@ target_include_directories(validator PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../QBDIPreload/include>
     $<INSTALL_INTERFACE:include>
     )
-target_link_libraries(validator QBDIPreload QBDI_static)
+target_link_libraries(validator PRIVATE QBDIPreload QBDI_static spdlog)
 
 set_target_properties(validator
     PROPERTIES

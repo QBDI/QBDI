@@ -50,13 +50,13 @@ static QBDI::VMAction step(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBD
     // Write a new instruction event
     if(writeInstructionEvent(instAnalysis->address, instAnalysis->mnemonic, instAnalysis->disassembly, gprState, fprState, pipes->dataPipe) != 1) {
         // DATA pipe failure, we exit
-        LogError("Validator::Instrumented", "Lost the data pipe, exiting!");
+        QBDI_ERROR("Lost the data pipe, exiting!");
         return QBDI::VMAction::STOP;
     }
     // Read next command
     if(readCommand(&cmd, pipes->ctrlPipe) != 1) {
         // CTRL pipe failure, we exit
-        LogError("Validator::Instrumented", "Lost the control pipe, exiting!");
+        QBDI_ERROR("Lost the control pipe, exiting!");
         return QBDI::VMAction::STOP;
     }
 
@@ -70,7 +70,7 @@ static QBDI::VMAction step(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState, QBD
         return QBDI::VMAction::STOP;
     }
     // FATAL
-    LogError("Validator::Instrumented", "Did not recognize command from the control pipe, exiting!");
+    QBDI_ERROR("Did not recognize command from the control pipe, exiting!");
     return QBDI::VMAction::STOP;
 }
 
@@ -189,7 +189,7 @@ static QBDI::VMAction verifyMemoryAccess(QBDI::VMInstanceRef vm, QBDI::GPRState 
     if(writeMismatchMemAccessEvent(instAnalysis->address, doRead, instAnalysis->mayLoad,
                                    doWrite, instAnalysis->mayStore, accesses, pipes->dataPipe) != 1) {
         // DATA pipe failure, we exit
-        LogError("Validator::Instrumented", "Lost the data pipe, exiting!");
+        QBDI_ERROR("Lost the data pipe, exiting!");
         return QBDI::VMAction::STOP;
     }
     errno = SAVED_ERRNO;
@@ -239,7 +239,7 @@ void cleanup_instrumentation() {
 void start_instrumented(QBDI::VM* vm, QBDI::rword start, QBDI::rword stop, int ctrlfd, int datafd) {
 
     VM = vm;
-    QBDI::LOGSYS.addFilter("*", QBDI::LogPriority::ERROR);
+    QBDI::setLogPriority(QBDI::LogPriority::ERROR);
 #if defined(_QBDI_LOG_DEBUG)
     for(const QBDI::MemoryMap& m :  QBDI::getCurrentProcessMaps()) {
         std::cout << m.name << " (" << m.permission << ") ";
@@ -251,7 +251,7 @@ void start_instrumented(QBDI::VM* vm, QBDI::rword start, QBDI::rword stop, int c
     PIPES.ctrlPipe = fdopen(ctrlfd, "rb");
     PIPES.dataPipe = fdopen(datafd, "wb");
     if(PIPES.ctrlPipe == nullptr || PIPES.dataPipe == nullptr) {
-        LogError("Validator::Instrumented", "Could not open communication pipes with master, exiting!");
+        QBDI_ERROR("Could not open communication pipes with master, exiting!");
         return;
     }
 

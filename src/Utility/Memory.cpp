@@ -18,8 +18,8 @@
 #include "llvm/Support/Process.h"
 
 #include "Utility/LogSys.h"
-#include "Memory.hpp"
-#include "Memory.h"
+#include "QBDI/Memory.hpp"
+#include "QBDI/Memory.h"
 #include <set>
 
 #define FRAME_LENGTH       16
@@ -150,7 +150,7 @@ qbdi_MemoryMap* convert_MemoryMap_to_C(std::vector<MemoryMap> maps, size_t* size
         return NULL;
     }
     qbdi_MemoryMap* cmaps = (qbdi_MemoryMap*) malloc(*size * sizeof(qbdi_MemoryMap));
-    RequireAction("convert_MemoryMap_to_C", cmaps != NULL, abort());
+    QBDI_REQUIRE_ACTION(cmaps != NULL, abort());
     for(size_t i = 0; i < *size; i++) {
         cmaps[i].start = maps[i].range.start();
         cmaps[i].end = maps[i].range.end();
@@ -190,7 +190,7 @@ char** qbdi_getModuleNames(size_t* size) {
         return NULL;
     }
     char** names = (char**) malloc(modules.size() * sizeof(char*));
-    RequireAction("getModuleNames", names != NULL, abort());
+    QBDI_REQUIRE_ACTION(names != NULL, abort());
     for(size_t i = 0; i < modules.size(); i++) {
         names[i] = strdup(modules[i].c_str());
     }

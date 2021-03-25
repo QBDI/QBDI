@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#include "Platform.h"
+#include "QBDI/Platform.h"
 
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 #include "X86InstrInfo.h"

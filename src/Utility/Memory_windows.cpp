@@ -18,8 +18,8 @@
 #include "llvm/Support/Process.h"
 
 #include "Utility/LogSys.h"
-#include "Memory.hpp"
-#include "Memory.h"
+#include "QBDI/Memory.hpp"
+#include "QBDI/Memory.h"
 
 #include <Windows.h>
 #include <Psapi.h>
@@ -103,12 +103,16 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path) {
             // fallback to empty name
             m.name.clear();
         }
-        LogCallback(LogPriority::DEBUG, "getRemoteProcessMaps", [&] (FILE *out) -> void {
-            fprintf(out, "Read new map [%" PRIRWORD ", %" PRIRWORD "] %s ", m.range.start(), m.range.end(), m.name.c_str());
-            if(m.permission & QBDI::PF_READ)  fprintf(out, "r");
-            if(m.permission & QBDI::PF_WRITE) fprintf(out, "w");
-            if(m.permission & QBDI::PF_EXEC)  fprintf(out, "x");
-        });
+        QBDI_DEBUG(
+            "Read new map [0x{:x}, 0x{:x}] {} {}{}{}",
+            m.range.start(),
+            m.range.end(),
+            m.name.c_str(),
+            (m.permission & QBDI::PF_READ)  ?"r":"-",
+            (m.permission & QBDI::PF_WRITE) ?"w":"-",
+            (m.permission & QBDI::PF_EXEC)  ?"x":"-"
+        );
+
         maps.push_back(m);
     }
     CloseHandle(self);

@@ -131,14 +131,14 @@ void LinuxProcess::setBreakpoint(void *address) {
     this->brk_address = address;
     this->brk_value = ptrace(PTRACE_PEEKDATA, this->pid, address, NULL);
     if (ptrace(PTRACE_POKEDATA, this->pid, address, BRK_INS | (this->brk_value & (~BRK_MASK))) == -1) {
-        LogError("LinuxProcess::setBreakpoint", "Failed to set breakpoint: %s", strerror(errno));
+        QBDI_ERROR("Failed to set breakpoint: {}", strerror(errno));
         exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
     }
 }
 
 void LinuxProcess::unsetBreakpoint() {
     if (ptrace(PTRACE_POKEDATA, this->pid, this->brk_address, this->brk_value) == -1) {
-        LogError("LinuxProcess::unsetBreakpoint", "Failed to unset breakpoint: %s", strerror(errno));
+        QBDI_ERROR("Failed to unset breakpoint: {}", strerror(errno));
         exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
     }
 }
@@ -169,7 +169,7 @@ int LinuxProcess::waitForStatus() {
 void LinuxProcess::getProcessGPR(QBDI::GPRState *gprState) {
     GPR_STRUCT user;
     if (ptrace(PTRACE_GETREGS, this->pid, NULL, &user) == -1) {
-        LogError("LinuxProcess::getProcessGPR", "Failed to get GPR state: %s", strerror(errno));
+        QBDI_ERROR("Failed to get GPR state: {}", strerror(errno));
         exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
     }
     userToGPRState(&user, gprState);
@@ -187,7 +187,7 @@ void LinuxProcess::getProcessFPR(QBDI::FPRState *fprState) {
     #define VFP_REGS_SIZE (32 * 8 + 4)
     uint8_t user[VFP_REGS_SIZE];
     if (ptrace(PTRACE_GETVFPREGS, this->pid, NULL, user) == -1) {
-        LogError("LinuxProcess::getProcessFPR", "Failed to get FPR state: %s", strerror(errno));
+        QBDI_ERROR("Failed to get FPR state: {}", strerror(errno));
         exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
     }
     userToFPRState(user, fprState);
@@ -199,7 +199,7 @@ void LinuxProcess::getProcessFPR(QBDI::FPRState *fprState) {
     if (ptrace(PTRACE_GETFPREGS, this->pid, NULL, &user) == -1)
     #endif
     {
-        LogError("LinuxProcess::getProcessFPR", "Failed to get FPR state: %s", strerror(errno));
+        QBDI_ERROR("Failed to get FPR state: {}", strerror(errno));
         exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
     }
     userToFPRState(&user, fprState);

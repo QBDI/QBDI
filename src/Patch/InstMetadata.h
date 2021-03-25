@@ -22,7 +22,7 @@
 
 #include "Utility/InstAnalysis_prive.h"
 
-#include "State.h"
+#include "QBDI/State.h"
 
 namespace QBDI {
 

@@ -24,7 +24,7 @@
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstrInfo.h"
 #include "llvm/MC/MCRegisterInfo.h"
-#include "Platform.h"
+#include "QBDI/Platform.h"
 
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 #include "Patch/X86_64/ExecBlockFlags_X86_64.h"

@@ -16,6 +16,7 @@ include(CMakeFindBinUtils)
 # Macros
 include(cmake/merge_archives.cmake)
 
+
 # CCACHE
 # ======
 if (QBDI_CCACHE)
@@ -38,10 +39,15 @@ if (QBDI_CCACHE)
     endif()
 endif()
 
-# DEBUG log
-if(QBDI_LOG_DEBUG)
-    add_definitions(-D_QBDI_LOG_DEBUG)
+
+# DEBUG log (spdlog option)
+include(spdlog)
+if (QBDI_LOG_DEBUG)
+    add_definitions(-D_QBDI_LOG_DEBUG -DSPDLOG_DEBUG_ON=1 -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG)
+else()
+    add_definitions(-DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_INFO)
 endif()
+add_definitions(-DSPDLOG_NO_TLS=1 -DSPDLOG_NO_THREAD_ID=1 -DSPDLOG_NO_DATETIME=1)
 
 # AVX
 if(QBDI_DISABLE_AVX)
@@ -227,12 +233,13 @@ if(${DEPENDENCY_SATISFIED})
     add_library(QBDI_src INTERFACE)
     add_library(QBDI_shared_src INTERFACE)
 
+    target_link_libraries(QBDI_src INTERFACE spdlog)
+
     include("${CMAKE_CURRENT_SOURCE_DIR}/src/CMakeLists.txt")
 
     target_include_directories(QBDI_src INTERFACE
         "${CMAKE_CURRENT_BINARY_DIR}/include"
-        "${CMAKE_CURRENT_BINARY_DIR}/include/QBDI"
-        "${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
         "${CMAKE_CURRENT_SOURCE_DIR}/src"
         "${CMAKE_CURRENT_BINARY_DIR}/src"
         "${CMAKE_CURRENT_SOURCE_DIR}/deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/include"
@@ -241,8 +248,7 @@ if(${DEPENDENCY_SATISFIED})
 
     target_include_directories(QBDI_shared_src INTERFACE
         "${CMAKE_CURRENT_BINARY_DIR}/include"
-        "${CMAKE_CURRENT_BINARY_DIR}/include/QBDI"
-        "${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
         )
 
     if (QBDI_STATIC_LIBRARY)

@@ -46,7 +46,7 @@ QBDIPRELOAD_INIT;
 
 
 int QBDI::qbdipreload_on_main(int argc, char** argv) {
-    QBDI::LOGSYS.addFilter("*", QBDI::LogPriority::DEBUG);
+    QBDI::setLogPriority(QBDI::LogPriority::DEBUG);
 
     if(ROLE == Role::Master) {
         DarwinProcess* debuggedProcess = new DarwinProcess(DEBUGGED);

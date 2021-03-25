@@ -30,8 +30,8 @@
 #include "Patch/Types.h"
 #include "Utility/memory_ostream.h"
 
-#include "Callback.h"
-#include "State.h"
+#include "QBDI/Callback.h"
+#include "QBDI/State.h"
 
 namespace llvm {
   class MCInst;

@@ -42,7 +42,7 @@ RelocatableInst::UniquePtrVec GetOperand::generate(const llvm::MCInst* inst,
             );
     }
     else {
-        LogError("GetOperand::generate", "Invalid operand type for GetOperand()");
+        QBDI_ERROR("Invalid operand type for GetOperand()");
         return {};
     }
 }
@@ -93,17 +93,17 @@ RelocatableInst::UniquePtrVec GetReadAddress::generate(const llvm::MCInst* inst,
         }
         // Implicit RSI or RDI
         else if (implicitDSIAccess(*inst, desc)) {
-            RequireAction("GetReadAddress::generate", index < 2 && "Wrong index", abort());
+            QBDI_REQUIRE_ACTION(index < 2 && "Wrong index", abort());
             unsigned int reg;
             if (FormDesc == llvm::X86II::RawFrmSrc ||
                 (FormDesc == llvm::X86II::RawFrmDstSrc && index == 0)) {
                 // (R|E)SI
                 reg = Reg(4);
-                Require("GetReadAddress::generate", reg == llvm::X86::RSI || reg == llvm::X86::ESI);
+                QBDI_REQUIRE(reg == llvm::X86::RSI || reg == llvm::X86::ESI);
             } else {
                 // (R|E)DI
                 reg = Reg(5);
-                Require("GetReadAddress::generate", reg == llvm::X86::RDI || reg == llvm::X86::EDI);
+                QBDI_REQUIRE(reg == llvm::X86::RDI || reg == llvm::X86::EDI);
             }
             return conv_unique<RelocatableInst>(NoReloc::unique(movrr(dest, reg)));
         }
@@ -124,7 +124,7 @@ RelocatableInst::UniquePtrVec GetReadAddress::generate(const llvm::MCInst* inst,
         else if (inst->getOpcode() == llvm::X86::XLAT) {
             // (R|E)BX
             unsigned int reg = Reg(1);
-            Require("GetReadAddress::generate", reg == llvm::X86::RBX || reg == llvm::X86::EBX);
+            QBDI_REQUIRE(reg == llvm::X86::RBX || reg == llvm::X86::EBX);
             return conv_unique<RelocatableInst>(
                 NoReloc::unique(movzxrr8(dest, llvm::X86::AL)),
                 NoReloc::unique(lea(dest, reg, 1, dest, 0, 0))
@@ -168,10 +168,10 @@ RelocatableInst::UniquePtrVec GetReadAddress::generate(const llvm::MCInst* inst,
                         );
                 }
             }
-            RequireAction("GetReadAddress::generate", false && "No memory address found in the instruction", abort());
+            QBDI_REQUIRE_ACTION(false && "No memory address found in the instruction", abort());
         }
     }
-    RequireAction("GetReadAddress::generate", false && "Called on an instruction which does not make read access", abort());
+    QBDI_REQUIRE_ACTION(false && "Called on an instruction which does not make read access", abort());
 }
 
 RelocatableInst::UniquePtrVec GetWriteAddress::generate(const llvm::MCInst* inst,
@@ -200,11 +200,11 @@ RelocatableInst::UniquePtrVec GetWriteAddress::generate(const llvm::MCInst* inst
             if (FormDesc == llvm::X86II::RawFrmSrc) {
                 // (R|E)SI
                 reg = Reg(4);
-                Require("GetWriteAddress::generate", reg == llvm::X86::RSI || reg == llvm::X86::ESI);
+                QBDI_REQUIRE(reg == llvm::X86::RSI || reg == llvm::X86::ESI);
             } else {
                 // (R|E)DI
                 reg = Reg(5);
-                Require("GetWriteAddress::generate", reg == llvm::X86::RDI || reg == llvm::X86::EDI);
+                QBDI_REQUIRE(reg == llvm::X86::RDI || reg == llvm::X86::EDI);
             }
             return conv_unique<RelocatableInst>(NoReloc::unique(movrr(dest, reg)));
         }
@@ -267,10 +267,10 @@ RelocatableInst::UniquePtrVec GetWriteAddress::generate(const llvm::MCInst* inst
                         );
                 }
             }
-            RequireAction("GetWriteAddress::generate", false && "No memory address found in the instruction", abort());
+            QBDI_REQUIRE_ACTION(false && "No memory address found in the instruction", abort());
         }
     }
-    RequireAction("GetWriteAddress::generate", false && "Called on an instruction which does not make write access", abort());
+    QBDI_REQUIRE_ACTION(false && "Called on an instruction which does not make write access", abort());
 }
 
 RelocatableInst::UniquePtrVec GetReadValue::generate(const llvm::MCInst* inst,
@@ -307,17 +307,17 @@ RelocatableInst::UniquePtrVec GetReadValue::generate(const llvm::MCInst* inst,
                 return conv_unique<RelocatableInst>(NoReloc::unique(mov32rm8(dst, Reg(stack_register), 1, 0, 0, 0)));
             }
         } else if (implicitDSIAccess(*inst, desc)) {
-            RequireAction("GetReadValue::generate", index < 2 && "Wrong index", abort());
+            QBDI_REQUIRE_ACTION(index < 2 && "Wrong index", abort());
             unsigned int reg;
             if (FormDesc == llvm::X86II::RawFrmSrc ||
                 (FormDesc == llvm::X86II::RawFrmDstSrc && index == 0)) {
                 // (R|E)SI
                 reg = Reg(4);
-                Require("GetReadValue::generate", reg == llvm::X86::RSI || reg == llvm::X86::ESI);
+                QBDI_REQUIRE(reg == llvm::X86::RSI || reg == llvm::X86::ESI);
             } else {
                 // (R|E)DI
                 reg = Reg(5);
-                Require("GetReadValue::generate", reg == llvm::X86::RDI || reg == llvm::X86::EDI);
+                QBDI_REQUIRE(reg == llvm::X86::RDI || reg == llvm::X86::EDI);
             }
 
             if(size == 8) {
@@ -354,8 +354,8 @@ RelocatableInst::UniquePtrVec GetReadValue::generate(const llvm::MCInst* inst,
             unsigned dest = temp_manager->getRegForTemp(temp);
             // (R|E)BX
             unsigned int reg = Reg(1);
-            Require("GetReadValue::generate", reg == llvm::X86::RBX || reg == llvm::X86::EBX);
-            Require("GetReadValue::generate", size == 1);
+            QBDI_REQUIRE(reg == llvm::X86::RBX || reg == llvm::X86::EBX);
+            QBDI_REQUIRE(size == 1);
             return conv_unique<RelocatableInst>(
                 NoReloc::unique(movzxrr8(dest, llvm::X86::AL)),
                 NoReloc::unique(mov32rm8(dest, reg, 1, dest, 0, 0))
@@ -408,10 +408,10 @@ RelocatableInst::UniquePtrVec GetReadValue::generate(const llvm::MCInst* inst,
                         );
                 }
             }
-            RequireAction("GetReadValue::generate", false && "No memory address found in the instruction", abort());
+            QBDI_REQUIRE_ACTION(false && "No memory address found in the instruction", abort());
         }
     }
-    RequireAction("GetReadValue::generate", false && "Called on an instruction which does not make read access", abort());
+    QBDI_REQUIRE_ACTION(false && "Called on an instruction which does not make read access", abort());
 }
 
 RelocatableInst::UniquePtrVec GetWriteValue::generate(const llvm::MCInst* inst,
@@ -503,10 +503,10 @@ RelocatableInst::UniquePtrVec GetWriteValue::generate(const llvm::MCInst* inst,
                     return conv_unique<RelocatableInst>(NoReloc::unique(mov32rm8(dst, src_addr, 1, 0, 0, seg)));
                 }
             }
-            RequireAction("GetWriteValue::generate", false && "No memory address found in the instruction", abort());
+            QBDI_REQUIRE_ACTION(false && "No memory address found in the instruction", abort());
         }
     }
-    RequireAction("GetWriteValue::generate", false && "Called on an instruction which does not make write access", abort());
+    QBDI_REQUIRE_ACTION(false && "Called on an instruction which does not make write access", abort());
 }
 
 RelocatableInst::UniquePtrVec GetInstId::generate(const llvm::MCInst* inst,

@@ -18,7 +18,7 @@
 #ifndef QBDI_PLATFORM_H_
 #define QBDI_PLATFORM_H_
 
-#include "Config.h"
+#include "QBDI/Config.h"
 
 #ifdef QBDI_PLATFORM_WINDOWS
 # define QBDI_ALIGNED(n) __declspec(align(n))

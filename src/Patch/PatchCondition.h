@@ -26,8 +26,8 @@
 #include "Patch/Types.h"
 #include "Patch/PatchUtils.h"
 
-#include "Range.h"
-#include "State.h"
+#include "QBDI/Range.h"
+#include "QBDI/State.h"
 
 namespace llvm {
   class MCInst;

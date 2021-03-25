@@ -32,13 +32,13 @@ void ExecBroker::changeVMInstanceRef(VMInstanceRef vminstance) {
 }
 
 void ExecBroker::addInstrumentedRange(const Range<rword>& r) {
-    LogDebug("ExecBroker::addInstrumentedRange", "Adding instrumented range [%" PRIRWORD ", %" PRIRWORD "]",
+    QBDI_DEBUG("Adding instrumented range [{:x}, {:x}]",
              r.start(), r.end());
     instrumented.add(r);
 }
 
 void ExecBroker::removeInstrumentedRange(const Range<rword>& r) {
-    LogDebug("ExecBroker::removeInstrumentedRange", "Removing instrumented range [%" PRIRWORD ", %" PRIRWORD "]",
+    QBDI_DEBUG("Removing instrumented range [{:x}, {:x}]",
              r.start(), r.end());
     instrumented.remove(r);
 }
@@ -127,8 +127,8 @@ bool ExecBroker::transferExecution(rword addr, GPRState *gprState, FPRState *fpr
     hookedAddress = *ptr;
     hook = transferBlock.getCurrentPC() + transferBlock.getEpilogueOffset();
     *ptr = hook;
-    LogDebug("ExecBroker::transferExecution", "Patched %p hooking return address 0x%" PRIRWORD " with 0x%" PRIRWORD,
-             ptr, hookedAddress, *ptr);
+    QBDI_DEBUG("Patched 0x{:x} hooking return address 0x{:x} with 0x{:x}",
+             reinterpret_cast<uintptr_t>(ptr), hookedAddress, *ptr);
 
     // Write transfer state
     transferBlock.getContext()->gprState = *gprState;
@@ -136,7 +136,8 @@ bool ExecBroker::transferExecution(rword addr, GPRState *gprState, FPRState *fpr
     transferBlock.getContext()->hostState.selector = addr;
     transferBlock.getContext()->hostState.executeFlags = defaultExecuteFlags;
     // Execute transfer
-    LogDebug("ExecBroker::transferExecution", "Transfering execution to 0x%" PRIRWORD " using transferBlock %p", addr, &transferBlock);
+    QBDI_DEBUG("Transfering execution to 0x{:x} using transferBlock 0x{:x}", addr,
+            reinterpret_cast<uintptr_t>(&transferBlock));
     transferBlock.run();
     // Restore original return
     QBDI_GPR_SET(&transferBlock.getContext()->gprState, REG_PC, hookedAddress);
@@ -161,11 +162,12 @@ rword *ExecBroker::getReturnPoint(GPRState *gprState) const {
 
     for(int i = 0; i < SCAN_DISTANCE; i++) {
         if(isInstrumented(ptr[i])) {
-            LogDebug("ExecBroker::getReturnPoint", "Found instrumented return address on the stack at %p", &(ptr[i]));
+            QBDI_DEBUG("Found instrumented return address on the stack at 0x{:x}",
+                    reinterpret_cast<uintptr_t>(&(ptr[i])));
             return &(ptr[i]);
         }
     }
-    LogDebug("ExecBroker::getReturnPoint", "No instrumented return address found on the stack");
+    QBDI_DEBUG("No instrumented return address found on the stack");
     return NULL;
 }
 
@@ -176,17 +178,18 @@ rword *ExecBroker::getReturnPoint(GPRState *gprState) const {
     rword *ptr = (rword*) gprState->sp;
 
     if(isInstrumented(gprState->lr)) {
-        LogDebug("ExecBroker::getReturnPoint", "Found instrumented return address in LR register");
+        QBDI_DEBUG("Found instrumented return address in LR register");
         return &(gprState->lr);
     }
     for(int i = 0; i < SCAN_DISTANCE; i++) {
         if(isInstrumented(ptr[i])) {
-            LogDebug("ExecBroker::getReturnPoint", "Found instrumented return address on the stack at %p", &(ptr[i]));
+            QBDI_DEBUG("Found instrumented return address on the stack at 0x{:x}",
+                    reinterpret_cast<uintptr_t>(&(ptr[i])));
             return &(ptr[i]);
         }
     }
 
-    LogDebug("ExecBroker::getReturnPoint", "LR register does not contain an instrumented return address");
+    QBDI_DEBUG("LR register does not contain an instrumented return address");
     return NULL;
 }
 

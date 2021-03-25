@@ -21,12 +21,12 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-#include "Platform.h"
-#include "Callback.h"
-#include "Errors.h"
-#include "State.h"
-#include "Options.h"
-#include "InstAnalysis.h"
+#include "QBDI/Callback.h"
+#include "QBDI/Errors.h"
+#include "QBDI/InstAnalysis.h"
+#include "QBDI/Options.h"
+#include "QBDI/Platform.h"
+#include "QBDI/State.h"
 
 #ifdef __cplusplus
 namespace QBDI {

@@ -64,7 +64,7 @@ kern_return_t onBreakpoint(
         count = THREAD_STATE_COUNT;
         kr = thread_get_state(thread, THREAD_STATE_ID, (thread_state_t) &threadState, &count);
         if(kr != KERN_SUCCESS) {
-            LogError("DarwinProcess::onBreakpoint", "Failed to get thread state\n");
+            QBDI_ERROR("Failed to get thread state\n");
             exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
         }
 
@@ -75,7 +75,7 @@ kern_return_t onBreakpoint(
         count = THREAD_STATE_COUNT;
         kr = thread_set_state(thread, THREAD_STATE_ID, (thread_state_t) &threadState, count);
         if(kr != KERN_SUCCESS) {
-            LogError("DarwinProcess::onBreakpoint", "Failed to set thread state\n");
+            QBDI_ERROR("Failed to set thread state\n");
             exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
         }
 
@@ -96,7 +96,7 @@ kern_return_t onBreakpoint(
     return KERN_SUCCESS;
 }
 
-DarwinProcess::DarwinProcess(pid_t process):  pid(process), brk_address(nullptr), brk_value(0), 
+DarwinProcess::DarwinProcess(pid_t process):  pid(process), brk_address(nullptr), brk_value(0),
                                         suspended(true), prot_page(0), prot_rx(true) {
     kern_return_t kr;
     thread_act_array_t threads;
@@ -108,13 +108,13 @@ DarwinProcess::DarwinProcess(pid_t process):  pid(process), brk_address(nullptr)
     // Get task port
     kr = task_for_pid(mach_task_self(), process, &this->task);
     if(kr != KERN_SUCCESS) {
-        LogError("DarwinProcess::DarwinProcess", "Failed to get task for pid %u, are you running as root?", (unsigned) process);
+        QBDI_ERROR("Failed to get task for pid {}, are you running as root?", (unsigned) process);
         exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
     }
     // Get thread ports
     kr = task_threads(this->task, &threads, &count);
     if(kr != KERN_SUCCESS) {
-        LogError("DarwinProcess::DarwinProcess", "Failed to get task for pid %u, are you running as root?", (unsigned) process);
+        QBDI_ERROR("Failed to get task for pid {}, are you running as root?", (unsigned) process);
         exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
     }
     // Keep only the main thread (the preload doesn't support multithreading anyway)
@@ -122,13 +122,13 @@ DarwinProcess::DarwinProcess(pid_t process):  pid(process), brk_address(nullptr)
     for(unsigned i = 1; i < count; i++) {
         kr = mach_port_deallocate(mach_task_self(), threads[i]);
         if(kr != KERN_SUCCESS) {
-            LogError("DarwinProcess::DarwinProcess", "Failed to deallocate thread port");
+            QBDI_ERROR("Failed to deallocate thread port");
             exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
         }
     }
     kr = mach_vm_deallocate(mach_task_self(), (mach_vm_address_t) threads, count * sizeof(thread_act_t));
     if(kr != KERN_SUCCESS) {
-        LogError("DarwinProcess::DarwinProcess", "Failed to deallocate thread list");
+        QBDI_ERROR("Failed to deallocate thread list");
         exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
     }
 
@@ -136,7 +136,7 @@ DarwinProcess::DarwinProcess(pid_t process):  pid(process), brk_address(nullptr)
     this->kq = kqueue();
     EV_SET(&ke, process, EVFILT_PROC, EV_ADD, NOTE_EXIT, 0, NULL);
     if(kevent(this->kq, &ke, 1, NULL, 0, NULL) == -1) {
-        LogError("DarwinProcess::DarwinProcess", "Failed to setup kqueue");
+        QBDI_ERROR("Failed to setup kqueue");
         exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
     }
 
@@ -153,7 +153,7 @@ void DarwinProcess::suspend() {
     if(this->suspended == false) {
         kr = task_suspend(this->task);
         if(kr != KERN_SUCCESS) {
-            LogError("DarwinProcess::suspend", "Failed to suspend process: %s", mach_error_string(kr));
+            QBDI_ERROR("Failed to suspend process: {}", mach_error_string(kr));
             exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
         }
         this->suspended = true;
@@ -166,7 +166,7 @@ void DarwinProcess::resume() {
     if(this->suspended == true) {
         kr = task_resume(this->task);
         if(kr != KERN_SUCCESS) {
-            LogError("DarwinProcess::resume", "Failed to resume process: %s", mach_error_string(kr));
+            QBDI_ERROR("Failed to resume process: {}", mach_error_string(kr));
             exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
         }
         this->suspended = false;
@@ -187,7 +187,7 @@ void DarwinProcess::makeRW(void* address) {
     if(this->prot_rx == true) {
         kr = mach_vm_protect(this->task, (mach_vm_address_t) page, this->pageSize, false, VM_PROT_READ | VM_PROT_WRITE);
         if(kr != KERN_SUCCESS) {
-            LogError("DarwinProcess::makeRX", "Failed to change memory protection to RW of remote process: %s", mach_error_string(kr));
+            QBDI_ERROR("Failed to change memory protection to RW of remote process: {}", mach_error_string(kr));
             exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
         }
         this->prot_rx = false;
@@ -200,7 +200,7 @@ void DarwinProcess::makeRX() {
     if(this->prot_rx == false) {
         kr = mach_vm_protect(this->task, (mach_vm_address_t) this->prot_page, this->pageSize, false, VM_PROT_READ | VM_PROT_EXECUTE);
         if(kr != KERN_SUCCESS) {
-            LogError("DarwinProcess::makeRX", "Failed to change memory protection to RX of remote process: %s", mach_error_string(kr));
+            QBDI_ERROR("Failed to change memory protection to RX of remote process: {}", mach_error_string(kr));
             exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
         }
         this->prot_rx = true;
@@ -216,12 +216,12 @@ void DarwinProcess::setBreakpoint(void *address) {
     makeRW(address);
     kr = mach_vm_read_overwrite(this->task, (mach_vm_address_t) address, sizeof(uint8_t), (mach_vm_address_t) &this->brk_value, &readSize);
     if(kr != KERN_SUCCESS) {
-        LogError("DarwinProcess::setBreakpoint", "Failed to read remote process memory");
+        QBDI_ERROR("Failed to read remote process memory");
         exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
     }
     kr = mach_vm_write(this->task, (mach_vm_address_t) address, (mach_vm_offset_t) &BRK_INS, sizeof(uint8_t));
     if(kr != KERN_SUCCESS) {
-        LogError("DarwinProcess::setBreakpoint", "Failed to write remote process memory");
+        QBDI_ERROR("Failed to write remote process memory");
         exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
     }
     this->brk_address = address;
@@ -234,7 +234,7 @@ void DarwinProcess::unsetBreakpoint() {
     makeRW(this->brk_address);
     kr = mach_vm_write(this->task, (mach_vm_address_t) this->brk_address, (mach_vm_offset_t) &this->brk_value, sizeof(uint8_t));
     if(kr != KERN_SUCCESS) {
-        LogError("DarwinProcess::unsetBreakpoint", "Failed to write remote process memory");
+        QBDI_ERROR("Failed to write remote process memory");
         exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
     }
 }
@@ -253,7 +253,7 @@ int DarwinProcess::waitForStatus() {
     while(STATUS == Status::Running) {
         // Check for exit
         if(kevent(this->kq, nullptr, 0, &ke, 1, &zero) == -1) {
-            LogError("DarwinProcess::DarwinProcess", "Failed to poll the kqueue");
+            QBDI_ERROR("Failed to poll the kqueue");
             exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
         }
         if(ke.fflags & NOTE_EXIT) {
@@ -281,7 +281,7 @@ void DarwinProcess::getProcessGPR(QBDI::GPRState *gprState) {
     count = THREAD_STATE_COUNT;
     kr = thread_get_state(this->mainThread, THREAD_STATE_ID, (thread_state_t) &threadState, &count);
     if(kr != KERN_SUCCESS) {
-        LogError("DarwinProcess::getProcessGPR", "Failed to get GPR thread state: %s", mach_error_string(kr));
+        QBDI_ERROR("Failed to get GPR thread state: {}", mach_error_string(kr));
         exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
     }
 
@@ -296,7 +296,7 @@ void DarwinProcess::getProcessFPR(QBDI::FPRState *fprState) {
     count = THREAD_STATE_FP_COUNT;
     kr = thread_get_state(this->mainThread, THREAD_STATE_FP_ID, (thread_state_t) &floatState, &count);
     if(kr != KERN_SUCCESS) {
-        LogError("DarwinProcess::getProcessFPR", "Failed to get FPR thread state: %s", mach_error_string(kr));
+        QBDI_ERROR("Failed to get FPR thread state: {}", mach_error_string(kr));
         exit(QBDIPRELOAD_ERR_STARTUP_FAILED);
     }
 

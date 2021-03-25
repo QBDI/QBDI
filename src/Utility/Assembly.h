@@ -25,7 +25,7 @@
 #include "llvm/MC/MCRegisterInfo.h"
 #include "llvm/Support/raw_ostream.h"
 
-#include "Options.h"
+#include "QBDI/Options.h"
 #include "Utility/memory_ostream.h"
 
 namespace llvm {
@@ -68,7 +68,7 @@ public:
     llvm::MCDisassembler::DecodeStatus getInstruction(llvm::MCInst &inst, uint64_t &size,
                                             llvm::ArrayRef<uint8_t> bytes, uint64_t address) const;
 
-    void printDisasm(const llvm::MCInst &inst, uint64_t address, llvm::raw_ostream &out = llvm::errs()) const;
+    std::string showInst(const llvm::MCInst& inst, uint64_t address) const;
 
     const char* getRegisterName(unsigned int id) const {return MRI.getName(id); }
 

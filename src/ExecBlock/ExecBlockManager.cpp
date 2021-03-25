@@ -25,7 +25,7 @@
 #include "Utility/Assembly.h"
 #include "Utility/LogSys.h"
 
-#include "State.h"
+#include "QBDI/State.h"
 
 namespace QBDI {
 
@@ -36,28 +36,30 @@ ExecBlockManager::ExecBlockManager(const Assembly& assembly, VMInstanceRef vmins
 }
 
 ExecBlockManager::~ExecBlockManager() {
-    LogCallback(LogPriority::DEBUG, "ExecBlockManager::~ExecBlockManager", [&] (FILE *log) -> void {
-        this->printCacheStatistics(log);
+    QBDI_DEBUG_BLOCK({
+        this->printCacheStatistics();
     });
     clearCache();
 }
 
 void ExecBlockManager::changeVMInstanceRef(VMInstanceRef vminstance) {
     this->vminstance = vminstance;
-    for (auto &reg : regions)
-        for (auto &block : reg.blocks)
+    for (auto &reg : regions) {
+        for (auto &block : reg.blocks) {
             block->changeVMInstanceRef(vminstance);
+        }
+    }
 }
 
 float ExecBlockManager::getExpansionRatio() const {
-    LogDebug("ExecBlockManager::getExpansionRatio", "%zu / %zu", total_translation_size, total_translated_size);
+    QBDI_DEBUG("{} / {}", total_translation_size, total_translated_size);
     return static_cast<float>(total_translation_size) / static_cast<float>(total_translated_size);
 }
 
-void ExecBlockManager::printCacheStatistics(FILE* output) const {
+void ExecBlockManager::printCacheStatistics() const {
     float mean_occupation = 0.0;
     size_t region_overflow = 0;
-    fprintf(output, "\tCache made of %zu regions:\n", regions.size());
+    QBDI_DEBUG("\tCache made of {} regions:", regions.size());
     for(size_t i = 0; i < regions.size(); i++) {
         float occupation = 0.0;
         for(size_t j = 0; j < regions[i].blocks.size(); j++) {
@@ -70,7 +72,7 @@ void ExecBlockManager::printCacheStatistics(FILE* output) const {
             occupation /= regions[i].blocks.size();
         }
         mean_occupation += occupation;
-        fprintf(output, "\t\t[0x%" PRIRWORD ", 0x%" PRIRWORD "]: %zu blocks, %f occupation ratio\n",
+        QBDI_DEBUG("\t\t[0x{:x}, 0x{:x}]: {} blocks, {} occupation ratio",
                 regions[i].covered.start(),
                 regions[i].covered.end(),
                 regions[i].blocks.size(),
@@ -79,12 +81,12 @@ void ExecBlockManager::printCacheStatistics(FILE* output) const {
     if(regions.size() > 0) {
         mean_occupation /= regions.size();
     }
-    fprintf(output, "\tMean occupation ratio: %f\n", mean_occupation);
-    fprintf(output, "\tRegion overflow count: %zu\n", region_overflow);
+    QBDI_DEBUG("\tMean occupation ratio: {}", mean_occupation);
+    QBDI_DEBUG("\tRegion overflow count: {}", region_overflow);
 }
 
 ExecBlock* ExecBlockManager::getProgrammedExecBlock(rword address, SeqLoc* programmedSeqLock) {
-    LogDebug("ExecBlockManager::getProgrammedExecBlock", "Looking up sequence at address %" PRIRWORD, address);
+    QBDI_DEBUG("Looking up sequence at address {:x}", address);
 
     size_t r = searchRegion(address);
 
@@ -94,8 +96,10 @@ ExecBlock* ExecBlockManager::getProgrammedExecBlock(rword address, SeqLoc* progr
         // Attempting sequenceCache resolution
         const std::map<rword, SeqLoc>::const_iterator seqLoc = region.sequenceCache.find(address);
         if(seqLoc != region.sequenceCache.end()) {
-            LogDebug("ExecBlockManager::getProgrammedExecBlock", "Found sequence 0x%" PRIRWORD " in ExecBlock %p as seqID %" PRIu16,
-                     address, region.blocks[seqLoc->second.blockIdx].get(), seqLoc->second.seqID);
+            QBDI_DEBUG("Found sequence 0x{:x} in ExecBlock 0x{:x} as seqID {:x}",
+                     address,
+                     reinterpret_cast<uintptr_t>(region.blocks[seqLoc->second.blockIdx].get()),
+                     seqLoc->second.seqID);
             // copy current sequence info
             if (programmedSeqLock != nullptr) {
                 *programmedSeqLock = seqLoc->second;
@@ -121,8 +125,10 @@ ExecBlock* ExecBlockManager::getProgrammedExecBlock(rword address, SeqLoc* progr
                 address,
                 existingSeqLoc.seqEnd,
             };
-            LogDebug("ExecBlockManager::getProgrammedExecBlock", "Splitted seqID %" PRIu16 " at instID %" PRIu16 " in ExecBlock %p as new sequence with seqID %" PRIu16,
-                     existingSeqId, instLoc->second.instID, block, newSeqID);
+            QBDI_DEBUG("Splitted seqID {:x} at instID {:x} in ExecBlock 0x{:x} as new sequence with seqID {:x}",
+                     existingSeqId, instLoc->second.instID,
+                     reinterpret_cast<uintptr_t>(block),
+                     newSeqID);
             // copy current sequence info
             if (programmedSeqLock != nullptr) {
                 *programmedSeqLock = regions[r].sequenceCache[address];
@@ -131,12 +137,12 @@ ExecBlock* ExecBlockManager::getProgrammedExecBlock(rword address, SeqLoc* progr
             return block;
         }
     }
-    LogDebug("ExecBlockManager::getProgrammedExecBlock", "Cache miss for sequence 0x%" PRIRWORD, address);
+    QBDI_DEBUG("Cache miss for sequence 0x{:x}", address);
     return nullptr;
 }
 
 const ExecBlock* ExecBlockManager::getExecBlock(rword address) const {
-    LogDebug("ExecBlockManager::getExecBlock", "Looking up address %" PRIRWORD, address);
+    QBDI_DEBUG("Looking up address {:x}", address);
 
     size_t r = searchRegion(address);
 
@@ -146,12 +152,13 @@ const ExecBlock* ExecBlockManager::getExecBlock(rword address) const {
         // Attempting instCache resolution
         const std::map<rword, InstLoc>::const_iterator instLoc = region.instCache.find(address);
         if(instLoc != region.instCache.end()) {
-            LogDebug("ExecBlockManager::getExecBlock", "Found address 0x%" PRIRWORD " in ExecBlock %p",
-                     address, region.blocks[instLoc->second.blockIdx].get());
+            QBDI_DEBUG("Found address 0x{:x} in ExecBlock 0x{:x}",
+                     address,
+                     reinterpret_cast<uintptr_t>(region.blocks[instLoc->second.blockIdx].get()));
             return region.blocks[instLoc->second.blockIdx].get();
         }
     }
-    LogDebug("ExecBlockManager::getExecBlock", "Cache miss for address 0x%" PRIRWORD, address);
+    QBDI_DEBUG("Cache miss for address 0x{:x}", address);
     return nullptr;
 }
 
@@ -201,8 +208,8 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock, siz
 
     // Basic block truncation to prevent dedoubled instruction
     // patchEnd must be the number of instruction that wasn't in the cache for this basicblock
-    RequireAction("ExecBlockManager::writeBasicBlock", patchEnd <= basicBlock.size(), abort());
-    RequireAction("ExecBlockManager::writeBasicBlock", patchEnd == basicBlock.size() || region.instCache.count(basicBlock[patchEnd].metadata.address) == 1, abort());
+    QBDI_REQUIRE_ACTION(patchEnd <= basicBlock.size(), abort());
+    QBDI_REQUIRE_ACTION(patchEnd == basicBlock.size() || region.instCache.count(basicBlock[patchEnd].metadata.address) == 1, abort());
 
     while (patchEnd > 0 && region.instCache.count(basicBlock[patchEnd - 1].metadata.address) != 0) {
         // should never happen if preWriteBasicBlock is used
@@ -211,10 +218,10 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock, siz
 
     // Cache integrity safeguard, should never happen
     if(patchEnd == 0) {
-        LogDebug("ExecBlockManager::writeBasicBlock", "Cache hit, basic block 0x%" PRIRWORD " already exist", firstPatch.metadata.address);
+        QBDI_DEBUG("Cache hit, basic block 0x{:x} already exist", firstPatch.metadata.address);
         return;
     }
-    LogDebug("ExecBlockManager::writeBasicBlock", "Writting new basic block 0x%" PRIRWORD, firstPatch.metadata.address);
+    QBDI_DEBUG("Writting new basic block 0x{:x}", firstPatch.metadata.address);
 
     // Writing the basic block as one or more sequences
     while(patchIdx < patchEnd) {
@@ -224,7 +231,7 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock, siz
             // Optimally, a region should only have one ExecBlocks but misspredictions or oversized
             // basic blocks can cause overflows.
             if(i >= region.blocks.size()) {
-                RequireAction("ExecBlockManager::writeBasicBlock", i < (1<<16), abort());
+                QBDI_REQUIRE_ACTION(i < (1<<16), abort());
                 region.blocks.emplace_back(std::make_unique<ExecBlock>(assembly, vminstance, &execBlockPrologue, &execBlockEpilogue, epilogueSize));
                 if (epilogueSize == 0) {
                     epilogueSize = region.blocks[i]->getEpilogueSize();
@@ -247,11 +254,12 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch>& basicBlock, siz
                 for(size_t j = 0; j < res.patchWritten; j++) {
                     region.instCache[basicBlock[patchIdx + j].metadata.address] = InstLoc {static_cast<uint16_t>(i), static_cast<uint16_t>(startID + j)};
                 }
-                LogDebug("ExecBlockManager::writeBasicBlock",
-                         "Sequence 0x%" PRIRWORD "-0x%" PRIRWORD " written in ExecBlock %p as seqID %" PRIu16,
+                QBDI_DEBUG(
+                         "Sequence 0x{:x}-0x{:x} written in ExecBlock 0x{:x} as seqID {:x}",
                          basicBlock[patchIdx].metadata.address,
                          basicBlock[patchIdx + res.patchWritten - 1].metadata.endAddress(),
-                         region.blocks[i].get(), res.seqID);
+                         reinterpret_cast<uintptr_t>(region.blocks[i].get()),
+                         res.seqID);
                 // Updating counters
                 translated += basicBlock[patchIdx + res.patchWritten - 1].metadata.endAddress() - basicBlock[patchIdx].metadata.address;
                 translation += res.bytesWritten;
@@ -272,7 +280,7 @@ size_t ExecBlockManager::searchRegion(rword address) const {
     if(regions.size() == 0) {
         return 0;
     }
-    LogDebug("ExecBlockManager::searchRegion", "Searching for address 0x%" PRIRWORD, address);
+    QBDI_DEBUG("Searching for address 0x{:x}", address);
     // Binary search of the first region to look at
     while(low + 1 != high) {
         size_t idx = (low + high) / 2;
@@ -283,25 +291,24 @@ size_t ExecBlockManager::searchRegion(rword address) const {
             low = idx;
         }
         else {
-            LogDebug("ExecBlockManager::searchRegion", "Exact match for region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
+            QBDI_DEBUG("Exact match for region {} [0x{:x}, 0x{:x}]",
                      idx, regions[idx].covered.start(), regions[idx].covered.end());
             return idx;
         }
     }
-    LogDebug("ExecBlockManager::searchRegion", "Low match for region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
+    QBDI_DEBUG("Low match for region {} [0x{:x}, 0x{:x}]",
              low, regions[low].covered.start(), regions[low].covered.end());
     return low;
 }
 
 void ExecBlockManager::mergeRegion(size_t i) {
 
-    RequireAction("ExecBlockManager::mergeRegion", i + 1 < regions.size(), return);
-    RequireAction("ExecBlockManager::mergeRegion",
+    QBDI_REQUIRE_ACTION(i + 1 < regions.size(), return);
+    QBDI_REQUIRE_ACTION(
             regions[i].blocks.size() + regions[i+1].blocks.size() < (1<<16), abort());
 
-    LogDebug(
-            "ExecBlockManager::mergeRegion",
-            "Merge region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "] and region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
+    QBDI_DEBUG(
+            "Merge region {} [0x{:x}, 0x{:x}] and region {} [0x{:x}, 0x{:x}]",
             i,
             regions[i].covered.start(),
             regions[i].covered.end(),
@@ -358,9 +365,8 @@ size_t ExecBlockManager::findRegion(const Range<rword>& codeRange) {
         unsigned cost = 0;
         // Easy case: the code range is inside one of the region, we can return immediately
         if(regions[i].covered.contains(codeRange)) {
-            LogDebug(
-                "ExecBlockManager::findRegion",
-                "Basic block [0x%" PRIRWORD ", 0x%" PRIRWORD "] assigned to region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
+            QBDI_DEBUG(
+                "Basic block [0x{:x}, 0x{:x}] assigned to region {} [0x{:x}, 0x{:x}]",
                 codeRange.start(),
                 codeRange.end(),
                 i,
@@ -375,9 +381,8 @@ size_t ExecBlockManager::findRegion(const Range<rword>& codeRange) {
         // In order to avoid two regions to overlaps,
         //  we must use the first region that overlaps
         if(regions[i].covered.overlaps(codeRange)) {
-            LogDebug(
-                    "ExecBlockManager::findRegion",
-                    "Region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "] overlaps a part of basic block [0x%" PRIRWORD ", 0x%" PRIRWORD "], Try extend",
+            QBDI_DEBUG(
+                    "Region {} [0x{:x}, 0x{:x}] overlaps a part of basic block [0x{:x}, 0x{:x}], Try extend",
                     i,
                     regions[i].covered.start(),
                     regions[i].covered.end(),
@@ -388,7 +393,7 @@ size_t ExecBlockManager::findRegion(const Range<rword>& codeRange) {
             if(codeRange.start() < regions[i].covered.start()) {
                 // the previous region mustn't containt codeRange.start
                 // (should never happend as the iteration test the previous block first)
-                RequireAction("ExecBlockManager::findRegion",
+                QBDI_REQUIRE_ACTION(
                         i == 0 or regions[i-1].covered.end() <= codeRange.start(),
                         abort());
                 regions[i].covered.setStart(codeRange.start());
@@ -405,9 +410,8 @@ size_t ExecBlockManager::findRegion(const Range<rword>& codeRange) {
                     mergeRegion(i);
                 }
             }
-            LogDebug(
-                    "ExecBlockManager::findRegion",
-                    "New Region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
+            QBDI_DEBUG(
+                    "New Region {} [0x{:x}, 0x{:x}]",
                     i,
                     regions[i].covered.start(),
                     regions[i].covered.end()
@@ -432,9 +436,8 @@ size_t ExecBlockManager::findRegion(const Range<rword>& codeRange) {
     }
     // We found an extension candidate
     if(best_region != regions.size()) {
-        LogDebug(
-            "ExecBlockManager::findRegion",
-            "Extending region %zu [0x%" PRIRWORD ", 0x%" PRIRWORD "] to cover basic block [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
+        QBDI_DEBUG(
+            "Extending region {} [0x{:x}, 0x{:x}] to cover basic block [0x{:x}, 0x{:x}]",
             best_region,
             regions[best_region].covered.start(),
             regions[best_region].covered.end(),
@@ -457,9 +460,8 @@ size_t ExecBlockManager::findRegion(const Range<rword>& codeRange) {
             break;
         }
     }
-    LogDebug(
-        "ExecBlockManager::findRegion",
-        "Creating new region %zu to cover basic block [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
+    QBDI_DEBUG(
+        "Creating new region {} to cover basic block [0x{:x}, 0x{:x}]",
         insert,
         codeRange.start(),
         codeRange.end()
@@ -474,9 +476,8 @@ void ExecBlockManager::updateRegionStat(size_t r, rword translated) {
     regions[r].available = regions[r].blocks[0]->getEpilogueOffset();
     // Space which needs to be reserved for the non translated part of the covered region
     unsigned reserved = static_cast<unsigned>((static_cast<float>(regions[r].covered.size() - regions[r].translated)) * getExpansionRatio());
-    LogDebug(
-        "ExecBlockManager::updateRegionStat",
-        "Region %zu has %zu bytes available of which %u are reserved for %zu bytes of untranslated code",
+    QBDI_DEBUG(
+        "Region {} has {} bytes available of which {} are reserved for {} bytes of untranslated code",
         r,
         regions[r].available,
         reserved,
@@ -503,11 +504,11 @@ void ExecBlockManager::clearCache(RangeSet<rword> rangeSet) {
 void ExecBlockManager::flushCommit() {
     // It needs to be erased from last to first to preserve index validity
     if(needFlush) {
-        LogDebug("ExecBlockManager::flushCommit", "Flushing analysis caches");
+        QBDI_DEBUG("Flushing analysis caches");
         regions.erase(std::remove_if(regions.begin(), regions.end(),
             [](const ExecRegion &r) -> bool {
                 if (r.toFlush)
-                    LogDebug("ExecBlockManager::flushCommit", "Erasing region [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
+                    QBDI_DEBUG("Erasing region [0x{:x}, 0x{:x}]",
                              r.covered.start(), r.covered.end());
                 return r.toFlush;
             }), regions.end());
@@ -517,7 +518,7 @@ void ExecBlockManager::flushCommit() {
 
 void ExecBlockManager::clearCache(Range<rword> range) {
     size_t i = 0;
-    LogDebug("ExecBlockManager::clearCache", "Erasing range [0x%" PRIRWORD ", 0x%" PRIRWORD "]", range.start(), range.end());
+    QBDI_DEBUG("Erasing range [0x{:x}, 0x{:x}]", range.start(), range.end());
     for(i = 0; i < regions.size(); i++) {
         if(regions[i].covered.overlaps(range)) {
             regions[i].toFlush = true;
@@ -527,7 +528,7 @@ void ExecBlockManager::clearCache(Range<rword> range) {
 }
 
 void ExecBlockManager::clearCache(bool flushNow) {
-    LogDebug("ExecBlockManager::clearCache", "Erasing all cache");
+    QBDI_DEBUG("Erasing all cache");
     if (flushNow) {
         regions.clear();
         total_translated_size = 1;

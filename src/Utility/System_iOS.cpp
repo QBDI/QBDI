@@ -29,7 +29,7 @@
 
 #include "Utility/server-iOS-jit-user.h"
 #include "Utility/LogSys.h"
-#include "System.h"
+#include "Utility/System.h"
 
 
 #ifndef PT_TRACE_ME
@@ -53,7 +53,7 @@ void init_jit_server() {
         bootstrap_look_up(bootstrap_port, "com.apple.uikit.viewservice.frida",
                           &frida_jit);
         if (frida_jit == MACH_PORT_NULL) {
-            LogError("init_jit_server()", "Cannot attach to Frida JIT server !");
+            QBDI_ERROR("Cannot attach to Frida JIT server !");
         }
     }
     // disable code signature enforcement
@@ -90,7 +90,7 @@ bool isRWXSupported() {
         task = mach_task_self ();
 
         kr = vm_allocate(task, &page, pageSize, VM_FLAGS_ANYWHERE);
-        RequireAction("isRWXSupported", kr == KERN_SUCCESS, return);
+        QBDI_REQUIRE_ACTION(kr == KERN_SUCCESS, return);
 
         llvm::sys::MemoryBlock block((void*)page, pageSize);
 
@@ -154,7 +154,7 @@ llvm::sys::MemoryBlock allocateMappedMemory(size_t numBytes,
         if (frida_jit == MACH_PORT_NULL) {
             init_jit_server();
         }
-        RequireAction("allocateMappedMemory", frida_jit != MACH_PORT_NULL, return empty);
+        QBDI_REQUIRE_ACTION(frida_jit != MACH_PORT_NULL, return empty);
         kr = frida_jit_alloc(frida_jit, mach_task_self(), &page, size, VM_FLAGS_ANYWHERE);
         address = page;
         // no need to set permissions later
@@ -162,7 +162,7 @@ llvm::sys::MemoryBlock allocateMappedMemory(size_t numBytes,
     } else {
         kr = vm_allocate(mach_task_self(), &address, size, VM_FLAGS_ANYWHERE);
     }
-    RequireAction("allocateMappedMemory", kr == KERN_SUCCESS, return empty);
+    QBDI_REQUIRE_ACTION(kr == KERN_SUCCESS, return empty);
     // everything should be fine, set error code to 0
     ec = std::error_code();
 
@@ -205,7 +205,7 @@ const std::string getHostCPUName() {
             case CPU_SUBTYPE_ARM_V8:     return "cortex-a53";
             default: return "arm710t"; // Minimum model on iOS
         }
-    } 
+    }
 #ifdef CPU_TYPE_ARM64
     // ARM64 kernel
     else if (hostInfo.cpu_type == CPU_TYPE_ARM64) {
@@ -220,7 +220,7 @@ const std::string getHostCPUName() {
         return "swift";
     }
 #endif
-    LogWarning("System::getHostCPUName", "Unknown cpu type, using generic");
+    QBDI_WARN("Unknown cpu type, using generic");
     return "generic";
 }
 

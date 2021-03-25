@@ -19,7 +19,7 @@
 #include "llvm/MC/MCInst.h"
 #include "llvm/Support/Format.h"
 
-#include "ExecBlock.h"
+#include "ExecBlock/ExecBlock.h"
 #include "Patch/ExecBlockFlags.h"
 #include "Patch/Patch.h"
 #include "Patch/PatchGenerator.h"
@@ -31,9 +31,9 @@
 #include "Utility/LogSys.h"
 #include "Utility/System.h"
 
-#include "Memory.hpp"
-#include "Options.h"
-#include "Platform.h"
+#include "QBDI/Memory.hpp"
+#include "QBDI/Options.h"
+#include "QBDI/Platform.h"
 
 #if defined(QBDI_PLATFORM_WINDOWS)
     extern "C" void qbdi_runCodeBlock(void *codeBlock, QBDI::rword execflags);
@@ -62,11 +62,11 @@ ExecBlock::ExecBlock(const Assembly& assembly, VMInstanceRef vminstance,
 
     // Allocate 2 pages block
     codeBlock = QBDI::allocateMappedMemory(2*pageSize, nullptr, mflags, ec);
-    RequireAction("ExecBlock::ExecBlock", codeBlock.base() != nullptr, abort());
+    QBDI_REQUIRE_ACTION(codeBlock.base() != nullptr, abort());
     // Split it in two blocks
     dataBlock = llvm::sys::MemoryBlock(reinterpret_cast<void*>(reinterpret_cast<uint64_t>(codeBlock.base()) + pageSize), pageSize);
     codeBlock = llvm::sys::MemoryBlock(codeBlock.base(), pageSize);
-    LogDebug("ExecBlock::ExecBlock", "codeBlock @ 0x%" PRIRWORD " | dataBlock @ 0x%" PRIRWORD, reinterpret_cast<rword>(codeBlock.base()), reinterpret_cast<rword>(dataBlock.base()));
+    QBDI_DEBUG("codeBlock @ 0x{:x} | dataBlock @ 0x{:x}", reinterpret_cast<rword>(codeBlock.base()), reinterpret_cast<rword>(dataBlock.base()));
 
     // Other initializations
     context = static_cast<Context*>(dataBlock.base());
@@ -95,14 +95,14 @@ ExecBlock::ExecBlock(const Assembly& assembly, VMInstanceRef vminstance,
         }
         epilogueSize = codeStream->current_pos();
         codeStream->seek(0);
-        LogDebug("ExecBlock::ExecBlock", "Detect Epilogue size: %d", epilogueSize);
+        QBDI_DEBUG("Detect Epilogue size: {}", epilogueSize);
     }
     // JIT prologue and epilogue
     codeStream->seek(codeBlock.allocatedSize() - epilogueSize);
     for(const auto &inst: *execBlockEpilogue) {
         assembly.writeInstruction(inst->reloc(this), codeStream.get());
     }
-    RequireAction("ExecBlock::ExecBlock", codeStream->current_pos() == codeBlock.allocatedSize() && "Wrong Epilogue Size", abort());
+    QBDI_REQUIRE_ACTION(codeStream->current_pos() == codeBlock.allocatedSize() && "Wrong Epilogue Size", abort());
 
     codeStream->seek(0);
     for(const auto &inst: *execBlockPrologue) {
@@ -133,13 +133,11 @@ void ExecBlock::show() const {
         std::string disass;
 
         dstatus = assembly.getInstruction(inst, instSize, jitCode.slice(i), i);
-        RequireAction("ExecBlock::show", dstatus != llvm::MCDisassembler::Fail,
+        QBDI_REQUIRE_ACTION(dstatus != llvm::MCDisassembler::Fail,
             break
         );
 
-        llvm::raw_string_ostream disassOs(disass);
-        assembly.printDisasm(inst, reinterpret_cast<uint64_t>(codeBlock.base()) + i, disassOs);
-        disassOs.flush();
+        disass = assembly.showInst(inst, reinterpret_cast<uint64_t>(codeBlock.base()) + i);
         fprintf(stderr, "%s\n", disass.c_str());
     }
 
@@ -159,7 +157,7 @@ void ExecBlock::show() const {
 }
 
 void ExecBlock::selectSeq(uint16_t seqID) {
-    Require("ExecBlock::selectSeq", seqID < seqRegistry.size());
+    QBDI_REQUIRE(seqID < seqRegistry.size());
     currentSeq = seqID;
     currentInst = seqRegistry[currentSeq].startInstID;
     context->hostState.selector = reinterpret_cast<rword>(codeBlock.base()) + static_cast<rword>(instRegistry[seqRegistry[seqID].startInstID].offset);
@@ -176,22 +174,22 @@ void ExecBlock::run() {
 }
 
 VMAction ExecBlock::execute() {
-    LogDebug("ExecBlock::execute", "Executing ExecBlock %p programmed with selector at 0x%" PRIRWORD,
-             this, context->hostState.selector);
+    QBDI_DEBUG("Executing ExecBlock 0x{:x} programmed with selector at 0x{:x}",
+             reinterpret_cast<uintptr_t>(this), context->hostState.selector);
     do {
         context->hostState.callback = (rword) 0;
         context->hostState.data = (rword) 0;
 
-        LogDebug("ExecBlock::execute", "Execution of ExecBlock %p resumed at 0x%" PRIRWORD,
-                 this, context->hostState.selector);
+        QBDI_DEBUG("Execution of ExecBlock 0x{:x} resumed at 0x{:x}",
+                 reinterpret_cast<uintptr_t>(this), context->hostState.selector);
         run();
 
         if(context->hostState.callback != 0) {
             currentInst = context->hostState.origin;
 
-            LogDebug("ExecBlock::execute", "Callback request by ExecBlock %p for callback 0x%" PRIRWORD,
-                     this, context->hostState.callback);
-            Require("ExecBlock::execute", currentInst < instMetadata.size());
+            QBDI_DEBUG("Callback request by ExecBlock 0x{:x} for callback 0x{:x}",
+                     reinterpret_cast<uintptr_t>(this), context->hostState.callback);
+            QBDI_REQUIRE(currentInst < instMetadata.size());
 
             VMAction r = (reinterpret_cast<InstCallback>(context->hostState.callback))(
                 vminstance,
@@ -201,13 +199,13 @@ VMAction ExecBlock::execute() {
 
             switch(r) {
                 case CONTINUE:
-                    LogDebug("ExecBlock::execute", "Callback 0x%" PRIRWORD" returned CONTINUE", context->hostState.callback);
+                    QBDI_DEBUG("Callback 0x{:x}"" returned CONTINUE", context->hostState.callback);
                     break;
                 case BREAK_TO_VM:
-                    LogDebug("ExecBlock::execute", "Callback 0x%" PRIRWORD" returned BREAK_TO_VM", context->hostState.callback);
+                    QBDI_DEBUG("Callback 0x{:x}"" returned BREAK_TO_VM", context->hostState.callback);
                     return BREAK_TO_VM;
                 case STOP:
-                    LogDebug("ExecBlock::execute", "Callback 0x%" PRIRWORD" returned STOP", context->hostState.callback);
+                    QBDI_DEBUG("Callback 0x{:x}"" returned STOP", context->hostState.callback);
                     return STOP;
             }
         }
@@ -226,16 +224,16 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
 
     // Refuse to write empty sequence
     if(seqIt == seqEnd) {
-        LogWarning("ExecBlock::writeSequence", "Attempting to write empty sequence");
+        QBDI_WARN("Attempting to write empty sequence");
         return {EXEC_BLOCK_FULL, 0, 0};
     }
 
     // Check if there's enough space left
     if(getEpilogueOffset() <= MINIMAL_BLOCK_SIZE) {
-        LogDebug("ExecBlock::writeBasicBlock", "ExecBlock %p is full", this);
+        QBDI_DEBUG("ExecBlock 0x{:x} is full", reinterpret_cast<uintptr_t>(this));
         return {EXEC_BLOCK_FULL, 0, 0};
     }
-    LogDebug("ExecBlock::writeBasicBlock", "Attempting to write %zu patches to ExecBlock %p", std::distance(seqIt, seqEnd), this);
+    QBDI_DEBUG("Attempting to write {} patches to ExecBlock 0x{:x}", std::distance(seqIt, seqEnd), reinterpret_cast<uintptr_t>(this));
     // Pages are RWX on iOS
     // Ensure code block is RW
     if constexpr(not is_ios) {
@@ -250,13 +248,10 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
         uint32_t rollbackShadowIdx = shadowIdx;
         size_t rollbackShadowRegistry = shadowRegistry.size();
 
-        LogCallback(LogPriority::DEBUG, "ExecBlock::writeBasicBlock", [&] (FILE *log) -> void {
-            std::string disass;
-            llvm::raw_string_ostream disassOs(disass);
-            assembly.printDisasm(seqIt->metadata.inst, seqIt->metadata.address, disassOs);
-            disassOs.flush();
-            fprintf(log, "Attempting to write patch of %u RelocatableInst to ExecBlock %p for instruction %" PRIRWORD ": %s",
-                    seqIt->metadata.patchSize, this, seqIt->metadata.address, disass.c_str());
+        QBDI_DEBUG_BLOCK({
+            std::string disass =  assembly.showInst(seqIt->metadata.inst, seqIt->metadata.address);
+            QBDI_DEBUG("Attempting to write patch of {} RelocatableInst to ExecBlock 0x{:x} for instruction {:x}: {}",
+                    seqIt->metadata.patchSize, reinterpret_cast<uintptr_t>(this), seqIt->metadata.address, disass.c_str());
         });
         // Attempt to write a complete patch. If not, rollback to the last complete patch written
         for(const RelocatableInst::UniquePtr& inst : seqIt->insts) {
@@ -271,7 +266,7 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
         }
 
         if(rollback) {
-            LogDebug("ExecBlock::writeBasicBlock", "Not enough space left, rolling back to offset 0x%" PRIRWORD, rollbackOffset);
+            QBDI_DEBUG("Not enough space left, rolling back to offset 0x{:x}", rollbackOffset);
             // Seek to the last complete patch written and terminate it with a terminator
             codeStream->seek(rollbackOffset);
             // free shadows allocated by the rollbacked code
@@ -279,7 +274,7 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
             shadowRegistry.resize(rollbackShadowRegistry);
             // It's a NULL rollback, don't terminate it
             if(rollbackOffset == startOffset) {
-                LogDebug("ExecBlock::writeBasicBlock", "NULL rollback, nothing written to ExecBlock %p", this);
+                QBDI_DEBUG("NULL rollback, nothing written to ExecBlock 0x{:x}", reinterpret_cast<uintptr_t>(this));
                 return {EXEC_BLOCK_FULL, 0, 0};
             }
             needTerminator = true;
@@ -302,7 +297,7 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
     }
     // The last instruction of the sequence doesn't end with a change of RIP/PC, add a Terminator
     if (needTerminator) {
-        LogDebug("ExecBlock::writeBasicBlock", "Writting terminator to ExecBlock %p to finish non-exit sequence", this);
+        QBDI_DEBUG("Writting terminator to ExecBlock 0x{:x} to finish non-exit sequence", reinterpret_cast<uintptr_t>(this));
         RelocatableInst::UniquePtrVec terminator = getTerminator(instMetadata.back().endAddress());
         for(const RelocatableInst::UniquePtr &inst : terminator) {
             assembly.writeInstruction(inst->reloc(this), codeStream.get());
@@ -324,12 +319,12 @@ SeqWriteResult ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt
     seqRegistry.push_back(SeqInfo {startInstID, endInstID, executeFlags});
     // Return write results
     unsigned bytesWritten = static_cast<unsigned>(codeStream->current_pos() - startOffset);
-    LogDebug("ExecBlock::writeBasicBlock", "End write sequence in basicblock %p with execFlags : %x", this, executeFlags);
+    QBDI_DEBUG("End write sequence in basicblock 0x{:x} with execFlags : {:x}", reinterpret_cast<uintptr_t>(this), executeFlags);
     return SeqWriteResult {seqID, bytesWritten, patchWritten};
 }
 
 uint16_t ExecBlock::splitSequence(uint16_t instID) {
-    Require("ExecBlock::splitSequence", instID < instRegistry.size());
+    QBDI_REQUIRE(instID < instRegistry.size());
     uint16_t seqID = instRegistry[instID].seqID;
     seqRegistry.push_back(SeqInfo {
         instID,
@@ -340,10 +335,9 @@ uint16_t ExecBlock::splitSequence(uint16_t instID) {
 }
 
 void ExecBlock::makeRX() {
-    LogDebug("ExecBlock::makeRX", "Making ExecBlock %p RX", this);
+    QBDI_DEBUG("Making ExecBlock 0x{:x} RX", reinterpret_cast<uintptr_t>(this));
     if(pageState != RX) {
-        RequireAction(
-            "ExecBlock::makeRX",
+        QBDI_REQUIRE_ACTION(
             !llvm::sys::Memory::protectMappedMemory(codeBlock, PF::MF_READ | PF::MF_EXEC),
             abort()
         );
@@ -352,10 +346,9 @@ void ExecBlock::makeRX() {
 }
 
 void ExecBlock::makeRW() {
-    LogDebug("ExecBlock::makeRW", "Making ExecBlock %p RW", this);
+    QBDI_DEBUG("Making ExecBlock 0x{:x} RW", reinterpret_cast<uintptr_t>(this));
     if(pageState != RW) {
-        RequireAction(
-            "ExecBlock::makeRW",
+        QBDI_REQUIRE_ACTION(
             !llvm::sys::Memory::protectMappedMemory(codeBlock, PF::MF_READ | PF::MF_WRITE),
             abort()
         );
@@ -365,9 +358,9 @@ void ExecBlock::makeRW() {
 
 uint16_t ExecBlock::newShadow(uint16_t tag) {
     uint16_t id = shadowIdx++;
-    RequireAction("ExecBlock::newShadow", id * sizeof(rword) < dataBlock.allocatedSize() - sizeof(Context), abort());
+    QBDI_REQUIRE_ACTION(id * sizeof(rword) < dataBlock.allocatedSize() - sizeof(Context), abort());
     if(tag != ShadowReservedTag::Untagged) {
-        LogDebug("ExecBlock::newShadow", "Registering new tagged shadow %" PRIu16 " for instID %" PRIu16 " wih tag %" PRIu16, id, getNextInstID(), tag);
+        QBDI_DEBUG("Registering new tagged shadow {:x} for instID {:x} wih tag {:x}", id, getNextInstID(), tag);
         shadowRegistry.push_back({
             getNextInstID(),
             tag,
@@ -385,23 +378,23 @@ uint16_t ExecBlock::getLastShadow(uint16_t tag) {
             return it->shadowID;
         }
     }
-    LogError("ExecBlock::getLastShadow", "Cannot found shadow tag %" PRIu16 " for the current instruction", tag);
+    QBDI_ERROR("Cannot found shadow tag {:x} for the current instruction", tag);
     abort();
 }
 
 void ExecBlock::setShadow(uint16_t id, rword v) {
-    RequireAction("ExecBlock::setShadow", id * sizeof(rword) < dataBlock.allocatedSize() - sizeof(Context), abort());
+    QBDI_REQUIRE_ACTION(id * sizeof(rword) < dataBlock.allocatedSize() - sizeof(Context), abort());
     shadows[id] = v;
 }
 
 rword ExecBlock::getShadow(uint16_t id) const {
-    RequireAction("ExecBlock::getShadow", id * sizeof(rword) < dataBlock.allocatedSize() - sizeof(Context), abort());
+    QBDI_REQUIRE_ACTION(id * sizeof(rword) < dataBlock.allocatedSize() - sizeof(Context), abort());
     return shadows[id];
 }
 
 rword ExecBlock::getShadowOffset(uint16_t id) const {
     rword offset = sizeof(Context) + id*sizeof(rword);
-    RequireAction("ExecBlock::getShadowOffset", offset < dataBlock.allocatedSize(), abort());
+    QBDI_REQUIRE_ACTION(offset < dataBlock.allocatedSize(), abort());
     return offset;
 }
 
@@ -415,22 +408,22 @@ uint16_t ExecBlock::getInstID(rword address) const {
 }
 
 const InstMetadata& ExecBlock::getInstMetadata(uint16_t instID) const {
-    Require("ExecBlock::getInstMetadata", instID < instMetadata.size());
+    QBDI_REQUIRE(instID < instMetadata.size());
     return instMetadata[instID];
 }
 
 rword ExecBlock::getInstAddress(uint16_t instID) const {
-    Require("ExecBlock::getInstAddress", instID < instMetadata.size());
+    QBDI_REQUIRE(instID < instMetadata.size());
     return instMetadata[instID].address;
 }
 
 const llvm::MCInst& ExecBlock::getOriginalMCInst(uint16_t instID) const {
-    Require("ExecBlock::getOriginalMCInst", instID < instMetadata.size());
+    QBDI_REQUIRE(instID < instMetadata.size());
     return instMetadata[instID].inst;
 }
 
 const InstAnalysis* ExecBlock::getInstAnalysis(uint16_t instID, AnalysisType type) const {
-    Require("ExecBlock::getInstAnalysis", instID < instMetadata.size());
+    QBDI_REQUIRE(instID < instMetadata.size());
     return analyzeInstMetadata(instMetadata[instID], type, assembly);
 }
 
@@ -444,24 +437,24 @@ uint16_t ExecBlock::getSeqID(rword address) const {
 }
 
 uint16_t ExecBlock::getSeqID(uint16_t instID) const {
-    Require("ExecBlock::getSeqID", instID < instRegistry.size());
+    QBDI_REQUIRE(instID < instRegistry.size());
     return instRegistry[instID].seqID;
 }
 
 uint16_t ExecBlock::getSeqStart(uint16_t seqID) const {
-    Require("ExecBlock::getSeqStart", seqID < seqRegistry.size());
+    QBDI_REQUIRE(seqID < seqRegistry.size());
     return seqRegistry[seqID].startInstID;
 }
 
 uint16_t ExecBlock::getSeqEnd(uint16_t seqID) const {
-    Require("ExecBlock::getSeqStart", seqID < seqRegistry.size());
+    QBDI_REQUIRE(seqID < seqRegistry.size());
     return seqRegistry[seqID].endInstID;
 }
 
 const llvm::ArrayRef<ShadowInfo> ExecBlock::getShadowByInst(uint16_t instID) const {
-    Require("ExecBlock::getShadowByInst", instID < instRegistry.size());
-    Require("ExecBlock::getShadowByInst", instRegistry[instID].shadowOffset <= shadowRegistry.size());
-    Require("ExecBlock::getShadowByInst", instRegistry[instID].shadowOffset + instRegistry[instID].shadowSize <= shadowRegistry.size());
+    QBDI_REQUIRE(instID < instRegistry.size());
+    QBDI_REQUIRE(instRegistry[instID].shadowOffset <= shadowRegistry.size());
+    QBDI_REQUIRE(instRegistry[instID].shadowOffset + instRegistry[instID].shadowSize <= shadowRegistry.size());
 
     if (instRegistry[instID].shadowOffset == shadowRegistry.size()) {
         return llvm::ArrayRef<ShadowInfo> {};

@@ -21,8 +21,8 @@
 #include <memory>
 #include <vector>
 
-#include "Options.h"
-#include "State.h"
+#include "QBDI/Options.h"
+#include "QBDI/State.h"
 
 namespace QBDI {
 

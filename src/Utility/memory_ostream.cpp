@@ -20,7 +20,7 @@
 
 void memory_ostream::write_impl(const char *Ptr, size_t Size)
 {
-    RequireAction("memory_ostream::write_impl", pos + Size <= os.allocatedSize(), abort());
+    QBDI_REQUIRE_ACTION(pos + Size <= os.allocatedSize(), abort());
     char *os_ptr = (char*) ((uint64_t) os.base() + pos);
     for(uint64_t i = 0; i < Size; i++)
         os_ptr[i] = Ptr[i];
@@ -29,6 +29,6 @@ void memory_ostream::write_impl(const char *Ptr, size_t Size)
 
 void memory_ostream::seek(uint64_t pos)
 {
-    RequireAction("memory_ostream::seek", pos < os.allocatedSize(), abort());
+    QBDI_REQUIRE_ACTION(pos < os.allocatedSize(), abort());
     this->pos = pos;
 }

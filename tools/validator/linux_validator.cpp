@@ -30,8 +30,8 @@
 #include <sys/ptrace.h>
 #include <sys/wait.h>
 
-#include "Memory.hpp"
-#include "Platform.h"
+#include "QBDI/Memory.hpp"
+#include "QBDI/Platform.h"
 #include "Utility/LogSys.h"
 
 static bool INSTRUMENTED = false;
@@ -44,7 +44,7 @@ QBDIPRELOAD_INIT;
 
 int QBDI::qbdipreload_on_main(int argc, char** argv) {
     if (INSTRUMENTED) {
-        QBDI::LOGSYS.addFilter("*", QBDI::LogPriority::WARNING);
+        QBDI::setLogPriority(QBDI::LogPriority::WARNING);
         return QBDIPRELOAD_NOT_HANDLED;
 
     } else {

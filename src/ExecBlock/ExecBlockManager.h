@@ -22,9 +22,9 @@
 #include <map>
 #include <vector>
 
-#include "Callback.h"
-#include "Range.h"
-#include "State.h"
+#include "QBDI/Callback.h"
+#include "QBDI/Range.h"
+#include "QBDI/State.h"
 
 namespace llvm {
   class MCInstrInfo;
@@ -101,7 +101,7 @@ class ExecBlockManager {
 
     void changeVMInstanceRef(VMInstanceRef vminstance);
 
-    void printCacheStatistics(FILE* output) const;
+    void printCacheStatistics() const;
 
     ExecBlock* getProgrammedExecBlock(rword address, SeqLoc* programmedSeqLock=nullptr);
 

@@ -18,8 +18,7 @@
 #include <bitset>
 #include <algorithm>
 
-#include "Engine.h"
-#include "Errors.h"
+#include "Engine/Engine.h"
 
 #include "llvm/ADT/Triple.h"
 #include "llvm/ADT/SmallVector.h"
@@ -34,7 +33,6 @@
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
 
-#include "Platform.h"
 #include "ExecBlock/ExecBlockManager.h"
 #include "ExecBroker/ExecBroker.h"
 #include "Patch/InstInfo.h"
@@ -49,6 +47,9 @@
 #include "Utility/Assembly.h"
 #include "Utility/LogSys.h"
 #include "Utility/System.h"
+
+#include "QBDI/Errors.h"
+#include "QBDI/Platform.h"
 
 
 // Mask to identify VM events
@@ -85,8 +86,9 @@ void Engine::init() {
     if (cpu.empty()) {
         cpu = QBDI::getHostCPUName();
         // If API is broken on ARM, we are facing big problems...
-        if constexpr(is_arm)
-            Require("Engine::Engine", !cpu.empty() && cpu != "generic");
+        if constexpr(is_arm) {
+            QBDI_REQUIRE(!cpu.empty() && cpu != "generic");
+        }
     }
     if (mattrs.empty()) {
         mattrs = getHostCPUFeatures();
@@ -105,7 +107,7 @@ void Engine::init() {
     );
     llvm::Triple processTriple(tripleName);
     processTarget = llvm::TargetRegistry::lookupTarget(tripleName, error);
-    LogDebug("Engine::init", "Initialized LLVM for target %s", tripleName.c_str());
+    QBDI_DEBUG("Initialized LLVM for target {}", tripleName.c_str());
 
     // Allocate all LLVM classes
     llvm::MCTargetOptions MCOptions;
@@ -122,7 +124,7 @@ void Engine::init() {
     MSTI = std::unique_ptr<llvm::MCSubtargetInfo>(
       processTarget->createMCSubtargetInfo(tripleName, cpu, featuresStr)
     );
-    LogDebug("Engine::init", "Initialized LLVM subtarget with cpu %s and features %s", cpu.c_str(), featuresStr.c_str());
+    QBDI_DEBUG("Initialized LLVM subtarget with cpu {} and features {}", cpu.c_str(), featuresStr.c_str());
     auto MAB = std::unique_ptr<llvm::MCAsmBackend>(
         processTarget->createMCAsmBackend(*MSTI, *MRI, MCOptions)
     );
@@ -149,7 +151,7 @@ void Engine::init() {
 }
 
 void Engine::reinit(const std::string& cpu_, const std::vector<std::string>& mattrs_, Options opts) {
-    RequireAction("Engine::reinit", not running && "Cannot reInit a running Engine", abort());
+    QBDI_REQUIRE_ACTION(not running && "Cannot reInit a running Engine", abort());
 
     // clear callbacks
     instrRules.clear();
@@ -194,7 +196,7 @@ Engine::Engine(const Engine& other)
 }
 
 Engine& Engine::operator=(const Engine& other) {
-    RequireAction("Engine::operator=", not running && "Cannot assign a running Engine", abort());
+    QBDI_REQUIRE_ACTION(not running && "Cannot assign a running Engine", abort());
     this->clearAllCache();
 
     if (cpu != other.cpu || mattrs != other.mattrs) {
@@ -224,9 +226,9 @@ Engine& Engine::operator=(const Engine& other) {
 }
 
 void Engine::setOptions(Options options) {
-    RequireAction("Engine::setOptions", not running && "Cannot setOptions on a running Engine", abort());
+    QBDI_REQUIRE_ACTION(not running && "Cannot setOptions on a running Engine", abort());
     if (options != this->options) {
-        LogDebug("Engine::setOptions", "Change Options from %x to %x", this->options, options);
+        QBDI_DEBUG("Change Options from {:x} to {:x}", this->options, options);
         clearAllCache();
         assembly->setOptions(options);
 
@@ -244,7 +246,7 @@ void Engine::setOptions(Options options) {
 }
 
 void Engine::changeVMInstanceRef(VMInstanceRef vminstance) {
-    RequireAction("Engine::changeVMInstanceRef", not running && "Cannot changeVMInstanceRef on a running Engine", abort());
+    QBDI_REQUIRE_ACTION(not running && "Cannot changeVMInstanceRef on a running Engine", abort());
     this->vminstance = vminstance;
 
     blockManager->changeVMInstanceRef(vminstance);
@@ -280,12 +282,12 @@ FPRState* Engine::getFPRState() const {
 }
 
 void Engine::setGPRState(const GPRState* gprState) {
-    RequireAction("Engine::setGPRState", gprState, return);
+    QBDI_REQUIRE_ACTION(gprState, return);
     *(this->curGPRState) = *gprState;
 }
 
 void Engine::setFPRState(const FPRState* fprState) {
-    RequireAction("Engine::setFPRState", fprState, return);
+    QBDI_REQUIRE_ACTION(fprState, return);
     *(this->curFPRState) = *fprState;
 }
 
@@ -335,7 +337,7 @@ std::vector<Patch> Engine::patch(rword start) {
     const llvm::ArrayRef<uint8_t> code((uint8_t*) start, (size_t) -1);
     bool basicBlockEnd = false;
     rword i = 0;
-    LogDebug("Engine::patch", "Patching basic block at address 0x%" PRIRWORD, start);
+    QBDI_DEBUG("Patching basic block at address 0x{:x}", start);
 
     // Get Basic block
     while(basicBlockEnd == false) {
@@ -350,23 +352,20 @@ std::vector<Patch> Engine::patch(rword start) {
             // Disassemble
             dstatus = assembly->getInstruction(inst, instSize, code.slice(i), i);
             address = start + i;
-            RequireAction("Engine::patch", llvm::MCDisassembler::Success == dstatus, abort());
-            LogCallback(LogPriority::DEBUG, "Engine::patch", [&] (FILE *log) -> void {
-                std::string disass;
-                llvm::raw_string_ostream disassOs(disass);
-                assembly->printDisasm(inst, address, disassOs);
-                disassOs.flush();
-                fprintf(log, "Patching 0x%" PRIRWORD " %s", address, disass.c_str());
+            QBDI_REQUIRE_ACTION(llvm::MCDisassembler::Success == dstatus, abort());
+            QBDI_DEBUG_BLOCK({
+                std::string disass = assembly->showInst(inst, address);
+                QBDI_DEBUG("Patching 0x{:x} {}", address, disass.c_str());
             });
             // Patch & merge
             for(uint32_t j = 0; j < patchRules.size(); j++) {
                 if(patchRules[j].canBeApplied(inst, address, instSize, MCII.get())) {
-                    LogDebug("Engine::patch", "Patch rule %" PRIu32 " applied", j);
+                    QBDI_DEBUG("Patch rule {:x} applied", j);
                     if(patch.insts.size() == 0) {
                         patch = patchRules[j].generate(inst, address, instSize, MCII.get(), MRI.get());
                     }
                     else {
-                        LogDebug("Engine::patch", "Previous instruction merged");
+                        QBDI_DEBUG("Previous instruction merged");
                         patch = patchRules[j].generate(inst, address, instSize, MCII.get(), MRI.get(), &patch);
                     }
                     break;
@@ -374,10 +373,10 @@ std::vector<Patch> Engine::patch(rword start) {
             }
             i += instSize;
         } while(patch.metadata.merge);
-        LogDebug("Engine::patch", "Patch of size %" PRIu32 " generated", patch.metadata.patchSize);
+        QBDI_DEBUG("Patch of size {:x} generated", patch.metadata.patchSize);
 
         if(patch.metadata.modifyPC) {
-            LogDebug("Engine::patch", "Basic block starting at address 0x%" PRIRWORD " ended at address 0x%" PRIRWORD, start, address);
+            QBDI_DEBUG("Basic block starting at address 0x{:x} ended at address 0x{:x}", start, address);
             basicBlockEnd = true;
         }
 
@@ -388,24 +387,21 @@ std::vector<Patch> Engine::patch(rword start) {
 }
 
 void Engine::instrument(std::vector<Patch> &basicBlock, size_t patchEnd) {
-    LogDebug("Engine::instrument", "Instrumenting sequence [0x%" PRIRWORD ", 0x%" PRIRWORD "] in basic block [0x%" PRIRWORD ", 0x%" PRIRWORD "]",
+    QBDI_DEBUG("Instrumenting sequence [0x{:x}, 0x{:x}] in basic block [0x{:x}, 0x{:x}]",
              basicBlock.front().metadata.address, basicBlock[patchEnd - 1].metadata.address,
              basicBlock.front().metadata.address, basicBlock.back().metadata.address);
 
     for(size_t i = 0; i < patchEnd; i++) {
         Patch& patch = basicBlock[i];
-        LogCallback(LogPriority::DEBUG, "Engine::instrument", [&] (FILE *log) -> void {
-            std::string disass;
-            llvm::raw_string_ostream disassOs(disass);
-            assembly->printDisasm(patch.metadata.inst, patch.metadata.address, disassOs);
-            disassOs.flush();
-            fprintf(log, "Instrumenting 0x%" PRIRWORD " %s", patch.metadata.address, disass.c_str());
+        QBDI_DEBUG_BLOCK({
+            std::string disass = assembly->showInst(patch.metadata.inst, patch.metadata.address);
+            QBDI_DEBUG("Instrumenting 0x{:x} {}", patch.metadata.address, disass.c_str());
         });
         // Instrument
         for (const auto& item: instrRules) {
             const InstrRule* rule = item.second.get();
             if (rule->tryInstrument(patch, MCII.get(), MRI.get(), assembly.get())) { // Push MCII
-                LogDebug("Engine::instrument", "Instrumentation rule %" PRIu32 " applied", item.first);
+                QBDI_DEBUG("Instrumentation rule {:x} applied", item.first);
             }
         }
     }
@@ -425,7 +421,7 @@ void Engine::handleNewBasicBlock(rword pc) {
 
 
 bool Engine::precacheBasicBlock(rword pc) {
-    RequireAction("Engine::precacheBasicBlock", not running && "Cannot precacheBasicBlock on a running Engine", abort());
+    QBDI_REQUIRE_ACTION(not running && "Cannot precacheBasicBlock on a running Engine", abort());
     if(blockManager->isFlushPending()) {
         // Commit the flush
         blockManager->flushCommit();
@@ -442,7 +438,7 @@ bool Engine::precacheBasicBlock(rword pc) {
 
 
 bool Engine::run(rword start, rword stop) {
-    RequireAction("Engine::precacheBasicBlock", not running && "Cannot run an already running Engine", abort());
+    QBDI_REQUIRE_ACTION(not running && "Cannot run an already running Engine", abort());
 
     rword         currentPC = start;
     bool          hasRan = false;
@@ -471,7 +467,7 @@ bool Engine::run(rword start, rword stop) {
             basicBlockBeginAddr = 0;
             basicBlockEndAddr = 0;
 
-            LogDebug("Engine::run", "Executing 0x%" PRIRWORD " through execBroker", currentPC);
+            QBDI_DEBUG("Executing 0x{:x} through execBroker", currentPC);
             action = signalEvent(EXEC_TRANSFER_CALL, currentPC, nullptr, 0, curGPRState, curFPRState);
             // transfer execution
             if (action == CONTINUE) {
@@ -482,7 +478,7 @@ bool Engine::run(rword start, rword stop) {
         // Else execute through DBI
         else {
             VMEvent event = VMEvent::SEQUENCE_ENTRY;
-            LogDebug("Engine::run", "Executing 0x%" PRIRWORD " through DBI", currentPC);
+            QBDI_DEBUG("Executing 0x{:x} through DBI", currentPC);
 
             // Is cache flush pending?
             if(blockManager->isFlushPending()) {
@@ -499,13 +495,13 @@ bool Engine::run(rword start, rword stop) {
             SeqLoc currentSequence;
             curExecBlock = blockManager->getProgrammedExecBlock(currentPC, &currentSequence);
             if(curExecBlock == nullptr) {
-                LogDebug("Engine::run", "Cache miss for 0x%" PRIRWORD ", patching & instrumenting new basic block", currentPC);
+                QBDI_DEBUG("Cache miss for 0x{:x}, patching & instrumenting new basic block", currentPC);
                 handleNewBasicBlock(currentPC);
                 // Signal a new basic block
                 event |= BASIC_BLOCK_NEW;
                 // Set new basic block as current
                 curExecBlock = blockManager->getProgrammedExecBlock(currentPC, &currentSequence);
-                RequireAction("Engine::run", curExecBlock != nullptr, abort());
+                QBDI_REQUIRE_ACTION(curExecBlock != nullptr, abort());
             }
 
             if (basicBlockEndAddr == 0) {
@@ -540,7 +536,7 @@ bool Engine::run(rword start, rword stop) {
             }
         }
         if (action == STOP) {
-            LogDebug("Engine::run", "Receive STOP Action");
+            QBDI_DEBUG("Receive STOP Action");
             break;
         }
         if (action == BREAK_TO_VM) {
@@ -549,7 +545,7 @@ bool Engine::run(rword start, rword stop) {
         }
         // Get next block PC
         currentPC = QBDI_GPR_GET(curGPRState, REG_PC);
-        LogDebug("Engine::run", "Next address to execute is 0x%" PRIRWORD, currentPC);
+        QBDI_DEBUG("Next address to execute is 0x{:x}", currentPC);
     } while(currentPC != stop);
 
     // Copy final context
@@ -565,7 +561,7 @@ bool Engine::run(rword start, rword stop) {
 
 uint32_t Engine::addInstrRule(std::unique_ptr<InstrRule>&& rule) {
     uint32_t id = instrRulesCounter++;
-    RequireAction("Engine::addInstrRule", id < EVENTID_VM_MASK, return VMError::INVALID_EVENTID);
+    QBDI_REQUIRE_ACTION(id < EVENTID_VM_MASK, return VMError::INVALID_EVENTID);
 
     this->clearCache(rule->affectedRange());
 
@@ -583,7 +579,7 @@ uint32_t Engine::addInstrRule(std::unique_ptr<InstrRule>&& rule) {
 
 uint32_t Engine::addVMEventCB(VMEvent mask, VMCallback cbk, void *data) {
     uint32_t id = vmCallbacksCounter++;
-    RequireAction("Engine::addVMEventCB", id < EVENTID_VM_MASK, return VMError::INVALID_EVENTID);
+    QBDI_REQUIRE_ACTION(id < EVENTID_VM_MASK, return VMError::INVALID_EVENTID);
     vmCallbacks.emplace_back(id, CallbackRegistration {mask, cbk, data});
     eventMask |= mask;
     return id | EVENTID_VM_MASK;
@@ -623,7 +619,7 @@ const InstAnalysis* Engine::getInstAnalysis(rword address, AnalysisType type) co
         return nullptr;
     }
     uint16_t instID = block->getInstID(address);
-    RequireAction("Engine::getInstAnalysis", instID != NOT_FOUND, return nullptr);
+    QBDI_REQUIRE_ACTION(instID != NOT_FOUND, return nullptr);
     return block->getInstAnalysis(instID, type);
 }
 

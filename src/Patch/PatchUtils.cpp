@@ -19,7 +19,7 @@
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstrInfo.h"
 
-#include "Platform.h"
+#include "QBDI/Platform.h"
 #include "Patch/PatchUtils.h"
 #include "Patch/InstInfo.h"
 #include "Patch/RegisterSize.h"
@@ -108,7 +108,7 @@ Reg TempManager::getRegForTemp(unsigned int id) {
             return Reg(i);
         }
     }
-    LogError("TempManager::getRegForTemp", "No free registers found");
+    QBDI_ERROR("No free registers found");
     abort();
 }
 
@@ -133,7 +133,7 @@ unsigned TempManager::getSizedSubReg(unsigned reg, unsigned size) const {
             return subreg;
         }
     }
-    LogError("TempManager::getSizedSubReg", "No sub register of size %u found for register %u (%s)", size, reg, MRI->getName(reg));
+    QBDI_ERROR("No sub register of size {} found for register {} ({})", size, reg, MRI->getName(reg));
     abort();
 }
 

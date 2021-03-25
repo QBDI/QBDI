@@ -18,7 +18,7 @@
 #ifndef QBDI_ERRORS_H_
 #define QBDI_ERRORS_H_
 
-#include "Platform.h"
+#include "QBDI/Platform.h"
 
 #ifdef __cplusplus
 namespace QBDI {

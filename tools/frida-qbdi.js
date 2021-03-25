@@ -318,7 +318,7 @@ var QBDI_C = Object.freeze({
                                    rword, rword, rword, rword, rword, rword, rword, rword, rword, rword]),
     getModuleNames: _qbdibinder.bind('qbdi_getModuleNames', 'pointer', ['pointer']),
     // Logs
-    addLogFilter: _qbdibinder.bind('qbdi_addLogFilter', 'void', ['pointer', 'uint32']),
+    setLogPriority: _qbdibinder.bind('qbdi_setLogPriority', 'void', ['uint32']),
     // Helpers
     getVersion: _qbdibinder.bind('qbdi_getVersion', 'pointer', ['pointer']),
     getGPR: _qbdibinder.bind('qbdi_getGPR', rword, ['pointer', 'uint32']),
@@ -1492,9 +1492,8 @@ class QBDI {
     }
 
     // Logs
-    addLogFilter(tag, priority) {
-        var tagPtr = Memory.allocUtf8String(tag);
-        QBDI_C.addLogFilter(tagPtr, priority);
+    setLogPriority(priority) {
+        QBDI_C.setLogPriority(priority);
     }
 
     // Helpers

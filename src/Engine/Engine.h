@@ -28,11 +28,11 @@
 #include <malloc.h>
 #endif
 
-#include "Callback.h"
-#include "InstAnalysis.h"
-#include "Options.h"
-#include "State.h"
-#include "Range.h"
+#include "QBDI/Callback.h"
+#include "QBDI/InstAnalysis.h"
+#include "QBDI/Options.h"
+#include "QBDI/State.h"
+#include "QBDI/Range.h"
 
 namespace llvm {
     class MCAsmInfo;

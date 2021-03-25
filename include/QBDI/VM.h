@@ -24,13 +24,13 @@
 #include <cstdarg>
 #include <memory>
 
-#include "Platform.h"
-#include "Callback.h"
-#include "Errors.h"
-#include "State.h"
-#include "InstAnalysis.h"
-#include "Range.h"
-#include "Options.h"
+#include "QBDI/Callback.h"
+#include "QBDI/Errors.h"
+#include "QBDI/InstAnalysis.h"
+#include "QBDI/Options.h"
+#include "QBDI/Platform.h"
+#include "QBDI/Range.h"
+#include "QBDI/State.h"
 
 namespace QBDI {
 

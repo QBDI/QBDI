@@ -23,8 +23,8 @@
 #include "llvm/MC/MCInstrDesc.h"
 #include "MCTargetDesc/X86BaseInfo.h"
 
-#include "InstAnalysis_prive.h"
-#include "LogSys.h"
+#include "Utility/InstAnalysis_prive.h"
+#include "Utility/LogSys.h"
 
 namespace QBDI {
 
@@ -47,7 +47,7 @@ static ConditionType ConditionLLVM2QBDI(unsigned cond) {
         case llvm::X86::CondCode::COND_S : return CONDITION_SIGN;
         case llvm::X86::CondCode::COND_NS: return CONDITION_NOT_SIGN;
         default:
-          LogError("ConditionLLVM2QBDI", "Unsupported LLVM condition %d", cond);
+          QBDI_ERROR("Unsupported LLVM condition {}", cond);
           abort();
     }
 }

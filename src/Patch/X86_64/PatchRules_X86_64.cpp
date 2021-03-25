@@ -44,7 +44,7 @@ RelocatableInst::UniquePtrVec getExecBlockPrologue(Options opts) {
         prologue.push_back(Fxrstor(Offset(offsetof(Context, fprState))));
         // target je needFPU
         if(isHostCPUFeaturePresent("avx")) {
-            LogDebug("getExecBlockPrologue", "AVX support enabled in guest context switches");
+            QBDI_DEBUG("AVX support enabled in guest context switches");
             // don't restore if not needed
             if ((opts & Options::OPT_DISABLE_OPTIONAL_FPR) == 0) {
                 prologue.push_back(Test(Reg(0), ExecBlockFlags::needAVX));
@@ -109,7 +109,7 @@ RelocatableInst::UniquePtrVec getExecBlockEpilogue(Options opts) {
         epilogue.push_back(Fxsave(Offset(offsetof(Context, fprState))));
         // target je needFPU
         if(isHostCPUFeaturePresent("avx")) {
-            LogDebug("getExecBlockEpilogue", "AVX support enabled in guest context switches");
+            QBDI_DEBUG("AVX support enabled in guest context switches");
             // don't save if not needed
             if ((opts & Options::OPT_DISABLE_OPTIONAL_FPR) == 0) {
                 epilogue.push_back(Test(Reg(0), ExecBlockFlags::needAVX));
