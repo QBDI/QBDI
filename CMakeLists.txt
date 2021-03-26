@@ -363,6 +363,8 @@ if(${DEPENDENCY_SATISFIED})
 
         set(RESOURCES_PREFIX "${CMAKE_INSTALL_DATADIR}/qbdi${QBDI_ARCH}")
 
+        install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt" DESTINATION "${RESOURCES_PREFIX}" COMPONENT QBDI)
+
         install(EXPORT QBDI_targets
             FILE QBDIConfig.cmake
             NAMESPACE QBDI::
@@ -420,6 +422,8 @@ if(${DEPENDENCY_SATISFIED})
             FILE QBDI${QBDI_ARCH}Config.cmake
             NAMESPACE QBDI::${QBDI_ARCH}::
             DESTINATION cmake)
+
+        install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt" DESTINATION .)
 
         install(DIRECTORY templates/qbdi_template/ DESTINATION templates/qbdi_template)
 

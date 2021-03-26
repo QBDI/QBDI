@@ -103,6 +103,7 @@ setup(
     version='0.8.1b0',
     author='Nicolas Surbayrole',
     license = "apache2",
+    license_files = ('LICENSE.txt',),
     author_email='qbdi@quarkslab.com',
     description='Python binding for QBDI',
     long_description=long_description,
