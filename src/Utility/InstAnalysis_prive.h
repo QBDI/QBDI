@@ -23,10 +23,10 @@
 #include "QBDI/InstAnalysis.h"
 
 namespace llvm {
-  class MCInstrDesc;
-  class MCInstrInfo;
-  class MCRegisterInfo;
-}
+class MCInstrDesc;
+class MCInstrInfo;
+class MCRegisterInfo;
+} // namespace llvm
 
 namespace QBDI {
 
@@ -34,19 +34,21 @@ class Assembly;
 class InstMetadata;
 
 struct InstAnalysisDestructor {
-  void operator()(InstAnalysis* ptr) const;
+  void operator()(InstAnalysis *ptr) const;
 };
 
 using InstAnalysisPtr = std::unique_ptr<InstAnalysis, InstAnalysisDestructor>;
 
-const InstAnalysis* analyzeInstMetadata(const InstMetadata& instMetadata, AnalysisType type,
-                                        const Assembly& assembly);
+const InstAnalysis *analyzeInstMetadata(const InstMetadata &instMetadata,
+                                        AnalysisType type,
+                                        const Assembly &assembly);
 
 // X86 specific
-void analyseCondition(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const llvm::MCInstrDesc& desc);
+void analyseCondition(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
+                      const llvm::MCInstrDesc &desc);
 bool isSupportedOperandType(unsigned opType);
-unsigned getBias(const llvm::MCInstrDesc& desc);
+unsigned getBias(const llvm::MCInstrDesc &desc);
 
-}
+} // namespace QBDI
 
 #endif

@@ -18,10 +18,9 @@
 #ifndef LAYER2_ARM_H
 #define LAYER2_ARM_H
 
-#include "Patch/Types.h"
 #include "Patch/ARM/RelocatableInst_ARM.h"
+#include "Patch/Types.h"
 #include "Utility/LogSys.h"
-
 
 namespace QBDI {
 
@@ -57,9 +56,11 @@ RelocatableInst::SharedPtr Str(Reg reg, Offset offset);
 
 RelocatableInst::SharedPtr Str(Reg reg, Constant constant);
 
-RelocatableInst::SharedPtr Vstrs(unsigned int reg, unsigned int base, rword offset);
+RelocatableInst::SharedPtr Vstrs(unsigned int reg, unsigned int base,
+                                 rword offset);
 
-RelocatableInst::SharedPtr Vldrs(unsigned int reg, unsigned int base, rword offset);
+RelocatableInst::SharedPtr Vldrs(unsigned int reg, unsigned int base,
+                                 rword offset);
 
 RelocatableInst::SharedPtr Adr(Reg reg, rword offset);
 
@@ -72,6 +73,6 @@ RelocatableInst::SharedPtr Mrs(Reg reg);
 RelocatableInst::SharedPtr Popr(Reg reg);
 
 RelocatableInst::SharedPtr Pushr(Reg reg);
-}
+} // namespace QBDI
 
 #endif

@@ -21,11 +21,10 @@
 namespace QBDI {
 namespace pyQBDI {
 
-void init_binding_State(py::module_& m) {
+void init_binding_State(py::module_ &m) {
 
-
-    // TODO
+  // TODO
 }
 
-}}
-
+} // namespace pyQBDI
+} // namespace QBDI

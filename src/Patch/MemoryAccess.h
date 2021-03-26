@@ -26,12 +26,13 @@ namespace QBDI {
 
 class ExecBlock;
 
-void analyseMemoryAccess(const ExecBlock& currentExecBlock, uint16_t instID, bool afterInst, std::vector<MemoryAccess>& dest);
+void analyseMemoryAccess(const ExecBlock &currentExecBlock, uint16_t instID,
+                         bool afterInst, std::vector<MemoryAccess> &dest);
 
 std::vector<std::unique_ptr<InstrRule>> getInstrRuleMemAccessRead();
 
 std::vector<std::unique_ptr<InstrRule>> getInstrRuleMemAccessWrite();
 
-}
+} // namespace QBDI
 
 #endif

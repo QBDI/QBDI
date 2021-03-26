@@ -27,7 +27,9 @@ namespace QBDI {
 /*! QBDI Error values
  */
 typedef enum {
-    _QBDI_EI(INVALID_EVENTID) = 0xffffffff,  /*!< Mark a returned event id as invalid */
+  _QBDI_EI(INVALID_EVENTID) = 0xffffffff, /*!< Mark a returned event id as
+                                           * invalid
+                                           */
 } VMError;
 
 #ifdef __cplusplus

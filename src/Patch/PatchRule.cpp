@@ -16,52 +16,56 @@
  * limitations under the License.
  */
 
+#include "Patch/PatchRule.h"
 #include "Patch/ExecBlockFlags.h"
 #include "Patch/PatchGenerator.h"
-#include "Patch/PatchRule.h"
 
 namespace QBDI {
 
-PatchRule::PatchRule(PatchCondition::UniquePtr&& condition, std::vector<std::unique_ptr<PatchGenerator>>&& generators)
-        : condition(std::move(condition)), generators(std::move(generators)) {};
+PatchRule::PatchRule(PatchCondition::UniquePtr &&condition,
+                     std::vector<std::unique_ptr<PatchGenerator>> &&generators)
+    : condition(std::move(condition)), generators(std::move(generators)){};
 
 PatchRule::~PatchRule() = default;
 
-PatchRule::PatchRule(PatchRule&&) = default;
+PatchRule::PatchRule(PatchRule &&) = default;
 
 Patch PatchRule::generate(const llvm::MCInst &inst, rword address,
-    rword instSize, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI, Patch* toMerge) const {
+                          rword instSize, const llvm::MCInstrInfo *MCII,
+                          const llvm::MCRegisterInfo *MRI,
+                          Patch *toMerge) const {
 
-    Patch patch(inst, address, instSize);
-    patch.metadata.execblockFlags = getExecBlockFlags(inst, MCII, MRI);
-    if(toMerge != nullptr) {
-        patch.metadata.address = toMerge->metadata.address;
-        patch.metadata.instSize += toMerge->metadata.instSize;
-        patch.metadata.execblockFlags |= toMerge->metadata.execblockFlags;
-    }
-    TempManager temp_manager(inst, MCII, MRI);
-    bool modifyPC = false;
-    bool merge = false;
+  Patch patch(inst, address, instSize);
+  patch.metadata.execblockFlags = getExecBlockFlags(inst, MCII, MRI);
+  if (toMerge != nullptr) {
+    patch.metadata.address = toMerge->metadata.address;
+    patch.metadata.instSize += toMerge->metadata.instSize;
+    patch.metadata.execblockFlags |= toMerge->metadata.execblockFlags;
+  }
+  TempManager temp_manager(inst, MCII, MRI);
+  bool modifyPC = false;
+  bool merge = false;
 
-    for(const auto &g : generators) {
-        patch.append(g->generate(&inst, address, instSize, MCII, &temp_manager, toMerge));
-        modifyPC |= g->modifyPC();
-        merge |= g->doNotInstrument();
-    }
-    patch.setMerge(merge);
-    patch.setModifyPC(modifyPC);
+  for (const auto &g : generators) {
+    patch.append(
+        g->generate(&inst, address, instSize, MCII, &temp_manager, toMerge));
+    modifyPC |= g->modifyPC();
+    merge |= g->doNotInstrument();
+  }
+  patch.setMerge(merge);
+  patch.setModifyPC(modifyPC);
 
-    Reg::Vec used_registers = temp_manager.getUsedRegisters();
+  Reg::Vec used_registers = temp_manager.getUsedRegisters();
 
-    for(unsigned int i = 0; i < used_registers.size(); i++) {
-        patch.prepend(SaveReg(used_registers[i], Offset(used_registers[i])));
-    }
+  for (unsigned int i = 0; i < used_registers.size(); i++) {
+    patch.prepend(SaveReg(used_registers[i], Offset(used_registers[i])));
+  }
 
-    for(unsigned int i = 0; i < used_registers.size(); i++) {
-        patch.append(LoadReg(used_registers[i], Offset(used_registers[i])));
-    }
+  for (unsigned int i = 0; i < used_registers.size(); i++) {
+    patch.append(LoadReg(used_registers[i], Offset(used_registers[i])));
+  }
 
-    return patch;
+  return patch;
 }
 
 } // namespace QBDI

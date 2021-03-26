@@ -19,19 +19,19 @@
 #define QBDITEST_INSTANALYSISTEST
 
 #include <memory>
-#include "VM.h"
 #include "TestSetup/InMemoryAssembler.h"
+#include "VM.h"
 
 class InstAnalysisTest {
-    private:
-        std::vector<InMemoryObject> objects;
+private:
+  std::vector<InMemoryObject> objects;
 
-    protected:
-        InstAnalysisTest() : vm() {}
+protected:
+  InstAnalysisTest() : vm() {}
 
-        QBDI::rword writeASM(const char* source);
+  QBDI::rword writeASM(const char *source);
 
-        QBDI::VM vm;
+  QBDI::VM vm;
 };
 
 #endif /* QBDITEST_INSTANALYSISTEST */

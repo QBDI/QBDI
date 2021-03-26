@@ -20,8 +20,8 @@
 
 #include "process.h"
 
-#include <stdint.h>
 #include <mach/task.h>
+#include <stdint.h>
 
 static const uint8_t BRK_INS = 0xCC;
 
@@ -50,47 +50,45 @@ static const uint8_t BRK_INS = 0xCC;
 class DarwinProcess : public Process {
 
 private:
-    
-    pid_t pid;
-    task_t task;
-    thread_act_t mainThread;
-    void* brk_address;
-    uint8_t  brk_value;
-    bool suspended;
-    QBDI::rword pageSize;
-    QBDI::rword prot_page;
-    bool prot_rx;
-    int kq;
+  pid_t pid;
+  task_t task;
+  thread_act_t mainThread;
+  void *brk_address;
+  uint8_t brk_value;
+  bool suspended;
+  QBDI::rword pageSize;
+  QBDI::rword prot_page;
+  bool prot_rx;
+  int kq;
 
-    void suspend();
+  void suspend();
 
-    void resume();
+  void resume();
 
-    void makeRW(void* address);
+  void makeRW(void *address);
 
-    void makeRX();
+  void makeRX();
 
 public:
+  DarwinProcess(pid_t process);
 
-    DarwinProcess(pid_t process);
+  pid_t getPID() { return pid; }
 
-    pid_t getPID() { return pid; }
+  void setBreakpoint(void *address);
 
-    void setBreakpoint(void* address);
+  void unsetBreakpoint();
 
-    void unsetBreakpoint();
+  void continueExecution();
 
-    void continueExecution();
+  int waitForStatus();
 
-    int waitForStatus();
+  void getProcessGPR(QBDI::GPRState *gprState);
 
-    void getProcessGPR(QBDI::GPRState *gprState);
-    
-    void getProcessFPR(QBDI::FPRState *fprState);
+  void getProcessFPR(QBDI::FPRState *fprState);
 };
 
-void threadStateToGPRState(THREAD_STATE* ts, QBDI::GPRState* gprState);
+void threadStateToGPRState(THREAD_STATE *ts, QBDI::GPRState *gprState);
 
-void floatStateToFPRState(THREAD_STATE_FP* fs, QBDI::FPRState* fprState);
+void floatStateToFPRState(THREAD_STATE_FP *fs, QBDI::FPRState *fprState);
 
 #endif // DARWIN_PROCESS_H

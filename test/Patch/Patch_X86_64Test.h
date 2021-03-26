@@ -18,24 +18,20 @@
 #ifndef PATCH_X86_64TEST_H
 #define PATCH_X86_64TEST_H
 
+#include <sstream>
 #include <string.h>
 #include <string>
-#include <sstream>
 
 #include "Platform.h"
 
 #if defined(QBDI_ARCH_X86)
 #include "ComparedExecutor_X86.h"
 
-class Patch_X86_64Test : public ComparedExecutor_X86 {
-
-};
+class Patch_X86_64Test : public ComparedExecutor_X86 {};
 #else
 #include "ComparedExecutor_X86_64.h"
 
-class Patch_X86_64Test : public ComparedExecutor_X86_64 {
-
-};
+class Patch_X86_64Test : public ComparedExecutor_X86_64 {};
 #endif
 
 #endif

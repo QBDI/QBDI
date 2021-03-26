@@ -18,15 +18,13 @@
 #ifndef PATCH_ARMTEST_H
 #define PATCH_ARMTEST_H
 
+#include <sstream>
 #include <stdlib.h>
 #include <string.h>
 #include <string>
-#include <sstream>
 
 #include "Patch/ComparedExecutor_ARM.h"
 
-class Patch_ARMTest : public ComparedExecutor_ARM {
-
-};
+class Patch_ARMTest : public ComparedExecutor_ARM {};
 
 #endif

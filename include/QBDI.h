@@ -19,11 +19,11 @@
 #define QBDI_H_
 
 #ifdef __cplusplus
-#include "QBDI/VM.h"
 #include "QBDI/Memory.hpp"
+#include "QBDI/VM.h"
 #else
-#include "QBDI/VM_C.h"
 #include "QBDI/Memory.h"
+#include "QBDI/VM_C.h"
 #endif
 
 #include "QBDI/Logs.h"

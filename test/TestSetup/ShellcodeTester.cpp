@@ -15,53 +15,54 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <catch2/catch.hpp>
 #include "TestSetup/ShellcodeTester.h"
-
+#include <catch2/catch.hpp>
 
 llvm::sys::MemoryBlock ShellcodeTester::allocateStack(QBDI::rword size) {
-    std::error_code  ec;
-    llvm::sys::MemoryBlock stackBlock;
+  std::error_code ec;
+  llvm::sys::MemoryBlock stackBlock;
 
-    stackBlock = llvm::sys::Memory::allocateMappedMemory(size, nullptr,
-                                                         PF::MF_READ | PF::MF_WRITE, ec);
-    CHECK(0 == ec.value());
-    memset(stackBlock.base(), 0, stackBlock.allocatedSize());
-    return stackBlock;
+  stackBlock = llvm::sys::Memory::allocateMappedMemory(
+      size, nullptr, PF::MF_READ | PF::MF_WRITE, ec);
+  CHECK(0 == ec.value());
+  memset(stackBlock.base(), 0, stackBlock.allocatedSize());
+  return stackBlock;
 }
 
 void ShellcodeTester::freeStack(llvm::sys::MemoryBlock &memoryBlock) {
-    CHECK(0 == llvm::sys::Memory::releaseMappedMemory(memoryBlock).value());
+  CHECK(0 == llvm::sys::Memory::releaseMappedMemory(memoryBlock).value());
 }
 
-void ShellcodeTester::comparedExec(const char* source, QBDI::Context &inputCtx,
+void ShellcodeTester::comparedExec(const char *source, QBDI::Context &inputCtx,
                                    QBDI::rword stackSize) {
-    InMemoryObject object = compileWithContextSwitch(source);
+  InMemoryObject object = compileWithContextSwitch(source);
 
-    QBDI::Context realCtx, jitCtx;
-    llvm::sys::MemoryBlock realStack = allocateStack(stackSize);
-    llvm::sys::MemoryBlock jitStack = allocateStack(stackSize);
-    REQUIRE(realStack.allocatedSize() == jitStack.allocatedSize());
+  QBDI::Context realCtx, jitCtx;
+  llvm::sys::MemoryBlock realStack = allocateStack(stackSize);
+  llvm::sys::MemoryBlock jitStack = allocateStack(stackSize);
+  REQUIRE(realStack.allocatedSize() == jitStack.allocatedSize());
 
-    const llvm::ArrayRef<uint8_t>& code = object.getCode();
-    llvm::sys::Memory::InvalidateInstructionCache(code.data(), code.size());
+  const llvm::ArrayRef<uint8_t> &code = object.getCode();
+  llvm::sys::Memory::InvalidateInstructionCache(code.data(), code.size());
 
-    realCtx = realExec(code, inputCtx, realStack);
-    jitCtx = jitExec(code, inputCtx, jitStack);
+  realCtx = realExec(code, inputCtx, realStack);
+  jitCtx = jitExec(code, inputCtx, jitStack);
 
-    for(uint32_t i = 0; i < QBDI::AVAILABLE_GPR; i++) {
-        CHECK(QBDI_GPR_GET(&realCtx.gprState, i) == QBDI_GPR_GET(&jitCtx.gprState, i));
-    }
+  for (uint32_t i = 0; i < QBDI::AVAILABLE_GPR; i++) {
+    CHECK(QBDI_GPR_GET(&realCtx.gprState, i) ==
+          QBDI_GPR_GET(&jitCtx.gprState, i));
+  }
 
 #if !defined(_QBDI_ASAN_ENABLED_) || !defined(QBDI_ARCH_X86_64)
-    for(uint32_t i = 0; i < sizeof(QBDI::FPRState); i++) {
-        CHECK(((char*)&realCtx.fprState)[i] == ((char*)&jitCtx.fprState)[i]);
-    }
+  for (uint32_t i = 0; i < sizeof(QBDI::FPRState); i++) {
+    CHECK(((char *)&realCtx.fprState)[i] == ((char *)&jitCtx.fprState)[i]);
+  }
 #endif
-    for(uint32_t i = 0; i < realStack.allocatedSize() - sizeof(QBDI::rword); i++) {
-        CHECK(((char*)realStack.base())[i] == ((char*)jitStack.base())[i]);
-    }
+  for (uint32_t i = 0; i < realStack.allocatedSize() - sizeof(QBDI::rword);
+       i++) {
+    CHECK(((char *)realStack.base())[i] == ((char *)jitStack.base())[i]);
+  }
 
-    freeStack(realStack);
-    freeStack(jitStack);
+  freeStack(realStack);
+  freeStack(jitStack);
 }

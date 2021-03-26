@@ -21,54 +21,62 @@
 
 namespace QBDI {
 
-void SetOperand::transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const {
-    switch(type) {
-        case TempOperandType:
-            inst.getOperand(opn).setReg(temp_manager->getRegForTemp(temp));
-            break;
-        case RegOperandType:
-            inst.getOperand(opn).setReg(reg);
-            break;
-        case ImmOperandType:
-            inst.getOperand(opn).setImm(imm);
-            break;
+void SetOperand::transform(llvm::MCInst &inst, rword address, size_t instSize,
+                           TempManager *temp_manager) const {
+  switch (type) {
+    case TempOperandType:
+      inst.getOperand(opn).setReg(temp_manager->getRegForTemp(temp));
+      break;
+    case RegOperandType:
+      inst.getOperand(opn).setReg(reg);
+      break;
+    case ImmOperandType:
+      inst.getOperand(opn).setImm(imm);
+      break;
+  }
+}
+
+void SubstituteWithTemp::transform(llvm::MCInst &inst, rword address,
+                                   size_t instSize,
+                                   TempManager *temp_manager) const {
+  for (unsigned int i = 0; i < inst.getNumOperands(); i++) {
+    llvm::MCOperand &op = inst.getOperand(i);
+    if (op.isReg() && op.getReg() == reg) {
+      op.setReg(temp_manager->getRegForTemp(temp));
     }
+  }
 }
 
-void SubstituteWithTemp::transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const {
-    for(unsigned int i = 0; i < inst.getNumOperands(); i++) {
-        llvm::MCOperand &op = inst.getOperand(i);
-        if(op.isReg() && op.getReg() == reg) {
-            op.setReg(temp_manager->getRegForTemp(temp));
-        }
+void AddOperand::transform(llvm::MCInst &inst, rword address, size_t instSize,
+                           TempManager *temp_manager) const {
+  switch (type) {
+    case TempOperandType:
+      inst.insert(inst.begin() + opn, llvm::MCOperand::createReg(
+                                          temp_manager->getRegForTemp(temp)));
+      break;
+    case RegOperandType:
+      inst.insert(inst.begin() + opn, llvm::MCOperand::createReg(reg));
+      break;
+    case ImmOperandType:
+      inst.insert(inst.begin() + opn, llvm::MCOperand::createImm(imm));
+      break;
+  }
+}
+
+void RemoveOperand::transform(llvm::MCInst &inst, rword address,
+                              size_t instSize,
+                              TempManager *temp_manager) const {
+  for (auto it = inst.begin(); it != inst.end(); ++it) {
+    if (it->isReg() && it->getReg() == reg) {
+      inst.erase(it);
+      break;
     }
+  }
 }
 
-void AddOperand::transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const {
-    switch(type) {
-        case TempOperandType:
-            inst.insert(inst.begin() + opn, llvm::MCOperand::createReg(temp_manager->getRegForTemp(temp)));
-            break;
-        case RegOperandType:
-            inst.insert(inst.begin() + opn, llvm::MCOperand::createReg(reg));
-            break;
-        case ImmOperandType:
-            inst.insert(inst.begin() + opn, llvm::MCOperand::createImm(imm));
-            break;
-    }
+void SetOpcode::transform(llvm::MCInst &inst, rword address, size_t instSize,
+                          TempManager *temp_manager) const {
+  inst.setOpcode(opcode);
 }
 
-void RemoveOperand::transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const {
-    for(auto it = inst.begin(); it != inst.end(); ++it) {
-        if(it->isReg() && it->getReg() == reg) {
-            inst.erase(it);
-            break;
-        }
-    }
-}
-
-void SetOpcode::transform(llvm::MCInst &inst, rword address, size_t instSize, TempManager *temp_manager) const {
-    inst.setOpcode(opcode);
-}
-
-}
+} // namespace QBDI

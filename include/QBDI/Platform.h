@@ -21,25 +21,25 @@
 #include "QBDI/Config.h"
 
 #ifdef QBDI_PLATFORM_WINDOWS
-# define QBDI_ALIGNED(n) __declspec(align(n))
-# define QBDI_EXPORT __declspec(dllexport)
-# define QBDI_NOINLINE __declspec(noinline)
-# define QBDI_NOSTACKPROTECTOR
-# define _QBDI_FORCE_USE
-# define _QBDI_UNREACHABLE() __assume(0)
+#define QBDI_ALIGNED(n) __declspec(align(n))
+#define QBDI_EXPORT __declspec(dllexport)
+#define QBDI_NOINLINE __declspec(noinline)
+#define QBDI_NOSTACKPROTECTOR
+#define _QBDI_FORCE_USE
+#define _QBDI_UNREACHABLE() __assume(0)
 #else
-# define QBDI_ALIGNED(n) __attribute__((aligned(n)))
-# define QBDI_EXPORT __attribute__ ((visibility ("default")))
-# define QBDI_NOINLINE __attribute__((noinline))
-# define QBDI_NOSTACKPROTECTOR __attribute__((no_stack_protector))
-# define _QBDI_FORCE_USE __attribute__((__used__))
-# define _QBDI_UNREACHABLE() __builtin_unreachable()
+#define QBDI_ALIGNED(n) __attribute__((aligned(n)))
+#define QBDI_EXPORT __attribute__((visibility("default")))
+#define QBDI_NOINLINE __attribute__((noinline))
+#define QBDI_NOSTACKPROTECTOR __attribute__((no_stack_protector))
+#define _QBDI_FORCE_USE __attribute__((__used__))
+#define _QBDI_UNREACHABLE() __builtin_unreachable()
 #endif
 
 #if defined(__has_feature)
-#  if __has_feature(address_sanitizer)
+#if __has_feature(address_sanitizer)
 #define _QBDI_ASAN_ENABLED_
-#  endif
+#endif
 #endif
 
 #ifdef __cplusplus

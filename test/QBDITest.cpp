@@ -24,13 +24,14 @@
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
 
-    srand(time(nullptr));
+  srand(time(nullptr));
 
-    if (getenv("TEST_DEBUG") != nullptr) {
-        QBDI::setLogPriority(QBDI::LogPriority::DEBUG);
-    }
+  if (getenv("TEST_DEBUG") != nullptr) {
+    QBDI::setLogPriority(QBDI::LogPriority::DEBUG);
+  }
 
-    return Catch::Session().run( argc, argv );;
+  return Catch::Session().run(argc, argv);
+  ;
 }

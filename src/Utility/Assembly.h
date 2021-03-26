@@ -29,57 +29,58 @@
 #include "Utility/memory_ostream.h"
 
 namespace llvm {
-  class MCContext;
-  class MCAsmBackend;
-  class Target;
-  class MCInstrInfo;
-  class MCAsmInfo;
-  class MCSubtargetInfo;
-  class MCAssembler;
-  class MCInstPrinter;
-  class MCInst;
-}
+class MCContext;
+class MCAsmBackend;
+class Target;
+class MCInstrInfo;
+class MCAsmInfo;
+class MCSubtargetInfo;
+class MCAssembler;
+class MCInstPrinter;
+class MCInst;
+} // namespace llvm
 
 namespace QBDI {
 
 class Assembly {
 protected:
+  const llvm::Target *target;
+  llvm::MCInstrInfo &MCII;
+  const llvm::MCRegisterInfo &MRI;
+  const llvm::MCAsmInfo &MAI;
+  llvm::MCSubtargetInfo &MSTI;
+  std::unique_ptr<llvm::MCAssembler> assembler;
+  std::unique_ptr<llvm::MCDisassembler> disassembler;
+  std::unique_ptr<llvm::MCInstPrinter> asmPrinter;
+  std::unique_ptr<llvm::raw_pwrite_stream> null_ostream;
 
-    const llvm::Target                       *target;
-    llvm::MCInstrInfo                        &MCII;
-    const llvm::MCRegisterInfo               &MRI;
-    const llvm::MCAsmInfo                    &MAI;
-    llvm::MCSubtargetInfo                    &MSTI;
-    std::unique_ptr<llvm::MCAssembler>       assembler;
-    std::unique_ptr<llvm::MCDisassembler>    disassembler;
-    std::unique_ptr<llvm::MCInstPrinter>     asmPrinter;
-    std::unique_ptr<llvm::raw_pwrite_stream> null_ostream;
-
-    Options                                  options;
+  Options options;
 
 public:
-    Assembly(llvm::MCContext &context, std::unique_ptr<llvm::MCAsmBackend> MAB, llvm::MCInstrInfo &MCII,
-             const llvm::Target *target, llvm::MCSubtargetInfo &MSTI, Options options);
+  Assembly(llvm::MCContext &context, std::unique_ptr<llvm::MCAsmBackend> MAB,
+           llvm::MCInstrInfo &MCII, const llvm::Target *target,
+           llvm::MCSubtargetInfo &MSTI, Options options);
 
-    ~Assembly();
+  ~Assembly();
 
-    void writeInstruction(llvm::MCInst inst, memory_ostream* stream) const;
+  void writeInstruction(llvm::MCInst inst, memory_ostream *stream) const;
 
-    llvm::MCDisassembler::DecodeStatus getInstruction(llvm::MCInst &inst, uint64_t &size,
-                                            llvm::ArrayRef<uint8_t> bytes, uint64_t address) const;
+  llvm::MCDisassembler::DecodeStatus
+  getInstruction(llvm::MCInst &inst, uint64_t &size,
+                 llvm::ArrayRef<uint8_t> bytes, uint64_t address) const;
 
-    std::string showInst(const llvm::MCInst& inst, uint64_t address) const;
+  std::string showInst(const llvm::MCInst &inst, uint64_t address) const;
 
-    const char* getRegisterName(unsigned int id) const {return MRI.getName(id); }
+  const char *getRegisterName(unsigned int id) const { return MRI.getName(id); }
 
-    inline const llvm::MCInstrInfo& getMCII() const { return MCII; }
+  inline const llvm::MCInstrInfo &getMCII() const { return MCII; }
 
-    inline const llvm::MCRegisterInfo& getMRI() const { return MRI; }
+  inline const llvm::MCRegisterInfo &getMRI() const { return MRI; }
 
-    Options getOptions() const {return options;}
-    void setOptions(Options opts);
+  Options getOptions() const { return options; }
+  void setOptions(Options opts);
 };
 
-}
+} // namespace QBDI
 
 #endif // ASSEMBLY_H

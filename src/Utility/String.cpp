@@ -21,33 +21,35 @@
 namespace QBDI {
 namespace String {
 
-bool startsWith(const char* prefix, const char* str){
-    QBDI_REQUIRE_ACTION(prefix != nullptr, return false);
-    QBDI_REQUIRE_ACTION(str != nullptr, return false);
+bool startsWith(const char *prefix, const char *str) {
+  QBDI_REQUIRE_ACTION(prefix != nullptr, return false);
+  QBDI_REQUIRE_ACTION(str != nullptr, return false);
 
-    while (*prefix && *str) {
-        // Wildcard matching : "*" until the character following the wildcard matches a character in the str
-        if (*prefix == '*') {
-            if (toupper(*(prefix+1)) == toupper(*str++)) {
-                prefix++;
-            }
-            continue;
-        }
-        // Compare char
-        if (toupper(*prefix++) != toupper(*str++)) {
-            return false;
-        }
+  while (*prefix && *str) {
+    // Wildcard matching : "*" until the character following the wildcard
+    // matches a character in the str
+    if (*prefix == '*') {
+      if (toupper(*(prefix + 1)) == toupper(*str++)) {
+        prefix++;
+      }
+      continue;
     }
-    // check pending character after wildcard
-    if (*prefix && *(prefix+1)) {
-        return false;
+    // Compare char
+    if (toupper(*prefix++) != toupper(*str++)) {
+      return false;
     }
-    // prefix checking, if next char is not either \0, "_" or [0-9] then do not match
-    if (!((*str >= '0' && *str <= '9') || *str == '_' || !*str) ) {
-        return false;
-    }
-    return true;
+  }
+  // check pending character after wildcard
+  if (*prefix && *(prefix + 1)) {
+    return false;
+  }
+  // prefix checking, if next char is not either \0, "_" or [0-9] then do not
+  // match
+  if (!((*str >= '0' && *str <= '9') || *str == '_' || !*str)) {
+    return false;
+  }
+  return true;
 }
 
-}
-}
+} // namespace String
+} // namespace QBDI

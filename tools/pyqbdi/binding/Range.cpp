@@ -21,79 +21,80 @@
 namespace QBDI {
 namespace pyQBDI {
 
-void init_binding_Range(py::module_& m) {
-    py::class_<Range<rword>>(m, "Range")
-        .def(py::init<rword, rword>(),
-                "Create a new range",
-                "start"_a, "end"_a)
+void init_binding_Range(py::module_ &m) {
+  py::class_<Range<rword>>(m, "Range")
+      .def(py::init<rword, rword>(), "Create a new range", "start"_a, "end"_a)
 
-        .def_property("start", &Range<rword>::start, &Range<rword>::setStart,
-                "Range start value.")
+      .def_property("start", &Range<rword>::start, &Range<rword>::setStart,
+                    "Range start value.")
 
-        .def_property("end", &Range<rword>::end, &Range<rword>::setEnd,
-                "Range end value (always excluded).")
+      .def_property("end", &Range<rword>::end, &Range<rword>::setEnd,
+                    "Range end value (always excluded).")
 
-        .def("size", &Range<rword>::size,
-                "Return the total length of a range.")
+      .def("size", &Range<rword>::size, "Return the total length of a range.")
 
-        .def(py::self == py::self,
-                "Return True if two ranges are equal (same boundaries).",
-                "r"_a)
+      .def(py::self == py::self,
+           "Return True if two ranges are equal (same boundaries).", "r"_a)
 
-        .def("contains", (bool (Range<rword>::*)(const rword) const) &Range<rword>::contains,
-                "Return True if an value is inside current range boundaries.",
-                "t"_a)
+      .def("contains",
+           (bool (Range<rword>::*)(const rword) const) & Range<rword>::contains,
+           "Return True if an value is inside current range boundaries.", "t"_a)
 
-        .def("contains", (bool (Range<rword>::*)(const Range<rword>&) const) &Range<rword>::contains,
-                "Return True if a range is inside current range boundaries.",
-                "r"_a)
+      .def("contains",
+           (bool (Range<rword>::*)(const Range<rword> &) const) &
+               Range<rword>::contains,
+           "Return True if a range is inside current range boundaries.", "r"_a)
 
-        .def("__contains__", (bool (Range<rword>::*)(const rword) const) &Range<rword>::contains,
-                "Return True if an value is inside current range boundaries.",
-                "t"_a)
+      .def("__contains__",
+           (bool (Range<rword>::*)(const rword) const) & Range<rword>::contains,
+           "Return True if an value is inside current range boundaries.", "t"_a)
 
-        .def("__contains__", (bool (Range<rword>::*)(const Range<rword>&) const) &Range<rword>::contains,
-                "Return True if a range is inside current range boundaries.",
-                "r"_a)
+      .def("__contains__",
+           (bool (Range<rword>::*)(const Range<rword> &) const) &
+               Range<rword>::contains,
+           "Return True if a range is inside current range boundaries.", "r"_a)
 
-        .def("overlaps", &Range<rword>::overlaps,
-                "Return True if a range is overlapping current range lower or/and upper boundary.",
-                "r"_a)
+      .def("overlaps", &Range<rword>::overlaps,
+           "Return True if a range is overlapping current range lower or/and "
+           "upper boundary.",
+           "r"_a)
 
-        .def("__str__", [](const Range<rword> &r) {
-                               std::ostringstream oss;
-                               r.display(oss);
-                               return oss.str();
-                           })
-        .def("__repr__", [](const Range<rword> &r) {
-                               std::ostringstream oss;
-                               r.display(oss);
-                               return "<Range " + oss.str() + ">";
-                           })
-        .def("intersect", &Range<rword>::intersect,
-                "Return the intersection of two ranges.",
-                "r"_a)
-        .def("__getitem__", [](const Range<rword> &r, int index) {
-                                switch (index) {
-                                    case 0:
-                                        return r.start();
-                                    case 1:
-                                        return r.end();
-                                    default:
-                                        throw std::out_of_range("Only two elements");
-                                }
-                            })
-        .def("__setitem__", [](Range<rword> &r, int index, rword value) {
-                                switch (index) {
-                                    case 0:
-                                        r.setStart(value);
-                                    case 1:
-                                        r.setEnd(value);
-                                    default:
-                                        throw std::out_of_range("Only two elements");
-                                }
-                            });
+      .def("__str__",
+           [](const Range<rword> &r) {
+             std::ostringstream oss;
+             r.display(oss);
+             return oss.str();
+           })
+      .def("__repr__",
+           [](const Range<rword> &r) {
+             std::ostringstream oss;
+             r.display(oss);
+             return "<Range " + oss.str() + ">";
+           })
+      .def("intersect", &Range<rword>::intersect,
+           "Return the intersection of two ranges.", "r"_a)
+      .def("__getitem__",
+           [](const Range<rword> &r, int index) {
+             switch (index) {
+               case 0:
+                 return r.start();
+               case 1:
+                 return r.end();
+               default:
+                 throw std::out_of_range("Only two elements");
+             }
+           })
+      .def("__setitem__", [](Range<rword> &r, int index, rword value) {
+        switch (index) {
+          case 0:
+            r.setStart(value);
+          case 1:
+            r.setEnd(value);
+          default:
+            throw std::out_of_range("Only two elements");
+        }
+      });
 }
 
-}
-}
+} // namespace pyQBDI
+} // namespace QBDI

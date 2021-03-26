@@ -24,15 +24,16 @@
 #include "VM.h"
 
 class MemoryAccessTest {
-    protected:
-        MemoryAccessTest();
-        ~MemoryAccessTest();
+protected:
+  MemoryAccessTest();
+  ~MemoryAccessTest();
 
-        bool runOnASM(QBDI::rword* retval, const char* source, const std::vector<QBDI::rword>& args = {});
+  bool runOnASM(QBDI::rword *retval, const char *source,
+                const std::vector<QBDI::rword> &args = {});
 
-        QBDI::VM vm;
-        QBDI::GPRState* state;
-        uint8_t* fakestack;
+  QBDI::VM vm;
+  QBDI::GPRState *state;
+  uint8_t *fakestack;
 };
 
 #endif /* QBDITEST_MEMORYACCESSTEST_H */

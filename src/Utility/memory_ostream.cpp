@@ -18,17 +18,15 @@
 #include "Utility/memory_ostream.h"
 #include "Utility/LogSys.h"
 
-void memory_ostream::write_impl(const char *Ptr, size_t Size)
-{
-    QBDI_REQUIRE_ACTION(pos + Size <= os.allocatedSize(), abort());
-    char *os_ptr = (char*) ((uint64_t) os.base() + pos);
-    for(uint64_t i = 0; i < Size; i++)
-        os_ptr[i] = Ptr[i];
-    pos += Size;
+void memory_ostream::write_impl(const char *Ptr, size_t Size) {
+  QBDI_REQUIRE_ACTION(pos + Size <= os.allocatedSize(), abort());
+  char *os_ptr = (char *)((uint64_t)os.base() + pos);
+  for (uint64_t i = 0; i < Size; i++)
+    os_ptr[i] = Ptr[i];
+  pos += Size;
 }
 
-void memory_ostream::seek(uint64_t pos)
-{
-    QBDI_REQUIRE_ACTION(pos < os.allocatedSize(), abort());
-    this->pos = pos;
+void memory_ostream::seek(uint64_t pos) {
+  QBDI_REQUIRE_ACTION(pos < os.allocatedSize(), abort());
+  this->pos = pos;
 }

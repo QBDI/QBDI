@@ -39,12 +39,12 @@ extern const unsigned int size_SEG_ID;
 /*! X86 / X86_64 Host context.
  */
 struct HostState {
-    rword sp;
-    rword selector;
-    rword callback;
-    rword data;
-    rword origin;
-    rword executeFlags;
+  rword sp;
+  rword selector;
+  rword callback;
+  rword data;
+  rword origin;
+  rword executeFlags;
 };
 
 /*! X86 / X86_64 Execution context.
@@ -52,12 +52,10 @@ struct HostState {
 struct Context {
 
 public:
-
-    // fprState needs to be first for memory alignement reasons
-    FPRState fprState;
-    GPRState gprState;
-    HostState hostState;
-
+  // fprState needs to be first for memory alignement reasons
+  FPRState fprState;
+  GPRState gprState;
+  HostState hostState;
 };
 
 #elif defined(QBDI_ARCH_ARM)
@@ -65,33 +63,31 @@ public:
 // ARM Context
 // ============================================================================
 
-
 /*! ARM Host context.
-*/
+ */
 struct HostState {
-    rword fp;
-    rword sp;
-    rword selector;
-    rword callback;
-    rword data;
-    rword origin;
-    rword executeFlags;
+  rword fp;
+  rword sp;
+  rword selector;
+  rword callback;
+  rword data;
+  rword origin;
+  rword executeFlags;
 };
 
 /*! ARM Execution context.
-*/
+ */
 struct Context {
 
 public:
-
-    // hostState needs to be first for relative addressing range reasons
-    HostState hostState;
-    FPRState fprState;
-    GPRState gprState;
+  // hostState needs to be first for relative addressing range reasons
+  HostState hostState;
+  FPRState fprState;
+  GPRState gprState;
 };
 
 #endif // QBDI_ARCH_ARM
 
-} // QBDI
+} // namespace QBDI
 
-#endif //CONTEXT_H
+#endif // CONTEXT_H

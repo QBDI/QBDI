@@ -15,29 +15,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <stdio.h>
 #include <cstdint>
+#include <stdio.h>
 
 #include <catch2/catch.hpp>
 #include "Memory.hpp"
 
 TEST_CASE("AllocAlignedTest-CorrectSize") {
-    const static size_t size = 1000;
-    uint8_t *array =  (uint8_t*) QBDI::alignedAlloc(size, sizeof(void*));
-    REQUIRE(array != nullptr);
-    for(size_t i = 0; i < size; i++) {
-        array[i] = 0x42;
-    }
-    QBDI::alignedFree(array);
-    SUCCEED();
+  const static size_t size = 1000;
+  uint8_t *array = (uint8_t *)QBDI::alignedAlloc(size, sizeof(void *));
+  REQUIRE(array != nullptr);
+  for (size_t i = 0; i < size; i++) {
+    array[i] = 0x42;
+  }
+  QBDI::alignedFree(array);
+  SUCCEED();
 }
 
 TEST_CASE("AllocAlignedTest-CorrectAlignement") {
-    const static size_t size = 1000;
-    const static size_t align = 16;
-    void *array =  QBDI::alignedAlloc(size, align);
-    REQUIRE(array != nullptr);
-    REQUIRE(reinterpret_cast<std::uintptr_t>(array) % align == static_cast<std::uintptr_t>(0));
-    QBDI::alignedFree(array);
-    SUCCEED();
+  const static size_t size = 1000;
+  const static size_t align = 16;
+  void *array = QBDI::alignedAlloc(size, align);
+  REQUIRE(array != nullptr);
+  REQUIRE(reinterpret_cast<std::uintptr_t>(array) % align ==
+          static_cast<std::uintptr_t>(0));
+  QBDI::alignedFree(array);
+  SUCCEED();
 }

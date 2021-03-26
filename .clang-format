@@ -1,0 +1,28 @@
+---
+BasedOnStyle: LLVM
+IndentWidth: 2
+---
+Language: Cpp
+AlignConsecutiveBitFields: true
+AlignEscapedNewlines: Left
+AlwaysBreakTemplateDeclarations: Yes
+IncludeCategories:
+  - Regex:           '^"(llvm|catch2|spdlog)/'
+    Priority:        5
+    SortPriority:    0
+  - Regex:           '^"QBDI'
+    Priority:        3
+    SortPriority:    0
+  - Regex:           '^"(Engine|ExecBlock|ExecBroker|Patch|Utility)/'
+    Priority:        4
+    SortPriority:    0
+  - Regex:           '^<'
+    Priority:        1
+    SortPriority:    0
+  - Regex:           '.*'
+    Priority:        2
+    SortPriority:    0
+IndentCaseLabels: true
+AlwaysBreakBeforeMultilineStrings: true
+---
+

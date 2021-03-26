@@ -20,7 +20,6 @@
 
 #include "TestSetup/LLVMTestEnv.h"
 
-class ExecBlockManagerTest : public LLVMTestEnv {
-};
+class ExecBlockManagerTest : public LLVMTestEnv {};
 
 #endif /* QBDITEST_EXECBLOCKMANAGERTEST_H */

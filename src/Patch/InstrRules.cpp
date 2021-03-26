@@ -21,29 +21,35 @@
 
 namespace QBDI {
 
-/*! Output a list of PatchGenerator which would set up the host state part of the context for
- *  a callback.
+/*! Output a list of PatchGenerator which would set up the host state part of
+ * the context for a callback.
  *
  * @param[in] cbk   The callback function to call.
  * @param[in] data  The data to pass as an argument to the callback function.
  *
  * @return A list of PatchGenerator to set up this callback call.
  *
-*/
-PatchGenerator::UniquePtrVec getCallbackGenerator(InstCallback cbk, void* data) {
-    PatchGenerator::UniquePtrVec callbackGenerator;
+ */
+PatchGenerator::UniquePtrVec getCallbackGenerator(InstCallback cbk,
+                                                  void *data) {
+  PatchGenerator::UniquePtrVec callbackGenerator;
 
-    // Write callback address in host state
-    callbackGenerator.push_back(GetConstant::unique(Temp(0), Constant((rword) cbk)));
-    callbackGenerator.push_back(WriteTemp::unique(Temp(0), Offset(offsetof(Context, hostState.callback))));
-    // Write callback data pointer in host state
-    callbackGenerator.push_back(GetConstant::unique(Temp(0), Constant((rword) data)));
-    callbackGenerator.push_back(WriteTemp::unique(Temp(0), Offset(offsetof(Context, hostState.data))));
-    // Write internal instruction id of a callback
-    callbackGenerator.push_back(GetInstId::unique(Temp(0)));
-    callbackGenerator.push_back(WriteTemp::unique(Temp(0), Offset(offsetof(Context, hostState.origin))));
+  // Write callback address in host state
+  callbackGenerator.push_back(
+      GetConstant::unique(Temp(0), Constant((rword)cbk)));
+  callbackGenerator.push_back(WriteTemp::unique(
+      Temp(0), Offset(offsetof(Context, hostState.callback))));
+  // Write callback data pointer in host state
+  callbackGenerator.push_back(
+      GetConstant::unique(Temp(0), Constant((rword)data)));
+  callbackGenerator.push_back(
+      WriteTemp::unique(Temp(0), Offset(offsetof(Context, hostState.data))));
+  // Write internal instruction id of a callback
+  callbackGenerator.push_back(GetInstId::unique(Temp(0)));
+  callbackGenerator.push_back(
+      WriteTemp::unique(Temp(0), Offset(offsetof(Context, hostState.origin))));
 
-    return callbackGenerator;
+  return callbackGenerator;
 }
 
-}
+} // namespace QBDI
