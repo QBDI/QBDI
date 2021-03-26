@@ -4,6 +4,8 @@ CHANGELOG
 Next Release
 ------------
 
+* Introduce ``VMState.returnAddressPtr`` and ``VMState.returnAddressValue`` (only with ``EXEC_TRANSFER_CALL``)
+
 Version 0.8.0
 -------------
 

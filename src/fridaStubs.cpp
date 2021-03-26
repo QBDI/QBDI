@@ -38,13 +38,15 @@ QBDI_EXPORT const StructDesc* qbdi_getMemoryAccessStructDesc() {
 QBDI_EXPORT const StructDesc* qbdi_getVMStateStructDesc() {
     static const StructDesc VMStateDesc {
         sizeof(VMState),
-        6,
+        8,
         {
             offsetof(VMState, event),
             offsetof(VMState, sequenceStart),
             offsetof(VMState, sequenceEnd),
             offsetof(VMState, basicBlockStart),
             offsetof(VMState, basicBlockEnd),
+            offsetof(VMState, returnAddressPtr),
+            offsetof(VMState, returnAddressValue),
             offsetof(VMState, lastSignal),
         }
     };

@@ -1814,6 +1814,10 @@ class QBDI {
         p = ptr.add(this.#vmStateStructDesc.offsets[4]);
         state.basicBlockEnd = Memory.readRword(p);
         p = ptr.add(this.#vmStateStructDesc.offsets[5]);
+        state.returnAddressPtr = Memory.readRword(p);
+        p = ptr.add(this.#vmStateStructDesc.offsets[6]);
+        state.returnAddressValue = Memory.readRword(p);
+        p = ptr.add(this.#vmStateStructDesc.offsets[7]);
         state.lastSignal = Memory.readRword(p);
         Object.freeze(state);
         return state;

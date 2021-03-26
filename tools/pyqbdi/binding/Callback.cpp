@@ -69,7 +69,11 @@ void init_binding_Callback(py::module_& m) {
         .def_readonly("sequenceStart", &VMState::sequenceStart,
                 "The current sequence start address which can also be the execution transfer destination.")
         .def_readonly("sequenceEnd", &VMState::sequenceEnd,
-                "The current sequence end address which can also be the execution transfer destination.");
+                "The current sequence end address which can also be the execution transfer destination.")
+        .def_readonly("returnAddressPtr", &VMState::returnAddressPtr,
+                "The address of the return address detected during EXEC_TRANSFER_CALL.")
+        .def_readonly("returnAddressValue", &VMState::returnAddressValue,
+                "The return address detected during EXEC_TRANSFER_CALL.");
 
     enum_int_flag_<MemoryAccessFlags>(m, "MemoryAccessFlags", "Memory access flags", py::arithmetic())
         .value("MEMORY_NO_FLAGS", MemoryAccessFlags::MEMORY_NO_FLAGS, "Empty flags")

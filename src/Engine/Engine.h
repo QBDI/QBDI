@@ -105,7 +105,7 @@ private:
     void instrument(std::vector<Patch> &basicBlock, size_t patchEnd);
     void handleNewBasicBlock(rword pc);
 
-    VMAction signalEvent(VMEvent kind, rword currentPC, const SeqLoc* seqLoc, rword basicBlockBegin, GPRState *gprState, FPRState *fprState);
+    VMAction signalEvent(VMEvent kind, rword currentPC, const SeqLoc* seqLoc, rword basicBlockBegin, rword* retaddr, GPRState *gprState, FPRState *fprState);
 
 public:
 
