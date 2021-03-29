@@ -11,7 +11,9 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: Install system dependencies
-        run: sudo apt install -y --no-install-recommends clang-format-${{ env.CLANG_FORMAT_VERSION }}
+        run: |
+          sudo apt install -y --no-install-recommends clang-format-${{ env.CLANG_FORMAT_VERSION }}
+          sudo pip3 install cmakelang
       - name: Build and test QBDI
         run: bash ./.github/format_check.sh
 
