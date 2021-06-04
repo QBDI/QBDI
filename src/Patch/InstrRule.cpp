@@ -139,8 +139,8 @@ bool InstrRuleUser::tryInstrument(Patch &patch, const llvm::MCInstrInfo *MCII,
     return false;
   }
 
-  QBDI_DEBUG("Call user InstrCB at 0x{:x} with analysisType 0x{:x}", cbk,
-             analysisType);
+  QBDI_DEBUG("Call user InstrCB at 0x{:x} with analysisType 0x{:x}",
+             reinterpret_cast<void *>(cbk), analysisType);
 
   const InstAnalysis *ana =
       analyzeInstMetadata(patch.metadata, analysisType, *assembly);
