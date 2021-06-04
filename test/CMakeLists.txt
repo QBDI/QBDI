@@ -15,22 +15,6 @@ set(Catch2_SOURCE_DIR "${SOURCE_DIR}")
 # test
 if(QBDI_TEST)
 
-  # Generate a new static qbdi archive with additionnal llvm
-  # needed for the test. The new library allows to remove the llvm library only
-  # used by QBDITest for libQBDI.a and avoid error when link QBDItest
-  set(_TEST_LLVM_LIBS LLVMBitReader LLVMBitstreamReader LLVMCore LLVMObject
-                      LLVMRemarks LLVMTextAPI)
-
-  if(QBDI_PLATFORM_WINDOWS)
-    prepend(TEST_LLVM_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/ ".lib"
-            ${_TEST_LLVM_LIBS})
-  else()
-    prepend(TEST_LLVM_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/lib ".a"
-            ${_TEST_LLVM_LIBS})
-  endif()
-
-  merge_static_libs(LLVM_static_test LLVM_static_test \${TEST_LLVM_LIBS})
-
   add_executable(QBDITest "${CMAKE_CURRENT_LIST_DIR}/QBDITest.cpp")
   add_signature(QBDITest)
 
@@ -49,12 +33,13 @@ if(QBDI_TEST)
       "${CMAKE_SOURCE_DIR}/include/QBDI"
       "${CMAKE_CURRENT_SOURCE_DIR}"
       "${CMAKE_CURRENT_SOURCE_DIR}/../src"
-      "${CMAKE_CURRENT_SOURCE_DIR}/../deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/include"
-      "${CMAKE_CURRENT_SOURCE_DIR}/../deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/lib/Target/${QBDI_LLVM_ARCH}"
       "${Catch2_SOURCE_DIR}/single_include")
 
   add_dependencies(QBDITest Catch2)
-  target_link_libraries(QBDITest LLVM_static_test QBDI_static)
+  target_link_libraries(QBDITest QBDI_static qbdi-llvm)
+  #target_compile_options(QBDITest PUBLIC $<$<COMPILE_LANGUAGE:C>:${QBDI_COMMON_C_FLAGS}>)
+  #target_compile_options(QBDITest PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${QBDI_COMMON_CXX_FLAGS}>)
+  target_compile_definitions(QBDITest PUBLIC ${QBDI_COMMON_DEFINITION})
 
   set_target_properties(QBDITest PROPERTIES CXX_STANDARD 17
                                             CXX_STANDARD_REQUIRED ON)
@@ -74,7 +59,7 @@ if(QBDI_BENCHMARK)
             "${CMAKE_CURRENT_SOURCE_DIR}" "${Catch2_SOURCE_DIR}/single_include")
 
   add_dependencies(QBDIBenchmark Catch2)
-  target_link_libraries(QBDIBenchmark QBDI_static ${LLVM_LIBS})
+  target_link_libraries(QBDIBenchmark QBDI_static)
 
   set_target_properties(QBDIBenchmark PROPERTIES CXX_STANDARD 17
                                                  CXX_STANDARD_REQUIRED ON)

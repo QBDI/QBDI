@@ -73,7 +73,7 @@ class CMakeBuild(build_ext):
                       '-DQBDI_BENCHMARK=Off',
                       '-DQBDI_SHARED_LIBRARY=Off',
                      ]
-        build_args = ['--config', 'Release']
+        build_args = ['--config', 'Release', '--']
 
         if platform.system() == "Windows":
             cmake_args += ["-G", "Ninja"]
@@ -82,13 +82,18 @@ class CMakeBuild(build_ext):
             if self.has_ninja():
                 cmake_args += ["-G", "Ninja"]
             else:
-                build_args += ['--', '-j4']
+                build_args.append('-j4')
+
+        if 'LLVM_BUILD_DIR' in os.environ:
+            cmake_args.append('-DQBDI_LLVM_PREFIX={}'.format(os.environ.get('LLVM_BUILD_DIR')))
 
         env = os.environ.copy()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
                                                               self.distribution.get_version())
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
+        subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
+        subprocess.check_call(['cmake', '--build', '.'] + build_args + ['llvm'], cwd=self.build_temp)
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
         subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 

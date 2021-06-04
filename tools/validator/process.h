@@ -20,7 +20,7 @@
 
 #include <sys/types.h>
 
-#include "VM.h"
+#include "QBDI/State.h"
 
 class Process {
 

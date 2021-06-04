@@ -2,12 +2,7 @@
 TODO
 build*/*
 
-deps/**
-!deps/CMakeLists.txt
-!deps/*
-!deps/*/*
-!deps/**/build.sh
-!deps/**/rename-object.py
+deps
 
 docs/build
 docs/doxygen_c
