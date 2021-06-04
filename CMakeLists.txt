@@ -3,7 +3,8 @@ project(QBDI)
 
 include(GNUInstallDirs)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/"
+     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/llvm")
 
 # Config platform & arch
 include(QBDIConfig)
@@ -40,14 +41,6 @@ endif()
 
 # DEBUG log (spdlog option)
 include(spdlog)
-if(QBDI_LOG_DEBUG)
-  add_definitions(-D_QBDI_LOG_DEBUG -DSPDLOG_DEBUG_ON=1
-                  -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG)
-else()
-  add_definitions(-DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_INFO)
-endif()
-add_definitions(-DSPDLOG_NO_TLS=1 -DSPDLOG_NO_THREAD_ID=1
-                -DSPDLOG_NO_DATETIME=1)
 
 # AVX
 if(QBDI_DISABLE_AVX)
@@ -102,48 +95,110 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI/Config.h.in"
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/Utility/Version_commit.h.in"
                "${CMAKE_CURRENT_BINARY_DIR}/src/Utility/Version_commit.h" @ONLY)
 
-# Add dependency build targets
+# Add llvm
+include(QBDI_llvm)
 
-add_subdirectory(deps)
+# log debug
+set(QBDI_COMMON_DEFINITION -DSPDLOG_NO_TLS=1 -DSPDLOG_NO_THREAD_ID=1 -DSPDLOG_NO_DATETIME=1)
+if(QBDI_LOG_DEBUG)
+  message(STATUS "Compiling with QBDI_LOG_DEBUG")
+  set(QBDI_COMMON_DEFINITION ${QBDI_COMMON_DEFINITION} -D_QBDI_LOG_DEBUG -DSPDLOG_DEBUG_ON=1 -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG)
+else()
+  set(QBDI_COMMON_DEFINITION ${QBDI_COMMON_DEFINITION} -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_INFO)
+endif()
 
-if(${DEPENDENCY_SATISFIED})
+if(QBDI_PLATFORM_WINDOWS)
+  #set(QBDI_COMMON_C_FLAGS
+  #            /DWIN32
+  #            /D_WINDOWS
+  #            /W3
+  #            /MP
+  #            /permissive-
+  #            -D_CRT_SECURE_NO_DEPRECATE
+  #            -D_CRT_SECURE_NO_WARNINGS
+  #            -D_CRT_NONSTDC_NO_DEPRECATE
+  #            -D_CRT_NONSTDC_NO_WARNINGS
+  #            -D_SCL_SECURE_NO_DEPRECATE
+  #            -D_SCL_SECURE_NO_WARNINGS
+  #            -wd4141
+  #            -wd4146
+  #            -wd4180
+  #            -wd4244
+  #            -wd4258
+  #            -wd4267
+  #            -wd4291
+  #            -wd4345
+  #            -wd4351
+  #            -wd4355
+  #            -wd4456
+  #            -wd4457
+  #            -wd4458
+  #            -wd4459
+  #            -wd4503
+  #            -wd4624
+  #            -wd4722
+  #            -wd4800
+  #            -w14062
+  #            -we4238
+  #            -D__STDC_CONSTANT_MACROS
+  #            -D__STDC_FORMAT_MACROS
+  #            -D__STDC_LIMIT_MACROS)
+  #set(QBDI_COMMON_CXX_FLAGS
+  #            /DWIN32
+  #            /D_WINDOWS
+  #            /W3
+  #            /MP
+  #            /permissive-
+  #            -D_CRT_SECURE_NO_DEPRECATE
+  #            -D_CRT_SECURE_NO_WARNINGS
+  #            -D_CRT_NONSTDC_NO_DEPRECATE
+  #            -D_CRT_NONSTDC_NO_WARNINGS
+  #            -D_SCL_SECURE_NO_DEPRECATE
+  #            -D_SCL_SECURE_NO_WARNINGS
+  #            -wd4141
+  #            -wd4146
+  #            -wd4180
+  #            -wd4244
+  #            -wd4258
+  #            -wd4267
+  #            -wd4291
+  #            -wd4345
+  #            -wd4351
+  #            -wd4355
+  #            -wd4456
+  #            -wd4457
+  #            -wd4458
+  #            -wd4459
+  #            -wd4503
+  #            -wd4624
+  #            -wd4722
+  #            -wd4800
+  #            -w14062
+  #            -we4238
+  #            -D__STDC_CONSTANT_MACROS
+  #            -D__STDC_FORMAT_MACROS
+  #            -D__STDC_LIMIT_MACROS
+  #            -D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /DWIN32 /D_WINDOWS /W3 /MP /permissive- -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS -D_SCL_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -wd4141 -wd4146 -wd4180 -wd4244 -wd4258 -wd4267 -wd4291 -wd4345 -wd4351 -wd4355 -wd4456 -wd4457 -wd4458 -wd4459 -wd4503 -wd4624 -wd4722 -wd4800 -w14062 -we4238 -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DWIN32 /D_WINDOWS /W3 /MP /permissive- -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS -D_SCL_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -wd4141 -wd4146 -wd4180 -wd4244 -wd4258 -wd4267 -wd4291 -wd4345 -wd4351 -wd4355 -wd4456 -wd4457 -wd4458 -wd4459 -wd4503 -wd4624 -wd4722 -wd4800 -w14062 -we4238 -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING")
 
-  # Resolve LLVM options
-
-  if((QBDI_PLATFORM_LINUX
-      AND (QBDI_ARCH_X86
-           OR QBDI_ARCH_X86_64
-           OR QBDI_ARCH_ARM)
-     )
-     OR (QBDI_PLATFORM_OSX AND (QBDI_ARCH_X86 OR QBDI_ARCH_X86_64))
-     OR (QBDI_PLATFORM_IOS AND QBDI_ARCH_ARM))
-
-    set(CMAKE_C_FLAGS
-        "${CMAKE_C_FLAGS} -fPIC -Wall -ffunction-sections -fdata-sections -fvisibility=hidden -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS"
-    )
-    set(CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS} -fPIC -Wall -fvisibility-inlines-hidden  -fvisibility=hidden -ffunction-sections -fdata-sections -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -fno-rtti"
-    )
-
-  elseif(QBDI_PLATFORM_WINDOWS AND (QBDI_ARCH_X86 OR QBDI_ARCH_X86_64))
-
-    set(CMAKE_C_FLAGS
-        "${CMAKE_C_FLAGS} /DWIN32 /D_WINDOWS /W3 /MP /permissive- -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS -D_SCL_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -wd4141 -wd4146 -wd4180 -wd4244 -wd4258 -wd4267 -wd4291 -wd4345 -wd4351 -wd4355 -wd4456 -wd4457 -wd4458 -wd4459 -wd4503 -wd4624 -wd4722 -wd4800 -w14062 -we4238 -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS"
-    )
-    set(CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS} /DWIN32 /D_WINDOWS /W3 /MP /permissive- -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS -D_SCL_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -wd4141 -wd4146 -wd4180 -wd4244 -wd4258 -wd4267 -wd4291 -wd4345 -wd4351 -wd4355 -wd4456 -wd4457 -wd4458 -wd4459 -wd4503 -wd4624 -wd4722 -wd4800 -w14062 -we4238 -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING"
-    )
-
-  elseif(QBDI_PLATFORM_ANDROID)
-
-    set(CMAKE_C_FLAGS
-        "${CMAKE_C_FLAGS} -fPIC -Wall -ffunction-sections -fdata-sections -fvisibility=hidden"
-    )
-    set(CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS} -fPIC -Wall -fvisibility-inlines-hidden -fvisibility=hidden -ffunction-sections -fdata-sections -fno-rtti"
-    )
-
+else()
+  #set(QBDI_COMMON_C_FLAGS
+  #            -Wall -ffunction-sections
+  #            -fdata-sections -fvisibility-inlines-hidden -fvisibility=hidden
+  #            -fPIC)
+  #set(QBDI_COMMON_CXX_FLAGS
+  #            -Wall -ffunction-sections
+  #            -fdata-sections -fvisibility-inlines-hidden -fvisibility=hidden
+  #            -fPIC -fno-rtti)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -ffunction-sections -fdata-sections -fvisibility-inlines-hidden -fvisibility=hidden -fPIC")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -ffunction-sections -fdata-sections -fvisibility-inlines-hidden -fvisibility=hidden -fPIC -fno-rtti")
+  if(NOT QBDI_PLATFORM_ANDROID)
+    set(QBDI_COMMON_DEFINITION ${QBDI_COMMON_DEFINITION} -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS)
   endif()
+endif()
+
+if(NOT LLVM_MISSING_LIBRARY)
 
   # Setup assembly compile
   if(QBDI_PLATFORM_WINDOWS)
@@ -181,95 +236,25 @@ if(${DEPENDENCY_SATISFIED})
     endif()
   endif()
 
-  function(PREPEND var prefix suffix)
-    set(listVar "")
-    foreach(f ${ARGN})
-      list(APPEND listVar "${prefix}${f}${suffix}")
-    endforeach(f)
-    set(${var}
-        "${listVar}"
-        PARENT_SCOPE)
-  endfunction(PREPEND)
-
-  # Generated using
-  # llvm-config --libs x86 mc mcparser mcdisassembler object support --system-libs
-  # TODO: use ExternalProject for llvm
-
-  # Common static LLVM objects
-  set(_LLVM_STATIC_LIBS
-      LLVM${QBDI_LLVM_ARCH}AsmParser
-      LLVM${QBDI_LLVM_ARCH}Desc
-      LLVM${QBDI_LLVM_ARCH}Disassembler
-      LLVM${QBDI_LLVM_ARCH}Info
-      LLVM${QBDI_LLVM_ARCH}Utils
-      LLVMBinaryFormat
-      LLVMMC
-      LLVMMCDisassembler
-      LLVMMCParser
-      LLVMSupport)
-
-  if(QBDI_PLATFORM_LINUX AND (QBDI_ARCH_X86 OR QBDI_ARCH_X86_64))
-
-    set(LLVM_LIBS -lrt -ldl -lpthread -lz -lm -lstdc++)
-
-  elseif(QBDI_PLATFORM_WINDOWS AND (QBDI_ARCH_X86 OR QBDI_ARCH_X86_64))
-
-    set(LLVM_LIBS "")
-
-  elseif(QBDI_PLATFORM_LINUX AND QBDI_ARCH_ARM)
-
-    set(LLVM_LIBS -ldl -lpthread -lm -lstdc++)
-
-  elseif(QBDI_PLATFORM_OSX AND (QBDI_ARCH_X86 OR QBDI_ARCH_X86_64))
-
-    set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMDemangle)
-    set(LLVM_LIBS -lz -lpthread -lffi -ledit -lm -lc++)
-
-  elseif(QBDI_PLATFORM_ANDROID AND QBDI_ARCH_ARM)
-
-    set(LLVM_LIBS -ldl -lz -lm) # -lgnustl_static)
-
-  elseif(QBDI_PLATFORM_ANDROID AND (QBDI_ARCH_X86 OR QBDI_ARCH_X86_64))
-
-    set(LLVM_LIBS -ldl -lz -lm) # -lgnustl_static)
-
-  elseif(QBDI_PLATFORM_IOS AND QBDI_ARCH_ARM)
-
-    set(_LLVM_STATIC_LIBS ${_LLVM_STATIC_LIBS} LLVMDemangle)
-    set(LLVM_LIBS -lz -lpthread -ledit -lm -lc++)
-
-  endif()
-
-  set(LLVM_LIBS_DIR deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/lib)
-
-  if(QBDI_PLATFORM_WINDOWS)
-    prepend(LLVM_STATIC_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/ ".lib"
-            ${_LLVM_STATIC_LIBS})
-  else()
-    prepend(LLVM_STATIC_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/lib ".a"
-            ${_LLVM_STATIC_LIBS})
-  endif()
-
-  merge_static_libs(LLVM_static LLVM_static \${LLVM_STATIC_LIBS})
-
   # Add QBDI source file in QBDI_obj
   add_library(QBDI_src INTERFACE)
   add_library(QBDI_shared_src INTERFACE)
 
+  target_link_libraries(QBDI_src INTERFACE qbdi-llvm)
   target_link_libraries(QBDI_src INTERFACE spdlog)
 
   include("${CMAKE_CURRENT_SOURCE_DIR}/src/CMakeLists.txt")
 
+  target_compile_features(QBDI_src INTERFACE cxx_std_17)
+  #target_compile_options(QBDI_src INTERFACE $<$<COMPILE_LANGUAGE:C>:${QBDI_COMMON_C_FLAGS}>)
+  #target_compile_options(QBDI_src INTERFACE $<$<COMPILE_LANGUAGE:CXX>:${QBDI_COMMON_CXX_FLAGS}>)
+  target_compile_definitions(QBDI_src INTERFACE ${QBDI_COMMON_DEFINITION})
   target_include_directories(
     QBDI_src
-    INTERFACE
-      "${CMAKE_CURRENT_BINARY_DIR}/include"
-      "${CMAKE_CURRENT_SOURCE_DIR}/include"
-      "${CMAKE_CURRENT_SOURCE_DIR}/src"
-      "${CMAKE_CURRENT_BINARY_DIR}/src"
-      "${CMAKE_CURRENT_SOURCE_DIR}/deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/include"
-      "${CMAKE_CURRENT_SOURCE_DIR}/deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/lib/Target/${QBDI_LLVM_ARCH}"
-  )
+    INTERFACE "${CMAKE_CURRENT_BINARY_DIR}/include"
+              "${CMAKE_CURRENT_SOURCE_DIR}/include"
+              "${CMAKE_CURRENT_SOURCE_DIR}/src"
+              "${CMAKE_CURRENT_BINARY_DIR}/src")
 
   target_include_directories(
     QBDI_shared_src INTERFACE "${CMAKE_CURRENT_BINARY_DIR}/include"
@@ -277,12 +262,10 @@ if(${DEPENDENCY_SATISFIED})
 
   if(QBDI_STATIC_LIBRARY)
     add_library(QBDI_obj STATIC)
-    target_link_libraries(QBDI_obj PRIVATE QBDI_src)
+    target_link_libraries(QBDI_obj PRIVATE QBDI_src spdlog)
+    set_target_properties(QBDI_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-    set_target_properties(QBDI_obj PROPERTIES CXX_STANDARD 17
-                                              CXX_STANDARD_REQUIRED ON)
-
-    set(qbdi_static_libs LLVM_static QBDI_obj)
+    set(qbdi_static_libs qbdi-llvm QBDI_obj)
 
     merge_static_libs(QBDI_static QBDI \${qbdi_static_libs})
 
@@ -291,11 +274,9 @@ if(${DEPENDENCY_SATISFIED})
       QBDI_static
       PUBLIC $<INSTALL_INTERFACE:include>
              $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI>
-             $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
-             $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/QBDI>)
+             $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>)
 
-    target_link_libraries(QBDI_static PUBLIC ${LLVM_LIBS})
+    target_link_libraries(QBDI_static PUBLIC ${LLVM_LINK_LIBRARY})
     add_dependencies(QBDI_static QBDI_obj)
 
     if(QBDI_PLATFORM_WINDOWS)
@@ -317,19 +298,13 @@ if(${DEPENDENCY_SATISFIED})
     add_library(QBDI SHARED)
     add_library(QBDI::QBDI ALIAS QBDI)
 
-    set_target_properties(QBDI PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED
-                                                          ON)
-
     target_include_directories(
       QBDI
       PUBLIC $<INSTALL_INTERFACE:include>
              $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI>
-             $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
-             $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/QBDI>)
+             $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>)
 
-    target_link_libraries(QBDI PRIVATE QBDI_src QBDI_shared_src LLVM_static
-                                       ${LLVM_LIBS})
+    target_link_libraries(QBDI PRIVATE QBDI_src QBDI_shared_src qbdi-llvm)
 
     set_target_properties(QBDI PROPERTIES OUTPUT_NAME QBDI)
 
@@ -392,11 +367,11 @@ if(${DEPENDENCY_SATISFIED})
   endif()
 
   if(FULL_PACKAGE)
-    string(REPLACE ";" " " LLVM_LIBS_STR "${LLVM_LIBS}")
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/package/qbdi.pc.in"
-                   "${CMAKE_CURRENT_BINARY_DIR}/package/qbdi.pc" @ONLY)
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/package/qbdi.pc"
-            DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig/")
+    #string(REPLACE ";" " " LLVM_LIBS_STR "${LLVM_LIBS}")
+    #configure_file("${CMAKE_CURRENT_SOURCE_DIR}/package/qbdi.pc.in"
+    #               "${CMAKE_CURRENT_BINARY_DIR}/package/qbdi.pc" @ONLY)
+    #install(FILES "${CMAKE_CURRENT_BINARY_DIR}/package/qbdi.pc"
+    #        DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig/")
 
     set(RESOURCES_PREFIX "${CMAKE_INSTALL_DATADIR}/qbdi${QBDI_ARCH}")
 
@@ -549,7 +524,7 @@ if(${DEPENDENCY_SATISFIED})
     add_subdirectory(examples)
   endif()
 
-  # DEPENDENCY_SATISFIED
+  # NOT LLVM_MISSING_LIBRARY
 else()
   # raise an erreur if the compilation is run without llvm
   add_custom_target(missing-llvm ALL cmake -E false)

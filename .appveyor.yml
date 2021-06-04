@@ -26,6 +26,7 @@ environment:
       PYTHON37: "C:\\Python37-x64"
       PYTHON38: "C:\\Python38-x64"
       PYTHON39: "C:\\Python39-x64"
+      LLVM_BUILD_DIR: c:\projects\qbdi\deps\LLVM-10.0.1-windows-X64
     - platform: X86
       qbdi_arch: X86
       qbdi_plateform: windows
@@ -33,6 +34,7 @@ environment:
       PYTHON37: "C:\\Python37"
       PYTHON38: "C:\\Python38"
       PYTHON39: "C:\\Python39"
+      LLVM_BUILD_DIR: c:\projects\qbdi\deps\LLVM-10.0.1-windows-X86
 
 for:
 -
@@ -46,8 +48,7 @@ for:
 
 
 cache:
-  - deps\llvm\%qbdi_plateform%-%qbdi_arch%\lib -> deps\llvm\build.py
-  - deps\llvm\%qbdi_plateform%-%qbdi_arch%\include -> deps\llvm\build.py
+  - '%LLVM_BUILD_DIR%' -> cmake/llvm
   - '%SCCACHE_DIR%'
 
 install:
@@ -61,14 +62,14 @@ install:
   - "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat\" %Platform%"
   - "SET OLDPATH=%PATH%"
   - "SET PATH=%PYTHON36%;%PYTHON36%\\Scripts;%OLDPATH%"
+  - "SET LLVM_BUILD_PATH=%LLVM_BUILD_DIR%"
   - cmd: mkdir build
   - cmd: cd build
 
 build_script:
-  - cmd: cmake .. -G "Ninja" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DQBDI_PLATFORM=%qbdi_plateform% -DQBDI_ARCH=%qbdi_arch% -DQBDI_TOOLS_PYQBDI=Off -DQBDI_EXAMPLES=On
-  - ps: if (-not((Test-Path("../deps/llvm/$env:qbdi_plateform-$env:qbdi_arch/lib")) -and (Test-Path("../deps/llvm/$env:qbdi_plateform-$env:qbdi_arch/include")))) { python ..\deps\llvm\build.py prepare "$env:qbdi_plateform-$env:qbdi_arch" ; python ..\deps\llvm\build.py build "$env:qbdi_plateform-$env:qbdi_arch" OFF; python ..\deps\llvm\build.py package "$env:qbdi_plateform-$env:qbdi_arch" }
-  - cmd: python ..\deps\llvm\build.py clean %qbdi_plateform%-%qbdi_arch%
-  - cmd: cmake .. -G "Ninja" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DQBDI_PLATFORM=%qbdi_plateform% -DQBDI_ARCH=%qbdi_arch% -DQBDI_TOOLS_PYQBDI=Off -DQBDI_EXAMPLES=On
+  - cmd: cmake .. -G "Ninja" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DQBDI_PLATFORM=%qbdi_plateform% -DQBDI_ARCH=%qbdi_arch% -DQBDI_TOOLS_PYQBDI=Off -DQBDI_EXAMPLES=On -DQBDI_LLVM_PREFIX=%LLVM_BUILD_DIR%
+  - cmd: ninja llvm
+  - cmd: cmake .. -G "Ninja" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DQBDI_PLATFORM=%qbdi_plateform% -DQBDI_ARCH=%qbdi_arch% -DQBDI_TOOLS_PYQBDI=Off -DQBDI_EXAMPLES=On -DQBDI_LLVM_PREFIX=%LLVM_BUILD_DIR%
   - cmd: ninja
 
 after_build:

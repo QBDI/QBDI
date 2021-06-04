@@ -121,6 +121,7 @@ void Engine::init() {
       processTarget->createMCSubtargetInfo(tripleName, cpu, featuresStr));
   QBDI_DEBUG("Initialized LLVM subtarget with cpu {} and features {}",
              cpu.c_str(), featuresStr.c_str());
+
   auto MAB = std::unique_ptr<llvm::MCAsmBackend>(
       processTarget->createMCAsmBackend(*MSTI, *MRI, MCOptions));
   MCE = std::unique_ptr<llvm::MCCodeEmitter>(
