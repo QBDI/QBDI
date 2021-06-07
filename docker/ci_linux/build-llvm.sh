@@ -2,9 +2,21 @@
 
 set -ex
 
-cd ~/qbdi/deps/llvm/
+cd "${HOME}/qbdi/"
+mkdir -p build
+cd build
 
-python3 build.py prepare ${QBDI_PLATFORM}-${QBDI_ARCH}
-python3 build.py build ${QBDI_PLATFORM}-${QBDI_ARCH}
-python3 build.py package ${QBDI_PLATFORM}-${QBDI_ARCH}
-python3 build.py clean ${QBDI_PLATFORM}-${QBDI_ARCH}
+cmake .. \
+      -G Ninja \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_CROSSCOMPILING=FALSE \
+      -DQBDI_PLATFORM=${QBDI_PLATFORM} \
+      -DQBDI_ARCH=${QBDI_ARCH} \
+      -DQBDI_LLVM_PREFIX="${HOME}/qbdi/deps/LLVM-${QBDI_LLVM_VERSION}-${QBDI_PLATFORM}-${QBDI_ARCH}/" \
+      -DCMAKE_INSTALL_PREFIX=$PREFIX \
+      -DQBDI_EXAMPLES=ON \
+      -DQBDI_TOOLS_VALIDATOR=ON \
+      -DQBDI_TOOLS_PYQBDI=ON
+
+ninja llvm
+

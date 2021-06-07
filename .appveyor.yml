@@ -1,4 +1,4 @@
-version: 0.7.2.{build}
+version: 0.8.0.{build}
 
 clone_folder: c:\projects\qbdi
 
@@ -26,7 +26,7 @@ environment:
       PYTHON37: "C:\\Python37-x64"
       PYTHON38: "C:\\Python38-x64"
       PYTHON39: "C:\\Python39-x64"
-      QBDI_LLVM_PREFIX: c:\projects\qbdi\deps\LLVM-10.0.1-windows-X64
+      QBDI_LLVM_PREFIX: c:\projects\qbdi\deps\LLVM-10.0.1-windows-X86_64
     - platform: X86
       qbdi_arch: X86
       qbdi_plateform: windows
@@ -48,7 +48,7 @@ for:
 
 
 cache:
-  - '%QBDI_LLVM_PREFIX%/build' -> cmake/llvm
+  - '%QBDI_LLVM_PREFIX%/build -> cmake/llvm/QBDI_llvm.cmake, cmake/llvm/LLVMExportsWindows*'
   - '%QBDI_LLVM_PREFIX%/src/llvm-10.0.1.src.tar.xz'
   - '%SCCACHE_DIR%'
 
