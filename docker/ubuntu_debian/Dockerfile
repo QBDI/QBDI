@@ -40,22 +40,6 @@ RUN adduser --disabled-password --gecos '' $USER && \
 # switch to new user
 USER $USER
 
-# install QBDI compilation dependencies
-
-# git archive -o qbdi-deps.tar.gz --prefix=qbdi-deps/ HEAD deps
-ADD qbdi-deps.tar.gz $HOME/
-
-WORKDIR $HOME
-
-RUN sudo chown -R $USER:$USER .
-
-WORKDIR $HOME/qbdi-deps/deps/llvm/
-
-RUN python3 build.py prepare ${QBDI_PLATFORM}-${QBDI_ARCH} && \
-    python3 build.py build ${QBDI_PLATFORM}-${QBDI_ARCH} OFF && \
-    python3 build.py package ${QBDI_PLATFORM}-${QBDI_ARCH} && \
-    python3 build.py clean ${QBDI_PLATFORM}-${QBDI_ARCH}
-
 # build / test / install QBDI
 ARG CMAKE_ARGUMENT=""
 
@@ -65,12 +49,19 @@ ADD qbdi.tar.gz $HOME/
 WORKDIR $HOME/qbdi
 
 RUN sudo chown -R $USER:$USER . && \
-    # link llvm
-    rm -rf deps && \
-    ln -s $HOME/qbdi-deps/deps deps && \
-    # build
     mkdir build && \
     cd build && \
+    cmake -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_CROSSCOMPILING=FALSE \
+          -DQBDI_PLATFORM=$QBDI_PLATFORM \
+          -DQBDI_ARCH=$QBDI_ARCH \
+          -DCMAKE_INSTALL_PREFIX=$PREFIX \
+          -DQBDI_TOOLS_PYQBDI=ON \
+          -DQBDI_CCACHE=OFF \
+          $CMAKE_ARGUMENT \
+          ../ && \
+    ninja llvm && \
     cmake -G Ninja \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_CROSSCOMPILING=FALSE \

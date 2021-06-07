@@ -21,6 +21,7 @@ jobs:
       QBDI_PLATFORM: 'android'
       NDK_VERSION: 'r21d'
       ANDROID_PLATFORM: 23
+      QBDI_LLVM_VERSION: '10.0.1'
     steps:
       - name: checkout
         uses: actions/checkout@v2
@@ -40,30 +41,30 @@ jobs:
         id: cache-llvm
         with:
           path: |
-            deps/llvm/android-${{ matrix.QBDI_ARCH }}/include
-            deps/llvm/android-${{ matrix.QBDI_ARCH }}/lib
-          key: llvm-android-${{ matrix.QBDI_ARCH }}-${{ hashFiles('deps/llvm/build.py') }}-ndk-${{ env.NDK_VERSION }}
+            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/build
+            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/src/llvm-${{ env.QBDI_LLVM_VERSION }}.src.tar.xz
+            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/src/qbdi-llvm-deps
+          key: llvm-${{ env.QBDI_LLVM_VERSION }}-${{ runner.os }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}-${{ hashFiles('cmake/llvm/QBDI_llvm.cmake') }}-ndk-${{ env.NDK_VERSION }}
+      - name: Cache android NDK ${{ env.NDK_VERSION }}
+        uses: actions/cache@v2
+        id: cache-ndk
+        with:
+          path: |
+            android-ndk-${{ env.NDK_VERSION }}/
+          key: ndk-${{ env.NDK_VERSION }}-linux-x86_64
       - name: Install dependencies
         run: sudo apt-get install build-essential ccache cmake g++ libstdc++-8-dev make ninja-build pkg-config python3 unzip wget zlib1g-dev
       - name: Install android NDK ${{ env.NDK_VERSION }}
+        if: steps.cache-ndk.outputs.cache-hit != 'true'
         run: |
           wget --no-verbose https://dl.google.com/android/repository/android-ndk-${{ env.NDK_VERSION }}-linux-x86_64.zip
           unzip -q android-ndk-${{ env.NDK_VERSION }}-linux-x86_64.zip
           rm android-ndk-${{ env.NDK_VERSION }}-linux-x86_64.zip
+      - run: mkdir -p build
       - name: Build LLVM dependencies
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        working-directory: ./deps/llvm/
-        env:
-          NDK_PATH: ${{ github.workspace }}/android-ndk-${{ env.NDK_VERSION }}
+        working-directory: ./build
         run: |
-            python3 build.py prepare ${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}
-            python3 build.py build ${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}
-            python3 build.py package ${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}
-            python3 build.py clean ${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}
-      - name: Build Package
-        run: |
-          mkdir build
-          cd build
           cmake -DQBDI_PLATFORM=${{ env.QBDI_PLATFORM }} \
                 -DQBDI_ARCH=${{ matrix.QBDI_ARCH }} \
                 -DCMAKE_BUILD_TYPE=Release \
@@ -71,6 +72,21 @@ jobs:
                 -DANDROID_ABI=${{ matrix.ANDROID_ABI }} \
                 -DANDROID_PLATFORM=${{ env.ANDROID_PLATFORM }} \
                 -DQBDI_TEST=OFF \
+                -DQBDI_LLVM_PREFIX="${{ github.workspace }}/deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/" \
+                -G Ninja \
+                ..
+          ninja llvm
+      - name: Build Package
+        working-directory: ./build
+        run: |
+          cmake -DQBDI_PLATFORM=${{ env.QBDI_PLATFORM }} \
+                -DQBDI_ARCH=${{ matrix.QBDI_ARCH }} \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/android-ndk-${{ env.NDK_VERSION }}/build/cmake/android.toolchain.cmake \
+                -DANDROID_ABI=${{ matrix.ANDROID_ABI }} \
+                -DANDROID_PLATFORM=${{ env.ANDROID_PLATFORM }} \
+                -DQBDI_TEST=OFF \
+                -DQBDI_LLVM_PREFIX="${{ github.workspace }}/deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/" \
                 -G Ninja \
                 ..
           ninja

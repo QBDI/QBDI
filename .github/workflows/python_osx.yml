@@ -14,6 +14,7 @@ jobs:
       QBDI_PLATFORM: 'osx'
       QBDI_ARCH: 'X86_64'
       MACOSX_DEPLOYMENT_TARGET: '10.14'
+      QBDI_LLVM_VERSION: '10.0.1'
     steps:
       - name: Install system dependencies
         run: |
@@ -37,16 +38,23 @@ jobs:
         id: cache-llvm
         with:
           path: |
-            deps/llvm/osx-X86_64/include
-            deps/llvm/osx-X86_64/lib
-          key: llvm-${{ runner.os }}-osx-X86_64-${{ hashFiles('deps/llvm/build.py') }}-${{ env.MACOSX_DEPLOYMENT_TARGET }}
+            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}/build
+            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}/src/llvm-${{ env.QBDI_LLVM_VERSION }}.src.tar.xz
+            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}/src/qbdi-llvm-deps
+          key: llvm-${{ env.QBDI_LLVM_VERSION }}-${{ runner.os }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}-${{ hashFiles('cmake/llvm/QBDI_llvm.cmake') }}-${{ env.MACOSX_DEPLOYMENT_TARGET }}
       - name: build llvm
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
-          python3 ./deps/llvm/build.py prepare ${QBDI_PLATFORM}-${QBDI_ARCH}
-          python3 ./deps/llvm/build.py build   ${QBDI_PLATFORM}-${QBDI_ARCH}
-          python3 ./deps/llvm/build.py package ${QBDI_PLATFORM}-${QBDI_ARCH}
-          python3 ./deps/llvm/build.py clean   ${QBDI_PLATFORM}-${QBDI_ARCH}
+          mkdir -p build
+          cd build
+          cmake -G Ninja \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_CROSSCOMPILING=FALSE \
+                -DQBDI_PLATFORM=${QBDI_PLATFORM} \
+                -DQBDI_ARCH=${QBDI_ARCH} \
+                -DQBDI_LLVM_PREFIX="${{ github.workspace }}/deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}/" \
+                ..
+          ninja llvm
 
   build-pyqbdi:
     needs: build-llvm
@@ -58,6 +66,7 @@ jobs:
       QBDI_PLATFORM: 'osx'
       QBDI_ARCH: 'X86_64'
       MACOSX_DEPLOYMENT_TARGET: '10.14'
+      QBDI_LLVM_VERSION: '10.0.1'
     steps:
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
@@ -87,21 +96,16 @@ jobs:
         id: cache-llvm-python
         with:
           path: |
-            deps/llvm/osx-X86_64/include
-            deps/llvm/osx-X86_64/lib
-          key: llvm-${{ runner.os }}-osx-X86_64-${{ hashFiles('deps/llvm/build.py') }}-${{ env.MACOSX_DEPLOYMENT_TARGET }}-python-${{ matrix.python-version }}
+            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}/build
+            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}/src/llvm-${{ env.QBDI_LLVM_VERSION }}.src.tar.xz
+            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}/src/qbdi-llvm-deps
+          key: llvm-${{ env.QBDI_LLVM_VERSION }}-${{ runner.os }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}-${{ hashFiles('cmake/llvm/QBDI_llvm.cmake') }}-${{ env.MACOSX_DEPLOYMENT_TARGET }}-python-${{ matrix.python-version }}
           restore-keys: |
-            llvm-${{ runner.os }}-osx-X86_64-${{ hashFiles('deps/llvm/build.py') }}-${{ env.MACOSX_DEPLOYMENT_TARGET }}
-      - name: build llvm
-        if: steps.cache-llvm-python.outputs.cache-hit != 'true'
-        run: |
-          [[ ! -d ./deps/llvm/osx-X86_64 ]] || exit 0
-          python3 ./deps/llvm/build.py prepare ${QBDI_PLATFORM}-${QBDI_ARCH}
-          python3 ./deps/llvm/build.py build   ${QBDI_PLATFORM}-${QBDI_ARCH}
-          python3 ./deps/llvm/build.py package ${QBDI_PLATFORM}-${QBDI_ARCH}
-          python3 ./deps/llvm/build.py clean   ${QBDI_PLATFORM}-${QBDI_ARCH}
+            llvm-${{ env.QBDI_LLVM_VERSION }}-${{ runner.os }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}-${{ hashFiles('cmake/llvm/QBDI_llvm.cmake') }}-${{ env.MACOSX_DEPLOYMENT_TARGET }}
       - run: mkdir -p build
       - name: Build PyQBDI ${{ matrix.python-version }}
+        env:
+          QBDI_LLVM_PREFIX: "${{ github.workspace }}/deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}/"
         run: |
           python3 --version
           python3 setup.py bdist_wheel

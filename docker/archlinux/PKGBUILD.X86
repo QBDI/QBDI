@@ -11,7 +11,7 @@ url="https://qbdi.quarkslab.com/"
 license=('apache2')
 depends=('lib32-zlib')
 options=(staticlibs)
-makedepends=('cmake' 'make' 'gcc' 'python' 'git')
+makedepends=('cmake' 'ninja' 'gcc' 'python' 'git')
 
 prepare() {
     mkdir "$pkgname-$pkgver"
@@ -26,8 +26,9 @@ build() {
           -DCMAKE_INSTALL_PREFIX=/usr \
           -DQBDI_TOOLS_PYQBDI=OFF \
           -DQBDI_CCACHE=OFF \
+          -G Ninja \
           ../../../
-    [[ -d "../../../deps/llvm/linux-X86" ]] || make llvm
+    cmake --build . --target llvm
     cmake -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_CROSSCOMPILING=FALSE \
           -DQBDI_PLATFORM=linux \
@@ -35,8 +36,9 @@ build() {
           -DCMAKE_INSTALL_PREFIX=/usr \
           -DQBDI_TOOLS_PYQBDI=OFF \
           -DQBDI_CCACHE=OFF \
+          -G Ninja \
           ../../../
-    make -j4
+    cmake --build .
 }
 
 check() {
@@ -46,5 +48,5 @@ check() {
 
 package() {
     cd "$pkgname-$pkgver"
-    make DESTDIR="$pkgdir/" install
+    DESTDIR="$pkgdir/" cmake --build . --target install
 }

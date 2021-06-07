@@ -15,6 +15,7 @@ jobs:
         QBDI_ARCH: ['X86_64', 'X86']
     env:
       QBDI_PLATFORM: 'linux'
+      QBDI_LLVM_VERSION: '10.0.1'
     steps:
       - name: checkout
         uses: actions/checkout@v2
@@ -34,9 +35,10 @@ jobs:
         id: cache-llvm
         with:
           path: |
-            deps/llvm/linux-${{ matrix.QBDI_ARCH }}/include
-            deps/llvm/linux-${{ matrix.QBDI_ARCH }}/lib
-          key: llvm-${{ runner.os }}-pyqbdi-linux-${{ matrix.QBDI_ARCH }}-${{ hashFiles('deps/llvm/build.py') }}
+            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/build
+            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/src/llvm-${{ env.QBDI_LLVM_VERSION }}.src.tar.xz
+            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/src/qbdi-llvm-deps
+          key: llvm-${{ env.QBDI_LLVM_VERSION }}-${{ runner.os }}-pyqbdi-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}-${{ hashFiles('cmake/llvm/QBDI_llvm.cmake') }}
       - name: Create build image
         env:
           QBDI_ARCH: ${{ matrix.QBDI_ARCH }}

@@ -1,12 +1,16 @@
 language: cpp 
 
+env:
+  global:
+    - QBDI_LLVM_VERSION="10.0.1"
+    - CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DQBDI_TOOLS_VALIDATOR=ON -DQBDI_EXAMPLES=ON"
+    - QBDI_PLATFORM="osx"
+
 _osx_target: &osx_target
   os: osx
   osx_image: xcode9.4
   env:
-    - QBDI_PLATFORM="osx"
     - QBDI_ARCH="X86_64"
-    - CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DQBDI_PLATFORM=${QBDI_PLATFORM} -DQBDI_ARCH=${QBDI_ARCH} -DQBDI_TOOLS_VALIDATOR=ON -DQBDI_EXAMPLES=ON"
   before_script:
     - HOMEBREW_NO_AUTO_UPDATE=1 brew install ccache python3
 
@@ -14,32 +18,26 @@ _osx_target32: &osx_target32
   os: osx
   osx_image: xcode9.4
   env:
-    - QBDI_PLATFORM="osx"
     - QBDI_ARCH="X86"
-    - CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DQBDI_PLATFORM=${QBDI_PLATFORM} -DQBDI_ARCH=${QBDI_ARCH} -DQBDI_TOOLS_VALIDATOR=ON -DQBDI_EXAMPLES=ON"
   before_script:
     - HOMEBREW_NO_AUTO_UPDATE=1 brew install ccache python3
 
 _compile_and_test: &compile_and_test
   script:
     - mkdir build && cd build
-    - cmake .. ${CMAKE_ARGS}
-    - eval '[[ -n "$(find ../deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/lib -type f -print -quit)" && -n "$(find ../deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/include -type f -print -quit)" ]] || make llvm'
-    - cmake .. ${CMAKE_ARGS}
+    - cmake .. ${CMAKE_ARGS} -DQBDI_LLVM_PREFIX="../deps/LLVM-${QBDI_LLVM_VERSION}-${QBDI_PLATFORM}-${QBDI_ARCH}/" -DQBDI_PLATFORM=${QBDI_PLATFORM} -DQBDI_ARCH=${QBDI_ARCH}
+    - eval '[[ -n "$(find ../deps/LLVM-${QBDI_LLVM_VERSION}-${QBDI_PLATFORM}-${QBDI_ARCH}/build -type f -print -quit)" && -n "$(find ../deps/LLVM-${QBDI_LLVM_VERSION}-${QBDI_PLATFORM}-${QBDI_ARCH}/src/qbdi-llvm-deps -type f -print -quit)" ]] || make llvm'
+    - cmake .. ${CMAKE_ARGS} -DQBDI_LLVM_PREFIX="../deps/LLVM-${QBDI_LLVM_VERSION}-${QBDI_PLATFORM}-${QBDI_ARCH}/" -DQBDI_PLATFORM=${QBDI_PLATFORM} -DQBDI_ARCH=${QBDI_ARCH}
     - make -j2
     - ./test/QBDITest
-  before_cache:
-    # Reduce cache size
-    - python3 ../deps/llvm/build.py clean ${QBDI_PLATFORM}-${QBDI_ARCH}
 
 cache:
   apt: TRUE
   ccache: TRUE
   directories:
-    - deps/llvm/osx-X86_64/include
-    - deps/llvm/osx-X86_64/lib
-    - deps/llvm/osx-X86/include
-    - deps/llvm/osx-X86/lib
+    - deps/LLVM-${QBDI_LLVM_VERSION}-${QBDI_PLATFORM}-${QBDI_ARCH}/build
+    - deps/LLVM-${QBDI_LLVM_VERSION}-${QBDI_PLATFORM}-${QBDI_ARCH}/src/llvm-10.0.1.src.tar.xz
+    - deps/LLVM-${QBDI_LLVM_VERSION}-${QBDI_PLATFORM}-${QBDI_ARCH}/src/qbdi-llvm-deps
 
 jobs:
   include:

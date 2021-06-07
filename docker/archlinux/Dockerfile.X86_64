@@ -15,7 +15,7 @@ RUN pacman -Suy --noconfirm && \
         sudo \
         gcc \
         git \
-        make \
+        ninja \
         cmake \
         python2 \
         python3 \
@@ -28,22 +28,6 @@ RUN useradd -Groot $USER && \
 
 # switch to new user
 USER $USER
-
-# install QBDI compilation dependencies
-
-# git archive -o qbdi-deps.tar.gz --prefix=qbdi-deps/ HEAD deps
-ADD qbdi-deps.tar.gz $HOME/
-
-WORKDIR $HOME
-
-RUN sudo chown -R $USER:$USER .
-
-WORKDIR $HOME/qbdi-deps/deps/llvm/
-
-RUN python3 build.py prepare ${QBDI_PLATFORM}-${QBDI_ARCH} && \
-    python3 build.py build ${QBDI_PLATFORM}-${QBDI_ARCH} OFF && \
-    python3 build.py package ${QBDI_PLATFORM}-${QBDI_ARCH} && \
-    python3 build.py clean ${QBDI_PLATFORM}-${QBDI_ARCH}
 
 # build / test / install QBDI
 
