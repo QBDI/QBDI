@@ -99,102 +99,105 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/Utility/Version_commit.h.in"
 include(QBDI_llvm)
 
 # log debug
-set(QBDI_COMMON_DEFINITION -DSPDLOG_NO_TLS=1 -DSPDLOG_NO_THREAD_ID=1 -DSPDLOG_NO_DATETIME=1)
+set(QBDI_COMMON_DEFINITION -DSPDLOG_NO_TLS=1 -DSPDLOG_NO_THREAD_ID=1
+                           -DSPDLOG_NO_DATETIME=1)
 if(QBDI_LOG_DEBUG)
   message(STATUS "Compiling with QBDI_LOG_DEBUG")
-  set(QBDI_COMMON_DEFINITION ${QBDI_COMMON_DEFINITION} -D_QBDI_LOG_DEBUG -DSPDLOG_DEBUG_ON=1 -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG)
+  set(QBDI_COMMON_DEFINITION
+      ${QBDI_COMMON_DEFINITION} -D_QBDI_LOG_DEBUG -DSPDLOG_DEBUG_ON=1
+      -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG)
 else()
-  set(QBDI_COMMON_DEFINITION ${QBDI_COMMON_DEFINITION} -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_INFO)
+  set(QBDI_COMMON_DEFINITION ${QBDI_COMMON_DEFINITION}
+                             -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_INFO)
 endif()
 
 if(QBDI_PLATFORM_WINDOWS)
-  #set(QBDI_COMMON_C_FLAGS
-  #            /DWIN32
-  #            /D_WINDOWS
-  #            /W3
-  #            /MP
-  #            /permissive-
-  #            -D_CRT_SECURE_NO_DEPRECATE
-  #            -D_CRT_SECURE_NO_WARNINGS
-  #            -D_CRT_NONSTDC_NO_DEPRECATE
-  #            -D_CRT_NONSTDC_NO_WARNINGS
-  #            -D_SCL_SECURE_NO_DEPRECATE
-  #            -D_SCL_SECURE_NO_WARNINGS
-  #            -wd4141
-  #            -wd4146
-  #            -wd4180
-  #            -wd4244
-  #            -wd4258
-  #            -wd4267
-  #            -wd4291
-  #            -wd4345
-  #            -wd4351
-  #            -wd4355
-  #            -wd4456
-  #            -wd4457
-  #            -wd4458
-  #            -wd4459
-  #            -wd4503
-  #            -wd4624
-  #            -wd4722
-  #            -wd4800
-  #            -w14062
-  #            -we4238
-  #            -D__STDC_CONSTANT_MACROS
-  #            -D__STDC_FORMAT_MACROS
-  #            -D__STDC_LIMIT_MACROS)
-  #set(QBDI_COMMON_CXX_FLAGS
-  #            /DWIN32
-  #            /D_WINDOWS
-  #            /W3
-  #            /MP
-  #            /permissive-
-  #            -D_CRT_SECURE_NO_DEPRECATE
-  #            -D_CRT_SECURE_NO_WARNINGS
-  #            -D_CRT_NONSTDC_NO_DEPRECATE
-  #            -D_CRT_NONSTDC_NO_WARNINGS
-  #            -D_SCL_SECURE_NO_DEPRECATE
-  #            -D_SCL_SECURE_NO_WARNINGS
-  #            -wd4141
-  #            -wd4146
-  #            -wd4180
-  #            -wd4244
-  #            -wd4258
-  #            -wd4267
-  #            -wd4291
-  #            -wd4345
-  #            -wd4351
-  #            -wd4355
-  #            -wd4456
-  #            -wd4457
-  #            -wd4458
-  #            -wd4459
-  #            -wd4503
-  #            -wd4624
-  #            -wd4722
-  #            -wd4800
-  #            -w14062
-  #            -we4238
-  #            -D__STDC_CONSTANT_MACROS
-  #            -D__STDC_FORMAT_MACROS
-  #            -D__STDC_LIMIT_MACROS
-  #            -D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /DWIN32 /D_WINDOWS /W3 /MP /permissive- -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS -D_SCL_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -wd4141 -wd4146 -wd4180 -wd4244 -wd4258 -wd4267 -wd4291 -wd4345 -wd4351 -wd4355 -wd4456 -wd4457 -wd4458 -wd4459 -wd4503 -wd4624 -wd4722 -wd4800 -w14062 -we4238 -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DWIN32 /D_WINDOWS /W3 /MP /permissive- -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS -D_SCL_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -wd4141 -wd4146 -wd4180 -wd4244 -wd4258 -wd4267 -wd4291 -wd4345 -wd4351 -wd4355 -wd4456 -wd4457 -wd4458 -wd4459 -wd4503 -wd4624 -wd4722 -wd4800 -w14062 -we4238 -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING")
-
+  set(QBDI_COMMON_C_FLAGS
+      /DWIN32
+      /D_WINDOWS
+      /W3
+      /MP
+      /permissive-
+      -D_CRT_SECURE_NO_DEPRECATE
+      -D_CRT_SECURE_NO_WARNINGS
+      -D_CRT_NONSTDC_NO_DEPRECATE
+      -D_CRT_NONSTDC_NO_WARNINGS
+      -D_SCL_SECURE_NO_DEPRECATE
+      -D_SCL_SECURE_NO_WARNINGS
+      -wd4141
+      -wd4146
+      -wd4180
+      -wd4244
+      -wd4258
+      -wd4267
+      -wd4291
+      -wd4345
+      -wd4351
+      -wd4355
+      -wd4456
+      -wd4457
+      -wd4458
+      -wd4459
+      -wd4503
+      -wd4624
+      -wd4722
+      -wd4800
+      -w14062
+      -we4238
+      -D__STDC_CONSTANT_MACROS
+      -D__STDC_FORMAT_MACROS
+      -D__STDC_LIMIT_MACROS)
+  set(QBDI_COMMON_CXX_FLAGS
+      /DWIN32
+      /D_WINDOWS
+      /W3
+      /MP
+      /permissive-
+      -D_CRT_SECURE_NO_DEPRECATE
+      -D_CRT_SECURE_NO_WARNINGS
+      -D_CRT_NONSTDC_NO_DEPRECATE
+      -D_CRT_NONSTDC_NO_WARNINGS
+      -D_SCL_SECURE_NO_DEPRECATE
+      -D_SCL_SECURE_NO_WARNINGS
+      -wd4141
+      -wd4146
+      -wd4180
+      -wd4244
+      -wd4258
+      -wd4267
+      -wd4291
+      -wd4345
+      -wd4351
+      -wd4355
+      -wd4456
+      -wd4457
+      -wd4458
+      -wd4459
+      -wd4503
+      -wd4624
+      -wd4722
+      -wd4800
+      -w14062
+      -we4238
+      -D__STDC_CONSTANT_MACROS
+      -D__STDC_FORMAT_MACROS
+      -D__STDC_LIMIT_MACROS
+      -D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING)
 else()
-  #set(QBDI_COMMON_C_FLAGS
-  #            -Wall -ffunction-sections
-  #            -fdata-sections -fvisibility-inlines-hidden -fvisibility=hidden
-  #            -fPIC)
-  #set(QBDI_COMMON_CXX_FLAGS
-  #            -Wall -ffunction-sections
-  #            -fdata-sections -fvisibility-inlines-hidden -fvisibility=hidden
-  #            -fPIC -fno-rtti)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -ffunction-sections -fdata-sections -fvisibility-inlines-hidden -fvisibility=hidden -fPIC")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -ffunction-sections -fdata-sections -fvisibility-inlines-hidden -fvisibility=hidden -fPIC -fno-rtti")
+  set(QBDI_COMMON_C_FLAGS -Wall -ffunction-sections -fdata-sections
+                          -fvisibility-inlines-hidden -fvisibility=hidden -fPIC)
+  set(QBDI_COMMON_CXX_FLAGS
+      -Wall
+      -ffunction-sections
+      -fdata-sections
+      -fvisibility-inlines-hidden
+      -fvisibility=hidden
+      -fPIC
+      -fno-rtti)
   if(NOT QBDI_PLATFORM_ANDROID)
-    set(QBDI_COMMON_DEFINITION ${QBDI_COMMON_DEFINITION} -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS)
+    set(QBDI_COMMON_DEFINITION
+        ${QBDI_COMMON_DEFINITION} -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS
+        -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS)
   endif()
 endif()
 
@@ -246,8 +249,10 @@ if(NOT LLVM_MISSING_LIBRARY)
   include("${CMAKE_CURRENT_SOURCE_DIR}/src/CMakeLists.txt")
 
   target_compile_features(QBDI_src INTERFACE cxx_std_17)
-  #target_compile_options(QBDI_src INTERFACE $<$<COMPILE_LANGUAGE:C>:${QBDI_COMMON_C_FLAGS}>)
-  #target_compile_options(QBDI_src INTERFACE $<$<COMPILE_LANGUAGE:CXX>:${QBDI_COMMON_CXX_FLAGS}>)
+  target_compile_options(
+    QBDI_src INTERFACE $<$<COMPILE_LANGUAGE:C>:${QBDI_COMMON_C_FLAGS}>)
+  target_compile_options(
+    QBDI_src INTERFACE $<$<COMPILE_LANGUAGE:CXX>:${QBDI_COMMON_CXX_FLAGS}>)
   target_compile_definitions(QBDI_src INTERFACE ${QBDI_COMMON_DEFINITION})
   target_include_directories(
     QBDI_src

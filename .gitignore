@@ -3,6 +3,7 @@ TODO
 build*/*
 
 deps
+dist
 
 docs/build
 docs/doxygen_c

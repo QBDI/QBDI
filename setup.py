@@ -84,8 +84,8 @@ class CMakeBuild(build_ext):
             else:
                 build_args.append('-j4')
 
-        if 'LLVM_BUILD_DIR' in os.environ:
-            cmake_args.append('-DQBDI_LLVM_PREFIX={}'.format(os.environ.get('LLVM_BUILD_DIR')))
+        if 'QBDI_LLVM_PREFIX' in os.environ:
+            cmake_args.append('-DQBDI_LLVM_PREFIX={}'.format(os.environ.get('QBDI_LLVM_PREFIX')))
 
         env = os.environ.copy()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
