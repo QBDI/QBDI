@@ -8,7 +8,10 @@ include(ExternalProject)
 # --------------
 set(QBDI_LLVM_VERSION 10.0.1)
 set(QBDI_LLVM_URL
-  "https://github.com/llvm/llvm-project/releases/download/llvmorg-${QBDI_LLVM_VERSION}/llvm-${QBDI_LLVM_VERSION}.src.tar.xz")
+    "https://github.com/llvm/llvm-project/releases/download/llvmorg-${QBDI_LLVM_VERSION}/llvm-${QBDI_LLVM_VERSION}.src.tar.xz"
+)
+set(QBDI_LLVM_HASH
+    c5d8e30b57cbded7128d78e5e8dad811bff97a8d471896812f57fa99ee82cdf3)
 
 # LLVM CACHE BUILD DIR
 if(NOT DEFINED QBDI_LLVM_PREFIX)
@@ -78,18 +81,15 @@ if(QBDI_PLATFORM_OSX OR QBDI_PLATFORM_IOS)
 endif()
 
 if(QBDI_ARCH_X86_64 OR QBDI_ARCH_X86)
-  add_llvm_lib(
-    LLVMX86AsmParser
-    LLVMX86Disassembler
-    LLVMX86Desc
-    LLVMX86Info
-    LLVMX86Utils)
+  add_llvm_lib(LLVMX86AsmParser LLVMX86Disassembler LLVMX86Desc LLVMX86Info
+               LLVMX86Utils)
 else()
   message(FATAL_ERROR "Unsupported LLVM Architecture.")
 endif()
 
 set(QBDI_LLVM_CMAKE_ARGS
     -DCMAKE_BUILD_TYPE=Release
+    -DCMAKE_CXX_STANDARD=17
     -DLLVM_BUILD_TOOLS=off
     -DLLVM_BUILD_UTILS=off
     -DLLVM_BUILD_TESTS=off
@@ -164,6 +164,7 @@ ExternalProject_Add(
   qbdi-llvm-deps
   PREFIX ${QBDI_LLVM_PREFIX}
   URL ${QBDI_LLVM_URL}
+  URL_HASH SHA256=${QBDI_LLVM_HASH}
   CMAKE_ARGS ${QBDI_LLVM_CMAKE_ARGS}
   BINARY_DIR ${QBDI_LLVM_BUILD_DIR}
   BUILD_COMMAND ${CMAKE_COMMAND} --build ${QBDI_LLVM_BUILD_DIR} --
@@ -199,6 +200,7 @@ if(LLVM_MISSING_LIBRARY)
 else()
   add_dependencies(qbdi-llvm-build-deps qbdi-llvm-deps)
 
+  message(STATUS "LLVM LIB : ${LLVM_NEEDED_LIBRARY_TARGET}")
   merge_static_libs(qbdi-llvm qbdi-llvm \${LLVM_NEEDED_LIBRARY_TARGET})
   add_dependencies(qbdi-llvm qbdi-llvm-build-deps)
   target_link_libraries(qbdi-llvm INTERFACE ${LLVM_LINK_LIBRARY})

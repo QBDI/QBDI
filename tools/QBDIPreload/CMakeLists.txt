@@ -15,9 +15,16 @@ add_library(QBDIPreload STATIC ${SOURCES})
 
 target_compile_options(
   QBDIPreload
-  PRIVATE $<$<COMPILE_LANGUAGE:C>:-Wall -ffunction-sections
-            -fdata-sections -fvisibility-inlines-hidden -fvisibility=hidden
-            -fPIC -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS>)
+  PRIVATE $<$<COMPILE_LANGUAGE:C>:-Wall
+          -ffunction-sections
+          -fdata-sections
+          -fvisibility-inlines-hidden
+          -fvisibility=hidden
+          -fPIC
+          -D_GNU_SOURCE
+          -D__STDC_CONSTANT_MACROS
+          -D__STDC_FORMAT_MACROS
+          -D__STDC_LIMIT_MACROS>)
 
 # Also add build directory as include path for the mach_exc.h header
 target_include_directories(

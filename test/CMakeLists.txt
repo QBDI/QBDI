@@ -26,19 +26,20 @@ if(QBDI_TEST)
 
   target_include_directories(
     QBDITest
-    PRIVATE
-      "${CMAKE_BINARY_DIR}/include"
-      "${CMAKE_BINARY_DIR}/include/QBDI"
-      "${CMAKE_SOURCE_DIR}/include"
-      "${CMAKE_SOURCE_DIR}/include/QBDI"
-      "${CMAKE_CURRENT_SOURCE_DIR}"
-      "${CMAKE_CURRENT_SOURCE_DIR}/../src"
-      "${Catch2_SOURCE_DIR}/single_include")
+    PRIVATE "${CMAKE_BINARY_DIR}/include"
+            "${CMAKE_BINARY_DIR}/include/QBDI"
+            "${CMAKE_SOURCE_DIR}/include"
+            "${CMAKE_SOURCE_DIR}/include/QBDI"
+            "${CMAKE_CURRENT_SOURCE_DIR}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/../src"
+            "${Catch2_SOURCE_DIR}/single_include")
 
   add_dependencies(QBDITest Catch2)
   target_link_libraries(QBDITest QBDI_static qbdi-llvm)
-  #target_compile_options(QBDITest PUBLIC $<$<COMPILE_LANGUAGE:C>:${QBDI_COMMON_C_FLAGS}>)
-  #target_compile_options(QBDITest PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${QBDI_COMMON_CXX_FLAGS}>)
+  target_compile_options(QBDITest
+                         PUBLIC $<$<COMPILE_LANGUAGE:C>:${QBDI_COMMON_C_FLAGS}>)
+  target_compile_options(
+    QBDITest PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${QBDI_COMMON_CXX_FLAGS}>)
   target_compile_definitions(QBDITest PUBLIC ${QBDI_COMMON_DEFINITION})
 
   set_target_properties(QBDITest PROPERTIES CXX_STANDARD 17
@@ -59,6 +60,10 @@ if(QBDI_BENCHMARK)
             "${CMAKE_CURRENT_SOURCE_DIR}" "${Catch2_SOURCE_DIR}/single_include")
 
   add_dependencies(QBDIBenchmark Catch2)
+  target_compile_options(QBDIBenchmark
+                         PUBLIC $<$<COMPILE_LANGUAGE:C>:${QBDI_COMMON_C_FLAGS}>)
+  target_compile_options(
+    QBDIBenchmark PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${QBDI_COMMON_CXX_FLAGS}>)
   target_link_libraries(QBDIBenchmark QBDI_static)
 
   set_target_properties(QBDIBenchmark PROPERTIES CXX_STANDARD 17
