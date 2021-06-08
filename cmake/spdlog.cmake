@@ -2,26 +2,37 @@ if(__add_qbdi_spdlog)
   return()
 endif()
 set(__add_qbdi_spdlog ON)
-include(ExternalProject)
+
+include(FetchContent)
 
 # spdlog
 # ======
 set(SPDLOG_VERSION 1.8.3)
-set(SPDLOG_URL
-    "https://github.com/gabime/spdlog/archive/refs/tags/v${SPDLOG_VERSION}.zip")
-ExternalProject_Add(
+
+FetchContent_Declare(
   spdlog-project
-  URL ${SPDLOG_URL}
-  CONFIGURE_COMMAND ""
-  BUILD_COMMAND ""
-  INSTALL_COMMAND "")
-ExternalProject_Get_Property(spdlog-project SOURCE_DIR)
-set(SPDLOG_SOURCE_DIR "${SOURCE_DIR}")
+  URL "https://github.com/gabime/spdlog/archive/refs/tags/v${SPDLOG_VERSION}.zip"
+  URL_HASH
+    SHA256=16368df52019a36564b72bc792829a9ce61a3f318905f9a1ac38d949507dce51)
 
-add_library(spdlog INTERFACE)
-add_dependencies(spdlog spdlog-project)
-target_include_directories(spdlog INTERFACE "${SPDLOG_SOURCE_DIR}/include/")
+FetchContent_GetProperties(spdlog-project)
+if(NOT spdlog-project_POPULATED)
+  # Fetch the content using previously declared details
+  FetchContent_Populate(spdlog-project)
 
-if(QBDI_PLATFORM_ANDROID)
-  target_link_libraries(spdlog INTERFACE log)
+  add_subdirectory(${spdlog-project_SOURCE_DIR} ${spdlog-project_BINARY_DIR}
+                   EXCLUDE_FROM_ALL)
+endif()
+
+target_compile_definitions(
+  spdlog_header_only INTERFACE SPDLOG_NO_TLS=1 SPDLOG_NO_THREAD_ID=1
+                               SPDLOG_NO_DATETIME=1)
+
+if(QBDI_LOG_DEBUG)
+  target_compile_definitions(
+    spdlog_header_only INTERFACE SPDLOG_DEBUG_ON=1
+                                 SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG)
+else()
+  target_compile_definitions(spdlog_header_only
+                             INTERFACE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_INFO)
 endif()

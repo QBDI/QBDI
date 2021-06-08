@@ -1,13 +1,18 @@
-Include(FetchContent)
+include(FetchContent)
 
 if((QBDI_TEST) OR (QBDI_BENCHMARK))
-  FetchContent_Declare(Catch2
+  FetchContent_Declare(
+    Catch2
     GIT_REPOSITORY "https://github.com/catchorg/Catch2.git"
     GIT_PROGRESS "true"
     GIT_TAG "2c869e17e4803d30b3d5ca5b0d76387b9db97fa5" # v2.9.2
-    )
+  )
 
-  FetchContent_MakeAvailable(Catch2)
+  FetchContent_GetProperties(Catch2)
+  if(NOT catch2_POPULATED)
+    FetchContent_Populate(Catch2)
+    add_subdirectory(${catch2_SOURCE_DIR} ${catch2_BINARY_DIR} EXCLUDE_FROM_ALL)
+  endif()
 endif()
 
 # test
@@ -24,12 +29,9 @@ if(QBDI_TEST)
 
   target_include_directories(
     QBDITest
-    PRIVATE "${CMAKE_BINARY_DIR}/include"
-            "${CMAKE_BINARY_DIR}/include/QBDI"
-            "${CMAKE_SOURCE_DIR}/include"
-            "${CMAKE_SOURCE_DIR}/include/QBDI"
-            "${CMAKE_CURRENT_SOURCE_DIR}"
-            "${CMAKE_CURRENT_SOURCE_DIR}/../src")
+    PRIVATE "${CMAKE_BINARY_DIR}/include" "${CMAKE_BINARY_DIR}/include/QBDI"
+            "${CMAKE_SOURCE_DIR}/include" "${CMAKE_SOURCE_DIR}/include/QBDI"
+            "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/../src")
 
   target_link_libraries(QBDITest QBDI_static qbdi-llvm Catch2::Catch2)
   target_compile_options(QBDITest

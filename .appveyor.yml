@@ -69,8 +69,6 @@ install:
 
 build_script:
   - cmd: cmake .. -G "Ninja" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DQBDI_PLATFORM=%qbdi_plateform% -DQBDI_ARCH=%qbdi_arch% -DQBDI_TOOLS_PYQBDI=Off -DQBDI_EXAMPLES=On -DQBDI_LLVM_PREFIX=%QBDI_LLVM_PREFIX%
-  - cmd: ninja llvm
-  - cmd: cmake .. -G "Ninja" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DQBDI_PLATFORM=%qbdi_plateform% -DQBDI_ARCH=%qbdi_arch% -DQBDI_TOOLS_PYQBDI=Off -DQBDI_EXAMPLES=On -DQBDI_LLVM_PREFIX=%QBDI_LLVM_PREFIX%
   - cmd: ninja
 
 after_build:
