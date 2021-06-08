@@ -1,16 +1,14 @@
-include(ExternalProject)
+Include(FetchContent)
 
-ExternalProject_Add(
-  Catch2
-  GIT_REPOSITORY "https://github.com/catchorg/Catch2.git"
-  GIT_PROGRESS "true"
-  GIT_TAG "v2.9.2"
-  CONFIGURE_COMMAND ""
-  BUILD_COMMAND ""
-  INSTALL_COMMAND "")
+if((QBDI_TEST) OR (QBDI_BENCHMARK))
+  FetchContent_Declare(Catch2
+    GIT_REPOSITORY "https://github.com/catchorg/Catch2.git"
+    GIT_PROGRESS "true"
+    GIT_TAG "2c869e17e4803d30b3d5ca5b0d76387b9db97fa5" # v2.9.2
+    )
 
-ExternalProject_Get_Property(Catch2 SOURCE_DIR)
-set(Catch2_SOURCE_DIR "${SOURCE_DIR}")
+  FetchContent_MakeAvailable(Catch2)
+endif()
 
 # test
 if(QBDI_TEST)
@@ -31,11 +29,9 @@ if(QBDI_TEST)
             "${CMAKE_SOURCE_DIR}/include"
             "${CMAKE_SOURCE_DIR}/include/QBDI"
             "${CMAKE_CURRENT_SOURCE_DIR}"
-            "${CMAKE_CURRENT_SOURCE_DIR}/../src"
-            "${Catch2_SOURCE_DIR}/single_include")
+            "${CMAKE_CURRENT_SOURCE_DIR}/../src")
 
-  add_dependencies(QBDITest Catch2)
-  target_link_libraries(QBDITest QBDI_static qbdi-llvm)
+  target_link_libraries(QBDITest QBDI_static qbdi-llvm Catch2::Catch2)
   target_compile_options(QBDITest
                          PUBLIC $<$<COMPILE_LANGUAGE:C>:${QBDI_COMMON_C_FLAGS}>)
   target_compile_options(
@@ -57,14 +53,13 @@ if(QBDI_BENCHMARK)
     QBDIBenchmark
     PRIVATE "${CMAKE_BINARY_DIR}/include" "${CMAKE_BINARY_DIR}/include/QBDI"
             "${CMAKE_SOURCE_DIR}/include" "${CMAKE_SOURCE_DIR}/include/QBDI"
-            "${CMAKE_CURRENT_SOURCE_DIR}" "${Catch2_SOURCE_DIR}/single_include")
+            "${CMAKE_CURRENT_SOURCE_DIR}")
 
-  add_dependencies(QBDIBenchmark Catch2)
   target_compile_options(QBDIBenchmark
                          PUBLIC $<$<COMPILE_LANGUAGE:C>:${QBDI_COMMON_C_FLAGS}>)
   target_compile_options(
     QBDIBenchmark PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${QBDI_COMMON_CXX_FLAGS}>)
-  target_link_libraries(QBDIBenchmark QBDI_static)
+  target_link_libraries(QBDIBenchmark QBDI_static Catch2::Catch2)
 
   set_target_properties(QBDIBenchmark PROPERTIES CXX_STANDARD 17
                                                  CXX_STANDARD_REQUIRED ON)
