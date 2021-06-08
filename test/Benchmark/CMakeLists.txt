@@ -1,3 +1,5 @@
+include(ExternalProject)
+
 # Use external SHA256 implementation
 ExternalProject_Add(
   SHA256_lib
