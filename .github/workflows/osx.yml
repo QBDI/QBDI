@@ -47,7 +47,7 @@ jobs:
                 -DQBDI_TOOLS_VALIDATOR=ON \
                 -DQBDI_EXAMPLES=ON \
                 ..
-          ninja 
+          ninja
           cpack
       - name: test QBDI
         working-directory: ./build/test
@@ -58,7 +58,4 @@ jobs:
         with:
           name: package OSX X86_64
           path: build/QBDI-*.pkg
-
-
-
 

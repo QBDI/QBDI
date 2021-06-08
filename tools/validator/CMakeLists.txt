@@ -19,3 +19,7 @@ target_link_libraries(validator PRIVATE QBDIPreload QBDI_static
 
 set_target_properties(validator PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED
                                                            ON)
+target_compile_options(validator
+                       PRIVATE $<$<COMPILE_LANGUAGE:C>:${QBDI_COMMON_C_FLAGS}>)
+target_compile_options(
+  validator PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${QBDI_COMMON_CXX_FLAGS}>)
