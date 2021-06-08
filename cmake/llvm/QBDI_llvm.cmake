@@ -28,11 +28,11 @@ FetchContent_Declare(
   BINARY_DIR "${QBDI_LLVM_PREFIX}/build"
   DOWNLOAD_DIR "${QBDI_LLVM_PREFIX}/download"
   SOURCE_DIR "${QBDI_LLVM_PREFIX}/src"
+  SUBBUILD_DIR "${QBDI_LLVM_PREFIX}/subbuild"
   UPDATE_DISCONNECTED ON)
 
 FetchContent_GetProperties(llvm)
 if(NOT llvm_POPULATED)
-  # Fetch the content using previously declared details
   FetchContent_Populate(llvm)
 
   set(CMAKE_CXX_STANDARD
