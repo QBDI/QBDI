@@ -86,9 +86,6 @@ if(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
                                                           ON)
 
   if(Python3_LIBRARIES)
-    set_target_properties(
-      pyqbdi PROPERTIES COMPILE_DEFINITIONS
-                        "PYTHON_LIBRARIES=\"${Python3_LIBRARIES}\"")
     target_link_libraries(pyqbdi PRIVATE ${Python3_LIBRARIES})
   endif()
 
