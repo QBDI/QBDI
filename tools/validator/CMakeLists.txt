@@ -14,7 +14,8 @@ target_include_directories(
   PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
           $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../src>
           $<INSTALL_INTERFACE:include>)
-target_link_libraries(validator PRIVATE QBDIPreload QBDI_static spdlog)
+target_link_libraries(validator PRIVATE QBDIPreload QBDI_static
+                                        spdlog_header_only)
 
 set_target_properties(validator PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED
                                                            ON)

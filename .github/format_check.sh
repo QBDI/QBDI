@@ -16,7 +16,7 @@ for file in $(git ls-files | grep '\.\(cpp\|c\|h\|hpp\)$'); do
   fi
 done
 
-cmake-format -c .cmake_format.conf.py -l info --check $(git ls-files | grep '\(CMakeLists.txt\|\.cmake\)$' | grep -v 'cmake/llvm/LLVMExports')
+cmake-format -c .cmake_format.conf.py -l info --check $(git ls-files | grep '\(CMakeLists.txt\|\.cmake\)$')
 
 
 exit ${RETURN_CODE}
