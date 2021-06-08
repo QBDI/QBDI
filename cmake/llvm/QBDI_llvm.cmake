@@ -81,6 +81,9 @@ if(NOT llvm_POPULATED)
         CACHE BOOL "set LLVM_BUILD_32_BITS")
 
     if(QBDI_PLATFORM_OSX)
+      set(LLVM_ENABLE_LIBCXX
+          ON
+          CACHE BOOL "set LLVM_ENABLE_LIBCXX")
       set(LLVM_DEFAULT_TARGET_TRIPLE
           i386-apple-darwin17.7.0
           CACHE STRING "set LLVM_DEFAULT_TARGET_TRIPLE")
@@ -142,7 +145,6 @@ if(NOT llvm_POPULATED)
   endif()
 
   add_subdirectory(${llvm_SOURCE_DIR} ${llvm_BINARY_DIR} EXCLUDE_FROM_ALL)
-  #add_subdirectory(${llvm_SOURCE_DIR} ${llvm_BINARY_DIR})
 endif()
 
 # list of LLVM library to build
@@ -185,6 +187,43 @@ if(QBDI_ARCH_X86_64 OR QBDI_ARCH_X86)
 else()
   message(FATAL_ERROR "Unsupported LLVM Architecture.")
 endif()
+
+if(QBDI_PLATFORM_OSX)
+  find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
+  set(LLVMSupportFixName "${llvm_BINARY_DIR}/libLLVMSupportFix.a")
+  add_custom_command(
+    OUTPUT "${LLVMSupportFixName}"
+    COMMAND
+      "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/llvm/rename_object.py" -i
+      $<TARGET_FILE:LLVMSupport> -o "${LLVMSupportFixName}" -r Memory.cpp.o 1 -r
+      Error.cpp.o 1
+    COMMENT "Fix LLVMSupport library"
+    DEPENDS LLVMSupport
+    VERBATIM)
+  list(REMOVE_ITEM QBDI_LLVM_TARGET_LIBRARY LLVMSupport)
+  list(APPEND QBDI_LLVM_TARGET_LIBRARY "${LLVMSupportFixName}")
+
+  set(LLVMObjectFixName "${llvm_BINARY_DIR}/libLLVMObjectFix.a")
+  add_custom_command(
+    OUTPUT "${LLVMObjectFixName}"
+    COMMAND
+      "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/llvm/rename_object.py" -i
+      $<TARGET_FILE:LLVMObject> -o "${LLVMObjectFixName}" -r Minidump.cpp.o 1
+    COMMENT "Fix LLVMObject library"
+    DEPENDS LLVMObject
+    VERBATIM)
+  list(REMOVE_ITEM QBDI_LLVM_TARGET_LIBRARY LLVMObject)
+  list(APPEND QBDI_LLVM_TARGET_LIBRARY "${LLVMObjectFixName}")
+
+  list(APPEND QBDI_LLVM_LINK_LIBRARY -lc++)
+else(QBDI_PLATFORM_LINUX)
+  list(APPEND QBDI_LLVM_LINK_LIBRARY -lstdc++)
+endif()
+
+message(STATUS "QBDI_LLVM_LINK_LIBRARY: ${QBDI_LLVM_LINK_LIBRARY}")
 
 merge_static_libs(qbdi-llvm qbdi-llvm \${QBDI_LLVM_TARGET_LIBRARY})
 target_link_libraries(qbdi-llvm INTERFACE ${QBDI_LLVM_LINK_LIBRARY})
