@@ -20,6 +20,7 @@ additional_commands = {
       "BINARY_DIR": '1',
       "SOURCE_DIR": '1',
       "DOWNLOAD_DIR": '1',
+      "SUBBUILD_DIR": "1",
       "UPDATE_DISCONNECTED": "1",
     }
   }
