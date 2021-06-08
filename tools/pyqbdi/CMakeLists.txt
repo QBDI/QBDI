@@ -1,35 +1,25 @@
 if(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
   include(ExternalProject)
 
-  if(NOT PYTHON_VERSION)
-    set(PYTHON_VERSION 3)
-  endif()
-  message(STATUS "Python version: ${PYTHON_VERSION}")
-  find_package(PythonInterp "${PYTHON_VERSION}" EXACT REQUIRED)
-  if(NOT PYTHON_LIBRARIES)
-    set(PYTHON_LIBRARIES "$ENV{PYTHON_LIBRARIES}")
-  endif()
-  if(NOT PYTHON_LIBRARIES)
-    find_package(PythonLibs "${PYTHON_VERSION}" EXACT)
-  endif()
+  find_package(Python3 EXACT REQUIRED COMPONENTS Interpreter Development)
 
-  if(NOT PYTHON_INCLUDE_DIRS)
+  if(NOT Python3_INCLUDE_DIRS)
     execute_process(
-      COMMAND "${PYTHON_EXECUTABLE}" -c
+      COMMAND "${Python3_EXECUTABLE}" -c
               "from sysconfig import get_paths; print(get_paths()['include'])"
-      OUTPUT_VARIABLE PYTHON_INCLUDE_DIRS
+      OUTPUT_VARIABLE Python3_INCLUDE_DIRS
       OUTPUT_STRIP_TRAILING_WHITESPACE)
   endif()
 
   execute_process(
-    COMMAND "${PYTHON_EXECUTABLE}" -c
+    COMMAND "${Python3_EXECUTABLE}" -c
             "import platform; print(platform.architecture()[0])"
     OUTPUT_VARIABLE PYTHON_BIT
     OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-  message(STATUS "Python lib:     ${PYTHON_LIBRARIES}")
-  message(STATUS "Python include: ${PYTHON_INCLUDE_DIRS}")
-  message(STATUS "Python interpreter: ${PYTHON_EXECUTABLE}")
+  message(STATUS "Python lib:     ${Python3_LIBRARIES}")
+  message(STATUS "Python include: ${Python3_INCLUDE_DIRS}")
+  message(STATUS "Python interpreter: ${Python3_EXECUTABLE}")
   message(STATUS "Python ${PYTHON_BIT}")
 
   # verify we compile pyqbdi tools with the good version of python
@@ -82,7 +72,7 @@ if(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
     pyqbdi
     PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
             "${PYBIND11_SOURCE_DIR}/include" ${CMAKE_CURRENT_SOURCE_DIR}
-            ${PYTHON_INCLUDE_DIRS})
+            ${Python3_INCLUDE_DIRS})
 
   if(QBDI_TOOLS_QBDIPRELOAD)
     target_sources(pyqbdi PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/preload.cpp")
@@ -95,11 +85,11 @@ if(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
   set_target_properties(pyqbdi PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED
                                                           ON)
 
-  if(PYTHON_LIBRARIES)
+  if(Python3_LIBRARIES)
     set_target_properties(
       pyqbdi PROPERTIES COMPILE_DEFINITIONS
-                        "PYTHON_LIBRARIES=\"${PYTHON_LIBRARIES}\"")
-    target_link_libraries(pyqbdi PRIVATE ${PYTHON_LIBRARIES})
+                        "PYTHON_LIBRARIES=\"${Python3_LIBRARIES}\"")
+    target_link_libraries(pyqbdi PRIVATE ${Python3_LIBRARIES})
   endif()
 
   set_target_properties(pyqbdi PROPERTIES PREFIX "")
