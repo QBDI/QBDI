@@ -35,9 +35,7 @@ jobs:
         id: cache-llvm
         with:
           path: |
-            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/build
-            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/src/llvm-${{ env.QBDI_LLVM_VERSION }}.src.tar.xz
-            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/src/qbdi-llvm-deps
+            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/
           key: llvm-${{ env.QBDI_LLVM_VERSION }}-${{ runner.os }}-pyqbdi-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}-${{ hashFiles('cmake/llvm/QBDI_llvm.cmake') }}
       - name: Create build image
         env:

@@ -38,9 +38,7 @@ jobs:
         id: cache-llvm
         with:
           path: |
-            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}/build
-            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}/src/llvm-${{ env.QBDI_LLVM_VERSION }}.src.tar.xz
-            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}/src/qbdi-llvm-deps
+            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}/
           key: llvm-${{ env.QBDI_LLVM_VERSION }}-${{ runner.os }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}-${{ hashFiles('cmake/llvm/QBDI_llvm.cmake') }}-${{ env.MACOSX_DEPLOYMENT_TARGET }}
       - name: build llvm
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -96,9 +94,7 @@ jobs:
         id: cache-llvm-python
         with:
           path: |
-            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}/build
-            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}/src/llvm-${{ env.QBDI_LLVM_VERSION }}.src.tar.xz
-            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}/src/qbdi-llvm-deps
+            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}/
           key: llvm-${{ env.QBDI_LLVM_VERSION }}-${{ runner.os }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}-${{ hashFiles('cmake/llvm/QBDI_llvm.cmake') }}-${{ env.MACOSX_DEPLOYMENT_TARGET }}-python-${{ matrix.python-version }}
           restore-keys: |
             llvm-${{ env.QBDI_LLVM_VERSION }}-${{ runner.os }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}-${{ hashFiles('cmake/llvm/QBDI_llvm.cmake') }}-${{ env.MACOSX_DEPLOYMENT_TARGET }}

@@ -35,9 +35,7 @@ jobs:
         id: cache-llvm
         with:
           path: |
-            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/build
-            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/src/llvm-${{ env.QBDI_LLVM_VERSION }}.src.tar.xz
-            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/src/qbdi-llvm-deps
+            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/
           key: llvm-${{ env.QBDI_LLVM_VERSION }}-${{ runner.os }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}-${{ hashFiles('cmake/llvm/QBDI_llvm.cmake') }}
       - name: Cache test result
         uses: actions/cache@v2
@@ -49,10 +47,6 @@ jobs:
         env:
           QBDI_ARCH: ${{ matrix.QBDI_ARCH }}
         run: bash ./docker/ci_linux/img_build.sh
-      - name: Build LLVM dependencies
-        env:
-          QBDI_ARCH: ${{ matrix.QBDI_ARCH }}
-        run: bash ./docker/ci_linux/llvm.sh
       - name: Build and test QBDI
         env:
           QBDI_ARCH: ${{ matrix.QBDI_ARCH }}
