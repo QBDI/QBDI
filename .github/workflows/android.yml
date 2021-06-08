@@ -41,9 +41,7 @@ jobs:
         id: cache-llvm
         with:
           path: |
-            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/build
-            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/src/llvm-${{ env.QBDI_LLVM_VERSION }}.src.tar.xz
-            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/src/qbdi-llvm-deps
+            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/
           key: llvm-${{ env.QBDI_LLVM_VERSION }}-${{ runner.os }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}-${{ hashFiles('cmake/llvm/QBDI_llvm.cmake') }}-ndk-${{ env.NDK_VERSION }}
       - name: Cache android NDK ${{ env.NDK_VERSION }}
         uses: actions/cache@v2
@@ -61,21 +59,6 @@ jobs:
           unzip -q android-ndk-${{ env.NDK_VERSION }}-linux-x86_64.zip
           rm android-ndk-${{ env.NDK_VERSION }}-linux-x86_64.zip
       - run: mkdir -p build
-      - name: Build LLVM dependencies
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        working-directory: ./build
-        run: |
-          cmake -DQBDI_PLATFORM=${{ env.QBDI_PLATFORM }} \
-                -DQBDI_ARCH=${{ matrix.QBDI_ARCH }} \
-                -DCMAKE_BUILD_TYPE=Release \
-                -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/android-ndk-${{ env.NDK_VERSION }}/build/cmake/android.toolchain.cmake \
-                -DANDROID_ABI=${{ matrix.ANDROID_ABI }} \
-                -DANDROID_PLATFORM=${{ env.ANDROID_PLATFORM }} \
-                -DQBDI_TEST=OFF \
-                -DQBDI_LLVM_PREFIX="${{ github.workspace }}/deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/" \
-                -G Ninja \
-                ..
-          ninja llvm
       - name: Build Package
         working-directory: ./build
         run: |

@@ -71,20 +71,6 @@ RUN sudo chown -R $USER:$USER . && \
           -DQBDI_TOOLS_VALIDATOR=ON \
           $CMAKE_ARGUMENT \
           ../ && \
-    ninja llvm && \
-    cmake -G Ninja \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_CROSSCOMPILING=FALSE \
-          -DQBDI_PLATFORM=$QBDI_PLATFORM \
-          -DQBDI_ARCH=$QBDI_ARCH \
-          -DCMAKE_INSTALL_PREFIX=$PREFIX \
-          -DQBDI_CCACHE=OFF \
-          -DQBDI_LOG_DEBUG=ON \
-          -DQBDI_EXAMPLES=ON \
-          -DQBDI_TOOLS_PYQBDI=ON \
-          -DQBDI_TOOLS_VALIDATOR=ON \
-          $CMAKE_ARGUMENT \
-          ../ && \
     ninja && \
     # test
     ./test/QBDITest && \

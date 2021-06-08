@@ -48,8 +48,7 @@ for:
 
 
 cache:
-  - '%QBDI_LLVM_PREFIX%/build -> cmake/llvm/QBDI_llvm.cmake, cmake/llvm/LLVMExportsWindows*'
-  - '%QBDI_LLVM_PREFIX%/src/llvm-10.0.1.src.tar.xz'
+  - '%QBDI_LLVM_PREFIX%/ -> cmake/llvm/QBDI_llvm.cmake'
   - '%SCCACHE_DIR%'
 
 install:

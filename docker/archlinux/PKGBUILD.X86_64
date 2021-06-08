@@ -28,16 +28,6 @@ build() {
           -DQBDI_CCACHE=OFF \
           -G Ninja \
           ../../../
-    cmake --build . --target llvm
-    cmake -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_CROSSCOMPILING=FALSE \
-          -DQBDI_PLATFORM=linux \
-          -DQBDI_ARCH=X86_64 \
-          -DCMAKE_INSTALL_PREFIX=/usr \
-          -DQBDI_TOOLS_PYQBDI=OFF \
-          -DQBDI_CCACHE=OFF \
-          -G Ninja \
-          ../../../
     cmake --build .
 }
 
