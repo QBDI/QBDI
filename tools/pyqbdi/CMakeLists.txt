@@ -1,18 +1,18 @@
 if(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
-  include(ExternalProject)
+  include(FetchContent)
 
   find_package(Python3 REQUIRED COMPONENTS Interpreter)
-
   find_package(Python3 COMPONENTS Development)
 
   # in manylinux image, python doesn't have a library
   # If Python3::Development is not found, try to found the include with the executable
   if(NOT Python3_Development_FOUND AND "${Python3_INCLUDE_DIRS}" STREQUAL "")
     execute_process(
-      COMMAND "${Python3_EXECUTABLE}" -c "from sysconfig import get_paths; print(get_paths()['include'])"
+      COMMAND "${Python3_EXECUTABLE}" -c
+              "from sysconfig import get_paths; print(get_paths()['include'])"
       OUTPUT_VARIABLE Python3_INCLUDE_DIRS
       OUTPUT_STRIP_TRAILING_WHITESPACE)
-    if( "${Python3_INCLUDE_DIRS}" STREQUAL "" )
+    if("${Python3_INCLUDE_DIRS}" STREQUAL "")
       message(FATAL_ERROR "Python3_INCLUDE_DIRS not found")
     endif()
   endif()
@@ -41,15 +41,17 @@ if(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
     )
   endif()
 
-  FetchContent_Declare(pybind11
+  FetchContent_Declare(
+    pybind11
     URL "https://github.com/pybind/pybind11/archive/v2.6.1.zip"
     URL_HASH
       SHA256=e3f9408fca4e8ebf2d22229d5256adb49098073832aad87f3f6078d91a6942b2
-  )
+    DOWNLOAD_DIR "${CMAKE_SOURCE_DIR}/third-party/pybind11-download")
   FetchContent_GetProperties(pybind11)
   if(NOT pybind11_POPULATED)
     FetchContent_Populate(pybind11)
-    add_subdirectory(${pybind11_SOURCE_DIR} ${pybind11_BINARY_DIR} EXCLUDE_FROM_ALL)
+    add_subdirectory(${pybind11_SOURCE_DIR} ${pybind11_BINARY_DIR}
+                     EXCLUDE_FROM_ALL)
   endif()
 
   add_library(pyqbdi_utils INTERFACE)
@@ -75,9 +77,8 @@ if(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
   set(PYQBDI_SRC_MODULE "${CMAKE_CURRENT_SOURCE_DIR}/pyqbdi_module.cpp")
   pybind11_add_module(pyqbdi SHARED ${PYQBDI_SRC_MODULE})
   target_include_directories(
-    pyqbdi
-    PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-            ${CMAKE_CURRENT_SOURCE_DIR} ${Python3_INCLUDE_DIRS})
+    pyqbdi PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+                   ${CMAKE_CURRENT_SOURCE_DIR} ${Python3_INCLUDE_DIRS})
 
   if(QBDI_TOOLS_QBDIPRELOAD)
     target_sources(pyqbdi PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/preload.cpp")

@@ -41,6 +41,12 @@ jobs:
         run: |
           mkdir -p ~/.ccache
           cp .github/workflows/ccache.conf ~/.ccache/ccache.conf
+      - name: Cache third-party
+        uses: actions/cache@v2
+        with:
+          path: |
+            third-party
+          key: QBDI-third-party-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**.cmake') }}
       - run: mkdir -p build
       - name: Build PyQBDI ${{ matrix.python-version }}
         run: |

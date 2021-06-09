@@ -30,6 +30,8 @@ _compile_and_test: &compile_and_test
 cache:
   apt: TRUE
   ccache: TRUE
+  directories:
+    - third-party
 
 jobs:
   include:
