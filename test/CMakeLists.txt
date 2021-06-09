@@ -3,10 +3,10 @@ include(FetchContent)
 if((QBDI_TEST) OR (QBDI_BENCHMARK))
   FetchContent_Declare(
     Catch2
-    GIT_REPOSITORY "https://github.com/catchorg/Catch2.git"
-    GIT_PROGRESS "true"
-    GIT_TAG "2c869e17e4803d30b3d5ca5b0d76387b9db97fa5" # v2.9.2
-  )
+    URL "https://github.com/catchorg/Catch2/archive/refs/tags/v2.9.2.zip"
+    URL_HASH
+      "SHA256=dc486300de22b0d36ddba1705abb07b9e5780639d824ba172ddf7062b2a1bf8f"
+    DOWNLOAD_DIR "${CMAKE_SOURCE_DIR}/third-party/catch2-download")
 
   FetchContent_GetProperties(Catch2)
   if(NOT catch2_POPULATED)

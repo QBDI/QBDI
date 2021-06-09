@@ -2,7 +2,6 @@
 TODO
 build*/*
 
-deps
 dist
 
 docs/build
@@ -16,6 +15,8 @@ docs/qbdipreload.doxygen
 qbdi-deps.tar.gz
 qbdi.tar.gz
 package/QBDI-*
+
+third-party
 
 tools/validation_runner/.*_coverage
 tools/validation_runner/.*_output

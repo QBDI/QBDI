@@ -12,7 +12,8 @@ FetchContent_Declare(
   llvm
   URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${QBDI_LLVM_VERSION}/llvm-${QBDI_LLVM_VERSION}.src.tar.xz"
   URL_HASH
-    "SHA256=c5d8e30b57cbded7128d78e5e8dad811bff97a8d471896812f57fa99ee82cdf3")
+    "SHA256=c5d8e30b57cbded7128d78e5e8dad811bff97a8d471896812f57fa99ee82cdf3"
+  DOWNLOAD_DIR "${CMAKE_SOURCE_DIR}/third-party/llvm-download")
 
 FetchContent_GetProperties(llvm)
 if(NOT llvm_POPULATED)
