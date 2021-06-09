@@ -1,14 +1,20 @@
 if(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
   include(ExternalProject)
 
-  find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+  find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
-  if(NOT Python3_INCLUDE_DIRS)
+  find_package(Python3 COMPONENTS Development)
+
+  # in manylinux image, python doesn't have a library
+  # If Python3::Development is not found, try to found the include with the executable
+  if(NOT Python3_Development_FOUND AND "${Python3_INCLUDE_DIRS}" STREQUAL "")
     execute_process(
-      COMMAND "${Python3_EXECUTABLE}" -c
-              "from sysconfig import get_paths; print(get_paths()['include'])"
+      COMMAND "${Python3_EXECUTABLE}" -c "from sysconfig import get_paths; print(get_paths()['include'])"
       OUTPUT_VARIABLE Python3_INCLUDE_DIRS
       OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if( "${Python3_INCLUDE_DIRS}" STREQUAL "" )
+      message(FATAL_ERROR "Python3_INCLUDE_DIRS not found")
+    endif()
   endif()
 
   execute_process(
@@ -35,16 +41,16 @@ if(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
     )
   endif()
 
-  ExternalProject_Add(
-    pyqbdi_pybind11
+  FetchContent_Declare(pybind11
     URL "https://github.com/pybind/pybind11/archive/v2.6.1.zip"
     URL_HASH
       SHA256=e3f9408fca4e8ebf2d22229d5256adb49098073832aad87f3f6078d91a6942b2
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND "")
-  ExternalProject_Get_Property(pyqbdi_pybind11 SOURCE_DIR)
-  set(PYBIND11_SOURCE_DIR "${SOURCE_DIR}")
+  )
+  FetchContent_GetProperties(pybind11)
+  if(NOT pybind11_POPULATED)
+    FetchContent_Populate(pybind11)
+    add_subdirectory(${pybind11_SOURCE_DIR} ${pybind11_BINARY_DIR} EXCLUDE_FROM_ALL)
+  endif()
 
   add_library(pyqbdi_utils INTERFACE)
   add_dependencies(pyqbdi_utils pyqbdi_pybind11)
@@ -67,12 +73,11 @@ if(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
   # Shared library with QBDIPreload (if available)
   ##
   set(PYQBDI_SRC_MODULE "${CMAKE_CURRENT_SOURCE_DIR}/pyqbdi_module.cpp")
-  add_library(pyqbdi SHARED ${PYQBDI_SRC_MODULE})
+  pybind11_add_module(pyqbdi SHARED ${PYQBDI_SRC_MODULE})
   target_include_directories(
     pyqbdi
     PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-            "${PYBIND11_SOURCE_DIR}/include" ${CMAKE_CURRENT_SOURCE_DIR}
-            ${Python3_INCLUDE_DIRS})
+            ${CMAKE_CURRENT_SOURCE_DIR} ${Python3_INCLUDE_DIRS})
 
   if(QBDI_TOOLS_QBDIPRELOAD)
     target_sources(pyqbdi PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/preload.cpp")
@@ -84,10 +89,6 @@ if(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
   target_link_libraries(pyqbdi PRIVATE pyqbdi_module pyqbdi_utils QBDI_static)
   set_target_properties(pyqbdi PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED
                                                           ON)
-
-  if(Python3_LIBRARIES)
-    target_link_libraries(pyqbdi PRIVATE ${Python3_LIBRARIES})
-  endif()
 
   set_target_properties(pyqbdi PROPERTIES PREFIX "")
 
