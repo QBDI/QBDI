@@ -30,10 +30,12 @@ jobs:
         with:
           path: |
             ~/.ccache
-          key: ccache-android-${{ matrix.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}
+          key: ccache-android-${{ matrix.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}-${{ github.run_number }}
+          restore-keys: |
+            ccache-android-${{ matrix.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}-
       - if: steps.cache-ccache.outputs.cache-hit != 'true'
         run: |
-          mkdir ~/.ccache
+          mkdir -p ~/.ccache
           cp .github/workflows/ccache.conf ~/.ccache/ccache.conf
       - name: Cache android NDK ${{ env.NDK_VERSION }}
         uses: actions/cache@v2
@@ -47,7 +49,7 @@ jobs:
         with:
           path: |
             third-party
-          key: QBDI-third-party-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**.cmake') }}
+          key: QBDI-third-party-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**/*.cmake') }}
       - name: Install dependencies
         run: sudo apt-get install build-essential ccache cmake g++ libstdc++-8-dev make ninja-build pkg-config python3 unzip wget zlib1g-dev
       - name: Install android NDK ${{ env.NDK_VERSION }}
