@@ -2,7 +2,6 @@ language: cpp
 
 env:
   global:
-    - QBDI_LLVM_VERSION="10.0.1"
     - QBDI_PLATFORM="osx"
 
 _osx_target: &osx_target
@@ -24,15 +23,13 @@ _osx_target32: &osx_target32
 _compile_and_test: &compile_and_test
   script:
     - mkdir build && cd build
-    - cmake .. -DQBDI_LLVM_PREFIX="../deps/LLVM-${QBDI_LLVM_VERSION}-${QBDI_PLATFORM}-${QBDI_ARCH}/" -DQBDI_PLATFORM=${QBDI_PLATFORM} -DQBDI_ARCH=${QBDI_ARCH} -DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DQBDI_TOOLS_VALIDATOR=ON -DQBDI_EXAMPLES=ON
+    - cmake .. -DQBDI_PLATFORM=${QBDI_PLATFORM} -DQBDI_ARCH=${QBDI_ARCH} -DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING=FALSE -DQBDI_TOOLS_VALIDATOR=ON -DQBDI_EXAMPLES=ON
     - make -j2
     - ./test/QBDITest
 
 cache:
   apt: TRUE
   ccache: TRUE
-  directories:
-    - deps/LLVM-${QBDI_LLVM_VERSION}-${QBDI_PLATFORM}-${QBDI_ARCH}/
 
 jobs:
   include:

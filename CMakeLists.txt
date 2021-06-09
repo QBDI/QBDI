@@ -92,12 +92,6 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI/Config.h.in"
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/Utility/Version_commit.h.in"
                "${CMAKE_CURRENT_BINARY_DIR}/src/Utility/Version_commit.h" @ONLY)
 
-# Add llvm
-include(QBDI_llvm)
-
-# DEBUG log (spdlog option)
-include(spdlog)
-
 # log debug
 set(QBDI_COMMON_DEFINITION)
 if(QBDI_LOG_DEBUG)
@@ -175,8 +169,11 @@ if(QBDI_PLATFORM_WINDOWS)
       -we4238
       -D__STDC_CONSTANT_MACROS
       -D__STDC_FORMAT_MACROS
-      -D__STDC_LIMIT_MACROS
-      -D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING)
+      -D__STDC_LIMIT_MACROS)
+  # set _SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING for llvm compile
+  set(CMAKE_CXX_FLAGS
+      "${CMAKE_CXX_FLAGS} -D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING"
+  )
 else()
   set(QBDI_COMMON_C_FLAGS -Wall -ffunction-sections -fdata-sections
                           -fvisibility-inlines-hidden -fvisibility=hidden -fPIC)
@@ -194,6 +191,12 @@ else()
         -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS)
   endif()
 endif()
+
+# Add llvm
+include(QBDI_llvm)
+
+# DEBUG log (spdlog option)
+include(spdlog)
 
 # Setup assembly compile
 if(QBDI_PLATFORM_WINDOWS)

@@ -8,28 +8,11 @@ include(FetchContent)
 # configure FetchContent
 set(QBDI_LLVM_VERSION 10.0.1)
 
-# LLVM CACHE BUILD DIR
-if(NOT DEFINED QBDI_LLVM_PREFIX)
-  set(QBDI_LLVM_PREFIX
-      "${CMAKE_CURRENT_BINARY_DIR}/_deps/llvm-${QBDI_LLVM_VERSION}")
-  message(STATUS "QBDI_LLVM_PREFIX not specify. Use ${QBDI_LLVM_PREFIX}")
-else()
-  get_filename_component(QBDI_LLVM_PREFIX "${QBDI_LLVM_PREFIX}" REALPATH
-                         BASE_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-  file(MAKE_DIRECTORY "${QBDI_LLVM_PREFIX}")
-  message(STATUS "QBDI_LLVM_PREFIX: ${QBDI_LLVM_PREFIX}")
-endif()
-
 FetchContent_Declare(
   llvm
   URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${QBDI_LLVM_VERSION}/llvm-${QBDI_LLVM_VERSION}.src.tar.xz"
   URL_HASH
-    "SHA256=c5d8e30b57cbded7128d78e5e8dad811bff97a8d471896812f57fa99ee82cdf3"
-  BINARY_DIR "${QBDI_LLVM_PREFIX}/build"
-  DOWNLOAD_DIR "${QBDI_LLVM_PREFIX}/download"
-  SOURCE_DIR "${QBDI_LLVM_PREFIX}/src"
-  SUBBUILD_DIR "${QBDI_LLVM_PREFIX}/subbuild"
-  UPDATE_DISCONNECTED ON)
+    "SHA256=c5d8e30b57cbded7128d78e5e8dad811bff97a8d471896812f57fa99ee82cdf3")
 
 FetchContent_GetProperties(llvm)
 if(NOT llvm_POPULATED)

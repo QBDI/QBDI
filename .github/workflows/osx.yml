@@ -8,7 +8,6 @@ jobs:
     env:
       QBDI_PLATFORM: 'osx'
       QBDI_ARCH: 'X86_64'
-      QBDI_LLVM_VERSION: '10.0.1'
       MACOSX_DEPLOYMENT_TARGET: '10.14'
     steps:
       - name: Install system dependencies
@@ -28,13 +27,6 @@ jobs:
         run: |
           mkdir ~/.ccache
           cp .github/workflows/ccache.conf ~/.ccache/ccache.conf
-      - name: Cache llvm
-        uses: actions/cache@v2
-        id: cache-llvm
-        with:
-          path: |
-            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}/
-          key: llvm-${{ env.QBDI_LLVM_VERSION }}-${{ runner.os }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}-${{ hashFiles('cmake/llvm/QBDI_llvm.cmake') }}
       - run: mkdir -p build
       - name: build QBDI
         working-directory: ./build
@@ -46,7 +38,6 @@ jobs:
                 -DQBDI_ARCH=${QBDI_ARCH} \
                 -DQBDI_TOOLS_VALIDATOR=ON \
                 -DQBDI_EXAMPLES=ON \
-                -DQBDI_LLVM_PREFIX="${{ github.workspace }}/deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ env.QBDI_ARCH }}/" \
                 ..
           ninja 
           cpack

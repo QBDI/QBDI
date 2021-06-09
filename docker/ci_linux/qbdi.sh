@@ -11,7 +11,6 @@ GITDIR=$(git rev-parse --show-toplevel)
 docker run --rm \
     -e QBDI_PLATFORM="${QBDI_PLATFORM}" \
     -e QBDI_ARCH="${QBDI_ARCH}" \
-    -e QBDI_LLVM_VERSION="${QBDI_LLVM_VERSION}" \
     --mount type=bind,source="${GITDIR}",target=/home/docker/qbdi \
     --mount type=bind,source="${HOME}/.ccache",target=/home/docker/.ccache \
     --cap-add=SYS_PTRACE --security-opt seccomp:unconfined \
