@@ -22,7 +22,6 @@ environment:
       PYTHON37: "C:\\Python37-x64"
       PYTHON38: "C:\\Python38-x64"
       PYTHON39: "C:\\Python39-x64"
-      QBDI_LLVM_PREFIX: c:\projects\qbdi\deps\LLVM-10.0.1-windows-X86_64
     - platform: X86
       qbdi_arch: X86
       qbdi_plateform: windows
@@ -30,7 +29,6 @@ environment:
       PYTHON37: "C:\\Python37"
       PYTHON38: "C:\\Python38"
       PYTHON39: "C:\\Python39"
-      QBDI_LLVM_PREFIX: c:\projects\qbdi\deps\LLVM-10.0.1-windows-X86
 
 for:
 -
@@ -44,7 +42,6 @@ for:
 
 
 cache:
-  - '%QBDI_LLVM_PREFIX%/ -> cmake/llvm/QBDI_llvm.cmake'
   - '%SCCACHE_DIR%'
 
 install:
@@ -58,12 +55,11 @@ install:
   - "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat\" %Platform%"
   - "SET OLDPATH=%PATH%"
   - "SET PATH=%PYTHON36%;%PYTHON36%\\Scripts;%OLDPATH%"
-  - "SET QBDI_LLVM_PREFIX=%QBDI_LLVM_PREFIX%"
   - cmd: mkdir build
   - cmd: cd build
 
 build_script:
-  - cmd: cmake .. -G "Ninja" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DQBDI_PLATFORM=%qbdi_plateform% -DQBDI_ARCH=%qbdi_arch% -DQBDI_TOOLS_PYQBDI=Off -DQBDI_EXAMPLES=On -DQBDI_LLVM_PREFIX=%QBDI_LLVM_PREFIX%
+  - cmd: cmake .. -G "Ninja" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DQBDI_PLATFORM=%qbdi_plateform% -DQBDI_ARCH=%qbdi_arch% -DQBDI_TOOLS_PYQBDI=Off -DQBDI_EXAMPLES=On
   - cmd: ninja
   - cmd: cpack
   - cmd: cd ..

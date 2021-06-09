@@ -21,7 +21,6 @@ jobs:
       QBDI_PLATFORM: 'android'
       NDK_VERSION: 'r21d'
       ANDROID_PLATFORM: 23
-      QBDI_LLVM_VERSION: '10.0.1'
     steps:
       - name: checkout
         uses: actions/checkout@v2
@@ -36,13 +35,6 @@ jobs:
         run: |
           mkdir ~/.ccache
           cp .github/workflows/ccache.conf ~/.ccache/ccache.conf
-      - name: Cache llvm
-        uses: actions/cache@v2
-        id: cache-llvm
-        with:
-          path: |
-            deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/
-          key: llvm-${{ env.QBDI_LLVM_VERSION }}-${{ runner.os }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}-${{ hashFiles('cmake/llvm/QBDI_llvm.cmake') }}-ndk-${{ env.NDK_VERSION }}
       - name: Cache android NDK ${{ env.NDK_VERSION }}
         uses: actions/cache@v2
         id: cache-ndk
@@ -69,7 +61,6 @@ jobs:
                 -DANDROID_ABI=${{ matrix.ANDROID_ABI }} \
                 -DANDROID_PLATFORM=${{ env.ANDROID_PLATFORM }} \
                 -DQBDI_TEST=OFF \
-                -DQBDI_LLVM_PREFIX="${{ github.workspace }}/deps/LLVM-${{ env.QBDI_LLVM_VERSION }}-${{ env.QBDI_PLATFORM }}-${{ matrix.QBDI_ARCH }}/" \
                 -G Ninja \
                 ..
           ninja

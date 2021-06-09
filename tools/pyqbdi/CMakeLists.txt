@@ -1,7 +1,7 @@
 if(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
   include(ExternalProject)
 
-  find_package(Python3 EXACT REQUIRED COMPONENTS Interpreter Development)
+  find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 
   if(NOT Python3_INCLUDE_DIRS)
     execute_process(

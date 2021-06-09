@@ -4,9 +4,6 @@ set -ex
 
 cd ~/qbdi
 
-export QBDI_LLVM_PREFIX="${pwd}/deps/LLVM-${QBDI_LLVM_VERSION}-${QBDI_PLATFORM}-${QBDI_ARCH}/"
-mkdir -p "${QBDI_LLVM_PREFIX}"
-
 /opt/python/cp36-cp36m/bin/python setup.py bdist_wheel
 /opt/python/cp37-cp37m/bin/python setup.py bdist_wheel
 /opt/python/cp38-cp38/bin/python setup.py bdist_wheel
