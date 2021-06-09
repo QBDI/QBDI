@@ -34,9 +34,10 @@ jobs:
         with:
           path: |
             ~/.ccache
-          key: ccache-osx-X86_64-${{ hashFiles('.github/workflows/ccache.conf') }}-python-${{ matrix.python-version }}
+          key: ccache-osx-X86_64-${{ hashFiles('.github/workflows/ccache.conf') }}-python-${{ matrix.python-version }}-${{ github.run_number }}
           restore-keys: |
-            ccache-osx-X86_64-${{ hashFiles('.github/workflows/ccache.conf') }}
+            ccache-osx-X86_64-${{ hashFiles('.github/workflows/ccache.conf') }}-python-${{ matrix.python-version }}-
+            ccache-osx-X86_64-${{ hashFiles('.github/workflows/ccache.conf') }}-
       - if: steps.cache-ccache-python.outputs.cache-hit != 'true'
         run: |
           mkdir -p ~/.ccache
@@ -46,7 +47,7 @@ jobs:
         with:
           path: |
             third-party
-          key: QBDI-third-party-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**.cmake') }}
+          key: QBDI-third-party-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**/*.cmake') }}
       - run: mkdir -p build
       - name: Build PyQBDI ${{ matrix.python-version }}
         run: |

@@ -22,17 +22,19 @@ jobs:
         with:
           path: |
             ~/.ccache
-          key: ccache-osx-X86_64-${{ hashFiles('.github/workflows/ccache.conf') }}
+          key: ccache-osx-X86_64-${{ hashFiles('.github/workflows/ccache.conf') }}-${{ github.run_number }}
+          restore-keys: |
+            ccache-osx-X86_64-${{ hashFiles('.github/workflows/ccache.conf') }}-
       - if: steps.cache-ccache.outputs.cache-hit != 'true'
         run: |
-          mkdir ~/.ccache
+          mkdir -p ~/.ccache
           cp .github/workflows/ccache.conf ~/.ccache/ccache.conf
       - name: Cache third-party
         uses: actions/cache@v2
         with:
           path: |
             third-party
-          key: QBDI-third-party-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**.cmake') }}
+          key: QBDI-third-party-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**/*.cmake') }}
       - run: mkdir -p build
       - name: build QBDI
         working-directory: ./build
