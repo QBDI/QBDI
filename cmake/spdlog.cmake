@@ -21,3 +21,7 @@ set(SPDLOG_SOURCE_DIR "${SOURCE_DIR}")
 add_library(spdlog INTERFACE)
 add_dependencies(spdlog spdlog-project)
 target_include_directories(spdlog INTERFACE "${SPDLOG_SOURCE_DIR}/include/")
+
+if(QBDI_PLATFORM_ANDROID)
+  target_link_libraries(spdlog INTERFACE log)
+endif()
