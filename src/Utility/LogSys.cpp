@@ -17,117 +17,94 @@
  */
 #include "Utility/LogSys.h"
 
+#include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/sinks/basic_file_sink.h"
+
+#ifdef QBDI_PLATFORM_ANDROID
+#include "spdlog/sinks/android_sink.h"
+#endif
+
+// windows seem to define a macro on ERROR
+#ifdef QBDI_PLATFORM_WINDOWS
+# ifdef ERROR
+#  undef ERROR
+# endif
+#endif
+
+static QBDI::Logger logger;
+
 namespace QBDI {
 
-LogSys LOGSYS;
-
-LogSys::LogSys(FILE* output) : output(output) {
+Logger::Logger(void) {
+  setDefaultLogger();
+  spdlog::set_pattern("%^[%l] (%!) %s:%#%$ %v");
+  spdlog::set_level(spdlog::level::info);
 }
 
-void LogSys::setOutput(FILE* output) {
-    this->output = output;
-}
+Logger::~Logger(void) = default;
 
-void LogSys::addFilter(const char *tag, LogPriority priority) {
-    filter.emplace_back(tag, priority);
-}
-
-bool LogSys::matchFilter(const char* tag, LogPriority priority) {
-    for(const std::pair<const char*, LogPriority> &f : filter) {
-        if(priority >= f.second) {
-            bool matches = true;
-            int i = 0, j = 0, b = -1;
-
-            // Simple fuzzy match with '*' handling
-            while(f.first[i] != '\0') {
-                if(f.first[i] == '*') {
-                    if(f.first[i+1] == tag[j+1]) {
-                        // Mark the '*' as a backtrack point
-                        b = i;
-                        i++;
-                    }
-                    j++;
-                }
-                else if(f.first[i] == tag[j]) {
-                    i++;
-                    j++;
-                }
-                else {
-                    // No preceding '*' we can backtrack to
-                    if(b != -1) {
-                        i = b;
-                    }
-                    else {
-                        matches = false;
-                        break;
-                    }
-                }
-            }
-
-            if(matches) {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-void LogSys::writeTag(LogPriority priority, const char* tag) {
-#if defined(QBDI_PLATFORM_LINUX) || defined(QBDI_PLATFORM_ANDROID) || defined(QBDI_PLATFORM_OSX)
-    if(isatty(fileno(output))) {
-        switch(priority) {
-            case LogPriority::DEBUG:
-                fprintf(output, "\x1b[32;1m[%s]\x1b[0m ", tag);
-                break;
-            case LogPriority::WARNING:
-                fprintf(output, "\x1b[33;1m[%s]\x1b[0m ", tag);
-                break;
-            case LogPriority::ERROR:
-                fprintf(output, "\x1b[31;1m[%s]\x1b[0m ", tag);
-                break;
-        }
-        return;
-    }
+void Logger::setDefaultLogger() {
+#ifdef QBDI_PLATFORM_ANDROID
+  sink = spdlog::android_logger_mt("QBDI", "qbdi");
+#else
+  sink = spdlog::stderr_color_mt("console");
 #endif
-    fprintf(output, "[%s] ", tag);
+  spdlog::set_default_logger(sink);
 }
 
-void LogSys::log(LogPriority priority, const char* tag, const char* fmt, ...) {
-    if(matchFilter(tag, priority)) {
-        va_list ap;
-
-        writeTag(priority, tag);
-        va_start(ap, fmt);
-        vfprintf(output, fmt, ap);
-        va_end(ap);
-        fprintf(output, "\n");
-    }
+void Logger::setConsoleLogger() {
+  sink = spdlog::stderr_color_mt("console");
+  spdlog::set_default_logger(sink);
 }
 
-void LogSys::logCallback(LogPriority priority, const char* tag, std::function<void (FILE *log)> callback) {
-    if(matchFilter(tag, priority)) {
-        writeTag(priority, tag);
-        callback(output);
-        fprintf(output, "\n");
-    }
+void Logger::setPriority(LogPriority priority) {
+  switch (priority) {
+    case LogPriority::DEBUG:
+      spdlog::set_level(spdlog::level::debug);
+      break;
+    default:
+    case LogPriority::INFO:
+      spdlog::set_level(spdlog::level::info);
+      break;
+    case LogPriority::WARNING:
+      spdlog::set_level(spdlog::level::warn);
+      break;
+    case LogPriority::ERROR:
+      spdlog::set_level(spdlog::level::err);
+      break;
+    case LogPriority::DISABLE:
+      spdlog::set_level(spdlog::level::off);
+      break;
+  }
 }
 
-// C APIs
-void qbdi_setLogOutput(FILE* output) {
-    if (output == nullptr) {
-        output = stderr;
-    }
-    LOGSYS.setOutput(output);
+void Logger::setFile(const std::string& f, bool truncate) {
+  sink = spdlog::basic_logger_mt("QBDI", f, truncate);
+  spdlog::set_default_logger(sink);
 }
 
-void qbdi_addLogFilter(const char *tag, LogPriority priority) {
-    if (tag == nullptr) {
-        tag = "*";
-    } else {
-        tag = strdup(tag);
-    }
-    LOGSYS.addFilter(tag, priority);
+// =========================
+
+
+void qbdi_setLogFile(const char* filename, bool truncate) {
+  logger.setFile(std::string(filename), truncate);
 }
+
+void setLogFile(const std::string &filename, bool truncate) {
+  logger.setFile(filename, truncate);
+}
+
+void qbdi_setLogPriority(LogPriority priority) {
+  logger.setPriority(priority);
+}
+
+void qbdi_setLogConsole() {
+  logger.setConsoleLogger();
+}
+
+void qbdi_setLogDefault() {
+  logger.setDefaultLogger();
+}
+
 
 }

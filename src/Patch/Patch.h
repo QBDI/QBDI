@@ -27,7 +27,7 @@
 #include "Patch/RelocatableInst.h"
 #include "Patch/Types.h"
 
-#include "State.h"
+#include "QBDI/State.h"
 
 namespace QBDI {
 

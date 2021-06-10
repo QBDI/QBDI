@@ -31,8 +31,10 @@
 #include "Utility/Assembly.h"
 #include "Utility/LogSys.h"
 
-#include "Platform.h"
-#include "State.h"
+#include "QBDI/Platform.h"
+#include "QBDI/State.h"
+
+#include "spdlog/fmt/bin_to_hex.h"
 
 namespace QBDI {
 
@@ -99,13 +101,10 @@ void Assembly::writeInstruction(const llvm::MCInst inst, memory_ostream *stream)
     llvm::SmallVector<llvm::MCFixup,4> fixups;
 
     uint64_t pos = stream->current_pos();
-    LogCallback(LogPriority::DEBUG, "Assembly::writeInstruction", [&] (FILE *log) -> void {
-        std::string disass;
-        llvm::raw_string_ostream disassOs(disass);
+    QBDI_DEBUG_BLOCK({
         uint64_t address = reinterpret_cast<uint64_t>(stream->get_ptr()) + pos;
-        printDisasm(inst, address, disassOs);
-        disassOs.flush();
-        fprintf(log, "Assembling %s at 0x%" PRIx64, disass.c_str(), address);
+        std::string disass = showInst(inst, address);
+        QBDI_DEBUG("Assembling {} at 0x{:x}", disass.c_str(), address);
     });
     assembler->getEmitter().encodeInstruction(inst, *stream, fixups, MSTI);
     uint64_t size = stream->current_pos() - pos;
@@ -118,23 +117,27 @@ void Assembly::writeInstruction(const llvm::MCInst inst, memory_ostream *stream)
             assembler->getBackend().applyFixup(*assembler, fixup, target, llvm::MutableArrayRef<char>((char*) stream->get_ptr() + pos, size), (uint64_t) value, true, &MSTI);
         }
         else {
-            LogWarning("Assembly::writeInstruction", "Could not evalutate fixup, might crash!");
+            QBDI_WARN("Could not evalutate fixup, might crash!");
         }
     }
 
-    LogCallback(LogPriority::DEBUG, "Assembly::writeInstruction", [&] (FILE *log) -> void {
-        fprintf(log, "Assembly result at 0x%" PRIRWORD " is:", (rword) stream->get_ptr() + (rword) pos);
-        uint8_t* ptr = (uint8_t*) stream->get_ptr();
-        for(uint32_t i = 0; i < size; i++) {
-            fprintf(log, " %02" PRIx8, ptr[pos + i]);
-        }
-    });
+    QBDI_DEBUG( "Assembly result at 0x{:x} is: {:n}",
+        reinterpret_cast<uint64_t>(stream->get_ptr()) + pos,
+        spdlog::to_hex(
+            reinterpret_cast<uint8_t*>(stream->get_ptr()) + pos,
+            reinterpret_cast<uint8_t*>(stream->get_ptr()) + stream->current_pos())
+    );
 }
 
+std::string Assembly::showInst(const llvm::MCInst& inst, uint64_t address) const {
+    std::string out;
+    llvm::raw_string_ostream rso(out);
 
-void Assembly::printDisasm(const llvm::MCInst &inst, uint64_t address, llvm::raw_ostream &out) const {
     llvm::StringRef   unusedAnnotations;
-    asmPrinter->printInst(&inst, address, unusedAnnotations, MSTI, out);
+    asmPrinter->printInst(&inst, address, unusedAnnotations, MSTI, rso);
+
+    rso.flush();
+    return out;
 }
 
 }

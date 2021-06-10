@@ -18,10 +18,10 @@
 #ifndef QBDI_OPTION_H_
 #define QBDI_OPTION_H_
 
-#include "stdint.h"
+#include <stdint.h>
 
-#include "Bitmask.h"
-#include "Platform.h"
+#include "QBDI/Bitmask.h"
+#include "QBDI/Platform.h"
 
 #ifdef __cplusplus
 namespace QBDI {

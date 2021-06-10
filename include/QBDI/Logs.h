@@ -19,8 +19,12 @@
 #define QBDI_LOGS_H_
 
 #include <stdio.h>
+#include "QBDI/Platform.h"
 
-#include "Platform.h"
+#ifdef __cplusplus
+#include <string>
+#endif
+
 
 #ifdef __cplusplus
 namespace QBDI {
@@ -31,50 +35,71 @@ extern "C" {
  * In production builds, only Warning and Error logs are kept.
  */
 typedef enum {
-    _QBDI_EI(DEBUG) = 0, /*!< Debug logs */
-    _QBDI_EI(WARNING),   /*!< Warning logs */
-    _QBDI_EI(ERROR),     /*!< Error logs */
+    _QBDI_EI(DEBUG) = 0,       /*!< Debug logs */
+    _QBDI_EI(INFO),            /*!< Info logs (default) */
+    _QBDI_EI(WARNING),         /*!< Warning logs */
+    _QBDI_EI(ERROR),           /*!< Error logs */
+    _QBDI_EI(DISABLE) = 0xff,  /*!< Disable logs message */
 } LogPriority;
 
 
-/*! Redirect logs to an opened file.
+/*! Redirect logs to a file.
  *
- * @param[in] output        Pointer to an opened file where logs will be append.
+ * @param[in] filename    the path of the file to append the log
+ * @param[in] truncate    Set to true to clear the file before append the log
  */
-QBDI_EXPORT void qbdi_setLogOutput(FILE* output);
+QBDI_EXPORT void qbdi_setLogFile(const char* filename, bool truncate);
 
-/*! Enable logs matching tag and priority.
+/*! Write log to the console (stderr)
+ */
+QBDI_EXPORT void qbdi_setLogConsole();
+
+/*! Write log to the default location (stderr for linux, android_logger for android)
+ */
+QBDI_EXPORT void qbdi_setLogDefault();
+
+/*! Enable logs matching priority.
  *
- * @param[in] tag           Logs are identified using a tag (ex: Engine::patch).
- *                          "*" will log everything matching priority.
  * @param[in] priority      Filter logs with greater or equal priority.
  */
-QBDI_EXPORT void qbdi_addLogFilter(const char *tag, LogPriority priority);
+QBDI_EXPORT void qbdi_setLogPriority(LogPriority priority);
+
 
 #ifdef __cplusplus
+
 /*
  * C API C++ bindings
  */
 
-/*! Redirect logs to an opened file.
+/*! Redirect logs to a file.
  *
- * @param[in] output        Pointer to an opened file where logs will be append.
+ * @param[in] filename    the path of the file to append the log
+ * @param[in] truncate    Set to true to clear the file before append the log
  */
-inline void setLogOutput(FILE* output) {
-    return qbdi_setLogOutput(output);
-}
+QBDI_EXPORT void setLogFile(const std::string &filename, bool truncate=false);
 
-/*! Enable logs matching tag and priority.
+/*! Enable logs matching priority.
  *
- * @param[in] tag           Logs are identified using a tag (ex: Engine::patch).
- *                          "*" will log everything matching priority.
  * @param[in] priority      Filter logs with greater or equal priority.
  */
-inline void addLogFilter(const char *tag, LogPriority priority) {
-    return qbdi_addLogFilter(tag, priority);
+inline void setLogPriority(LogPriority priority=LogPriority::INFO) {
+    return qbdi_setLogPriority(priority);
+}
+
+/*! Write log to the console (stderr)
+ */
+inline void setLogConsole() {
+    return qbdi_setLogConsole();
+}
+
+/*! Write log to the default location (stderr for linux, android_logger for android)
+ */
+inline void setLogDefault() {
+    return qbdi_setLogDefault();
 }
 
 } // "C"
+
 } // QBDI::
 #endif
 

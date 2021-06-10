@@ -25,7 +25,7 @@
 #include "Patch/X86_64/PatchGenerator_X86_64.h"
 #include "Utility/LogSys.h"
 
-#include "Callback.h"
+#include "QBDI/Callback.h"
 
 namespace QBDI {
 
@@ -91,14 +91,13 @@ void analyseMemoryAccessAddrValue(const ExecBlock& curExecBlock, llvm::ArrayRef<
     do {
         index += 1;
         if (index >= shadows.size()) {
-            LogError(
-                "analyseMemoryAccessAddrValue",
-                "Not found shadow tag %" PRIu16 " for instruction %" PRIx64,
+            QBDI_ERROR(
+                "Not found shadow tag {:x} for instruction {:x}",
                 expectValueTag, access.instAddress
             );
             return;
         }
-        RequireAction("analyseMemoryAccessAddrValue", shadows[0].instID == shadows[index].instID, return);
+        QBDI_REQUIRE_ACTION(shadows[0].instID == shadows[index].instID, return);
     } while (shadows[index].tag != expectValueTag);
 
     access.value = curExecBlock.getShadow(shadows[index].shadowID);
@@ -152,14 +151,13 @@ void analyseMemoryAccessAddrRange(const ExecBlock& curExecBlock, llvm::ArrayRef<
     do {
         index += 1;
         if (index >= shadows.size()) {
-            LogError(
-                "analyseMemoryAccessAddrRange",
-                "Not found shadow tag %" PRIu16 " for instruction %" PRIx64,
+            QBDI_ERROR(
+                "Not found shadow tag {:x} for instruction {:x}",
                 expectValueTag, access.instAddress
             );
             return;
         }
-        RequireAction("analyseMemoryAccessAddrRange", shadows[0].instID == shadows[index].instID, return);
+        QBDI_REQUIRE_ACTION(shadows[0].instID == shadows[index].instID, return);
     } while (shadows[index].tag != expectValueTag);
 
     rword beginAddress = curExecBlock.getShadow(shadows[0].shadowID);
@@ -182,10 +180,10 @@ void analyseMemoryAccessAddrRange(const ExecBlock& curExecBlock, llvm::ArrayRef<
 void analyseMemoryAccess(const ExecBlock& curExecBlock, uint16_t instID, bool afterInst, std::vector<MemoryAccess>& dest) {
 
     llvm::ArrayRef<ShadowInfo> shadows = curExecBlock.getShadowByInst(instID);
-    LogDebug("analyseMemoryAccess", "Got %zu shadows for Instruction %" PRIu16, shadows.size(), instID);
+    QBDI_DEBUG("Got {} shadows for Instruction {:x}", shadows.size(), instID);
 
     while(! shadows.empty()) {
-        Require("analyseMemoryAccess", shadows[0].instID == instID);
+        QBDI_REQUIRE(shadows[0].instID == instID);
 
         switch (shadows[0].tag) {
             default:

@@ -7,6 +7,10 @@ QBDI binaries and packages can be statically linked with the followed source:
 - QBDI under the Apache License v2.0
 - LLVM under the Apache License v2.0 with LLVM Exceptions
     https://releases.llvm.org/10.0.0/LICENSE.TXT
+- spdlog under the MIT License
+    https://github.com/gabime/spdlog/blob/v1.x/LICENSE
+- fmtlib under the MIT License
+    https://github.com/fmtlib/fmt/blob/master/LICENSE.rst
 - Catch2 under the Boost Software License 1.0
     https://github.com/catchorg/Catch2/blob/devel/LICENSE.txt
 - Pybind11 under a BSD-style license

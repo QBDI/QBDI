@@ -22,7 +22,7 @@
 #include "Patch/X86_64/Layer2_X86_64.h"
 #include "Patch/X86_64/RelocatableInst_X86_64.h"
 
-#include "Config.h"
+#include "QBDI/Config.h"
 
 namespace QBDI {
 

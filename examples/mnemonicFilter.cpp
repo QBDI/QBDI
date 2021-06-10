@@ -33,7 +33,7 @@ int main(int argc, char ** argv)
     uint8_t *fakestack = nullptr;
     QBDI::GPRState *state;
 
-    QBDI::addLogFilter("*", QBDI::LogPriority::DEBUG);
+    QBDI::setLogPriority(QBDI::LogPriority::DEBUG);
 
     // Constructing a new QBDI vm
     QBDI::VM *vm = new QBDI::VM();

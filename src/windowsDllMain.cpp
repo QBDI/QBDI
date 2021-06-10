@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include <windows.h>
 
-#include "Platform.h"
+#include "QBDI/Platform.h"
 
 QBDI_EXPORT BOOLEAN WINAPI DllMain(IN HINSTANCE hDllHandle, IN DWORD nReason, IN LPVOID Reserved) {
     switch (nReason) {

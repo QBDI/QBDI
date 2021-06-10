@@ -15,10 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "VM.h"
-#include "Range.h"
-#include "Errors.h"
-#include "Memory.hpp"
+#include "QBDI/Errors.h"
+#include "QBDI/Memory.hpp"
+#include "QBDI/Range.h"
+#include "QBDI/VM.h"
 
 #include "Engine/Engine.h"
 #include "ExecBlock/ExecBlock.h"
@@ -206,12 +206,12 @@ FPRState* VM::getFPRState() const {
 
 
 void VM::setGPRState(const GPRState* gprState) {
-    RequireAction("VM::setGPRState", gprState != nullptr, return);
+    QBDI_REQUIRE_ACTION(gprState != nullptr, return);
     engine->setGPRState(gprState);
 }
 
 void VM::setFPRState(const FPRState* fprState) {
-    RequireAction("VM::setFPRState", fprState != nullptr, return);
+    QBDI_REQUIRE_ACTION(fprState != nullptr, return);
     engine->setFPRState(fprState);
 }
 
@@ -227,7 +227,7 @@ void VM::setOptions(Options options) {
 }
 
 void VM::addInstrumentedRange(rword start, rword end) {
-    RequireAction("VM::addInstrumentedRange", start < end, return);
+    QBDI_REQUIRE_ACTION(start < end, return);
     engine->addInstrumentedRange(start, end);
 }
 
@@ -244,7 +244,7 @@ bool VM::instrumentAllExecutableMaps() {
 }
 
 void VM::removeInstrumentedRange(rword start, rword end) {
-    RequireAction("VM::removeInstrumentedRange", start < end, return);
+    QBDI_REQUIRE_ACTION(start < end, return);
     engine->removeInstrumentedRange(start, end);
 }
 
@@ -273,7 +273,7 @@ bool VM::callA(rword* retval, rword function, uint32_t argNum, const rword* args
     GPRState* state = nullptr;
 
     state = getGPRState();
-    RequireAction("VM::callA", state != nullptr, abort());
+    QBDI_REQUIRE_ACTION(state != nullptr, abort());
 
     // a stack pointer must be set in state
     if (QBDI_GPR_GET(state, REG_SP) == 0) {
@@ -336,8 +336,8 @@ uint32_t VM::addInstrRuleRangeSet(RangeSet<rword> range, InstrRuleCallback cbk, 
 }
 
 uint32_t VM::addMnemonicCB(const char* mnemonic, InstPosition pos, InstCallback cbk, void *data) {
-    RequireAction("VM::addMnemonicCB", mnemonic != nullptr, return VMError::INVALID_EVENTID);
-    RequireAction("VM::addMnemonicCB", cbk != nullptr, return VMError::INVALID_EVENTID);
+    QBDI_REQUIRE_ACTION(mnemonic != nullptr, return VMError::INVALID_EVENTID);
+    QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
     return engine->addInstrRule(InstrRuleBasic::unique(
         MnemonicIs::unique(mnemonic),
         getCallbackGenerator(cbk, data),
@@ -347,7 +347,7 @@ uint32_t VM::addMnemonicCB(const char* mnemonic, InstPosition pos, InstCallback 
 }
 
 uint32_t VM::addCodeCB(InstPosition pos, InstCallback cbk, void *data) {
-    RequireAction("VM::addCodeCB", cbk != nullptr, return VMError::INVALID_EVENTID);
+    QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
     return engine->addInstrRule(InstrRuleBasic::unique(
         True::unique(),
         getCallbackGenerator(cbk, data),
@@ -357,7 +357,7 @@ uint32_t VM::addCodeCB(InstPosition pos, InstCallback cbk, void *data) {
 }
 
 uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk, void *data) {
-    RequireAction("VM::addCodeAddrCB", cbk != nullptr, return VMError::INVALID_EVENTID);
+    QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
     return engine->addInstrRule(InstrRuleBasic::unique(
         AddressIs::unique(address),
         getCallbackGenerator(cbk, data),
@@ -367,8 +367,8 @@ uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk, vo
 }
 
 uint32_t VM::addCodeRangeCB(rword start, rword end, InstPosition pos, InstCallback cbk, void *data) {
-    RequireAction("VM::addCodeRangeCB", start < end, return VMError::INVALID_EVENTID);
-    RequireAction("VM::addCodeRangeCB", cbk != nullptr, return VMError::INVALID_EVENTID);
+    QBDI_REQUIRE_ACTION(start < end, return VMError::INVALID_EVENTID);
+    QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
     return engine->addInstrRule(InstrRuleBasic::unique(
         InstructionInRange::unique(start, end),
         getCallbackGenerator(cbk, data),
@@ -378,7 +378,7 @@ uint32_t VM::addCodeRangeCB(rword start, rword end, InstPosition pos, InstCallba
 }
 
 uint32_t VM::addMemAccessCB(MemoryAccessType type, InstCallback cbk, void *data) {
-    RequireAction("VM::addMemAccessCB", cbk != nullptr, return VMError::INVALID_EVENTID);
+    QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
     recordMemoryAccess(type);
     switch(type) {
         case MEMORY_READ:
@@ -412,14 +412,14 @@ uint32_t VM::addMemAccessCB(MemoryAccessType type, InstCallback cbk, void *data)
 
 
 uint32_t VM::addMemAddrCB(rword address, MemoryAccessType type, InstCallback cbk, void *data) {
-    RequireAction("VM::addMemAddrCB", cbk != nullptr, return VMError::INVALID_EVENTID);
+    QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
     return addMemRangeCB(address, address + 1, type, cbk, data);
 }
 
 uint32_t VM::addMemRangeCB(rword start, rword end, MemoryAccessType type, InstCallback cbk, void *data) {
-    RequireAction("VM::addMemRangeCB", start < end, return VMError::INVALID_EVENTID);
-    RequireAction("VM::addMemRangeCB", type & MEMORY_READ_WRITE, return VMError::INVALID_EVENTID);
-    RequireAction("VM::addMemRangeCB", cbk != nullptr, return VMError::INVALID_EVENTID);
+    QBDI_REQUIRE_ACTION(start < end, return VMError::INVALID_EVENTID);
+    QBDI_REQUIRE_ACTION(type & MEMORY_READ_WRITE, return VMError::INVALID_EVENTID);
+    QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
     if((type == MEMORY_READ) && memReadGateCBID == VMError::INVALID_EVENTID) {
         memReadGateCBID = addMemAccessCB(MEMORY_READ, memReadGate, memCBInfos.get());
     }
@@ -427,14 +427,14 @@ uint32_t VM::addMemRangeCB(rword start, rword end, MemoryAccessType type, InstCa
         memWriteGateCBID = addMemAccessCB(MEMORY_READ_WRITE, memWriteGate, memCBInfos.get());
     }
     uint32_t id = memCBID++;
-    RequireAction("VM::addMemRangeCB", id < EVENTID_VIRTCB_MASK, return VMError::INVALID_EVENTID);
+    QBDI_REQUIRE_ACTION(id < EVENTID_VIRTCB_MASK, return VMError::INVALID_EVENTID);
     memCBInfos->emplace_back(id, MemCBInfo {type, {start, end}, cbk, data});
     return id | EVENTID_VIRTCB_MASK;
 }
 
 uint32_t VM::addVMEventCB(VMEvent mask, VMCallback cbk, void *data) {
-    RequireAction("VM::addVMEventCB", mask != 0, return VMError::INVALID_EVENTID);
-    RequireAction("VM::addVMEventCB", cbk != nullptr, return VMError::INVALID_EVENTID);
+    QBDI_REQUIRE_ACTION(mask != 0, return VMError::INVALID_EVENTID);
+    QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
     return engine->addVMEventCB(mask, cbk, data);
 }
 
@@ -471,7 +471,7 @@ void VM::deleteAllInstrumentations() {
 
 const InstAnalysis* VM::getInstAnalysis(AnalysisType type) const {
     const ExecBlock* curExecBlock = engine->getCurExecBlock();
-    RequireAction("VM::getInstAnalysis", curExecBlock != nullptr, return nullptr);
+    QBDI_REQUIRE_ACTION(curExecBlock != nullptr, return nullptr);
     uint16_t curInstID = curExecBlock->getCurrentInstID();
     return curExecBlock->getInstAnalysis(curInstID, type);
 }
@@ -518,7 +518,7 @@ std::vector<MemoryAccess> VM::getBBMemoryAccess() const {
     uint16_t bbID = curExecBlock->getCurrentSeqID();
     uint16_t instID = curExecBlock->getCurrentInstID();
     std::vector<MemoryAccess> memAccess;
-    LogDebug("VM::getBBMemoryAccess", "Search MemoryAccess for Basic Block %" PRIu16 " stopping at Instruction %" PRIu16,
+    QBDI_DEBUG("Search MemoryAccess for Basic Block {:x} stopping at Instruction {:x}",
              bbID, instID);
 
     uint16_t endInstID = curExecBlock->getSeqEnd(bbID);

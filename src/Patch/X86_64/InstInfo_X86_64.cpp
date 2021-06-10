@@ -24,8 +24,8 @@
 #include "Patch/X86_64/InstInfo_X86_64.h"
 #include "Utility/LogSys.h"
 
-#include "Config.h"
-#include "State.h"
+#include "QBDI/Config.h"
+#include "QBDI/State.h"
 
 #define CHECK_TABLE 0
 
@@ -2661,7 +2661,7 @@ struct MemAccessArray {
             return arr[op];
         }
 
-        LogError("MemAccessArray.get", "No opcode %u", op);
+        QBDI_ERROR("No opcode {}", op);
         return 0;
     }
 };

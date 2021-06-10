@@ -15,13 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "Platform.h"
+#include "QBDI/Platform.h"
 
 #include "llvm/Support/Host.h"
 #include "llvm/Support/Process.h"
 
-#include "Utility/LogSys.h"
-#include "System.h"
+#include "Utility/System.h"
 
 
 namespace QBDI {

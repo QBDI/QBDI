@@ -333,7 +333,7 @@ struct RegisterSizeArray {
         if(reg < llvm::X86::NUM_TARGET_REGS)
             return arr[reg];
 
-        LogError("RegisterSizeArray.get", "No register %u", reg);
+        QBDI_ERROR("No register {}", reg);
         return 0;
     }
 };

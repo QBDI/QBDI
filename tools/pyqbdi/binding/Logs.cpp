@@ -27,13 +27,15 @@ void init_binding_Logs(py::module_& m) {
             "Each log has a priority (or level) which can be used to control verbosity\n"
             "In production builds, only Warning and Error logs are kept.")
         .value("DEBUG", LogPriority::DEBUG, "Debug logs")
+        .value("INFO", LogPriority::INFO, "Info logs (default)")
         .value("WARNING", LogPriority::WARNING, "Warning logs")
         .value("ERROR", LogPriority::ERROR, "Error logs")
+        .value("DISABLE", LogPriority::DISABLE, "Disable logs message")
         .export_values();
 
-    m.def("addLogFilter", &addLogFilter,
-            "Enable logs matching tag and priority.",
-            "tag"_a, "priority"_a);
+    m.def("setLogPriority", &setLogPriority,
+            "Enable logs matching priority.",
+            "priority"_a);
 
 }
 

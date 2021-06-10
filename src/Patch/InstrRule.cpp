@@ -121,7 +121,7 @@ void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo* MCII, const ll
     } else if(position == POSTINST) {
         patch.append(std::move(instru));
     } else {
-        LogError("InstrRule::Instrument", "Invalid position 0x%x", position);
+        QBDI_ERROR("Invalid position 0x{:x}", position);
         abort();
     }
 }
@@ -140,13 +140,13 @@ bool InstrRuleUser::tryInstrument(Patch &patch, const llvm::MCInstrInfo* MCII, c
         return false;
     }
 
-    LogDebug("InstrRuleUser::tryInstrument", "Call user InstrCB at %p with analysisType 0x%x", cbk, analysisType);
+    QBDI_DEBUG("Call user InstrCB at 0x{:x} with analysisType 0x{:x}", cbk, analysisType);
 
     const InstAnalysis* ana = analyzeInstMetadata(patch.metadata, analysisType, *assembly);
 
     std::vector<InstrRuleDataCBK> vec = cbk(vm, ana, cbk_data);
 
-    LogDebug("InstrRuleUser::tryInstrument", "InstrCB return %u callback(s)", vec.size());
+    QBDI_DEBUG("InstrCB return {} callback(s)", vec.size());
 
     if (vec.size() == 0) {
         return false;

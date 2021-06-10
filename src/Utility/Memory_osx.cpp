@@ -18,8 +18,8 @@
 #include "llvm/Support/Process.h"
 
 #include "Utility/LogSys.h"
-#include "Memory.hpp"
-#include "Memory.h"
+#include "QBDI/Memory.hpp"
+#include "QBDI/Memory.h"
 
 #include <set>
 
@@ -182,7 +182,7 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path) {
     kern_return_t kr;
 
     kr = task_for_pid(mach_task_self(), pid, &task);
-    RequireAction("getRemoteProcessMaps", kr == KERN_SUCCESS, return memMaps);
+    QBDI_REQUIRE_ACTION(kr == KERN_SUCCESS, return memMaps);
 
     // Create a memory map
     while(1) {

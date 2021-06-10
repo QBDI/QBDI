@@ -22,8 +22,8 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "Platform.h"
-#include "State.h"
+#include "QBDI/Platform.h"
+#include "QBDI/State.h"
 
 #ifdef __cplusplus
 namespace QBDI {

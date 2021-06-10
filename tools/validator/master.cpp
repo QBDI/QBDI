@@ -20,7 +20,7 @@
 #include "validator.h"
 #include "validatorengine.h"
 
-#include "Memory.hpp"
+#include "QBDI/Memory.hpp"
 
 #include <stdlib.h>
 #include <string.h>
@@ -41,13 +41,13 @@ void start_master(Process* debugged, pid_t instrumented, int ctrlfd, int datafd)
     bool running = true;
     int error = 0;
 
-    QBDI::LOGSYS.addFilter("*", QBDI::LogPriority::ERROR);
+    QBDI::setLogPriority(QBDI::LogPriority::ERROR);
 
     // Create communication fifo
     ctrlPipe = fdopen(ctrlfd, "wb");
     dataPipe = fdopen(datafd, "rb");
     if(ctrlPipe == nullptr || dataPipe == nullptr) {
-        LogError("Validator::Master", "Could not open communication pipes with instrumented, exiting!");
+        QBDI_ERROR("Could not open communication pipes with instrumented, exiting!");
         exit(VALIDATOR_ERR_PIPE_CREATION_FAIL);
     }
 
@@ -58,7 +58,7 @@ void start_master(Process* debugged, pid_t instrumented, int ctrlfd, int datafd)
         else if(strcmp(env, "Summary") == 0) verbosity = LogVerbosity::Summary;
         else if(strcmp(env, "Detail") == 0) verbosity = LogVerbosity::Detail;
         else if(strcmp(env, "Full") == 0) verbosity = LogVerbosity::Full;
-        else LogWarning("Validator::Master", "Did not understood VALIDATOR_VERBOSITY parameter: %s\n", env);
+        else QBDI_WARN("Did not understood VALIDATOR_VERBOSITY parameter: {}\n", env);
     }
 
     ValidatorEngine validator(debugged->getPID(), instrumented, verbosity);
@@ -66,7 +66,7 @@ void start_master(Process* debugged, pid_t instrumented, int ctrlfd, int datafd)
     running = true;
     while(running) {
         if(readEvent(&event, dataPipe) != 1) {
-            LogError("Validator::Master", "Lost the data pipe, exiting!");
+            QBDI_ERROR("Lost the data pipe, exiting!");
             debugged->continueExecution();
             error = VALIDATOR_ERR_DATA_PIPE_LOST;
             break;
@@ -78,7 +78,7 @@ void start_master(Process* debugged, pid_t instrumented, int ctrlfd, int datafd)
         else if(event == EVENT::EXEC_TRANSFER) {
             QBDI::rword transferAddress;
             if(readExecTransferEvent(&transferAddress, dataPipe) != 1) {
-                LogError("Validator::Master", "Lost the data pipe, exiting!");
+                QBDI_ERROR("Lost the data pipe, exiting!");
                 debugged->continueExecution();
                 error = VALIDATOR_ERR_DATA_PIPE_LOST;
                 break;
@@ -87,13 +87,13 @@ void start_master(Process* debugged, pid_t instrumented, int ctrlfd, int datafd)
         }
         else if(event == EVENT::INSTRUCTION) {
             if(writeCommand(COMMAND::CONTINUE, ctrlPipe) != 1) {
-                LogError("Validator::Master", "Lost the control pipe, exiting!");
+                QBDI_ERROR("Lost the control pipe, exiting!");
                 debugged->continueExecution();
                 error = VALIDATOR_ERR_CTRL_PIPE_LOST;
                 break;
             }
             if(readInstructionEvent(&address, mnemonic, BUFFER_SIZE, disassembly, BUFFER_SIZE, &gprStateInstr, &fprStateInstr, dataPipe) != 1) {
-                LogError("Validator::Master", "Lost the data pipe, exiting!");
+                QBDI_ERROR("Lost the data pipe, exiting!");
                 debugged->continueExecution();
                 error = VALIDATOR_ERR_DATA_PIPE_LOST;
                 break;
@@ -103,7 +103,7 @@ void start_master(Process* debugged, pid_t instrumented, int ctrlfd, int datafd)
                 debugged->continueExecution();
                 status = debugged->waitForStatus();
                 if(hasExited(status)) {
-                    LogError("Validator::Master", "Execution diverged, debugged process exited!");
+                    QBDI_ERROR("Execution diverged, debugged process exited!");
                     validator.signalCriticalState();
                     running = false;
                     writeCommand(COMMAND::STOP, ctrlPipe);
@@ -111,7 +111,7 @@ void start_master(Process* debugged, pid_t instrumented, int ctrlfd, int datafd)
                     break;
                 }
                 else if(hasCrashed(status)) {
-                    LogError("Validator::Master", "Something went really wrong, debugged process encoutered signal %d", WSTOPSIG(status));
+                    QBDI_ERROR("Something went really wrong, debugged process encoutered signal {}", WSTOPSIG(status));
                     validator.signalCriticalState();
                     running = false;
                     writeCommand(COMMAND::STOP, ctrlPipe);
@@ -130,7 +130,7 @@ void start_master(Process* debugged, pid_t instrumented, int ctrlfd, int datafd)
             bool doRead, mayRead, doWrite, mayWrite;
             std::vector<QBDI::MemoryAccess> accesses;
             if(readMismatchMemAccessEvent(&address, &doRead, &mayRead, &doWrite, &mayWrite, accesses, dataPipe) != 1) {
-                LogError("Validator::Master", "Lost the data pipe, exiting!");
+                QBDI_ERROR("Lost the data pipe, exiting!");
                 debugged->continueExecution();
                 writeCommand(COMMAND::STOP, ctrlPipe);
                 error = VALIDATOR_ERR_DATA_PIPE_LOST;
@@ -138,7 +138,7 @@ void start_master(Process* debugged, pid_t instrumented, int ctrlfd, int datafd)
             }
             validator.signalAccessError(address, doRead, mayRead, doWrite, mayWrite, accesses);
         } else {
-            LogError("Validator::Master", "Unknown validator event %d", event);
+            QBDI_ERROR("Unknown validator event {}", event);
             debugged->continueExecution();
             error = VALIDATOR_ERR_UNEXPECTED_API_FAILURE;
             break;

@@ -18,10 +18,10 @@
 #ifndef QBDI_CALLBACK_H_
 #define QBDI_CALLBACK_H_
 
-#include "Platform.h"
-#include "State.h"
-#include "Bitmask.h"
-#include "InstAnalysis.h"
+#include "QBDI/Platform.h"
+#include "QBDI/State.h"
+#include "QBDI/Bitmask.h"
+#include "QBDI/InstAnalysis.h"
 #ifdef __cplusplus
 #include <vector>
 

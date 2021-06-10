@@ -19,7 +19,7 @@
 #define CONTEXT_H
 
 #include <map>
-#include "State.h"
+#include "QBDI/State.h"
 
 namespace QBDI {
 

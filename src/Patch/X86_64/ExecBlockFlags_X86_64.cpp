@@ -48,7 +48,7 @@ struct ExecBlockFlagsArray {
         if(reg < llvm::X86::NUM_TARGET_REGS)
             return arr[reg];
 
-        LogError("ExecBlockFlagsArray.get", "No register %u", reg);
+        QBDI_ERROR("No register {}", reg);
         return 0;
     }
 };

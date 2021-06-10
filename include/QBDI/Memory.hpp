@@ -18,17 +18,17 @@
 #ifndef QBDI_MEMORY_HPP_
 #define QBDI_MEMORY_HPP_
 
-#include <stdbool.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <string.h>
-
-#include "Platform.h"
-#include "State.h"
-
 #include <string>
 #include <vector>
-#include "Range.h"
-#include "Bitmask.h"
+
+#include "QBDI/Bitmask.h"
+#include "QBDI/Platform.h"
+#include "QBDI/Range.h"
+#include "QBDI/State.h"
+
 
 
 namespace QBDI {

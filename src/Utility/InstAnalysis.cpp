@@ -30,8 +30,8 @@
 #include "Utility/InstAnalysis_prive.h"
 #include "Utility/LogSys.h"
 
-#include "Platform.h"
-#include "State.h"
+#include "QBDI/Platform.h"
+#include "QBDI/State.h"
 
 #ifndef QBDI_PLATFORM_WINDOWS
 #if defined(QBDI_PLATFORM_LINUX) && !defined(__USE_GNU)
@@ -84,7 +84,7 @@ void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm::MCReg
             opa.size = getRegisterSize(regNo);
             opa.type = OPERAND_GPR;
             if (!opa.size) {
-                LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.regName);
+                QBDI_WARN("register {} ({}) with size null", regNo, opa.regName);
             }
             return;
         }
@@ -96,7 +96,7 @@ void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm::MCReg
         opa.size = getRegisterSize(regNo);
         opa.type = OPERAND_FPR;
         if (!opa.size) {
-            LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.regName);
+            QBDI_WARN("register {} ({}) with size null", regNo, opa.regName);
         }
         return;
     }
@@ -107,13 +107,13 @@ void analyseRegister(OperandAnalysis& opa, unsigned int regNo, const llvm::MCReg
             opa.size = getRegisterSize(regNo);
             opa.type = OPERAND_SEG;
             if (!opa.size) {
-                LogWarning("analyseRegister", "register %d (%s) with size null", regNo, opa.regName);
+                QBDI_WARN("register {} ({}) with size null", regNo, opa.regName);
             }
             return;
         }
     }
     // unsupported register
-    LogWarning("analyseRegister", "Unknown register %d : %s", regNo, opa.regName);
+    QBDI_WARN("Unknown register {} : {}", regNo, opa.regName);
     opa.regCtxIdx = -1;
     opa.regOff = 0;
     opa.size = 0;
@@ -239,8 +239,8 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
                     opa.flag |= OPERANDFLAG_UNDEFINED_EFFECT;
                     break;
                 default:
-                    LogWarning("analyseOperands",
-                            "Not supported operandType %d for register operand", opdesc.OperandType);
+                    QBDI_WARN(
+                            "Not supported operandType {} for register operand", opdesc.OperandType);
                     continue;
             }
             if (regNo != 0) {
@@ -276,8 +276,8 @@ void analyseOperands(InstAnalysis* instAnalysis, const llvm::MCInst& inst, const
                 default:
                     // warning only if unsupported operandType (don't warn for llvm::X86::OperandType::OPERAND_COND_CODE)
                     if (not isSupportedOperandType(opdesc.OperandType)) {
-                        LogWarning("analyseOperands",
-                                "Not supported operandType %d for immediate operand", opdesc.OperandType);
+                        QBDI_WARN(
+                                "Not supported operandType {} for immediate operand", opdesc.OperandType);
                     }
                     continue;
             }
@@ -351,12 +351,8 @@ const InstAnalysis* analyzeInstMetadata(const InstMetadata& instMetadata, Analys
     const llvm::MCInstrDesc &desc = MCII.get(inst.getOpcode());
 
     if (missingType & ANALYSIS_DISASSEMBLY) {
-        int len = 0;
-        std::string buffer;
-        llvm::raw_string_ostream bufferOs(buffer);
-        assembly.printDisasm(inst, instMetadata.address, bufferOs);
-        bufferOs.flush();
-        len = buffer.size() + 1;
+        std::string buffer = assembly.showInst(inst, instMetadata.address);
+        int len = buffer.size() + 1;
         instAnalysis->disassembly = new char[len];
         strncpy(instAnalysis->disassembly, buffer.c_str(), len);
         buffer.clear();

@@ -18,8 +18,8 @@
 #include "llvm/Support/Process.h"
 
 #include "Utility/LogSys.h"
-#include "Memory.hpp"
-#include "Memory.h"
+#include "QBDI/Memory.hpp"
+#include "QBDI/Memory.h"
 
 
 namespace QBDI {
@@ -36,8 +36,8 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path) {
 
     snprintf(line, BUFFER_SIZE, "/proc/%llu/maps", (unsigned long long) pid);
     mapfile = fopen(line, "r");
-    LogDebug("getRemoteProcessMaps", "Querying memory maps from %s", line);
-    RequireAction("getRemoteProcessMaps", mapfile != nullptr, return maps);
+    QBDI_DEBUG("Querying memory maps from {}", line);
+    QBDI_REQUIRE_ACTION(mapfile != nullptr, return maps);
 
     // Process a memory map line in the form of
     // 00400000-0063c000 r-xp 00000000 fe:01 675628    /usr/bin/vim
@@ -50,7 +50,7 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path) {
             *ptr = '\0';
         }
         ptr = line;
-        LogDebug("getRemoteProcessMaps", "Parsing line: %s", line);
+        QBDI_DEBUG("Parsing line: {}", line);
 
         // Read range
         m.range.setStart(strtoul(ptr, &ptr, 16));
@@ -104,13 +104,15 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path) {
             }
         }
 
-
-        LogCallback(LogPriority::DEBUG, "getRemoteProcessMaps", [&] (FILE *out) -> void {
-            fprintf(out, "Read new map [%" PRIRWORD ", %" PRIRWORD "] %s ", m.range.start(), m.range.end(), m.name.c_str());
-            if(m.permission & QBDI::PF_READ)  fprintf(out, "r");
-            if(m.permission & QBDI::PF_WRITE) fprintf(out, "w");
-            if(m.permission & QBDI::PF_EXEC)  fprintf(out, "x");
-        });
+        QBDI_DEBUG(
+            "Read new map [0x{:x}, 0x{:x}] {} {}{}{}",
+            m.range.start(),
+            m.range.end(),
+            m.name.c_str(),
+            (m.permission & QBDI::PF_READ)  ?"r":"-",
+            (m.permission & QBDI::PF_WRITE) ?"w":"-",
+            (m.permission & QBDI::PF_EXEC)  ?"x":"-"
+        );
         maps.push_back(m);
     }
     fclose(mapfile);

@@ -20,7 +20,7 @@
 
 #include "Patch/InstrRule.h"
 
-#include "Callback.h"
+#include "QBDI/Callback.h"
 
 namespace QBDI {
 

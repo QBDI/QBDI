@@ -25,7 +25,7 @@
 #include "Patch/PatchGenerator.h"
 #include "Patch/PatchUtils.h"
 
-#include "Callback.h"
+#include "QBDI/Callback.h"
 
 namespace llvm {
   class MCInstrInfo;

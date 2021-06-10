@@ -22,9 +22,9 @@
 
 #include "llvm/Support/Process.h"
 
-#include "Memory.hpp"
-#include "Range.h"
-#include "State.h"
+#include "QBDI/Memory.hpp"
+#include "QBDI/Range.h"
+#include "QBDI/State.h"
 #include "ExecBlock/ExecBlock.h"
 
 namespace QBDI {

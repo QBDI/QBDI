@@ -18,9 +18,9 @@
 #ifndef PATCHRULES_TARGET_H
 #define PATCHRULES_TARGET_H
 
-#include "Platform.h"
+#include "QBDI/Platform.h"
 
-#include "PatchRules.h"
+#include "Patch/PatchRules.h"
 
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 #include "Patch/X86_64/PatchRules_X86_64.h"

@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "Layer2_ARM.h"
+#include "Patch/ARM/Layer2_ARM.h"
 
 namespace QBDI {
 

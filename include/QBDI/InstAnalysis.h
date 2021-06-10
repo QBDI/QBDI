@@ -20,9 +20,9 @@
 
 #include <stdbool.h>
 
-#include "Platform.h"
-#include "Bitmask.h"
-#include "State.h"
+#include "QBDI/Platform.h"
+#include "QBDI/Bitmask.h"
+#include "QBDI/State.h"
 
 #ifdef __cplusplus
 namespace QBDI {
