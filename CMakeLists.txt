@@ -276,6 +276,9 @@ if(QBDI_STATIC_LIBRARY)
            $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>)
 
   target_link_libraries(QBDI_static PUBLIC ${QBDI_LLVM_LINK_LIBRARY})
+  if(QBDI_PLATFORM_ANDROID)
+    target_link_libraries(QBDI_static PUBLIC log)
+  endif()
   add_dependencies(QBDI_static QBDI_obj)
 
   if(QBDI_PLATFORM_WINDOWS)

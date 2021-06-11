@@ -124,6 +124,10 @@ if(NOT llvm_POPULATED)
     set(LLVM_CCACHE_BUILD
         ON
         CACHE BOOL "Enable CCACHE in llvm")
+  else()
+    set(LLVM_CCACHE_BUILD
+        OFF
+        CACHE BOOL "Enable CCACHE in llvm")
   endif()
 
   if(QBDI_ASAN AND HAVE_FLAG_SANITIZE_ADDRESS)
@@ -144,7 +148,28 @@ if(NOT llvm_POPULATED)
         "${llvm_SOURCE_DIR}/test/CMakeLists.txt")
   endif()
 
+  option(QBDI_LLVM_NATIVE_BUILD "Hack llvm native build" ON)
+  # tbl-gen compilation need a native compilation.
+  # we need to hack cmake/modules/CrossCompile.cmake:llvm_create_cross_target
+  if(QBDI_LLVM_NATIVE_BUILD AND (CMAKE_CROSSCOMPILING OR ANDROID))
+    set(${CMAKE_PROJECT_NAME}_NATIVE_BUILD "${CMAKE_BINARY_DIR}/QBDI_NATIVE")
+  endif()
+
   add_subdirectory(${llvm_SOURCE_DIR} ${llvm_BINARY_DIR} EXCLUDE_FROM_ALL)
+
+  if(QBDI_LLVM_NATIVE_BUILD AND (CMAKE_CROSSCOMPILING OR ANDROID))
+    set(QBDI_SOURCE_DIR "${CMAKE_SOURCE_DIR}")
+    set(CMAKE_SOURCE_DIR
+        "${llvm_SOURCE_DIR}"
+        CACHE STRING "" FORCE)
+
+    llvm_create_cross_target("${CMAKE_PROJECT_NAME}" NATIVE "" Release
+                             -DLLVM_CCACHE_BUILD=${LLVM_CCACHE_BUILD})
+
+    set(CMAKE_SOURCE_DIR
+        "${QBDI_SOURCE_DIR}"
+        CACHE STRING "" FORCE)
+  endif()
 endif()
 
 # list of LLVM library to build
@@ -222,8 +247,6 @@ if(QBDI_PLATFORM_OSX)
 else(QBDI_PLATFORM_LINUX)
   list(APPEND QBDI_LLVM_LINK_LIBRARY -lstdc++)
 endif()
-
-message(STATUS "QBDI_LLVM_LINK_LIBRARY: ${QBDI_LLVM_LINK_LIBRARY}")
 
 merge_static_libs(qbdi-llvm qbdi-llvm \${QBDI_LLVM_TARGET_LIBRARY})
 target_link_libraries(qbdi-llvm INTERFACE ${QBDI_LLVM_LINK_LIBRARY})

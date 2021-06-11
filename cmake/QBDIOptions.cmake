@@ -29,11 +29,16 @@ option(QBDI_STATIC_LIBRARY "Build the static library" ON)
 # Compile shared Library
 option(QBDI_SHARED_LIBRARY "Build the shared library" ON)
 
-# test
-option(QBDI_TEST "Compile tests" ON)
+if(NOT QBDI_PLATFORM_ANDROID)
+  # test
+  option(QBDI_TEST "Compile tests" ON)
 
-# benchmark
-option(QBDI_BENCHMARK "Compile benchmark" OFF)
+  # benchmark
+  option(QBDI_BENCHMARK "Compile benchmark" OFF)
+else()
+  set(QBDI_TEST OFF)
+  set(QBDI_BENCHMARK OFF)
+endif()
 
 # example
 option(QBDI_EXAMPLES "Compile examples" OFF)
