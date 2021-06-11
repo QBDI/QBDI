@@ -13,7 +13,7 @@ FetchContent_Declare(
   URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${QBDI_LLVM_VERSION}/llvm-${QBDI_LLVM_VERSION}.src.tar.xz"
   URL_HASH
     "SHA256=c5d8e30b57cbded7128d78e5e8dad811bff97a8d471896812f57fa99ee82cdf3"
-  DOWNLOAD_DIR "${CMAKE_SOURCE_DIR}/third-party/llvm-download")
+  DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/llvm-download")
 
 FetchContent_GetProperties(llvm)
 if(NOT llvm_POPULATED)
@@ -67,15 +67,15 @@ if(NOT llvm_POPULATED)
   set(LLVM_ENABLE_Z3_SOLVER
       OFF
       CACHE BOOL "Disable LLVM_ENABLE_Z3_SOLVER")
+  set(LLVM_TARGET_ARCH
+      ${QBDI_LLVM_ARCH}
+      CACHE STRING "set LLVM_ARCH")
+  set(LLVM_TARGETS_TO_BUILD
+      ${QBDI_LLVM_ARCH}
+      CACHE STRING "set LLVM_TARGETS_TO_BUILD")
 
+  set(QBDI_LLVM_TRIPLE "")
   if(QBDI_ARCH_X86)
-    set(QBDI_LLVM_ARCH X86)
-    set(LLVM_TARGET_ARCH
-        X86
-        CACHE STRING "set LLVM_ARCH")
-    set(LLVM_TARGETS_TO_BUILD
-        X86
-        CACHE STRING "set LLVM_TARGETS_TO_BUILD")
     set(LLVM_BUILD_32_BITS
         ON
         CACHE BOOL "set LLVM_BUILD_32_BITS")
@@ -84,31 +84,23 @@ if(NOT llvm_POPULATED)
       set(LLVM_ENABLE_LIBCXX
           ON
           CACHE BOOL "set LLVM_ENABLE_LIBCXX")
-      set(LLVM_DEFAULT_TARGET_TRIPLE
-          i386-apple-darwin17.7.0
-          CACHE STRING "set LLVM_DEFAULT_TARGET_TRIPLE")
+      set(QBDI_LLVM_TRIPLE i386-apple-darwin17.7.0)
     elseif(QBDI_PLATFORM_LINUX OR QBDI_PLATFORM_ANDROID)
-      set(LLVM_DEFAULT_TARGET_TRIPLE
-          i386-pc-linux
-          CACHE STRING "set LLVM_DEFAULT_TARGET_TRIPLE")
+      set(QBDI_LLVM_TRIPLE i386-pc-linux)
     endif()
 
   elseif(QBDI_ARCH_X86_64)
-    set(QBDI_LLVM_ARCH X86)
-    set(LLVM_TARGET_ARCH
-        X86
-        CACHE STRING "set LLVM_ARCH")
-    set(LLVM_TARGETS_TO_BUILD
-        X86
-        CACHE STRING "set LLVM_TARGETS_TO_BUILD")
-
     if(QBDI_PLATFORM_LINUX)
-      set(LLVM_DEFAULT_TARGET_TRIPLE
-          x86_64-pc-linux-gnu
-          CACHE STRING "set LLVM_DEFAULT_TARGET_TRIPLE")
+      set(QBDI_LLVM_TRIPLE x86_64-pc-linux-gnu)
     endif()
   else()
     message(FATAL_ERROR "Unsupported LLVM Architecture.")
+  endif()
+
+  if(NOT ("${QBDI_LLVM_TRIPLE}" STREQUAL ""))
+    set(LLVM_DEFAULT_TARGET_TRIPLE
+        "${QBDI_LLVM_TRIPLE}"
+        CACHE STRING "set LLVM_DEFAULT_TARGET_TRIPLE")
   endif()
 
   # check if llvm-tblgen-X is available
