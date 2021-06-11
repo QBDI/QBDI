@@ -18,21 +18,21 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "llvm/Support/Memory.h"
 
 namespace QBDI {
-    bool isRWXSupported();
-    llvm::sys::MemoryBlock allocateMappedMemory(size_t NumBytes,
-                                                const llvm::sys::MemoryBlock *const NearBlock,
-                                                unsigned PFlags,
-                                                std::error_code &EC);
-    void releaseMappedMemory(llvm::sys::MemoryBlock& block);
-    const std::string getHostCPUName();
-    const std::vector<std::string> getHostCPUFeatures();
-    bool isHostCPUFeaturePresent(const char* f);
-}
+bool isRWXSupported();
+llvm::sys::MemoryBlock
+allocateMappedMemory(size_t NumBytes,
+                     const llvm::sys::MemoryBlock *const NearBlock,
+                     unsigned PFlags, std::error_code &EC);
+void releaseMappedMemory(llvm::sys::MemoryBlock &block);
+const std::string getHostCPUName();
+const std::vector<std::string> getHostCPUFeatures();
+bool isHostCPUFeaturePresent(const char *f);
+} // namespace QBDI
 
 #endif // SYSTEM_H

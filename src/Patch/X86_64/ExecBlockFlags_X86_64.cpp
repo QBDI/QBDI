@@ -18,80 +18,83 @@
 
 #include "X86InstrInfo.h"
 
-#include "Patch/Types.h"
-#include "Patch/InstInfo.h"
 #include "Patch/ExecBlockFlags.h"
+#include "Patch/InstInfo.h"
+#include "Patch/Types.h"
 #include "Utility/LogSys.h"
 
 namespace QBDI {
 namespace {
 
 struct ExecBlockFlagsArray {
-    uint8_t arr[llvm::X86::NUM_TARGET_REGS];
+  uint8_t arr[llvm::X86::NUM_TARGET_REGS];
 
-    constexpr ExecBlockFlagsArray() : arr() {
-        for (unsigned i = 0; i < llvm::X86::NUM_TARGET_REGS; i++) {
-            if (llvm::X86::YMM0 <= i && i <= llvm::X86::YMM15) {
-                arr[i] = ExecBlockFlags::needAVX | ExecBlockFlags::needFPU;
-            } else if (    (llvm::X86::XMM0<= i && i <= llvm::X86::XMM15) ||
-                           (llvm::X86::ST0<= i && i <= llvm::X86::ST7) ||
-                           (llvm::X86::MM0<= i && i <= llvm::X86::MM7) ||
-                           llvm::X86::FPSW == i || llvm::X86::FPCW == i) {
-                arr[i] = ExecBlockFlags::needFPU;
-            } else {
-                arr[i] = 0;
-            }
-        }
+  constexpr ExecBlockFlagsArray() : arr() {
+    for (unsigned i = 0; i < llvm::X86::NUM_TARGET_REGS; i++) {
+      if (llvm::X86::YMM0 <= i && i <= llvm::X86::YMM15) {
+        arr[i] = ExecBlockFlags::needAVX | ExecBlockFlags::needFPU;
+      } else if ((llvm::X86::XMM0 <= i && i <= llvm::X86::XMM15) ||
+                 (llvm::X86::ST0 <= i && i <= llvm::X86::ST7) ||
+                 (llvm::X86::MM0 <= i && i <= llvm::X86::MM7) ||
+                 llvm::X86::FPSW == i || llvm::X86::FPCW == i) {
+        arr[i] = ExecBlockFlags::needFPU;
+      } else {
+        arr[i] = 0;
+      }
     }
+  }
 
-    inline uint8_t get(size_t reg) const {
-        if(reg < llvm::X86::NUM_TARGET_REGS)
-            return arr[reg];
+  inline uint8_t get(size_t reg) const {
+    if (reg < llvm::X86::NUM_TARGET_REGS)
+      return arr[reg];
 
-        QBDI_ERROR("No register {}", reg);
-        return 0;
-    }
+    QBDI_ERROR("No register {}", reg);
+    return 0;
+  }
 };
 
+} // namespace
+
+const uint8_t defaultExecuteFlags =
+    ExecBlockFlags::needAVX | ExecBlockFlags::needFPU;
+
+uint8_t getExecBlockFlags(const llvm::MCInst &inst,
+                          const llvm::MCInstrInfo *MCII,
+                          const llvm::MCRegisterInfo *MRI) {
+  static constexpr ExecBlockFlagsArray cache;
+
+  const llvm::MCInstrDesc &desc = MCII->get(inst.getOpcode());
+  uint8_t flags = 0;
+
+  // register flag
+  for (size_t i = 0; i < inst.getNumOperands(); i++) {
+    const llvm::MCOperand &op = inst.getOperand(i);
+    if (op.isReg()) {
+      flags |= cache.get(op.getReg());
+    }
+  }
+
+  const uint16_t *implicitRegs = desc.getImplicitDefs();
+  for (; implicitRegs && *implicitRegs; implicitRegs++) {
+    flags |= cache.get(*implicitRegs);
+  }
+  implicitRegs = desc.getImplicitUses();
+  for (; implicitRegs && *implicitRegs; implicitRegs++) {
+    flags |= cache.get(*implicitRegs);
+  }
+
+  // detect implicit FPU instruction
+  if ((desc.TSFlags & llvm::X86II::FPTypeMask) != 0) {
+    if ((desc.TSFlags & llvm::X86II::FPTypeMask) != llvm::X86II::SpecialFP or
+        ((not desc.isReturn()) and (not desc.isCall()))) {
+      flags |= ExecBlockFlags::needFPU;
+    }
+  }
+
+  if ((flags & ExecBlockFlags::needAVX) != 0)
+    flags |= ExecBlockFlags::needFPU;
+
+  return flags;
 }
 
-const uint8_t defaultExecuteFlags = ExecBlockFlags::needAVX | ExecBlockFlags::needFPU;
-
-uint8_t getExecBlockFlags(const llvm::MCInst& inst, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI) {
-    static constexpr ExecBlockFlagsArray cache;
-
-    const llvm::MCInstrDesc &desc = MCII->get(inst.getOpcode());
-    uint8_t flags = 0;
-
-    // register flag
-    for (size_t i=0; i < inst.getNumOperands(); i++) {
-        const llvm::MCOperand& op = inst.getOperand(i);
-        if (op.isReg()) {
-            flags |= cache.get(op.getReg());
-        }
-    }
-
-    const uint16_t* implicitRegs = desc.getImplicitDefs();
-    for (; implicitRegs && *implicitRegs; implicitRegs++) {
-        flags |= cache.get(*implicitRegs);
-    }
-    implicitRegs = desc.getImplicitUses();
-    for (; implicitRegs && *implicitRegs; implicitRegs++) {
-        flags |= cache.get(*implicitRegs);
-    }
-
-    // detect implicit FPU instruction
-    if ((desc.TSFlags & llvm::X86II::FPTypeMask) != 0) {
-        if ((desc.TSFlags & llvm::X86II::FPTypeMask) != llvm::X86II::SpecialFP or
-                ((not desc.isReturn()) and (not desc.isCall()))) {
-            flags |= ExecBlockFlags::needFPU;
-        }
-    }
-
-    if ((flags & ExecBlockFlags::needAVX) != 0)
-        flags |= ExecBlockFlags::needFPU;
-
-    return flags;
-}
-
-}
+} // namespace QBDI

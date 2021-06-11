@@ -21,120 +21,160 @@
 namespace QBDI {
 namespace pyQBDI {
 
-void init_utils_Float(py::module_& m) {
+void init_utils_Float(py::module_ &m) {
 
-    m.def("encodeFloat",
-            [](float val) {
-                union {float f; int32_t i;} t;
-                t.f = val;
-                return t.i;
-            }, R"doc(
+  m.def(
+      "encodeFloat",
+      [](float val) {
+        union {
+          float f;
+          int32_t i;
+        } t;
+        t.f = val;
+        return t.i;
+      },
+      R"doc(
             Encode a float as a signed integer.
 
             :param val: Float value
 
             :returns: a sigend integer
             )doc",
-            "val"_a);
+      "val"_a);
 
-    m.def("encodeFloatU",
-            [](float val) {
-                union {float f; uint32_t i;} t;
-                t.f = val;
-                return t.i;
-            }, R"doc(
+  m.def(
+      "encodeFloatU",
+      [](float val) {
+        union {
+          float f;
+          uint32_t i;
+        } t;
+        t.f = val;
+        return t.i;
+      },
+      R"doc(
             Encode a float as an unsigned interger.
 
             :param val: Float value
 
             :returns: an unsigned integer
             )doc",
-            "val"_a);
+      "val"_a);
 
-    m.def("decodeFloat",
-            [](int32_t val) {
-                union {float f; int32_t i;} t;
-                t.i = val;
-                return t.f;
-            }, R"doc(
+  m.def(
+      "decodeFloat",
+      [](int32_t val) {
+        union {
+          float f;
+          int32_t i;
+        } t;
+        t.i = val;
+        return t.f;
+      },
+      R"doc(
             Encode a sigend integer as a float.
 
             :param val: signed integer value
 
             :returns: a float
             )doc",
-            "val"_a);
+      "val"_a);
 
-    m.def("decodeFloatU",
-            [](uint32_t val) {
-                union {float f; uint32_t i;} t;
-                t.i = val;
-                return t.f;
-            }, R"doc(
+  m.def(
+      "decodeFloatU",
+      [](uint32_t val) {
+        union {
+          float f;
+          uint32_t i;
+        } t;
+        t.i = val;
+        return t.f;
+      },
+      R"doc(
             Encode an unsigend integer as a float.
 
             :param val: unsigned integer value
 
             :returns: a float
             )doc",
-            "val"_a);
+      "val"_a);
 
-    m.def("encodeDouble",
-            [](double val) {
-                union {double f; int64_t i;} t;
-                t.f = val;
-                return t.i;
-            }, R"doc(
+  m.def(
+      "encodeDouble",
+      [](double val) {
+        union {
+          double f;
+          int64_t i;
+        } t;
+        t.f = val;
+        return t.i;
+      },
+      R"doc(
             Encode a double as a signed integer.
 
             :param val: Double value
 
             :returns: a sigend integer
             )doc",
-            "val"_a);
+      "val"_a);
 
-    m.def("encodeDoubleU",
-            [](double val) {
-                union {double f; uint64_t i;} t;
-                t.f = val;
-                return t.i;
-            }, R"doc(
+  m.def(
+      "encodeDoubleU",
+      [](double val) {
+        union {
+          double f;
+          uint64_t i;
+        } t;
+        t.f = val;
+        return t.i;
+      },
+      R"doc(
             Encode a double as an unsigned interger.
 
             :param val: Double value
 
             :returns: an unsigned integer
             )doc",
-            "val"_a);
+      "val"_a);
 
-    m.def("decodeDouble",
-            [](int64_t val) {
-                union {double f; int64_t i;} t;
-                t.i = val;
-                return t.f;
-            }, R"doc(
+  m.def(
+      "decodeDouble",
+      [](int64_t val) {
+        union {
+          double f;
+          int64_t i;
+        } t;
+        t.i = val;
+        return t.f;
+      },
+      R"doc(
             Encode a sigend integer as a double.
 
             :param val: signed integer value
 
             :returns: a double
             )doc",
-            "val"_a);
+      "val"_a);
 
-    m.def("decodeDoubleU",
-            [](uint64_t val) {
-                union {double f; uint64_t i;} t;
-                t.i = val;
-                return t.f;
-            }, R"doc(
+  m.def(
+      "decodeDoubleU",
+      [](uint64_t val) {
+        union {
+          double f;
+          uint64_t i;
+        } t;
+        t.i = val;
+        return t.f;
+      },
+      R"doc(
             Encode an unsigend integer as a double.
 
             :param val: unsigned integer value
 
             :returns: a double
             )doc",
-            "val"_a);
+      "val"_a);
 }
 
-}
-}
+} // namespace pyQBDI
+} // namespace QBDI

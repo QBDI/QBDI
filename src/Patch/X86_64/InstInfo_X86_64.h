@@ -22,19 +22,21 @@
 
 namespace QBDI {
 
-bool isMinSizeRead(const llvm::MCInst& inst);
+bool isMinSizeRead(const llvm::MCInst &inst);
 
-bool isMinSizeWrite(const llvm::MCInst& inst);
+bool isMinSizeWrite(const llvm::MCInst &inst);
 
-bool isDoubleRead(const llvm::MCInst& inst);
+bool isDoubleRead(const llvm::MCInst &inst);
 
-// does the instruction may change the value of register used to address a strore
-bool mayChangeWriteAddr(const llvm::MCInst& inst, const llvm::MCInstrDesc& desc);
+// does the instruction may change the value of register used to address a
+// strore
+bool mayChangeWriteAddr(const llvm::MCInst &inst,
+                        const llvm::MCInstrDesc &desc);
 
-bool hasREPPrefix(const llvm::MCInst& instr);
+bool hasREPPrefix(const llvm::MCInst &instr);
 
-bool implicitDSIAccess(const llvm::MCInst& inst, const llvm::MCInstrDesc& desc);
+bool implicitDSIAccess(const llvm::MCInst &inst, const llvm::MCInstrDesc &desc);
 
-}
+} // namespace QBDI
 
 #endif

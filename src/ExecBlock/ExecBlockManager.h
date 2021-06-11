@@ -27,9 +27,9 @@
 #include "QBDI/State.h"
 
 namespace llvm {
-  class MCInstrInfo;
-  class MCRegisterInfo;
-}
+class MCInstrInfo;
+class MCRegisterInfo;
+} // namespace llvm
 
 namespace QBDI {
 
@@ -40,90 +40,90 @@ class Patch;
 class RelocatableInst;
 
 struct InstLoc {
-    uint16_t blockIdx;
-    uint16_t instID;
+  uint16_t blockIdx;
+  uint16_t instID;
 };
 
 struct SeqLoc {
-    uint16_t blockIdx;
-    uint16_t seqID;
-    rword bbEnd;
-    rword seqStart;
-    rword seqEnd;
+  uint16_t blockIdx;
+  uint16_t seqID;
+  rword bbEnd;
+  rword seqStart;
+  rword seqEnd;
 };
 
 struct ExecRegion {
-    Range<rword>                             covered;
-    unsigned                                 translated;
-    unsigned                                 available;
-    std::vector<std::unique_ptr<ExecBlock>>  blocks;
-    std::map<rword, SeqLoc>                  sequenceCache;
-    std::map<rword, InstLoc>                 instCache;
-    bool                                     toFlush = false;
+  Range<rword> covered;
+  unsigned translated;
+  unsigned available;
+  std::vector<std::unique_ptr<ExecBlock>> blocks;
+  std::map<rword, SeqLoc> sequenceCache;
+  std::map<rword, InstLoc> instCache;
+  bool toFlush = false;
 
-    ExecRegion(ExecRegion&&) = default;
-    ExecRegion& operator=(ExecRegion&&) = default;
+  ExecRegion(ExecRegion &&) = default;
+  ExecRegion &operator=(ExecRegion &&) = default;
 };
 
 class ExecBlockManager {
-    private:
+private:
+  std::vector<ExecRegion> regions;
+  rword total_translated_size;
+  rword total_translation_size;
+  bool needFlush;
 
-    std::vector<ExecRegion>            regions;
-    rword                              total_translated_size;
-    rword                              total_translation_size;
-    bool                               needFlush;
+  VMInstanceRef vminstance;
+  const Assembly &assembly;
 
-    VMInstanceRef                    vminstance;
-    const Assembly&                  assembly;
+  // cache ExecBlock prologue and epilogue
+  uint32_t epilogueSize;
+  const std::vector<std::unique_ptr<RelocatableInst>> execBlockPrologue;
+  const std::vector<std::unique_ptr<RelocatableInst>> execBlockEpilogue;
 
-    // cache ExecBlock prologue and epilogue
-    uint32_t                                            epilogueSize;
-    const std::vector<std::unique_ptr<RelocatableInst>> execBlockPrologue;
-    const std::vector<std::unique_ptr<RelocatableInst>> execBlockEpilogue;
+  size_t searchRegion(rword start) const;
 
-    size_t searchRegion(rword start) const;
+  void mergeRegion(size_t i);
 
-    void mergeRegion(size_t i);
+  size_t findRegion(const Range<rword> &codeRange);
 
-    size_t findRegion(const Range<rword>& codeRange);
+  void updateRegionStat(size_t r, rword translated);
 
-    void updateRegionStat(size_t r, rword translated);
+  float getExpansionRatio() const;
 
-    float getExpansionRatio() const;
+public:
+  ExecBlockManager(const Assembly &assembly,
+                   VMInstanceRef vminstance = nullptr);
 
-    public:
+  ~ExecBlockManager();
 
-    ExecBlockManager(const Assembly& assembly, VMInstanceRef vminstance = nullptr);
+  ExecBlockManager(const ExecBlockManager &) = delete;
 
-    ~ExecBlockManager();
+  void changeVMInstanceRef(VMInstanceRef vminstance);
 
-    ExecBlockManager(const ExecBlockManager&) = delete;
+  void printCacheStatistics() const;
 
-    void changeVMInstanceRef(VMInstanceRef vminstance);
+  ExecBlock *getProgrammedExecBlock(rword address,
+                                    SeqLoc *programmedSeqLock = nullptr);
 
-    void printCacheStatistics() const;
+  const ExecBlock *getExecBlock(rword address) const;
 
-    ExecBlock* getProgrammedExecBlock(rword address, SeqLoc* programmedSeqLock=nullptr);
+  const SeqLoc *getSeqLoc(rword address) const;
 
-    const ExecBlock* getExecBlock(rword address) const;
+  size_t preWriteBasicBlock(const std::vector<Patch> &basicBlock);
 
-    const SeqLoc* getSeqLoc(rword address) const;
+  void writeBasicBlock(const std::vector<Patch> &basicBlock, size_t patchEnd);
 
-    size_t preWriteBasicBlock(const std::vector<Patch>& basicBlock);
+  bool isFlushPending() { return needFlush; }
 
-    void writeBasicBlock(const std::vector<Patch>& basicBlock, size_t patchEnd);
+  void flushCommit();
 
-    bool isFlushPending() { return needFlush; }
+  void clearCache(bool flushNow = true);
 
-    void flushCommit();
+  void clearCache(Range<rword> range);
 
-    void clearCache(bool flushNow=true);
-
-    void clearCache(Range<rword> range);
-
-    void clearCache(RangeSet<rword> rangeSet);
+  void clearCache(RangeSet<rword> rangeSet);
 };
 
-}
+} // namespace QBDI
 
 #endif

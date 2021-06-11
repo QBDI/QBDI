@@ -28,30 +28,31 @@
 
 class ShellcodeTester {
 protected:
+  using PF = llvm::sys::Memory::ProtectionFlags;
 
-    using PF = llvm::sys::Memory::ProtectionFlags;
-
-    QBDI::VM vm;
+  QBDI::VM vm;
 
 public:
+  ShellcodeTester(const std::string &cpu = "",
+                  const std::vector<std::string> &mattrs = {})
+      : vm(cpu, mattrs) {}
 
-    ShellcodeTester(const std::string& cpu = "", const std::vector<std::string>& mattrs = {})
-        : vm(cpu, mattrs) {}
+  virtual llvm::sys::MemoryBlock allocateStack(QBDI::rword size);
 
-    virtual llvm::sys::MemoryBlock allocateStack(QBDI::rword size);
+  virtual void freeStack(llvm::sys::MemoryBlock &memoryBlock);
 
-    virtual void freeStack(llvm::sys::MemoryBlock &memoryBlock);
+  virtual InMemoryObject compileWithContextSwitch(const char *source) = 0;
 
-    virtual InMemoryObject compileWithContextSwitch(const char* source) = 0;
+  virtual QBDI::Context jitExec(llvm::ArrayRef<uint8_t> code,
+                                QBDI::Context &inputCtx,
+                                llvm::sys::MemoryBlock &stack) = 0;
 
-    virtual QBDI::Context jitExec(llvm::ArrayRef<uint8_t> code, QBDI::Context &inputCtx,
-                                  llvm::sys::MemoryBlock &stack) = 0;
+  virtual QBDI::Context realExec(llvm::ArrayRef<uint8_t> code,
+                                 QBDI::Context &inputCtx,
+                                 llvm::sys::MemoryBlock &stack) = 0;
 
-    virtual QBDI::Context realExec(llvm::ArrayRef<uint8_t> code, QBDI::Context &inputCtx,
-                                   llvm::sys::MemoryBlock &stack) = 0;
-
-    virtual void comparedExec(const char* source, QBDI::Context &inputCtx, QBDI::rword stackSize);
-
+  virtual void comparedExec(const char *source, QBDI::Context &inputCtx,
+                            QBDI::rword stackSize);
 };
 
 #endif

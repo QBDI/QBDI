@@ -20,7 +20,6 @@
 
 #include "TestSetup/LLVMTestEnv.h"
 
-class MemoryAccessTable_X86_64 : public LLVMTestEnv {
-};
+class MemoryAccessTable_X86_64 : public LLVMTestEnv {};
 
 #endif /* QBDITEST_MEMORYACCESSTABLE */

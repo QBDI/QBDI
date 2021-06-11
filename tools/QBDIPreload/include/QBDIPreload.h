@@ -25,7 +25,6 @@ namespace QBDI {
 extern "C" {
 #endif
 
-
 /** @brief No error */
 #define QBDIPRELOAD_NO_ERROR 0
 /** @brief Startup step not handled by callback */
@@ -33,17 +32,19 @@ extern "C" {
 /** @brief Error in the startup (preload) process */
 #define QBDIPRELOAD_ERR_STARTUP_FAILED 2
 
-
 /**
  * A C pre-processor macro declaring a constructor.
  *
- * @warning `QBDIPRELOAD_INIT` must be used once in any project using QBDIPreload.
- * It declares a constructor, so it must be placed like a function declaration on a single line.
+ * @warning `QBDIPRELOAD_INIT` must be used once in any project using
+ * QBDIPreload. It declares a constructor, so it must be placed like a function
+ * declaration on a single line.
  */
 #ifdef __cplusplus
-#define QBDIPRELOAD_INIT __attribute__((constructor)) void init() { QBDI::qbdipreload_hook_init(); }
+#define QBDIPRELOAD_INIT \
+  __attribute__((constructor)) void init() { QBDI::qbdipreload_hook_init(); }
 #else
-#define QBDIPRELOAD_INIT __attribute__((constructor)) void init() { qbdipreload_hook_init(); }
+#define QBDIPRELOAD_INIT \
+  __attribute__((constructor)) void init() { qbdipreload_hook_init(); }
 #endif
 
 /*
@@ -54,20 +55,22 @@ extern "C" {
  * @param[in] gprCtx     Platform GPRState pointer
  * @param[in] gprState   QBDI GPRState pointer
  */
-QBDI_EXPORT void qbdipreload_threadCtxToGPRState(const void* gprCtx, GPRState* gprState);
+QBDI_EXPORT void qbdipreload_threadCtxToGPRState(const void *gprCtx,
+                                                 GPRState *gprState);
 
 /** Convert a QBDIPreload FPR context (platform dependent) to a QBDI FPR state.
  * @param[in] fprCtx     Platform FPRState pointer
  * @param[in] fprState   QBDI FPRState pointer
  */
-QBDI_EXPORT void qbdipreload_floatCtxToFPRState(const void* fprCtx, FPRState* fprState);
+QBDI_EXPORT void qbdipreload_floatCtxToFPRState(const void *fprCtx,
+                                                FPRState *fprState);
 
 /** Enable QBDIPreload hook on the main function (using its address)
  *
- * @warning It MUST be used in `qbdipreload_on_start` if you want to handle this step.
- *          The assumed `main` address is provided as a callback argument.
+ * @warning It MUST be used in `qbdipreload_on_start` if you want to handle this
+ * step. The assumed `main` address is provided as a callback argument.
  *
- * @param[in] main       Pointer to the main function 
+ * @param[in] main       Pointer to the main function
  */
 QBDI_EXPORT int qbdipreload_hook_main(void *main);
 
@@ -82,7 +85,7 @@ QBDI_EXPORT int qbdipreload_hook_main(void *main);
  * QBDIPRELOAD_NOT_HANDLED can simply be returned and
  * default behavior will be used.
  */
- 
+
 /*! Function called when preload is on a program entry point
  * (interposed start or an early constructor).
  * It provides the main function address, that can be used
@@ -99,7 +102,7 @@ extern int qbdipreload_on_start(void *main);
  * @param[in]   gprCtx  Original GPR context
  * @param[in]   fpuCtx  Original FPU context
  * @return      int     QBDIPreload state
-*/
+ */
 extern int qbdipreload_on_premain(void *gprCtx, void *fpuCtx);
 
 /*! Function called when preload has successfully hijacked
@@ -109,21 +112,21 @@ extern int qbdipreload_on_premain(void *gprCtx, void *fpuCtx);
  * @param[in]   argv    Original argv
  * @return      int     QBDIPreload state
  */
-extern int qbdipreload_on_main(int argc, char** argv);
+extern int qbdipreload_on_main(int argc, char **argv);
 
 /*! Function called when preload is done and we have a valid
  * QBDI VM object on which we can call run (after some last initializations).
-  * @param[in]  vm          VM instance.
-  * @param[in]  start       Start address of the range (included).
-  * @param[in]  stop        End address of the range (excluded).
-  * @return     int         QBDIPreload state
+ * @param[in]  vm          VM instance.
+ * @param[in]  start       Start address of the range (included).
+ * @param[in]  stop        End address of the range (excluded).
+ * @return     int         QBDIPreload state
  */
 extern int qbdipreload_on_run(VMInstanceRef vm, rword start, rword stop);
 
 /*! Function called when process is exiting (using `_exit` or `exit`).
-  * @param[in]  status  exit status
-  * @return     int     QBDIPreload state
-*/
+ * @param[in]  status  exit status
+ * @return     int     QBDIPreload state
+ */
 extern int qbdipreload_on_exit(int status);
 
 /*
@@ -132,7 +135,9 @@ extern int qbdipreload_on_exit(int status);
 
 QBDI_EXPORT int qbdipreload_hook_init();
 
-QBDI_EXPORT void* qbdipreload_setup_exception_handler(uint32_t target, uint32_t mask, void* handler);
+QBDI_EXPORT void *qbdipreload_setup_exception_handler(uint32_t target,
+                                                      uint32_t mask,
+                                                      void *handler);
 
 #ifdef __cplusplus
 } // "C"

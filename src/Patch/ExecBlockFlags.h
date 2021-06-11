@@ -21,10 +21,10 @@
 #include <memory>
 #include <vector>
 
+#include "QBDI/Platform.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstrInfo.h"
 #include "llvm/MC/MCRegisterInfo.h"
-#include "QBDI/Platform.h"
 
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
 #include "Patch/X86_64/ExecBlockFlags_X86_64.h"
@@ -34,10 +34,12 @@
 
 namespace QBDI {
 
-uint8_t getExecBlockFlags(const llvm::MCInst& inst, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI);
+uint8_t getExecBlockFlags(const llvm::MCInst &inst,
+                          const llvm::MCInstrInfo *MCII,
+                          const llvm::MCRegisterInfo *MRI);
 
 extern const uint8_t defaultExecuteFlags;
 
-}
+} // namespace QBDI
 
 #endif

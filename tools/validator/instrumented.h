@@ -20,7 +20,8 @@
 
 #include <QBDI/VM.h>
 
-void start_instrumented(QBDI::VM* vm, QBDI::rword start, QBDI::rword stop, int ctrlfd, int datafd);
+void start_instrumented(QBDI::VM *vm, QBDI::rword start, QBDI::rword stop,
+                        int ctrlfd, int datafd);
 
 void cleanup_instrumentation();
 

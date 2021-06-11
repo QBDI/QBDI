@@ -21,7 +21,6 @@
 
 #include "TestSetup/LLVMTestEnv.h"
 
-class ExecBlockTest : public LLVMTestEnv {
-};
+class ExecBlockTest : public LLVMTestEnv {};
 
 #endif /* QBDITEST_EXECBLOCKTEST_H */

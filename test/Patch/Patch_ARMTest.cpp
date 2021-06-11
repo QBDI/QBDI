@@ -15,41 +15,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <catch2/catch.hpp>
 #include "Patch/Patch_ARMTest.h"
+#include <catch2/catch.hpp>
 
 TEST_CASE_METHOD(Patch_ARMTest, "Patch_ARMTest-GPRSave") {
-    QBDI::Context inputState;
+  QBDI::Context inputState;
 
-    memset(&inputState, 0, sizeof(QBDI::Context));
-    comparedExec(GPRSave_s, inputState, 4096);
+  memset(&inputState, 0, sizeof(QBDI::Context));
+  comparedExec(GPRSave_s, inputState, 4096);
 }
 
 TEST_CASE_METHOD(Patch_ARMTest, "Patch_ARMTest-GPRShuffle") {
-    QBDI::Context inputState;
+  QBDI::Context inputState;
 
-    memset(&inputState, 0, sizeof(QBDI::Context));
-    for(uint32_t i = 0; i < QBDI::AVAILABLE_GPR; i++)
-        QBDI_GPR_SET(&inputState.gprState, i, i);
-    comparedExec(GPRShuffle_s, inputState, 4096);
+  memset(&inputState, 0, sizeof(QBDI::Context));
+  for (uint32_t i = 0; i < QBDI::AVAILABLE_GPR; i++)
+    QBDI_GPR_SET(&inputState.gprState, i, i);
+  comparedExec(GPRShuffle_s, inputState, 4096);
 }
 
 TEST_CASE_METHOD(Patch_ARMTest, "Patch_ARMTest-RelativeAddressing") {
-    QBDI::Context inputState;
+  QBDI::Context inputState;
 
-    memset(&inputState, 0, sizeof(QBDI::Context));
-    inputState.gprState.r0 = rand();
-    inputState.gprState.r1 = rand();
-    comparedExec(RelativeAddressing_s, inputState, 4096);
+  memset(&inputState, 0, sizeof(QBDI::Context));
+  inputState.gprState.r0 = rand();
+  inputState.gprState.r1 = rand();
+  comparedExec(RelativeAddressing_s, inputState, 4096);
 }
 
 TEST_CASE_METHOD(Patch_ARMTest, "Patch_ARMTest-ConditionalBranching") {
-    QBDI::Context inputState;
+  QBDI::Context inputState;
 
-    memset(&inputState, 0, sizeof(QBDI::Context));
-    inputState.gprState.r0 = rand();
-    inputState.gprState.r1 = rand();
-    inputState.gprState.r2 = rand();
-    inputState.gprState.r3 = rand();
-    comparedExec(ConditionalBranching_s, inputState, 4096);
+  memset(&inputState, 0, sizeof(QBDI::Context));
+  inputState.gprState.r0 = rand();
+  inputState.gprState.r1 = rand();
+  inputState.gprState.r2 = rand();
+  inputState.gprState.r3 = rand();
+  comparedExec(ConditionalBranching_s, inputState, 4096);
 }

@@ -62,7 +62,8 @@ constexpr uint16_t REGISTER_1BYTE[] = {
     llvm::X86::R15BH,
 };
 
-constexpr size_t REGISTER_1BYTE_SIZE = sizeof(REGISTER_1BYTE)/sizeof(uint16_t);
+constexpr size_t REGISTER_1BYTE_SIZE =
+    sizeof(REGISTER_1BYTE) / sizeof(uint16_t);
 
 constexpr uint16_t REGISTER_2BYTES[] = {
     llvm::X86::AX,
@@ -111,7 +112,8 @@ constexpr uint16_t REGISTER_2BYTES[] = {
     llvm::X86::SS,
 };
 
-constexpr size_t REGISTER_2BYTES_SIZE = sizeof(REGISTER_2BYTES)/sizeof(uint16_t);
+constexpr size_t REGISTER_2BYTES_SIZE =
+    sizeof(REGISTER_2BYTES) / sizeof(uint16_t);
 
 constexpr uint16_t REGISTER_4BYTES[] = {
     llvm::X86::EAX,
@@ -139,7 +141,8 @@ constexpr uint16_t REGISTER_4BYTES[] = {
 #endif
 };
 
-constexpr size_t REGISTER_4BYTES_SIZE = sizeof(REGISTER_4BYTES)/sizeof(uint16_t);
+constexpr size_t REGISTER_4BYTES_SIZE =
+    sizeof(REGISTER_4BYTES) / sizeof(uint16_t);
 
 constexpr uint16_t REGISTER_8BYTES[] = {
     llvm::X86::RAX,
@@ -173,177 +176,104 @@ constexpr uint16_t REGISTER_8BYTES[] = {
 #endif
 };
 
-constexpr size_t REGISTER_8BYTES_SIZE = sizeof(REGISTER_8BYTES)/sizeof(uint16_t);
+constexpr size_t REGISTER_8BYTES_SIZE =
+    sizeof(REGISTER_8BYTES) / sizeof(uint16_t);
 
 constexpr uint16_t REGISTER_10BYTES[] = {
-    llvm::X86::ST0,
-    llvm::X86::ST1,
-    llvm::X86::ST2,
-    llvm::X86::ST3,
-    llvm::X86::ST4,
-    llvm::X86::ST5,
-    llvm::X86::ST6,
-    llvm::X86::ST7,
+    llvm::X86::ST0, llvm::X86::ST1, llvm::X86::ST2, llvm::X86::ST3,
+    llvm::X86::ST4, llvm::X86::ST5, llvm::X86::ST6, llvm::X86::ST7,
 };
 
-constexpr size_t REGISTER_10BYTES_SIZE = sizeof(REGISTER_10BYTES)/sizeof(uint16_t);
+constexpr size_t REGISTER_10BYTES_SIZE =
+    sizeof(REGISTER_10BYTES) / sizeof(uint16_t);
 
 constexpr uint16_t REGISTER_16BYTES[] = {
-    llvm::X86::XMM0,
-    llvm::X86::XMM1,
-    llvm::X86::XMM2,
-    llvm::X86::XMM3,
-    llvm::X86::XMM4,
-    llvm::X86::XMM5,
-    llvm::X86::XMM6,
-    llvm::X86::XMM7,
-    llvm::X86::XMM8,
-    llvm::X86::XMM9,
-    llvm::X86::XMM10,
-    llvm::X86::XMM11,
-    llvm::X86::XMM12,
-    llvm::X86::XMM13,
-    llvm::X86::XMM14,
-    llvm::X86::XMM15,
-    llvm::X86::XMM16,
-    llvm::X86::XMM17,
-    llvm::X86::XMM18,
-    llvm::X86::XMM19,
-    llvm::X86::XMM20,
-    llvm::X86::XMM21,
-    llvm::X86::XMM22,
-    llvm::X86::XMM23,
-    llvm::X86::XMM24,
-    llvm::X86::XMM25,
-    llvm::X86::XMM26,
-    llvm::X86::XMM27,
-    llvm::X86::XMM28,
-    llvm::X86::XMM29,
-    llvm::X86::XMM30,
-    llvm::X86::XMM31,
+    llvm::X86::XMM0,  llvm::X86::XMM1,  llvm::X86::XMM2,  llvm::X86::XMM3,
+    llvm::X86::XMM4,  llvm::X86::XMM5,  llvm::X86::XMM6,  llvm::X86::XMM7,
+    llvm::X86::XMM8,  llvm::X86::XMM9,  llvm::X86::XMM10, llvm::X86::XMM11,
+    llvm::X86::XMM12, llvm::X86::XMM13, llvm::X86::XMM14, llvm::X86::XMM15,
+    llvm::X86::XMM16, llvm::X86::XMM17, llvm::X86::XMM18, llvm::X86::XMM19,
+    llvm::X86::XMM20, llvm::X86::XMM21, llvm::X86::XMM22, llvm::X86::XMM23,
+    llvm::X86::XMM24, llvm::X86::XMM25, llvm::X86::XMM26, llvm::X86::XMM27,
+    llvm::X86::XMM28, llvm::X86::XMM29, llvm::X86::XMM30, llvm::X86::XMM31,
 };
 
-constexpr size_t REGISTER_16BYTES_SIZE = sizeof(REGISTER_16BYTES)/sizeof(uint16_t);
+constexpr size_t REGISTER_16BYTES_SIZE =
+    sizeof(REGISTER_16BYTES) / sizeof(uint16_t);
 
 constexpr uint16_t REGISTER_32BYTES[] = {
-    llvm::X86::YMM0,
-    llvm::X86::YMM1,
-    llvm::X86::YMM2,
-    llvm::X86::YMM3,
-    llvm::X86::YMM4,
-    llvm::X86::YMM5,
-    llvm::X86::YMM6,
-    llvm::X86::YMM7,
-    llvm::X86::YMM8,
-    llvm::X86::YMM9,
-    llvm::X86::YMM10,
-    llvm::X86::YMM11,
-    llvm::X86::YMM12,
-    llvm::X86::YMM13,
-    llvm::X86::YMM14,
-    llvm::X86::YMM15,
-    llvm::X86::YMM16,
-    llvm::X86::YMM17,
-    llvm::X86::YMM18,
-    llvm::X86::YMM19,
-    llvm::X86::YMM20,
-    llvm::X86::YMM21,
-    llvm::X86::YMM22,
-    llvm::X86::YMM23,
-    llvm::X86::YMM24,
-    llvm::X86::YMM25,
-    llvm::X86::YMM26,
-    llvm::X86::YMM27,
-    llvm::X86::YMM28,
-    llvm::X86::YMM29,
-    llvm::X86::YMM30,
-    llvm::X86::YMM31,
+    llvm::X86::YMM0,  llvm::X86::YMM1,  llvm::X86::YMM2,  llvm::X86::YMM3,
+    llvm::X86::YMM4,  llvm::X86::YMM5,  llvm::X86::YMM6,  llvm::X86::YMM7,
+    llvm::X86::YMM8,  llvm::X86::YMM9,  llvm::X86::YMM10, llvm::X86::YMM11,
+    llvm::X86::YMM12, llvm::X86::YMM13, llvm::X86::YMM14, llvm::X86::YMM15,
+    llvm::X86::YMM16, llvm::X86::YMM17, llvm::X86::YMM18, llvm::X86::YMM19,
+    llvm::X86::YMM20, llvm::X86::YMM21, llvm::X86::YMM22, llvm::X86::YMM23,
+    llvm::X86::YMM24, llvm::X86::YMM25, llvm::X86::YMM26, llvm::X86::YMM27,
+    llvm::X86::YMM28, llvm::X86::YMM29, llvm::X86::YMM30, llvm::X86::YMM31,
 };
 
-constexpr size_t REGISTER_32BYTES_SIZE = sizeof(REGISTER_32BYTES)/sizeof(uint16_t);
+constexpr size_t REGISTER_32BYTES_SIZE =
+    sizeof(REGISTER_32BYTES) / sizeof(uint16_t);
 
 constexpr uint16_t REGISTER_64BYTES[] = {
-    llvm::X86::ZMM0,
-    llvm::X86::ZMM1,
-    llvm::X86::ZMM2,
-    llvm::X86::ZMM3,
-    llvm::X86::ZMM4,
-    llvm::X86::ZMM5,
-    llvm::X86::ZMM6,
-    llvm::X86::ZMM7,
-    llvm::X86::ZMM8,
-    llvm::X86::ZMM9,
-    llvm::X86::ZMM10,
-    llvm::X86::ZMM11,
-    llvm::X86::ZMM12,
-    llvm::X86::ZMM13,
-    llvm::X86::ZMM14,
-    llvm::X86::ZMM15,
-    llvm::X86::ZMM16,
-    llvm::X86::ZMM17,
-    llvm::X86::ZMM18,
-    llvm::X86::ZMM19,
-    llvm::X86::ZMM20,
-    llvm::X86::ZMM21,
-    llvm::X86::ZMM22,
-    llvm::X86::ZMM23,
-    llvm::X86::ZMM24,
-    llvm::X86::ZMM25,
-    llvm::X86::ZMM26,
-    llvm::X86::ZMM27,
-    llvm::X86::ZMM28,
-    llvm::X86::ZMM29,
-    llvm::X86::ZMM30,
-    llvm::X86::ZMM31,
+    llvm::X86::ZMM0,  llvm::X86::ZMM1,  llvm::X86::ZMM2,  llvm::X86::ZMM3,
+    llvm::X86::ZMM4,  llvm::X86::ZMM5,  llvm::X86::ZMM6,  llvm::X86::ZMM7,
+    llvm::X86::ZMM8,  llvm::X86::ZMM9,  llvm::X86::ZMM10, llvm::X86::ZMM11,
+    llvm::X86::ZMM12, llvm::X86::ZMM13, llvm::X86::ZMM14, llvm::X86::ZMM15,
+    llvm::X86::ZMM16, llvm::X86::ZMM17, llvm::X86::ZMM18, llvm::X86::ZMM19,
+    llvm::X86::ZMM20, llvm::X86::ZMM21, llvm::X86::ZMM22, llvm::X86::ZMM23,
+    llvm::X86::ZMM24, llvm::X86::ZMM25, llvm::X86::ZMM26, llvm::X86::ZMM27,
+    llvm::X86::ZMM28, llvm::X86::ZMM29, llvm::X86::ZMM30, llvm::X86::ZMM31,
 };
 
-constexpr size_t REGISTER_64BYTES_SIZE = sizeof(REGISTER_64BYTES)/sizeof(uint16_t);
+constexpr size_t REGISTER_64BYTES_SIZE =
+    sizeof(REGISTER_64BYTES) / sizeof(uint16_t);
 
 struct RegisterSizeArray {
-    uint8_t arr[llvm::X86::NUM_TARGET_REGS] = {0};
+  uint8_t arr[llvm::X86::NUM_TARGET_REGS] = {0};
 
-    constexpr RegisterSizeArray() {
-        for(size_t i = 0; i < REGISTER_1BYTE_SIZE; i++) {
-            arr[REGISTER_1BYTE[i]] = 1;
-        }
-        for(size_t i = 0; i < REGISTER_2BYTES_SIZE; i++) {
-            arr[REGISTER_2BYTES[i]] = 2;
-        }
-        for(size_t i = 0; i < REGISTER_4BYTES_SIZE; i++) {
-            arr[REGISTER_4BYTES[i]] = 4;
-        }
-        for(size_t i = 0; i < REGISTER_8BYTES_SIZE; i++) {
-            arr[REGISTER_8BYTES[i]] = 8;
-        }
-        for(size_t i = 0; i < REGISTER_10BYTES_SIZE; i++) {
-            arr[REGISTER_10BYTES[i]] = 10;
-        }
-        for(size_t i = 0; i < REGISTER_16BYTES_SIZE; i++) {
-            arr[REGISTER_16BYTES[i]] = 16;
-        }
-        for(size_t i = 0; i < REGISTER_32BYTES_SIZE; i++) {
-            arr[REGISTER_32BYTES[i]] = 32;
-        }
-        for(size_t i = 0; i < REGISTER_64BYTES_SIZE; i++) {
-            arr[REGISTER_64BYTES[i]] = 64;
-        }
+  constexpr RegisterSizeArray() {
+    for (size_t i = 0; i < REGISTER_1BYTE_SIZE; i++) {
+      arr[REGISTER_1BYTE[i]] = 1;
     }
-
-    inline uint8_t get(size_t reg) const {
-        if(reg < llvm::X86::NUM_TARGET_REGS)
-            return arr[reg];
-
-        QBDI_ERROR("No register {}", reg);
-        return 0;
+    for (size_t i = 0; i < REGISTER_2BYTES_SIZE; i++) {
+      arr[REGISTER_2BYTES[i]] = 2;
     }
+    for (size_t i = 0; i < REGISTER_4BYTES_SIZE; i++) {
+      arr[REGISTER_4BYTES[i]] = 4;
+    }
+    for (size_t i = 0; i < REGISTER_8BYTES_SIZE; i++) {
+      arr[REGISTER_8BYTES[i]] = 8;
+    }
+    for (size_t i = 0; i < REGISTER_10BYTES_SIZE; i++) {
+      arr[REGISTER_10BYTES[i]] = 10;
+    }
+    for (size_t i = 0; i < REGISTER_16BYTES_SIZE; i++) {
+      arr[REGISTER_16BYTES[i]] = 16;
+    }
+    for (size_t i = 0; i < REGISTER_32BYTES_SIZE; i++) {
+      arr[REGISTER_32BYTES[i]] = 32;
+    }
+    for (size_t i = 0; i < REGISTER_64BYTES_SIZE; i++) {
+      arr[REGISTER_64BYTES[i]] = 64;
+    }
+  }
+
+  inline uint8_t get(size_t reg) const {
+    if (reg < llvm::X86::NUM_TARGET_REGS)
+      return arr[reg];
+
+    QBDI_ERROR("No register {}", reg);
+    return 0;
+  }
 };
 
 } // anonymous namespace
 
 uint8_t getRegisterSize(unsigned reg) {
-    static constexpr RegisterSizeArray arraySize;
+  static constexpr RegisterSizeArray arraySize;
 
-    return arraySize.get(reg);
+  return arraySize.get(reg);
 }
 
 } // namespace QBDI

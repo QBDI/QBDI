@@ -19,14 +19,14 @@
 #define QBDITEST_OPTIONSTEST
 
 #include <memory>
-#include "VM.h"
 #include "TestSetup/InMemoryAssembler.h"
+#include "VM.h"
 
 class OptionsTest {
-    protected:
-        OptionsTest() : vm() {}
+protected:
+  OptionsTest() : vm() {}
 
-        QBDI::VM vm;
+  QBDI::VM vm;
 };
 
 #endif /* QBDITEST_OPTIONSTEST */

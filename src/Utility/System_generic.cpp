@@ -22,35 +22,30 @@
 
 #include "Utility/System.h"
 
-
 namespace QBDI {
 
-bool isRWXSupported() {
-  return false;
+bool isRWXSupported() { return false; }
+
+llvm::sys::MemoryBlock
+allocateMappedMemory(size_t numBytes,
+                     const llvm::sys::MemoryBlock *const nearBlock,
+                     unsigned pFlags, std::error_code &ec) {
+  // forward to llvm function
+  return llvm::sys::Memory::allocateMappedMemory(numBytes, nearBlock, pFlags,
+                                                 ec);
 }
 
-
-llvm::sys::MemoryBlock allocateMappedMemory(size_t numBytes,
-                                            const llvm::sys::MemoryBlock *const nearBlock,
-                                            unsigned pFlags,
-                                            std::error_code &ec) {
-    // forward to llvm function
-    return llvm::sys::Memory::allocateMappedMemory(numBytes, nearBlock, pFlags, ec);
+void releaseMappedMemory(llvm::sys::MemoryBlock &block) {
+  llvm::sys::Memory::releaseMappedMemory(block);
 }
-
-
-void releaseMappedMemory(llvm::sys::MemoryBlock& block) {
-    llvm::sys::Memory::releaseMappedMemory(block);
-}
-
 
 const std::string getHostCPUName() {
-    const std::string& cpuname = llvm::sys::getHostCPUName();
-    // set default ARM CPU
-    if constexpr(is_arm)
-        if (cpuname.empty() || cpuname == "generic")
-            return std::string("cortex-a8");
-    return cpuname;
+  const std::string &cpuname = llvm::sys::getHostCPUName();
+  // set default ARM CPU
+  if constexpr (is_arm)
+    if (cpuname.empty() || cpuname == "generic")
+      return std::string("cortex-a8");
+  return cpuname;
 }
 
-}
+} // namespace QBDI

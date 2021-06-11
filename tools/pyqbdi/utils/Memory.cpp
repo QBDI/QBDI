@@ -21,12 +21,14 @@
 namespace QBDI {
 namespace pyQBDI {
 
-void init_utils_Memory(py::module_& m) {
+void init_utils_Memory(py::module_ &m) {
 
-    m.def("readMemory",
-            [](QBDI::rword address, QBDI::rword size) {
-                return py::bytes(reinterpret_cast<const char*>(address), size);
-            }, R"doc(
+  m.def(
+      "readMemory",
+      [](QBDI::rword address, QBDI::rword size) {
+        return py::bytes(reinterpret_cast<const char *>(address), size);
+      },
+      R"doc(
             Read a content from a base address.
 
             :param address: Base address
@@ -37,12 +39,14 @@ void init_utils_Memory(py::module_& m) {
             .. warning::
                 This API is hazardous as the whole process memory can be read.
             )doc",
-            "address"_a, "size"_a);
+      "address"_a, "size"_a);
 
-    m.def("readRword",
-            [](QBDI::rword address) {
-                return *(reinterpret_cast<QBDI::rword*>(address));
-            }, R"doc(
+  m.def(
+      "readRword",
+      [](QBDI::rword address) {
+        return *(reinterpret_cast<QBDI::rword *>(address));
+      },
+      R"doc(
             Read a rword to the specified address
 
             :param address: Base address
@@ -52,12 +56,14 @@ void init_utils_Memory(py::module_& m) {
             .. warning::
                 This API is hazardous as the whole process memory can be read.
             )doc",
-            "address"_a);
+      "address"_a);
 
-    m.def("writeMemory",
-            [](QBDI::rword address, std::string bytes) {
-                memcpy(reinterpret_cast<void*>(address), bytes.c_str(), bytes.size());
-            }, R"doc(
+  m.def(
+      "writeMemory",
+      [](QBDI::rword address, std::string bytes) {
+        memcpy(reinterpret_cast<void *>(address), bytes.c_str(), bytes.size());
+      },
+      R"doc(
             Write a memory content to a base address.
 
             :param address: Base address
@@ -66,12 +72,14 @@ void init_utils_Memory(py::module_& m) {
             .. warning::
                 This API is hazardous as the whole process memory can be written.
             )doc",
-            "address"_a, "bytes"_a);
+      "address"_a, "bytes"_a);
 
-    m.def("writeRword",
-            [](QBDI::rword address, QBDI::rword value) {
-                *(reinterpret_cast<QBDI::rword*>(address)) = value;
-            }, R"doc(
+  m.def(
+      "writeRword",
+      [](QBDI::rword address, QBDI::rword value) {
+        *(reinterpret_cast<QBDI::rword *>(address)) = value;
+      },
+      R"doc(
             Write a rword in a base address.
 
             :param address: Base address
@@ -80,47 +88,52 @@ void init_utils_Memory(py::module_& m) {
             .. warning::
                 This API is hazardous as the whole process memory can be written.
             )doc",
-            "address"_a, "value"_a);
+      "address"_a, "value"_a);
 
-    m.def("allocateRword",
-            []() {
-                QBDI::rword addr = reinterpret_cast<QBDI::rword>( std::malloc(sizeof(rword)));
-                if (addr == 0) {
-                    throw std::bad_alloc{};
-                }
-                return addr;
-            }, R"doc(
+  m.def(
+      "allocateRword",
+      []() {
+        QBDI::rword addr =
+            reinterpret_cast<QBDI::rword>(std::malloc(sizeof(rword)));
+        if (addr == 0) {
+          throw std::bad_alloc{};
+        }
+        return addr;
+      },
+      R"doc(
             Allocate a raw memory space to store a rword.
 
             :returns: Address to a memory space to store a rword
             )doc");
 
-    m.def("allocateMemory",
-            [](QBDI::rword length) {
-                QBDI::rword addr = reinterpret_cast<QBDI::rword>( std::malloc(length));
-                if (addr == 0) {
-                    throw std::bad_alloc{};
-                }
-                return addr;
-            }, R"doc(
+  m.def(
+      "allocateMemory",
+      [](QBDI::rword length) {
+        QBDI::rword addr = reinterpret_cast<QBDI::rword>(std::malloc(length));
+        if (addr == 0) {
+          throw std::bad_alloc{};
+        }
+        return addr;
+      },
+      R"doc(
             Allocate a raw memory space of specified length.
 
             :param length: length of the memory space to allocate
 
             :returns: Address to the allocated memory
             )doc",
-            "length"_a);
+      "length"_a);
 
-    m.def("freeMemory",
-            [](QBDI::rword address) {
-                std::free( reinterpret_cast<void*>(address));
-            }, R"doc(
+  m.def(
+      "freeMemory",
+      [](QBDI::rword address) { std::free(reinterpret_cast<void *>(address)); },
+      R"doc(
             Free a memory space allocate with allocateRword or allocateMemory.
 
             :param address: Address of the allocated memory
             )doc",
-            "address"_a);
+      "address"_a);
 }
 
-}
-}
+} // namespace pyQBDI
+} // namespace QBDI

@@ -17,8 +17,8 @@
  */
 #include "Utility/LogSys.h"
 
-#include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
 
 #ifdef QBDI_PLATFORM_ANDROID
 #include "spdlog/sinks/android_sink.h"
@@ -26,9 +26,9 @@
 
 // windows seem to define a macro on ERROR
 #ifdef QBDI_PLATFORM_WINDOWS
-# ifdef ERROR
-#  undef ERROR
-# endif
+#ifdef ERROR
+#undef ERROR
+#endif
 #endif
 
 static QBDI::Logger logger;
@@ -78,15 +78,14 @@ void Logger::setPriority(LogPriority priority) {
   }
 }
 
-void Logger::setFile(const std::string& f, bool truncate) {
+void Logger::setFile(const std::string &f, bool truncate) {
   sink = spdlog::basic_logger_mt("QBDI", f, truncate);
   spdlog::set_default_logger(sink);
 }
 
 // =========================
 
-
-void qbdi_setLogFile(const char* filename, bool truncate) {
+void qbdi_setLogFile(const char *filename, bool truncate) {
   logger.setFile(std::string(filename), truncate);
 }
 
@@ -94,17 +93,10 @@ void setLogFile(const std::string &filename, bool truncate) {
   logger.setFile(filename, truncate);
 }
 
-void qbdi_setLogPriority(LogPriority priority) {
-  logger.setPriority(priority);
-}
+void qbdi_setLogPriority(LogPriority priority) { logger.setPriority(priority); }
 
-void qbdi_setLogConsole() {
-  logger.setConsoleLogger();
-}
+void qbdi_setLogConsole() { logger.setConsoleLogger(); }
 
-void qbdi_setLogDefault() {
-  logger.setDefaultLogger();
-}
+void qbdi_setLogDefault() { logger.setDefaultLogger(); }
 
-
-}
+} // namespace QBDI

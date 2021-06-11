@@ -33,48 +33,42 @@ class Assembly;
 class ExecBroker {
 
 private:
+  RangeSet<rword> instrumented;
+  ExecBlock transferBlock;
+  rword pageSize;
 
-    RangeSet<rword>        instrumented;
-    ExecBlock              transferBlock;
-    rword                  pageSize;
+  using PF = llvm::sys::Memory::ProtectionFlags;
 
-    using PF = llvm::sys::Memory::ProtectionFlags;
-
-    // ARCH dependant method
-    rword *getReturnPoint(GPRState* gprState) const;
+  // ARCH dependant method
+  rword *getReturnPoint(GPRState *gprState) const;
 
 public:
+  ExecBroker(const Assembly &assembly, VMInstanceRef vminstance = nullptr);
 
-    ExecBroker(const Assembly& assembly, VMInstanceRef vminstance = nullptr);
+  void changeVMInstanceRef(VMInstanceRef vminstance);
 
-    void changeVMInstanceRef(VMInstanceRef vminstance);
+  bool isInstrumented(rword addr) const { return instrumented.contains(addr); }
 
-    bool isInstrumented(rword addr) const { return instrumented.contains(addr);}
+  void setInstrumentedRange(const RangeSet<rword> &r) { instrumented = r; }
 
-    void setInstrumentedRange(const RangeSet<rword>& r) {
-      instrumented = r;
-    }
+  const RangeSet<rword> &getInstrumentedRange() const { return instrumented; }
 
-    const RangeSet<rword>& getInstrumentedRange() const {
-      return instrumented;
-    }
+  void addInstrumentedRange(const Range<rword> &r);
+  bool addInstrumentedModule(const std::string &name);
+  bool addInstrumentedModuleFromAddr(rword addr);
 
-    void addInstrumentedRange(const Range<rword>& r);
-    bool addInstrumentedModule(const std::string& name);
-    bool addInstrumentedModuleFromAddr(rword addr);
+  void removeInstrumentedRange(const Range<rword> &r);
+  bool removeInstrumentedModule(const std::string &name);
+  bool removeInstrumentedModuleFromAddr(rword addr);
+  void removeAllInstrumentedRanges();
 
-    void removeInstrumentedRange(const Range<rword>& r);
-    bool removeInstrumentedModule(const std::string& name);
-    bool removeInstrumentedModuleFromAddr(rword addr);
-    void removeAllInstrumentedRanges();
+  bool instrumentAllExecutableMaps();
 
-    bool instrumentAllExecutableMaps();
+  bool canTransferExecution(GPRState *gprState) const;
 
-    bool canTransferExecution(GPRState* gprState) const;
-
-    bool transferExecution(rword addr, GPRState *gprState, FPRState *fprState);
+  bool transferExecution(rword addr, GPRState *gprState, FPRState *fprState);
 };
 
-}
+} // namespace QBDI
 
 #endif // EXECBROKER_H

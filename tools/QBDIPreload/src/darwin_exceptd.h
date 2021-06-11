@@ -15,13 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <pthread.h>
 #include <mach/task.h>
+#include <pthread.h>
 
-typedef kern_return_t (*exception_handler_func)(mach_port_t, mach_port_t, mach_port_t, exception_type_t, mach_exception_data_t, mach_msg_type_number_t);
+typedef kern_return_t (*exception_handler_func)(mach_port_t, mach_port_t,
+                                                mach_port_t, exception_type_t,
+                                                mach_exception_data_t,
+                                                mach_msg_type_number_t);
 
 struct ExceptionHandler;
 
-struct ExceptionHandler* setupExceptionHandler(task_t target, exception_mask_t exceptionMask, exception_handler_func handler);
+struct ExceptionHandler *setupExceptionHandler(task_t target,
+                                               exception_mask_t exceptionMask,
+                                               exception_handler_func handler);
 
-void stopExceptionHandler(struct ExceptionHandler* exceptionHandler);
+void stopExceptionHandler(struct ExceptionHandler *exceptionHandler);

@@ -22,61 +22,56 @@
 
 namespace QBDI {
 
-class MemoryConstant: public AutoClone<RelocatableInst, MemoryConstant> {
-    unsigned int opn;
-    rword        value;
+class MemoryConstant : public AutoClone<RelocatableInst, MemoryConstant> {
+  unsigned int opn;
+  rword value;
 
 public:
+  MemoryConstant(llvm::MCInst inst, unsigned int opn, rword value)
+      : RelocatableInst(inst), opn(opn), value(value){};
 
-    MemoryConstant(llvm::MCInst inst, unsigned int opn, rword value)
-        : RelocatableInst(inst), opn(opn), value(value) {};
-
-    llvm::MCInst reloc(ExecBlock *exec_block) {
-        uint16_t id = exec_block->newShadow();
-        exec_block->setShadow(id, value);
-        inst.getOperand(opn).setImm(
-            exec_block->getDataBlockOffset() + exec_block->getShadowOffset(id) - 8
-        );
-        return inst;
-    }
+  llvm::MCInst reloc(ExecBlock *exec_block) {
+    uint16_t id = exec_block->newShadow();
+    exec_block->setShadow(id, value);
+    inst.getOperand(opn).setImm(exec_block->getDataBlockOffset() +
+                                exec_block->getShadowOffset(id) - 8);
+    return inst;
+  }
 };
 
 class HostPCRel : public AutoClone<RelocatableInst, HostPCRel> {
-    unsigned int opn;
-    rword        offset;
+  unsigned int opn;
+  rword offset;
 
 public:
   HostPCRel(llvm::MCInst inst, unsigned int opn, rword offset)
-        : RelocatableInst(inst), opn(opn), offset(offset) {};
+      : RelocatableInst(inst), opn(opn), offset(offset){};
 
-    llvm::MCInst reloc(ExecBlock *exec_block) {
-        uint16_t id = exec_block->newShadow();
-        exec_block->setShadow(id, offset + exec_block->getCurrentPC());
-        inst.getOperand(opn).setImm(
-            exec_block->getDataBlockOffset() + exec_block->getShadowOffset(id) - 8
-        );
-        return inst;
-    }
+  llvm::MCInst reloc(ExecBlock *exec_block) {
+    uint16_t id = exec_block->newShadow();
+    exec_block->setShadow(id, offset + exec_block->getCurrentPC());
+    inst.getOperand(opn).setImm(exec_block->getDataBlockOffset() +
+                                exec_block->getShadowOffset(id) - 8);
+    return inst;
+  }
 };
 
 class InstId : public AutoClone<RelocatableInst, InstId> {
-    unsigned int opn;
+  unsigned int opn;
 
 public:
-    InstId(llvm::MCInst inst, unsigned int opn)
-        : RelocatableInst(inst), opn(opn) {};
+  InstId(llvm::MCInst inst, unsigned int opn)
+      : RelocatableInst(inst), opn(opn){};
 
-    llvm::MCInst reloc(ExecBlock *exec_block) {
-        uint16_t id = exec_block->newShadow();
-        exec_block->setShadow(id, exec_block->getNextInstID());
-        inst.getOperand(opn).setImm(
-            exec_block->getDataBlockOffset() + exec_block->getShadowOffset(id) - 8
-        );
-        return inst;
-    }
+  llvm::MCInst reloc(ExecBlock *exec_block) {
+    uint16_t id = exec_block->newShadow();
+    exec_block->setShadow(id, exec_block->getNextInstID());
+    inst.getOperand(opn).setImm(exec_block->getDataBlockOffset() +
+                                exec_block->getShadowOffset(id) - 8);
+    return inst;
+  }
 };
 
-
-}
+} // namespace QBDI
 
 #endif

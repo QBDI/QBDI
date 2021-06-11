@@ -22,7 +22,7 @@
 
 namespace QBDI {
 namespace String {
-    bool startsWith(const char* prefix, const char* str);
+bool startsWith(const char *prefix, const char *str);
 }
-}
+} // namespace QBDI
 #endif // STRING_H

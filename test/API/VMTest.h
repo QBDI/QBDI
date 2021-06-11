@@ -23,13 +23,13 @@
 #include "VM.h"
 
 class VMTest {
-    public:
-        VMTest();
-        ~VMTest();
+public:
+  VMTest();
+  ~VMTest();
 
-        std::unique_ptr<QBDI::VM> vm;
-        QBDI::GPRState* state;
-        uint8_t* fakestack;
+  std::unique_ptr<QBDI::VM> vm;
+  QBDI::GPRState *state;
+  uint8_t *fakestack;
 };
 
 #endif /* QBDITEST_VMTEST_H */

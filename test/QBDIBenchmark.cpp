@@ -26,12 +26,13 @@
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 #include <catch2/catch.hpp>
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
 
-    srand(time(nullptr));
+  srand(time(nullptr));
 
-    setvbuf(stdout, nullptr, _IONBF, 0);
-    setvbuf(stderr, nullptr, _IONBF, 0);
+  setvbuf(stdout, nullptr, _IONBF, 0);
+  setvbuf(stderr, nullptr, _IONBF, 0);
 
-    return Catch::Session().run( argc, argv );;
+  return Catch::Session().run(argc, argv);
+  ;
 }

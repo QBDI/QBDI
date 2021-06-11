@@ -23,10 +23,7 @@
 
 namespace QBDI {
 
-typedef enum : uint8_t {
-    needAVX = 1<<0,
-    needFPU = 1<<1
-} ExecBlockFlags;
+typedef enum : uint8_t { needAVX = 1 << 0, needFPU = 1 << 1 } ExecBlockFlags;
 
 }
 

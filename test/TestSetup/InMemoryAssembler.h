@@ -24,24 +24,23 @@
 class InMemoryObject {
 
 protected:
+  using PF = llvm::sys::Memory::ProtectionFlags;
 
-    using PF = llvm::sys::Memory::ProtectionFlags;
-
-    llvm::sys::MemoryBlock                   objectBlock;
-    llvm::ArrayRef<uint8_t>                  code;
+  llvm::sys::MemoryBlock objectBlock;
+  llvm::ArrayRef<uint8_t> code;
 
 public:
+  InMemoryObject(const char *source, const char *cpu = "",
+                 const char **mattrs = nullptr);
 
-    InMemoryObject(const char* source, const char* cpu = "", const char** mattrs = nullptr);
+  InMemoryObject(const InMemoryObject &vm) = delete;
+  InMemoryObject(InMemoryObject &&vm) = default;
+  InMemoryObject &operator=(const InMemoryObject &vm) = delete;
+  InMemoryObject &operator=(const InMemoryObject &&vm) = delete;
 
-    InMemoryObject(const InMemoryObject& vm) = delete;
-    InMemoryObject(InMemoryObject&& vm) = default;
-    InMemoryObject& operator=(const InMemoryObject& vm) = delete;
-    InMemoryObject& operator=(const InMemoryObject&& vm) = delete;
+  ~InMemoryObject();
 
-    ~InMemoryObject();
-
-    llvm::ArrayRef<uint8_t> getCode() { return code; }
+  llvm::ArrayRef<uint8_t> getCode() { return code; }
 };
 
 #endif

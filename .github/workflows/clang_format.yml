@@ -1,0 +1,20 @@
+name: Code format
+
+on: [push, pull_request]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      CLANG_FORMAT_VERSION: 11
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: Install system dependencies
+        run: |
+          sudo apt install -y --no-install-recommends clang-format-${{ env.CLANG_FORMAT_VERSION }}
+          sudo pip3 install cmakelang
+      - name: Build and test QBDI
+        run: bash ./.github/format_check.sh
+
+

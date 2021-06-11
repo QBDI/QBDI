@@ -25,29 +25,33 @@
 
 namespace QBDI {
 
-RelocatableInst::UniquePtrVec ModifyInstruction::generate(const llvm::MCInst *inst,
-    rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) const {
+RelocatableInst::UniquePtrVec
+ModifyInstruction::generate(const llvm::MCInst *inst, rword address,
+                            rword instSize, const llvm::MCInstrInfo *MCII,
+                            TempManager *temp_manager, Patch *toMerge) const {
 
-    llvm::MCInst a(*inst);
-    for (const auto& t: transforms) {
-        t->transform(a, address, instSize, temp_manager);
-    }
+  llvm::MCInst a(*inst);
+  for (const auto &t : transforms) {
+    t->transform(a, address, instSize, temp_manager);
+  }
 
-    RelocatableInst::UniquePtrVec out;
-    if (toMerge != nullptr) {
-        RelocatableInst::UniquePtrVec t;
-        t.swap(toMerge->insts);
-        toMerge->metadata.patchSize = 0;
-        append(out, std::move(t));
-    }
-    out.push_back(NoReloc::unique(std::move(a)));
-    return out;
+  RelocatableInst::UniquePtrVec out;
+  if (toMerge != nullptr) {
+    RelocatableInst::UniquePtrVec t;
+    t.swap(toMerge->insts);
+    toMerge->metadata.patchSize = 0;
+    append(out, std::move(t));
+  }
+  out.push_back(NoReloc::unique(std::move(a)));
+  return out;
 }
 
-RelocatableInst::UniquePtrVec DoNotInstrument::generate(const llvm::MCInst *inst,
-    rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) const {
+RelocatableInst::UniquePtrVec
+DoNotInstrument::generate(const llvm::MCInst *inst, rword address,
+                          rword instSize, const llvm::MCInstrInfo *MCII,
+                          TempManager *temp_manager, Patch *toMerge) const {
 
-    return {};
+  return {};
 }
 
-}
+} // namespace QBDI

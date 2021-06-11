@@ -18,25 +18,25 @@
 #ifndef LOGSYS_H
 #define LOGSYS_H
 
-#include <cstring>
-#include <cstdio>
 #include <cstdarg>
-#include <vector>
+#include <cstdio>
+#include <cstring>
 #include <functional>
 #include <utility>
+#include <vector>
 
-#include "QBDI/Platform.h"
 #include "QBDI/Logs.h"
+#include "QBDI/Platform.h"
 #include "spdlog/spdlog.h"
 
-#if defined(QBDI_PLATFORM_LINUX) || defined(QBDI_PLATFORM_ANDROID) || defined(QBDI_PLATFORM_OSX)
+#if defined(QBDI_PLATFORM_LINUX) || defined(QBDI_PLATFORM_ANDROID) || \
+    defined(QBDI_PLATFORM_OSX)
 #include <unistd.h>
 #endif
 
-
-#define QBDI_INFO(...)     SPDLOG_INFO(__VA_ARGS__)
-#define QBDI_WARN(...)     SPDLOG_WARN(__VA_ARGS__)
-#define QBDI_ERROR(...)    SPDLOG_ERROR(__VA_ARGS__)
+#define QBDI_INFO(...) SPDLOG_INFO(__VA_ARGS__)
+#define QBDI_WARN(...) SPDLOG_WARN(__VA_ARGS__)
+#define QBDI_ERROR(...) SPDLOG_ERROR(__VA_ARGS__)
 #define QBDI_CRITICAL(...) SPDLOG_CRITICAL(__VA_ARGS__)
 
 #if defined(QBDI_LOG_DEBUG)
@@ -47,30 +47,37 @@
 #define QBDI_DEBUG(...) (void)0
 #endif
 
-#define QBDI_REQUIRE(req) if (!(req)) { QBDI_ERROR("Assertion Failed : {}", #req); }
-#define QBDI_REQUIRE_ACTION(req, ac) if (!(req)) { QBDI_ERROR("Assertion Failed : {}", #req); ac; }
+#define QBDI_REQUIRE(req)                      \
+  if (!(req)) {                                \
+    QBDI_ERROR("Assertion Failed : {}", #req); \
+  }
+#define QBDI_REQUIRE_ACTION(req, ac)           \
+  if (!(req)) {                                \
+    QBDI_ERROR("Assertion Failed : {}", #req); \
+    ac;                                        \
+  }
 
 namespace QBDI {
 
 class Logger {
-  public:
+public:
   Logger(void);
-  Logger(const Logger&) = delete;
-  Logger& operator=(const Logger&) = delete;
+  Logger(const Logger &) = delete;
+  Logger &operator=(const Logger &) = delete;
 
   void setPriority(LogPriority priority);
 
-  void setFile(const std::string& f, bool truncate);
+  void setFile(const std::string &f, bool truncate);
 
   void setDefaultLogger();
   void setConsoleLogger();
 
   ~Logger(void);
 
-  private:
+private:
   std::shared_ptr<spdlog::logger> sink;
 };
 
-};
+}; // namespace QBDI
 
 #endif

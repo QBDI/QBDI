@@ -18,34 +18,33 @@
 #ifndef COMPAREDEXECUTOR_ARM_H
 #define COMPAREDEXECUTOR_ARM_H
 
+#include <sstream>
 #include <string.h>
 #include <string>
-#include <sstream>
 
-#include "TestSetup/ShellcodeTester.h"
 #include "TestSetup/InMemoryAssembler.h"
+#include "TestSetup/ShellcodeTester.h"
 
 #define CPU_CPU "cortex-a9"
 #define CPU_MATTRS "vfp2"
 
-extern const char* GPRSave_s;
-extern const char* GPRShuffle_s;
-extern const char* RelativeAddressing_s;
-extern const char* ConditionalBranching_s;
-
+extern const char *GPRSave_s;
+extern const char *GPRShuffle_s;
+extern const char *RelativeAddressing_s;
+extern const char *ConditionalBranching_s;
 
 class ComparedExecutor_ARM : public ShellcodeTester {
 
 public:
-    ComparedExecutor_ARM() : ShellcodeTester(CPU_CPU, {CPU_MATTRS}) {}
+  ComparedExecutor_ARM() : ShellcodeTester(CPU_CPU, {CPU_MATTRS}) {}
 
-    QBDI::Context jitExec(llvm::ArrayRef<uint8_t> code, QBDI::Context &inputCtx,
-                          llvm::sys::MemoryBlock &stack);
+  QBDI::Context jitExec(llvm::ArrayRef<uint8_t> code, QBDI::Context &inputCtx,
+                        llvm::sys::MemoryBlock &stack);
 
-    QBDI::Context realExec(llvm::ArrayRef<uint8_t> code, QBDI::Context &inputCtx,
-                           llvm::sys::MemoryBlock &stack);
+  QBDI::Context realExec(llvm::ArrayRef<uint8_t> code, QBDI::Context &inputCtx,
+                         llvm::sys::MemoryBlock &stack);
 
-    InMemoryObject compileWithContextSwitch(const char* source);
+  InMemoryObject compileWithContextSwitch(const char *source);
 };
 
 #endif

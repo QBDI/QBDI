@@ -45,28 +45,27 @@ static const long BRK_INS = 0xE7FFDEFE;
 class LinuxProcess : public Process {
 
 private:
-    
-    pid_t pid;
-    void* brk_address;
-    long  brk_value;
+  pid_t pid;
+  void *brk_address;
+  long brk_value;
 
 public:
+  LinuxProcess(pid_t process)
+      : pid(process), brk_address(nullptr), brk_value(0) {}
 
-    LinuxProcess(pid_t process) : pid(process), brk_address(nullptr), brk_value(0) {}
+  pid_t getPID() { return pid; }
 
-    pid_t getPID() { return pid; }
+  void setBreakpoint(void *address);
 
-    void setBreakpoint(void* address);
+  void unsetBreakpoint();
 
-    void unsetBreakpoint();
+  void continueExecution();
 
-    void continueExecution();
+  int waitForStatus();
 
-    int waitForStatus();
+  void getProcessGPR(QBDI::GPRState *gprState);
 
-    void getProcessGPR(QBDI::GPRState *gprState);
-    
-    void getProcessFPR(QBDI::FPRState *fprState);
+  void getProcessFPR(QBDI::FPRState *fprState);
 };
 
 #endif // LINUX_PROCESS_H

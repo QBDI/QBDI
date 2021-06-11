@@ -18,14 +18,12 @@
 #ifndef INSTR_ARMTEST_H
 #define INSTR_ARMTEST_H
 
+#include <sstream>
 #include <string.h>
 #include <string>
-#include <sstream>
 
 #include "ComparedExecutor_ARM.h"
 
-class Instr_ARMTest : public ComparedExecutor_ARM {
-
-};
+class Instr_ARMTest : public ComparedExecutor_ARM {};
 
 #endif

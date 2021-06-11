@@ -19,114 +19,135 @@
 
 namespace QBDI {
 
-RelocatableInst::SharedPtrVec GetOperand::generate(const llvm::MCInst *inst,
-    rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) {
+RelocatableInst::SharedPtrVec
+GetOperand::generate(const llvm::MCInst *inst, rword address, rword instSize,
+                     const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
+                     Patch *toMerge) {
 
-    if(inst->getOperand(op).isImm()) {
-        return {Ldr(temp_manager->getRegForTemp(temp),
-                   Constant(inst->getOperand(op).getImm()))
-        };
-    }
-    else if(inst->getOperand(op).isReg()) {
-        return {NoReloc(mov(temp_manager->getRegForTemp(temp), inst->getOperand(op).getReg()))};
-    }
-    else {
-        LogError("GetOperand::generate", "Invalid operand type for GetOperand()");
-        return {};
-    }
+  if (inst->getOperand(op).isImm()) {
+    return {Ldr(temp_manager->getRegForTemp(temp),
+                Constant(inst->getOperand(op).getImm()))};
+  } else if (inst->getOperand(op).isReg()) {
+    return {NoReloc(
+        mov(temp_manager->getRegForTemp(temp), inst->getOperand(op).getReg()))};
+  } else {
+    LogError("GetOperand::generate", "Invalid operand type for GetOperand()");
+    return {};
+  }
 }
 
-RelocatableInst::SharedPtrVec GetConstant::generate(const llvm::MCInst *inst,
-    rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) {
+RelocatableInst::SharedPtrVec
+GetConstant::generate(const llvm::MCInst *inst, rword address, rword instSize,
+                      const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
+                      Patch *toMerge) {
 
-    return{Ldr(temp_manager->getRegForTemp(temp), Constant(cst))};
+  return {Ldr(temp_manager->getRegForTemp(temp), Constant(cst))};
 }
 
-RelocatableInst::SharedPtrVec GetPCOffset::generate(const llvm::MCInst *inst,
-    rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) {
+RelocatableInst::SharedPtrVec
+GetPCOffset::generate(const llvm::MCInst *inst, rword address, rword instSize,
+                      const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
+                      Patch *toMerge) {
 
-    if(type == ConstantType) {
-        return{Ldr(temp_manager->getRegForTemp(temp), Constant(address + 8 + cst))};
+  if (type == ConstantType) {
+    return {
+        Ldr(temp_manager->getRegForTemp(temp), Constant(address + 8 + cst))};
+  } else if (type == OperandType) {
+    if (inst->getOperand(op).isImm()) {
+      return {Ldr(temp_manager->getRegForTemp(temp),
+                  Constant(address + 8 + inst->getOperand(op).getImm()))};
+    } else if (inst->getOperand(op).isReg()) {
+      return {Ldr(temp_manager->getRegForTemp(temp), Constant(address + 8)),
+              NoReloc(add(temp_manager->getRegForTemp(temp),
+                          inst->getOperand(op).getReg()))};
+    } else {
+      LogError("GePCOffset::generate", "Invalid operand type for GetOperand()");
+      return {};
     }
-    else if(type == OperandType) {
-        if(inst->getOperand(op).isImm()) {
-            return {Ldr(
-                temp_manager->getRegForTemp(temp),
-                Constant(address + 8 + inst->getOperand(op).getImm()))
-            };
-        }
-        else if(inst->getOperand(op).isReg()) {
-            return {
-                Ldr(temp_manager->getRegForTemp(temp), Constant(address + 8)),
-                NoReloc(add(temp_manager->getRegForTemp(temp), inst->getOperand(op).getReg()))
-            };
-        }
-        else {
-            LogError("GePCOffset::generate", "Invalid operand type for GetOperand()");
-            return {};
-        }
-    }
-    _QBDI_UNREACHABLE();
+  }
+  _QBDI_UNREACHABLE();
 }
 
 RelocatableInst::SharedPtrVec GetInstId::generate(const llvm::MCInst *inst,
-    rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) {
+                                                  rword address, rword instSize,
+                                                  const llvm::MCInstrInfo *MCII,
+                                                  TempManager *temp_manager,
+                                                  Patch *toMerge) {
 
-    return {InstId(ldri12(temp_manager->getRegForTemp(temp), Reg(REG_PC), 0), 2)};
+  return {InstId(ldri12(temp_manager->getRegForTemp(temp), Reg(REG_PC), 0), 2)};
 }
 
 RelocatableInst::SharedPtrVec CopyReg::generate(const llvm::MCInst *inst,
-    rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) {
+                                                rword address, rword instSize,
+                                                const llvm::MCInstrInfo *MCII,
+                                                TempManager *temp_manager,
+                                                Patch *toMerge) {
 
-    return {NoReloc(mov(temp_manager->getRegForTemp(temp), reg))};
+  return {NoReloc(mov(temp_manager->getRegForTemp(temp), reg))};
 }
 
 RelocatableInst::SharedPtrVec WriteTemp::generate(const llvm::MCInst *inst,
-    rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) {
+                                                  rword address, rword instSize,
+                                                  const llvm::MCInstrInfo *MCII,
+                                                  TempManager *temp_manager,
+                                                  Patch *toMerge) {
 
-    return {Str(temp_manager->getRegForTemp(temp), offset)};
+  return {Str(temp_manager->getRegForTemp(temp), offset)};
 }
 
 RelocatableInst::SharedPtrVec SaveReg::generate(const llvm::MCInst *inst,
-    rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) {
+                                                rword address, rword instSize,
+                                                const llvm::MCInstrInfo *MCII,
+                                                TempManager *temp_manager,
+                                                Patch *toMerge) {
 
-    return {Str(reg, offset)};
+  return {Str(reg, offset)};
 }
 
 RelocatableInst::SharedPtrVec LoadReg::generate(const llvm::MCInst *inst,
-    rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) {
+                                                rword address, rword instSize,
+                                                const llvm::MCInstrInfo *MCII,
+                                                TempManager *temp_manager,
+                                                Patch *toMerge) {
 
-    return {Ldr(reg, offset)};
+  return {Ldr(reg, offset)};
 }
 
-RelocatableInst::SharedPtrVec JmpEpilogue::generate(const llvm::MCInst *inst,
-    rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) {
+RelocatableInst::SharedPtrVec
+JmpEpilogue::generate(const llvm::MCInst *inst, rword address, rword instSize,
+                      const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
+                      Patch *toMerge) {
 
-    return {EpilogueRel(b(0), 0, -8)};
+  return {EpilogueRel(b(0), 0, -8)};
 }
 
-RelocatableInst::SharedPtrVec SimulateLink::generate(const llvm::MCInst *inst,
-    rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) {
-    RelocatableInst::SharedPtrVec patch;
+RelocatableInst::SharedPtrVec
+SimulateLink::generate(const llvm::MCInst *inst, rword address, rword instSize,
+                       const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
+                       Patch *toMerge) {
+  RelocatableInst::SharedPtrVec patch;
 
-    append(patch, GetPCOffset(Temp(0), Constant(-4)).generate(inst, address, instSize, temp_manager, nullptr));
-    patch.push_back(NoReloc(mov(Reg(REG_LR), temp_manager->getRegForTemp(temp))));
+  append(patch, GetPCOffset(Temp(0), Constant(-4))
+                    .generate(inst, address, instSize, temp_manager, nullptr));
+  patch.push_back(NoReloc(mov(Reg(REG_LR), temp_manager->getRegForTemp(temp))));
 
-    return patch;
+  return patch;
 }
 
-RelocatableInst::SharedPtrVec SimulatePopPC::generate(const llvm::MCInst *inst,
-    rword address, rword instSize, const llvm::MCInstrInfo* MCII, TempManager *temp_manager, Patch *toMerge) {
-    RelocatableInst::SharedPtrVec patch;
-    int64_t cond = inst->getOperand(2).getImm();
+RelocatableInst::SharedPtrVec
+SimulatePopPC::generate(const llvm::MCInst *inst, rword address, rword instSize,
+                        const llvm::MCInstrInfo *MCII,
+                        TempManager *temp_manager, Patch *toMerge) {
+  RelocatableInst::SharedPtrVec patch;
+  int64_t cond = inst->getOperand(2).getImm();
 
-    append(patch, GetPCOffset(temp, Constant(-4)).generate(inst, address, instSize, temp_manager, nullptr));
-    patch.push_back(NoReloc(
-        pop(temp_manager->getRegForTemp(temp), cond)
-    ));
-    append(patch, WriteTemp(temp, Offset(Reg(REG_PC))).generate(inst, address, instSize, temp_manager, nullptr));
+  append(patch, GetPCOffset(temp, Constant(-4))
+                    .generate(inst, address, instSize, temp_manager, nullptr));
+  patch.push_back(NoReloc(pop(temp_manager->getRegForTemp(temp), cond)));
+  append(patch, WriteTemp(temp, Offset(Reg(REG_PC)))
+                    .generate(inst, address, instSize, temp_manager, nullptr));
 
-    return patch;
+  return patch;
 }
 
-}
+} // namespace QBDI

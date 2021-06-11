@@ -15,12 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <stdio.h>
 #include <catch2/catch.hpp>
+#include <stdio.h>
 
+#include "X86InstrInfo.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstrDesc.h"
-#include "X86InstrInfo.h"
 
 #include "MemoryAccessTable_X86_64.h"
 #include "Patch/InstInfo.h"
@@ -29,8 +29,8 @@ namespace {
 
 using namespace llvm::X86;
 
-const std::set<unsigned> unsupportedInst {
-        // codeGenOnly
+const std::set<unsigned> unsupportedInst{
+    // codeGenOnly
     // alias for other instruction, will never be dissassemble by LLVM
     LXADD16,
     LXADD32,
@@ -140,7 +140,8 @@ const std::set<unsigned> unsupportedInst {
 };
 
 // instruction that reads memory/stack but without mayLoad
-const std::set<unsigned> fixupRead {
+const std::set<unsigned> fixupRead{
+    // clang-format off
     ARPL16mr,
     BOUNDS16rm,
     BOUNDS32rm,
@@ -209,9 +210,11 @@ const std::set<unsigned> fixupRead {
     SCASL,
     SCASQ,
     SCASW,
+    // clang-format on
 };
 // instruction that writes memory/stack but without mayStore
-const std::set<unsigned> fixupWrite {
+const std::set<unsigned> fixupWrite{
+    // clang-format off
     CALL16m,
     CALL16m_NT,
     CALL16r,
@@ -242,9 +245,11 @@ const std::set<unsigned> fixupWrite {
     STOSL,
     STOSQ,
     STOSW,
+    // clang-format on
 };
 // instruction with mayLoad but don't reads memory/stack
-const std::set<unsigned> fixupNoRead {
+const std::set<unsigned> fixupNoRead{
+    // clang-format off
     CLDEMOTE,
     CLFLUSH,
     CLFLUSHOPT,
@@ -290,9 +295,11 @@ const std::set<unsigned> fixupNoRead {
     WRGSBASE,
     WRGSBASE64,
     XSETBV,
+    // clang-format on
 };
 // instruction with mayStore but don't writes memory/stack
-const std::set<unsigned> fixupNoWrite {
+const std::set<unsigned> fixupNoWrite{
+    // clang-format off
     CLDEMOTE,
     CLFLUSH,
     CLFLUSHOPT,
@@ -339,91 +346,99 @@ const std::set<unsigned> fixupNoWrite {
     XRSTORS,
     XRSTORS64,
     XSETBV,
+    // clang-format on
 };
 
-} // namespace anonymous
+} // namespace
 
-TEST_CASE_METHOD(MemoryAccessTable_X86_64, "MemoryAccessTable_X86_64-CrossCheck") {
+TEST_CASE_METHOD(MemoryAccessTable_X86_64,
+                 "MemoryAccessTable_X86_64-CrossCheck") {
 
-    for (unsigned opcode = 0; opcode < llvm::X86::INSTRUCTION_LIST_END; opcode++) {
-        if (unsupportedInst.count(opcode) == 1)
-            continue;
+  for (unsigned opcode = 0; opcode < llvm::X86::INSTRUCTION_LIST_END;
+       opcode++) {
+    if (unsupportedInst.count(opcode) == 1)
+      continue;
 
-        const llvm::MCInstrDesc &desc = MCII->get(opcode);
-        const char* mnemonic = MCII->getName(opcode).data();
+    const llvm::MCInstrDesc &desc = MCII->get(opcode);
+    const char *mnemonic = MCII->getName(opcode).data();
 
-        // the opcode is a pseudo instruction used by LLVM internally
-        if (desc.isPseudo())
-            continue;
+    // the opcode is a pseudo instruction used by LLVM internally
+    if (desc.isPseudo())
+      continue;
 
-        // some no pseudo instructions are also pseudo ...
-        if ((desc.TSFlags & llvm::X86II::FormMask) == llvm::X86II::Pseudo)
-            continue;
+    // some no pseudo instructions are also pseudo ...
+    if ((desc.TSFlags & llvm::X86II::FormMask) == llvm::X86II::Pseudo)
+      continue;
 
-        // not support AVX512. discard all instruction with the encodage EVEX
-        // introduce with AVX512
-        if ((desc.TSFlags & llvm::X86II::EncodingMask) == llvm::X86II::EVEX)
-            continue;
+    // not support AVX512. discard all instruction with the encodage EVEX
+    // introduce with AVX512
+    if ((desc.TSFlags & llvm::X86II::EncodingMask) == llvm::X86II::EVEX)
+      continue;
 
-        // not support XOP. (AMD eXtended Operations)
-        if ((desc.TSFlags & llvm::X86II::EncodingMask) == llvm::X86II::XOP)
-            continue;
+    // not support XOP. (AMD eXtended Operations)
+    if ((desc.TSFlags & llvm::X86II::EncodingMask) == llvm::X86II::XOP)
+      continue;
 
-        // InstInfo_X86_64.cpp only use inst->getOpcode(). The MCInst doesn't need to have his operand
-        llvm::MCInst inst;
-        inst.setOpcode(opcode);
+    // InstInfo_X86_64.cpp only use inst->getOpcode(). The MCInst doesn't need
+    // to have his operand
+    llvm::MCInst inst;
+    inst.setOpcode(opcode);
 
-        bool doRead = (QBDI::getReadSize(inst) != 0);
-        bool doWrite = (QBDI::getWriteSize(inst) != 0);
-        bool mayRead = desc.mayLoad();
-        bool mayWrite = desc.mayStore();
+    bool doRead = (QBDI::getReadSize(inst) != 0);
+    bool doWrite = (QBDI::getWriteSize(inst) != 0);
+    bool mayRead = desc.mayLoad();
+    bool mayWrite = desc.mayStore();
 
-        bool bypassRead = false;
-        bool bypassWrite = false;
+    bool bypassRead = false;
+    bool bypassWrite = false;
 
-        // llvm mayLoad and mayStore fixup
-        if (fixupRead.count(opcode) == 1) {
-            if (doRead && !mayRead)
-                bypassRead = true;
-            else
-                WARN("Unneeded instruction " << mnemonic << " in fixupRead");
-        }
-
-        if (fixupNoRead.count(opcode) == 1) {
-            if (!doRead && mayRead)
-                bypassRead = true;
-            else
-                WARN("Unneeded instruction " << mnemonic << " in fixupNoRead");
-        }
-
-        if (fixupWrite.count(opcode) == 1) {
-            if (doWrite && !mayWrite)
-                bypassWrite = true;
-            else
-                WARN("Unneeded instruction " << mnemonic << " in fixupWrite");
-        }
-
-        if (fixupNoWrite.count(opcode) == 1) {
-            if (!doWrite && mayWrite)
-                bypassWrite = true;
-            else
-                WARN("Unneeded instruction " << mnemonic << " in fixupNoWrite");
-        }
-
-        if (!bypassRead && doRead != mayRead) {
-            if (doRead && !mayRead) {
-                FAIL_CHECK("Unexpected read for " << mnemonic);
-            } else if (!doRead && mayRead) {
-                FAIL_CHECK("Missing read for " << mnemonic << " type " << (desc.TSFlags & llvm::X86II::FormMask));
-            }
-        }
-
-        if (!bypassWrite && doWrite != mayWrite) {
-            if (doWrite && !mayWrite) {
-                FAIL_CHECK("Unexpected write for " << mnemonic);
-            } else if (!doWrite && mayWrite) {
-                FAIL_CHECK("Missing write for " << mnemonic << " type " << (desc.TSFlags & llvm::X86II::FormMask));
-            }
-        }
+    // llvm mayLoad and mayStore fixup
+    if (fixupRead.count(opcode) == 1) {
+      if (doRead && !mayRead)
+        bypassRead = true;
+      else
+        WARN("Unneeded instruction " << mnemonic << " in fixupRead");
     }
+
+    if (fixupNoRead.count(opcode) == 1) {
+      if (!doRead && mayRead)
+        bypassRead = true;
+      else
+        WARN("Unneeded instruction " << mnemonic << " in fixupNoRead");
+    }
+
+    if (fixupWrite.count(opcode) == 1) {
+      if (doWrite && !mayWrite)
+        bypassWrite = true;
+      else
+        WARN("Unneeded instruction " << mnemonic << " in fixupWrite");
+    }
+
+    if (fixupNoWrite.count(opcode) == 1) {
+      if (!doWrite && mayWrite)
+        bypassWrite = true;
+      else
+        WARN("Unneeded instruction " << mnemonic << " in fixupNoWrite");
+    }
+
+    if (!bypassRead && doRead != mayRead) {
+      if (doRead && !mayRead) {
+        FAIL_CHECK("Unexpected read for " << mnemonic);
+      } else if (!doRead && mayRead) {
+        FAIL_CHECK("Missing read for "
+                   << mnemonic << " type "
+                   << (desc.TSFlags & llvm::X86II::FormMask));
+      }
+    }
+
+    if (!bypassWrite && doWrite != mayWrite) {
+      if (doWrite && !mayWrite) {
+        FAIL_CHECK("Unexpected write for " << mnemonic);
+      } else if (!doWrite && mayWrite) {
+        FAIL_CHECK("Missing write for "
+                   << mnemonic << " type "
+                   << (desc.TSFlags & llvm::X86II::FormMask));
+      }
+    }
+  }
 }

@@ -1,3 +1,1 @@
-int dummy() {
-    return 42;
-}
+int dummy() { return 42; }

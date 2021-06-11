@@ -27,8 +27,7 @@
 
 namespace QBDI {
 
-typedef enum : uint8_t {
-} ExecBlockFlags;
+typedef enum : uint8_t {} ExecBlockFlags;
 
 }
 

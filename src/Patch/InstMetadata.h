@@ -28,24 +28,23 @@ namespace QBDI {
 
 class InstMetadata {
 public:
-    llvm::MCInst inst;
-    rword address;
-    uint32_t instSize;
-    uint32_t patchSize;
-    bool modifyPC;
-    bool merge;
-    uint8_t execblockFlags;
-    mutable InstAnalysisPtr analysis;
+  llvm::MCInst inst;
+  rword address;
+  uint32_t instSize;
+  uint32_t patchSize;
+  bool modifyPC;
+  bool merge;
+  uint8_t execblockFlags;
+  mutable InstAnalysisPtr analysis;
 
-    inline rword endAddress() const {
-        return address + instSize;
-    }
+  inline rword endAddress() const { return address + instSize; }
 
-    inline InstMetadata lightCopy() const {
-        return {inst, address, instSize, patchSize, modifyPC, merge, execblockFlags, nullptr};
-    }
+  inline InstMetadata lightCopy() const {
+    return {inst,     address, instSize,       patchSize,
+            modifyPC, merge,   execblockFlags, nullptr};
+  }
 };
 
-}
+} // namespace QBDI
 
 #endif // INSTMETADATA_H

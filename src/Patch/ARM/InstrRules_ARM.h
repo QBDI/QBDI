@@ -24,9 +24,9 @@
 #include "llvm/MC/MCInst.h"
 
 #include "QBDI/Callback.h"
-#include "Patch/PatchUtils.h"
-#include "Patch/ARM/PatchGenerator_ARM.h"
 #include "Patch/ARM/Layer2_ARM.h"
+#include "Patch/ARM/PatchGenerator_ARM.h"
+#include "Patch/PatchUtils.h"
 
 namespace QBDI {
 

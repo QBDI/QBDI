@@ -25,22 +25,21 @@
 class Process {
 
 public:
+  virtual ~Process() = default;
 
-    virtual ~Process() = default;
+  virtual pid_t getPID() = 0;
 
-    virtual pid_t getPID() = 0;
+  virtual void setBreakpoint(void *address) = 0;
 
-    virtual void setBreakpoint(void* address) = 0;
+  virtual void unsetBreakpoint() = 0;
 
-    virtual void unsetBreakpoint() = 0;
+  virtual void continueExecution() = 0;
 
-    virtual void continueExecution() = 0;
+  virtual int waitForStatus() = 0;
 
-    virtual int waitForStatus() = 0;
+  virtual void getProcessGPR(QBDI::GPRState *gprState) = 0;
 
-    virtual void getProcessGPR(QBDI::GPRState *gprState) = 0;
-    
-    virtual void getProcessFPR(QBDI::FPRState *fprState) = 0;
+  virtual void getProcessFPR(QBDI::FPRState *fprState) = 0;
 };
 
 bool hasExited(int status);

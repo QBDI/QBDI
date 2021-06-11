@@ -24,58 +24,55 @@
 
 #include "Utility/System.h"
 
-
 namespace QBDI {
 
 const std::vector<std::string> getHostCPUFeatures() {
-    std::vector<std::string> mattrs = {};
-    llvm::StringMap<bool> features;
+  std::vector<std::string> mattrs = {};
+  llvm::StringMap<bool> features;
 
-    bool ret = llvm::sys::getHostCPUFeatures(features);
-    if (ret) {
-        for (const auto& feat: features) {
-            // XXX: #19 Bad AVX support detection in VM environments
-            #if defined(_QBDI_FORCE_DISABLE_AVX)
-            const char* disable_avx = "1";
-            #else
-            const char* disable_avx = getenv("QBDI_FORCE_DISABLE_AVX");
-            #endif
-            // fix buggy dynamic detection
-            if(disable_avx != NULL &&
-                    feat.first().equals(llvm::StringRef("avx"))) {
-                continue;
-            }
-            if(feat.second) {
-                mattrs.push_back(feat.first());
-            }
-        }
+  bool ret = llvm::sys::getHostCPUFeatures(features);
+  if (ret) {
+    for (const auto &feat : features) {
+// XXX: #19 Bad AVX support detection in VM environments
+#if defined(_QBDI_FORCE_DISABLE_AVX)
+      const char *disable_avx = "1";
+#else
+      const char *disable_avx = getenv("QBDI_FORCE_DISABLE_AVX");
+#endif
+      // fix buggy dynamic detection
+      if (disable_avx != NULL && feat.first().equals(llvm::StringRef("avx"))) {
+        continue;
+      }
+      if (feat.second) {
+        mattrs.push_back(feat.first());
+      }
     }
+  }
 
-    if constexpr(is_arm)
-        // set default ARM CPU
-        if(features.size() == 0) {
-            features.insert({"fp16", true});
-            features.insert({"d16", true});
-        }
-    // Fixing awfull LLVM API
-    if(features.count("fp16") && features["fp16"]) {
-        mattrs.emplace_back("vfp2");
+  if constexpr (is_arm)
+    // set default ARM CPU
+    if (features.size() == 0) {
+      features.insert({"fp16", true});
+      features.insert({"d16", true});
     }
-    if(features.count("d16") && features["d16"]) {
-        mattrs.emplace_back("vfp3");
-    }
-    return mattrs;
+  // Fixing awfull LLVM API
+  if (features.count("fp16") && features["fp16"]) {
+    mattrs.emplace_back("vfp2");
+  }
+  if (features.count("d16") && features["d16"]) {
+    mattrs.emplace_back("vfp3");
+  }
+  return mattrs;
 }
 
-
-bool isHostCPUFeaturePresent(const char* query) {
-   std::vector<std::string> features = getHostCPUFeatures();
-   for(const std::string& feature: features) {
-        if(feature == query) {
-            return true;
-        }
-   }
-   return false;
+bool isHostCPUFeaturePresent(const char *query) {
+  std::vector<std::string> features = getHostCPUFeatures();
+  for (const std::string &feature : features) {
+    if (feature == query) {
+      return true;
+    }
+  }
+  return false;
 }
 
-}
+} // namespace QBDI

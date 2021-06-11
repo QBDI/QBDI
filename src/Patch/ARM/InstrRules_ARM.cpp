@@ -19,25 +19,26 @@
 
 namespace QBDI {
 
-/* Genreate a series of RelocatableInst which when appended to an instrumentation code trigger a 
- * break to host. It receive in argument a temporary reg which will be used for computations then 
- * finally restored.
-*/
+/* Genreate a series of RelocatableInst which when appended to an
+ * instrumentation code trigger a break to host. It receive in argument a
+ * temporary reg which will be used for computations then finally restored.
+ */
 RelocatableInst::SharedPtrVec getBreakToHost(Reg temp) {
-    RelocatableInst::SharedPtrVec breakToHost;
+  RelocatableInst::SharedPtrVec breakToHost;
 
-    // Use the temporary register to compute PC + 16 which is the address which will follow this 
-    // patch and where the execution needs to be resumed
-    breakToHost.push_back(HostPCRel(ldri12(temp, Reg(REG_PC), 0), 2, 16));
-    // Set the selector to this address so the execution can be resumed when the exec block will be 
-    // reexecuted
-    append(breakToHost, SaveReg(temp, Offset(offsetof(Context, hostState.selector))));
-    // Restore the temporary register
-    append(breakToHost, LoadReg(temp, Offset(temp)));
-    // Jump to the epilogue to break to the host
-    append(breakToHost, JmpEpilogue());
+  // Use the temporary register to compute PC + 16 which is the address which
+  // will follow this patch and where the execution needs to be resumed
+  breakToHost.push_back(HostPCRel(ldri12(temp, Reg(REG_PC), 0), 2, 16));
+  // Set the selector to this address so the execution can be resumed when the
+  // exec block will be reexecuted
+  append(breakToHost,
+         SaveReg(temp, Offset(offsetof(Context, hostState.selector))));
+  // Restore the temporary register
+  append(breakToHost, LoadReg(temp, Offset(temp)));
+  // Jump to the epilogue to break to the host
+  append(breakToHost, JmpEpilogue());
 
-    return breakToHost;
+  return breakToHost;
 }
 
-}
+} // namespace QBDI

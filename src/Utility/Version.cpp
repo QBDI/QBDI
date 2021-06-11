@@ -20,11 +20,11 @@
 
 namespace QBDI {
 
-const char* qbdi_getVersion(uint32_t* version) {
-    if (version != nullptr) {
-        *version = QBDI_VERSION;
-    }
-    return QBDI_VERSION_FULL_STRING;
+const char *qbdi_getVersion(uint32_t *version) {
+  if (version != nullptr) {
+    *version = QBDI_VERSION;
+  }
+  return QBDI_VERSION_FULL_STRING;
 }
 
-};
+}; // namespace QBDI

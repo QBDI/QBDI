@@ -17,15 +17,17 @@
  */
 
 #include "Patch/ExecBlockFlags.h"
-#include "Patch/Types.h"
 #include "Patch/InstInfo.h"
+#include "Patch/Types.h"
 
 namespace QBDI {
 
 const uint8_t defaultExecuteFlags = 0;
 
-uint8_t getExecBlockFlags(const llvm::MCInst& inst, const llvm::MCInstrInfo* MCII, const llvm::MCRegisterInfo* MRI) {
-    return 0;
+uint8_t getExecBlockFlags(const llvm::MCInst &inst,
+                          const llvm::MCInstrInfo *MCII,
+                          const llvm::MCRegisterInfo *MRI) {
+  return 0;
 }
 
-}
+} // namespace QBDI

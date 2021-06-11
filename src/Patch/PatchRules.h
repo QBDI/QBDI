@@ -29,15 +29,16 @@ namespace QBDI {
 class PatchRule;
 class RelocatableInst;
 
-std::vector<std::unique_ptr<RelocatableInst>> getExecBlockPrologue(Options opts);
+std::vector<std::unique_ptr<RelocatableInst>>
+getExecBlockPrologue(Options opts);
 
-std::vector<std::unique_ptr<RelocatableInst>> getExecBlockEpilogue(Options opts);
+std::vector<std::unique_ptr<RelocatableInst>>
+getExecBlockEpilogue(Options opts);
 
 std::vector<std::unique_ptr<RelocatableInst>> getTerminator(rword address);
 
 std::vector<PatchRule> getDefaultPatchRules();
 
-}
+} // namespace QBDI
 
 #endif
-

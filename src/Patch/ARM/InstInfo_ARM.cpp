@@ -21,36 +21,40 @@
 namespace QBDI {
 
 void initMemAccessInfo() {
-    // TODO
-    LogWarning("initMemAccessInfo", "This architecture does not support memory access information");
+  // TODO
+  LogWarning("initMemAccessInfo",
+             "This architecture does not support memory access information");
 }
 
-unsigned getReadSize(const llvm::MCInst* inst) {
-    LogWarning("getReadSize", "This architecture does not support memory access information");
-    return 0;
+unsigned getReadSize(const llvm::MCInst *inst) {
+  LogWarning("getReadSize",
+             "This architecture does not support memory access information");
+  return 0;
 }
 
-unsigned getWriteSize(const llvm::MCInst* inst) {
-    LogWarning("getWriteSize", "This architecture does not support memory access information");
-    return 0;
+unsigned getWriteSize(const llvm::MCInst *inst) {
+  LogWarning("getWriteSize",
+             "This architecture does not support memory access information");
+  return 0;
 }
 
-bool isStackRead(const llvm::MCInst* inst) {
-    LogWarning("isStackRead", "This architecture does not support memory access information");
-    return false;
+bool isStackRead(const llvm::MCInst *inst) {
+  LogWarning("isStackRead",
+             "This architecture does not support memory access information");
+  return false;
 }
 
-bool isStackWrite(const llvm::MCInst* inst) {
-    LogWarning("isStackWrite", "This architecture does not support memory access information");
-    return false;
+bool isStackWrite(const llvm::MCInst *inst) {
+  LogWarning("isStackWrite",
+             "This architecture does not support memory access information");
+  return false;
 }
 
-unsigned getImmediateSize(const llvm::MCInst* inst, const llvm::MCInstrDesc* desc) {
-    return sizeof(rword);
+unsigned getImmediateSize(const llvm::MCInst *inst,
+                          const llvm::MCInstrDesc *desc) {
+  return sizeof(rword);
 }
 
-bool useAllRegisters(const llvm::MCInst* inst) {
-    return false;
-}
+bool useAllRegisters(const llvm::MCInst *inst) { return false; }
 
-};
+}; // namespace QBDI
