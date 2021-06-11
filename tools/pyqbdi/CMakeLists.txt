@@ -46,7 +46,7 @@ if(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
     URL "https://github.com/pybind/pybind11/archive/v2.6.1.zip"
     URL_HASH
       SHA256=e3f9408fca4e8ebf2d22229d5256adb49098073832aad87f3f6078d91a6942b2
-    DOWNLOAD_DIR "${CMAKE_SOURCE_DIR}/third-party/pybind11-download")
+    DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/pybind11-download")
   FetchContent_GetProperties(pybind11)
   if(NOT pybind11_POPULATED)
     FetchContent_Populate(pybind11)

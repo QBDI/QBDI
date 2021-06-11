@@ -192,10 +192,10 @@ else()
   endif()
 endif()
 
-# Add llvm
+# Dependencies
+# ============
+set(QBDI_THIRD_PARTY_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/third-party/")
 include(QBDI_llvm)
-
-# DEBUG log (spdlog option)
 include(spdlog)
 
 # Setup assembly compile

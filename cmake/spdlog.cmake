@@ -14,7 +14,7 @@ FetchContent_Declare(
   URL "https://github.com/gabime/spdlog/archive/refs/tags/v${SPDLOG_VERSION}.zip"
   URL_HASH
     SHA256=6e66c8ed4c014b0fb00c74d34eea95b5d34f6e4b51b746b1ea863dc3c2e854fd
-  DOWNLOAD_DIR "${CMAKE_SOURCE_DIR}/third-party/spdlog-project-download")
+  DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/spdlog-project-download")
 
 FetchContent_GetProperties(spdlog-project)
 if(NOT spdlog-project_POPULATED)
