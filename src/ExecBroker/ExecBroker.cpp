@@ -21,14 +21,15 @@
 
 namespace QBDI {
 
-ExecBroker::ExecBroker(const Assembly &assembly, VMInstanceRef vminstance)
-    : transferBlock(assembly, vminstance) {
+ExecBroker::ExecBroker(std::unique_ptr<ExecBlock> _transferBlock,
+                       VMInstanceRef vminstance)
+    : transferBlock(std::move(_transferBlock)) {
   pageSize = llvm::expectedToOptional(llvm::sys::Process::getPageSize())
                  .getValueOr(4096);
 }
 
 void ExecBroker::changeVMInstanceRef(VMInstanceRef vminstance) {
-  transferBlock.changeVMInstanceRef(vminstance);
+  transferBlock->changeVMInstanceRef(vminstance);
 }
 
 void ExecBroker::addInstrumentedRange(const Range<rword> &r) {
@@ -122,31 +123,31 @@ bool ExecBroker::transferExecution(rword addr, GPRState *gprState,
 
   // Backup / Patch return address
   hookedAddress = *ptr;
-  hook = transferBlock.getCurrentPC() + transferBlock.getEpilogueOffset();
+  hook = transferBlock->getCurrentPC() + transferBlock->getEpilogueOffset();
   *ptr = hook;
   QBDI_DEBUG("Patched 0x{:x} hooking return address 0x{:x} with 0x{:x}",
              reinterpret_cast<uintptr_t>(ptr), hookedAddress, *ptr);
 
   // Write transfer state
-  transferBlock.getContext()->gprState = *gprState;
-  transferBlock.getContext()->fprState = *fprState;
-  transferBlock.getContext()->hostState.selector = addr;
-  transferBlock.getContext()->hostState.executeFlags = defaultExecuteFlags;
+  transferBlock->getContext()->gprState = *gprState;
+  transferBlock->getContext()->fprState = *fprState;
+  transferBlock->getContext()->hostState.selector = addr;
+  transferBlock->getContext()->hostState.executeFlags = defaultExecuteFlags;
   // Execute transfer
   QBDI_DEBUG("Transfering execution to 0x{:x} using transferBlock 0x{:x}", addr,
              reinterpret_cast<uintptr_t>(&transferBlock));
-  transferBlock.run();
+  transferBlock->run();
   // Restore original return
-  QBDI_GPR_SET(&transferBlock.getContext()->gprState, REG_PC, hookedAddress);
+  QBDI_GPR_SET(&transferBlock->getContext()->gprState, REG_PC, hookedAddress);
 #if defined(QBDI_ARCH_ARM)
   // Under ARM, also reset the LR register
-  if (QBDI_GPR_GET(&transferBlock.getContext()->gprState, REG_LR) == hook) {
-    QBDI_GPR_SET(&transferBlock.getContext()->gprState, REG_LR, hookedAddress);
+  if (QBDI_GPR_GET(&transferBlock->getContext()->gprState, REG_LR) == hook) {
+    QBDI_GPR_SET(&transferBlock->getContext()->gprState, REG_LR, hookedAddress);
   }
 #endif
   // Read transfer result
-  *gprState = transferBlock.getContext()->gprState;
-  *fprState = transferBlock.getContext()->fprState;
+  *gprState = transferBlock->getContext()->gprState;
+  *fprState = transferBlock->getContext()->fprState;
 
   return true;
 }

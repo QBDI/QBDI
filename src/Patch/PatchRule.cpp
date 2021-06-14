@@ -31,24 +31,22 @@ PatchRule::~PatchRule() = default;
 PatchRule::PatchRule(PatchRule &&) = default;
 
 Patch PatchRule::generate(const llvm::MCInst &inst, rword address,
-                          rword instSize, const llvm::MCInstrInfo *MCII,
-                          const llvm::MCRegisterInfo *MRI,
+                          rword instSize, const LLVMCPU &llvmcpu,
                           Patch *toMerge) const {
 
   Patch patch(inst, address, instSize);
-  patch.metadata.execblockFlags = getExecBlockFlags(inst, MCII, MRI);
+  patch.metadata.execblockFlags = getExecBlockFlags(inst, llvmcpu);
   if (toMerge != nullptr) {
     patch.metadata.address = toMerge->metadata.address;
     patch.metadata.instSize += toMerge->metadata.instSize;
     patch.metadata.execblockFlags |= toMerge->metadata.execblockFlags;
   }
-  TempManager temp_manager(inst, MCII, MRI);
+  TempManager temp_manager(inst, llvmcpu);
   bool modifyPC = false;
   bool merge = false;
 
   for (const auto &g : generators) {
-    patch.append(
-        g->generate(&inst, address, instSize, MCII, &temp_manager, toMerge));
+    patch.append(g->generate(&inst, address, instSize, &temp_manager, toMerge));
     modifyPC |= g->modifyPC();
     merge |= g->doNotInstrument();
   }

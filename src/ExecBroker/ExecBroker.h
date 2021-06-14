@@ -28,13 +28,13 @@
 #include "ExecBlock/ExecBlock.h"
 
 namespace QBDI {
-class Assembly;
+class LLVMCPU;
 
 class ExecBroker {
 
 private:
   RangeSet<rword> instrumented;
-  ExecBlock transferBlock;
+  std::unique_ptr<ExecBlock> transferBlock;
   rword pageSize;
 
   using PF = llvm::sys::Memory::ProtectionFlags;
@@ -43,7 +43,8 @@ private:
   rword *getReturnPoint(GPRState *gprState) const;
 
 public:
-  ExecBroker(const Assembly &assembly, VMInstanceRef vminstance = nullptr);
+  ExecBroker(std::unique_ptr<ExecBlock> transferBlock,
+             VMInstanceRef vminstance = nullptr);
 
   void changeVMInstanceRef(VMInstanceRef vminstance);
 

@@ -52,14 +52,14 @@ Reg TempManager::getRegForTemp(unsigned int id) {
     i = _QBDI_FIRST_FREE_REGISTER;
   }
 
-  const llvm::MCInstrDesc &desc = MCII->get(inst.getOpcode());
+  const llvm::MCInstrDesc &desc = MCII.get(inst.getOpcode());
   // Find a free register
   for (; i < AVAILABLE_GPR; i++) {
     bool free = true;
     // Check for explicit registers
     for (unsigned int j = 0; j < inst.getNumOperands(); j++) {
       const llvm::MCOperand &op = inst.getOperand(j);
-      if (op.isReg() && MRI->isSubRegisterEq(GPR_ID[i], op.getReg())) {
+      if (op.isReg() && MRI.isSubRegisterEq(GPR_ID[i], op.getReg())) {
         free = false;
         break;
       }
@@ -68,7 +68,7 @@ Reg TempManager::getRegForTemp(unsigned int id) {
     if (free) {
       const uint16_t *implicitRegs = desc.getImplicitUses();
       for (; implicitRegs && *implicitRegs; ++implicitRegs) {
-        if (MRI->isSubRegisterEq(GPR_ID[i], *implicitRegs)) {
+        if (MRI.isSubRegisterEq(GPR_ID[i], *implicitRegs)) {
           free = false;
           break;
         }
@@ -78,7 +78,7 @@ Reg TempManager::getRegForTemp(unsigned int id) {
     if (free) {
       const uint16_t *implicitRegs = desc.getImplicitDefs();
       for (; implicitRegs && *implicitRegs; ++implicitRegs) {
-        if (MRI->isSubRegisterEq(GPR_ID[i], *implicitRegs)) {
+        if (MRI.isSubRegisterEq(GPR_ID[i], *implicitRegs)) {
           free = false;
           break;
         }
@@ -121,14 +121,14 @@ unsigned TempManager::getSizedSubReg(unsigned reg, unsigned size) const {
   if (getRegisterSize(reg) == size) {
     return reg;
   }
-  for (unsigned i = 1; i < MRI->getNumSubRegIndices(); i++) {
-    unsigned subreg = MRI->getSubReg(reg, i);
+  for (unsigned i = 1; i < MRI.getNumSubRegIndices(); i++) {
+    unsigned subreg = MRI.getSubReg(reg, i);
     if (subreg != 0 && getRegisterSize(subreg) == size) {
       return subreg;
     }
   }
   QBDI_ERROR("No sub register of size {} found for register {} ({})", size, reg,
-             MRI->getName(reg));
+             MRI.getName(reg));
   abort();
 }
 

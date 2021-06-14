@@ -24,11 +24,10 @@
 #include "Patch/Patch.h"
 #include "Patch/PatchRule.h"
 #include "Patch/PatchRules.h"
-#include "Utility/Assembly.h"
 
 TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest-EmptyBasicBlock") {
   // Allocate ExecBlock
-  QBDI::ExecBlock execBlock(*assembly);
+  QBDI::ExecBlock execBlock(*this);
   // Write an empty basic block
   QBDI::Patch::Vec empty;
   QBDI::SeqWriteResult res =
@@ -38,7 +37,7 @@ TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest-EmptyBasicBlock") {
 
 TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest-MultipleBasicBlock") {
   // Allocate ExecBlock
-  QBDI::ExecBlock execBlock(*assembly);
+  QBDI::ExecBlock execBlock(*this);
   // Jit two different terminators
   QBDI::Patch::Vec terminator1;
   QBDI::Patch::Vec terminator2;
@@ -74,7 +73,7 @@ TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest-MultipleBasicBlock") {
 
 TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest-BasicBlockOverload") {
   // Allocate ExecBlock
-  QBDI::ExecBlock execBlock(*assembly);
+  QBDI::ExecBlock execBlock(*this);
   QBDI::Patch::Vec empty;
   QBDI::SeqWriteResult res;
   uint32_t i = 0;

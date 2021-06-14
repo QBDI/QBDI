@@ -39,7 +39,7 @@ class MCInst;
 
 namespace QBDI {
 
-class Assembly;
+class LLVMCPU;
 class RelocatableInst;
 class Patch;
 
@@ -86,7 +86,7 @@ private:
   llvm::sys::MemoryBlock codeBlock;
   llvm::sys::MemoryBlock dataBlock;
   std::unique_ptr<memory_ostream> codeStream;
-  const Assembly &assembly;
+  const LLVMCPU &llvmcpu;
   Context *context;
   rword *shadows;
   std::vector<ShadowInfo> shadowRegistry;
@@ -122,7 +122,7 @@ private:
 public:
   /*! Construct a new ExecBlock
    *
-   * @param[in] assembly           Assembly used to assemble instructions in the
+   * @param[in] llvmcpu            LLVMCPU used to assemble instructions in the
    *                               ExecBlock.
    * @param[in] vminstance         Pointer to public engine interface
    * @param[in] execBlockPrologue  cached prologue of ExecManager
@@ -130,7 +130,7 @@ public:
    * @param[in] epilogueSize       size in bytes of the epilogue (0 is not know)
    */
   ExecBlock(
-      const Assembly &assembly, VMInstanceRef vminstance = nullptr,
+      const LLVMCPU &llvmcpu, VMInstanceRef vminstance = nullptr,
       const std::vector<std::unique_ptr<RelocatableInst>> *execBlockPrologue =
           nullptr,
       const std::vector<std::unique_ptr<RelocatableInst>> *execBlockEpilogue =
@@ -140,6 +140,7 @@ public:
   ~ExecBlock();
 
   ExecBlock(const ExecBlock &) = delete;
+  ExecBlock &operator=(const ExecBlock &) = delete;
 
   /*! Change vminstance when VM object is moved
    */

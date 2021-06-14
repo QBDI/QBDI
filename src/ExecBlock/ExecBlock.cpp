@@ -19,6 +19,7 @@
 #include "llvm/MC/MCInst.h"
 #include "llvm/Support/Format.h"
 
+#include "Engine/LLVMCPU.h"
 #include "ExecBlock/ExecBlock.h"
 #include "Patch/ExecBlockFlags.h"
 #include "Patch/Patch.h"
@@ -26,7 +27,6 @@
 #include "Patch/PatchRule.h"
 #include "Patch/PatchRules_Target.h"
 #include "Patch/RelocatableInst.h"
-#include "Utility/Assembly.h"
 #include "Utility/InstAnalysis_prive.h"
 #include "Utility/LogSys.h"
 #include "Utility/System.h"
@@ -45,11 +45,11 @@ extern void qbdi_runCodeBlock(void *codeBlock,
 namespace QBDI {
 
 ExecBlock::ExecBlock(
-    const Assembly &assembly, VMInstanceRef vminstance,
+    const LLVMCPU &llvmcpu, VMInstanceRef vminstance,
     const std::vector<std::unique_ptr<RelocatableInst>> *execBlockPrologue,
     const std::vector<std::unique_ptr<RelocatableInst>> *execBlockEpilogue,
     uint32_t epilogueSize_)
-    : vminstance(vminstance), assembly(assembly), epilogueSize(epilogueSize_) {
+    : vminstance(vminstance), llvmcpu(llvmcpu), epilogueSize(epilogueSize_) {
 
   // Allocate memory blocks
   std::error_code ec;
@@ -91,17 +91,17 @@ ExecBlock::ExecBlock(
   std::vector<std::unique_ptr<RelocatableInst>> execBlockEpilogue_;
 
   if (execBlockPrologue == nullptr) {
-    execBlockPrologue_ = getExecBlockPrologue(assembly.getOptions());
+    execBlockPrologue_ = getExecBlockPrologue(llvmcpu.getOptions());
     execBlockPrologue = &execBlockPrologue_;
   }
   if (execBlockEpilogue == nullptr) {
-    execBlockEpilogue_ = getExecBlockEpilogue(assembly.getOptions());
+    execBlockEpilogue_ = getExecBlockEpilogue(llvmcpu.getOptions());
     execBlockEpilogue = &execBlockEpilogue_;
   }
   if (epilogueSize == 0) {
     // Only way to know the epilogue size is to JIT is somewhere
     for (const auto &inst : *execBlockEpilogue) {
-      assembly.writeInstruction(inst->reloc(this), codeStream.get());
+      llvmcpu.writeInstruction(inst->reloc(this), codeStream.get());
     }
     epilogueSize = codeStream->current_pos();
     codeStream->seek(0);
@@ -110,7 +110,7 @@ ExecBlock::ExecBlock(
   // JIT prologue and epilogue
   codeStream->seek(codeBlock.allocatedSize() - epilogueSize);
   for (const auto &inst : *execBlockEpilogue) {
-    assembly.writeInstruction(inst->reloc(this), codeStream.get());
+    llvmcpu.writeInstruction(inst->reloc(this), codeStream.get());
   }
   QBDI_REQUIRE_ACTION(codeStream->current_pos() == codeBlock.allocatedSize() &&
                           "Wrong Epilogue Size",
@@ -118,7 +118,7 @@ ExecBlock::ExecBlock(
 
   codeStream->seek(0);
   for (const auto &inst : *execBlockPrologue) {
-    assembly.writeInstruction(inst->reloc(this), codeStream.get());
+    llvmcpu.writeInstruction(inst->reloc(this), codeStream.get());
   }
 }
 
@@ -146,18 +146,18 @@ void ExecBlock::show() const {
     llvm::MCInst inst;
     std::string disass;
 
-    dstatus = assembly.getInstruction(inst, instSize, jitCode.slice(i), i);
+    dstatus = llvmcpu.getInstruction(inst, instSize, jitCode.slice(i), i);
     QBDI_REQUIRE_ACTION(dstatus != llvm::MCDisassembler::Fail, break);
 
-    disass = assembly.showInst(
-        inst, reinterpret_cast<uint64_t>(codeBlock.base()) + i);
+    disass = llvmcpu.showInst(inst,
+                              reinterpret_cast<uint64_t>(codeBlock.base()) + i);
     fprintf(stderr, "%s\n", disass.c_str());
   }
 
   fprintf(stderr, "---- CONTEXT ----\n");
   for (i = 0; i < NUM_GPR; i++) {
     fprintf(stderr, "%s=0x%016" PRIRWORD " ",
-            assembly.getRegisterName(GPR_ID[i]),
+            llvmcpu.getRegisterName(GPR_ID[i]),
             QBDI_GPR_GET(&context->gprState, i));
     if (i % 4 == 0)
       fprintf(stderr, "\n");
@@ -276,7 +276,7 @@ ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt,
 
     QBDI_DEBUG_BLOCK({
       std::string disass =
-          assembly.showInst(seqIt->metadata.inst, seqIt->metadata.address);
+          llvmcpu.showInst(seqIt->metadata.inst, seqIt->metadata.address);
       QBDI_DEBUG(
           "Attempting to write patch of {} RelocatableInst to ExecBlock 0x{:x} "
           "for instruction {:x}: {}",
@@ -287,7 +287,7 @@ ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt,
     // patch written
     for (const RelocatableInst::UniquePtr &inst : seqIt->insts) {
       if (getEpilogueOffset() > MINIMAL_BLOCK_SIZE) {
-        assembly.writeInstruction(inst->reloc(this), codeStream.get());
+        llvmcpu.writeInstruction(inst->reloc(this), codeStream.get());
       } else {
         // Not enough space left, rollback
         rollback = true;
@@ -339,18 +339,18 @@ ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt,
     RelocatableInst::UniquePtrVec terminator =
         getTerminator(instMetadata.back().endAddress());
     for (const RelocatableInst::UniquePtr &inst : terminator) {
-      assembly.writeInstruction(inst->reloc(this), codeStream.get());
+      llvmcpu.writeInstruction(inst->reloc(this), codeStream.get());
     }
   }
   // JIT the jump to epilogue
   RelocatableInst::UniquePtrVec jmpEpilogue = JmpEpilogue();
   for (const RelocatableInst::UniquePtr &inst : jmpEpilogue) {
-    assembly.writeInstruction(inst->reloc(this), codeStream.get());
+    llvmcpu.writeInstruction(inst->reloc(this), codeStream.get());
   }
   // change the flag of the basicblock
-  if (assembly.getOptions() & Options::OPT_DISABLE_FPR) {
+  if (llvmcpu.getOptions() & Options::OPT_DISABLE_FPR) {
     executeFlags = 0;
-  } else if (assembly.getOptions() & Options::OPT_DISABLE_OPTIONAL_FPR) {
+  } else if (llvmcpu.getOptions() & Options::OPT_DISABLE_OPTIONAL_FPR) {
     executeFlags = defaultExecuteFlags;
   }
   // Register sequence
@@ -465,7 +465,7 @@ const llvm::MCInst &ExecBlock::getOriginalMCInst(uint16_t instID) const {
 const InstAnalysis *ExecBlock::getInstAnalysis(uint16_t instID,
                                                AnalysisType type) const {
   QBDI_REQUIRE(instID < instMetadata.size());
-  return analyzeInstMetadata(instMetadata[instID], type, assembly);
+  return analyzeInstMetadata(instMetadata[instID], type, llvmcpu);
 }
 
 uint16_t ExecBlock::getSeqID(rword address) const {

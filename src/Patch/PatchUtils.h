@@ -24,6 +24,7 @@
 #include <utility>
 #include <vector>
 
+#include "Engine/LLVMCPU.h"
 #include "Patch/Types.h"
 
 namespace llvm {
@@ -116,15 +117,16 @@ class TempManager {
 
   std::vector<std::pair<unsigned int, unsigned int>> temps;
   const llvm::MCInst &inst;
-  const llvm::MCInstrInfo *MCII;
-  const llvm::MCRegisterInfo *MRI;
   bool allowInstRegister;
 
 public:
-  TempManager(const llvm::MCInst &inst, const llvm::MCInstrInfo *MCII,
-              const llvm::MCRegisterInfo *MRI, bool allowInstRegister = false)
-      : inst(inst), MCII(MCII), MRI(MRI),
-        allowInstRegister(allowInstRegister){};
+  const llvm::MCInstrInfo &MCII;
+  const llvm::MCRegisterInfo &MRI;
+
+  TempManager(const llvm::MCInst &inst, const LLVMCPU &llvmcpu,
+              bool allowInstRegister = false)
+      : inst(inst), allowInstRegister(allowInstRegister),
+        MCII(llvmcpu.getMCII()), MRI(llvmcpu.getMRI()) {}
 
   Reg getRegForTemp(unsigned int id);
 

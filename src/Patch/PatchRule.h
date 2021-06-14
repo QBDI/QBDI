@@ -26,11 +26,10 @@
 
 namespace llvm {
 class MCInst;
-class MCInstrInfo;
-class MCRegisterInfo;
 } // namespace llvm
 
 namespace QBDI {
+class LLVMCPU;
 class PatchGenerator;
 
 /*! A patch rule written in PatchDSL.
@@ -60,13 +59,13 @@ public:
    * @param[in] inst      The current instruction.
    * @param[in] address   The current instruction address.
    * @param[in] instSize  The current instruction size.
-   * @param[in] MCII      An LLVM MC instruction info context.
+   * @param[in] llvmcpu   LLVMCPU object
    *
    * @return True if this patch condition evaluate to true on this context.
    */
   bool canBeApplied(const llvm::MCInst &inst, rword address, rword instSize,
-                    const llvm::MCInstrInfo *MCII) const {
-    return condition->test(inst, address, instSize, MCII);
+                    const LLVMCPU &llvmcpu) const {
+    return condition->test(inst, address, instSize, llvmcpu);
   }
 
   /*! Generate this rule output patch by evaluating its generators on the
@@ -76,10 +75,7 @@ public:
    * @param[in] inst      The current instruction.
    * @param[in] address   The current instruction address.
    * @param[in] instSize  The current instruction size.
-   * @param[in] MCII      A LLVM::MCInstrInfo classes used for internal
-   *                      architecture specific queries.
-   * @param[in] MRI       A LLVM::MCRegisterInfo classes used for internal
-   *                      architecture specific queries.
+   * @param[in] llvmcpu   LLVMCPU object
    * @param[in] toMerge   An eventual previous patch which is to be merged
    *                      with the current instruction. The patch is empty
    *                      after the merge.
@@ -88,8 +84,7 @@ public:
    * RelocatableInst.
    */
   Patch generate(const llvm::MCInst &inst, rword address, rword instSize,
-                 const llvm::MCInstrInfo *MCII, const llvm::MCRegisterInfo *MRI,
-                 Patch *toMerge = nullptr) const;
+                 const LLVMCPU &llvmcpu, Patch *toMerge = nullptr) const;
 };
 
 } // namespace QBDI

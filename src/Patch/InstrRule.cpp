@@ -25,8 +25,7 @@
 
 namespace QBDI {
 
-void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo *MCII,
-                           const llvm::MCRegisterInfo *MRI,
+void InstrRule::instrument(Patch &patch, const LLVMCPU &llvmcpu,
                            const PatchGenerator::UniquePtrVec &patchGen,
                            bool breakToHost, InstPosition position) const {
 
@@ -39,13 +38,12 @@ void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo *MCII,
    * each case, can trigger a break to host.
    */
   RelocatableInst::UniquePtrVec instru;
-  TempManager tempManager(patch.metadata.inst, MCII, MRI, true);
+  TempManager tempManager(patch.metadata.inst, llvmcpu, true);
 
   // Generate the instrumentation code from the original instruction context
   for (const PatchGenerator::UniquePtr &g : patchGen) {
-    append(instru,
-           g->generate(&patch.metadata.inst, patch.metadata.address,
-                       patch.metadata.instSize, MCII, &tempManager, nullptr));
+    append(instru, g->generate(&patch.metadata.inst, patch.metadata.address,
+                               patch.metadata.instSize, &tempManager, nullptr));
   }
 
   // In case we break to the host, we need to ensure the value of PC in the
@@ -60,8 +58,7 @@ void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo *MCII,
           append(instru,
                  GetConstant(Temp(0), Constant(patch.metadata.address))
                      .generate(&patch.metadata.inst, patch.metadata.address,
-                               patch.metadata.instSize, MCII, &tempManager,
-                               nullptr));
+                               patch.metadata.instSize, &tempManager, nullptr));
           break;
         // In POSTINST PC is set to the next instruction address
         case InstPosition::POSTINST:
@@ -69,8 +66,7 @@ void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo *MCII,
                  GetConstant(Temp(0), Constant(patch.metadata.address +
                                                patch.metadata.instSize))
                      .generate(&patch.metadata.inst, patch.metadata.address,
-                               patch.metadata.instSize, MCII, &tempManager,
-                               nullptr));
+                               patch.metadata.instSize, &tempManager, nullptr));
           break;
       }
       append(instru,
@@ -119,20 +115,18 @@ void InstrRule::instrument(Patch &patch, const llvm::MCInstrInfo *MCII,
 }
 
 bool InstrRuleBasic::canBeApplied(const Patch &patch,
-                                  const llvm::MCInstrInfo *MCII) const {
+                                  const LLVMCPU &llvmcpu) const {
   return condition->test(patch.metadata.inst, patch.metadata.address,
-                         patch.metadata.instSize, MCII);
+                         patch.metadata.instSize, llvmcpu);
 }
 
 bool InstrRuleDynamic::canBeApplied(const Patch &patch,
-                                    const llvm::MCInstrInfo *MCII) const {
+                                    const LLVMCPU &llvmcpu) const {
   return condition->test(patch.metadata.inst, patch.metadata.address,
-                         patch.metadata.instSize, MCII);
+                         patch.metadata.instSize, llvmcpu);
 }
 
-bool InstrRuleUser::tryInstrument(Patch &patch, const llvm::MCInstrInfo *MCII,
-                                  const llvm::MCRegisterInfo *MRI,
-                                  const Assembly *assembly) const {
+bool InstrRuleUser::tryInstrument(Patch &patch, const LLVMCPU &llvmcpu) const {
   if (!range.contains(
           Range<rword>(patch.metadata.address,
                        patch.metadata.address + patch.metadata.instSize))) {
@@ -143,7 +137,7 @@ bool InstrRuleUser::tryInstrument(Patch &patch, const llvm::MCInstrInfo *MCII,
              reinterpret_cast<void *>(cbk), analysisType);
 
   const InstAnalysis *ana =
-      analyzeInstMetadata(patch.metadata, analysisType, *assembly);
+      analyzeInstMetadata(patch.metadata, analysisType, llvmcpu);
 
   std::vector<InstrRuleDataCBK> vec = cbk(vm, ana, cbk_data);
 
@@ -154,7 +148,7 @@ bool InstrRuleUser::tryInstrument(Patch &patch, const llvm::MCInstrInfo *MCII,
   }
 
   for (const InstrRuleDataCBK &cbkToAdd : vec) {
-    instrument(patch, MCII, MRI,
+    instrument(patch, llvmcpu,
                getCallbackGenerator(cbkToAdd.cbk, cbkToAdd.data), true,
                cbkToAdd.position);
   }

@@ -26,24 +26,24 @@
 namespace QBDI {
 
 bool MnemonicIs::test(const llvm::MCInst &inst, rword address, rword instSize,
-                      const llvm::MCInstrInfo *MCII) const {
-  return QBDI::String::startsWith(mnemonic.c_str(),
-                                  MCII->getName(inst.getOpcode()).data());
+                      const LLVMCPU &llvmcpu) const {
+  return QBDI::String::startsWith(
+      mnemonic.c_str(), llvmcpu.getMCII().getName(inst.getOpcode()).data());
 }
 
 bool OpIs::test(const llvm::MCInst &inst, rword address, rword instSize,
-                const llvm::MCInstrInfo *MCII) const {
+                const LLVMCPU &llvmcpu) const {
   return inst.getOpcode() == op;
 }
 
 bool RegIs::test(const llvm::MCInst &inst, rword address, rword instSize,
-                 const llvm::MCInstrInfo *MCII) const {
+                 const LLVMCPU &llvmcpu) const {
   return inst.getOperand(opn).isReg() &&
          inst.getOperand(opn).getReg() == (unsigned int)reg;
 }
 
 bool UseReg::test(const llvm::MCInst &inst, rword address, rword instSize,
-                  const llvm::MCInstrInfo *MCII) const {
+                  const LLVMCPU &llvmcpu) const {
   for (unsigned int i = 0; i < inst.getNumOperands(); i++) {
     const llvm::MCOperand &op = inst.getOperand(i);
     if (op.isReg() && op.getReg() == (unsigned int)reg) {
@@ -54,45 +54,42 @@ bool UseReg::test(const llvm::MCInst &inst, rword address, rword instSize,
 }
 
 bool OperandIsReg::test(const llvm::MCInst &inst, rword address, rword instSize,
-                        const llvm::MCInstrInfo *MCII) const {
+                        const LLVMCPU &llvmcpu) const {
   return inst.getOperand(opn).isReg();
 }
 
 bool OperandIsImm::test(const llvm::MCInst &inst, rword address, rword instSize,
-                        const llvm::MCInstrInfo *MCII) const {
+                        const LLVMCPU &llvmcpu) const {
   return inst.getOperand(opn).isImm();
 }
 
 bool DoesReadAccess::test(const llvm::MCInst &inst, rword address,
-                          rword instSize, const llvm::MCInstrInfo *MCII) const {
+                          rword instSize, const LLVMCPU &llvmcpu) const {
   return getReadSize(inst) > 0;
 }
 
 bool DoesWriteAccess::test(const llvm::MCInst &inst, rword address,
-                           rword instSize,
-                           const llvm::MCInstrInfo *MCII) const {
+                           rword instSize, const LLVMCPU &llvmcpu) const {
   return getWriteSize(inst) > 0;
 }
 
 bool ReadAccessSizeIs::test(const llvm::MCInst &inst, rword address,
-                            rword instSize,
-                            const llvm::MCInstrInfo *MCII) const {
+                            rword instSize, const LLVMCPU &llvmcpu) const {
   return getReadSize(inst) == (rword)size;
 }
 
 bool WriteAccessSizeIs::test(const llvm::MCInst &inst, rword address,
-                             rword instSize,
-                             const llvm::MCInstrInfo *MCII) const {
+                             rword instSize, const LLVMCPU &llvmcpu) const {
   return getWriteSize(inst) == (rword)size;
 }
 
 bool IsStackRead::test(const llvm::MCInst &inst, rword address, rword instSize,
-                       const llvm::MCInstrInfo *MCII) const {
+                       const LLVMCPU &llvmcpu) const {
   return isStackRead(inst);
 }
 
 bool IsStackWrite::test(const llvm::MCInst &inst, rword address, rword instSize,
-                        const llvm::MCInstrInfo *MCII) const {
+                        const LLVMCPU &llvmcpu) const {
   return isStackWrite(inst);
 }
 

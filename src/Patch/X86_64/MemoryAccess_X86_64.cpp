@@ -219,8 +219,7 @@ void analyseMemoryAccess(const ExecBlock &curExecBlock, uint16_t instID,
 }
 
 static const PatchGenerator::UniquePtrVec &
-generatePreReadInstrumentPatch(Patch &patch, const llvm::MCInstrInfo *MCII,
-                               const llvm::MCRegisterInfo *MRI) {
+generatePreReadInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
 
   // REP prefix
   if (hasREPPrefix(patch.metadata.inst)) {
@@ -277,8 +276,7 @@ generatePreReadInstrumentPatch(Patch &patch, const llvm::MCInstrInfo *MCII,
 }
 
 static const PatchGenerator::UniquePtrVec &
-generatePostReadInstrumentPatch(Patch &patch, const llvm::MCInstrInfo *MCII,
-                                const llvm::MCRegisterInfo *MRI) {
+generatePostReadInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
 
   // REP prefix
   if (hasREPPrefix(patch.metadata.inst)) {
@@ -302,10 +300,10 @@ generatePostReadInstrumentPatch(Patch &patch, const llvm::MCInstrInfo *MCII,
 }
 
 static const PatchGenerator::UniquePtrVec &
-generatePreWriteInstrumentPatch(Patch &patch, const llvm::MCInstrInfo *MCII,
-                                const llvm::MCRegisterInfo *MRI) {
+generatePreWriteInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
 
-  const llvm::MCInstrDesc &desc = MCII->get(patch.metadata.inst.getOpcode());
+  const llvm::MCInstrDesc &desc =
+      llvmcpu.getMCII().get(patch.metadata.inst.getOpcode());
 
   if (hasREPPrefix(patch.metadata.inst)) {
     static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
@@ -327,10 +325,10 @@ generatePreWriteInstrumentPatch(Patch &patch, const llvm::MCInstrInfo *MCII,
 }
 
 static const PatchGenerator::UniquePtrVec &
-generatePostWriteInstrumentPatch(Patch &patch, const llvm::MCInstrInfo *MCII,
-                                 const llvm::MCRegisterInfo *MRI) {
+generatePostWriteInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
 
-  const llvm::MCInstrDesc &desc = MCII->get(patch.metadata.inst.getOpcode());
+  const llvm::MCInstrDesc &desc =
+      llvmcpu.getMCII().get(patch.metadata.inst.getOpcode());
 
   if (hasREPPrefix(patch.metadata.inst)) {
     static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(

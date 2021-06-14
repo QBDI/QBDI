@@ -22,11 +22,11 @@
 #include "llvm/MC/MCInstrInfo.h"
 #include "llvm/MC/MCRegisterInfo.h"
 
+#include "Engine/LLVMCPU.h"
 #include "ExecBlock/Context.h"
 #include "Patch/InstInfo.h"
 #include "Patch/InstMetadata.h"
 #include "Patch/RegisterSize.h"
-#include "Utility/Assembly.h"
 #include "Utility/InstAnalysis_prive.h"
 #include "Utility/LogSys.h"
 
@@ -342,7 +342,7 @@ void InstAnalysisDestructor::operator()(InstAnalysis *ptr) const {
 
 const InstAnalysis *analyzeInstMetadata(const InstMetadata &instMetadata,
                                         AnalysisType type,
-                                        const Assembly &assembly) {
+                                        const LLVMCPU &llvmcpu) {
 
   InstAnalysis *instAnalysis = instMetadata.analysis.get();
   if (instAnalysis == nullptr) {
@@ -362,12 +362,12 @@ const InstAnalysis *analyzeInstMetadata(const InstMetadata &instMetadata,
 
   instAnalysis->analysisType = newType;
 
-  const llvm::MCInstrInfo &MCII = assembly.getMCII();
+  const llvm::MCInstrInfo &MCII = llvmcpu.getMCII();
   const llvm::MCInst &inst = instMetadata.inst;
   const llvm::MCInstrDesc &desc = MCII.get(inst.getOpcode());
 
   if (missingType & ANALYSIS_DISASSEMBLY) {
-    std::string buffer = assembly.showInst(inst, instMetadata.address);
+    std::string buffer = llvmcpu.showInst(inst, instMetadata.address);
     int len = buffer.size() + 1;
     instAnalysis->disassembly = new char[len];
     strncpy(instAnalysis->disassembly, buffer.c_str(), len);
@@ -397,7 +397,7 @@ const InstAnalysis *analyzeInstMetadata(const InstMetadata &instMetadata,
 
   if (missingType & ANALYSIS_OPERANDS) {
     // analyse operands (immediates / registers)
-    analyseOperands(instAnalysis, inst, desc, assembly.getMRI());
+    analyseOperands(instAnalysis, inst, desc, llvmcpu.getMRI());
   }
 
   if (missingType & ANALYSIS_SYMBOL) {

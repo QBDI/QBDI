@@ -18,6 +18,7 @@
 
 #include "X86InstrInfo.h"
 
+#include "Engine/LLVMCPU.h"
 #include "Patch/ExecBlockFlags.h"
 #include "Patch/InstInfo.h"
 #include "Patch/Types.h"
@@ -59,11 +60,10 @@ const uint8_t defaultExecuteFlags =
     ExecBlockFlags::needAVX | ExecBlockFlags::needFPU;
 
 uint8_t getExecBlockFlags(const llvm::MCInst &inst,
-                          const llvm::MCInstrInfo *MCII,
-                          const llvm::MCRegisterInfo *MRI) {
+                          const QBDI::LLVMCPU &llvmcpu) {
   static constexpr ExecBlockFlagsArray cache;
 
-  const llvm::MCInstrDesc &desc = MCII->get(inst.getOpcode());
+  const llvm::MCInstrDesc &desc = llvmcpu.getMCII().get(inst.getOpcode());
   uint8_t flags = 0;
 
   // register flag

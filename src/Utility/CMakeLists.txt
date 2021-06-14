@@ -1,6 +1,5 @@
 # Add QBDI target
 set(SOURCES
-    "${CMAKE_CURRENT_LIST_DIR}/Assembly.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/InstAnalysis.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/LogSys.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/Memory.cpp"

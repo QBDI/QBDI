@@ -30,8 +30,7 @@ namespace QBDI {
 
 RelocatableInst::UniquePtrVec
 GetOperand::generate(const llvm::MCInst *inst, rword address, rword instSize,
-                     const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-                     Patch *toMerge) const {
+                     TempManager *temp_manager, Patch *toMerge) const {
   if (inst->getOperand(op).isReg()) {
     return conv_unique<RelocatableInst>(NoReloc::unique(movrr(
         temp_manager->getRegForTemp(temp), inst->getOperand(op).getReg())));
@@ -47,8 +46,7 @@ GetOperand::generate(const llvm::MCInst *inst, rword address, rword instSize,
 
 RelocatableInst::UniquePtrVec
 GetConstant::generate(const llvm::MCInst *inst, rword address, rword instSize,
-                      const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-                      Patch *toMerge) const {
+                      TempManager *temp_manager, Patch *toMerge) const {
 
   return conv_unique<RelocatableInst>(
       Mov(temp_manager->getRegForTemp(temp), cst));
@@ -56,8 +54,7 @@ GetConstant::generate(const llvm::MCInst *inst, rword address, rword instSize,
 
 RelocatableInst::UniquePtrVec
 GetPCOffset::generate(const llvm::MCInst *inst, rword address, rword instSize,
-                      const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-                      Patch *toMerge) const {
+                      TempManager *temp_manager, Patch *toMerge) const {
   if (type == ConstantType) {
     return conv_unique<RelocatableInst>(Mov(
         temp_manager->getRegForTemp(temp), Constant(address + instSize + cst)));
@@ -72,12 +69,12 @@ GetPCOffset::generate(const llvm::MCInst *inst, rword address, rword instSize,
 
 RelocatableInst::UniquePtrVec
 GetReadAddress::generate(const llvm::MCInst *inst, rword address,
-                         rword instSize, const llvm::MCInstrInfo *MCII,
-                         TempManager *temp_manager, Patch *toMerge) const {
+                         rword instSize, TempManager *temp_manager,
+                         Patch *toMerge) const {
   // Check if this instruction does indeed read something
   unsigned size = getReadSize(*inst);
   if (size > 0) {
-    const llvm::MCInstrDesc &desc = MCII->get(inst->getOpcode());
+    const llvm::MCInstrDesc &desc = temp_manager->MCII.get(inst->getOpcode());
     uint64_t TSFlags = desc.TSFlags;
     unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
     int memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
@@ -166,12 +163,12 @@ GetReadAddress::generate(const llvm::MCInst *inst, rword address,
 
 RelocatableInst::UniquePtrVec
 GetWriteAddress::generate(const llvm::MCInst *inst, rword address,
-                          rword instSize, const llvm::MCInstrInfo *MCII,
-                          TempManager *temp_manager, Patch *toMerge) const {
+                          rword instSize, TempManager *temp_manager,
+                          Patch *toMerge) const {
   // Check if this instruction does indeed read something
   unsigned size = getWriteSize(*inst);
   if (size > 0) {
-    const llvm::MCInstrDesc &desc = MCII->get(inst->getOpcode());
+    const llvm::MCInstrDesc &desc = temp_manager->MCII.get(inst->getOpcode());
     uint64_t TSFlags = desc.TSFlags;
     unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
     int memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
@@ -256,11 +253,10 @@ GetWriteAddress::generate(const llvm::MCInst *inst, rword address,
 
 RelocatableInst::UniquePtrVec
 GetReadValue::generate(const llvm::MCInst *inst, rword address, rword instSize,
-                       const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-                       Patch *toMerge) const {
+                       TempManager *temp_manager, Patch *toMerge) const {
   const unsigned size = getReadSize(*inst);
   if (size > 0) {
-    const llvm::MCInstrDesc &desc = MCII->get(inst->getOpcode());
+    const llvm::MCInstrDesc &desc = temp_manager->MCII.get(inst->getOpcode());
     uint64_t TSFlags = desc.TSFlags;
     unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
     int memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
@@ -399,11 +395,10 @@ GetReadValue::generate(const llvm::MCInst *inst, rword address, rword instSize,
 
 RelocatableInst::UniquePtrVec
 GetWriteValue::generate(const llvm::MCInst *inst, rword address, rword instSize,
-                        const llvm::MCInstrInfo *MCII,
                         TempManager *temp_manager, Patch *toMerge) const {
   const unsigned size = getWriteSize(*inst);
   if (size > 0) {
-    const llvm::MCInstrDesc &desc = MCII->get(inst->getOpcode());
+    const llvm::MCInstrDesc &desc = temp_manager->MCII.get(inst->getOpcode());
     uint64_t TSFlags = desc.TSFlags;
     unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
     int memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
@@ -505,7 +500,6 @@ GetWriteValue::generate(const llvm::MCInst *inst, rword address, rword instSize,
 
 RelocatableInst::UniquePtrVec GetInstId::generate(const llvm::MCInst *inst,
                                                   rword address, rword instSize,
-                                                  const llvm::MCInstrInfo *MCII,
                                                   TempManager *temp_manager,
                                                   Patch *toMerge) const {
 
@@ -515,7 +509,6 @@ RelocatableInst::UniquePtrVec GetInstId::generate(const llvm::MCInst *inst,
 
 RelocatableInst::UniquePtrVec ReadTemp::generate(const llvm::MCInst *inst,
                                                  rword address, rword instSize,
-                                                 const llvm::MCInstrInfo *MCII,
                                                  TempManager *temp_manager,
                                                  Patch *toMerge) const {
 
@@ -531,7 +524,6 @@ RelocatableInst::UniquePtrVec ReadTemp::generate(const llvm::MCInst *inst,
 
 RelocatableInst::UniquePtrVec WriteTemp::generate(const llvm::MCInst *inst,
                                                   rword address, rword instSize,
-                                                  const llvm::MCInstrInfo *MCII,
                                                   TempManager *temp_manager,
                                                   Patch *toMerge) const {
 
@@ -547,7 +539,6 @@ RelocatableInst::UniquePtrVec WriteTemp::generate(const llvm::MCInst *inst,
 
 RelocatableInst::UniquePtrVec SaveReg::generate(const llvm::MCInst *inst,
                                                 rword address, rword instSize,
-                                                const llvm::MCInstrInfo *MCII,
                                                 TempManager *temp_manager,
                                                 Patch *toMerge) const {
 
@@ -556,7 +547,6 @@ RelocatableInst::UniquePtrVec SaveReg::generate(const llvm::MCInst *inst,
 
 RelocatableInst::UniquePtrVec LoadReg::generate(const llvm::MCInst *inst,
                                                 rword address, rword instSize,
-                                                const llvm::MCInstrInfo *MCII,
                                                 TempManager *temp_manager,
                                                 Patch *toMerge) const {
 
@@ -565,24 +555,20 @@ RelocatableInst::UniquePtrVec LoadReg::generate(const llvm::MCInst *inst,
 
 RelocatableInst::UniquePtrVec
 JmpEpilogue::generate(const llvm::MCInst *inst, rword address, rword instSize,
-                      const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-                      Patch *toMerge) const {
+                      TempManager *temp_manager, Patch *toMerge) const {
 
   return conv_unique<RelocatableInst>(EpilogueRel::unique(jmp(0), 0, -1));
 }
 
 RelocatableInst::UniquePtrVec
 SimulateCall::generate(const llvm::MCInst *inst, rword address, rword instSize,
-                       const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-                       Patch *toMerge) const {
+                       TempManager *temp_manager, Patch *toMerge) const {
   RelocatableInst::UniquePtrVec patch;
 
-  append(patch,
-         WriteTemp(temp, Offset(Reg(REG_PC)))
-             .generate(inst, address, instSize, MCII, temp_manager, nullptr));
-  append(patch,
-         GetPCOffset(temp, Constant(0))
-             .generate(inst, address, instSize, MCII, temp_manager, nullptr));
+  append(patch, WriteTemp(temp, Offset(Reg(REG_PC)))
+                    .generate(inst, address, instSize, temp_manager, nullptr));
+  append(patch, GetPCOffset(temp, Constant(0))
+                    .generate(inst, address, instSize, temp_manager, nullptr));
   patch.push_back(Pushr(temp_manager->getRegForTemp(temp)));
 
   return patch;
@@ -590,17 +576,15 @@ SimulateCall::generate(const llvm::MCInst *inst, rword address, rword instSize,
 
 RelocatableInst::UniquePtrVec
 SimulateRet::generate(const llvm::MCInst *inst, rword address, rword instSize,
-                      const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-                      Patch *toMerge) const {
+                      TempManager *temp_manager, Patch *toMerge) const {
   RelocatableInst::UniquePtrVec patch;
 
   patch.push_back(Popr(temp_manager->getRegForTemp(temp)));
   if (inst->getNumOperands() == 1 && inst->getOperand(0).isImm()) {
     patch.push_back(Add(Reg(REG_SP), Constant(inst->getOperand(0).getImm())));
   }
-  append(patch,
-         WriteTemp(temp, Offset(Reg(REG_PC)))
-             .generate(inst, address, instSize, MCII, temp_manager, nullptr));
+  append(patch, WriteTemp(temp, Offset(Reg(REG_PC)))
+                    .generate(inst, address, instSize, temp_manager, nullptr));
 
   return patch;
 }

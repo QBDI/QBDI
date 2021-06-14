@@ -30,8 +30,8 @@ class MCRegisterInfo;
 
 namespace QBDI {
 
-class Assembly;
 class InstMetadata;
+class LLVMCPU;
 
 struct InstAnalysisDestructor {
   void operator()(InstAnalysis *ptr) const;
@@ -41,7 +41,7 @@ using InstAnalysisPtr = std::unique_ptr<InstAnalysis, InstAnalysisDestructor>;
 
 const InstAnalysis *analyzeInstMetadata(const InstMetadata &instMetadata,
                                         AnalysisType type,
-                                        const Assembly &assembly);
+                                        const LLVMCPU &llvmcpu);
 
 // X86 specific
 void analyseCondition(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
