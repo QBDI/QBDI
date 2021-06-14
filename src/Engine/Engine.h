@@ -24,29 +24,15 @@
 #include <utility>
 #include <vector>
 
-#if !defined(__APPLE__)
-#include <malloc.h>
-#endif
-
 #include "QBDI/Callback.h"
 #include "QBDI/InstAnalysis.h"
 #include "QBDI/Options.h"
 #include "QBDI/Range.h"
 #include "QBDI/State.h"
 
-namespace llvm {
-class MCAsmInfo;
-class MCCodeEmitter;
-class MCContext;
-class MCInstrInfo;
-class MCObjectFileInfo;
-class MCRegisterInfo;
-class MCSubtargetInfo;
-} // namespace llvm
-
 namespace QBDI {
 
-class Assembly;
+class LLVMCPU;
 class ExecBlock;
 class ExecBlockManager;
 class ExecBroker;
@@ -64,21 +50,11 @@ struct CallbackRegistration {
 
 class Engine {
 private:
-  std::unique_ptr<llvm::MCAsmInfo> MAI;
-  std::unique_ptr<llvm::MCCodeEmitter> MCE;
-  std::unique_ptr<llvm::MCContext> MCTX;
-  std::unique_ptr<llvm::MCInstrInfo> MCII;
-  std::unique_ptr<llvm::MCObjectFileInfo> MOFI;
-  std::unique_ptr<llvm::MCRegisterInfo> MRI;
-  std::unique_ptr<llvm::MCSubtargetInfo> MSTI;
-  std::string tripleName;
-  std::string cpu;
-  std::vector<std::string> mattrs;
   VMInstanceRef vminstance;
 
-  std::unique_ptr<Assembly> assembly;
+  std::unique_ptr<LLVMCPU> llvmcpu;
   std::unique_ptr<ExecBlockManager> blockManager;
-  std::unique_ptr<ExecBroker> execBroker;
+  ExecBroker *execBroker;
   std::vector<PatchRule> patchRules;
   std::vector<std::pair<uint32_t, std::unique_ptr<InstrRule>>> instrRules;
   uint32_t instrRulesCounter;
@@ -92,10 +68,6 @@ private:
   Options options;
   VMEvent eventMask;
   bool running;
-
-  void init();
-  void reinit(const std::string &cpu, const std::vector<std::string> &mattrs,
-              Options opts);
 
   std::vector<Patch> patch(rword start);
 

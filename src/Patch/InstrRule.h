@@ -27,14 +27,9 @@
 
 #include "QBDI/Callback.h"
 
-namespace llvm {
-class MCInstrInfo;
-class MCRegisterInfo;
-} // namespace llvm
-
 namespace QBDI {
 
-class Assembly;
+class LLVMCPU;
 class Patch;
 class PatchGenerator;
 
@@ -67,27 +62,17 @@ public:
    * needed.
    *
    * @param[in] patch     The current patch to instrument.
-   * @param[in] MCII      A LLVM::MCInstrInfo classes used for internal
-   *                      architecture specific queries.
-   * @param[in] MRI       A LLVM::MCRegisterInfo classes used for internal
-   *                      architecture specific queries.
-   * @param[in] assemby   Assembly object to generate InstAnalysis
+   * @param[in] llvmcpu   LLVMCPU object
    */
-  virtual bool tryInstrument(Patch &patch, const llvm::MCInstrInfo *MCII,
-                             const llvm::MCRegisterInfo *MRI,
-                             const Assembly *assembly) const = 0;
+  virtual bool tryInstrument(Patch &patch, const LLVMCPU &llvmcpu) const = 0;
 
   /*! Instrument a patch by evaluating its generators on the current context.
    * Also handles the temporary register management for this patch.
    *
-   * @param[in] patch  The current patch to instrument.
-   * @param[in] MCII   A LLVM::MCInstrInfo classes used for internal
-   *                   architecture specific queries.
-   * @param[in] MRI    A LLVM::MCRegisterInfo classes used for internal
-   *                   architecture specific queries.
+   * @param[in] patch     The current patch to instrument.
+   * @param[in] llvmcpu   LLVMCPU object
    */
-  void instrument(Patch &patch, const llvm::MCInstrInfo *MCII,
-                  const llvm::MCRegisterInfo *MRI,
+  void instrument(Patch &patch, const LLVMCPU &llvmcpu,
                   const PatchGenerator::UniquePtrVec &patchGen,
                   bool breakToHost, InstPosition position) const;
 };
@@ -138,19 +123,18 @@ public:
   /*! Determine wheter this rule applies by evaluating this rule condition on
    * the current context.
    *
-   * @param[in] patch  A patch containing the current context.
-   * @param[in] MCII   An LLVM MC instruction info context.
+   * @param[in] patch     A patch containing the current context.
+   * @param[in] llvmcpu   LLVMCPU object
    *
    * @return True if this instrumentation condition evaluate to true on this
    * patch.
    */
-  bool canBeApplied(const Patch &patch, const llvm::MCInstrInfo *MCII) const;
+  bool canBeApplied(const Patch &patch, const LLVMCPU &llvmcpu) const;
 
-  inline bool tryInstrument(Patch &patch, const llvm::MCInstrInfo *MCII,
-                            const llvm::MCRegisterInfo *MRI,
-                            const Assembly *assembly) const override {
-    if (canBeApplied(patch, MCII)) {
-      instrument(patch, MCII, MRI, patchGen, breakToHost, position);
+  inline bool tryInstrument(Patch &patch,
+                            const LLVMCPU &llvmcpu) const override {
+    if (canBeApplied(patch, llvmcpu)) {
+      instrument(patch, llvmcpu, patchGen, breakToHost, position);
       return true;
     }
     return false;
@@ -158,8 +142,7 @@ public:
 };
 
 typedef const std::vector<std::unique_ptr<PatchGenerator>> &(*PatchGenMethod)(
-    Patch &patch, const llvm::MCInstrInfo *MCII,
-    const llvm::MCRegisterInfo *MRI);
+    Patch &patch, const LLVMCPU &llvmcpu);
 
 class InstrRuleDynamic : public AutoUnique<InstrRule, InstrRuleDynamic> {
 
@@ -207,20 +190,19 @@ public:
   /*! Determine wheter this rule applies by evaluating this rule condition on
    * the current context.
    *
-   * @param[in] patch  A patch containing the current context.
-   * @param[in] MCII   An LLVM MC instruction info context.
+   * @param[in] patch     A patch containing the current context.
+   * @param[in] llvmcpu   LLVMCPU object
    *
    * @return True if this instrumentation condition evaluate to true on this
    * patch.
    */
-  bool canBeApplied(const Patch &patch, const llvm::MCInstrInfo *MCII) const;
+  bool canBeApplied(const Patch &patch, const LLVMCPU &llvmcpu) const;
 
-  inline bool tryInstrument(Patch &patch, const llvm::MCInstrInfo *MCII,
-                            const llvm::MCRegisterInfo *MRI,
-                            const Assembly *assembly) const override {
-    if (canBeApplied(patch, MCII)) {
-      instrument(patch, MCII, MRI, patchGenMethod(patch, MCII, MRI),
-                 breakToHost, position);
+  inline bool tryInstrument(Patch &patch,
+                            const LLVMCPU &llvmcpu) const override {
+    if (canBeApplied(patch, llvmcpu)) {
+      instrument(patch, llvmcpu, patchGenMethod(patch, llvmcpu), breakToHost,
+                 position);
       return true;
     }
     return false;
@@ -250,9 +232,7 @@ public:
 
   inline RangeSet<rword> affectedRange() const override { return range; }
 
-  bool tryInstrument(Patch &patch, const llvm::MCInstrInfo *MCII,
-                     const llvm::MCRegisterInfo *MRI,
-                     const Assembly *assembly) const override;
+  bool tryInstrument(Patch &patch, const LLVMCPU &llvmcpu) const override;
 };
 
 } // namespace QBDI

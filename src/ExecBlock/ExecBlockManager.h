@@ -33,8 +33,9 @@ class MCRegisterInfo;
 
 namespace QBDI {
 
-class Assembly;
+class LLVMCPU;
 class ExecBlock;
+class ExecBroker;
 class InstMetadata;
 class Patch;
 class RelocatableInst;
@@ -67,13 +68,14 @@ struct ExecRegion {
 
 class ExecBlockManager {
 private:
+  std::unique_ptr<ExecBroker> execBroker;
   std::vector<ExecRegion> regions;
   rword total_translated_size;
   rword total_translation_size;
   bool needFlush;
 
   VMInstanceRef vminstance;
-  const Assembly &assembly;
+  const LLVMCPU &llvmcpu;
 
   // cache ExecBlock prologue and epilogue
   uint32_t epilogueSize;
@@ -91,14 +93,15 @@ private:
   float getExpansionRatio() const;
 
 public:
-  ExecBlockManager(const Assembly &assembly,
-                   VMInstanceRef vminstance = nullptr);
+  ExecBlockManager(const LLVMCPU &llvmcpu, VMInstanceRef vminstance = nullptr);
 
   ~ExecBlockManager();
 
   ExecBlockManager(const ExecBlockManager &) = delete;
 
   void changeVMInstanceRef(VMInstanceRef vminstance);
+
+  inline ExecBroker *getExecBroker() { return execBroker.get(); }
 
   void printCacheStatistics() const;
 

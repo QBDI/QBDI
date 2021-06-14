@@ -22,42 +22,8 @@
 #include <string>
 #include <vector>
 
-#include "Options.h"
+#include "Engine/LLVMCPU.h"
 
-namespace llvm {
-class MCAsmInfo;
-class MCCodeEmitter;
-class MCContext;
-class MCInstrInfo;
-class MCObjectFileInfo;
-class MCRegisterInfo;
-class MCSubtargetInfo;
-class Target;
-} // namespace llvm
-
-namespace QBDI {
-class Assembly;
-}
-
-class LLVMTestEnv {
-protected:
-  std::unique_ptr<llvm::MCAsmInfo> MAI;
-  std::unique_ptr<llvm::MCCodeEmitter> MCE;
-  std::unique_ptr<llvm::MCContext> MCTX;
-  std::unique_ptr<llvm::MCInstrInfo> MCII;
-  std::unique_ptr<llvm::MCObjectFileInfo> MOFI;
-  std::unique_ptr<llvm::MCRegisterInfo> MRI;
-  std::unique_ptr<llvm::MCSubtargetInfo> MSTI;
-  std::unique_ptr<QBDI::Assembly> assembly;
-  const llvm::Target *processTarget;
-  std::string tripleName;
-  std::string cpu;
-  std::vector<std::string> mattrs;
-
-public:
-  LLVMTestEnv(std::string cpu = "", std::vector<std::string> mattrs = {},
-              QBDI::Options opts = QBDI::Options::NO_OPT);
-  ~LLVMTestEnv();
-};
+class LLVMTestEnv : public QBDI::LLVMCPU {};
 
 #endif

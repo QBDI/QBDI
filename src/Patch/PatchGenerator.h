@@ -35,7 +35,7 @@ class PureEval {
 public:
   operator std::vector<std::unique_ptr<RelocatableInst>>() const {
     return (static_cast<const T *>(this))
-        ->generate(nullptr, 0, 0, nullptr, nullptr, nullptr);
+        ->generate(nullptr, 0, 0, nullptr, nullptr);
   }
 };
 
@@ -60,8 +60,7 @@ public:
 
   virtual std::vector<std::unique_ptr<RelocatableInst>>
   generate(const llvm::MCInst *inst, rword address, rword instSize,
-           const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-           Patch *toMerge) const = 0;
+           TempManager *temp_manager, Patch *toMerge) const = 0;
 
   virtual ~PatchGenerator() = default;
 
@@ -94,8 +93,7 @@ public:
    */
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const llvm::MCInst *inst, rword address, rword instSize,
-           const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-           Patch *toMerge) const override;
+           TempManager *temp_manager, Patch *toMerge) const override;
 };
 
 class DoNotInstrument : public AutoClone<PatchGenerator, DoNotInstrument> {
@@ -112,8 +110,7 @@ public:
    */
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const llvm::MCInst *inst, rword address, rword instSize,
-           const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-           Patch *toMerge) const override;
+           TempManager *temp_manager, Patch *toMerge) const override;
 
   inline bool doNotInstrument() const override { return true; }
 };
@@ -138,8 +135,7 @@ public:
    */
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const llvm::MCInst *inst, rword address, rword instSize,
-           const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-           Patch *toMerge) const override;
+           TempManager *temp_manager, Patch *toMerge) const override;
 };
 
 class GetOperand : public AutoClone<PatchGenerator, GetOperand> {
@@ -163,8 +159,7 @@ public:
    */
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const llvm::MCInst *inst, rword address, rword instSize,
-           const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-           Patch *toMerge) const override;
+           TempManager *temp_manager, Patch *toMerge) const override;
 };
 
 class GetConstant : public AutoClone<PatchGenerator, GetConstant> {
@@ -185,8 +180,7 @@ public:
    */
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const llvm::MCInst *inst, rword address, rword instSize,
-           const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-           Patch *toMerge) const override;
+           TempManager *temp_manager, Patch *toMerge) const override;
 };
 
 class ReadTemp : public AutoClone<PatchGenerator, ReadTemp> {
@@ -225,8 +219,7 @@ public:
    */
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const llvm::MCInst *inst, rword address, rword instSize,
-           const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-           Patch *toMerge) const override;
+           TempManager *temp_manager, Patch *toMerge) const override;
 };
 
 class WriteTemp : public AutoClone<PatchGenerator, WriteTemp> {
@@ -267,8 +260,7 @@ public:
    */
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const llvm::MCInst *inst, rword address, rword instSize,
-           const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-           Patch *toMerge) const override;
+           TempManager *temp_manager, Patch *toMerge) const override;
 
   inline bool modifyPC() const override {
     return offset == Offset(Reg(REG_PC));
@@ -297,8 +289,7 @@ public:
    */
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const llvm::MCInst *inst, rword address, rword instSize,
-           const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-           Patch *toMerge) const override;
+           TempManager *temp_manager, Patch *toMerge) const override;
 };
 
 class LoadReg : public AutoClone<PatchGenerator, LoadReg>,
@@ -323,8 +314,7 @@ public:
    */
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const llvm::MCInst *inst, rword address, rword instSize,
-           const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-           Patch *toMerge) const override;
+           TempManager *temp_manager, Patch *toMerge) const override;
 };
 
 class GetInstId : public AutoClone<PatchGenerator, GetInstId> {
@@ -346,8 +336,7 @@ public:
    */
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const llvm::MCInst *inst, rword address, rword instSize,
-           const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-           Patch *toMerge) const override;
+           TempManager *temp_manager, Patch *toMerge) const override;
 };
 
 class JmpEpilogue : public AutoClone<PatchGenerator, JmpEpilogue>,
@@ -364,8 +353,7 @@ public:
    */
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const llvm::MCInst *inst, rword address, rword instSize,
-           const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-           Patch *toMerge) const override;
+           TempManager *temp_manager, Patch *toMerge) const override;
 };
 
 } // namespace QBDI

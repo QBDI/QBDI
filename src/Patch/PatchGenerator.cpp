@@ -27,8 +27,8 @@ namespace QBDI {
 
 RelocatableInst::UniquePtrVec
 ModifyInstruction::generate(const llvm::MCInst *inst, rword address,
-                            rword instSize, const llvm::MCInstrInfo *MCII,
-                            TempManager *temp_manager, Patch *toMerge) const {
+                            rword instSize, TempManager *temp_manager,
+                            Patch *toMerge) const {
 
   llvm::MCInst a(*inst);
   for (const auto &t : transforms) {
@@ -48,8 +48,8 @@ ModifyInstruction::generate(const llvm::MCInst *inst, rword address,
 
 RelocatableInst::UniquePtrVec
 DoNotInstrument::generate(const llvm::MCInst *inst, rword address,
-                          rword instSize, const llvm::MCInstrInfo *MCII,
-                          TempManager *temp_manager, Patch *toMerge) const {
+                          rword instSize, TempManager *temp_manager,
+                          Patch *toMerge) const {
 
   return {};
 }
