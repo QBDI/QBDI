@@ -23,8 +23,8 @@
 #include <string>
 #include "inttypes.h"
 
-#include "Memory.hpp"
-#include "Platform.h"
+#include "QBDI/Memory.hpp"
+#include "QBDI/Platform.h"
 
 TEST_CASE_METHOD(OptionsTest, "OptionsTest_X86-ATTSyntax") {
 

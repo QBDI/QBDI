@@ -19,7 +19,7 @@
 
 #include "TestSetup/InMemoryAssembler.h"
 
-#include "Platform.h"
+#include "QBDI/Platform.h"
 #include "Utility/System.h"
 
 #include "llvm/MC/MCAsmBackend.h"

@@ -24,9 +24,9 @@
 
 #include "TestSetup/InMemoryAssembler.h"
 
-#include "Memory.hpp"
-#include "Platform.h"
-#include "Range.h"
+#include "QBDI/Memory.hpp"
+#include "QBDI/Platform.h"
+#include "QBDI/Range.h"
 
 #define STACK_SIZE 4096
 #define FAKE_RET_ADDR 0x666

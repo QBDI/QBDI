@@ -20,9 +20,9 @@
 
 #include "inttypes.h"
 
-#include "Memory.hpp"
-#include "Platform.h"
-#include "Range.h"
+#include "QBDI/Memory.hpp"
+#include "QBDI/Platform.h"
+#include "QBDI/Range.h"
 
 #include "Utility/System.h"
 

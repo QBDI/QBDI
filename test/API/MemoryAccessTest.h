@@ -21,7 +21,7 @@
 
 #include <memory>
 
-#include "VM.h"
+#include "QBDI/VM.h"
 
 class MemoryAccessTest {
 protected:

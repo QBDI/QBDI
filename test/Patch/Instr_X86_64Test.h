@@ -22,7 +22,7 @@
 #include <string.h>
 #include <string>
 
-#include "Platform.h"
+#include "QBDI/Platform.h"
 
 #if defined(QBDI_ARCH_X86)
 #include "ComparedExecutor_X86.h"
