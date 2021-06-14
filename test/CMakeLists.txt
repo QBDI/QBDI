@@ -29,8 +29,7 @@ if(QBDI_TEST)
 
   target_include_directories(
     QBDITest
-    PRIVATE "${CMAKE_BINARY_DIR}/include" "${CMAKE_BINARY_DIR}/include/QBDI"
-            "${CMAKE_SOURCE_DIR}/include" "${CMAKE_SOURCE_DIR}/include/QBDI"
+    PRIVATE "${CMAKE_BINARY_DIR}/include" "${CMAKE_SOURCE_DIR}/include"
             "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/../src")
 
   target_link_libraries(QBDITest QBDI_static qbdi-llvm Catch2::Catch2)
@@ -53,8 +52,7 @@ if(QBDI_BENCHMARK)
 
   target_include_directories(
     QBDIBenchmark
-    PRIVATE "${CMAKE_BINARY_DIR}/include" "${CMAKE_BINARY_DIR}/include/QBDI"
-            "${CMAKE_SOURCE_DIR}/include" "${CMAKE_SOURCE_DIR}/include/QBDI"
+    PRIVATE "${CMAKE_BINARY_DIR}/include" "${CMAKE_SOURCE_DIR}/include"
             "${CMAKE_CURRENT_SOURCE_DIR}")
 
   target_compile_options(QBDIBenchmark

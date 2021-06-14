@@ -20,7 +20,7 @@
 
 #include <memory>
 
-#include "VM.h"
+#include "QBDI/VM.h"
 
 class VMTest {
 public:

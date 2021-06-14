@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "VM.h"
+#include "QBDI/VM.h"
 #include "ExecBlock/Context.h"
 
 #include "TestSetup/InMemoryAssembler.h"
