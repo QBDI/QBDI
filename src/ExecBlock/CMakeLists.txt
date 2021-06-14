@@ -1,15 +1,13 @@
-# Add QBDI target
-set(SOURCES
-    "${CMAKE_CURRENT_LIST_DIR}/Context.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ExecBlock.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ExecBlockManager.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/${QBDI_PLATFORM}-${QBDI_ARCH}_Stub.${ASM_EXT}")
+include("${CMAKE_CURRENT_LIST_DIR}/context_switch/CMakeLists.txt")
 
-# Assembly stubs
-if(QBDI_PLATFORM_WINDOWS AND QBDI_BITS_32)
-  set_source_files_properties(
-    "${CMAKE_CURRENT_LIST_DIR}/${QBDI_PLATFORM}-${QBDI_ARCH}_Stub.${ASM_EXT}"
-    PROPERTIES COMPILE_FLAGS "/safeseh")
+if(QBDI_ARCH_X86)
+  include("${CMAKE_CURRENT_LIST_DIR}/X86/CMakeLists.txt")
+elseif(QBDI_ARCH_X86_64)
+  include("${CMAKE_CURRENT_LIST_DIR}/X86_64/CMakeLists.txt")
 endif()
+
+# Add QBDI target
+set(SOURCES "${CMAKE_CURRENT_LIST_DIR}/ExecBlock.cpp"
+            "${CMAKE_CURRENT_LIST_DIR}/ExecBlockManager.cpp")
 
 target_sources(QBDI_src INTERFACE "${SOURCES}")
