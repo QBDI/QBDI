@@ -45,7 +45,7 @@ Any user callbacks should be registered to the :class:`VM`, then the VM can be r
         return pyqbdi.CONTINUE
 
     def pyqbdipreload_on_run(vm, start, stop):
-        vm.addCodeCB(pyqbdi.PREINST, showInstruction, None)
+        vm.addCodeCB(pyqbdi.PREINST, instCallback, None)
         vm.run(start, stop)
 
 Exit hook
