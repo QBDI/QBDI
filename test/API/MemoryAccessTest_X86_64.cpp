@@ -1447,6 +1447,10 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-enter-leave") {
 
 TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-fld-fstp") {
 
+  if (!checkFeature("mmx")) {
+    return;
+  }
+
   const char source[] =
       "flds	(%rax)\n"
       "fldl (%rbx)\n"
@@ -1502,6 +1506,10 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-fld-fstp") {
 
 TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-movapd") {
 
+  if (!checkFeature("sse2")) {
+    return;
+  }
+
   const char source[] =
       "movapd	(%rax), %xmm1\n"
       "movapd %xmm2, (%rbx)\n";
@@ -1551,6 +1559,10 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-movapd") {
 }
 
 TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-maskmovdqu") {
+
+  if (!checkFeature("avx")) {
+    return;
+  }
 
   const char source[] = "maskmovdqu	%xmm1, %xmm0\n";
 
@@ -1602,6 +1614,10 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-maskmovdqu") {
 }
 
 TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-maskmovq") {
+
+  if (!checkFeature("avx") || !checkFeature("sse")) {
+    return;
+  }
 
   const char source[] = "maskmovq	%mm1, %mm0\n";
 

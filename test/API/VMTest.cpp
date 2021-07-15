@@ -28,24 +28,27 @@
 #define STACK_SIZE 4096
 #define FAKE_RET_ADDR 0x666
 
-QBDI_NOINLINE int dummyFun0() { return 42; }
+QBDI_DISABLE_ASAN QBDI_NOINLINE int dummyFun0() { return 42; }
 
-QBDI_NOINLINE int dummyFun1(int arg0) { return arg0; }
+QBDI_DISABLE_ASAN QBDI_NOINLINE int dummyFun1(int arg0) { return arg0; }
 
-QBDI_NOINLINE int dummyFun4(int arg0, int arg1, int arg2, int arg3) {
+QBDI_DISABLE_ASAN QBDI_NOINLINE int dummyFun4(int arg0, int arg1, int arg2,
+                                              int arg3) {
   return arg0 + arg1 + arg2 + arg3;
 }
 
-QBDI_NOINLINE int dummyFun5(int arg0, int arg1, int arg2, int arg3, int arg4) {
+QBDI_DISABLE_ASAN QBDI_NOINLINE int dummyFun5(int arg0, int arg1, int arg2,
+                                              int arg3, int arg4) {
   return arg0 + arg1 + arg2 + arg3 + arg4;
 }
 
-QBDI_NOINLINE int dummyFun8(int arg0, int arg1, int arg2, int arg3, int arg4,
-                            int arg5, int arg6, int arg7) {
+QBDI_DISABLE_ASAN QBDI_NOINLINE int dummyFun8(int arg0, int arg1, int arg2,
+                                              int arg3, int arg4, int arg5,
+                                              int arg6, int arg7) {
   return arg0 + arg1 + arg2 + arg3 + arg4 + arg5 + arg6 + arg7;
 }
 
-QBDI_NOINLINE int dummyFunCall(int arg0) {
+QBDI_DISABLE_ASAN QBDI_NOINLINE int dummyFunCall(int arg0) {
   // use simple BUT multiplatform functions to test external calls
   uint8_t *useless = (uint8_t *)QBDI::alignedAlloc(256, 16);
   if (useless) {
@@ -55,8 +58,9 @@ QBDI_NOINLINE int dummyFunCall(int arg0) {
   return dummyFun1(arg0);
 }
 
-QBDI_NOINLINE int dummyFunBB(int arg0, int arg1, int arg2, int (*f0)(int),
-                             int (*f1)(int), int (*f2)(int)) {
+QBDI_DISABLE_ASAN QBDI_NOINLINE int dummyFunBB(int arg0, int arg1, int arg2,
+                                               int (*f0)(int), int (*f1)(int),
+                                               int (*f2)(int)) {
   int r = 0;
   if (arg0 & 1) {
     r = f1(f0(arg1)) + arg2;
@@ -199,7 +203,8 @@ struct TestInst TestInsts[MNEM_COUNT] = {
      }}};
 #endif
 
-QBDI_NOSTACKPROTECTOR QBDI_NOINLINE QBDI::rword satanicFun(QBDI::rword arg0) {
+QBDI_NOSTACKPROTECTOR QBDI_DISABLE_ASAN QBDI_NOINLINE QBDI::rword
+satanicFun(QBDI::rword arg0) {
   QBDI::rword volatile res = arg0 + 0x666;
 #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
   QBDI::rword p = 0x42;
@@ -359,15 +364,8 @@ TEST_CASE_METHOD(VMTest, "VMTest-InstCallback") {
   QBDI::rword info[2] = {42, 0};
   QBDI::simulateCall(state, FAKE_RET_ADDR, {info[0]});
 
-  QBDI::rword rstart = (QBDI::rword)&satanicFun;
-  QBDI::rword rend = (QBDI::rword)(((uint8_t *)&satanicFun) + 100);
-
-  bool success = vm->removeInstrumentedModuleFromAddr((QBDI::rword)&dummyFun0);
-  REQUIRE(success);
-  vm->addInstrumentedRange(rstart, rend);
-
-  uint32_t instrId = vm->addCodeRangeCB(
-      rstart, rend, QBDI::InstPosition::POSTINST, evilCbk, &info);
+  uint32_t instrId =
+      vm->addCodeCB(QBDI::InstPosition::POSTINST, evilCbk, &info);
 
   bool ran = vm->run((QBDI::rword)satanicFun, (QBDI::rword)FAKE_RET_ADDR);
   REQUIRE(ran);
@@ -376,7 +374,7 @@ TEST_CASE_METHOD(VMTest, "VMTest-InstCallback") {
   REQUIRE(ret == (QBDI::rword)satanicFun(info[0]));
   REQUIRE(info[1] == (QBDI::rword)1);
 
-  success = vm->deleteInstrumentation(instrId);
+  bool success = vm->deleteInstrumentation(instrId);
   REQUIRE(success);
 
   SUCCEED();
@@ -481,52 +479,41 @@ QBDI::VMAction checkTransfer(QBDI::VMInstanceRef vm, const QBDI::VMState *state,
                              QBDI::GPRState *gprState, QBDI::FPRState *fprState,
                              void *data) {
   int *s = (int *)data;
-#if defined(QBDI_PLATFORM_LINUX) || defined(QBDI_PLATFORM_ANDROID) || \
-    defined(QBDI_PLATFORM_OSX)
-  QBDI::rword allocAPI = (QBDI::rword)&posix_memalign;
-  QBDI::rword freeAPI = (QBDI::rword)&free;
-#elif defined(QBDI_PLATFORM_WINDOWS)
-  QBDI::rword allocAPI = (QBDI::rword)&_aligned_malloc;
-  QBDI::rword freeAPI = (QBDI::rword)&_aligned_free;
-#endif
   if (state->event == QBDI::VMEvent::EXEC_TRANSFER_CALL) {
-    if (*s == 0 && state->sequenceStart == allocAPI) {
-      *s = 1;
-    } else if (*s == 2 && state->sequenceStart == freeAPI) {
-      *s = 3;
-    } else {
-      INFO("Calling unknown address 0x" << std::hex << state->sequenceStart);
-    }
+    REQUIRE((*s % 2) == 0);
+    REQUIRE(reinterpret_cast<QBDI::rword>(dummyFun1) == state->sequenceStart);
+    *s += 1;
   } else if (state->event == QBDI::VMEvent::EXEC_TRANSFER_RETURN) {
-    if (*s == 1 && state->sequenceStart == allocAPI) {
-      *s = 2;
-    } else if (*s == 3 && state->sequenceStart == freeAPI) {
-      *s = 4;
-    } else {
-      INFO("Returning from unknown address 0x" << std::hex
-                                               << state->sequenceStart);
-    }
+    REQUIRE((*s % 2) == 1);
+    REQUIRE(reinterpret_cast<QBDI::rword>(dummyFun1) == state->sequenceStart);
+    *s += 1;
   }
   return QBDI::VMAction::CONTINUE;
 }
 
 TEST_CASE_METHOD(VMTest, "VMTest-VMEvent_ExecTransfer") {
   int s = 0;
-  QBDI::simulateCall(state, FAKE_RET_ADDR, {42});
-  bool instrumented =
-      vm->addInstrumentedModuleFromAddr((QBDI::rword)&dummyFunCall);
+
+  bool instrumented = vm->addInstrumentedModuleFromAddr(
+      reinterpret_cast<QBDI::rword>(dummyFunBB));
   REQUIRE(instrumented);
+  vm->removeInstrumentedRange(reinterpret_cast<QBDI::rword>(dummyFun1),
+                              reinterpret_cast<QBDI::rword>(dummyFun1) + 1);
+
   uint32_t id = vm->addVMEventCB(QBDI::VMEvent::EXEC_TRANSFER_CALL,
                                  checkTransfer, (void *)&s);
   REQUIRE(id != QBDI::INVALID_EVENTID);
   id = vm->addVMEventCB(QBDI::VMEvent::EXEC_TRANSFER_RETURN, checkTransfer,
                         (void *)&s);
   REQUIRE(id != QBDI::INVALID_EVENTID);
-  bool ran = vm->run((QBDI::rword)dummyFunCall, (QBDI::rword)FAKE_RET_ADDR);
+  QBDI::rword retval;
+  bool ran = vm->call(&retval, reinterpret_cast<QBDI::rword>(dummyFunBB),
+                      {0, 0, 0, reinterpret_cast<QBDI::rword>(dummyFun1),
+                       reinterpret_cast<QBDI::rword>(dummyFun1),
+                       reinterpret_cast<QBDI::rword>(dummyFun1)});
   REQUIRE(ran);
-  QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
-  REQUIRE(ret == (QBDI::rword)42);
-  REQUIRE(4 == s);
+  REQUIRE(retval == (QBDI::rword)0);
+  REQUIRE(10 == s);
   vm->deleteAllInstrumentations();
 }
 
@@ -830,13 +817,14 @@ TEST_CASE("VMTest-MoveConstructor") {
   data.reachInstrumentCB = false;
   data.allowedNewBlock = false;
 
-  vm = vm1.vm.release();
-  REQUIRE(vm1.vm.get() == nullptr);
   REQUIRE(vm == data.expectedRef);
 
   // move vm
   QBDI::VM movedVM(std::move(*vm));
   vm = nullptr;
+
+  vm1.vm.reset();
+  REQUIRE(vm1.vm.get() == nullptr);
 
   REQUIRE(data.expectedRef != &movedVM);
   data.expectedRef = &movedVM;
@@ -963,12 +951,12 @@ TEST_CASE("VMTest-MoveAssignmentOperator") {
   data1.expectedRef = vm2;
   data2.expectedRef = nullptr;
 
-  vm1 = vm1_.vm.release();
-  REQUIRE(vm1_.vm.get() == nullptr);
-
   // move vm
   *vm2 = std::move(*vm1);
   vm1 = nullptr;
+
+  vm1_.vm.reset();
+  REQUIRE(vm1_.vm.get() == nullptr);
 
   vm2->call(&retvalue, (QBDI::rword)dummyFun1, {780});
 
