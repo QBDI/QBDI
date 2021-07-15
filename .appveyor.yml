@@ -1,4 +1,4 @@
-version: 0.7.2.{build}
+version: 0.8.0.{build}
 
 clone_folder: c:\projects\qbdi
 
@@ -14,10 +14,6 @@ environment:
   SCCACHE_CACHE_SIZE: "250M"
   SCCACHE_DIR: C:\Users\appveyor\AppData\Local\Mozilla\sccache
   SCCACHE_ERROR_LOG: C:\projects\sccache.log
-  PYTHON36LIB: "libs\\python36.lib"
-  PYTHON37LIB: "libs\\python37.lib"
-  PYTHON38LIB: "libs\\python38.lib"
-  PYTHON39LIB: "libs\\python39.lib"
   matrix:
     - platform: X64
       qbdi_arch: X86_64
@@ -46,8 +42,7 @@ for:
 
 
 cache:
-  - deps\llvm\%qbdi_plateform%-%qbdi_arch%\lib -> deps\llvm\build.py
-  - deps\llvm\%qbdi_plateform%-%qbdi_arch%\include -> deps\llvm\build.py
+  - third-party
   - '%SCCACHE_DIR%'
 
 install:
@@ -66,39 +61,26 @@ install:
 
 build_script:
   - cmd: cmake .. -G "Ninja" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DQBDI_PLATFORM=%qbdi_plateform% -DQBDI_ARCH=%qbdi_arch% -DQBDI_TOOLS_PYQBDI=Off -DQBDI_EXAMPLES=On
-  - ps: if (-not((Test-Path("../deps/llvm/$env:qbdi_plateform-$env:qbdi_arch/lib")) -and (Test-Path("../deps/llvm/$env:qbdi_plateform-$env:qbdi_arch/include")))) { python ..\deps\llvm\build.py prepare "$env:qbdi_plateform-$env:qbdi_arch" ; python ..\deps\llvm\build.py build "$env:qbdi_plateform-$env:qbdi_arch" OFF; python ..\deps\llvm\build.py package "$env:qbdi_plateform-$env:qbdi_arch" }
-  - cmd: python ..\deps\llvm\build.py clean %qbdi_plateform%-%qbdi_arch%
-  - cmd: cmake .. -G "Ninja" -DCMAKE_CROSSCOMPILING=FALSE -DCMAKE_BUILD_TYPE=%configuration% -DQBDI_PLATFORM=%qbdi_plateform% -DQBDI_ARCH=%qbdi_arch% -DQBDI_TOOLS_PYQBDI=Off -DQBDI_EXAMPLES=On
   - cmd: ninja
-
-after_build:
   - cmd: cpack
   - cmd: cd ..
   # build 3.6
   - "SET PATH=%PYTHON36%;%PYTHON36%\\Scripts;%OLDPATH%"
-  - "SET PYTHON_LIBRARIES=%PYTHON36%\\%PYTHON36LIB%"
-  - "SET PYTHON_INCLUDE_DIRS=%PYTHON36%\\include"
   - ps: if ($env:BUILD_ALL_WHEEL -eq "True") { Invoke-Expression "$env:PYTHON36\python.exe -m pip install --upgrade pip" }
   - ps: if ($env:BUILD_ALL_WHEEL -eq "True") { Invoke-Expression "$env:PYTHON36\python.exe -m pip install setuptools wheel" }
   - ps: if ($env:BUILD_ALL_WHEEL -eq "True") { Invoke-Expression "$env:PYTHON36\python.exe setup.py bdist_wheel" }
   # build 3.7
   - "SET PATH=%PYTHON37%;%PYTHON37%\\Scripts;%OLDPATH%"
-  - "SET PYTHON_LIBRARIES=%PYTHON37%\\%PYTHON37LIB%"
-  - "SET PYTHON_INCLUDE_DIRS=%PYTHON37%\\include"
   - ps: if ($env:BUILD_ALL_WHEEL -eq "True") { Invoke-Expression "$env:PYTHON37\python.exe -m pip install --upgrade pip" }
   - ps: if ($env:BUILD_ALL_WHEEL -eq "True") { Invoke-Expression "$env:PYTHON37\python.exe -m pip install setuptools wheel" }
   - ps: if ($env:BUILD_ALL_WHEEL -eq "True") { Invoke-Expression "$env:PYTHON37\python.exe setup.py bdist_wheel" }
   # build 3.8
   - "SET PATH=%PYTHON38%;%PYTHON38%\\Scripts;%OLDPATH%"
-  - "SET PYTHON_LIBRARIES=%PYTHON38%\\%PYTHON38LIB%"
-  - "SET PYTHON_INCLUDE_DIRS=%PYTHON38%\\include"
   - ps: if ($env:BUILD_ALL_WHEEL -eq "True") { Invoke-Expression "$env:PYTHON38\python.exe -m pip install --upgrade pip" }
   - ps: if ($env:BUILD_ALL_WHEEL -eq "True") { Invoke-Expression "$env:PYTHON38\python.exe -m pip install setuptools wheel" }
   - ps: if ($env:BUILD_ALL_WHEEL -eq "True") { Invoke-Expression "$env:PYTHON38\python.exe setup.py bdist_wheel" }
   # build 3.9
   - "SET PATH=%PYTHON39%;%PYTHON39%\\Scripts;%OLDPATH%"
-  - "SET PYTHON_LIBRARIES=%PYTHON39%\\%PYTHON39LIB%"
-  - "SET PYTHON_INCLUDE_DIRS=%PYTHON39%\\include"
   - ps: Invoke-Expression "$env:PYTHON39\python.exe -m pip install --upgrade pip"
   - ps: Invoke-Expression "$env:PYTHON39\python.exe -m pip install setuptools wheel"
   - ps: Invoke-Expression "$env:PYTHON39\python.exe setup.py bdist_wheel"

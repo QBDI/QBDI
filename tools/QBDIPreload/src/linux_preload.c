@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/ucontext.h>
 #include <sys/wait.h>
 #include <unistd.h>
 

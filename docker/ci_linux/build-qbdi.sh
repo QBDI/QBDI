@@ -6,12 +6,13 @@ cd "${HOME}/qbdi/"
 mkdir -p build
 cd build
 
-cmake -G Ninja \
+cmake .. \
+      -G Ninja \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_CROSSCOMPILING=FALSE \
       -DQBDI_PLATFORM=${QBDI_PLATFORM} \
       -DQBDI_ARCH=${QBDI_ARCH} \
-      -DCMAKE_INSTALL_PREFIX=$PREFIX .. \
+      -DCMAKE_INSTALL_PREFIX=$PREFIX \
       -DQBDI_EXAMPLES=ON \
       -DQBDI_TOOLS_VALIDATOR=ON \
       -DQBDI_TOOLS_PYQBDI=ON

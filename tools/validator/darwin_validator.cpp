@@ -25,8 +25,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "Memory.hpp"
-#include "Platform.h"
+#include "QBDI/Memory.hpp"
+#include "QBDI/Platform.h"
 #include "Utility/LogSys.h"
 
 static const size_t STACK_SIZE = 8388608;

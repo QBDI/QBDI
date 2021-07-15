@@ -45,26 +45,11 @@ class CMakeBuild(build_ext):
     def has_ninja():
         return bool(shutil.which('ninja'))
 
-    def run(self):
-        try:
-            out = subprocess.check_output(['cmake', '--version'])
-        except OSError:
-            raise RuntimeError("CMake must be installed to build the following extensions: " +
-                               ", ".join(e.name for e in self.extensions))
-
-        if platform.system() == "Windows":
-            cmake_version = LooseVersion(re.search(r'version\s*([\d.]+)', out.decode()).group(1))
-            if cmake_version < '3.1.0':
-                raise RuntimeError("CMake >= 3.1.0 is required on Windows")
-
-        for ext in self.extensions:
-            self.build_extension(ext)
-
     def build_extension(self, ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         detected_platform, detected_arch = detect_QBDI_platform()
         cmake_args = ['-DPYQBDI_OUTPUT_DIRECTORY=' + extdir,
-                      '-DPYTHON_EXECUTABLE=' + sys.executable,
+                      '-DPython3_EXECUTABLE=' + sys.executable,
                       '-DCMAKE_BUILD_TYPE=Release',
                       '-DQBDI_PLATFORM=' + detected_platform,
                       '-DQBDI_ARCH=' + detected_arch,
@@ -73,7 +58,7 @@ class CMakeBuild(build_ext):
                       '-DQBDI_BENCHMARK=Off',
                       '-DQBDI_SHARED_LIBRARY=Off',
                      ]
-        build_args = ['--config', 'Release']
+        build_args = ['--config', 'Release', '--']
 
         if platform.system() == "Windows":
             cmake_args += ["-G", "Ninja"]
@@ -82,7 +67,10 @@ class CMakeBuild(build_ext):
             if self.has_ninja():
                 cmake_args += ["-G", "Ninja"]
             else:
-                build_args += ['--', '-j4']
+                build_args.append('-j4')
+
+        if 'QBDI_LLVM_PREFIX' in os.environ:
+            cmake_args.append('-DQBDI_LLVM_PREFIX={}'.format(os.environ.get('QBDI_LLVM_PREFIX')))
 
         env = os.environ.copy()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
