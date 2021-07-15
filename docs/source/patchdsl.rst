@@ -461,11 +461,11 @@ Memory Access Information Queries
 * :cpp:class:`QBDI::GetReadValue`
 * :cpp:class:`QBDI::GetWriteValue`
 
-.. doxygenfunction:: QBDI::GetReadAddress::GetReadAddress(Temp)
+.. doxygenfunction:: QBDI::GetReadAddress::GetReadAddress(Temp, size_t)
 
 .. doxygenfunction:: QBDI::GetWriteAddress::GetWriteAddress(Temp)
 
-.. doxygenfunction:: QBDI::GetReadValue::GetReadValue(Temp)
+.. doxygenfunction:: QBDI::GetReadValue::GetReadValue(Temp, size_t)
 
 .. doxygenfunction:: QBDI::GetWriteValue::GetWriteValue(Temp)
 
@@ -475,7 +475,7 @@ Special
 * :cpp:class:`QBDI::ModifyInstruction`
 * :cpp:class:`QBDI::DoNotInstrument`
 
-.. doxygenfunction:: QBDI::ModifyInstruction::ModifyInstruction(InstTransform::SharedPtrVec)
+.. doxygenfunction:: QBDI::ModifyInstruction::ModifyInstruction(InstTransform::UniquePtrVec &&)
 
 .. doxygenfunction:: QBDI::DoNotInstrument::DoNotInstrument()
 

@@ -138,10 +138,10 @@ MemoryAccess
 InstrRuleCallback
 ^^^^^^^^^^^^^^^^^
 
-.. doxygenfunction:: qbdi_addInstrRule(InstrRuleCallback cbk, AnalysisType type, void* data)
+.. doxygenfunction:: qbdi_addInstrRule
     :project: QBDI_C
 
-.. doxygenfunction:: qbdi_addInstrRuleRange(rword start, rword end, InstrRuleCallback cbk, AnalysisType type, void* data)
+.. doxygenfunction:: qbdi_addInstrRuleRange
     :project: QBDI_C
 
 Removal
