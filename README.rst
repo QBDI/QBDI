@@ -25,7 +25,7 @@ QuarkslaB Dynamic binary Instrumentation (QBDI) is a modular, cross-platform and
 DBI framework. It aims to support Linux, macOS, Android, iOS and Windows operating systems running on
 x86, x86-64, ARM and AArch64 architectures. In addition of C/C++ API, Python and JS/frida bindings are
 available to script QBDI. Information about what is a DBI framework and how QBDI
-works can be found in the user documentation introduction (`User Documentation <https://qbdi.readthedocs.io/en/stable/index.html>`_).
+works can be found in the `documentation introduction <https://qbdi.readthedocs.io/en/stable/intro.html>`_.
 
 QBDI modularity means it doesn't contain a preferred injection method and it is designed to be
 used in conjunction with an external injection tool. QBDI includes a tiny (``LD_PRELOAD`` based)
