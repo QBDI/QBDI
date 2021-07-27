@@ -45,7 +45,8 @@ QBDI_NOINLINE int thedude() {
   std::cin >> name;
   time(&t);
   secret = new char[name.length() + 16 + 2];
-  sprintf(secret, "%" PRIu64 ":%s", (uint64_t)t, name.c_str());
+  snprintf(secret, name.length() + 16 + 2, "%" PRIu64 ":%s", (uint64_t)t,
+           name.c_str());
   std::cout << "Ok I'll give you the hash of " << secret << "." << std::endl;
   hash = magicHash(secret);
   std::cout << "Your hash is " << hash << "." << std::endl;

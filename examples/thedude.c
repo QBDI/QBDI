@@ -54,7 +54,7 @@ QBDI_NOINLINE int thedude() {
   }
   stripLF(name);
   time(&t);
-  sprintf(secret, "%" PRIu64 ":%s", (uint64_t)t, name);
+  snprintf(secret, 2 * BUFFER_SIZE, "%" PRIu64 ":%s", (uint64_t)t, name);
   printf("Ok I'll give you the hash of %s.\n", secret);
   hash = magicHash(secret);
   printf("Your hash is %" PRIx64 ".\n", hash);

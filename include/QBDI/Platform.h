@@ -27,6 +27,7 @@
 #define QBDI_NOSTACKPROTECTOR
 #define _QBDI_FORCE_USE
 #define _QBDI_UNREACHABLE() __assume(0)
+#define QBDI_DISABLE_ASAN __declspec(no_sanitize_address)
 #else
 #define QBDI_ALIGNED(n) __attribute__((aligned(n)))
 #define QBDI_EXPORT __attribute__((visibility("default")))
@@ -34,6 +35,7 @@
 #define QBDI_NOSTACKPROTECTOR __attribute__((no_stack_protector))
 #define _QBDI_FORCE_USE __attribute__((__used__))
 #define _QBDI_UNREACHABLE() __builtin_unreachable()
+#define QBDI_DISABLE_ASAN __attribute__((no_sanitize_address))
 #endif
 
 #if defined(__has_feature)

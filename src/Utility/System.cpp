@@ -32,20 +32,71 @@ const std::vector<std::string> getHostCPUFeatures() {
 
   bool ret = llvm::sys::getHostCPUFeatures(features);
   if (ret) {
-    for (const auto &feat : features) {
-// XXX: #19 Bad AVX support detection in VM environments
 #if defined(_QBDI_FORCE_DISABLE_AVX)
-      const char *disable_avx = "1";
+    const char *disable_avx = "1";
 #else
-      const char *disable_avx = getenv("QBDI_FORCE_DISABLE_AVX");
+    const char *disable_avx = getenv("QBDI_FORCE_DISABLE_AVX");
 #endif
+
+#if defined(_QBDI_ASAN_ENABLED_)
+    const char *asan_blacklist_feature[] = {
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+      "x87",
+      "fxsr",
+      "xsave",
+      "xsaveopt",
+      "xsavec",
+      "xsaves",
+      "sse",
+      "sse2",
+      "sse3",
+      "ssse3",
+      "sse4.1",
+      "sse4.2",
+      "mmx",
+      "3dnow",
+      "3dnowa",
+      "sse4a",
+      "avx",
+      "avx2",
+      "fma",
+      "f16c",
+      "pclmul",
+      "gfni",
+      "vpclmulqdq",
+      "fma4",
+      "xop",
+      "aes",
+      "vaes",
+      "sha"
+#endif
+    };
+    const size_t asan_blacklist_feature_size =
+        sizeof(asan_blacklist_feature) / sizeof(char *);
+#endif
+
+    for (const auto &feat : features) {
+      if (!feat.second) {
+        continue;
+      }
+      // XXX: #19 Bad AVX support detection in VM environments
       // fix buggy dynamic detection
       if (disable_avx != NULL && feat.first().equals(llvm::StringRef("avx"))) {
         continue;
       }
-      if (feat.second) {
-        mattrs.push_back(feat.first());
+#if defined(_QBDI_ASAN_ENABLED_)
+      bool blacklist_feature = false;
+      for (int i = 0; i < asan_blacklist_feature_size; i++) {
+        if (feat.first().equals(llvm::StringRef(asan_blacklist_feature[i]))) {
+          blacklist_feature = true;
+          break;
+        }
       }
+      if (blacklist_feature) {
+        continue;
+      }
+#endif
+      mattrs.push_back(feat.first());
     }
   }
 
