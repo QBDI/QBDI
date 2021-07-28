@@ -104,7 +104,7 @@ Engine &Engine::operator=(const Engine &other) {
   QBDI_REQUIRE_ACTION(not running && "Cannot assign a running Engine", abort());
   this->clearAllCache();
 
-  if (llvmcpu->isSameCPU(*other.llvmcpu)) {
+  if (not llvmcpu->isSameCPU(*other.llvmcpu)) {
     blockManager.reset();
 
     llvmcpu = std::make_unique<LLVMCPU>(
