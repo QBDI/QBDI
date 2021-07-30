@@ -10,7 +10,7 @@ var stack = vm.allocateVirtualStack(state, 0x100000);
 // Instrument "Secret" function from demo.bin
 var funcPtr = Module.findExportByName(null, "Secret");
 if (!funcPtr) {
-    funcPtr = DebugSymbol.fromName("Secret");
+    funcPtr = DebugSymbol.fromName("Secret").address;
 }
 vm.addInstrumentedModuleFromAddr(funcPtr);
 
