@@ -18,17 +18,19 @@
 #ifndef LLVMCPU_H
 #define LLVMCPU_H
 
+#include <algorithm>
 #include <memory>
+#include <stdint.h>
+#include <string>
 #include <vector>
 
-#include "llvm/ADT/APInt.h"
+#include "llvm/ADT/ArrayRef.h"
 #include "llvm/MC/MCDisassembler/MCDisassembler.h"
 
 #include "QBDI/Options.h"
-#include "Utility/memory_ostream.h"
+#include "QBDI/State.h"
 
 namespace llvm {
-class MCAsmBackend;
 class MCAsmInfo;
 class MCAssembler;
 class MCCodeEmitter;
@@ -44,15 +46,18 @@ class raw_pwrite_stream;
 } // namespace llvm
 
 namespace QBDI {
+class memory_ostream;
 
 class LLVMCPU {
 
-protected:
+private:
   std::string tripleName;
   std::string cpu;
+  std::string arch;
   std::vector<std::string> mattrs;
   const llvm::Target *target;
   Options options;
+  CPUMode cpumode;
 
   std::unique_ptr<llvm::MCAsmInfo> MAI;
   std::unique_ptr<llvm::MCCodeEmitter> MCE;
@@ -68,9 +73,9 @@ protected:
   std::unique_ptr<llvm::raw_pwrite_stream> null_ostream;
 
 public:
-  LLVMCPU(const std::string &cpu = "",
+  LLVMCPU(const std::string &cpu = "", const std::string &arch = "",
           const std::vector<std::string> &mattrs = {},
-          Options opts = Options::NO_OPT);
+          Options opts = Options::NO_OPT, CPUMode cpumode = CPUMode::DEFAULT);
 
   ~LLVMCPU();
 
@@ -90,13 +95,11 @@ public:
 
   const char *getRegisterName(unsigned int id) const;
 
-  inline const bool isSameCPU(const LLVMCPU &other) const {
-    return cpu == other.cpu and mattrs == other.mattrs;
-  }
-
   inline const std::string &getCPU() const { return cpu; }
 
   inline const std::vector<std::string> &getMattrs() const { return mattrs; }
+
+  inline const CPUMode getCPUMode() const { return cpumode; }
 
   inline const llvm::MCInstrInfo &getMCII() const { return *MCII; }
 
@@ -104,6 +107,39 @@ public:
 
   Options getOptions() const { return options; }
   void setOptions(Options opts);
+};
+
+class LLVMCPUs {
+private:
+  std::unique_ptr<LLVMCPU> llvmcpu[CPUMode::COUNT];
+
+public:
+  LLVMCPUs(const std::string &cpu = "",
+           const std::vector<std::string> &mattrs = {},
+           Options opts = Options::NO_OPT);
+
+  ~LLVMCPUs();
+
+  LLVMCPUs(const LLVMCPUs &&) = delete;
+  LLVMCPUs &operator=(const LLVMCPUs &&) = delete;
+
+  LLVMCPUs(const LLVMCPUs &) = delete;
+  LLVMCPUs &operator=(const LLVMCPUs &) = delete;
+
+  inline const bool isSameCPU(const LLVMCPUs &other) const {
+    return getCPU() == other.getCPU() and getMattrs() == other.getMattrs();
+  }
+
+  inline const std::string &getCPU() const { return llvmcpu[0]->getCPU(); }
+
+  inline const std::vector<std::string> &getMattrs() const {
+    return llvmcpu[0]->getMattrs();
+  }
+
+  Options getOptions() const { return llvmcpu[0]->getOptions(); }
+  void setOptions(Options opts);
+
+  const LLVMCPU &getCPU(CPUMode mode) const { return *llvmcpu[mode]; }
 };
 
 } // namespace QBDI

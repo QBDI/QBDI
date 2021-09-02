@@ -18,20 +18,26 @@
 #ifndef INSTRRULE_H
 #define INSTRRULE_H
 
+#include <algorithm>
 #include <memory>
 #include <vector>
 
-#include "Patch/PatchCondition.h"
-#include "Patch/PatchGenerator.h"
 #include "Patch/PatchUtils.h"
 
 #include "QBDI/Callback.h"
+#include "QBDI/InstAnalysis.h"
+#include "QBDI/Range.h"
+#include "QBDI/State.h"
 
 namespace QBDI {
 
 class LLVMCPU;
 class Patch;
+class PatchCondition;
 class PatchGenerator;
+
+using PatchConditionUniquePtr = std::unique_ptr<PatchCondition>;
+using PatchGeneratorUniquePtrVec = std::vector<std::unique_ptr<PatchGenerator>>;
 
 /*! An instrumentation rule written in PatchDSL.
  */
@@ -73,14 +79,14 @@ public:
    * @param[in] llvmcpu   LLVMCPU object
    */
   void instrument(Patch &patch, const LLVMCPU &llvmcpu,
-                  const PatchGenerator::UniquePtrVec &patchGen,
-                  bool breakToHost, InstPosition position) const;
+                  const PatchGeneratorUniquePtrVec &patchGen, bool breakToHost,
+                  InstPosition position) const;
 };
 
 class InstrRuleBasic : public AutoUnique<InstrRule, InstrRuleBasic> {
 
-  PatchCondition::UniquePtr condition;
-  PatchGenerator::UniquePtrVec patchGen;
+  PatchConditionUniquePtr condition;
+  PatchGeneratorUniquePtrVec patchGen;
   InstPosition position;
   bool breakToHost;
 
@@ -99,26 +105,17 @@ public:
    *                         should end with a break to host (in the case of a
    * callback for example).
    */
-  InstrRuleBasic(PatchCondition::UniquePtr &&condition,
-                 PatchGenerator::UniquePtrVec &&patchGen, InstPosition position,
-                 bool breakToHost, int priority = 0)
-      : AutoUnique<InstrRule, InstrRuleBasic>(priority),
-        condition(std::forward<PatchCondition::UniquePtr>(condition)),
-        patchGen(std::forward<PatchGenerator::UniquePtrVec>(patchGen)),
-        position(position), breakToHost(breakToHost) {}
+  InstrRuleBasic(PatchConditionUniquePtr &&condition,
+                 PatchGeneratorUniquePtrVec &&patchGen, InstPosition position,
+                 bool breakToHost, int priority = 0);
 
-  ~InstrRuleBasic() override = default;
+  ~InstrRuleBasic() override;
 
-  inline std::unique_ptr<InstrRule> clone() const override {
-    return InstrRuleBasic::unique(condition->clone(), cloneVec(patchGen),
-                                  position, breakToHost, priority);
-  };
+  std::unique_ptr<InstrRule> clone() const override;
 
   inline InstPosition getPosition() const { return position; }
 
-  inline RangeSet<rword> affectedRange() const override {
-    return condition->affectedRange();
-  }
+  RangeSet<rword> affectedRange() const override;
 
   /*! Determine wheter this rule applies by evaluating this rule condition on
    * the current context.
@@ -141,12 +138,12 @@ public:
   }
 };
 
-typedef const std::vector<std::unique_ptr<PatchGenerator>> &(*PatchGenMethod)(
+typedef const PatchGeneratorUniquePtrVec &(*PatchGenMethod)(
     Patch &patch, const LLVMCPU &llvmcpu);
 
 class InstrRuleDynamic : public AutoUnique<InstrRule, InstrRuleDynamic> {
 
-  PatchCondition::UniquePtr condition;
+  PatchConditionUniquePtr condition;
   PatchGenMethod patchGenMethod;
   InstPosition position;
   bool breakToHost;
@@ -166,26 +163,17 @@ public:
    *                             instrumentation should end with a break to
    *                             host (in the case of a callback for example).
    */
-  InstrRuleDynamic(PatchCondition::UniquePtr &&condition,
+  InstrRuleDynamic(PatchConditionUniquePtr &&condition,
                    PatchGenMethod patchGenMethod, InstPosition position,
-                   bool breakToHost, int priority = 0)
-      : AutoUnique<InstrRule, InstrRuleDynamic>(priority),
-        condition(std::forward<PatchCondition::UniquePtr>(condition)),
-        patchGenMethod(patchGenMethod), position(position),
-        breakToHost(breakToHost) {}
+                   bool breakToHost, int priority = 0);
 
-  ~InstrRuleDynamic() override = default;
+  ~InstrRuleDynamic() override;
 
-  inline std::unique_ptr<InstrRule> clone() const override {
-    return InstrRuleDynamic::unique(condition->clone(), patchGenMethod,
-                                    position, breakToHost, priority);
-  };
+  std::unique_ptr<InstrRule> clone() const override;
 
   inline InstPosition getPosition() const { return position; }
 
-  inline RangeSet<rword> affectedRange() const override {
-    return condition->affectedRange();
-  }
+  RangeSet<rword> affectedRange() const override;
 
   /*! Determine wheter this rule applies by evaluating this rule condition on
    * the current context.
@@ -220,11 +208,9 @@ class InstrRuleUser : public AutoClone<InstrRule, InstrRuleUser> {
 public:
   InstrRuleUser(InstrRuleCallback cbk, AnalysisType analysisType,
                 void *cbk_data, VMInstanceRef vm, RangeSet<rword> range,
-                int priority = 0)
-      : AutoClone<InstrRule, InstrRuleUser>(priority), cbk(cbk),
-        analysisType(analysisType), cbk_data(cbk_data), vm(vm), range(range) {}
+                int priority = 0);
 
-  ~InstrRuleUser() override = default;
+  ~InstrRuleUser() override;
 
   inline void changeVMInstanceRef(VMInstanceRef vminstance) override {
     vm = vminstance;

@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "Patch/PatchUtils.h"
@@ -42,7 +43,7 @@ public:
   using UniquePtr = std::unique_ptr<PatchCondition>;
   using UniquePtrVec = std::vector<std::unique_ptr<PatchCondition>>;
 
-  virtual std::unique_ptr<PatchCondition> clone() const = 0;
+  virtual UniquePtr clone() const = 0;
 
   virtual bool test(const llvm::MCInst &inst, rword address, rword instSize,
                     const LLVMCPU &llvmcpu) const = 0;
@@ -81,23 +82,6 @@ public:
    * @param[in] op LLVM instruction opcode ID.
    */
   OpIs(unsigned int op) : op(op){};
-
-  bool test(const llvm::MCInst &inst, rword address, rword instSize,
-            const LLVMCPU &llvmcpu) const override;
-};
-
-class RegIs : public AutoClone<PatchCondition, RegIs> {
-  Operand opn;
-  Reg reg;
-
-public:
-  /*! Return true if the instruction operand with index opn is a register equal
-   * to reg.
-   *
-   * @param[in] opn The instruction operand.
-   * @param[in] reg The register to compare with.
-   */
-  RegIs(Operand opn, Reg reg) : opn(opn), reg(reg){};
 
   bool test(const llvm::MCInst &inst, rword address, rword instSize,
             const LLVMCPU &llvmcpu) const override;
@@ -160,34 +144,6 @@ public:
     r.add(Range<rword>(breakpoint, breakpoint + 1));
     return r;
   }
-};
-
-class OperandIsReg : public AutoClone<PatchCondition, OperandIsReg> {
-  Operand opn;
-
-public:
-  /*! Return true if the instruction operand opn is a register.
-   *
-   * @param[in] opn The instruction operand.
-   */
-  OperandIsReg(Operand opn) : opn(opn){};
-
-  bool test(const llvm::MCInst &inst, rword address, rword instSize,
-            const LLVMCPU &llvmcpu) const override;
-};
-
-class OperandIsImm : public AutoClone<PatchCondition, OperandIsImm> {
-  Operand opn;
-
-public:
-  /*! Return true if the instruction operand opn is an immediate.
-   *
-   * @param[in] opn The instruction operand.
-   */
-  OperandIsImm(Operand opn) : opn(opn){};
-
-  bool test(const llvm::MCInst &inst, rword address, rword instSize,
-            const LLVMCPU &llvmcpu) const override;
 };
 
 class And : public AutoUnique<PatchCondition, And> {
@@ -305,54 +261,6 @@ public:
   /*! Return true if the instruction write data to memory.
    */
   DoesWriteAccess(){};
-
-  bool test(const llvm::MCInst &inst, rword address, rword instSize,
-            const LLVMCPU &llvmcpu) const override;
-};
-
-class ReadAccessSizeIs : public AutoClone<PatchCondition, ReadAccessSizeIs> {
-public:
-  Constant size;
-
-  /*! Return true if the instruction read access size equal to size.
-   *
-   * @param[in] size Size to compare with.
-   */
-  ReadAccessSizeIs(Constant size) : size(size){};
-
-  bool test(const llvm::MCInst &inst, rword address, rword instSize,
-            const LLVMCPU &llvmcpu) const override;
-};
-
-class WriteAccessSizeIs : public AutoClone<PatchCondition, WriteAccessSizeIs> {
-public:
-  Constant size;
-
-  /*! Return true if the instruction write access size equal to size.
-   *
-   * @param[in] size Size to compare with.
-   */
-  WriteAccessSizeIs(Constant size) : size(size){};
-
-  bool test(const llvm::MCInst &inst, rword address, rword instSize,
-            const LLVMCPU &llvmcpu) const override;
-};
-
-class IsStackRead : public AutoClone<PatchCondition, IsStackRead> {
-public:
-  /*! Return true if the instruction is reading data from the stack.
-   */
-  IsStackRead(){};
-
-  bool test(const llvm::MCInst &inst, rword address, rword instSize,
-            const LLVMCPU &llvmcpu) const override;
-};
-
-class IsStackWrite : public AutoClone<PatchCondition, IsStackWrite> {
-public:
-  /*! Return true if the instruction is writing data to the stack.
-   */
-  IsStackWrite(){};
 
   bool test(const llvm::MCInst &inst, rword address, rword instSize,
             const LLVMCPU &llvmcpu) const override;

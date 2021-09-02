@@ -16,32 +16,34 @@
  * limitations under the License.
  */
 #include <algorithm>
-#include <cstdint>
+#include <iterator>
+#include <stdlib.h>
+#include <utility>
 
 #include "Engine/LLVMCPU.h"
 #include "ExecBlock/ExecBlock.h"
 #include "ExecBlock/ExecBlockManager.h"
 #include "ExecBroker/ExecBroker.h"
+#include "Patch/InstMetadata.h"
 #include "Patch/Patch.h"
 #include "Patch/PatchRules.h"
+#include "Patch/RelocatableInst.h"
 #include "Utility/LogSys.h"
-
-#include "QBDI/State.h"
 
 namespace QBDI {
 
-ExecBlockManager::ExecBlockManager(const LLVMCPU &llvmcpu,
+ExecBlockManager::ExecBlockManager(const LLVMCPUs &llvmCPUs,
                                    VMInstanceRef vminstance)
     : total_translated_size(1), total_translation_size(1),
-      vminstance(vminstance), llvmcpu(llvmcpu),
-      execBlockPrologue(getExecBlockPrologue(llvmcpu.getOptions())),
-      execBlockEpilogue(getExecBlockEpilogue(llvmcpu.getOptions())) {
+      vminstance(vminstance), llvmCPUs(llvmCPUs),
+      execBlockPrologue(getExecBlockPrologue(llvmCPUs.getOptions())),
+      execBlockEpilogue(getExecBlockEpilogue(llvmCPUs.getOptions())) {
 
   auto execBrokerBlock = std::make_unique<ExecBlock>(
-      llvmcpu, vminstance, &execBlockPrologue, &execBlockEpilogue, 0);
+      llvmCPUs, vminstance, &execBlockPrologue, &execBlockEpilogue, 0);
   epilogueSize = execBrokerBlock->getEpilogueSize();
-  execBroker =
-      std::make_unique<ExecBroker>(std::move(execBrokerBlock), vminstance);
+  execBroker = std::make_unique<ExecBroker>(std::move(execBrokerBlock),
+                                            llvmCPUs, vminstance);
 }
 
 ExecBlockManager::~ExecBlockManager() {
@@ -258,9 +260,9 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch> &basicBlock,
       // or oversized basic blocks can cause overflows.
       if (i >= region.blocks.size()) {
         QBDI_REQUIRE_ACTION(i < (1 << 16), abort());
-        region.blocks.emplace_back(
-            std::make_unique<ExecBlock>(llvmcpu, vminstance, &execBlockPrologue,
-                                        &execBlockEpilogue, epilogueSize));
+        region.blocks.emplace_back(std::make_unique<ExecBlock>(
+            llvmCPUs, vminstance, &execBlockPrologue, &execBlockEpilogue,
+            epilogueSize));
       }
       // Write sequence
       SeqWriteResult res = region.blocks[i]->writeSequence(

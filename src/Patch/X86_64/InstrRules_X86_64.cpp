@@ -15,29 +15,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <stddef.h>
+#include <stdlib.h>
 
+#include "ExecBlock/Context.h"
 #include "Patch/InstrRules.h"
+#include "Patch/PatchGenerator.h"
+#include "Patch/RelocatableInst.h"
+#include "Patch/Types.h"
 #include "Patch/X86_64/Layer2_X86_64.h"
-#include "Patch/X86_64/PatchGenerator_X86_64.h"
 #include "Patch/X86_64/RelocatableInst_X86_64.h"
 
 #include "QBDI/Config.h"
+#include "Utility/LogSys.h"
 
 namespace QBDI {
+class Patch;
 
 /* Generate a series of RelocatableInst which when appended to an
  * instrumentation code trigger a break to host. It receive in argument a
  * temporary reg which will be used for computations then finally restored.
  */
-RelocatableInst::UniquePtrVec getBreakToHost(Reg temp) {
+RelocatableInst::UniquePtrVec getBreakToHost(Reg temp, const Patch &patch,
+                                             bool restore) {
   RelocatableInst::UniquePtrVec breakToHost;
+
+  QBDI_REQUIRE_ACTION(restore && "X86 don't have a temporary register",
+                      abort());
 
   // Use the temporary register to compute RIP + offset which is the address
   // which will follow this patch and where the execution needs to be resumed
   if constexpr (is_x86)
     breakToHost.push_back(HostPCRel::unique(mov32ri(temp, 0), 1, 22));
   else
-    breakToHost.push_back(HostPCRel::unique(mov64ri(temp, 0), 1, 29));
+    breakToHost.push_back(NoReloc::unique(addr64i(temp, Reg(REG_PC), 19)));
   // Set the selector to this address so the execution can be resumed when the
   // exec block will be reexecuted
   append(breakToHost,

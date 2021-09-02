@@ -18,21 +18,12 @@
 #ifndef LOGSYS_H
 #define LOGSYS_H
 
-#include <cstdarg>
-#include <cstdio>
-#include <cstring>
-#include <functional>
-#include <utility>
-#include <vector>
+#include <memory>
+#include <string>
 
+#include "QBDI/Config.h"
 #include "QBDI/Logs.h"
-#include "QBDI/Platform.h"
 #include "spdlog/spdlog.h"
-
-#if defined(QBDI_PLATFORM_LINUX) || defined(QBDI_PLATFORM_ANDROID) || \
-    defined(QBDI_PLATFORM_OSX)
-#include <unistd.h>
-#endif
 
 #define QBDI_INFO(...) SPDLOG_INFO(__VA_ARGS__)
 #define QBDI_WARN(...) SPDLOG_WARN(__VA_ARGS__)

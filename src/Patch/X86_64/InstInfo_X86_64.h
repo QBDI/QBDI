@@ -18,9 +18,16 @@
 #ifndef INSTINFO_X86_64_H
 #define INSTINFO_X86_64_H
 
-#include "Patch/InstInfo.h"
+namespace llvm {
+class MCInst;
+class MCInstrDesc;
+} // namespace llvm
 
 namespace QBDI {
+
+bool isStackRead(const llvm::MCInst &inst);
+
+bool isStackWrite(const llvm::MCInst &inst);
 
 bool isMinSizeRead(const llvm::MCInst &inst);
 

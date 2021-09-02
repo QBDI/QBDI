@@ -12,9 +12,11 @@ set(SOURCES
     "${CMAKE_CURRENT_LIST_DIR}/InstrRule.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/InstrRules.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/InstTransform.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/Patch.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/PatchCondition.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/PatchGenerator.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/PatchUtils.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/PatchRule.cpp")
+    "${CMAKE_CURRENT_LIST_DIR}/PatchRule.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/Register.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/TempManager.cpp")
 
 target_sources(QBDI_src INTERFACE "${SOURCES}")

@@ -15,13 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <stddef.h>
+#include <stdint.h>
 
+#include "MCTargetDesc/X86BaseInfo.h"
 #include "X86InstrInfo.h"
+#include "llvm/MC/MCInst.h"
+#include "llvm/MC/MCInstrDesc.h"
+#include "llvm/MC/MCInstrInfo.h"
 
 #include "Engine/LLVMCPU.h"
 #include "Patch/ExecBlockFlags.h"
-#include "Patch/InstInfo.h"
-#include "Patch/Types.h"
+#include "Patch/X86_64/ExecBlockFlags_X86_64.h"
 #include "Utility/LogSys.h"
 
 namespace QBDI {

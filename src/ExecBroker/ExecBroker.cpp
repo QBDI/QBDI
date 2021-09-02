@@ -15,17 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <utility>
+
+#include "llvm/ADT/Optional.h"
+#include "llvm/Support/Error.h"
+#include "llvm/Support/Process.h"
+
+#include "QBDI/Memory.hpp"
 #include "ExecBroker/ExecBroker.h"
-#include "Patch/ExecBlockFlags.h"
 #include "Utility/LogSys.h"
 
 namespace QBDI {
 
 ExecBroker::ExecBroker(std::unique_ptr<ExecBlock> _transferBlock,
-                       VMInstanceRef vminstance)
+                       const LLVMCPUs &llvmCPUs, VMInstanceRef vminstance)
     : transferBlock(std::move(_transferBlock)) {
   pageSize = llvm::expectedToOptional(llvm::sys::Process::getPageSize())
                  .getValueOr(4096);
+  initExecBrokerSequences(llvmCPUs);
 }
 
 void ExecBroker::changeVMInstanceRef(VMInstanceRef vminstance) {
@@ -33,12 +40,13 @@ void ExecBroker::changeVMInstanceRef(VMInstanceRef vminstance) {
 }
 
 void ExecBroker::addInstrumentedRange(const Range<rword> &r) {
-  QBDI_DEBUG("Adding instrumented range [{:x}, {:x}]", r.start(), r.end());
+  QBDI_DEBUG("Adding instrumented range [0x{:x}, 0x{:x}]", r.start(), r.end());
   instrumented.add(r);
 }
 
 void ExecBroker::removeInstrumentedRange(const Range<rword> &r) {
-  QBDI_DEBUG("Removing instrumented range [{:x}, {:x}]", r.start(), r.end());
+  QBDI_DEBUG("Removing instrumented range [0x{:x}, 0x{:x}]", r.start(),
+             r.end());
   instrumented.remove(r);
 }
 
@@ -110,87 +118,5 @@ bool ExecBroker::instrumentAllExecutableMaps() {
 bool ExecBroker::canTransferExecution(GPRState *gprState) const {
   return getReturnPoint(gprState) ? true : false;
 }
-
-bool ExecBroker::transferExecution(rword addr, GPRState *gprState,
-                                   FPRState *fprState) {
-  rword hookedAddress = 0;
-  rword hook = 0;
-  rword *ptr = NULL;
-
-  ptr = getReturnPoint(gprState);
-  if (!ptr)
-    return false;
-
-  // Backup / Patch return address
-  hookedAddress = *ptr;
-  hook = transferBlock->getCurrentPC() + transferBlock->getEpilogueOffset();
-  *ptr = hook;
-  QBDI_DEBUG("Patched 0x{:x} hooking return address 0x{:x} with 0x{:x}",
-             reinterpret_cast<uintptr_t>(ptr), hookedAddress, *ptr);
-
-  // Write transfer state
-  transferBlock->getContext()->gprState = *gprState;
-  transferBlock->getContext()->fprState = *fprState;
-  transferBlock->getContext()->hostState.selector = addr;
-  transferBlock->getContext()->hostState.executeFlags = defaultExecuteFlags;
-  // Execute transfer
-  QBDI_DEBUG("Transfering execution to 0x{:x} using transferBlock 0x{:x}", addr,
-             reinterpret_cast<uintptr_t>(&transferBlock));
-  transferBlock->run();
-  // Restore original return
-  QBDI_GPR_SET(&transferBlock->getContext()->gprState, REG_PC, hookedAddress);
-#if defined(QBDI_ARCH_ARM)
-  // Under ARM, also reset the LR register
-  if (QBDI_GPR_GET(&transferBlock->getContext()->gprState, REG_LR) == hook) {
-    QBDI_GPR_SET(&transferBlock->getContext()->gprState, REG_LR, hookedAddress);
-  }
-#endif
-  // Read transfer result
-  *gprState = transferBlock->getContext()->gprState;
-  *fprState = transferBlock->getContext()->fprState;
-
-  return true;
-}
-
-#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
-
-rword *ExecBroker::getReturnPoint(GPRState *gprState) const {
-  static int SCAN_DISTANCE = 3;
-  rword *ptr = (rword *)QBDI_GPR_GET(gprState, REG_SP);
-
-  for (int i = 0; i < SCAN_DISTANCE; i++) {
-    if (isInstrumented(ptr[i])) {
-      QBDI_DEBUG("Found instrumented return address on the stack at 0x{:x}",
-                 reinterpret_cast<uintptr_t>(&(ptr[i])));
-      return &(ptr[i]);
-    }
-  }
-  QBDI_DEBUG("No instrumented return address found on the stack");
-  return NULL;
-}
-
-#elif defined(QBDI_ARCH_ARM)
-
-rword *ExecBroker::getReturnPoint(GPRState *gprState) const {
-  static int SCAN_DISTANCE = 2;
-  rword *ptr = (rword *)gprState->sp;
-
-  if (isInstrumented(gprState->lr)) {
-    QBDI_DEBUG("Found instrumented return address in LR register");
-    return &(gprState->lr);
-  }
-  for (int i = 0; i < SCAN_DISTANCE; i++) {
-    if (isInstrumented(ptr[i])) {
-      QBDI_DEBUG("Found instrumented return address on the stack at 0x{:x}",
-                 reinterpret_cast<uintptr_t>(&(ptr[i])));
-      return &(ptr[i]);
-    }
-  }
-
-  QBDI_DEBUG("LR register does not contain an instrumented return address");
-  return NULL;
-}
-
-#endif
 
 } // namespace QBDI

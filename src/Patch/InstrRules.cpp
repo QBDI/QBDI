@@ -15,7 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <stddef.h>
 
+#include "QBDI/State.h"
+#include "ExecBlock/Context.h"
 #include "Patch/InstrRules.h"
 #include "Patch/PatchGenerator.h"
 

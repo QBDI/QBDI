@@ -1,3 +1,5 @@
+#include <stddef.h>
+#include <stdint.h>
 
 #include <QBDI.h>
 
@@ -68,7 +70,7 @@ QBDI_EXPORT const StructDesc *qbdi_getOperandAnalysisStructDesc() {
 QBDI_EXPORT const StructDesc *qbdi_getInstAnalysisStructDesc() {
   static const StructDesc InstAnalysisDesc{
       sizeof(InstAnalysis),
-      21,
+      22,
       {
           offsetof(InstAnalysis, mnemonic),
           offsetof(InstAnalysis, disassembly),
@@ -80,6 +82,7 @@ QBDI_EXPORT const StructDesc *qbdi_getInstAnalysisStructDesc() {
           offsetof(InstAnalysis, isReturn),
           offsetof(InstAnalysis, isCompare),
           offsetof(InstAnalysis, isPredicable),
+          offsetof(InstAnalysis, isMoveImm),
           offsetof(InstAnalysis, mayLoad),
           offsetof(InstAnalysis, mayStore),
           offsetof(InstAnalysis, loadSize),

@@ -15,17 +15,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <algorithm>
+#include <memory>
+#include <stddef.h>
+#include <stdint.h>
+#include <utility>
+#include <vector>
+
+#include "llvm/ADT/ArrayRef.h"
+#include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstrInfo.h"
 
+#include "Engine/LLVMCPU.h"
 #include "ExecBlock/ExecBlock.h"
+#include "Patch/InstInfo.h"
+#include "Patch/InstMetadata.h"
+#include "Patch/InstrRule.h"
 #include "Patch/MemoryAccess.h"
 #include "Patch/Patch.h"
 #include "Patch/PatchCondition.h"
+#include "Patch/PatchGenerator.h"
+#include "Patch/PatchUtils.h"
+#include "Patch/Types.h"
 #include "Patch/X86_64/InstInfo_X86_64.h"
 #include "Patch/X86_64/PatchGenerator_X86_64.h"
 #include "Utility/LogSys.h"
 
+#include "QBDI/Bitmask.h"
 #include "QBDI/Callback.h"
+#include "QBDI/State.h"
+
+namespace llvm {
+class MCInstrDesc;
+}
 
 namespace QBDI {
 

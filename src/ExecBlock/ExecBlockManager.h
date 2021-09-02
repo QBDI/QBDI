@@ -20,23 +20,20 @@
 
 #include <algorithm>
 #include <map>
+#include <memory>
+#include <stddef.h>
+#include <stdint.h>
 #include <vector>
 
 #include "QBDI/Callback.h"
 #include "QBDI/Range.h"
 #include "QBDI/State.h"
 
-namespace llvm {
-class MCInstrInfo;
-class MCRegisterInfo;
-} // namespace llvm
-
 namespace QBDI {
 
-class LLVMCPU;
 class ExecBlock;
 class ExecBroker;
-class InstMetadata;
+class LLVMCPUs;
 class Patch;
 class RelocatableInst;
 
@@ -75,7 +72,7 @@ private:
   bool needFlush;
 
   VMInstanceRef vminstance;
-  const LLVMCPU &llvmcpu;
+  const LLVMCPUs &llvmCPUs;
 
   // cache ExecBlock prologue and epilogue
   uint32_t epilogueSize;
@@ -93,7 +90,8 @@ private:
   float getExpansionRatio() const;
 
 public:
-  ExecBlockManager(const LLVMCPU &llvmcpu, VMInstanceRef vminstance = nullptr);
+  ExecBlockManager(const LLVMCPUs &llvmCPUs,
+                   VMInstanceRef vminstance = nullptr);
 
   ~ExecBlockManager();
 

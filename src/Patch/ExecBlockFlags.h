@@ -27,6 +27,8 @@
 #include "Patch/X86_64/ExecBlockFlags_X86_64.h"
 #elif defined(QBDI_ARCH_ARM)
 #include "Patch/ARM/ExecBlockFlags_ARM.h"
+#elif defined(QBDI_ARCH_AARCH64)
+#include "Patch/AARCH64/ExecBlockFlags_AARCH64.h"
 #endif
 
 namespace llvm {

@@ -24,21 +24,7 @@
 #include <utility>
 #include <vector>
 
-#include "Engine/LLVMCPU.h"
-#include "Patch/Types.h"
-
-namespace llvm {
-class MCInst;
-class MCInstrInfo;
-class MCRegisterInfo;
-} // namespace llvm
-
 namespace QBDI {
-
-class RelocatableInst;
-class PatchGenerator;
-
-// Helper template
 
 // helper to create a object as a unique_ptr
 template <typename T, typename U>
@@ -110,32 +96,6 @@ inline void prepend(std::vector<std::unique_ptr<T>> &u,
   std::move(u.begin(), u.end(), std::back_inserter(v));
   u.swap(v);
 }
-
-// Helper classes
-
-class TempManager {
-
-  std::vector<std::pair<unsigned int, unsigned int>> temps;
-  const llvm::MCInst &inst;
-  bool allowInstRegister;
-
-public:
-  const llvm::MCInstrInfo &MCII;
-  const llvm::MCRegisterInfo &MRI;
-
-  TempManager(const llvm::MCInst &inst, const LLVMCPU &llvmcpu,
-              bool allowInstRegister = false)
-      : inst(inst), allowInstRegister(allowInstRegister),
-        MCII(llvmcpu.getMCII()), MRI(llvmcpu.getMRI()) {}
-
-  Reg getRegForTemp(unsigned int id);
-
-  Reg::Vec getUsedRegisters() const;
-
-  size_t getUsedRegisterNumber() const;
-
-  unsigned getSizedSubReg(unsigned reg, unsigned size) const;
-};
 
 } // namespace QBDI
 

@@ -15,30 +15,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef PATCHRULES_H
-#define PATCHRULES_H
+#ifndef CONTEXT_X86_64_H
+#define CONTEXT_X86_64_H
 
-#include <memory>
-#include <vector>
-
-#include "QBDI/Options.h"
 #include "QBDI/State.h"
 
 namespace QBDI {
 
-class PatchRule;
-class RelocatableInst;
+/*! X86_64 Host context.
+ */
+struct QBDI_ALIGNED(8) HostState {
+  rword sp;
+  rword selector;
+  rword callback;
+  rword data;
+  rword origin;
+  rword executeFlags;
+};
 
-std::vector<std::unique_ptr<RelocatableInst>>
-getExecBlockPrologue(Options opts);
+/*! X86_64 Execution context.
+ */
+struct QBDI_ALIGNED(8) Context {
 
-std::vector<std::unique_ptr<RelocatableInst>>
-getExecBlockEpilogue(Options opts);
-
-std::vector<std::unique_ptr<RelocatableInst>> getTerminator(rword address);
-
-std::vector<PatchRule> getDefaultPatchRules(Options opts);
+public:
+  // fprState needs to be first for memory alignement reasons
+  FPRState fprState;
+  GPRState gprState;
+  HostState hostState;
+};
 
 } // namespace QBDI
 
-#endif
+#endif // CONTEXT_X86_64_H

@@ -15,18 +15,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include <map>
-#include <string>
+#include <stdlib.h>
 
 #include "MCTargetDesc/X86BaseInfo.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstrDesc.h"
 
+#include "QBDI/Bitmask.h"
+#include "QBDI/InstAnalysis.h"
+#include "QBDI/State.h"
+#include "Patch/Register.h"
+#include "Patch/X86_64/InstInfo_X86_64.h"
 #include "Utility/InstAnalysis_prive.h"
 #include "Utility/LogSys.h"
 
+namespace llvm {
+class MCRegisterInfo;
+}
+
 namespace QBDI {
+namespace InstructionAnalysis {
 
 static ConditionType ConditionLLVM2QBDI(unsigned cond) {
   switch (cond) {
@@ -82,8 +90,8 @@ void analyseCondition(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
   instAnalysis->condition = CONDITION_NONE;
 }
 
-bool isSupportedOperandType(unsigned opType) {
-  switch (opType) {
+bool isFlagOperand(unsigned opcode, unsigned opNum, unsigned operandType) {
+  switch (operandType) {
     default:
       return false;
     case llvm::X86::OperandType::OPERAND_COND_CODE:
@@ -95,4 +103,33 @@ unsigned getBias(const llvm::MCInstrDesc &desc) {
   return llvm::X86II::getOperandBias(desc);
 }
 
+unsigned getAdditionnalOperandNumber(const llvm::MCInst &inst,
+                                     const llvm::MCInstrDesc &desc) {
+
+  if ((desc.isReturn() and isStackRead(inst)) or
+      (desc.isCall() and isStackWrite(inst))) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+void getAdditionnalOperand(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
+                           const llvm::MCInstrDesc &desc,
+                           const llvm::MCRegisterInfo &MRI) {
+
+  if ((desc.isReturn() and isStackRead(inst)) or
+      (desc.isCall() and isStackWrite(inst))) {
+    // increment or decrement SP
+    OperandAnalysis &opa2 = instAnalysis->operands[instAnalysis->numOperands];
+    analyseRegister(opa2, GPR_ID[REG_SP], MRI);
+    opa2.regAccess = REGISTER_READ_WRITE;
+    opa2.flag |= OPERANDFLAG_IMPLICIT;
+    instAnalysis->numOperands++;
+    // try to merge with a previous one
+    tryMergeCurrentRegister(instAnalysis);
+  }
+}
+
+} // namespace InstructionAnalysis
 } // namespace QBDI

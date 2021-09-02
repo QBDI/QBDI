@@ -15,15 +15,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <stdint.h>
+#include <stdlib.h>
+#include <utility>
+
+#include "Patch/InstMetadata.h"
 #include "Patch/InstrRule.h"
 #include "Patch/InstrRules.h"
 #include "Patch/Patch.h"
+#include "Patch/PatchCondition.h"
 #include "Patch/PatchGenerator.h"
 #include "Patch/RelocatableInst.h"
+#include "Patch/TempManager.h"
+#include "Patch/Types.h"
 #include "Utility/InstAnalysis_prive.h"
 #include "Utility/LogSys.h"
 
 namespace QBDI {
+
+// InstrRule
+// =========
 
 void InstrRule::instrument(Patch &patch, const LLVMCPU &llvmcpu,
                            const PatchGenerator::UniquePtrVec &patchGen,
@@ -38,7 +49,7 @@ void InstrRule::instrument(Patch &patch, const LLVMCPU &llvmcpu,
    * each case, can trigger a break to host.
    */
   RelocatableInst::UniquePtrVec instru;
-  TempManager tempManager(patch.metadata.inst, llvmcpu, true);
+  TempManager tempManager(patch, llvmcpu, true);
 
   // Generate the instrumentation code from the original instruction context
   for (const PatchGenerator::UniquePtr &g : patchGen) {
@@ -79,26 +90,34 @@ void InstrRule::instrument(Patch &patch, const LLVMCPU &llvmcpu,
   if (breakToHost && tempManager.getUsedRegisterNumber() == 0) {
     tempManager.getRegForTemp(Temp(0));
   }
-  // Prepend the temporary register saving code to the instrumentation
+
+  // Get all used temporary register
   Reg::Vec usedRegisters = tempManager.getUsedRegisters();
-  for (uint32_t i = 0; i < usedRegisters.size(); i++) {
-    prepend(instru, SaveReg(usedRegisters[i], Offset(usedRegisters[i])));
-  }
 
   // In the break to host case the first used register is not restored and
   // instead given to the break to host code as a scratch. It will later be
   // restored by the break to host code.
   if (breakToHost) {
     for (uint32_t i = 1; i < usedRegisters.size(); i++) {
-      append(instru, LoadReg(usedRegisters[i], Offset(usedRegisters[i])));
+      if (tempManager.shouldRestore(usedRegisters[i])) {
+        append(instru, LoadReg(usedRegisters[i], Offset(usedRegisters[i])));
+        prepend(instru, SaveReg(usedRegisters[i], Offset(usedRegisters[i])));
+      }
     }
-    append(instru, getBreakToHost(usedRegisters[0]));
+    bool restoreLast = tempManager.shouldRestore(usedRegisters[0]);
+    if (restoreLast) {
+      prepend(instru, SaveReg(usedRegisters[0], Offset(usedRegisters[0])));
+    }
+    append(instru, getBreakToHost(usedRegisters[0], patch, restoreLast));
   }
   // Normal case where we append the temporary register restoration code to the
   // instrumentation
   else {
     for (uint32_t i = 0; i < usedRegisters.size(); i++) {
-      append(instru, LoadReg(usedRegisters[i], Offset(usedRegisters[i])));
+      if (tempManager.shouldRestore(usedRegisters[i])) {
+        append(instru, LoadReg(usedRegisters[i], Offset(usedRegisters[i])));
+        prepend(instru, SaveReg(usedRegisters[i], Offset(usedRegisters[i])));
+      }
     }
   }
 
@@ -114,17 +133,74 @@ void InstrRule::instrument(Patch &patch, const LLVMCPU &llvmcpu,
   }
 }
 
+// InstrRuleBasic
+// ==============
+
+InstrRuleBasic::InstrRuleBasic(PatchConditionUniquePtr &&condition,
+                               PatchGeneratorUniquePtrVec &&patchGen,
+                               InstPosition position, bool breakToHost,
+                               int priority)
+    : AutoUnique<InstrRule, InstrRuleBasic>(priority),
+      condition(std::forward<PatchConditionUniquePtr>(condition)),
+      patchGen(std::forward<PatchGeneratorUniquePtrVec>(patchGen)),
+      position(position), breakToHost(breakToHost) {}
+
+InstrRuleBasic::~InstrRuleBasic() = default;
+
 bool InstrRuleBasic::canBeApplied(const Patch &patch,
                                   const LLVMCPU &llvmcpu) const {
   return condition->test(patch.metadata.inst, patch.metadata.address,
                          patch.metadata.instSize, llvmcpu);
 }
 
+std::unique_ptr<InstrRule> InstrRuleBasic::clone() const {
+  return InstrRuleBasic::unique(condition->clone(), cloneVec(patchGen),
+                                position, breakToHost, priority);
+};
+
+RangeSet<rword> InstrRuleBasic::affectedRange() const {
+  return condition->affectedRange();
+}
+
+// InstrRuleDynamic
+// ================
+
+InstrRuleDynamic::InstrRuleDynamic(PatchConditionUniquePtr &&condition,
+                                   PatchGenMethod patchGenMethod,
+                                   InstPosition position, bool breakToHost,
+                                   int priority)
+    : AutoUnique<InstrRule, InstrRuleDynamic>(priority),
+      condition(std::forward<PatchConditionUniquePtr>(condition)),
+      patchGenMethod(patchGenMethod), position(position),
+      breakToHost(breakToHost) {}
+
+InstrRuleDynamic::~InstrRuleDynamic() = default;
+
 bool InstrRuleDynamic::canBeApplied(const Patch &patch,
                                     const LLVMCPU &llvmcpu) const {
   return condition->test(patch.metadata.inst, patch.metadata.address,
                          patch.metadata.instSize, llvmcpu);
 }
+
+std::unique_ptr<InstrRule> InstrRuleDynamic::clone() const {
+  return InstrRuleDynamic::unique(condition->clone(), patchGenMethod, position,
+                                  breakToHost, priority);
+};
+
+RangeSet<rword> InstrRuleDynamic::affectedRange() const {
+  return condition->affectedRange();
+}
+
+// InstrRuleUser
+// =============
+
+InstrRuleUser::InstrRuleUser(InstrRuleCallback cbk, AnalysisType analysisType,
+                             void *cbk_data, VMInstanceRef vm,
+                             RangeSet<rword> range, int priority)
+    : AutoClone<InstrRule, InstrRuleUser>(priority), cbk(cbk),
+      analysisType(analysisType), cbk_data(cbk_data), vm(vm), range(range) {}
+
+InstrRuleUser::~InstrRuleUser() = default;
 
 bool InstrRuleUser::tryInstrument(Patch &patch, const LLVMCPU &llvmcpu) const {
   if (!range.contains(

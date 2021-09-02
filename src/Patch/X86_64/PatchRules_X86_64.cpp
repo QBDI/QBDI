@@ -15,15 +15,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <algorithm>
+#include <stddef.h>
+#include <vector>
+
 #include "X86InstrInfo.h"
 
-#include "Patch/ExecBlockFlags.h"
+#include "QBDI/Config.h"
+#include "QBDI/Options.h"
+#include "QBDI/State.h"
+#include "ExecBlock/Context.h"
 #include "Patch/InstTransform.h"
+#include "Patch/PatchCondition.h"
+#include "Patch/PatchGenerator.h"
 #include "Patch/PatchRule.h"
+#include "Patch/PatchRules.h"
+#include "Patch/PatchUtils.h"
+#include "Patch/RelocatableInst.h"
+#include "Patch/Types.h"
+#include "Patch/X86_64/ExecBlockFlags_X86_64.h"
 #include "Patch/X86_64/Layer2_X86_64.h"
 #include "Patch/X86_64/PatchGenerator_X86_64.h"
 #include "Patch/X86_64/PatchRules_X86_64.h"
-
 #include "Utility/LogSys.h"
 #include "Utility/System.h"
 
@@ -215,7 +228,7 @@ RelocatableInst::UniquePtrVec getExecBlockEpilogue(Options opts) {
   return epilogue;
 }
 
-std::vector<PatchRule> getDefaultPatchRules() {
+std::vector<PatchRule> getDefaultPatchRules(Options opts) {
   std::vector<PatchRule> rules;
 
   /* Rule #0: Avoid instrumenting instruction prefixes.

@@ -15,11 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "QBDI/Platform.h"
+#include <stddef.h>
+#include <string>
+#include <system_error>
 
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Host.h"
-#include "llvm/Support/Process.h"
+#include "llvm/Support/Memory.h"
 
+#include "QBDI/Config.h"
 #include "Utility/System.h"
 
 namespace QBDI {

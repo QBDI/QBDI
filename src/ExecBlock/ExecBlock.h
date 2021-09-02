@@ -18,20 +18,31 @@
 #ifndef EXECBLOCK_H
 #define EXECBLOCK_H
 
-#include <iterator>
 #include <memory>
+#include <stdint.h>
 #include <vector>
 
-#include "llvm/ADT/APInt.h"
+#include "llvm/ADT/ArrayRef.h"
 #include "llvm/Support/Memory.h"
-#include "llvm/Support/Process.h"
 
 #include "Patch/InstMetadata.h"
 #include "Patch/Types.h"
 #include "Utility/memory_ostream.h"
 
 #include "QBDI/Callback.h"
+#include "QBDI/Config.h"
+#include "QBDI/InstAnalysis.h"
 #include "QBDI/State.h"
+
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+#include "ExecBlock/X86_64/ScratchRegisterInfo_X86_64.h"
+#elif defined(QBDI_ARCH_ARM)
+#include "ExecBlock/ARM/ScratchRegisterInfo_ARM.h"
+#elif defined(QBDI_ARCH_AARCH64)
+#include "ExecBlock/AARCH64/ScratchRegisterInfo_AARCH64.h"
+#else
+#error "No ScratchRegisterInfo for this architecture"
+#endif
 
 namespace llvm {
 class MCInst;
@@ -39,6 +50,7 @@ class MCInst;
 
 namespace QBDI {
 
+class LLVMCPUs;
 class LLVMCPU;
 class RelocatableInst;
 class Patch;
@@ -56,6 +68,8 @@ struct SeqInfo {
   uint16_t startInstID;
   uint16_t endInstID;
   uint8_t executeFlags;
+  CPUMode cpuMode;
+  ScratchRegisterSeqInfo sr;
 };
 
 struct SeqWriteResult {
@@ -86,7 +100,7 @@ private:
   llvm::sys::MemoryBlock codeBlock;
   llvm::sys::MemoryBlock dataBlock;
   std::unique_ptr<memory_ostream> codeStream;
-  const LLVMCPU &llvmcpu;
+  const LLVMCPUs &llvmCPUs;
   Context *context;
   rword *shadows;
   std::vector<ShadowInfo> shadowRegistry;
@@ -98,18 +112,20 @@ private:
   uint16_t currentSeq;
   uint16_t currentInst;
   uint32_t epilogueSize;
+  bool isFull;
+  ScratchRegisterInfo srInfo;
 
   /*! Verify if the code block is in read execute mode.
    *
    * @return Return true if the code block is in read execute mode.
    */
-  bool isRX() const { return pageState == RX; }
+  inline bool isRX() const { return pageState == RX; }
 
   /*! Verify if the code block is in read write mode.
    *
    * @return Return true if the code block is in read write mode.
    */
-  bool isRW() const { return pageState == RW; }
+  inline bool isRW() const { return pageState == RW; }
 
   /*! Changes the code block permissions to RX.
    */
@@ -119,10 +135,17 @@ private:
    */
   void makeRW();
 
+  void initScratchRegisterForPatch(std::vector<Patch>::const_iterator seqStart,
+                                   std::vector<Patch>::const_iterator seqEnd);
+
+  bool writePatch(const Patch &p, const LLVMCPU &llvmcpu);
+
+  void finalizeScratchRegisterForPatch();
+
 public:
   /*! Construct a new ExecBlock
    *
-   * @param[in] llvmcpu            LLVMCPU used to assemble instructions in the
+   * @param[in] llvmCPUs           LLVMCPU used to assemble instructions in the
    *                               ExecBlock.
    * @param[in] vminstance         Pointer to public engine interface
    * @param[in] execBlockPrologue  cached prologue of ExecManager
@@ -130,7 +153,7 @@ public:
    * @param[in] epilogueSize       size in bytes of the epilogue (0 is not know)
    */
   ExecBlock(
-      const LLVMCPU &llvmcpu, VMInstanceRef vminstance = nullptr,
+      const LLVMCPUs &llvmCPUs, VMInstanceRef vminstance = nullptr,
       const std::vector<std::unique_ptr<RelocatableInst>> *execBlockPrologue =
           nullptr,
       const std::vector<std::unique_ptr<RelocatableInst>> *execBlockEpilogue =
@@ -181,6 +204,10 @@ public:
    */
   uint16_t splitSequence(uint16_t instID);
 
+  /*! Get the address of the DataBlock
+   *
+   * @return The DataBlock offset.
+   */
   rword getDataBlockBase() const {
     return reinterpret_cast<rword>(dataBlock.base());
   }
@@ -191,9 +218,7 @@ public:
    * @return The computed offset.
    */
   rword getDataBlockOffset() const {
-    return reinterpret_cast<rword>(dataBlock.base()) -
-           reinterpret_cast<rword>(codeBlock.base()) -
-           codeStream->current_pos();
+    return codeBlock.allocatedSize() - codeStream->current_pos();
   }
 
   /*! Compute the offset between the current code stream position and the start
@@ -257,9 +282,17 @@ public:
    *
    * @param instID The instruction ID.
    *
-   * @return The address of the instruction.
+   * @return The real address of the instruction.
    */
   rword getInstAddress(uint16_t instID) const;
+
+  /*! Obtain the instrumented address for a specific instruction ID.
+   *
+   * @param instID The instruction ID.
+   *
+   * @return The address in the BasicBlock of the instruction.
+   */
+  rword getInstInstrumentedAddress(uint16_t instID) const;
 
   /*! Obtain the original MCInst for a specific instruction ID.
    *
@@ -414,6 +447,8 @@ public:
    * @return the occupation ratio.
    */
   float occupationRatio() const;
+
+  const ScratchRegisterInfo &getScratchRegisterInfo() const { return srInfo; }
 };
 
 } // namespace QBDI

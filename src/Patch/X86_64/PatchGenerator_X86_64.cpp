@@ -15,11 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <memory>
-#include <vector>
+#include <stdint.h>
+#include <stdlib.h>
+#include <utility>
 
+#include "MCTargetDesc/X86BaseInfo.h"
 #include "X86InstrInfo.h"
+#include "llvm/MC/MCInst.h"
+#include "llvm/MC/MCInstrDesc.h"
+#include "llvm/MC/MCInstrInfo.h"
 
+#include "QBDI/Config.h"
+#include "QBDI/Platform.h"
+#include "Patch/InstInfo.h"
+#include "Patch/RelocatableInst.h"
+#include "Patch/TempManager.h"
 #include "Patch/X86_64/InstInfo_X86_64.h"
 #include "Patch/X86_64/Layer2_X86_64.h"
 #include "Patch/X86_64/PatchGenerator_X86_64.h"
@@ -27,30 +37,24 @@
 #include "Utility/LogSys.h"
 
 namespace QBDI {
+class Patch;
+
+// Generic PatchGenerator that must be implemented by each target
+
+// JmpEpilogue
+// ===========
 
 RelocatableInst::UniquePtrVec
-GetOperand::generate(const llvm::MCInst *inst, rword address, rword instSize,
-                     TempManager *temp_manager, Patch *toMerge) const {
-  if (inst->getOperand(op).isReg()) {
-    return conv_unique<RelocatableInst>(NoReloc::unique(movrr(
-        temp_manager->getRegForTemp(temp), inst->getOperand(op).getReg())));
-  } else if (inst->getOperand(op).isImm()) {
-    return conv_unique<RelocatableInst>(
-        Mov(temp_manager->getRegForTemp(temp),
-            Constant(inst->getOperand(op).getImm())));
-  } else {
-    QBDI_ERROR("Invalid operand type for GetOperand()");
-    return {};
-  }
-}
-
-RelocatableInst::UniquePtrVec
-GetConstant::generate(const llvm::MCInst *inst, rword address, rword instSize,
+JmpEpilogue::generate(const llvm::MCInst *inst, rword address, rword instSize,
                       TempManager *temp_manager, Patch *toMerge) const {
 
-  return conv_unique<RelocatableInst>(
-      Mov(temp_manager->getRegForTemp(temp), cst));
+  return conv_unique<RelocatableInst>(EpilogueRel::unique(jmp(0), 0, -1));
 }
+
+// Target Specific PatchGenerator
+
+// GetPCOffset
+// ===========
 
 RelocatableInst::UniquePtrVec
 GetPCOffset::generate(const llvm::MCInst *inst, rword address, rword instSize,
@@ -66,6 +70,44 @@ GetPCOffset::generate(const llvm::MCInst *inst, rword address, rword instSize,
   }
   _QBDI_UNREACHABLE();
 }
+
+// SimulateCall
+// ============
+
+RelocatableInst::UniquePtrVec
+SimulateCall::generate(const llvm::MCInst *inst, rword address, rword instSize,
+                       TempManager *temp_manager, Patch *toMerge) const {
+  RelocatableInst::UniquePtrVec patch;
+
+  append(patch, WriteTemp(temp, Offset(Reg(REG_PC)))
+                    .generate(inst, address, instSize, temp_manager, nullptr));
+  append(patch, GetPCOffset(temp, Constant(0))
+                    .generate(inst, address, instSize, temp_manager, nullptr));
+  patch.push_back(Pushr(temp_manager->getRegForTemp(temp)));
+
+  return patch;
+}
+
+// SimulateRet
+// ===========
+
+RelocatableInst::UniquePtrVec
+SimulateRet::generate(const llvm::MCInst *inst, rword address, rword instSize,
+                      TempManager *temp_manager, Patch *toMerge) const {
+  RelocatableInst::UniquePtrVec patch;
+
+  patch.push_back(Popr(temp_manager->getRegForTemp(temp)));
+  if (inst->getNumOperands() == 1 && inst->getOperand(0).isImm()) {
+    patch.push_back(Add(Reg(REG_SP), Constant(inst->getOperand(0).getImm())));
+  }
+  append(patch, WriteTemp(temp, Offset(Reg(REG_PC)))
+                    .generate(inst, address, instSize, temp_manager, nullptr));
+
+  return patch;
+}
+
+// GetReadAddress
+// ==============
 
 RelocatableInst::UniquePtrVec
 GetReadAddress::generate(const llvm::MCInst *inst, rword address,
@@ -161,6 +203,9 @@ GetReadAddress::generate(const llvm::MCInst *inst, rword address,
       abort());
 }
 
+// GetWriteAddress
+// ===============
+
 RelocatableInst::UniquePtrVec
 GetWriteAddress::generate(const llvm::MCInst *inst, rword address,
                           rword instSize, TempManager *temp_manager,
@@ -250,6 +295,9 @@ GetWriteAddress::generate(const llvm::MCInst *inst, rword address,
       false && "Called on an instruction which does not make write access",
       abort());
 }
+
+// GetReadValue
+// ============
 
 RelocatableInst::UniquePtrVec
 GetReadValue::generate(const llvm::MCInst *inst, rword address, rword instSize,
@@ -393,6 +441,9 @@ GetReadValue::generate(const llvm::MCInst *inst, rword address, rword instSize,
       abort());
 }
 
+// GetWriteValue
+// =============
+
 RelocatableInst::UniquePtrVec
 GetWriteValue::generate(const llvm::MCInst *inst, rword address, rword instSize,
                         TempManager *temp_manager, Patch *toMerge) const {
@@ -496,97 +547,6 @@ GetWriteValue::generate(const llvm::MCInst *inst, rword address, rword instSize,
   QBDI_REQUIRE_ACTION(
       false && "Called on an instruction which does not make write access",
       abort());
-}
-
-RelocatableInst::UniquePtrVec GetInstId::generate(const llvm::MCInst *inst,
-                                                  rword address, rword instSize,
-                                                  TempManager *temp_manager,
-                                                  Patch *toMerge) const {
-
-  return conv_unique<RelocatableInst>(
-      InstId::unique(movri(temp_manager->getRegForTemp(temp), 0), 1));
-}
-
-RelocatableInst::UniquePtrVec ReadTemp::generate(const llvm::MCInst *inst,
-                                                 rword address, rword instSize,
-                                                 TempManager *temp_manager,
-                                                 Patch *toMerge) const {
-
-  if (type == OffsetType) {
-    return conv_unique<RelocatableInst>(
-        Mov(temp_manager->getRegForTemp(temp), offset));
-  } else if (type == ShadowType) {
-    return conv_unique<RelocatableInst>(
-        Mov(temp_manager->getRegForTemp(temp), shadow));
-  }
-  _QBDI_UNREACHABLE();
-}
-
-RelocatableInst::UniquePtrVec WriteTemp::generate(const llvm::MCInst *inst,
-                                                  rword address, rword instSize,
-                                                  TempManager *temp_manager,
-                                                  Patch *toMerge) const {
-
-  if (type == OffsetType) {
-    return conv_unique<RelocatableInst>(
-        Mov(offset, temp_manager->getRegForTemp(temp)));
-  } else if (type == ShadowType) {
-    return conv_unique<RelocatableInst>(
-        Mov(shadow, temp_manager->getRegForTemp(temp)));
-  }
-  _QBDI_UNREACHABLE();
-}
-
-RelocatableInst::UniquePtrVec SaveReg::generate(const llvm::MCInst *inst,
-                                                rword address, rword instSize,
-                                                TempManager *temp_manager,
-                                                Patch *toMerge) const {
-
-  return conv_unique<RelocatableInst>(Mov(offset, reg));
-}
-
-RelocatableInst::UniquePtrVec LoadReg::generate(const llvm::MCInst *inst,
-                                                rword address, rword instSize,
-                                                TempManager *temp_manager,
-                                                Patch *toMerge) const {
-
-  return conv_unique<RelocatableInst>(Mov(reg, offset));
-}
-
-RelocatableInst::UniquePtrVec
-JmpEpilogue::generate(const llvm::MCInst *inst, rword address, rword instSize,
-                      TempManager *temp_manager, Patch *toMerge) const {
-
-  return conv_unique<RelocatableInst>(EpilogueRel::unique(jmp(0), 0, -1));
-}
-
-RelocatableInst::UniquePtrVec
-SimulateCall::generate(const llvm::MCInst *inst, rword address, rword instSize,
-                       TempManager *temp_manager, Patch *toMerge) const {
-  RelocatableInst::UniquePtrVec patch;
-
-  append(patch, WriteTemp(temp, Offset(Reg(REG_PC)))
-                    .generate(inst, address, instSize, temp_manager, nullptr));
-  append(patch, GetPCOffset(temp, Constant(0))
-                    .generate(inst, address, instSize, temp_manager, nullptr));
-  patch.push_back(Pushr(temp_manager->getRegForTemp(temp)));
-
-  return patch;
-}
-
-RelocatableInst::UniquePtrVec
-SimulateRet::generate(const llvm::MCInst *inst, rword address, rword instSize,
-                      TempManager *temp_manager, Patch *toMerge) const {
-  RelocatableInst::UniquePtrVec patch;
-
-  patch.push_back(Popr(temp_manager->getRegForTemp(temp)));
-  if (inst->getNumOperands() == 1 && inst->getOperand(0).isImm()) {
-    patch.push_back(Add(Reg(REG_SP), Constant(inst->getOperand(0).getImm())));
-  }
-  append(patch, WriteTemp(temp, Offset(Reg(REG_PC)))
-                    .generate(inst, address, instSize, temp_manager, nullptr));
-
-  return patch;
 }
 
 } // namespace QBDI

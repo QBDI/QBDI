@@ -15,30 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef PATCHRULES_H
-#define PATCHRULES_H
-
-#include <memory>
-#include <vector>
-
-#include "QBDI/Options.h"
-#include "QBDI/State.h"
+#ifndef QBDI_EXECBROKER_X86_64_H
+#define QBDI_EXECBROKER_X86_64_H
 
 namespace QBDI {
 
-class PatchRule;
-class RelocatableInst;
-
-std::vector<std::unique_ptr<RelocatableInst>>
-getExecBlockPrologue(Options opts);
-
-std::vector<std::unique_ptr<RelocatableInst>>
-getExecBlockEpilogue(Options opts);
-
-std::vector<std::unique_ptr<RelocatableInst>> getTerminator(rword address);
-
-std::vector<PatchRule> getDefaultPatchRules(Options opts);
+struct ExecBrokerArchData {};
 
 } // namespace QBDI
 
-#endif
+#endif // QBDI_EXECBROKER_X86_64_H

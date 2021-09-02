@@ -15,10 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#include "llvm/ADT/StringRef.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstrInfo.h"
 
+#include "Engine/LLVMCPU.h"
 #include "Patch/InstInfo.h"
 #include "Patch/PatchCondition.h"
 #include "Utility/String.h"
@@ -36,12 +37,6 @@ bool OpIs::test(const llvm::MCInst &inst, rword address, rword instSize,
   return inst.getOpcode() == op;
 }
 
-bool RegIs::test(const llvm::MCInst &inst, rword address, rword instSize,
-                 const LLVMCPU &llvmcpu) const {
-  return inst.getOperand(opn).isReg() &&
-         inst.getOperand(opn).getReg() == (unsigned int)reg;
-}
-
 bool UseReg::test(const llvm::MCInst &inst, rword address, rword instSize,
                   const LLVMCPU &llvmcpu) const {
   for (unsigned int i = 0; i < inst.getNumOperands(); i++) {
@@ -53,16 +48,6 @@ bool UseReg::test(const llvm::MCInst &inst, rword address, rword instSize,
   return false;
 }
 
-bool OperandIsReg::test(const llvm::MCInst &inst, rword address, rword instSize,
-                        const LLVMCPU &llvmcpu) const {
-  return inst.getOperand(opn).isReg();
-}
-
-bool OperandIsImm::test(const llvm::MCInst &inst, rword address, rword instSize,
-                        const LLVMCPU &llvmcpu) const {
-  return inst.getOperand(opn).isImm();
-}
-
 bool DoesReadAccess::test(const llvm::MCInst &inst, rword address,
                           rword instSize, const LLVMCPU &llvmcpu) const {
   return getReadSize(inst) > 0;
@@ -71,26 +56,6 @@ bool DoesReadAccess::test(const llvm::MCInst &inst, rword address,
 bool DoesWriteAccess::test(const llvm::MCInst &inst, rword address,
                            rword instSize, const LLVMCPU &llvmcpu) const {
   return getWriteSize(inst) > 0;
-}
-
-bool ReadAccessSizeIs::test(const llvm::MCInst &inst, rword address,
-                            rword instSize, const LLVMCPU &llvmcpu) const {
-  return getReadSize(inst) == (rword)size;
-}
-
-bool WriteAccessSizeIs::test(const llvm::MCInst &inst, rword address,
-                             rword instSize, const LLVMCPU &llvmcpu) const {
-  return getWriteSize(inst) == (rword)size;
-}
-
-bool IsStackRead::test(const llvm::MCInst &inst, rword address, rword instSize,
-                       const LLVMCPU &llvmcpu) const {
-  return isStackRead(inst);
-}
-
-bool IsStackWrite::test(const llvm::MCInst &inst, rword address, rword instSize,
-                        const LLVMCPU &llvmcpu) const {
-  return isStackWrite(inst);
 }
 
 } // namespace QBDI

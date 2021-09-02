@@ -18,10 +18,23 @@
 #ifndef PATCHGENERATOR_X86_64_H
 #define PATCHGENERATOR_X86_64_H
 
-#include "Patch/InstInfo.h"
+#include <memory>
+#include <stddef.h>
+#include <vector>
+
+#include "QBDI/State.h"
 #include "Patch/PatchGenerator.h"
+#include "Patch/PatchUtils.h"
+#include "Patch/Types.h"
+
+namespace llvm {
+class MCInst;
+}
 
 namespace QBDI {
+class Patch;
+class RelocatableInst;
+class TempManager;
 
 class GetPCOffset : public AutoClone<PatchGenerator, GetPCOffset> {
 

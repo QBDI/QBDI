@@ -15,10 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "llvm/Support/Process.h"
+#include <algorithm>
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <string>
+#include <unistd.h>
+#include <vector>
 
-#include "QBDI/Memory.h"
+#include "QBDI/Bitmask.h"
 #include "QBDI/Memory.hpp"
+#include "QBDI/Range.h"
+#include "QBDI/State.h"
 #include "Utility/LogSys.h"
 
 namespace QBDI {

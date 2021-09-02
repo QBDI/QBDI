@@ -15,18 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <algorithm>
-#include <bitset>
+#include <utility>
 
-#include "llvm/ADT/APInt.h"
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Triple.h"
+#include "llvm/ADT/Twine.h"
 #include "llvm/MC/MCAsmBackend.h"
 #include "llvm/MC/MCAsmInfo.h"
 #include "llvm/MC/MCAssembler.h"
 #include "llvm/MC/MCCodeEmitter.h"
 #include "llvm/MC/MCContext.h"
 #include "llvm/MC/MCDisassembler/MCDisassembler.h"
+#include "llvm/MC/MCExpr.h"
+#include "llvm/MC/MCFixup.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstPrinter.h"
 #include "llvm/MC/MCInstrInfo.h"
@@ -34,22 +36,52 @@
 #include "llvm/MC/MCObjectWriter.h"
 #include "llvm/MC/MCRegisterInfo.h"
 #include "llvm/MC/MCSubtargetInfo.h"
+#include "llvm/MC/MCTargetOptions.h"
 #include "llvm/MC/MCValue.h"
+#include "llvm/MC/SubtargetFeature.h"
+#include "llvm/Support/Host.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include "QBDI/Config.h"
 #include "Engine/LLVMCPU.h"
 #include "Utility/LogSys.h"
 #include "Utility/System.h"
+#include "Utility/memory_ostream.h"
 
 #include "spdlog/fmt/bin_to_hex.h"
 
 namespace QBDI {
 
-LLVMCPU::LLVMCPU(const std::string &_cpu,
-                 const std::vector<std::string> &_mattrs, Options opts)
-    : cpu(_cpu), mattrs(_mattrs), options(opts) {
+LLVMCPUs::LLVMCPUs(const std::string &_cpu,
+                   const std::vector<std::string> &_mattrs, Options opts) {
+#if defined(QBDI_ARCH_ARM)
+  llvmcpu[CPUMode::ARM] =
+      std::make_unique<LLVMCPU>(_cpu, "arm", _mattrs, opts, CPUMode::ARM);
+  llvmcpu[CPUMode::Thumb] =
+      std::make_unique<LLVMCPU>(_cpu, "thumb", _mattrs, opts, CPUMode::Thumb);
+#elif defined(QBDI_ARCH_AARCH64)
+  llvmcpu[CPUMode::AARCH64] = std::make_unique<LLVMCPU>(
+      _cpu, "aarch64", _mattrs, opts, CPUMode::AARCH64);
+#elif defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+  llvmcpu[CPUMode::DEFAULT] =
+      std::make_unique<LLVMCPU>(_cpu, "", _mattrs, opts, CPUMode::DEFAULT);
+#endif
+}
+
+LLVMCPUs::~LLVMCPUs() = default;
+
+void LLVMCPUs::setOptions(Options opts) {
+  for (int i = 0; i < CPUMode::COUNT; i++) {
+    llvmcpu[i]->setOptions(opts);
+  }
+}
+
+LLVMCPU::LLVMCPU(const std::string &_cpu, const std::string &_arch,
+                 const std::vector<std::string> &_mattrs, Options opts,
+                 CPUMode cpumode)
+    : cpu(_cpu), arch(_arch), mattrs(_mattrs), options(opts), cpumode(cpumode) {
 
   std::string error;
   std::string featuresStr;
@@ -81,7 +113,7 @@ LLVMCPU::LLVMCPU(const std::string &_cpu,
   // lookup target
   tripleName = llvm::Triple::normalize(llvm::sys::getDefaultTargetTriple());
   llvm::Triple processTriple(tripleName);
-  target = llvm::TargetRegistry::lookupTarget(tripleName, error);
+  target = llvm::TargetRegistry::lookupTarget(arch, processTriple, error);
   QBDI_DEBUG("Initialized LLVM for target {}", tripleName.c_str());
 
   // Allocate all LLVM classes
@@ -123,7 +155,7 @@ LLVMCPU::LLVMCPU(const std::string &_cpu,
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
   variant = ((options & Options::OPT_ATT_SYNTAX) == 0) ? 1 : 0;
 #else
-  variant = MAI.getAssemblerDialect();
+  variant = MAI->getAssemblerDialect();
 #endif
 
   asmPrinter = std::unique_ptr<llvm::MCInstPrinter>(target->createMCInstPrinter(

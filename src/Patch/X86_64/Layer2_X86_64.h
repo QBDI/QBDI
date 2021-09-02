@@ -19,9 +19,11 @@
 #define LAYER2_X86_64_H
 
 #include <memory>
+#include <stdint.h>
 
 #include "llvm/MC/MCInst.h"
 
+#include "QBDI/State.h"
 #include "Patch/Types.h"
 
 namespace QBDI {

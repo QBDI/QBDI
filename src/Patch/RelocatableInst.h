@@ -23,22 +23,18 @@
 
 #include "llvm/MC/MCInst.h"
 
-#include "ExecBlock/ExecBlock.h"
 #include "Patch/PatchUtils.h"
 #include "Patch/Types.h"
 
 namespace QBDI {
+class ExecBlock;
 
 class RelocatableInst {
-protected:
-  llvm::MCInst inst;
-
 public:
   using UniquePtr = std::unique_ptr<RelocatableInst>;
   using UniquePtrVec = std::vector<std::unique_ptr<RelocatableInst>>;
 
-  RelocatableInst(llvm::MCInst &&inst)
-      : inst(std::forward<llvm::MCInst>(inst)) {}
+  RelocatableInst() {}
 
   virtual std::unique_ptr<RelocatableInst> clone() const = 0;
 
@@ -48,62 +44,103 @@ public:
 };
 
 class NoReloc : public AutoClone<RelocatableInst, NoReloc> {
+  llvm::MCInst inst;
+
 public:
   NoReloc(llvm::MCInst &&inst)
-      : AutoClone<RelocatableInst, NoReloc>(std::forward<llvm::MCInst>(inst)) {}
+      : AutoClone<RelocatableInst, NoReloc>(),
+        inst(std::forward<llvm::MCInst>(inst)) {}
 
   llvm::MCInst reloc(ExecBlock *exec_block) const override { return inst; }
 };
 
-class DataBlockRel : public AutoClone<RelocatableInst, DataBlockRel> {
-  unsigned int opn;
-  rword offset;
+// Generic RelocatableInst that must be implemented by each target
+
+class LoadShadow : public AutoClone<RelocatableInst, LoadShadow> {
+  unsigned reg;
+  uint16_t tag;
 
 public:
-  DataBlockRel(llvm::MCInst &&inst, unsigned int opn, rword offset)
-      : AutoClone<RelocatableInst, DataBlockRel>(
-            std::forward<llvm::MCInst>(inst)),
-        opn(opn), offset(offset){};
+  LoadShadow(unsigned reg, Shadow tag)
+      : AutoClone<RelocatableInst, LoadShadow>(), reg(reg), tag(tag.getTag()) {}
 
-  llvm::MCInst reloc(ExecBlock *exec_block) const override {
-    llvm::MCInst res = inst;
-    res.getOperand(opn).setImm(offset + exec_block->getDataBlockOffset());
-    return res;
-  }
+  // Load a value from the last shadow with the given tag
+  llvm::MCInst reloc(ExecBlock *execBlock) const override;
 };
 
-class DataBlockAbsRel : public AutoClone<RelocatableInst, DataBlockAbsRel> {
-  unsigned int opn;
-  rword offset;
+class StoreShadow : public AutoClone<RelocatableInst, StoreShadow> {
+  unsigned reg;
+  uint16_t tag;
+  bool create;
 
 public:
-  DataBlockAbsRel(llvm::MCInst &&inst, unsigned int opn, rword offset)
-      : AutoClone<RelocatableInst, DataBlockAbsRel>(
-            std::forward<llvm::MCInst>(inst)),
-        opn(opn), offset(offset){};
+  StoreShadow(unsigned reg, Shadow tag, bool create)
+      : AutoClone<RelocatableInst, StoreShadow>(), reg(reg), tag(tag.getTag()),
+        create(create) {}
 
-  llvm::MCInst reloc(ExecBlock *exec_block) const override {
-    llvm::MCInst res = inst;
-    res.getOperand(opn).setImm(exec_block->getDataBlockBase() + offset);
-    return res;
-  }
+  // Store a value to a shadow
+  // if create, the shadow is create in the ExecBlock with the given tag
+  // otherwise, the last shadow with this tag is used
+  llvm::MCInst reloc(ExecBlock *execBlock) const override;
 };
 
-class EpilogueRel : public AutoClone<RelocatableInst, EpilogueRel> {
-  unsigned int opn;
-  rword offset;
+class LoadDataBlock : public AutoClone<RelocatableInst, LoadDataBlock> {
+  unsigned reg;
+  int64_t offset;
 
 public:
-  EpilogueRel(llvm::MCInst &&inst, unsigned int opn, rword offset)
-      : AutoClone<RelocatableInst, EpilogueRel>(
-            std::forward<llvm::MCInst>(inst)),
-        opn(opn), offset(offset){};
+  LoadDataBlock(unsigned reg, int64_t offset)
+      : AutoClone<RelocatableInst, LoadDataBlock>(), reg(reg), offset(offset) {}
 
-  llvm::MCInst reloc(ExecBlock *exec_block) const override {
-    llvm::MCInst res = inst;
-    res.getOperand(opn).setImm(offset + exec_block->getEpilogueOffset());
-    return res;
+  // Load a value from the specified offset of the datablock
+  llvm::MCInst reloc(ExecBlock *execBlock) const override;
+};
+
+class StoreDataBlock : public AutoClone<RelocatableInst, StoreDataBlock> {
+  unsigned reg;
+  int64_t offset;
+
+public:
+  StoreDataBlock(unsigned reg, int64_t offset)
+      : AutoClone<RelocatableInst, StoreDataBlock>(), reg(reg), offset(offset) {
   }
+
+  // Store a value to the specified offset of the datablock
+  llvm::MCInst reloc(ExecBlock *execBlock) const override;
+};
+
+class MovReg : public AutoClone<RelocatableInst, MovReg> {
+  unsigned dst;
+  unsigned src;
+
+public:
+  MovReg(unsigned dst, unsigned src)
+      : AutoClone<RelocatableInst, MovReg>(), dst(dst), src(src) {}
+
+  // Move a value from a register to another
+  llvm::MCInst reloc(ExecBlock *execBlock) const override;
+};
+
+class LoadImm : public AutoClone<RelocatableInst, LoadImm> {
+  unsigned reg;
+  Constant imm;
+
+public:
+  LoadImm(unsigned reg, Constant imm)
+      : AutoClone<RelocatableInst, LoadImm>(), reg(reg), imm(imm) {}
+
+  // Set the register to this value
+  llvm::MCInst reloc(ExecBlock *execBlock) const override;
+};
+
+class InstId : public AutoClone<RelocatableInst, InstId> {
+  unsigned reg;
+
+public:
+  InstId(unsigned reg) : AutoClone<RelocatableInst, InstId>(), reg(reg) {}
+
+  // Store the current instruction ID in the register
+  llvm::MCInst reloc(ExecBlock *exec_block) const override;
 };
 
 } // namespace QBDI

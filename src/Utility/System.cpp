@@ -15,12 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <algorithm>
+#include <stdlib.h>
 
+#include "llvm/ADT/StringMap.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/ADT/iterator.h"
+#include "llvm/MC/SubtargetFeature.h"
 #include "llvm/Support/Host.h"
-#include "llvm/Support/Process.h"
 
 #include "QBDI/Config.h"
-#include "QBDI/Platform.h"
 
 #include "Utility/System.h"
 
@@ -31,7 +35,21 @@ const std::vector<std::string> getHostCPUFeatures() {
   llvm::StringMap<bool> features;
 
   bool ret = llvm::sys::getHostCPUFeatures(features);
+
   if (ret) {
+    const char *fixupFeatures = getenv("QBDI_FIXUP_FEATURES");
+    if (fixupFeatures != nullptr) {
+      llvm::SubtargetFeatures addFeatures(fixupFeatures);
+      for (const auto &f : addFeatures.getFeatures()) {
+        if (llvm::SubtargetFeatures::hasFlag(f)) {
+          features[llvm::SubtargetFeatures::StripFlag(f)] =
+              llvm::SubtargetFeatures::isEnabled(f);
+        } else {
+          features[f] = true;
+        }
+      }
+    }
+
 #if defined(_QBDI_FORCE_DISABLE_AVX)
     const char *disable_avx = "1";
 #else

@@ -16,27 +16,32 @@
  * limitations under the License.
  */
 #include <algorithm>
-#include <bitset>
+#include <cstdint>
+#include <string.h>
+
+#include "llvm/ADT/ArrayRef.h"
+#include "llvm/MC/MCDisassembler/MCDisassembler.h"
+#include "llvm/MC/MCInst.h"
 
 #include "Engine/Engine.h"
 #include "Engine/LLVMCPU.h"
 
+#include "ExecBlock/Context.h"
+#include "ExecBlock/ExecBlock.h"
 #include "ExecBlock/ExecBlockManager.h"
 #include "ExecBroker/ExecBroker.h"
-#include "Patch/InstInfo.h"
 #include "Patch/InstMetadata.h"
 #include "Patch/InstrRule.h"
-#include "Patch/InstrRules.h"
 #include "Patch/Patch.h"
 #include "Patch/PatchRule.h"
 #include "Patch/PatchRules.h"
-#include "Patch/RegisterSize.h"
-#include "Patch/Types.h"
 #include "Utility/LogSys.h"
-#include "Utility/System.h"
 
+#include "QBDI/Bitmask.h"
+#include "QBDI/Config.h"
 #include "QBDI/Errors.h"
-#include "QBDI/Platform.h"
+#include "QBDI/Range.h"
+#include "QBDI/State.h"
 
 // Mask to identify VM events
 #define EVENTID_VM_MASK (1UL << 30)
@@ -46,14 +51,15 @@ namespace QBDI {
 Engine::Engine(const std::string &_cpu, const std::vector<std::string> &_mattrs,
                Options opts, VMInstanceRef vminstance)
     : vminstance(vminstance), instrRulesCounter(0), vmCallbacksCounter(0),
-      options(opts), eventMask(VMEvent::NO_EVENT), running(false) {
+      curCPUMode(CPUMode::DEFAULT), options(opts), eventMask(VMEvent::NO_EVENT),
+      running(false) {
 
-  llvmcpu = std::make_unique<LLVMCPU>(_cpu, _mattrs, opts);
-  blockManager = std::make_unique<ExecBlockManager>(*llvmcpu, vminstance);
+  llvmCPUs = std::make_unique<LLVMCPUs>(_cpu, _mattrs, opts);
+  blockManager = std::make_unique<ExecBlockManager>(*llvmCPUs, vminstance);
   execBroker = blockManager->getExecBroker();
 
   // Get default Patch rules for this architecture
-  patchRules = getDefaultPatchRules();
+  patchRules = getDefaultPatchRules(options);
 
   gprState = std::make_unique<GPRState>();
   fprState = std::make_unique<FPRState>();
@@ -72,18 +78,19 @@ Engine::Engine(const Engine &other)
     : vminstance(nullptr), instrRules(),
       instrRulesCounter(other.instrRulesCounter),
       vmCallbacks(other.vmCallbacks),
-      vmCallbacksCounter(other.vmCallbacksCounter), options(other.options),
+      vmCallbacksCounter(other.vmCallbacksCounter),
+      curCPUMode(CPUMode::DEFAULT), options(other.options),
       eventMask(other.eventMask), running(false) {
 
-  llvmcpu = std::make_unique<LLVMCPU>(
-      other.llvmcpu->getCPU(), other.llvmcpu->getMattrs(), other.options);
-  blockManager = std::make_unique<ExecBlockManager>(*llvmcpu, nullptr);
+  llvmCPUs = std::make_unique<LLVMCPUs>(
+      other.llvmCPUs->getCPU(), other.llvmCPUs->getMattrs(), other.options);
+  blockManager = std::make_unique<ExecBlockManager>(*llvmCPUs, nullptr);
   execBroker = blockManager->getExecBroker();
   // copy instrumentation range
   execBroker->setInstrumentedRange(other.execBroker->getInstrumentedRange());
 
   // Get default Patch rules for this architecture
-  patchRules = getDefaultPatchRules();
+  patchRules = getDefaultPatchRules(options);
 
   // Copy unique_ptr of instrRules
   for (const auto &r : other.instrRules) {
@@ -104,13 +111,13 @@ Engine &Engine::operator=(const Engine &other) {
   QBDI_REQUIRE_ACTION(not running && "Cannot assign a running Engine", abort());
   this->clearAllCache();
 
-  if (not llvmcpu->isSameCPU(*other.llvmcpu)) {
+  if (not llvmCPUs->isSameCPU(*other.llvmCPUs)) {
     blockManager.reset();
 
-    llvmcpu = std::make_unique<LLVMCPU>(
-        other.llvmcpu->getCPU(), other.llvmcpu->getMattrs(), other.options);
+    llvmCPUs = std::make_unique<LLVMCPUs>(
+        other.llvmCPUs->getCPU(), other.llvmCPUs->getMattrs(), other.options);
 
-    blockManager = std::make_unique<ExecBlockManager>(*llvmcpu, nullptr);
+    blockManager = std::make_unique<ExecBlockManager>(*llvmCPUs, nullptr);
     execBroker = blockManager->getExecBroker();
   }
 
@@ -142,15 +149,21 @@ void Engine::setOptions(Options options) {
   if (options != this->options) {
     QBDI_DEBUG("Change Options from {:x} to {:x}", this->options, options);
     clearAllCache();
-    llvmcpu->setOptions(options);
+    llvmCPUs->setOptions(options);
+
+    Options needRecreate =
+        Options::OPT_DISABLE_FPR | Options::OPT_DISABLE_OPTIONAL_FPR;
+#if defined(QBDI_ARCH_AARCH64)
+    needRecreate |= OPT_DISABLE_LOCAL_MONITOR;
+#endif
 
     // need to recreate all ExecBlock
-    if (((this->options ^ options) &
-         (Options::OPT_DISABLE_FPR | Options::OPT_DISABLE_OPTIONAL_FPR)) != 0) {
+    if (((this->options ^ options) & needRecreate) != 0) {
       const RangeSet<rword> instrumentationRange =
           execBroker->getInstrumentedRange();
 
-      blockManager = std::make_unique<ExecBlockManager>(*llvmcpu, vminstance);
+      patchRules = getDefaultPatchRules(options);
+      blockManager = std::make_unique<ExecBlockManager>(*llvmCPUs, vminstance);
       execBroker = blockManager->getExecBroker();
 
       execBroker->setInstrumentedRange(instrumentationRange);
@@ -244,13 +257,14 @@ void Engine::removeAllInstrumentedRanges() {
 
 std::vector<Patch> Engine::patch(rword start) {
   std::vector<Patch> basicBlock;
+  const LLVMCPU &llvmcpu = llvmCPUs->getCPU(curCPUMode);
   const llvm::ArrayRef<uint8_t> code((uint8_t *)start, (size_t)-1);
   bool basicBlockEnd = false;
   rword i = 0;
   QBDI_DEBUG("Patching basic block at address 0x{:x}", start);
 
   // Get Basic block
-  while (basicBlockEnd == false) {
+  while (not basicBlockEnd) {
     llvm::MCInst inst;
     llvm::MCDisassembler::DecodeStatus dstatus;
     rword address;
@@ -260,22 +274,22 @@ std::vector<Patch> Engine::patch(rword start) {
     // Aggregate a complete patch
     do {
       // Disassemble
-      dstatus = llvmcpu->getInstruction(inst, instSize, code.slice(i), i);
+      dstatus = llvmcpu.getInstruction(inst, instSize, code.slice(i), i);
       address = start + i;
       QBDI_REQUIRE_ACTION(llvm::MCDisassembler::Success == dstatus, abort());
       QBDI_DEBUG_BLOCK({
-        std::string disass = llvmcpu->showInst(inst, address);
+        std::string disass = llvmcpu.showInst(inst, address);
         QBDI_DEBUG("Patching 0x{:x} {}", address, disass.c_str());
       });
       // Patch & merge
       for (uint32_t j = 0; j < patchRules.size(); j++) {
-        if (patchRules[j].canBeApplied(inst, address, instSize, *llvmcpu)) {
-          QBDI_DEBUG("Patch rule {:x} applied", j);
+        if (patchRules[j].canBeApplied(inst, address, instSize, llvmcpu)) {
+          QBDI_DEBUG("Patch rule {} applied", j);
           if (patch.insts.size() == 0) {
-            patch = patchRules[j].generate(inst, address, instSize, *llvmcpu);
+            patch = patchRules[j].generate(inst, address, instSize, llvmcpu);
           } else {
             QBDI_DEBUG("Previous instruction merged");
-            patch = patchRules[j].generate(inst, address, instSize, *llvmcpu,
+            patch = patchRules[j].generate(inst, address, instSize, llvmcpu,
                                            &patch);
           }
           break;
@@ -299,6 +313,7 @@ std::vector<Patch> Engine::patch(rword start) {
 }
 
 void Engine::instrument(std::vector<Patch> &basicBlock, size_t patchEnd) {
+  const LLVMCPU &llvmcpu = llvmCPUs->getCPU(curCPUMode);
   QBDI_DEBUG(
       "Instrumenting sequence [0x{:x}, 0x{:x}] in basic block [0x{:x}, 0x{:x}]",
       basicBlock.front().metadata.address,
@@ -309,14 +324,14 @@ void Engine::instrument(std::vector<Patch> &basicBlock, size_t patchEnd) {
     Patch &patch = basicBlock[i];
     QBDI_DEBUG_BLOCK({
       std::string disass =
-          llvmcpu->showInst(patch.metadata.inst, patch.metadata.address);
+          llvmcpu.showInst(patch.metadata.inst, patch.metadata.address);
       QBDI_DEBUG("Instrumenting 0x{:x} {}", patch.metadata.address,
                  disass.c_str());
     });
     // Instrument
     for (const auto &item : instrRules) {
       const InstrRule *rule = item.second.get();
-      if (rule->tryInstrument(patch, *llvmcpu)) {
+      if (rule->tryInstrument(patch, llvmcpu)) {
         QBDI_DEBUG("Instrumentation rule {:x} applied", item.first);
       }
     }

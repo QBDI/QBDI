@@ -15,15 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef REGISTERSIZE_H
-#define REGISTERSIZE_H
-
-#include <stdint.h>
+#ifndef SCRATCHREGISTERINFO_X86_64_H
+#define SCRATCHREGISTERINFO_X86_64_H
 
 namespace QBDI {
 
-uint8_t getRegisterSize(unsigned reg);
+// no need of ScratchRegister for X86 and X86_64
+struct ScratchRegisterInfo {};
 
-};
+struct ScratchRegisterSeqInfo {};
 
-#endif // REGISTERSIZE_H
+} // namespace QBDI
+
+#endif // SCRATCHREGISTERINFO_X86_64_H

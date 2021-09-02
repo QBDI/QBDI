@@ -15,14 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <stdlib.h>
 
-#include "llvm/MC/MCInst.h"
-#include "llvm/MC/MCInstrInfo.h"
+#include "llvm/MC/MCRegister.h"     // for MCRegister
+#include "llvm/MC/MCRegisterInfo.h" // for MCRegisterInfo
 
-#include "QBDI/Platform.h"
+#include "QBDI/Config.h"
+#include "QBDI/State.h"
+#include "Engine/LLVMCPU.h"
 #include "Patch/InstInfo.h"
-#include "Patch/PatchUtils.h"
-#include "Patch/RegisterSize.h"
+#include "Patch/InstMetadata.h"
+#include "Patch/Patch.h"
+#include "Patch/Register.h"
+#include "Patch/TempManager.h"
 #include "Utility/LogSys.h"
 
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
@@ -35,64 +43,63 @@ static constexpr unsigned int _QBDI_FIRST_FREE_REGISTER = 0;
 
 namespace QBDI {
 
+TempManager::TempManager(Patch &patch, const LLVMCPU &llvmcpu,
+                         bool allowInstRegister)
+    : patch(patch), allowInstRegister(allowInstRegister),
+      MCII(llvmcpu.getMCII()), MRI(llvmcpu.getMRI()) {}
+
 Reg TempManager::getRegForTemp(unsigned int id) {
-  unsigned int i;
 
   // Check if the id is already alocated
-  for (auto p : temps) {
+  for (const auto &p : temps) {
     if (p.first == id) {
       return Reg(p.second);
     }
   }
 
+  // try to find a register that doesn't need to be restore
+  for (const auto &r : unrestoreGPR) {
+    if (patch.regUsage.count(r) != 0) {
+      continue;
+    }
+    bool freeReg = true;
+    for (const auto &p : temps) {
+      if (p.second == r.getID()) {
+        freeReg = false;
+        break;
+      }
+    }
+    if (freeReg) {
+      temps.emplace_back(id, r.getID());
+      patch.tempReg.insert(r);
+      return r;
+    }
+  }
+
   // Start from the last free register found (or default)
+  unsigned int i;
   if (temps.size() > 0) {
-    i = temps.back().second + 1;
+    if (unrestoreGPR.count(temps.back().second) == 0) {
+      i = temps.back().second + 1;
+    } else {
+      i = _QBDI_FIRST_FREE_REGISTER;
+    }
   } else {
     i = _QBDI_FIRST_FREE_REGISTER;
   }
 
-  const llvm::MCInstrDesc &desc = MCII.get(inst.getOpcode());
   // Find a free register
   for (; i < AVAILABLE_GPR; i++) {
-    bool free = true;
-    // Check for explicit registers
-    for (unsigned int j = 0; j < inst.getNumOperands(); j++) {
-      const llvm::MCOperand &op = inst.getOperand(j);
-      if (op.isReg() && MRI.isSubRegisterEq(GPR_ID[i], op.getReg())) {
-        free = false;
-        break;
-      }
-    }
-    // Check for implicitly used registers
-    if (free) {
-      const uint16_t *implicitRegs = desc.getImplicitUses();
-      for (; implicitRegs && *implicitRegs; ++implicitRegs) {
-        if (MRI.isSubRegisterEq(GPR_ID[i], *implicitRegs)) {
-          free = false;
-          break;
-        }
-      }
-    }
-    // Check for implicitly modified registers
-    if (free) {
-      const uint16_t *implicitRegs = desc.getImplicitDefs();
-      for (; implicitRegs && *implicitRegs; ++implicitRegs) {
-        if (MRI.isSubRegisterEq(GPR_ID[i], *implicitRegs)) {
-          free = false;
-          break;
-        }
-      }
-    }
-    if (free) {
+    if (patch.regUsage.count(GPR_ID[i]) == 0) {
       // store it and return it
       temps.emplace_back(id, i);
+      patch.tempReg.insert(GPR_ID[i]);
       return Reg(i);
     }
   }
 
   // bypass for pusha and popa. MemoryAccess will not work on theses instruction
-  if (allowInstRegister and useAllRegisters(inst)) {
+  if (allowInstRegister and useAllRegisters(patch.metadata.inst)) {
     if (temps.size() > 0) {
       i = temps.back().second + 1;
     } else {
@@ -101,6 +108,7 @@ Reg TempManager::getRegForTemp(unsigned int id) {
     // store it and return it
     if (i < AVAILABLE_GPR) {
       temps.emplace_back(id, i);
+      patch.tempReg.insert(GPR_ID[i]);
       return Reg(i);
     }
   }
@@ -110,8 +118,9 @@ Reg TempManager::getRegForTemp(unsigned int id) {
 
 Reg::Vec TempManager::getUsedRegisters() const {
   Reg::Vec list;
-  for (auto p : temps)
+  for (auto p : temps) {
     list.push_back(Reg(p.second));
+  }
   return list;
 }
 

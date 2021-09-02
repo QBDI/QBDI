@@ -16,21 +16,29 @@
  * limitations under the License.
  */
 #include <bitset>
+#include <cstdint>
+#include <map>
+#include <string.h>
+#include <string>
+#include <utility>
 
+#include "llvm/ADT/StringRef.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstrDesc.h"
 #include "llvm/MC/MCInstrInfo.h"
+#include "llvm/MC/MCRegister.h"
 #include "llvm/MC/MCRegisterInfo.h"
 
 #include "Engine/LLVMCPU.h"
-#include "ExecBlock/Context.h"
 #include "Patch/InstInfo.h"
 #include "Patch/InstMetadata.h"
-#include "Patch/RegisterSize.h"
+#include "Patch/Register.h"
 #include "Utility/InstAnalysis_prive.h"
 #include "Utility/LogSys.h"
 
-#include "QBDI/Platform.h"
+#include "QBDI/Bitmask.h"
+#include "QBDI/Config.h"
+#include "QBDI/InstAnalysis.h"
 #include "QBDI/State.h"
 
 #ifndef QBDI_PLATFORM_WINDOWS
@@ -41,7 +49,7 @@
 #endif
 
 namespace QBDI {
-namespace {
+namespace InstructionAnalysis {
 
 static bool isFlagRegister(unsigned int regNo) {
   if (regNo == /* llvm::X86|ARM::NoRegister */ 0) {
@@ -75,13 +83,14 @@ void analyseRegister(OperandAnalysis &opa, unsigned int regNo,
     return;
   }
   // try to match register in our GPR context
-  for (uint16_t j = 0; j < NUM_GPR; j++) {
-    if (MRI.isSubRegisterEq(GPR_ID[j], regNo)) {
-      if (GPR_ID[j] != regNo) {
-        unsigned int subregidx = MRI.getSubRegIndex(GPR_ID[j], regNo);
+  size_t gprIndex = getGPRPosition(regNo);
+  if (gprIndex != ((size_t)-1)) {
+    if (MRI.isSubRegisterEq(GPR_ID[gprIndex], regNo)) {
+      if (GPR_ID[gprIndex] != regNo) {
+        unsigned int subregidx = MRI.getSubRegIndex(GPR_ID[gprIndex], regNo);
         opa.regOff = MRI.getSubRegIdxOffset(subregidx);
       }
-      opa.regCtxIdx = j;
+      opa.regCtxIdx = gprIndex;
       opa.size = getRegisterSize(regNo);
       opa.type = OPERAND_GPR;
       if (!opa.size) {
@@ -89,7 +98,10 @@ void analyseRegister(OperandAnalysis &opa, unsigned int regNo,
       }
       return;
     }
+    QBDI_WARN("register {} ({}) has index {} but isn't a subregister", regNo,
+              opa.regName, gprIndex);
   }
+  // try to match register in our GPR context
   auto it = FPR_ID.find(regNo);
   if (it != FPR_ID.end()) {
     opa.regCtxIdx = it->second;
@@ -194,11 +206,7 @@ void analyseOperands(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
   uint8_t numOperandsMax = numOperands + desc.getNumImplicitDefs() +
                            desc.getNumImplicitUses() - operandBias;
   // (R|E)SP are missing for RET and CALL in x86
-  if constexpr ((is_x86_64 or is_x86)) {
-    if ((desc.isReturn() and isStackRead(inst)) or
-        (desc.isCall() and isStackWrite(inst)))
-      numOperandsMax = numOperandsMax + 1;
-  }
+  numOperandsMax += getAdditionnalOperandNumber(inst, desc);
   if (numOperandsMax == 0) {
     // no operand to analyse
     return;
@@ -267,6 +275,9 @@ void analyseOperands(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
       }
       instAnalysis->numOperands++;
     } else if (op.isImm()) {
+      if (isFlagOperand(inst.getOpcode(), i, opdesc.OperandType)) {
+        continue;
+      }
       // fill the operand analysis
       switch (opdesc.OperandType) {
         case llvm::MCOI::OPERAND_IMMEDIATE:
@@ -285,12 +296,8 @@ void analyseOperands(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
           opa.size = sizeof(rword);
           break;
         default:
-          // warning only if unsupported operandType (don't warn for
-          // llvm::X86::OperandType::OPERAND_COND_CODE)
-          if (not isSupportedOperandType(opdesc.OperandType)) {
-            QBDI_WARN("Not supported operandType {} for immediate operand",
-                      opdesc.OperandType);
-          }
+          QBDI_WARN("Not supported operandType {} for immediate operand",
+                    opdesc.OperandType);
           continue;
       }
       if (opdesc.isPredicate()) {
@@ -310,22 +317,10 @@ void analyseOperands(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
                            MRI);
 
   // (R|E)SP are missing for RET and CALL in x86
-  if constexpr ((is_x86_64 or is_x86)) {
-    if ((desc.isReturn() and isStackRead(inst)) or
-        (desc.isCall() and isStackWrite(inst))) {
-      // increment or decrement SP
-      OperandAnalysis &opa2 = instAnalysis->operands[instAnalysis->numOperands];
-      analyseRegister(opa2, GPR_ID[REG_SP], MRI);
-      opa2.regAccess = REGISTER_READ_WRITE;
-      opa2.flag |= OPERANDFLAG_IMPLICIT;
-      instAnalysis->numOperands++;
-      // try to merge with a previous one
-      tryMergeCurrentRegister(instAnalysis);
-    }
-  }
+  getAdditionnalOperand(instAnalysis, inst, desc, MRI);
 }
 
-} // namespace
+} // namespace InstructionAnalysis
 
 void InstAnalysisDestructor::operator()(InstAnalysis *ptr) const {
   if (ptr == nullptr) {
@@ -383,21 +378,24 @@ const InstAnalysis *analyzeInstMetadata(const InstMetadata &instMetadata,
     instAnalysis->isReturn = desc.isReturn();
     instAnalysis->isCompare = desc.isCompare();
     instAnalysis->isPredicable = desc.isPredicable();
+    instAnalysis->isMoveImm = desc.isMoveImmediate();
     instAnalysis->loadSize = getReadSize(inst);
     instAnalysis->storeSize = getWriteSize(inst);
     instAnalysis->mayLoad =
         instAnalysis->loadSize != 0 || unsupportedRead(inst);
-    instAnalysis->mayStore = instAnalysis->storeSize != 0;
+    instAnalysis->mayStore =
+        instAnalysis->storeSize != 0 || unsupportedWrite(inst);
     instAnalysis->mayLoad_LLVM = desc.mayLoad();
     instAnalysis->mayStore_LLVM = desc.mayStore();
     instAnalysis->mnemonic = MCII.getName(inst.getOpcode()).data();
 
-    analyseCondition(instAnalysis, inst, desc);
+    InstructionAnalysis::analyseCondition(instAnalysis, inst, desc);
   }
 
   if (missingType & ANALYSIS_OPERANDS) {
     // analyse operands (immediates / registers)
-    analyseOperands(instAnalysis, inst, desc, llvmcpu.getMRI());
+    InstructionAnalysis::analyseOperands(instAnalysis, inst, desc,
+                                         llvmcpu.getMRI());
   }
 
   if (missingType & ANALYSIS_SYMBOL) {

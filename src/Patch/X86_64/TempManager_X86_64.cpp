@@ -15,17 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef PATCHRULES_TARGET_H
-#define PATCHRULES_TARGET_H
 
-#include "QBDI/Platform.h"
+#include <set>
+#include "Patch/TempManager.h"
+#include "Patch/Types.h"
 
-#include "Patch/PatchRules.h"
+namespace QBDI {
 
-#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
-#include "Patch/X86_64/PatchRules_X86_64.h"
-#elif defined(QBDI_ARCH_ARM)
-#include "Patch/ARM/PatchRules_ARM.h"
-#endif
+const std::set<Reg> TempManager::unrestoreGPR = {};
 
-#endif
+}

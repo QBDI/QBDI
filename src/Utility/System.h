@@ -18,7 +18,9 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
+#include <stddef.h>
 #include <string>
+#include <system_error>
 #include <vector>
 
 #include "llvm/Support/Memory.h"

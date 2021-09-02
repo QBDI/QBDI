@@ -15,11 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef MEMORY_OSTREAM_H
-#define MEMORY_OSTREAM_H
+#ifndef QBDI_MEMORY_OSTREAM_H
+#define QBDI_MEMORY_OSTREAM_H
+
+#include <stddef.h>
+#include <stdint.h>
 
 #include "llvm/Support/Memory.h"
 #include "llvm/Support/raw_ostream.h"
+
+namespace QBDI {
 
 class memory_ostream : public llvm::raw_ostream {
   llvm::sys::MemoryBlock &os;
@@ -36,5 +41,7 @@ public:
   uint64_t current_pos() const override { return pos; }
   void *get_ptr() { return os.base(); }
 };
+
+} // namespace QBDI
 
 #endif

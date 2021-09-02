@@ -19,8 +19,9 @@
 #define ENGINE_H
 
 #include <cstdlib>
-#include <map>
 #include <memory>
+#include <stdint.h>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -32,14 +33,13 @@
 
 namespace QBDI {
 
-class LLVMCPU;
+class LLVMCPUs;
 class ExecBlock;
 class ExecBlockManager;
 class ExecBroker;
 class PatchRule;
 class InstrRule;
 class Patch;
-class InstMetadata;
 struct SeqLoc;
 
 struct CallbackRegistration {
@@ -52,7 +52,7 @@ class Engine {
 private:
   VMInstanceRef vminstance;
 
-  std::unique_ptr<LLVMCPU> llvmcpu;
+  std::unique_ptr<LLVMCPUs> llvmCPUs;
   std::unique_ptr<ExecBlockManager> blockManager;
   ExecBroker *execBroker;
   std::vector<PatchRule> patchRules;
@@ -65,6 +65,7 @@ private:
   GPRState *curGPRState;
   FPRState *curFPRState;
   ExecBlock *curExecBlock;
+  CPUMode curCPUMode;
   Options options;
   VMEvent eventMask;
   bool running;
