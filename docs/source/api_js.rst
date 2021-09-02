@@ -323,6 +323,10 @@ InstAnalysis
 
     True if instruction contains a predicate (~is conditional) (if ANALYSIS_INSTRUCTION)
 
+  .. js:attribute:: isMoveImm
+
+    True if this instruction is a move immediate (including conditional moves) instruction (if ANALYSIS_INSTRUCTION)
+
   .. js:attribute:: isReturn
 
     True if instruction acts like a ‘return’ (if ANALYSIS_INSTRUCTION)
