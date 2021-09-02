@@ -1,17 +1,6 @@
-set(SOURCES "")
+add_library(QBDIPreload STATIC)
 
-if(QBDI_PLATFORM_LINUX OR QBDI_PLATFORM_ANDROID)
-  set(SOURCES ${SOURCES} "src/linux_preload.c")
-elseif(QBDI_PLATFORM_OSX)
-  # Generate MIG interface at config time in the build directory
-  execute_process(
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMAND mig ${CMAKE_OSX_SYSROOT}/usr/include/mach/mach_exc.defs)
-  set(SOURCES ${SOURCES} "src/darwin_preload.c" "src/darwin_exceptd.c"
-              "mach_excServer.c")
-endif()
-
-add_library(QBDIPreload STATIC ${SOURCES})
+include("${CMAKE_CURRENT_LIST_DIR}/src/CMakeLists.txt")
 
 target_compile_options(
   QBDIPreload

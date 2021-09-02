@@ -28,14 +28,16 @@
 
 #include <QBDI.h>
 
-#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
-#define SIGBRK SIGTRAP
-static const long BRK_MASK = 0xFF;
-static const long BRK_INS = 0xCC;
+#if defined(QBDI_ARCH_X86)
+#include "X86/linux_X86.h"
+#elif defined(QBDI_ARCH_X86_64)
+#include "X86_64/linux_X86_64.h"
 #elif defined(QBDI_ARCH_ARM)
-#define SIGBRK SIGILL
-static const long BRK_MASK = 0xFFFFFFFF;
-static const long BRK_INS = 0xE7FFDEFE;
+#include "ARM/linux_ARM.h"
+#elif defined(QBDI_ARCH_AARCH64)
+#include "AARCH64/linux_AARCH64.h"
+#else
+#error "Architecture not supported"
 #endif
 
 static const size_t STACK_SIZE = 8388608;
@@ -49,114 +51,6 @@ static struct {
   void *address;
   long value;
 } ENTRY_BRK;
-
-void qbdipreload_threadCtxToGPRState(const void *gprCtx, GPRState *gprState) {
-  const ucontext_t *uap = (const ucontext_t *)gprCtx;
-
-#if defined(QBDI_ARCH_X86_64)
-  gprState->rax = uap->uc_mcontext.gregs[REG_RAX];
-  gprState->rbx = uap->uc_mcontext.gregs[REG_RBX];
-  gprState->rcx = uap->uc_mcontext.gregs[REG_RCX];
-  gprState->rdx = uap->uc_mcontext.gregs[REG_RDX];
-  gprState->rsi = uap->uc_mcontext.gregs[REG_RSI];
-  gprState->rdi = uap->uc_mcontext.gregs[REG_RDI];
-  gprState->rbp = uap->uc_mcontext.gregs[REG_RBP];
-  gprState->rsp = uap->uc_mcontext.gregs[REG_RSP];
-  gprState->r8 = uap->uc_mcontext.gregs[REG_R8];
-  gprState->r9 = uap->uc_mcontext.gregs[REG_R9];
-  gprState->r10 = uap->uc_mcontext.gregs[REG_R10];
-  gprState->r11 = uap->uc_mcontext.gregs[REG_R11];
-  gprState->r12 = uap->uc_mcontext.gregs[REG_R12];
-  gprState->r13 = uap->uc_mcontext.gregs[REG_R13];
-  gprState->r14 = uap->uc_mcontext.gregs[REG_R14];
-  gprState->r15 = uap->uc_mcontext.gregs[REG_R15];
-  gprState->rip = uap->uc_mcontext.gregs[REG_RIP];
-  gprState->eflags = uap->uc_mcontext.gregs[REG_EFL];
-#elif defined(QBDI_ARCH_X86)
-  gprState->eax = uap->uc_mcontext.gregs[REG_EAX];
-  gprState->ebx = uap->uc_mcontext.gregs[REG_EBX];
-  gprState->ecx = uap->uc_mcontext.gregs[REG_ECX];
-  gprState->edx = uap->uc_mcontext.gregs[REG_EDX];
-  gprState->esi = uap->uc_mcontext.gregs[REG_ESI];
-  gprState->edi = uap->uc_mcontext.gregs[REG_EDI];
-  gprState->ebp = uap->uc_mcontext.gregs[REG_EBP];
-  gprState->esp = uap->uc_mcontext.gregs[REG_ESP];
-  gprState->eip = uap->uc_mcontext.gregs[REG_EIP];
-  gprState->eflags = uap->uc_mcontext.gregs[REG_EFL];
-#elif defined(QBDI_ARCH_ARM)
-  gprState->r0 = uap->uc_mcontext.arm_r0;
-  gprState->r1 = uap->uc_mcontext.arm_r1;
-  gprState->r2 = uap->uc_mcontext.arm_r2;
-  gprState->r3 = uap->uc_mcontext.arm_r3;
-  gprState->r4 = uap->uc_mcontext.arm_r4;
-  gprState->r5 = uap->uc_mcontext.arm_r5;
-  gprState->r6 = uap->uc_mcontext.arm_r6;
-  gprState->r7 = uap->uc_mcontext.arm_r7;
-  gprState->r8 = uap->uc_mcontext.arm_r8;
-  gprState->r9 = uap->uc_mcontext.arm_r9;
-  gprState->r10 = uap->uc_mcontext.arm_r10;
-  gprState->fp = uap->uc_mcontext.arm_fp;
-  gprState->r12 = uap->uc_mcontext.arm_ip;
-  gprState->sp = uap->uc_mcontext.arm_sp;
-  gprState->lr = uap->uc_mcontext.arm_lr;
-  gprState->pc = uap->uc_mcontext.arm_pc;
-  gprState->cpsr = uap->uc_mcontext.arm_cpsr;
-#endif
-}
-
-void qbdipreload_floatCtxToFPRState(const void *fprCtx, FPRState *fprState) {
-#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
-  const ucontext_t *uap = (const ucontext_t *)fprCtx;
-
-  memcpy(&fprState->stmm0, &uap->uc_mcontext.fpregs->_st[0], 10);
-  memcpy(&fprState->stmm1, &uap->uc_mcontext.fpregs->_st[1], 10);
-  memcpy(&fprState->stmm2, &uap->uc_mcontext.fpregs->_st[2], 10);
-  memcpy(&fprState->stmm3, &uap->uc_mcontext.fpregs->_st[3], 10);
-  memcpy(&fprState->stmm4, &uap->uc_mcontext.fpregs->_st[4], 10);
-  memcpy(&fprState->stmm5, &uap->uc_mcontext.fpregs->_st[5], 10);
-  memcpy(&fprState->stmm6, &uap->uc_mcontext.fpregs->_st[6], 10);
-  memcpy(&fprState->stmm7, &uap->uc_mcontext.fpregs->_st[7], 10);
-#if defined(QBDI_ARCH_X86_64)
-  memcpy(&fprState->xmm0, &uap->uc_mcontext.fpregs->_xmm[0], 16);
-  memcpy(&fprState->xmm1, &uap->uc_mcontext.fpregs->_xmm[1], 16);
-  memcpy(&fprState->xmm2, &uap->uc_mcontext.fpregs->_xmm[2], 16);
-  memcpy(&fprState->xmm3, &uap->uc_mcontext.fpregs->_xmm[3], 16);
-  memcpy(&fprState->xmm4, &uap->uc_mcontext.fpregs->_xmm[4], 16);
-  memcpy(&fprState->xmm5, &uap->uc_mcontext.fpregs->_xmm[5], 16);
-  memcpy(&fprState->xmm6, &uap->uc_mcontext.fpregs->_xmm[6], 16);
-  memcpy(&fprState->xmm7, &uap->uc_mcontext.fpregs->_xmm[7], 16);
-  memcpy(&fprState->xmm8, &uap->uc_mcontext.fpregs->_xmm[8], 16);
-  memcpy(&fprState->xmm9, &uap->uc_mcontext.fpregs->_xmm[9], 16);
-  memcpy(&fprState->xmm10, &uap->uc_mcontext.fpregs->_xmm[10], 16);
-  memcpy(&fprState->xmm11, &uap->uc_mcontext.fpregs->_xmm[11], 16);
-  memcpy(&fprState->xmm12, &uap->uc_mcontext.fpregs->_xmm[12], 16);
-  memcpy(&fprState->xmm13, &uap->uc_mcontext.fpregs->_xmm[13], 16);
-  memcpy(&fprState->xmm14, &uap->uc_mcontext.fpregs->_xmm[14], 16);
-  memcpy(&fprState->xmm15, &uap->uc_mcontext.fpregs->_xmm[15], 16);
-  fprState->rfcw = uap->uc_mcontext.fpregs->cwd;
-  fprState->rfsw = uap->uc_mcontext.fpregs->swd;
-  fprState->ftw = uap->uc_mcontext.fpregs->ftw & 0xFF;
-  fprState->rsrv1 = uap->uc_mcontext.fpregs->ftw >> 8;
-  fprState->fop = uap->uc_mcontext.fpregs->fop;
-  fprState->mxcsr = uap->uc_mcontext.fpregs->mxcsr;
-  fprState->mxcsrmask = uap->uc_mcontext.fpregs->mxcr_mask;
-#else
-  fprState->rfcw = uap->uc_mcontext.fpregs->cw;
-  fprState->rfsw = uap->uc_mcontext.fpregs->sw;
-  fprState->ftw = 0;
-  int i, j = uap->uc_mcontext.fpregs->tag;
-  for (i = 0; i < 8; i++) {
-    if (((j >> (i * 2)) & 0x3) != 0x3) {
-      fprState->ftw |= 1 << i;
-    }
-  }
-  fprState->mxcsr = 0x1f80;
-  fprState->mxcsrmask = 0xffff;
-#endif
-#elif defined(QBDI_ARCH_ARM)
-  // Somehow not available under ARM
-#endif
-}
 
 void setEntryBreakpoint(void *address) {
   long pageSize = sysconf(_SC_PAGESIZE);
@@ -191,32 +85,21 @@ void catchEntrypoint(int argc, char **argv) {
     qbdi_initVM(&vm, NULL, NULL, 0);
     qbdi_instrumentAllExecutableMaps(vm);
 
-    size_t size = 0, i = 0;
+    size_t size = 0;
     qbdi_MemoryMap *modules = qbdi_getCurrentProcessMaps(false, &size);
 
     // Filter some modules to avoid conflicts
     qbdi_removeInstrumentedModuleFromAddr(vm, (rword)&catchEntrypoint);
-    for (i = 0; i < size; i++) {
-      if ((modules[i].permission & QBDI_PF_EXEC) &&
-          (strstr(modules[i].name, "libc-2.") ||
-           strstr(modules[i].name, "ld-2.") ||
-           strstr(modules[i].name, "libcofi") || modules[i].name[0] == 0)) {
-        qbdi_removeInstrumentedRange(vm, modules[i].start, modules[i].end);
-      }
-    }
+    removeConflictModule(vm, modules, size);
+
     qbdi_freeMemoryMapArray(modules, size);
 
     // Set original states
     qbdi_setGPRState(vm, &ENTRY_GPR);
     qbdi_setFPRState(vm, &ENTRY_FPR);
 
-#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
     rword start = QBDI_GPR_GET(qbdi_getGPRState(vm), REG_PC);
-    rword stop = *((rword *)QBDI_GPR_GET(qbdi_getGPRState(vm), REG_SP));
-#elif defined(QBDI_ARCH_ARM)
-    rword start = QBDI_GPR_GET(qbdi_getGPRState(vm), REG_PC);
-    rword stop = QBDI_GPR_GET(qbdi_getGPRState(vm), REG_LR);
-#endif
+    rword stop = getReturnAddress(qbdi_getGPRState(vm));
     status = qbdipreload_on_run(vm, start, stop);
   }
   exit(status);
@@ -225,12 +108,7 @@ void catchEntrypoint(int argc, char **argv) {
 void redirectExec(int signum, siginfo_t *info, void *data) {
   ucontext_t *uap = (ucontext_t *)data;
 
-  // x86-64 breakpoint quirk
-#if defined(QBDI_ARCH_X86_64)
-  uap->uc_mcontext.gregs[REG_RIP] -= 1;
-#elif defined(QBDI_ARCH_X86)
-  uap->uc_mcontext.gregs[REG_EIP] -= 1;
-#endif
+  fix_ucontext_t(uap);
 
   int status = qbdipreload_on_premain((void *)uap, (void *)uap);
 
@@ -243,31 +121,10 @@ void redirectExec(int signum, siginfo_t *info, void *data) {
     DEFAULT_HANDLER = true;
     void *newStack = mmap(NULL, STACK_SIZE, PROT_READ | PROT_WRITE,
                           MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
-
-#if defined(QBDI_ARCH_X86_64)
-    uap->uc_mcontext.gregs[REG_RSP] = (rword)newStack + STACK_SIZE - 8;
-    uap->uc_mcontext.gregs[REG_RBP] = (rword)newStack + STACK_SIZE - 8;
-#elif defined(QBDI_ARCH_X86)
-    // need to copy stack arguments
-    // main have only three arguments (int argc, char** argv, char** envp) =>
-    // 0xc align on 0x10
-    memcpy(newStack + STACK_SIZE - 0x10,
-           (void *)(uap->uc_mcontext.gregs[REG_ESP] + 0x4), 0x10);
-    uap->uc_mcontext.gregs[REG_ESP] = (rword)newStack + STACK_SIZE - 0x14;
-    uap->uc_mcontext.gregs[REG_EBP] = (rword)newStack + STACK_SIZE - 0x14;
-#elif defined(QBDI_ARCH_ARM)
-    uap->uc_mcontext.arm_sp = (rword)newStack + STACK_SIZE - 8;
-    uap->uc_mcontext.arm_fp = (rword)newStack + STACK_SIZE - 8;
-#endif
+    prepareStack(newStack, STACK_SIZE, uap);
   }
 
-#if defined(QBDI_ARCH_X86_64)
-  uap->uc_mcontext.gregs[REG_RIP] = (rword)catchEntrypoint;
-#elif defined(QBDI_ARCH_X86)
-  uap->uc_mcontext.gregs[REG_EIP] = (rword)catchEntrypoint;
-#elif defined(QBDI_ARCH_ARM)
-  uap->uc_mcontext.arm_pc = (rword)catchEntrypoint;
-#endif
+  setPC(uap, (rword)catchEntrypoint);
 }
 
 static void *setupExceptionHandler(void (*action)(int, siginfo_t *, void *)) {
