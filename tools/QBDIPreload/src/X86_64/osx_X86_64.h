@@ -3,6 +3,8 @@
 
 #include <QBDI.h>
 
+#include <mach/thread_status.h>
+
 static const uint8_t BRK_INS = 0xCC;
 
 #define MACH_HEADER mach_header_64
@@ -28,7 +30,7 @@ static inline void setPC(THREAD_STATE *state, rword address) {
 static inline void prepareStack(void *newStack, size_t sizeStack,
                                 THREAD_STATE *state) {
   state->__rbp = (rword)newStack + sizeStack - 8;
-  state->__rsp = state->.__rbp;
+  state->__rsp = state->__rbp;
 }
 
 static inline void fixSignalPC(THREAD_STATE *state) { state->__rip -= 1; }
