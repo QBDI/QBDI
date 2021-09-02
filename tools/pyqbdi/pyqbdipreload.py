@@ -22,17 +22,21 @@ import pyqbdi
 from ctypes import util as ctypesutil
 import sys
 import os
-
+import argparse
 
 def run():
 
-    if len(sys.argv) <= 2 or sys.argv[1] in ['-h', '--help']:
-        print("Usage: python -m {} <script> <target> [<args> ...]".format(sys.argv[0]))
-        exit(1)
+    parser = argparse.ArgumentParser()
 
-    script = sys.argv[1]
-    binary = sys.argv[2]
-    args = sys.argv[2:]
+    parser.add_argument("script", type=str, help="PyQBDI script")
+    parser.add_argument("target", type=str, help="command to instrument")
+    parser.add_argument("args", type=str, help="command arguments", nargs='*')
+
+    args = parser.parse_args()
+
+    script = args.script
+    binary = args.target
+    args = [args.target] + args.args
     environ = os.environ.copy()
 
     # add LD_PRELOAD or DYLD_INSERT_LIBRARIES

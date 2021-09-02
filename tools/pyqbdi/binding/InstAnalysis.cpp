@@ -219,6 +219,14 @@ void init_binding_InstAnalysis(py::module_ &m) {
           "True if instruction contains a predicate (~is conditional) (if "
           "ANALYSIS_INSTRUCTION)")
       .def_property_readonly(
+          "isMoveImm",
+          [](const InstAnalysis &obj) {
+            return get_InstAnalysis_member(obj, &InstAnalysis::isMoveImm,
+                                           ANALYSIS_INSTRUCTION);
+          },
+          "True if this instruction is a move immediate (including conditional"
+          " moves) instruction. (if ANALYSIS_INSTRUCTION)")
+      .def_property_readonly(
           "mayLoad",
           [](const InstAnalysis &obj) {
             return get_InstAnalysis_member(obj, &InstAnalysis::mayLoad,

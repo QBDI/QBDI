@@ -1,4 +1,6 @@
-if(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
+if(QBDI_ARCH_X86
+   OR QBDI_ARCH_X86_64
+   OR QBDI_ARCH_AARCH64)
   include(FetchContent)
 
   find_package(Python3 REQUIRED COMPONENTS Interpreter)
@@ -29,7 +31,8 @@ if(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
   message(STATUS "Python ${PYTHON_BIT}")
 
   # verify we compile pyqbdi tools with the good version of python
-  if((${PYTHON_BIT} STREQUAL "64bit") AND NOT QBDI_ARCH_X86_64)
+  if((${PYTHON_BIT} STREQUAL "64bit") AND NOT (QBDI_ARCH_X86_64
+                                               OR QBDI_ARCH_AARCH64))
     message(
       FATAL_ERROR
         "PyQBDI with Python ${PYTHON_BIT} is not compatible with the architecture ${QBDI_ARCH}"

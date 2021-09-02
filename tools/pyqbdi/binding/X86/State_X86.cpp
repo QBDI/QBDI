@@ -192,62 +192,6 @@ void init_binding_State(py::module_ &m) {
           },
           "XMM 7")
       .def_property(
-          "xmm8",
-          [](const FPRState &t) { return py::bytes(t.xmm8, sizeof(t.xmm8)); },
-          [](FPRState &t, py::bytes v) {
-            std::string(v).copy(t.xmm8, sizeof(t.xmm8), 0);
-          },
-          "XMM 8")
-      .def_property(
-          "xmm9",
-          [](const FPRState &t) { return py::bytes(t.xmm9, sizeof(t.xmm9)); },
-          [](FPRState &t, py::bytes v) {
-            std::string(v).copy(t.xmm9, sizeof(t.xmm9), 0);
-          },
-          "XMM 9")
-      .def_property(
-          "xmm10",
-          [](const FPRState &t) { return py::bytes(t.xmm10, sizeof(t.xmm10)); },
-          [](FPRState &t, py::bytes v) {
-            std::string(v).copy(t.xmm10, sizeof(t.xmm10), 0);
-          },
-          "XMM 10")
-      .def_property(
-          "xmm11",
-          [](const FPRState &t) { return py::bytes(t.xmm11, sizeof(t.xmm11)); },
-          [](FPRState &t, py::bytes v) {
-            std::string(v).copy(t.xmm11, sizeof(t.xmm11), 0);
-          },
-          "XMM 11")
-      .def_property(
-          "xmm12",
-          [](const FPRState &t) { return py::bytes(t.xmm12, sizeof(t.xmm12)); },
-          [](FPRState &t, py::bytes v) {
-            std::string(v).copy(t.xmm12, sizeof(t.xmm12), 0);
-          },
-          "XMM 12")
-      .def_property(
-          "xmm13",
-          [](const FPRState &t) { return py::bytes(t.xmm13, sizeof(t.xmm13)); },
-          [](FPRState &t, py::bytes v) {
-            std::string(v).copy(t.xmm13, sizeof(t.xmm13), 0);
-          },
-          "XMM 13")
-      .def_property(
-          "xmm14",
-          [](const FPRState &t) { return py::bytes(t.xmm14, sizeof(t.xmm14)); },
-          [](FPRState &t, py::bytes v) {
-            std::string(v).copy(t.xmm14, sizeof(t.xmm14), 0);
-          },
-          "XMM 14")
-      .def_property(
-          "xmm15",
-          [](const FPRState &t) { return py::bytes(t.xmm15, sizeof(t.xmm15)); },
-          [](FPRState &t, py::bytes v) {
-            std::string(v).copy(t.xmm15, sizeof(t.xmm15), 0);
-          },
-          "XMM 15")
-      .def_property(
           "ymm0",
           [](const FPRState &t) { return py::bytes(t.ymm0, sizeof(t.ymm0)); },
           [](FPRState &t, py::bytes v) {
@@ -303,62 +247,6 @@ void init_binding_State(py::module_ &m) {
             std::string(v).copy(t.ymm7, sizeof(t.ymm7), 0);
           },
           "YMM7[255:128]")
-      .def_property(
-          "ymm8",
-          [](const FPRState &t) { return py::bytes(t.ymm8, sizeof(t.ymm8)); },
-          [](FPRState &t, py::bytes v) {
-            std::string(v).copy(t.ymm8, sizeof(t.ymm8), 0);
-          },
-          "YMM8[255:128]")
-      .def_property(
-          "ymm9",
-          [](const FPRState &t) { return py::bytes(t.ymm9, sizeof(t.ymm9)); },
-          [](FPRState &t, py::bytes v) {
-            std::string(v).copy(t.ymm9, sizeof(t.ymm9), 0);
-          },
-          "YMM9[255:128]")
-      .def_property(
-          "ymm10",
-          [](const FPRState &t) { return py::bytes(t.ymm10, sizeof(t.ymm10)); },
-          [](FPRState &t, py::bytes v) {
-            std::string(v).copy(t.ymm10, sizeof(t.ymm10), 0);
-          },
-          "YMM10[255:128]")
-      .def_property(
-          "ymm11",
-          [](const FPRState &t) { return py::bytes(t.ymm11, sizeof(t.ymm11)); },
-          [](FPRState &t, py::bytes v) {
-            std::string(v).copy(t.ymm11, sizeof(t.ymm11), 0);
-          },
-          "YMM11[255:128]")
-      .def_property(
-          "ymm12",
-          [](const FPRState &t) { return py::bytes(t.ymm12, sizeof(t.ymm12)); },
-          [](FPRState &t, py::bytes v) {
-            std::string(v).copy(t.ymm12, sizeof(t.ymm12), 0);
-          },
-          "YMM12[255:128]")
-      .def_property(
-          "ymm13",
-          [](const FPRState &t) { return py::bytes(t.ymm13, sizeof(t.ymm13)); },
-          [](FPRState &t, py::bytes v) {
-            std::string(v).copy(t.ymm13, sizeof(t.ymm13), 0);
-          },
-          "YMM13[255:128]")
-      .def_property(
-          "ymm14",
-          [](const FPRState &t) { return py::bytes(t.ymm14, sizeof(t.ymm14)); },
-          [](FPRState &t, py::bytes v) {
-            std::string(v).copy(t.ymm14, sizeof(t.ymm14), 0);
-          },
-          "YMM14[255:128]")
-      .def_property(
-          "ymm15",
-          [](const FPRState &t) { return py::bytes(t.ymm15, sizeof(t.ymm15)); },
-          [](FPRState &t, py::bytes v) {
-            std::string(v).copy(t.ymm15, sizeof(t.ymm15), 0);
-          },
-          "YMM15[255:128]")
       .def("__str__", [](const FPRState &obj) {
         std::ostringstream oss;
         oss << std::hex << std::setfill('0')
@@ -416,22 +304,6 @@ void init_binding_State(py::module_ &m) {
         hexify_register(oss, obj.xmm6, sizeof(obj.xmm6));
         oss << std::endl << "xmm7  : 0x";
         hexify_register(oss, obj.xmm7, sizeof(obj.xmm7));
-        oss << std::endl << "xmm8  : 0x";
-        hexify_register(oss, obj.xmm8, sizeof(obj.xmm8));
-        oss << std::endl << "xmm9  : 0x";
-        hexify_register(oss, obj.xmm9, sizeof(obj.xmm9));
-        oss << std::endl << "xmm10 : 0x";
-        hexify_register(oss, obj.xmm10, sizeof(obj.xmm10));
-        oss << std::endl << "xmm11 : 0x";
-        hexify_register(oss, obj.xmm11, sizeof(obj.xmm11));
-        oss << std::endl << "xmm12 : 0x";
-        hexify_register(oss, obj.xmm12, sizeof(obj.xmm12));
-        oss << std::endl << "xmm13 : 0x";
-        hexify_register(oss, obj.xmm13, sizeof(obj.xmm13));
-        oss << std::endl << "xmm14 : 0x";
-        hexify_register(oss, obj.xmm14, sizeof(obj.xmm14));
-        oss << std::endl << "xmm15 : 0x";
-        hexify_register(oss, obj.xmm15, sizeof(obj.xmm15));
 
         oss << std::endl << "ymm0  : 0x";
         hexify_register(oss, obj.ymm0, sizeof(obj.ymm0));
@@ -457,30 +329,6 @@ void init_binding_State(py::module_ &m) {
         oss << std::endl << "ymm7  : 0x";
         hexify_register(oss, obj.ymm7, sizeof(obj.ymm7));
         hexify_register(oss, obj.xmm7, sizeof(obj.xmm7));
-        oss << std::endl << "ymm8  : 0x";
-        hexify_register(oss, obj.ymm8, sizeof(obj.ymm8));
-        hexify_register(oss, obj.xmm8, sizeof(obj.xmm8));
-        oss << std::endl << "ymm9  : 0x";
-        hexify_register(oss, obj.ymm9, sizeof(obj.ymm9));
-        hexify_register(oss, obj.xmm9, sizeof(obj.xmm9));
-        oss << std::endl << "ymm10 : 0x";
-        hexify_register(oss, obj.ymm10, sizeof(obj.ymm10));
-        hexify_register(oss, obj.xmm10, sizeof(obj.xmm10));
-        oss << std::endl << "ymm11 : 0x";
-        hexify_register(oss, obj.ymm11, sizeof(obj.ymm11));
-        hexify_register(oss, obj.xmm11, sizeof(obj.xmm11));
-        oss << std::endl << "ymm12 : 0x";
-        hexify_register(oss, obj.ymm12, sizeof(obj.ymm12));
-        hexify_register(oss, obj.xmm12, sizeof(obj.xmm12));
-        oss << std::endl << "ymm13 : 0x";
-        hexify_register(oss, obj.ymm13, sizeof(obj.ymm13));
-        hexify_register(oss, obj.xmm13, sizeof(obj.xmm13));
-        oss << std::endl << "ymm14 : 0x";
-        hexify_register(oss, obj.ymm14, sizeof(obj.ymm14));
-        hexify_register(oss, obj.xmm14, sizeof(obj.xmm14));
-        oss << std::endl << "ymm15 : 0x";
-        hexify_register(oss, obj.ymm15, sizeof(obj.ymm15));
-        hexify_register(oss, obj.xmm15, sizeof(obj.xmm15));
 
         oss << std::endl << "=== FPRState end ===" << std::endl;
         return oss.str();
@@ -493,60 +341,46 @@ void init_binding_State(py::module_ &m) {
   m.attr("REG_PC") = REG_PC;
   m.attr("NUM_GPR") = NUM_GPR;
   m.attr("REG_LR") = py::none();
+  m.attr("REG_FLAG") = REG_FLAG;
 
   py::class_<GPRState>(m, "GPRState")
       .def(py::init<>())
-      .def_readwrite("rax", &GPRState::rax)
-      .def_readwrite("rbx", &GPRState::rbx)
-      .def_readwrite("rcx", &GPRState::rcx)
-      .def_readwrite("rdx", &GPRState::rdx)
-      .def_readwrite("rsi", &GPRState::rsi)
-      .def_readwrite("rdi", &GPRState::rdi)
-      .def_readwrite("r8", &GPRState::r8)
-      .def_readwrite("r9", &GPRState::r9)
-      .def_readwrite("r10", &GPRState::r10)
-      .def_readwrite("r11", &GPRState::r11)
-      .def_readwrite("r12", &GPRState::r12)
-      .def_readwrite("r13", &GPRState::r13)
-      .def_readwrite("r14", &GPRState::r14)
-      .def_readwrite("r15", &GPRState::r15)
-      .def_readwrite("rbp", &GPRState::rbp)
-      .def_readwrite("rsp", &GPRState::rsp)
-      .def_readwrite("rip", &GPRState::rip)
+      .def_readwrite("eax", &GPRState::eax)
+      .def_readwrite("ebx", &GPRState::ebx)
+      .def_readwrite("ecx", &GPRState::ecx)
+      .def_readwrite("edx", &GPRState::edx)
+      .def_readwrite("esi", &GPRState::esi)
+      .def_readwrite("edi", &GPRState::edi)
+      .def_readwrite("ebp", &GPRState::ebp)
+      .def_readwrite("esp", &GPRState::esp)
+      .def_readwrite("eip", &GPRState::eip)
       .def_readwrite("eflags", &GPRState::eflags)
       // cross architecture access
-      .def_readwrite("REG_RETURN", &GPRState::rax, "shadow of rax")
-      .def_readwrite("AVAILABLE_GPR", &GPRState::rbp, "shadow of rbp")
-      .def_readwrite("REG_BP", &GPRState::rbp, "shadow of rbp")
-      .def_readwrite("REG_SP", &GPRState::rsp, "shadow of rsp")
-      .def_readwrite("REG_PC", &GPRState::rip, "shadow of rip")
+      .def_readwrite("REG_RETURN", &GPRState::eax, "shadow of eax")
+      .def_readwrite("AVAILABLE_GPR", &GPRState::ebp, "shadow of ebp")
+      .def_readwrite("REG_BP", &GPRState::ebp, "shadow of ebp")
+      .def_readwrite("REG_SP", &GPRState::esp, "shadow of esp")
+      .def_readwrite("REG_PC", &GPRState::eip, "shadow of eip")
       .def_readwrite("NUM_GPR", &GPRState::eflags, "shadow of eflags")
+      .def_readwrite("REG_FLAG", &GPRState::eflags, "shadow of eflags")
       .def_property_readonly(
           "REG_LR", [](const GPRState &obj) { return py::none(); },
-          "not available on X86_64")
+          "not available on X86")
       .def("__str__",
            [](const GPRState &obj) {
              std::ostringstream oss;
              int r = sizeof(rword) * 2;
              oss << std::hex << std::setfill('0')
                  << "=== GPRState begin ===" << std::endl
-                 << "rax    : 0x" << std::setw(r) << obj.rax << std::endl
-                 << "rbx    : 0x" << std::setw(r) << obj.rbx << std::endl
-                 << "rcx    : 0x" << std::setw(r) << obj.rcx << std::endl
-                 << "rdx    : 0x" << std::setw(r) << obj.rdx << std::endl
-                 << "rsi    : 0x" << std::setw(r) << obj.rsi << std::endl
-                 << "rdi    : 0x" << std::setw(r) << obj.rdi << std::endl
-                 << "r8     : 0x" << std::setw(r) << obj.r8 << std::endl
-                 << "r9     : 0x" << std::setw(r) << obj.r9 << std::endl
-                 << "r10    : 0x" << std::setw(r) << obj.r10 << std::endl
-                 << "r11    : 0x" << std::setw(r) << obj.r11 << std::endl
-                 << "r12    : 0x" << std::setw(r) << obj.r12 << std::endl
-                 << "r13    : 0x" << std::setw(r) << obj.r13 << std::endl
-                 << "r14    : 0x" << std::setw(r) << obj.r14 << std::endl
-                 << "r15    : 0x" << std::setw(r) << obj.r15 << std::endl
-                 << "rbp    : 0x" << std::setw(r) << obj.rbp << std::endl
-                 << "rsp    : 0x" << std::setw(r) << obj.rsp << std::endl
-                 << "rip    : 0x" << std::setw(r) << obj.rip << std::endl
+                 << "eax    : 0x" << std::setw(r) << obj.eax << std::endl
+                 << "ebx    : 0x" << std::setw(r) << obj.ebx << std::endl
+                 << "ecx    : 0x" << std::setw(r) << obj.ecx << std::endl
+                 << "edx    : 0x" << std::setw(r) << obj.edx << std::endl
+                 << "esi    : 0x" << std::setw(r) << obj.esi << std::endl
+                 << "edi    : 0x" << std::setw(r) << obj.edi << std::endl
+                 << "ebp    : 0x" << std::setw(r) << obj.ebp << std::endl
+                 << "esp    : 0x" << std::setw(r) << obj.esp << std::endl
+                 << "eip    : 0x" << std::setw(r) << obj.eip << std::endl
                  << "eflags : 0x" << std::setw(r) << obj.eflags << std::endl
                  << "=== GPRState end ===" << std::endl;
              return oss.str();
