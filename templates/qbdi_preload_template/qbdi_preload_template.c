@@ -25,7 +25,11 @@ int qbdipreload_on_premain(void *gprCtx, void *fpuCtx) {
 }
 
 int qbdipreload_on_main(int argc, char **argv) {
-  qbdi_addLogFilter("*", QBDI_DEBUG);
+  if (getenv("QBDI_DEBUG") != NULL) {
+    qbdi_setLogPriority(QBDI_DEBUG);
+  } else {
+    qbdi_setLogPriority(QBDI_WARNING);
+  }
   return QBDIPRELOAD_NOT_HANDLED;
 }
 
