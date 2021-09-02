@@ -22,8 +22,8 @@
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstrDesc.h"
 
-#include "MemoryAccessTable_X86_64.h"
 #include "Patch/InstInfo.h"
+#include "Patch/MemoryAccessTable.h"
 
 namespace {
 
@@ -351,16 +351,17 @@ const std::set<unsigned> fixupNoWrite{
 
 } // namespace
 
-TEST_CASE_METHOD(MemoryAccessTable_X86_64,
-                 "MemoryAccessTable_X86_64-CrossCheck") {
+TEST_CASE_METHOD(MemoryAccessTable, "MemoryAccessTable-CrossCheck") {
+
+  const llvm::MCInstrInfo &MCII = getCPU(QBDI::CPUMode::DEFAULT).getMCII();
 
   for (unsigned opcode = 0; opcode < llvm::X86::INSTRUCTION_LIST_END;
        opcode++) {
     if (unsupportedInst.count(opcode) == 1)
       continue;
 
-    const llvm::MCInstrDesc &desc = MCII->get(opcode);
-    const char *mnemonic = MCII->getName(opcode).data();
+    const llvm::MCInstrDesc &desc = MCII.get(opcode);
+    const char *mnemonic = MCII.getName(opcode).data();
 
     // the opcode is a pseudo instruction used by LLVM internally
     if (desc.isPseudo())

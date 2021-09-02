@@ -15,28 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef UTILS_H
+#define UTILS_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+#include "QBDI/State.h"
 
-#include <QBDI/Logs.h>
+QBDI::rword get_random();
 
-#define CATCH_CONFIG_RUNNER
-#include <catch2/catch.hpp>
-
-int main(int argc, char **argv) {
-
-  srand(time(nullptr));
-
-  if (getenv("TEST_DEBUG") != nullptr) {
-    QBDI::setLogPriority(QBDI::LogPriority::DEBUG);
-  } else {
-    QBDI::setLogPriority(QBDI::LogPriority::WARNING);
-  }
-  setvbuf(stdout, nullptr, _IONBF, 0);
-  setvbuf(stderr, nullptr, _IONBF, 0);
-
-  return Catch::Session().run(argc, argv);
-  ;
-}
+#endif /* UTILS_H */

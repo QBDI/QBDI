@@ -3,9 +3,9 @@ include(FetchContent)
 if((QBDI_TEST) OR (QBDI_BENCHMARK))
   FetchContent_Declare(
     Catch2
-    URL "https://github.com/catchorg/Catch2/archive/refs/tags/v2.9.2.zip"
+    URL "https://github.com/catchorg/Catch2/archive/refs/tags/v2.13.7.zip"
     URL_HASH
-      "SHA256=dc486300de22b0d36ddba1705abb07b9e5780639d824ba172ddf7062b2a1bf8f"
+      "SHA256=3f3ccd90ad3a8fbb1beeb15e6db440ccdcbebe378dfd125d07a1f9a587a927e9"
     DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/catch2-download")
 
   FetchContent_GetProperties(Catch2)
@@ -32,7 +32,8 @@ if(QBDI_TEST)
     PRIVATE "${CMAKE_BINARY_DIR}/include" "${CMAKE_SOURCE_DIR}/include"
             "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/../src")
 
-  target_link_libraries(QBDITest QBDI_static qbdi-llvm Catch2::Catch2)
+  target_link_libraries(QBDITest QBDI_static qbdi-llvm Catch2::Catch2
+                        spdlog_header_only)
   target_compile_options(QBDITest
                          PUBLIC $<$<COMPILE_LANGUAGE:C>:${QBDI_COMMON_C_FLAGS}>)
   target_compile_options(

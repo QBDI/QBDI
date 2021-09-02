@@ -18,6 +18,9 @@
 #ifndef INMEMORYASSEMBLER_H
 #define INMEMORYASSEMBLER_H
 
+#include <string>
+#include <vector>
+
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/Support/Memory.h"
 
@@ -31,7 +34,7 @@ protected:
 
 public:
   InMemoryObject(const char *source, const char *cpu = "",
-                 const char **mattrs = nullptr);
+                 const std::vector<std::string> mattrs = {});
 
   InMemoryObject(const InMemoryObject &vm) = delete;
   InMemoryObject(InMemoryObject &&vm) = default;

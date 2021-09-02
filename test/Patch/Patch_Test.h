@@ -15,23 +15,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef INSTR_X86_64TEST_H
-#define INSTR_X86_64TEST_H
+#ifndef PATCH_TEST_H
+#define PATCH_TEST_H
 
 #include <sstream>
 #include <string.h>
 #include <string>
 
 #include "QBDI/Platform.h"
+#include "Patch/Utils.h"
 
 #if defined(QBDI_ARCH_X86)
-#include "ComparedExecutor_X86.h"
+#include "X86/ComparedExecutor_X86.h"
 
-class Instr_X86_64Test : public ComparedExecutor_X86 {};
+class Patch_Test : public ComparedExecutor_X86 {};
+#elif defined(QBDI_ARCH_X86_64)
+#include "X86_64/ComparedExecutor_X86_64.h"
+
+class Patch_Test : public ComparedExecutor_X86_64 {};
+#elif defined(QBDI_ARCH_ARM)
+#include "ARM/ComparedExecutor_ARM.h"
+
+class Patch_Test : public ComparedExecutor_ARM {};
+
+#elif defined(QBDI_ARCH_AARCH64)
+#include "AARCH64/ComparedExecutor_AARCH64.h"
+
+class Patch_Test : public ComparedExecutor_AARCH64 {};
+
 #else
-#include "ComparedExecutor_X86_64.h"
-
-class Instr_X86_64Test : public ComparedExecutor_X86_64 {};
+#error "Architecture not supported"
 #endif
 
 #endif

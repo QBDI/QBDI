@@ -17,6 +17,7 @@
  */
 #include "TestSetup/ShellcodeTester.h"
 #include <catch2/catch.hpp>
+#include "Utility/LogSys.h"
 
 llvm::sys::MemoryBlock ShellcodeTester::allocateStack(QBDI::rword size) {
   std::error_code ec;
@@ -49,17 +50,26 @@ void ShellcodeTester::comparedExec(const char *source, QBDI::Context &inputCtx,
   jitCtx = jitExec(code, inputCtx, jitStack);
 
   for (uint32_t i = 0; i < QBDI::AVAILABLE_GPR; i++) {
+    INFO("The offset is " << i);
     CHECK(QBDI_GPR_GET(&realCtx.gprState, i) ==
           QBDI_GPR_GET(&jitCtx.gprState, i));
   }
 
-#if !defined(_QBDI_ASAN_ENABLED_) || !defined(QBDI_ARCH_X86_64)
+#if defined(QBDI_ARCH_AARCH64)
+  for (uint32_t i = 0; i < QBDI_NUM_FPR; i++) {
+    INFO("The offset is " << i);
+    CHECK(((__uint128_t *)&realCtx.fprState)[i] ==
+          ((__uint128_t *)&jitCtx.fprState)[i]);
+  }
+#elif !defined(_QBDI_ASAN_ENABLED_) || !defined(QBDI_ARCH_X86_64)
   for (uint32_t i = 0; i < sizeof(QBDI::FPRState); i++) {
+    INFO("The offset is " << i);
     CHECK(((char *)&realCtx.fprState)[i] == ((char *)&jitCtx.fprState)[i]);
   }
 #endif
   for (uint32_t i = 0; i < realStack.allocatedSize() - sizeof(QBDI::rword);
        i++) {
+    INFO("The offset is " << i << " / " << realStack.allocatedSize());
     CHECK(((char *)realStack.base())[i] == ((char *)jitStack.base())[i]);
   }
 

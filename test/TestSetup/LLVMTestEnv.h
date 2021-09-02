@@ -24,6 +24,6 @@
 
 #include "Engine/LLVMCPU.h"
 
-class LLVMTestEnv : public QBDI::LLVMCPU {};
+class LLVMTestEnv : public QBDI::LLVMCPUs {};
 
 #endif

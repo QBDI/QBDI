@@ -41,7 +41,7 @@
 #include "llvm/Support/TargetRegistry.h"
 
 InMemoryObject::InMemoryObject(const char *source, const char *cpu,
-                               const char **mattrs) {
+                               const std::vector<std::string> mattrs) {
   std::unique_ptr<llvm::MCAsmInfo> MAI;
   std::unique_ptr<llvm::MCContext> MCTX;
   std::unique_ptr<llvm::MCInstrInfo> MCII;
@@ -52,17 +52,14 @@ InMemoryObject::InMemoryObject(const char *source, const char *cpu,
   const llvm::Target *processTarget;
   llvm::SourceMgr SrcMgr;
   std::string tripleName;
-  std::string featuresStr;
   std::error_code ec;
   llvm::SmallVector<char, 1024> objectVector;
 
-  if (mattrs != nullptr) {
-    llvm::SubtargetFeatures features;
-    for (unsigned i = 0; mattrs[i] != nullptr; i++) {
-      features.AddFeature(mattrs[i]);
-    }
-    featuresStr = features.getString();
+  llvm::SubtargetFeatures features;
+  for (const auto &e : mattrs) {
+    features.AddFeature(e);
   }
+  std::string featuresStr = features.getString();
 
   std::string error;
   // lookup target

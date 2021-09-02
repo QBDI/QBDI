@@ -15,28 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-
-#include <QBDI/Logs.h>
-
-#define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
+#include "Patch/Patch_Test.h"
 
-int main(int argc, char **argv) {
+TEST_CASE_METHOD(Patch_Test, "Patch_Test-UnalignedCodeForward") {
+  QBDI::Context inputState;
 
-  srand(time(nullptr));
+  memset(&inputState, 0, sizeof(QBDI::Context));
+  comparedExec(UnalignedCodeForward_s, inputState, 4096);
+}
 
-  if (getenv("TEST_DEBUG") != nullptr) {
-    QBDI::setLogPriority(QBDI::LogPriority::DEBUG);
-  } else {
-    QBDI::setLogPriority(QBDI::LogPriority::WARNING);
-  }
-  setvbuf(stdout, nullptr, _IONBF, 0);
-  setvbuf(stderr, nullptr, _IONBF, 0);
+TEST_CASE_METHOD(Patch_Test, "Patch_Test-UnalignedCodeBackward") {
+  QBDI::Context inputState;
 
-  return Catch::Session().run(argc, argv);
-  ;
+  memset(&inputState, 0, sizeof(QBDI::Context));
+  comparedExec(UnalignedCodeBackward_s, inputState, 4096);
 }

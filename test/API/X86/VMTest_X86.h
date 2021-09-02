@@ -15,11 +15,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef QBDITEST_MEMORYACCESSTABLE
-#define QBDITEST_MEMORYACCESSTABLE
+#ifndef QBDITEST_VMTEST_X86_H
+#define QBDITEST_VMTEST_X86_H
 
-#include "TestSetup/LLVMTestEnv.h"
+#include "API/VMTest.h"
+#include "QBDI/Memory.hpp"
+#include "QBDI/Platform.h"
+#include "QBDI/VM.h"
 
-class MemoryAccessTable_X86_64 : public LLVMTestEnv {};
+QBDI_NOINLINE QBDI::rword satanicFun(QBDI::rword arg0);
 
-#endif /* QBDITEST_MEMORYACCESSTABLE */
+#define MNEM_COUNT 5u
+#define MNEM_VALIDATION 140u
+
+#define MAX_OPERAND 6
+#define MNEM_CMP "CMP*"
+
+struct TestInst {
+  uint32_t instSize;
+  uint8_t numOperands;
+  bool isCompare;
+  QBDI::RegisterAccessType flagsAccess;
+  QBDI::OperandAnalysis operands[MAX_OPERAND];
+};
+
+extern const struct TestInst TestInsts[MNEM_COUNT];
+
+#endif

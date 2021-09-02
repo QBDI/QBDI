@@ -15,23 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef PATCH_X86_64TEST_H
-#define PATCH_X86_64TEST_H
+#ifndef QBDITEST_MEMORYACCESSTABLE
+#define QBDITEST_MEMORYACCESSTABLE
 
-#include <sstream>
-#include <string.h>
-#include <string>
+#include "TestSetup/LLVMTestEnv.h"
 
-#include "QBDI/Platform.h"
+class MemoryAccessTable : public LLVMTestEnv {};
 
-#if defined(QBDI_ARCH_X86)
-#include "ComparedExecutor_X86.h"
-
-class Patch_X86_64Test : public ComparedExecutor_X86 {};
-#else
-#include "ComparedExecutor_X86_64.h"
-
-class Patch_X86_64Test : public ComparedExecutor_X86_64 {};
-#endif
-
-#endif
+#endif /* QBDITEST_MEMORYACCESSTABLE */

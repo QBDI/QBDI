@@ -21,9 +21,8 @@ add_custom_command(
 target_include_directories(QBDIBenchmark PRIVATE "${sha256_lib_SOURCE_DIR}")
 
 # set sources
-set(SOURCES
-    "${CMAKE_CURRENT_LIST_DIR}/Fibonacci.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/SHA256.cpp"
-    "${sha256_lib_SOURCE_DIR}/sha256_impl.cpp")
-
-target_sources(QBDIBenchmark PUBLIC "${SOURCES}")
+target_sources(
+  QBDIBenchmark
+  PRIVATE "${CMAKE_CURRENT_LIST_DIR}/Fibonacci.cpp"
+          "${CMAKE_CURRENT_LIST_DIR}/SHA256.cpp"
+          "${sha256_lib_SOURCE_DIR}/sha256_impl.cpp")

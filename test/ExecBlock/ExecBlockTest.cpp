@@ -24,6 +24,7 @@
 #include "Patch/Patch.h"
 #include "Patch/PatchRule.h"
 #include "Patch/PatchRules.h"
+#include "Patch/RelocatableInst.h"
 
 TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest-EmptyBasicBlock") {
   // Allocate ExecBlock

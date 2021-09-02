@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 #include <catch2/catch.hpp>
-#include "MemoryAccessTest.h"
+#include "API/MemoryAccessTest.h"
 
 #include "inttypes.h"
 

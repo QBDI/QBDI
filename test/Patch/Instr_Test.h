@@ -15,36 +15,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef QBDITEST_VMTEST_H
-#define QBDITEST_VMTEST_H
+#ifndef INSTR_TEST_H
+#define INSTR_TEST_H
 
-#include <memory>
+#include <sstream>
+#include <string.h>
+#include <string>
 
-#include "QBDI/VM.h"
-
-#define STACK_SIZE 4096
-#define FAKE_RET_ADDR 0x666
-
-class VMTest {
-public:
-  VMTest();
-  ~VMTest();
-
-  std::unique_ptr<QBDI::VM> vm;
-  QBDI::GPRState *state;
-  uint8_t *fakestack;
-};
+#include "QBDI/Platform.h"
+#include "Patch/Utils.h"
 
 #if defined(QBDI_ARCH_X86)
-#include "X86/VMTest_X86.h"
+#include "X86/ComparedExecutor_X86.h"
+
+class Instr_Test : public ComparedExecutor_X86 {};
 #elif defined(QBDI_ARCH_X86_64)
-#include "X86_64/VMTest_X86_64.h"
+#include "X86_64/ComparedExecutor_X86_64.h"
+
+class Instr_Test : public ComparedExecutor_X86_64 {};
 #elif defined(QBDI_ARCH_ARM)
-#include "ARM/VMTest_ARM.h"
+#include "ARM/ComparedExecutor_ARM.h"
+
+class Instr_Test : public ComparedExecutor_ARM {};
+
 #elif defined(QBDI_ARCH_AARCH64)
-#include "AARCH64/VMTest_AARCH64.h"
+#include "AARCH64/ComparedExecutor_AARCH64.h"
+
+class Instr_Test : public ComparedExecutor_AARCH64 {};
+
 #else
 #error "Architecture not supported"
 #endif
 
-#endif /* QBDITEST_VMTEST_H */
+QBDI::VMAction increment(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+                         QBDI::FPRState *fprState, void *data);
+
+#endif

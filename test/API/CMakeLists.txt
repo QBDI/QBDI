@@ -1,24 +1,18 @@
-set(SOURCES
-    "${CMAKE_CURRENT_LIST_DIR}/AllocTest.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/RangeTest.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/VMTest.cpp")
+target_sources(
+  QBDITest
+  PRIVATE "${CMAKE_CURRENT_LIST_DIR}/AllocTest.cpp"
+          "${CMAKE_CURRENT_LIST_DIR}/RangeTest.cpp"
+          "${CMAKE_CURRENT_LIST_DIR}/VMTest.cpp"
+          "${CMAKE_CURRENT_LIST_DIR}/MemoryAccessTest.cpp")
 
-if(QBDI_ARCH_X86_64 OR QBDI_ARCH_X86)
-  set(SOURCES ${SOURCES} "${CMAKE_CURRENT_LIST_DIR}/MemoryAccessTest.cpp")
-
-  if(QBDI_ARCH_X86_64)
-    set(SOURCES
-        ${SOURCES} "${CMAKE_CURRENT_LIST_DIR}/InstAnalysisTest_X86_64.cpp"
-        "${CMAKE_CURRENT_LIST_DIR}/MemoryAccessTest_X86_64.cpp"
-        "${CMAKE_CURRENT_LIST_DIR}/OptionsTest_X86_64.cpp")
-  endif()
-
-  if(QBDI_ARCH_X86)
-    set(SOURCES
-        ${SOURCES} "${CMAKE_CURRENT_LIST_DIR}/InstAnalysisTest_X86.cpp"
-        "${CMAKE_CURRENT_LIST_DIR}/MemoryAccessTest_X86.cpp"
-        "${CMAKE_CURRENT_LIST_DIR}/OptionsTest_X86.cpp")
-  endif()
+if(QBDI_ARCH_X86_64)
+  include("${CMAKE_CURRENT_LIST_DIR}/X86_64/CMakeLists.txt")
+elseif(QBDI_ARCH_X86)
+  include("${CMAKE_CURRENT_LIST_DIR}/X86/CMakeLists.txt")
+elseif(QBDI_ARCH_ARM)
+  include("${CMAKE_CURRENT_LIST_DIR}/ARM/CMakeLists.txt")
+elseif(QBDI_ARCH_AARCH64)
+  include("${CMAKE_CURRENT_LIST_DIR}/AARCH64/CMakeLists.txt")
+else()
+  message(FATAL_ERROR "No stub for architecture ${QBDI_ARCH}")
 endif()
-
-target_sources(QBDITest PUBLIC "${SOURCES}")

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 #include <catch2/catch.hpp>
-#include "OptionsTest.h"
+#include "API/OptionsTest.h"
 
 #include <algorithm>
 #include <sstream>
@@ -26,30 +26,30 @@
 #include "QBDI/Memory.hpp"
 #include "QBDI/Platform.h"
 
-TEST_CASE_METHOD(OptionsTest, "OptionsTest_X86_64-ATTSyntax") {
+TEST_CASE_METHOD(OptionsTest, "OptionsTest_X86-ATTSyntax") {
 
-  InMemoryObject leaObj("leaq (%rax), %rbx\nret\n");
+  InMemoryObject leaObj("leal (%eax), %ebx\nret\n");
   QBDI::rword addr = (QBDI::rword)leaObj.getCode().data();
 
   vm.setOptions(QBDI::Options::NO_OPT);
-  vm.precacheBasicBlock(addr);
+  CHECK(vm.precacheBasicBlock(addr));
 
   const QBDI::InstAnalysis *ana =
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY);
   REQUIRE(ana != nullptr);
   REQUIRE(ana->disassembly != nullptr);
 
-  CHECK(std::string(ana->disassembly) == std::string("\tlea\trbx, [rax]"));
+  CHECK(std::string(ana->disassembly) == std::string("\tlea\tebx, [eax]"));
 
   vm.clearAllCache();
   vm.setOptions(QBDI::Options::OPT_ATT_SYNTAX);
-  vm.precacheBasicBlock(addr);
+  CHECK(vm.precacheBasicBlock(addr));
 
   ana = vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY);
   REQUIRE(ana != nullptr);
   REQUIRE(ana->disassembly != nullptr);
 
-  CHECK(std::string(ana->disassembly) == std::string("\tleaq\t(%rax), %rbx"));
+  CHECK(std::string(ana->disassembly) == std::string("\tleal\t(%eax), %ebx"));
 }
 
 static QBDI::VMAction setBool(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
@@ -58,18 +58,18 @@ static QBDI::VMAction setBool(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
   return QBDI::VMAction::CONTINUE;
 }
 
-TEST_CASE_METHOD(OptionsTest, "OptionsTest_X86_64-setOption") {
+TEST_CASE_METHOD(OptionsTest, "OptionsTest_X86-setOption") {
   // check if the callback and the instrumentation range are keep when use
   // setOptions
 
-  InMemoryObject leaObj("leaq 0x20(%rax), %rax\nret\n");
+  InMemoryObject leaObj("leal 0x20(%eax), %eax\nret\n");
   QBDI::rword addr = (QBDI::rword)leaObj.getCode().data();
 
   uint8_t *fakestack;
   QBDI::GPRState *state = vm.getGPRState();
   bool ret = QBDI::allocateVirtualStack(state, 4096, &fakestack);
   REQUIRE(ret == true);
-  state->rax = 0;
+  state->eax = 0;
 
   vm.setOptions(QBDI::Options::NO_OPT);
   vm.addInstrumentedRange(addr, addr + (QBDI::rword)leaObj.getCode().size());
@@ -81,25 +81,25 @@ TEST_CASE_METHOD(OptionsTest, "OptionsTest_X86_64-setOption") {
 
   REQUIRE(vm.call(&retval, addr, {}));
   REQUIRE(cbReach);
-  REQUIRE(state->rax == 0x20);
+  REQUIRE(state->eax == 0x20);
 
   cbReach = false;
   vm.setOptions(QBDI::Options::OPT_ATT_SYNTAX);
   REQUIRE(vm.call(&retval, addr, {}));
   REQUIRE(cbReach);
-  REQUIRE(state->rax == 0x40);
+  REQUIRE(state->eax == 0x40);
 
   cbReach = false;
   vm.setOptions(QBDI::Options::OPT_DISABLE_FPR);
   REQUIRE(vm.call(&retval, addr, {}));
   REQUIRE(cbReach);
-  REQUIRE(state->rax == 0x60);
+  REQUIRE(state->eax == 0x60);
 
   cbReach = false;
   vm.setOptions(QBDI::Options::OPT_DISABLE_OPTIONAL_FPR);
   REQUIRE(vm.call(&retval, addr, {}));
   REQUIRE(cbReach);
-  REQUIRE(state->rax == 0x80);
+  REQUIRE(state->eax == 0x80);
 
   QBDI::alignedFree(fakestack);
 }

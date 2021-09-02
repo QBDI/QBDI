@@ -15,28 +15,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef QBDITEST_VMTEST_X86_64_H
+#define QBDITEST_VMTEST_X86_64_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+#include "API/VMTest.h"
+#include "QBDI/Memory.hpp"
+#include "QBDI/Platform.h"
+#include "QBDI/VM.h"
 
-#include <QBDI/Logs.h>
+QBDI_NOINLINE QBDI::rword satanicFun(QBDI::rword arg0);
 
-#define CATCH_CONFIG_RUNNER
-#include <catch2/catch.hpp>
+#define MNEM_COUNT 5u
+#define MNEM_VALIDATION 140u
 
-int main(int argc, char **argv) {
+#define MAX_OPERAND 6
+#define MNEM_CMP "CMP*"
 
-  srand(time(nullptr));
+struct TestInst {
+  uint32_t instSize;
+  uint8_t numOperands;
+  bool isCompare;
+  QBDI::RegisterAccessType flagsAccess;
+  QBDI::OperandAnalysis operands[MAX_OPERAND];
+};
 
-  if (getenv("TEST_DEBUG") != nullptr) {
-    QBDI::setLogPriority(QBDI::LogPriority::DEBUG);
-  } else {
-    QBDI::setLogPriority(QBDI::LogPriority::WARNING);
-  }
-  setvbuf(stdout, nullptr, _IONBF, 0);
-  setvbuf(stderr, nullptr, _IONBF, 0);
+extern const struct TestInst TestInsts[MNEM_COUNT];
 
-  return Catch::Session().run(argc, argv);
-  ;
-}
+#endif

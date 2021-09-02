@@ -16,14 +16,18 @@
  * limitations under the License.
  */
 #include <catch2/catch.hpp>
-#include <stdio.h>
+#include <memory>
 
 #include "ExecBlockManagerTest.h"
 
+#include "QBDI/State.h"
+#include "ExecBlock/Context.h"
+#include "ExecBlock/ExecBlock.h"
 #include "ExecBlock/ExecBlockManager.h"
+#include "Patch/InstMetadata.h"
 #include "Patch/Patch.h"
-#include "Patch/PatchRule.h"
 #include "Patch/PatchRules.h"
+#include "Patch/RelocatableInst.h"
 
 QBDI::Patch::Vec getEmptyBB(QBDI::rword address) {
   QBDI::Patch::Vec bb;

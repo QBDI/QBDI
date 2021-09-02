@@ -1,22 +1,17 @@
-set(SOURCES
-    "${CMAKE_CURRENT_LIST_DIR}/ComparedExecutor_${QBDI_ARCH}.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/Instr_${QBDI_BASE_ARCH}Test.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/Patch_${QBDI_BASE_ARCH}Test.cpp")
+target_sources(
+  QBDITest
+  PRIVATE "${CMAKE_CURRENT_LIST_DIR}/Utils.cpp"
+          "${CMAKE_CURRENT_LIST_DIR}/Instr_Test.cpp"
+          "${CMAKE_CURRENT_LIST_DIR}/Patch_Test.cpp")
 
-if(QBDI_ARCH_X86_64 OR QBDI_ARCH_X86)
-  set(SOURCES ${SOURCES}
-              "${CMAKE_CURRENT_LIST_DIR}/MemoryAccessTable_X86_64.cpp")
+if(QBDI_ARCH_X86_64)
+  include("${CMAKE_CURRENT_LIST_DIR}/X86_64/CMakeLists.txt")
+elseif(QBDI_ARCH_X86)
+  include("${CMAKE_CURRENT_LIST_DIR}/X86/CMakeLists.txt")
+elseif(QBDI_ARCH_ARM)
+  include("${CMAKE_CURRENT_LIST_DIR}/ARM/CMakeLists.txt")
+elseif(QBDI_ARCH_AARCH64)
+  include("${CMAKE_CURRENT_LIST_DIR}/AARCH64/CMakeLists.txt")
+else()
+  message(FATAL_ERROR "No stub for architecture ${QBDI_ARCH}")
 endif()
-
-if(QBDI_PLATFORM_WINDOWS)
-  if(QBDI_ARCH_X86_64)
-    set(SOURCES ${SOURCES} "${CMAKE_CURRENT_LIST_DIR}/WIN64_RunRealExec.asm")
-  elseif(QBDI_ARCH_X86)
-    set(SOURCES ${SOURCES} "${CMAKE_CURRENT_LIST_DIR}/WIN86_RunRealExec.asm")
-    set_source_files_properties(
-      "${CMAKE_CURRENT_LIST_DIR}/WIN86_RunRealExec.asm" PROPERTIES COMPILE_FLAGS
-                                                                   "/safeseh")
-  endif()
-endif()
-
-target_sources(QBDITest PUBLIC "${SOURCES}")

@@ -133,10 +133,8 @@ QBDI::Context ComparedExecutor_X86_64::realExec(llvm::ArrayRef<uint8_t> code,
       4096, nullptr, PF::MF_READ | PF::MF_WRITE, ec);
 
   // Put the inputState on the stack
-  QBDI_GPR_SET(&inputState.gprState, QBDI::REG_BP,
-               (QBDI::rword)stack.base() + stack.allocatedSize());
-  QBDI_GPR_SET(&inputState.gprState, QBDI::REG_SP,
-               (QBDI::rword)stack.base() + stack.allocatedSize());
+  inputState.gprState.rbp = (QBDI::rword)stack.base() + stack.allocatedSize();
+  inputState.gprState.rsp = (QBDI::rword)stack.base() + stack.allocatedSize();
 
   // Copy the input context
   memcpy(ctxBlock.base(), (void *)&inputState, sizeof(QBDI::Context));
