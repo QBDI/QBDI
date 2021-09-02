@@ -66,7 +66,7 @@ endif()
 set(QBDI_SUPPORTED_PLATFORMS "android" "linux" "windows" "osx" "ios")
 
 set(QBDI_SUPPORTED_ARCH #    "ARM" # no maintained since 0.7.0
-    #    "AARCH64" # not supported yet
+    #    "AARCH64" # private support
     "X86" "X86_64")
 
 set(QBDI_PLATFORM_WINDOWS 0)
@@ -116,11 +116,11 @@ elseif(QBDI_ARCH STREQUAL "ARM")
   set(QBDI_BITS_32 1)
   set(QBDI_LLVM_ARCH "ARM")
   set(QBDI_BASE_ARCH "ARM")
-  #elseif(QBDI_ARCH STREQUAL "AARCH64")
-  #  set(QBDI_ARCH_AARCH64 1)
-  #  set(QBDI_BITS_64 1)
-  #  set(QBDI_LLVM_ARCH "AARCH64")
-  #  set(QBDI_BASE_ARCH "AARCH64")
+elseif(QBDI_ARCH STREQUAL "AARCH64")
+  set(QBDI_ARCH_AARCH64 1)
+  set(QBDI_BITS_64 1)
+  set(QBDI_LLVM_ARCH "AArch64")
+  set(QBDI_BASE_ARCH "AARCH64")
 elseif(QBDI_ARCH STREQUAL "X86")
   set(QBDI_ARCH_X86 1)
   set(QBDI_BITS_32 1)
@@ -138,41 +138,26 @@ else()
   )
 endif()
 
-if(QBDI_PLATFORM_LINUX
-   AND NOT
-       (QBDI_ARCH_X86
-        OR QBDI_ARCH_X86_64
-        OR QBDI_ARCH_ARM))
-  message(
-    FATAL_ERROR
-      "Linux platform is only supported for X86, X86_64 and ARM architectures.")
-endif()
-
 if(QBDI_PLATFORM_WINDOWS AND NOT (QBDI_ARCH_X86 OR QBDI_ARCH_X86_64))
   message(
     FATAL_ERROR
       "Windows platform is only supported for X86 and X86_64 architectures.")
 endif()
 
-if(QBDI_PLATFORM_OSX AND NOT (QBDI_ARCH_X86 OR QBDI_ARCH_X86_64))
+if(QBDI_PLATFORM_OSX
+   AND NOT
+       (QBDI_ARCH_X86
+        OR QBDI_ARCH_X86_64
+        OR QBDI_ARCH_AARCH64))
   message(
     FATAL_ERROR
       "OSX platform is only supported for X86 and X86_64 architectures.")
 endif()
 
-if(QBDI_PLATFORM_IOS AND NOT QBDI_ARCH_ARM)
-  message(FATAL_ERROR "IOS platform is only supported for ARM architecture.")
-endif()
-
-if(QBDI_PLATFORM_ANDROID
-   AND NOT
-       (QBDI_ARCH_ARM
-        OR QBDI_ARCH_X86
-        OR QBDI_ARCH_X86_64))
+if(QBDI_PLATFORM_IOS AND NOT (QBDI_ARCH_ARM OR QBDI_ARCH_AARCH64))
   message(
     FATAL_ERROR
-      "Android platform is only supported for X86, X86_64 and ARM architecture."
-  )
+      "IOS platform is only supported for ARM and AARCH64 architecture.")
 endif()
 
 message(STATUS "")

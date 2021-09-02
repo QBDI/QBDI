@@ -75,7 +75,19 @@ if(NOT llvm_POPULATED)
       CACHE STRING "set LLVM_TARGETS_TO_BUILD")
 
   set(QBDI_LLVM_TRIPLE "")
-  if(QBDI_ARCH_X86)
+  if(QBDI_ARCH_ARM)
+    if(QBDI_PLATFORM_ANDROID)
+      set(QBDI_LLVM_TRIPLE armv7-linux-androideabi)
+    else()
+      set(QBDI_LLVM_TRIPLE armv7-linux-gnu)
+    endif()
+  elseif(QBDI_ARCH_AARCH64)
+    if(QBDI_PLATFORM_ANDROID)
+      set(QBDI_LLVM_TRIPLE aarch64-linux-android)
+    else()
+      set(QBDI_LLVM_TRIPLE aarch64-linux-gnu)
+    endif()
+  elseif(QBDI_ARCH_X86)
     set(LLVM_BUILD_32_BITS
         ON
         CACHE BOOL "set LLVM_BUILD_32_BITS")
@@ -198,7 +210,19 @@ if(QBDI_PLATFORM_OSX OR QBDI_PLATFORM_IOS)
   add_llvm_lib(LLVMDemangle)
 endif()
 
-if(QBDI_ARCH_X86_64 OR QBDI_ARCH_X86)
+if(QBDI_ARCH_ARM)
+  add_llvm_lib(
+    LLVMARMCodeGen
+    LLVMARMAsmParser
+    LLVMARMDisassembler
+    LLVMARMAsmPrinter
+    LLVMARMDesc
+    LLVMARMInfo
+    LLVMARMUtils)
+elseif(QBDI_ARCH_AARCH64)
+  add_llvm_lib(LLVMAArch64AsmParser LLVMAArch64Desc LLVMAArch64Disassembler
+               LLVMAArch64Info LLVMAArch64Utils)
+elseif(QBDI_ARCH_X86_64 OR QBDI_ARCH_X86)
   add_llvm_lib(LLVMX86AsmParser LLVMX86Disassembler LLVMX86Desc LLVMX86Info
                LLVMX86Utils)
 else()

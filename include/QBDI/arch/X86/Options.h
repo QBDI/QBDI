@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef QBDI_OPTION_H_
-#define QBDI_OPTION_H_
+#ifndef QBDI_OPTION_X86_H_
+#define QBDI_OPTION_X86_H_
 
 #include <stdint.h>
 
@@ -39,12 +39,10 @@ typedef enum {
                                                 * optimisation when the target
                                                 * execblock doesn't used FPR
                                                 */
-// architecture specific option between 24 and 31
-#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+  // architecture specific option between 24 and 31
   _QBDI_EI(OPT_ATT_SYNTAX) = 1 << 24, /*!< Used the AT&T syntax for
                                        * instruction disassembly
                                        */
-#endif
 } Options;
 
 _QBDI_ENABLE_BITMASK_OPERATORS(Options)
@@ -53,4 +51,4 @@ _QBDI_ENABLE_BITMASK_OPERATORS(Options)
 }
 #endif
 
-#endif /* QBDI_OPTION_H_ */
+#endif /* QBDI_OPTION_X86_H_ */

@@ -1,21 +1,20 @@
 #!/bin/sh
 set -e
 
-DEFAULT_NDK_PATH=${HOME}/android-ndk-r20
-QBDI_NDK_PATH=${NDK_PATH:-${DEFAULT_NDK_PATH}}
-
-if [ ! -d "$QBDI_NDK_PATH" ]; then
-  echo "'${QBDI_NDK_PATH}' is not valid!"
+if [ -z "${ANDROID_SDK}" ]; then
+  echo "ANDROID_SDK variable should be set to the path of android sdk."
   exit 1
 fi
-
-export NDK_PATH=${QBDI_NDK_PATH}
+if [ ! -d "${ANDROID_SDK}" ]; then
+  echo "'${ANDROID_SDK}' is not valid!"
+  exit 1
+fi
 
 cmake  .. \
       -DQBDI_PLATFORM=android \
       -DQBDI_ARCH=X86_64 \
       -DCMAKE_BUILD_TYPE=Release \
-      -DCMAKE_TOOLCHAIN_FILE="${NDK_PATH}/build/cmake/android.toolchain.cmake" \
+      -DCMAKE_TOOLCHAIN_FILE="${ANDROID_SDK}/ndk-bundle/build/cmake/android.toolchain.cmake" \
       -DANDROID_ABI=x86 \
       -DANDROID_PLATFORM=23
 

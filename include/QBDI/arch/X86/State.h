@@ -23,9 +23,19 @@
 
 #include "QBDI/Platform.h"
 
+// ============================================================================
+// X86 Context
+// ============================================================================
+
+#define PRIRWORD PRIx32
+
 #ifdef __cplusplus
 namespace QBDI {
 #endif // __cplusplus
+
+/*! X86 CPU modes.
+ */
+typedef enum { X86 = 0, DEFAULT = 0, COUNT } CPUMode;
 
 typedef struct {
   uint16_t invalid : 1;
@@ -63,13 +73,11 @@ typedef struct {
   char rsrv[6];
 } MMSTReg;
 
-#define PRIRWORD PRIx32
-
 typedef uint32_t rword;
 
 /*! X86 Floating Point Register context.
  */ // SPHINX_X86_FPRSTATE_BEGIN
-typedef struct {
+typedef struct QBDI_ALIGNED(16) {
   union {
     FPControl fcw; /* x87 FPU control word */
     uint16_t rfcw;
@@ -120,7 +128,7 @@ typedef char __compile_check_01__[sizeof(FPRState) == 640 ? 1 : -1];
 
 /*! X86 General Purpose Register context.
  */ // SPHINX_X86_GPRSTATE_BEGIN
-typedef struct {
+typedef struct QBDI_ALIGNED(4) {
   rword eax;
   rword ebx;
   rword ecx;
@@ -144,6 +152,15 @@ static const unsigned int REG_BP = 6;
 static const unsigned int REG_SP = 7;
 static const unsigned int REG_PC = 8;
 static const unsigned int REG_FLAG = 9;
+
+#ifdef __cplusplus
+#define QBDI_GPR_GET(state, i) (reinterpret_cast<const QBDI::rword *>(state)[i])
+#define QBDI_GPR_SET(state, i, v) \
+  (reinterpret_cast<QBDI::rword *>(state)[i] = v)
+#else
+#define QBDI_GPR_GET(state, i) (((rword *)state)[i])
+#define QBDI_GPR_SET(state, i, v) (((rword *)state)[i] = v)
+#endif
 
 #ifdef __cplusplus
 }

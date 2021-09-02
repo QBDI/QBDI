@@ -39,11 +39,6 @@ if(QBDI_CCACHE)
   endif()
 endif()
 
-# AVX
-if(QBDI_DISABLE_AVX)
-  add_definitions(-D_QBDI_FORCE_DISABLE_AVX)
-endif()
-
 include(CheckCCompilerFlag)
 
 if(QBDI_ASAN)
@@ -89,6 +84,12 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI/Version.h.in"
                "${CMAKE_CURRENT_BINARY_DIR}/include/QBDI/Version.h" @ONLY)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI/Config.h.in"
                "${CMAKE_CURRENT_BINARY_DIR}/include/QBDI/Config.h" @ONLY)
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI/arch/${QBDI_ARCH}/State.h"
+  "${CMAKE_CURRENT_BINARY_DIR}/include/QBDI/State.h" COPYONLY)
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI/arch/${QBDI_ARCH}/Options.h"
+  "${CMAKE_CURRENT_BINARY_DIR}/include/QBDI/Options.h" COPYONLY)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/Utility/Version_commit.h.in"
                "${CMAKE_CURRENT_BINARY_DIR}/src/Utility/Version_commit.h" @ONLY)
 
@@ -192,6 +193,12 @@ else()
   endif()
 endif()
 
+# AVX
+if(QBDI_DISABLE_AVX)
+  set(QBDI_COMMON_DEFINITION ${QBDI_COMMON_DEFINITION}
+                             -D_QBDI_FORCE_DISABLE_AVX)
+endif()
+
 # Dependencies
 # ============
 set(QBDI_THIRD_PARTY_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/third-party/")
@@ -202,16 +209,19 @@ include(spdlog)
 if(QBDI_PLATFORM_WINDOWS)
   enable_language(ASM_MASM)
   set(ASM_EXT "asm")
-else()
+elseif(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
   set(CMAKE_ASM-ATT_COMPILER ${AS_BINARY})
   enable_language(ASM-ATT)
   set(ASM_EXT "s")
-  if(QBDI_PLATFORM_IOS)
-    set(CMAKE_ASM-ATT_FLAGS "-arch ${ARM_ARCH}")
-  elseif(QBDI_PLATFORM_OSX AND QBDI_ARCH_X86)
+  if(QBDI_PLATFORM_OSX AND QBDI_ARCH_X86)
     set(CMAKE_ASM-ATT_FLAGS "-arch i386")
   elseif(QBDI_PLATFORM_LINUX AND QBDI_ARCH_X86)
     set(CMAKE_ASM-ATT_FLAGS "--32")
+  endif()
+else()
+  enable_language(ASM)
+  if(QBDI_PLATFORM_IOS)
+    set(CMAKE_ASM_FLAGS "-arch ${ARM_ARCH}")
   endif()
 endif()
 
@@ -353,7 +363,8 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME "QBDI")
 install(
   DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI"
   DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-  PATTERN "*.in" EXCLUDE)
+  PATTERN "*.in" EXCLUDE
+  PATTERN "arch" EXCLUDE)
 install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include/QBDI"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
