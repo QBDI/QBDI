@@ -350,6 +350,11 @@ if (Process.arch === 'x64') {
      * String of the stack pointer register.
      */
     var REG_SP = "RSP";
+} else if (Process.arch === 'arm64') {
+    var GPR_NAMES = ["X0","X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12","X13","X14","X15","X16","X17","X18","X19","X20","X21","X22","X23","X24","X25","X26","X27","X28","FP","LR","SP","NZCV","PC"];
+    var REG_RETURN = "X0";
+    var REG_PC = "PC";
+    var REG_SP = "SP";
 //} else if (Process.arch === 'arm') {
 //    var GPR_NAMES = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R12","FP","SP","LR","PC","CPSR"];
 //    var REG_RETURN = "R0";
@@ -1868,36 +1873,38 @@ class QBDI {
         p = ptr.add(this.#instAnalysisStructDesc.offsets[9]);
         analysis.isPredicable = Memory.readU8(p) == true;
         p = ptr.add(this.#instAnalysisStructDesc.offsets[10]);
-        analysis.mayLoad = Memory.readU8(p) == true;
+        analysis.isMoveImm = Memory.readU8(p) == true;
         p = ptr.add(this.#instAnalysisStructDesc.offsets[11]);
-        analysis.mayStore = Memory.readU8(p) == true;
+        analysis.mayLoad = Memory.readU8(p) == true;
         p = ptr.add(this.#instAnalysisStructDesc.offsets[12]);
-        analysis.loadSize = Memory.readU32(p);
+        analysis.mayStore = Memory.readU8(p) == true;
         p = ptr.add(this.#instAnalysisStructDesc.offsets[13]);
-        analysis.storeSize = Memory.readU32(p);
+        analysis.loadSize = Memory.readU32(p);
         p = ptr.add(this.#instAnalysisStructDesc.offsets[14]);
-        analysis.condition = Memory.readU8(p);
+        analysis.storeSize = Memory.readU32(p);
         p = ptr.add(this.#instAnalysisStructDesc.offsets[15]);
-        analysis.flagsAccess = Memory.readU8(p);
+        analysis.condition = Memory.readU8(p);
         p = ptr.add(this.#instAnalysisStructDesc.offsets[16]);
-        var numOperands = Memory.readU8(p);
+        analysis.flagsAccess = Memory.readU8(p);
         p = ptr.add(this.#instAnalysisStructDesc.offsets[17]);
+        var numOperands = Memory.readU8(p);
+        p = ptr.add(this.#instAnalysisStructDesc.offsets[18]);
         var operandsPtr = Memory.readPointer(p);
         analysis.operands = new Array(numOperands);
         for (var i = 0; i < numOperands; i++) {
             analysis.operands[i] = this._parseOperandAnalysis(operandsPtr);
             operandsPtr = operandsPtr.add(this.#operandAnalysisStructDesc.size);
         }
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[18]);
+        p = ptr.add(this.#instAnalysisStructDesc.offsets[19]);
         var symbolPtr = Memory.readPointer(p);
         if (!symbolPtr.isNull()) {
             analysis.symbol = Memory.readCString(symbolPtr);
         } else {
             analysis.symbol = "";
         }
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[19]);
-        analysis.symbolOffset = Memory.readU32(p);
         p = ptr.add(this.#instAnalysisStructDesc.offsets[20]);
+        analysis.symbolOffset = Memory.readU32(p);
+        p = ptr.add(this.#instAnalysisStructDesc.offsets[21]);
         var modulePtr = Memory.readPointer(p);
         if (!modulePtr.isNull()) {
             analysis.module = Memory.readCString(modulePtr);
