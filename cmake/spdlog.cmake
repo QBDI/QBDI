@@ -2,26 +2,46 @@ if(__add_qbdi_spdlog)
   return()
 endif()
 set(__add_qbdi_spdlog ON)
-include(ExternalProject)
+
+include(FetchContent)
 
 # spdlog
 # ======
-set(SPDLOG_VERSION 1.8.3)
-set(SPDLOG_URL
-    "https://github.com/gabime/spdlog/archive/refs/tags/v${SPDLOG_VERSION}.zip")
-ExternalProject_Add(
+set(SPDLOG_VERSION 1.8.5)
+
+FetchContent_Declare(
   spdlog-project
-  URL ${SPDLOG_URL}
-  CONFIGURE_COMMAND ""
-  BUILD_COMMAND ""
-  INSTALL_COMMAND "")
-ExternalProject_Get_Property(spdlog-project SOURCE_DIR)
-set(SPDLOG_SOURCE_DIR "${SOURCE_DIR}")
+  URL "https://github.com/gabime/spdlog/archive/refs/tags/v${SPDLOG_VERSION}.zip"
+  URL_HASH
+    SHA256=6e66c8ed4c014b0fb00c74d34eea95b5d34f6e4b51b746b1ea863dc3c2e854fd
+  DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/spdlog-project-download")
 
-add_library(spdlog INTERFACE)
-add_dependencies(spdlog spdlog-project)
-target_include_directories(spdlog INTERFACE "${SPDLOG_SOURCE_DIR}/include/")
+FetchContent_GetProperties(spdlog-project)
+if(NOT spdlog-project_POPULATED)
+  # Fetch the content using previously declared details
+  FetchContent_Populate(spdlog-project)
 
-if(QBDI_PLATFORM_ANDROID)
-  target_link_libraries(spdlog INTERFACE log)
+  add_subdirectory(${spdlog-project_SOURCE_DIR} ${spdlog-project_BINARY_DIR}
+                   EXCLUDE_FROM_ALL)
+endif()
+
+target_compile_definitions(
+  spdlog_header_only INTERFACE SPDLOG_NO_TLS=1 SPDLOG_NO_THREAD_ID=1
+                               SPDLOG_NO_DATETIME=1)
+
+if(QBDI_LOG_DEBUG)
+  target_compile_definitions(
+    spdlog_header_only INTERFACE SPDLOG_DEBUG_ON=1
+                                 SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG)
+else()
+  target_compile_definitions(spdlog_header_only
+                             INTERFACE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_INFO)
+endif()
+
+# remove Threads::Threads for android
+if(ANDROID)
+  get_target_property(SPDLOG_LIB spdlog_header_only INTERFACE_LINK_LIBRARIES)
+  list(REMOVE_ITEM SPDLOG_LIB Threads::Threads)
+  set_property(TARGET spdlog_header_only PROPERTY INTERFACE_LINK_LIBRARIES
+                                                  "${SPDLOG_LIB}")
 endif()

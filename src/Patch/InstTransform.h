@@ -18,9 +18,12 @@
 #ifndef INSTTRANSFORM_H
 #define INSTTRANSFORM_H
 
+#include <map>
 #include <memory>
+#include <stddef.h>
 #include <vector>
 
+#include "QBDI/State.h"
 #include "Patch/PatchUtils.h"
 #include "Patch/Types.h"
 
@@ -29,6 +32,7 @@ class MCInst;
 }
 
 namespace QBDI {
+class TempManager;
 
 class InstTransform {
 public:
@@ -167,6 +171,21 @@ public:
    * @param[in] opcode New opcode to set as the instruction opcode.
    */
   SetOpcode(unsigned int opcode) : opcode(opcode) {}
+
+  void transform(llvm::MCInst &inst, rword address, size_t instSize,
+                 TempManager *temp_manager) const override;
+};
+
+class ReplaceOpcode : public AutoClone<InstTransform, ReplaceOpcode> {
+
+  std::map<unsigned, unsigned> opcode;
+
+public:
+  /*! Set the opcode of the instruction.
+   *
+   * @param[in] opcode New opcode to set as the instruction opcode.
+   */
+  ReplaceOpcode(std::map<unsigned, unsigned> opcode) : opcode(opcode) {}
 
   void transform(llvm::MCInst &inst, rword address, size_t instSize,
                  TempManager *temp_manager) const override;

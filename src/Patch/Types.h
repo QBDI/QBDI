@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "ExecBlock/Context.h"
+#include "Patch/Register.h"
 
 #include "QBDI/State.h"
 
@@ -45,6 +46,12 @@ public:
    * @return LLVM register id.
    */
   inline operator unsigned int() const { return GPR_ID[id]; }
+
+  /*! Get back the id of the register in GPRState
+   *
+   * @return GPRState register id.
+   */
+  inline unsigned int getID() const { return id; }
 
   /*! Return the offset of this register storage in the context part of the data
    * block.

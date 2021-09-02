@@ -32,6 +32,7 @@ public:
   rword address;
   uint32_t instSize;
   uint32_t patchSize;
+  CPUMode cpuMode;
   bool modifyPC;
   bool merge;
   uint8_t execblockFlags;
@@ -40,7 +41,7 @@ public:
   inline rword endAddress() const { return address + instSize; }
 
   inline InstMetadata lightCopy() const {
-    return {inst,     address, instSize,       patchSize,
+    return {inst,     address, instSize,       patchSize, cpuMode,
             modifyPC, merge,   execblockFlags, nullptr};
   }
 };

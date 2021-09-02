@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -30,7 +31,11 @@ int main(int argc, char **argv) {
 
   if (getenv("TEST_DEBUG") != nullptr) {
     QBDI::setLogPriority(QBDI::LogPriority::DEBUG);
+  } else {
+    QBDI::setLogPriority(QBDI::LogPriority::WARNING);
   }
+  setvbuf(stdout, nullptr, _IONBF, 0);
+  setvbuf(stderr, nullptr, _IONBF, 0);
 
   return Catch::Session().run(argc, argv);
   ;

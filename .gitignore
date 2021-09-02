@@ -2,12 +2,7 @@
 TODO
 build*/*
 
-deps/**
-!deps/CMakeLists.txt
-!deps/*
-!deps/*/*
-!deps/**/build.sh
-!deps/**/rename-object.py
+dist
 
 docs/build
 docs/doxygen_c
@@ -20,6 +15,8 @@ docs/qbdipreload.doxygen
 qbdi-deps.tar.gz
 qbdi.tar.gz
 package/QBDI-*
+
+third-party
 
 tools/validation_runner/.*_coverage
 tools/validation_runner/.*_output

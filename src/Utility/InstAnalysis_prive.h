@@ -30,8 +30,8 @@ class MCRegisterInfo;
 
 namespace QBDI {
 
-class Assembly;
 class InstMetadata;
+class LLVMCPU;
 
 struct InstAnalysisDestructor {
   void operator()(InstAnalysis *ptr) const;
@@ -41,14 +41,29 @@ using InstAnalysisPtr = std::unique_ptr<InstAnalysis, InstAnalysisDestructor>;
 
 const InstAnalysis *analyzeInstMetadata(const InstMetadata &instMetadata,
                                         AnalysisType type,
-                                        const Assembly &assembly);
+                                        const LLVMCPU &llvmcpu);
+namespace InstructionAnalysis {
 
-// X86 specific
+void analyseRegister(OperandAnalysis &opa, unsigned int regNo,
+                     const llvm::MCRegisterInfo &MRI);
+void tryMergeCurrentRegister(InstAnalysis *instAnalysis);
+
+// Arch specific
+// =============
+
 void analyseCondition(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
                       const llvm::MCInstrDesc &desc);
-bool isSupportedOperandType(unsigned opType);
+bool isFlagOperand(unsigned opcode, unsigned opNum, unsigned operandType);
 unsigned getBias(const llvm::MCInstrDesc &desc);
 
+// Missing operand in LLVM Description
+unsigned getAdditionnalOperandNumber(const llvm::MCInst &inst,
+                                     const llvm::MCInstrDesc &desc);
+void getAdditionnalOperand(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
+                           const llvm::MCInstrDesc &desc,
+                           const llvm::MCRegisterInfo &MRI);
+
+} // namespace InstructionAnalysis
 } // namespace QBDI
 
 #endif

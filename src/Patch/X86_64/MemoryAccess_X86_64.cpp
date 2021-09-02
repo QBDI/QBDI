@@ -15,17 +15,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <algorithm>
+#include <memory>
+#include <stddef.h>
+#include <stdint.h>
+#include <utility>
+#include <vector>
+
+#include "llvm/ADT/ArrayRef.h"
+#include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstrInfo.h"
 
+#include "Engine/LLVMCPU.h"
 #include "ExecBlock/ExecBlock.h"
+#include "Patch/InstInfo.h"
+#include "Patch/InstMetadata.h"
+#include "Patch/InstrRule.h"
 #include "Patch/MemoryAccess.h"
 #include "Patch/Patch.h"
 #include "Patch/PatchCondition.h"
+#include "Patch/PatchGenerator.h"
+#include "Patch/PatchUtils.h"
+#include "Patch/Types.h"
 #include "Patch/X86_64/InstInfo_X86_64.h"
 #include "Patch/X86_64/PatchGenerator_X86_64.h"
 #include "Utility/LogSys.h"
 
+#include "QBDI/Bitmask.h"
 #include "QBDI/Callback.h"
+#include "QBDI/State.h"
+
+namespace llvm {
+class MCInstrDesc;
+}
 
 namespace QBDI {
 
@@ -219,8 +241,7 @@ void analyseMemoryAccess(const ExecBlock &curExecBlock, uint16_t instID,
 }
 
 static const PatchGenerator::UniquePtrVec &
-generatePreReadInstrumentPatch(Patch &patch, const llvm::MCInstrInfo *MCII,
-                               const llvm::MCRegisterInfo *MRI) {
+generatePreReadInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
 
   // REP prefix
   if (hasREPPrefix(patch.metadata.inst)) {
@@ -277,8 +298,7 @@ generatePreReadInstrumentPatch(Patch &patch, const llvm::MCInstrInfo *MCII,
 }
 
 static const PatchGenerator::UniquePtrVec &
-generatePostReadInstrumentPatch(Patch &patch, const llvm::MCInstrInfo *MCII,
-                                const llvm::MCRegisterInfo *MRI) {
+generatePostReadInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
 
   // REP prefix
   if (hasREPPrefix(patch.metadata.inst)) {
@@ -302,10 +322,10 @@ generatePostReadInstrumentPatch(Patch &patch, const llvm::MCInstrInfo *MCII,
 }
 
 static const PatchGenerator::UniquePtrVec &
-generatePreWriteInstrumentPatch(Patch &patch, const llvm::MCInstrInfo *MCII,
-                                const llvm::MCRegisterInfo *MRI) {
+generatePreWriteInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
 
-  const llvm::MCInstrDesc &desc = MCII->get(patch.metadata.inst.getOpcode());
+  const llvm::MCInstrDesc &desc =
+      llvmcpu.getMCII().get(patch.metadata.inst.getOpcode());
 
   if (hasREPPrefix(patch.metadata.inst)) {
     static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
@@ -327,10 +347,10 @@ generatePreWriteInstrumentPatch(Patch &patch, const llvm::MCInstrInfo *MCII,
 }
 
 static const PatchGenerator::UniquePtrVec &
-generatePostWriteInstrumentPatch(Patch &patch, const llvm::MCInstrInfo *MCII,
-                                 const llvm::MCRegisterInfo *MRI) {
+generatePostWriteInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
 
-  const llvm::MCInstrDesc &desc = MCII->get(patch.metadata.inst.getOpcode());
+  const llvm::MCInstrDesc &desc =
+      llvmcpu.getMCII().get(patch.metadata.inst.getOpcode());
 
   if (hasREPPrefix(patch.metadata.inst)) {
     static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(

@@ -16,9 +16,11 @@
  * limitations under the License.
  */
 
+#include "MCTargetDesc/X86BaseInfo.h"
 #include "X86InstrInfo.h"
 #include "llvm/MC/MCInst.h"
 
+#include "Patch/RelocatableInst.h"
 #include "Patch/X86_64/Layer2_X86_64.h"
 #include "Patch/X86_64/RelocatableInst_X86_64.h"
 
@@ -529,29 +531,27 @@ llvm::MCInst jmpm(unsigned int base, rword offset) {
 }
 
 RelocatableInst::UniquePtr Mov(Reg dst, Reg src) {
-  return NoReloc::unique(movrr(dst, src));
+  return MovReg::unique(dst, src);
 }
 
 RelocatableInst::UniquePtr Mov(Reg reg, Constant cst) {
-  return NoReloc::unique(movri(reg, cst));
+  return LoadImm::unique(reg, cst);
 }
 
 RelocatableInst::UniquePtr Mov(Offset offset, Reg reg) {
-  return DataBlockRelx86(movmr(0, 0, 0, 0, 0, reg), 0, offset, 7);
+  return StoreDataBlock::unique(reg, offset);
 }
 
 RelocatableInst::UniquePtr Mov(Shadow shadow, Reg reg, bool create) {
-  return TaggedShadowx86(movmr(0, 0, 0, 0, 0, reg), 0, shadow.getTag(), 7,
-                         create);
+  return StoreShadow::unique(reg, shadow.getTag(), create);
 }
 
 RelocatableInst::UniquePtr Mov(Reg reg, Offset offset) {
-  return DataBlockRelx86(movrm(reg, 0, 0, 0, 0, 0), 1, offset, 7);
+  return LoadDataBlock::unique(reg, offset);
 }
 
 RelocatableInst::UniquePtr Mov(Reg reg, Shadow shadow) {
-  return TaggedShadowx86(movrm(reg, 0, 0, 0, 0, 0), 1, shadow.getTag(), 7,
-                         false);
+  return LoadShadow::unique(reg, shadow.getTag());
 }
 
 RelocatableInst::UniquePtr JmpM(Offset offset) {

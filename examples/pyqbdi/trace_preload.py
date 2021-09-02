@@ -2,7 +2,7 @@
 
 import pyqbdi
 
-def insnCB(vm, gpr, fpr, data):
+def showInstruction(vm, gpr, fpr, data):
     instAnalysis = vm.getInstAnalysis()
     print("0x{:x}: {}".format(instAnalysis.address, instAnalysis.disassembly))
     return pyqbdi.CONTINUE

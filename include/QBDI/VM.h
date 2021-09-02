@@ -20,10 +20,12 @@
 
 #include <cstdarg>
 #include <memory>
+#include <stdint.h>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "QBDI/Bitmask.h"
 #include "QBDI/Callback.h"
 #include "QBDI/Errors.h"
 #include "QBDI/InstAnalysis.h"

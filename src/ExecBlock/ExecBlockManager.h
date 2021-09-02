@@ -20,22 +20,20 @@
 
 #include <algorithm>
 #include <map>
+#include <memory>
+#include <stddef.h>
+#include <stdint.h>
 #include <vector>
 
 #include "QBDI/Callback.h"
 #include "QBDI/Range.h"
 #include "QBDI/State.h"
 
-namespace llvm {
-class MCInstrInfo;
-class MCRegisterInfo;
-} // namespace llvm
-
 namespace QBDI {
 
-class Assembly;
 class ExecBlock;
-class InstMetadata;
+class ExecBroker;
+class LLVMCPUs;
 class Patch;
 class RelocatableInst;
 
@@ -67,13 +65,14 @@ struct ExecRegion {
 
 class ExecBlockManager {
 private:
+  std::unique_ptr<ExecBroker> execBroker;
   std::vector<ExecRegion> regions;
   rword total_translated_size;
   rword total_translation_size;
   bool needFlush;
 
   VMInstanceRef vminstance;
-  const Assembly &assembly;
+  const LLVMCPUs &llvmCPUs;
 
   // cache ExecBlock prologue and epilogue
   uint32_t epilogueSize;
@@ -91,7 +90,7 @@ private:
   float getExpansionRatio() const;
 
 public:
-  ExecBlockManager(const Assembly &assembly,
+  ExecBlockManager(const LLVMCPUs &llvmCPUs,
                    VMInstanceRef vminstance = nullptr);
 
   ~ExecBlockManager();
@@ -99,6 +98,8 @@ public:
   ExecBlockManager(const ExecBlockManager &) = delete;
 
   void changeVMInstanceRef(VMInstanceRef vminstance);
+
+  inline ExecBroker *getExecBroker() { return execBroker.get(); }
 
   void printCacheStatistics() const;
 

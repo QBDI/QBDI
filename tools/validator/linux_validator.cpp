@@ -28,6 +28,7 @@
 #include <sys/mman.h>
 #include <sys/ptrace.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 #include "QBDI/Memory.hpp"
 #include "QBDI/Platform.h"
@@ -42,7 +43,11 @@ QBDIPRELOAD_INIT;
 
 int QBDI::qbdipreload_on_main(int argc, char **argv) {
   if (INSTRUMENTED) {
-    QBDI::setLogPriority(QBDI::LogPriority::WARNING);
+    if (getenv("QBDI_DEBUG") != NULL) {
+      QBDI::setLogPriority(QBDI::LogPriority::DEBUG);
+    } else {
+      QBDI::setLogPriority(QBDI::LogPriority::WARNING);
+    }
     return QBDIPRELOAD_NOT_HANDLED;
 
   } else {

@@ -15,35 +15,53 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef EXECBROKER_H
-#define EXECBROKER_H
+#ifndef QBDI_EXECBROKER_H
+#define QBDI_EXECBROKER_H
 
+#include <algorithm>
+#include <memory>
 #include <string>
+#include <vector>
 
-#include "llvm/Support/Process.h"
+#include "llvm/Support/Memory.h"
 
-#include "QBDI/Memory.hpp"
+#include "QBDI/Callback.h"
+#include "QBDI/Config.h"
 #include "QBDI/Range.h"
 #include "QBDI/State.h"
 #include "ExecBlock/ExecBlock.h"
 
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+#include "ExecBroker/X86_64/ExecBroker_X86_64.h"
+#elif defined(QBDI_ARCH_ARM)
+#include "ExecBroker/ARM/ExecBroker_ARM.h"
+#elif defined(QBDI_ARCH_AARCH64)
+#include "ExecBroker/AARCH64/ExecBroker_AARCH64.h"
+#else
+#error "No Implementation of ExecBroker for the current ARCH"
+#endif
+
 namespace QBDI {
-class Assembly;
+class LLVMCPUs;
 
 class ExecBroker {
 
 private:
   RangeSet<rword> instrumented;
-  ExecBlock transferBlock;
+  std::unique_ptr<ExecBlock> transferBlock;
   rword pageSize;
 
   using PF = llvm::sys::Memory::ProtectionFlags;
 
-  // ARCH dependant method
+  // ARCH specific method
+  ExecBrokerArchData archData;
+
+  void initExecBrokerSequences(const LLVMCPUs &llvmCPUs);
   rword *getReturnPoint(GPRState *gprState) const;
 
 public:
-  ExecBroker(const Assembly &assembly, VMInstanceRef vminstance = nullptr);
+  ExecBroker(std::unique_ptr<ExecBlock> transferBlock, const LLVMCPUs &llvmCPUs,
+             VMInstanceRef vminstance = nullptr);
 
   void changeVMInstanceRef(VMInstanceRef vminstance);
 
@@ -71,4 +89,4 @@ public:
 
 } // namespace QBDI
 
-#endif // EXECBROKER_H
+#endif // QBDI_EXECBROKER_H

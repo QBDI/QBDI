@@ -18,8 +18,7 @@
 #ifndef ExecBlockFlags_X86_64_H
 #define ExecBlockFlags_X86_64_H
 
-#include <memory>
-#include <vector>
+#include <stdint.h>
 
 namespace QBDI {
 

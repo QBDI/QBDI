@@ -15,8 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "Utility/memory_ostream.h"
+#include <stdlib.h>
+
 #include "Utility/LogSys.h"
+#include "Utility/memory_ostream.h"
+
+namespace QBDI {
 
 void memory_ostream::write_impl(const char *Ptr, size_t Size) {
   QBDI_REQUIRE_ACTION(pos + Size <= os.allocatedSize(), abort());
@@ -30,3 +34,5 @@ void memory_ostream::seek(uint64_t pos) {
   QBDI_REQUIRE_ACTION(pos < os.allocatedSize(), abort());
   this->pos = pos;
 }
+
+} // namespace QBDI

@@ -24,9 +24,9 @@
 
 #include "TestSetup/InMemoryAssembler.h"
 
-#include "Memory.hpp"
-#include "Platform.h"
-#include "Range.h"
+#include "QBDI/Memory.hpp"
+#include "QBDI/Platform.h"
+#include "QBDI/Range.h"
 
 #define STACK_SIZE 4096
 #define FAKE_RET_ADDR 0x666
@@ -179,18 +179,21 @@ MemoryAccessTest::MemoryAccessTest() : vm() {
   REQUIRE(ret == true);
 }
 
-MemoryAccessTest::~MemoryAccessTest() { QBDI::alignedFree(fakestack); }
+MemoryAccessTest::~MemoryAccessTest() {
+  QBDI::alignedFree(fakestack);
+  objects.clear();
+}
 
-bool MemoryAccessTest::runOnASM(QBDI::rword *retval, const char *source,
-                                const std::vector<QBDI::rword> &args) {
+QBDI::rword MemoryAccessTest::genASM(const char *source,
+                                     const std::vector<std::string> mattrs) {
   std::ostringstream finalSource;
 
   finalSource << source << "\n"
               << "ret\n";
 
-  InMemoryObject object = InMemoryObject(finalSource.str().c_str());
+  objects.emplace_back(finalSource.str().c_str(), "", mattrs);
 
-  const llvm::ArrayRef<uint8_t> &code = object.getCode();
+  const llvm::ArrayRef<uint8_t> &code = objects.back().getCode();
   llvm::sys::Memory::InvalidateInstructionCache(code.data(), code.size());
 
   vm.addInstrumentedRange((QBDI::rword)code.data(),
@@ -198,7 +201,15 @@ bool MemoryAccessTest::runOnASM(QBDI::rword *retval, const char *source,
   vm.clearCache((QBDI::rword)code.data(),
                 (QBDI::rword)code.data() + code.size());
 
-  return vm.call(retval, (QBDI::rword)code.data(), args);
+  return (QBDI::rword)code.data();
+}
+
+bool MemoryAccessTest::runOnASM(QBDI::rword *retval, const char *source,
+                                const std::vector<QBDI::rword> &args,
+                                const std::vector<std::string> mattrs) {
+  QBDI::rword addr = genASM(source, mattrs);
+
+  return vm.call(retval, addr, args);
 }
 
 QBDI::VMAction checkArrayRead8(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
@@ -456,6 +467,8 @@ QBDI::VMAction writeSnooper(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
   }
   return QBDI::VMAction::CONTINUE;
 }
+
+#if not defined(QBDI_ARCH_ARM)
 
 TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Read8") {
   char buffer[] = "p0p30fd0p3";
@@ -747,3 +760,5 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-MemorySnooping") {
   ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
   REQUIRE(original == ret);
 }
+
+#endif

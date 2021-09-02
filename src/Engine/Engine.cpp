@@ -16,40 +16,32 @@
  * limitations under the License.
  */
 #include <algorithm>
-#include <bitset>
+#include <cstdint>
+#include <string.h>
+
+#include "llvm/ADT/ArrayRef.h"
+#include "llvm/MC/MCDisassembler/MCDisassembler.h"
+#include "llvm/MC/MCInst.h"
 
 #include "Engine/Engine.h"
+#include "Engine/LLVMCPU.h"
 
-#include "llvm/ADT/SmallVector.h"
-#include "llvm/ADT/Triple.h"
-#include "llvm/MC/MCAsmBackend.h"
-#include "llvm/MC/MCAsmInfo.h"
-#include "llvm/MC/MCAssembler.h"
-#include "llvm/MC/MCCodeEmitter.h"
-#include "llvm/MC/MCContext.h"
-#include "llvm/MC/MCInstPrinter.h"
-#include "llvm/MC/MCInstrInfo.h"
-#include "llvm/MC/MCObjectFileInfo.h"
-#include "llvm/Support/TargetRegistry.h"
-#include "llvm/Support/TargetSelect.h"
-
+#include "ExecBlock/Context.h"
+#include "ExecBlock/ExecBlock.h"
 #include "ExecBlock/ExecBlockManager.h"
 #include "ExecBroker/ExecBroker.h"
-#include "Patch/InstInfo.h"
 #include "Patch/InstMetadata.h"
 #include "Patch/InstrRule.h"
-#include "Patch/InstrRules.h"
 #include "Patch/Patch.h"
 #include "Patch/PatchRule.h"
 #include "Patch/PatchRules.h"
-#include "Patch/RegisterSize.h"
-#include "Patch/Types.h"
-#include "Utility/Assembly.h"
 #include "Utility/LogSys.h"
-#include "Utility/System.h"
 
+#include "QBDI/Bitmask.h"
+#include "QBDI/Config.h"
 #include "QBDI/Errors.h"
-#include "QBDI/Platform.h"
+#include "QBDI/Range.h"
+#include "QBDI/State.h"
 
 // Mask to identify VM events
 #define EVENTID_VM_MASK (1UL << 30)
@@ -58,81 +50,16 @@ namespace QBDI {
 
 Engine::Engine(const std::string &_cpu, const std::vector<std::string> &_mattrs,
                Options opts, VMInstanceRef vminstance)
-    : cpu(_cpu), mattrs(_mattrs), vminstance(vminstance), instrRulesCounter(0),
-      vmCallbacksCounter(0), options(opts), eventMask(VMEvent::NO_EVENT),
+    : vminstance(vminstance), instrRulesCounter(0), vmCallbacksCounter(0),
+      curCPUMode(CPUMode::DEFAULT), options(opts), eventMask(VMEvent::NO_EVENT),
       running(false) {
-  init();
-}
 
-Engine::~Engine() = default;
-
-// may need to reinit the Engine during a copy
-void Engine::init() {
-  static bool firstInit = true;
-
-  std::string error;
-  std::string featuresStr;
-  const llvm::Target *processTarget;
-
-  if (firstInit) {
-    firstInit = false;
-    llvm::InitializeAllTargetInfos();
-    llvm::InitializeAllTargetMCs();
-    llvm::InitializeAllAsmParsers();
-    llvm::InitializeAllDisassemblers();
-  }
-
-  // Build features string
-  if (cpu.empty()) {
-    cpu = QBDI::getHostCPUName();
-    // If API is broken on ARM, we are facing big problems...
-    if constexpr (is_arm) {
-      QBDI_REQUIRE(!cpu.empty() && cpu != "generic");
-    }
-  }
-  if (mattrs.empty()) {
-    mattrs = getHostCPUFeatures();
-  }
-  if (!mattrs.empty()) {
-    llvm::SubtargetFeatures features;
-    for (unsigned i = 0; i != mattrs.size(); ++i) {
-      features.AddFeature(mattrs[i]);
-    }
-    featuresStr = features.getString();
-  }
-
-  // lookup target
-  tripleName = llvm::Triple::normalize(llvm::sys::getDefaultTargetTriple());
-  llvm::Triple processTriple(tripleName);
-  processTarget = llvm::TargetRegistry::lookupTarget(tripleName, error);
-  QBDI_DEBUG("Initialized LLVM for target {}", tripleName.c_str());
-
-  // Allocate all LLVM classes
-  llvm::MCTargetOptions MCOptions;
-  MRI = std::unique_ptr<llvm::MCRegisterInfo>(
-      processTarget->createMCRegInfo(tripleName));
-  MAI = std::unique_ptr<llvm::MCAsmInfo>(
-      processTarget->createMCAsmInfo(*MRI, tripleName, MCOptions));
-  MOFI = std::make_unique<llvm::MCObjectFileInfo>();
-  MCTX = std::make_unique<llvm::MCContext>(MAI.get(), MRI.get(), MOFI.get());
-  MOFI->InitMCObjectFileInfo(processTriple, false, *MCTX);
-  MCII = std::unique_ptr<llvm::MCInstrInfo>(processTarget->createMCInstrInfo());
-  MSTI = std::unique_ptr<llvm::MCSubtargetInfo>(
-      processTarget->createMCSubtargetInfo(tripleName, cpu, featuresStr));
-  QBDI_DEBUG("Initialized LLVM subtarget with cpu {} and features {}",
-             cpu.c_str(), featuresStr.c_str());
-  auto MAB = std::unique_ptr<llvm::MCAsmBackend>(
-      processTarget->createMCAsmBackend(*MSTI, *MRI, MCOptions));
-  MCE = std::unique_ptr<llvm::MCCodeEmitter>(
-      processTarget->createMCCodeEmitter(*MCII, *MRI, *MCTX));
-  // Allocate QBDI classes
-  assembly = std::make_unique<Assembly>(*MCTX, std::move(MAB), *MCII,
-                                        processTarget, *MSTI, options);
-  blockManager = std::make_unique<ExecBlockManager>(*assembly, vminstance);
-  execBroker = std::make_unique<ExecBroker>(*assembly, vminstance);
+  llvmCPUs = std::make_unique<LLVMCPUs>(_cpu, _mattrs, opts);
+  blockManager = std::make_unique<ExecBlockManager>(*llvmCPUs, vminstance);
+  execBroker = blockManager->getExecBroker();
 
   // Get default Patch rules for this architecture
-  patchRules = getDefaultPatchRules();
+  patchRules = getDefaultPatchRules(options);
 
   gprState = std::make_unique<GPRState>();
   fprState = std::make_unique<FPRState>();
@@ -145,59 +72,53 @@ void Engine::init() {
   curExecBlock = nullptr;
 }
 
-void Engine::reinit(const std::string &cpu_,
-                    const std::vector<std::string> &mattrs_, Options opts) {
-  QBDI_REQUIRE_ACTION(not running && "Cannot reInit a running Engine", abort());
-
-  // clear callbacks
-  instrRules.clear();
-  vmCallbacks.clear();
-  instrRulesCounter = 0;
-  vmCallbacksCounter = 0;
-  eventMask = VMEvent::NO_EVENT;
-
-  // clear state
-  gprState.reset();
-  curGPRState = nullptr;
-  fprState.reset();
-  curFPRState = nullptr;
-  patchRules.clear();
-
-  // close internal object
-  execBroker.reset();
-  blockManager.reset();
-  assembly.reset();
-
-  // close all llvm references
-  MCE.reset();
-  MSTI.reset();
-  MCII.reset();
-  MCTX.reset();
-  MOFI.reset();
-  MAI.reset();
-  MRI.reset();
-
-  cpu = cpu_;
-  mattrs = mattrs_;
-  tripleName = "";
-  options = opts;
-
-  init();
-}
+Engine::~Engine() = default;
 
 Engine::Engine(const Engine &other)
-    : cpu(other.cpu), mattrs(other.mattrs), vminstance(nullptr),
-      options(other.options), running(false) {
-  this->init();
-  *this = other;
+    : vminstance(nullptr), instrRules(),
+      instrRulesCounter(other.instrRulesCounter),
+      vmCallbacks(other.vmCallbacks),
+      vmCallbacksCounter(other.vmCallbacksCounter),
+      curCPUMode(CPUMode::DEFAULT), options(other.options),
+      eventMask(other.eventMask), running(false) {
+
+  llvmCPUs = std::make_unique<LLVMCPUs>(
+      other.llvmCPUs->getCPU(), other.llvmCPUs->getMattrs(), other.options);
+  blockManager = std::make_unique<ExecBlockManager>(*llvmCPUs, nullptr);
+  execBroker = blockManager->getExecBroker();
+  // copy instrumentation range
+  execBroker->setInstrumentedRange(other.execBroker->getInstrumentedRange());
+
+  // Get default Patch rules for this architecture
+  patchRules = getDefaultPatchRules(options);
+
+  // Copy unique_ptr of instrRules
+  for (const auto &r : other.instrRules) {
+    instrRules.emplace_back(r.first, r.second->clone());
+  }
+
+  gprState = std::make_unique<GPRState>();
+  fprState = std::make_unique<FPRState>();
+  curGPRState = gprState.get();
+  curFPRState = fprState.get();
+  setGPRState(other.getGPRState());
+  setFPRState(other.getFPRState());
+
+  curExecBlock = nullptr;
 }
 
 Engine &Engine::operator=(const Engine &other) {
   QBDI_REQUIRE_ACTION(not running && "Cannot assign a running Engine", abort());
   this->clearAllCache();
 
-  if (cpu != other.cpu || mattrs != other.mattrs) {
-    reinit(other.cpu, other.mattrs, other.options);
+  if (not llvmCPUs->isSameCPU(*other.llvmCPUs)) {
+    blockManager.reset();
+
+    llvmCPUs = std::make_unique<LLVMCPUs>(
+        other.llvmCPUs->getCPU(), other.llvmCPUs->getMattrs(), other.options);
+
+    blockManager = std::make_unique<ExecBlockManager>(*llvmCPUs, nullptr);
+    execBroker = blockManager->getExecBroker();
   }
 
   this->setOptions(other.options);
@@ -228,16 +149,22 @@ void Engine::setOptions(Options options) {
   if (options != this->options) {
     QBDI_DEBUG("Change Options from {:x} to {:x}", this->options, options);
     clearAllCache();
-    assembly->setOptions(options);
+    llvmCPUs->setOptions(options);
+
+    Options needRecreate =
+        Options::OPT_DISABLE_FPR | Options::OPT_DISABLE_OPTIONAL_FPR;
+#if defined(QBDI_ARCH_AARCH64)
+    needRecreate |= OPT_DISABLE_LOCAL_MONITOR;
+#endif
 
     // need to recreate all ExecBlock
-    if (((this->options ^ options) &
-         (Options::OPT_DISABLE_FPR | Options::OPT_DISABLE_OPTIONAL_FPR)) != 0) {
+    if (((this->options ^ options) & needRecreate) != 0) {
       const RangeSet<rword> instrumentationRange =
           execBroker->getInstrumentedRange();
 
-      blockManager = std::make_unique<ExecBlockManager>(*assembly, vminstance);
-      execBroker = std::make_unique<ExecBroker>(*assembly, vminstance);
+      patchRules = getDefaultPatchRules(options);
+      blockManager = std::make_unique<ExecBlockManager>(*llvmCPUs, vminstance);
+      execBroker = blockManager->getExecBroker();
 
       execBroker->setInstrumentedRange(instrumentationRange);
     }
@@ -251,7 +178,6 @@ void Engine::changeVMInstanceRef(VMInstanceRef vminstance) {
   this->vminstance = vminstance;
 
   blockManager->changeVMInstanceRef(vminstance);
-  execBroker->changeVMInstanceRef(vminstance);
 
   for (auto &r : instrRules) {
     r.second->changeVMInstanceRef(vminstance);
@@ -331,13 +257,14 @@ void Engine::removeAllInstrumentedRanges() {
 
 std::vector<Patch> Engine::patch(rword start) {
   std::vector<Patch> basicBlock;
+  const LLVMCPU &llvmcpu = llvmCPUs->getCPU(curCPUMode);
   const llvm::ArrayRef<uint8_t> code((uint8_t *)start, (size_t)-1);
   bool basicBlockEnd = false;
   rword i = 0;
   QBDI_DEBUG("Patching basic block at address 0x{:x}", start);
 
   // Get Basic block
-  while (basicBlockEnd == false) {
+  while (not basicBlockEnd) {
     llvm::MCInst inst;
     llvm::MCDisassembler::DecodeStatus dstatus;
     rword address;
@@ -347,24 +274,23 @@ std::vector<Patch> Engine::patch(rword start) {
     // Aggregate a complete patch
     do {
       // Disassemble
-      dstatus = assembly->getInstruction(inst, instSize, code.slice(i), i);
+      dstatus = llvmcpu.getInstruction(inst, instSize, code.slice(i), i);
       address = start + i;
       QBDI_REQUIRE_ACTION(llvm::MCDisassembler::Success == dstatus, abort());
       QBDI_DEBUG_BLOCK({
-        std::string disass = assembly->showInst(inst, address);
+        std::string disass = llvmcpu.showInst(inst, address);
         QBDI_DEBUG("Patching 0x{:x} {}", address, disass.c_str());
       });
       // Patch & merge
       for (uint32_t j = 0; j < patchRules.size(); j++) {
-        if (patchRules[j].canBeApplied(inst, address, instSize, MCII.get())) {
-          QBDI_DEBUG("Patch rule {:x} applied", j);
+        if (patchRules[j].canBeApplied(inst, address, instSize, llvmcpu)) {
+          QBDI_DEBUG("Patch rule {} applied", j);
           if (patch.insts.size() == 0) {
-            patch = patchRules[j].generate(inst, address, instSize, MCII.get(),
-                                           MRI.get());
+            patch = patchRules[j].generate(inst, address, instSize, llvmcpu);
           } else {
             QBDI_DEBUG("Previous instruction merged");
-            patch = patchRules[j].generate(inst, address, instSize, MCII.get(),
-                                           MRI.get(), &patch);
+            patch = patchRules[j].generate(inst, address, instSize, llvmcpu,
+                                           &patch);
           }
           break;
         }
@@ -387,6 +313,7 @@ std::vector<Patch> Engine::patch(rword start) {
 }
 
 void Engine::instrument(std::vector<Patch> &basicBlock, size_t patchEnd) {
+  const LLVMCPU &llvmcpu = llvmCPUs->getCPU(curCPUMode);
   QBDI_DEBUG(
       "Instrumenting sequence [0x{:x}, 0x{:x}] in basic block [0x{:x}, 0x{:x}]",
       basicBlock.front().metadata.address,
@@ -397,15 +324,14 @@ void Engine::instrument(std::vector<Patch> &basicBlock, size_t patchEnd) {
     Patch &patch = basicBlock[i];
     QBDI_DEBUG_BLOCK({
       std::string disass =
-          assembly->showInst(patch.metadata.inst, patch.metadata.address);
+          llvmcpu.showInst(patch.metadata.inst, patch.metadata.address);
       QBDI_DEBUG("Instrumenting 0x{:x} {}", patch.metadata.address,
                  disass.c_str());
     });
     // Instrument
     for (const auto &item : instrRules) {
       const InstrRule *rule = item.second.get();
-      if (rule->tryInstrument(patch, MCII.get(), MRI.get(),
-                              assembly.get())) { // Push MCII
+      if (rule->tryInstrument(patch, llvmcpu)) {
         QBDI_DEBUG("Instrumentation rule {:x} applied", item.first);
       }
     }

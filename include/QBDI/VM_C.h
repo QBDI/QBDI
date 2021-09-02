@@ -19,6 +19,7 @@
 #define QBDI_VM_C_H_
 
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #include "QBDI/Callback.h"

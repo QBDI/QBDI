@@ -15,12 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <stddef.h>
 #include <stdint.h>
 
+#include "MCTargetDesc/X86BaseInfo.h"
 #include "X86InstrInfo.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstrDesc.h"
 
+#include "Patch/InstInfo.h"
 #include "Patch/X86_64/InstInfo_X86_64.h"
 #include "Utility/LogSys.h"
 
@@ -2722,31 +2725,32 @@ struct MemAccessArray {
 
   int check() const {
     // read
-    check_table(READ_8, READ_8_SIZE, READ(1), 0xfff);
-    check_table(READ_16, READ_16_SIZE, READ(2), 0xfff);
-    check_table(READ_32, READ_32_SIZE, READ(4), 0xfff);
-    check_table(READ_64, READ_64_SIZE, READ(8), 0xfff);
-    check_table(READ_80, READ_80_SIZE, READ(10), 0xfff);
-    check_table(READ_128, READ_128_SIZE, READ(16), 0xfff);
-    check_table(READ_224, READ_224_SIZE, READ(28), 0xfff);
-    check_table(READ_256, READ_256_SIZE, READ(32), 0xfff);
-    check_table(READ_864, READ_864_SIZE, READ(108), 0xfff);
-    check_table(READ_4096, READ_4096_SIZE, READ(512), 0xfff);
-    check_table(READ_4608, READ_4608_SIZE, READ(576), 0xfff);
+    check_table(READ_8, READ_8_SIZE, READ(1), 0x8fff);
+    check_table(READ_16, READ_16_SIZE, READ(2), 0x8fff);
+    check_table(READ_32, READ_32_SIZE, READ(4), 0x8fff);
+    check_table(READ_64, READ_64_SIZE, READ(8), 0x8fff);
+    check_table(READ_80, READ_80_SIZE, READ(10), 0x8fff);
+    check_table(READ_128, READ_128_SIZE, READ(16), 0x8fff);
+    check_table(READ_224, READ_224_SIZE, READ(28), 0x8fff);
+    check_table(READ_256, READ_256_SIZE, READ(32), 0x8fff);
+    check_table(READ_864, READ_864_SIZE, READ(108), 0x8fff);
+    check_table(READ_4096, READ_4096_SIZE, READ(512), 0x8fff);
+    check_table(READ_4608, READ_4608_SIZE, READ(576), 0x8fff);
     // write
-    check_table(WRITE_8, WRITE_8_SIZE, WRITE(1), 0xfff << WRITE_POSITION);
-    check_table(WRITE_16, WRITE_16_SIZE, WRITE(2), 0xfff << WRITE_POSITION);
-    check_table(WRITE_32, WRITE_32_SIZE, WRITE(4), 0xfff << WRITE_POSITION);
-    check_table(WRITE_64, WRITE_64_SIZE, WRITE(8), 0xfff << WRITE_POSITION);
-    check_table(WRITE_80, WRITE_80_SIZE, WRITE(10), 0xfff << WRITE_POSITION);
-    check_table(WRITE_128, WRITE_128_SIZE, WRITE(16), 0xfff << WRITE_POSITION);
-    check_table(WRITE_224, WRITE_224_SIZE, WRITE(28), 0xfff << WRITE_POSITION);
-    check_table(WRITE_256, WRITE_256_SIZE, WRITE(32), 0xfff << WRITE_POSITION);
-    check_table(WRITE_864, WRITE_864_SIZE, WRITE(108), 0xfff << WRITE_POSITION);
+    check_table(WRITE_8, WRITE_8_SIZE, WRITE(1), 0x8fff << WRITE_POSITION);
+    check_table(WRITE_16, WRITE_16_SIZE, WRITE(2), 0x8fff << WRITE_POSITION);
+    check_table(WRITE_32, WRITE_32_SIZE, WRITE(4), 0x8fff << WRITE_POSITION);
+    check_table(WRITE_64, WRITE_64_SIZE, WRITE(8), 0x8fff << WRITE_POSITION);
+    check_table(WRITE_80, WRITE_80_SIZE, WRITE(10), 0x8fff << WRITE_POSITION);
+    check_table(WRITE_128, WRITE_128_SIZE, WRITE(16), 0x8fff << WRITE_POSITION);
+    check_table(WRITE_224, WRITE_224_SIZE, WRITE(28), 0x8fff << WRITE_POSITION);
+    check_table(WRITE_256, WRITE_256_SIZE, WRITE(32), 0x8fff << WRITE_POSITION);
+    check_table(WRITE_864, WRITE_864_SIZE, WRITE(108),
+                0x8fff << WRITE_POSITION);
     check_table(WRITE_4096, WRITE_4096_SIZE, WRITE(512),
-                0xfff << WRITE_POSITION);
+                0x8fff << WRITE_POSITION);
     check_table(WRITE_4608, WRITE_4608_SIZE, WRITE(576),
-                0xfff << WRITE_POSITION);
+                0x8fff << WRITE_POSITION);
     // read stack
     check_table(STACK_READ_16, STACK_READ_16_SIZE, STACK_READ(2), 0x8fff);
     check_table(STACK_READ_32, STACK_READ_32_SIZE, STACK_READ(4), 0x8fff);
@@ -2941,4 +2945,5 @@ bool unsupportedRead(const llvm::MCInst &inst) {
   }
 }
 
+bool unsupportedWrite(const llvm::MCInst &inst) { return false; }
 }; // namespace QBDI

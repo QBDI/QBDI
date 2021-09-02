@@ -19,7 +19,7 @@
 #include <stdio.h>
 
 #include <catch2/catch.hpp>
-#include "Memory.hpp"
+#include "QBDI/Memory.hpp"
 
 TEST_CASE("AllocAlignedTest-CorrectSize") {
   const static size_t size = 1000;

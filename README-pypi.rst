@@ -36,18 +36,16 @@ Status
 .. role:: orange
 .. role:: red
 
-=======   ==============================   ======================   =================================
-CPU       Operating Systems                Execution                Memory Access Information
-=======   ==============================   ======================   =================================
-x86-64    Android, Linux, macOS, Windows   :green:`Supported`       :green:`Supported`
-x86       Android, Linux, macOS, Windows   :green:`Supported`       :green:`Supported`
-ARM       Linux, Android, iOS              :orange:`Planned (*)`    :orange:`Planned (*)`
-AArch64   Android                          :orange:`Planned (*)`    :orange:`Planned (*)`
-=======   ==============================   ======================   =================================
+=======   ==============================   ========================   =================================
+CPU       Operating Systems                Execution                  Memory Access Information
+=======   ==============================   ========================   =================================
+x86-64    Android, Linux, macOS, Windows   :green:`Supported`         :green:`Supported`
+x86       Android, Linux, macOS, Windows   :green:`Supported`         :green:`Supported`
+ARM       Linux, Android, iOS              :orange:`Planned (*)`      :orange:`Planned (*)`
+AArch64   Android, Linux, macOS            :orange:`Supported (*)`    :orange:`Supported (*)`
+=======   ==============================   ========================   =================================
 
-.. warning::
-
-   The ARM and AArch64 instruction sets are supported but they still need to be integrated along with x86 and x86-64.
+\* The ARM and AArch64 instruction sets are supported but not public. Contact us if you want to try them.
 
 Installation
 ============

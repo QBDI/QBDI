@@ -132,6 +132,7 @@ typedef struct {
                            */
   rword address;          /*!< Instruction address */
   uint32_t instSize;      /*!< Instruction size (in bytes) */
+  CPUMode cpuMode;        /*!< Instruction CPU mode */
   bool affectControlFlow; /*!< true if instruction affects control flow */
   bool isBranch;          /*!< true if instruction acts like a 'jump' */
   bool isCall;            /*!< true if instruction acts like a 'call' */
@@ -139,6 +140,9 @@ typedef struct {
   bool isCompare;         /*!< true if instruction is a comparison */
   bool isPredicable;      /*!< true if instruction contains a predicate
                            * (~is conditional)
+                           */
+  bool isMoveImm;         /*!< true if this instruction is a move immediate
+                           * (including conditional moves) instruction.
                            */
   bool mayLoad;       /*!< true if QBDI detects a load for this instruction */
   bool mayStore;      /*!< true if QBDI detects a store for this instruction */

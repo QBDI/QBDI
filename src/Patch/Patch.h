@@ -18,65 +18,53 @@
 #ifndef PATCH_H
 #define PATCH_H
 
-#include <iterator>
+#include <map>
+#include <memory>
+#include <set>
 #include <vector>
 
-#include "llvm/MC/MCInst.h"
-
 #include "Patch/InstMetadata.h"
-#include "Patch/RelocatableInst.h"
-#include "Patch/Types.h"
+#include "Patch/Register.h"
 
 #include "QBDI/State.h"
 
+namespace llvm {
+class MCInst;
+}
+
 namespace QBDI {
+class LLVMCPU;
+class RelocatableInst;
 
 class Patch {
 public:
   InstMetadata metadata;
-  RelocatableInst::UniquePtrVec insts;
+  std::vector<std::unique_ptr<RelocatableInst>> insts;
+  // Registers Used and Defs by the instruction
+  std::map<unsigned, RegisterUsage> regUsage;
+  // Registers used by the TempRegister for this patch
+  std::set<unsigned> tempReg;
 
   using Vec = std::vector<Patch>;
 
-  Patch() { metadata.patchSize = 0; }
+  Patch();
 
-  Patch(llvm::MCInst inst, rword address, rword instSize) {
-    metadata.patchSize = 0;
-    setInst(inst, address, instSize);
-  }
+  Patch(const llvm::MCInst &inst, rword address, rword instSize,
+        const LLVMCPU &llvmcpu);
 
-  void setMerge(bool merge) { metadata.merge = merge; }
+  Patch(Patch &&);
+  Patch &operator=(Patch &&);
 
-  void setModifyPC(bool modifyPC) { metadata.modifyPC = modifyPC; }
+  ~Patch();
 
-  void setInst(llvm::MCInst inst, rword address, rword instSize) {
-    metadata.inst = inst;
-    metadata.address = address;
-    metadata.instSize = instSize;
-  }
+  void setMerge(bool merge);
+  void setModifyPC(bool modifyPC);
 
-  void append(RelocatableInst::UniquePtrVec v) {
-    metadata.patchSize += v.size();
-    std::move(v.begin(), v.end(), std::back_inserter(insts));
-  }
+  void append(std::unique_ptr<RelocatableInst> &&r);
+  void append(std::vector<std::unique_ptr<RelocatableInst>> v);
 
-  void prepend(RelocatableInst::UniquePtrVec v) {
-    metadata.patchSize += v.size();
-    // front iterator on std::vector may need to move all value at each move
-    // use a back_inserter in v and swap the vector at the end
-    std::move(insts.begin(), insts.end(), std::back_inserter(v));
-    v.swap(insts);
-  }
-
-  void append(RelocatableInst::UniquePtr &&r) {
-    insts.push_back(std::forward<RelocatableInst::UniquePtr>(r));
-    metadata.patchSize += 1;
-  }
-
-  void prepend(RelocatableInst::UniquePtr &&r) {
-    insts.insert(insts.begin(), std::forward<RelocatableInst::UniquePtr>(r));
-    metadata.patchSize += 1;
-  }
+  void prepend(std::unique_ptr<RelocatableInst> &&r);
+  void prepend(std::vector<std::unique_ptr<RelocatableInst>> v);
 };
 
 } // namespace QBDI

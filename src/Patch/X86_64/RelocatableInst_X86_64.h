@@ -18,96 +18,72 @@
 #ifndef RELOCATABLEINST_X86_64_H
 #define RELOCATABLEINST_X86_64_H
 
-#include "Patch/RelocatableInst.h"
+#include <memory>
+#include <utility>
+
+#include "llvm/MC/MCInst.h"
 
 #include "QBDI/Config.h"
+#include "QBDI/State.h"
+#include "Patch/PatchUtils.h"
+#include "Patch/RelocatableInst.h"
+#include "Patch/Types.h"
 
 namespace QBDI {
+class ExecBlock;
+
+class EpilogueRel : public AutoClone<RelocatableInst, EpilogueRel> {
+  llvm::MCInst inst;
+  unsigned int opn;
+  rword offset;
+
+public:
+  EpilogueRel(llvm::MCInst &&inst, unsigned int opn, rword offset)
+      : AutoClone<RelocatableInst, EpilogueRel>(),
+        inst(std::forward<llvm::MCInst>(inst)), opn(opn), offset(offset) {}
+
+  // Set an operand to epilogueOffset + offset
+  llvm::MCInst reloc(ExecBlock *exec_block) const override;
+};
 
 class HostPCRel : public AutoClone<RelocatableInst, HostPCRel> {
+  llvm::MCInst inst;
   unsigned int opn;
   rword offset;
 
 public:
   HostPCRel(llvm::MCInst &&inst, unsigned int opn, rword offset)
-      : AutoClone<RelocatableInst, HostPCRel>(std::forward<llvm::MCInst>(inst)),
-        opn(opn), offset(offset){};
+      : AutoClone<RelocatableInst, HostPCRel>(),
+        inst(std::forward<llvm::MCInst>(inst)), opn(opn), offset(offset) {}
 
-  llvm::MCInst reloc(ExecBlock *exec_block) const override {
-    llvm::MCInst res = inst;
-    res.getOperand(opn).setImm(offset + exec_block->getCurrentPC());
-    return res;
-  }
+  // set a an operand at currentPC + offset
+  llvm::MCInst reloc(ExecBlock *exec_block) const override;
 };
 
-class InstId : public AutoClone<RelocatableInst, InstId> {
+class DataBlockRel : public AutoClone<RelocatableInst, DataBlockRel> {
+  llvm::MCInst inst;
   unsigned int opn;
+  rword offset;
 
 public:
-  InstId(llvm::MCInst &&inst, unsigned int opn)
-      : AutoClone<RelocatableInst, InstId>(std::forward<llvm::MCInst>(inst)),
-        opn(opn){};
+  DataBlockRel(llvm::MCInst &&inst, unsigned int opn, rword offset)
+      : AutoClone<RelocatableInst, DataBlockRel>(),
+        inst(std::forward<llvm::MCInst>(inst)), opn(opn), offset(offset) {}
 
-  llvm::MCInst reloc(ExecBlock *exec_block) const override {
-    llvm::MCInst res = inst;
-    res.getOperand(opn).setImm(exec_block->getNextInstID());
-    return res;
-  }
+  llvm::MCInst reloc(ExecBlock *exec_block) const override;
 };
 
-class TaggedShadow : public AutoClone<RelocatableInst, TaggedShadow> {
-
+class DataBlockAbsRel : public AutoClone<RelocatableInst, DataBlockAbsRel> {
+  llvm::MCInst inst;
   unsigned int opn;
-  uint16_t tag;
-  rword inst_size;
-  bool create;
+  rword offset;
 
 public:
-  TaggedShadow(llvm::MCInst &&inst, unsigned int opn, uint16_t tag,
-               rword inst_size, bool create = true)
-      : AutoClone<RelocatableInst, TaggedShadow>(
-            std::forward<llvm::MCInst>(inst)),
-        opn(opn), tag(tag), inst_size(inst_size), create(create){};
+  DataBlockAbsRel(llvm::MCInst &&inst, unsigned int opn, rword offset)
+      : AutoClone<RelocatableInst, DataBlockAbsRel>(),
+        inst(std::forward<llvm::MCInst>(inst)), opn(opn), offset(offset) {}
 
-  llvm::MCInst reloc(ExecBlock *exec_block) const override {
-    uint16_t id;
-    if (create) {
-      id = exec_block->newShadow(tag);
-    } else {
-      id = exec_block->getLastShadow(tag);
-    }
-    llvm::MCInst res = inst;
-    res.getOperand(opn).setImm(exec_block->getDataBlockOffset() +
-                               exec_block->getShadowOffset(id) - inst_size);
-    return res;
-  }
-};
-
-class TaggedShadowAbs : public AutoClone<RelocatableInst, TaggedShadowAbs> {
-
-  unsigned int opn;
-  uint16_t tag;
-  bool create;
-
-public:
-  TaggedShadowAbs(llvm::MCInst &&inst, unsigned int opn, uint16_t tag,
-                  bool create = true)
-      : AutoClone<RelocatableInst, TaggedShadowAbs>(
-            std::forward<llvm::MCInst>(inst)),
-        opn(opn), tag(tag), create(create){};
-
-  llvm::MCInst reloc(ExecBlock *exec_block) const override {
-    uint16_t id;
-    if (create) {
-      id = exec_block->newShadow(tag);
-    } else {
-      id = exec_block->getLastShadow(tag);
-    }
-    llvm::MCInst res = inst;
-    res.getOperand(opn).setImm(exec_block->getDataBlockBase() +
-                               exec_block->getShadowOffset(id));
-    return res;
-  }
+  llvm::MCInst reloc(ExecBlock *exec_block) const override;
 };
 
 inline std::unique_ptr<RelocatableInst> DataBlockRelx86(llvm::MCInst &&inst,
@@ -122,20 +98,6 @@ inline std::unique_ptr<RelocatableInst> DataBlockRelx86(llvm::MCInst &&inst,
     inst.getOperand(opn /* AddrBaseReg */).setReg(0);
     return DataBlockAbsRel::unique(std::forward<llvm::MCInst>(inst),
                                    opn + 3 /* AddrDisp */, offset);
-  }
-}
-
-inline std::unique_ptr<RelocatableInst>
-TaggedShadowx86(llvm::MCInst &&inst, unsigned int opn, uint16_t tag,
-                rword inst_size, bool create = true) {
-  if constexpr (is_x86_64) {
-    inst.getOperand(opn /* AddrBaseReg */).setReg(Reg(REG_PC));
-    return TaggedShadow::unique(std::forward<llvm::MCInst>(inst),
-                                opn + 3 /* AddrDisp */, tag, inst_size, create);
-  } else {
-    inst.getOperand(opn /* AddrBaseReg */).setReg(0);
-    return TaggedShadowAbs::unique(std::forward<llvm::MCInst>(inst),
-                                   opn + 3 /* AddrDisp */, tag, create);
   }
 }
 

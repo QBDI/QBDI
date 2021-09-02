@@ -15,12 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <stddef.h>
+#include <stdint.h>
 
+#include "MCTargetDesc/X86BaseInfo.h"
 #include "X86InstrInfo.h"
+#include "llvm/MC/MCInst.h"
+#include "llvm/MC/MCInstrDesc.h"
+#include "llvm/MC/MCInstrInfo.h"
 
+#include "Engine/LLVMCPU.h"
 #include "Patch/ExecBlockFlags.h"
-#include "Patch/InstInfo.h"
-#include "Patch/Types.h"
+#include "Patch/X86_64/ExecBlockFlags_X86_64.h"
 #include "Utility/LogSys.h"
 
 namespace QBDI {
@@ -59,11 +65,10 @@ const uint8_t defaultExecuteFlags =
     ExecBlockFlags::needAVX | ExecBlockFlags::needFPU;
 
 uint8_t getExecBlockFlags(const llvm::MCInst &inst,
-                          const llvm::MCInstrInfo *MCII,
-                          const llvm::MCRegisterInfo *MRI) {
+                          const QBDI::LLVMCPU &llvmcpu) {
   static constexpr ExecBlockFlagsArray cache;
 
-  const llvm::MCInstrDesc &desc = MCII->get(inst.getOpcode());
+  const llvm::MCInstrDesc &desc = llvmcpu.getMCII().get(inst.getOpcode());
   uint8_t flags = 0;
 
   // register flag

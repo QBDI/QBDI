@@ -1,35 +1,22 @@
-include(ExternalProject)
+include(FetchContent)
 
-ExternalProject_Add(
-  Catch2
-  GIT_REPOSITORY "https://github.com/catchorg/Catch2.git"
-  GIT_PROGRESS "true"
-  GIT_TAG "v2.9.2"
-  CONFIGURE_COMMAND ""
-  BUILD_COMMAND ""
-  INSTALL_COMMAND "")
+if((QBDI_TEST) OR (QBDI_BENCHMARK))
+  FetchContent_Declare(
+    Catch2
+    URL "https://github.com/catchorg/Catch2/archive/refs/tags/v2.13.7.zip"
+    URL_HASH
+      "SHA256=3f3ccd90ad3a8fbb1beeb15e6db440ccdcbebe378dfd125d07a1f9a587a927e9"
+    DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/catch2-download")
 
-ExternalProject_Get_Property(Catch2 SOURCE_DIR)
-set(Catch2_SOURCE_DIR "${SOURCE_DIR}")
+  FetchContent_GetProperties(Catch2)
+  if(NOT catch2_POPULATED)
+    FetchContent_Populate(Catch2)
+    add_subdirectory(${catch2_SOURCE_DIR} ${catch2_BINARY_DIR} EXCLUDE_FROM_ALL)
+  endif()
+endif()
 
 # test
 if(QBDI_TEST)
-
-  # Generate a new static qbdi archive with additionnal llvm
-  # needed for the test. The new library allows to remove the llvm library only
-  # used by QBDITest for libQBDI.a and avoid error when link QBDItest
-  set(_TEST_LLVM_LIBS LLVMBitReader LLVMBitstreamReader LLVMCore LLVMObject
-                      LLVMRemarks LLVMTextAPI)
-
-  if(QBDI_PLATFORM_WINDOWS)
-    prepend(TEST_LLVM_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/ ".lib"
-            ${_TEST_LLVM_LIBS})
-  else()
-    prepend(TEST_LLVM_LIBS ${CMAKE_SOURCE_DIR}/${LLVM_LIBS_DIR}/lib ".a"
-            ${_TEST_LLVM_LIBS})
-  endif()
-
-  merge_static_libs(LLVM_static_test LLVM_static_test \${TEST_LLVM_LIBS})
 
   add_executable(QBDITest "${CMAKE_CURRENT_LIST_DIR}/QBDITest.cpp")
   add_signature(QBDITest)
@@ -42,19 +29,16 @@ if(QBDI_TEST)
 
   target_include_directories(
     QBDITest
-    PRIVATE
-      "${CMAKE_BINARY_DIR}/include"
-      "${CMAKE_BINARY_DIR}/include/QBDI"
-      "${CMAKE_SOURCE_DIR}/include"
-      "${CMAKE_SOURCE_DIR}/include/QBDI"
-      "${CMAKE_CURRENT_SOURCE_DIR}"
-      "${CMAKE_CURRENT_SOURCE_DIR}/../src"
-      "${CMAKE_CURRENT_SOURCE_DIR}/../deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/include"
-      "${CMAKE_CURRENT_SOURCE_DIR}/../deps/llvm/${QBDI_PLATFORM}-${QBDI_ARCH}/lib/Target/${QBDI_LLVM_ARCH}"
-      "${Catch2_SOURCE_DIR}/single_include")
+    PRIVATE "${CMAKE_BINARY_DIR}/include" "${CMAKE_SOURCE_DIR}/include"
+            "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/../src")
 
-  add_dependencies(QBDITest Catch2)
-  target_link_libraries(QBDITest LLVM_static_test QBDI_static)
+  target_link_libraries(QBDITest QBDI_static qbdi-llvm Catch2::Catch2
+                        spdlog_header_only)
+  target_compile_options(QBDITest
+                         PUBLIC $<$<COMPILE_LANGUAGE:C>:${QBDI_COMMON_C_FLAGS}>)
+  target_compile_options(
+    QBDITest PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${QBDI_COMMON_CXX_FLAGS}>)
+  target_compile_definitions(QBDITest PUBLIC ${QBDI_COMMON_DEFINITION})
 
   set_target_properties(QBDITest PROPERTIES CXX_STANDARD 17
                                             CXX_STANDARD_REQUIRED ON)
@@ -69,12 +53,14 @@ if(QBDI_BENCHMARK)
 
   target_include_directories(
     QBDIBenchmark
-    PRIVATE "${CMAKE_BINARY_DIR}/include" "${CMAKE_BINARY_DIR}/include/QBDI"
-            "${CMAKE_SOURCE_DIR}/include" "${CMAKE_SOURCE_DIR}/include/QBDI"
-            "${CMAKE_CURRENT_SOURCE_DIR}" "${Catch2_SOURCE_DIR}/single_include")
+    PRIVATE "${CMAKE_BINARY_DIR}/include" "${CMAKE_SOURCE_DIR}/include"
+            "${CMAKE_CURRENT_SOURCE_DIR}")
 
-  add_dependencies(QBDIBenchmark Catch2)
-  target_link_libraries(QBDIBenchmark QBDI_static ${LLVM_LIBS})
+  target_compile_options(QBDIBenchmark
+                         PUBLIC $<$<COMPILE_LANGUAGE:C>:${QBDI_COMMON_C_FLAGS}>)
+  target_compile_options(
+    QBDIBenchmark PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${QBDI_COMMON_CXX_FLAGS}>)
+  target_link_libraries(QBDIBenchmark QBDI_static Catch2::Catch2)
 
   set_target_properties(QBDIBenchmark PROPERTIES CXX_STANDARD 17
                                                  CXX_STANDARD_REQUIRED ON)

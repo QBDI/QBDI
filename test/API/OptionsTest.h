@@ -20,7 +20,7 @@
 
 #include <memory>
 #include "TestSetup/InMemoryAssembler.h"
-#include "VM.h"
+#include "QBDI/VM.h"
 
 class OptionsTest {
 protected:

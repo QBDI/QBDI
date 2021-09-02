@@ -15,8 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "Utility/String.h"
+#include <ctype.h>
+
 #include "Utility/LogSys.h"
+#include "Utility/String.h"
 
 namespace QBDI {
 namespace String {

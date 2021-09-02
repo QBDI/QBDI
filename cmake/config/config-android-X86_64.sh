@@ -1,15 +1,22 @@
 #!/bin/sh
 set -e
 
-DEFAULT_NDK_PATH=${HOME}/android-ndk-r20
-QBDI_NDK_PATH=${NDK_PATH:-${DEFAULT_NDK_PATH}}
-
-if [ ! -d "$QBDI_NDK_PATH" ]; then
-  echo "'${QBDI_NDK_PATH}' is not valid!"
-  exit 1
+if [ -z "${NDK_PATH}" ]; then
+  if [ -z "${ANDROID_SDK_ROOT}" ]; then
+    echo "ANDROID_SDK_ROOT or NDK_PATH variable should be set to configure cmake."
+    exit 1
+  fi
+  if [ ! -d "${ANDROID_SDK_ROOT}" ]; then
+    echo "'${ANDROID_SDK_ROOT}' is not valid!"
+    exit 1
+  fi
+  export NDK_PATH="${ANDROID_SDK_ROOT}/ndk-bundle/"
 fi
 
-export NDK_PATH=${QBDI_NDK_PATH}
+if [ ! -d "${NDK_PATH}" ]; then
+  echo "'${NDK_PATH}' is not valid!"
+  exit 1
+fi
 
 cmake  .. \
       -DQBDI_PLATFORM=android \
@@ -17,6 +24,7 @@ cmake  .. \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_TOOLCHAIN_FILE="${NDK_PATH}/build/cmake/android.toolchain.cmake" \
       -DANDROID_ABI=x86_64 \
-      -DANDROID_PLATFORM=23
+      -DANDROID_PLATFORM=23 \
+      -G Ninja
 
 

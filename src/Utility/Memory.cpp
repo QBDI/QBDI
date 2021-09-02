@@ -15,11 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "llvm/Support/Process.h"
-
+#include <iterator>
+#include <memory>
 #include <set>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <string>
+#include <vector>
+
+#include "QBDI/Config.h"
 #include "QBDI/Memory.h"
 #include "QBDI/Memory.hpp"
+#include "QBDI/Range.h"
+#include "QBDI/State.h"
 #include "Utility/LogSys.h"
 
 #define FRAME_LENGTH 16
@@ -105,7 +115,8 @@ void simulateCallA(GPRState *ctx, rword returnAddress, uint32_t argNum,
   QBDI_GPR_SET(ctx, REG_SP, QBDI_GPR_GET(ctx, REG_SP) - sizeof(rword));
   *(rword *)(QBDI_GPR_GET(ctx, REG_SP)) = returnAddress;
   argsoff++;
-#elif defined(QBDI_ARCH_ARM)
+#elif defined(QBDI_ARCH_ARM) || defined(QBDI_ARCH_AARCH64)
+  QBDI_DEBUG("Set LR to: 0x{:x}", returnAddress);
   ctx->lr = returnAddress;
 #endif
 
@@ -138,6 +149,15 @@ void simulateCallA(GPRState *ctx, rword returnAddress, uint32_t argNum,
   UNSTACK_ARG(r1);
   UNSTACK_ARG(r2);
   UNSTACK_ARG(r3);
+#elif defined(QBDI_ARCH_AARCH64)
+  UNSTACK_ARG(x0);
+  UNSTACK_ARG(x1);
+  UNSTACK_ARG(x2);
+  UNSTACK_ARG(x3);
+  UNSTACK_ARG(x4);
+  UNSTACK_ARG(x5);
+  UNSTACK_ARG(x6);
+  UNSTACK_ARG(x7);
 #endif // ARCH
 #undef UNSTACK_ARG
   limit -= argsoff;

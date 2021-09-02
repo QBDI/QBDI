@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <vector>
 
-#include "Range.h"
+#include "QBDI/Range.h"
 
 TEST_CASE("Range-StateIntegrity") {
   static const int N = 100;

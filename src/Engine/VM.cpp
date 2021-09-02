@@ -15,19 +15,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "QBDI/VM.h"
+#include <algorithm>
+#include <cstdint>
+#include <memory>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "QBDI/Callback.h"
+#include "QBDI/Config.h"
 #include "QBDI/Errors.h"
+#include "QBDI/InstAnalysis.h"
 #include "QBDI/Memory.hpp"
+#include "QBDI/Options.h"
 #include "QBDI/Range.h"
+#include "QBDI/State.h"
+#include "QBDI/VM.h"
 
 #include "Engine/Engine.h"
 #include "ExecBlock/ExecBlock.h"
-#include "Patch/InstInfo.h"
 #include "Patch/InstrRule.h"
 #include "Patch/InstrRules.h"
 #include "Patch/MemoryAccess.h"
 #include "Patch/PatchCondition.h"
 #include "Patch/PatchGenerator.h"
+#include "Patch/PatchUtils.h"
 #include "Utility/LogSys.h"
 
 // Mask to identify Virtual Callback events
@@ -486,7 +500,7 @@ const InstAnalysis *VM::getCachedInstAnalysis(rword address,
 }
 
 bool VM::recordMemoryAccess(MemoryAccessType type) {
-  if constexpr (not(is_x86_64 or is_x86))
+  if constexpr (is_arm)
     return false;
 
   if (type & MEMORY_READ && !(memoryLoggingLevel & MEMORY_READ)) {
@@ -505,6 +519,9 @@ bool VM::recordMemoryAccess(MemoryAccessType type) {
 }
 
 std::vector<MemoryAccess> VM::getInstMemoryAccess() const {
+  if constexpr (is_arm)
+    return {};
+
   const ExecBlock *curExecBlock = engine->getCurExecBlock();
   if (curExecBlock == nullptr) {
     return {};
@@ -516,6 +533,9 @@ std::vector<MemoryAccess> VM::getInstMemoryAccess() const {
 }
 
 std::vector<MemoryAccess> VM::getBBMemoryAccess() const {
+  if constexpr (is_arm)
+    return {};
+
   const ExecBlock *curExecBlock = engine->getCurExecBlock();
   if (curExecBlock == nullptr) {
     return {};

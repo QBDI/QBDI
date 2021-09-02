@@ -18,10 +18,23 @@
 #ifndef PATCHGENERATOR_X86_64_H
 #define PATCHGENERATOR_X86_64_H
 
-#include "Patch/InstInfo.h"
+#include <memory>
+#include <stddef.h>
+#include <vector>
+
+#include "QBDI/State.h"
 #include "Patch/PatchGenerator.h"
+#include "Patch/PatchUtils.h"
+#include "Patch/Types.h"
+
+namespace llvm {
+class MCInst;
+}
 
 namespace QBDI {
+class Patch;
+class RelocatableInst;
+class TempManager;
 
 class GetPCOffset : public AutoClone<PatchGenerator, GetPCOffset> {
 
@@ -65,8 +78,7 @@ public:
   */
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const llvm::MCInst *inst, rword address, rword instSize,
-           const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-           Patch *toMerge) const override;
+           TempManager *temp_manager, Patch *toMerge) const override;
 };
 
 class SimulateCall : public AutoClone<PatchGenerator, SimulateCall> {
@@ -92,8 +104,7 @@ public:
    */
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const llvm::MCInst *inst, rword address, rword instSize,
-           const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-           Patch *toMerge) const override;
+           TempManager *temp_manager, Patch *toMerge) const override;
 
   bool modifyPC() const override { return true; }
 };
@@ -124,8 +135,7 @@ public:
    */
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const llvm::MCInst *inst, rword address, rword instSize,
-           const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-           Patch *toMerge) const override;
+           TempManager *temp_manager, Patch *toMerge) const override;
 
   bool modifyPC() const override { return true; }
 };
@@ -156,8 +166,7 @@ public:
    */
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const llvm::MCInst *inst, rword address, rword instSize,
-           const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-           Patch *toMerge) const override;
+           TempManager *temp_manager, Patch *toMerge) const override;
 };
 
 class GetWriteAddress : public AutoClone<PatchGenerator, GetWriteAddress> {
@@ -183,8 +192,7 @@ public:
    */
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const llvm::MCInst *inst, rword address, rword instSize,
-           const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-           Patch *toMerge) const override;
+           TempManager *temp_manager, Patch *toMerge) const override;
 };
 
 class GetReadValue : public AutoClone<PatchGenerator, GetReadValue> {
@@ -209,8 +217,7 @@ public:
    */
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const llvm::MCInst *inst, rword address, rword instSize,
-           const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-           Patch *toMerge) const override;
+           TempManager *temp_manager, Patch *toMerge) const override;
 };
 
 class GetWriteValue : public AutoClone<PatchGenerator, GetWriteValue> {
@@ -233,8 +240,7 @@ public:
    */
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const llvm::MCInst *inst, rword address, rword instSize,
-           const llvm::MCInstrInfo *MCII, TempManager *temp_manager,
-           Patch *toMerge) const override;
+           TempManager *temp_manager, Patch *toMerge) const override;
 };
 
 } // namespace QBDI

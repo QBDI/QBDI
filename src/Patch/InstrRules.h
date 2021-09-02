@@ -26,7 +26,7 @@
 #include "QBDI/Callback.h"
 
 namespace QBDI {
-
+class Patch;
 class PatchGenerator;
 class RelocatableInst;
 
@@ -41,7 +41,8 @@ class RelocatableInst;
 std::vector<std::unique_ptr<PatchGenerator>>
 getCallbackGenerator(InstCallback cbk, void *data);
 
-std::vector<std::unique_ptr<RelocatableInst>> getBreakToHost(Reg temp);
+std::vector<std::unique_ptr<RelocatableInst>>
+getBreakToHost(Reg temp, const Patch &patch, bool restore);
 } // namespace QBDI
 
 #endif

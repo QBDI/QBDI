@@ -18,76 +18,24 @@
 #ifndef CONTEXT_H
 #define CONTEXT_H
 
-#include <map>
-#include "QBDI/State.h"
+#include "QBDI/Config.h"
 
 namespace QBDI {
 
-extern const unsigned int GPR_ID[];
-extern const unsigned int FLAG_ID[];
-extern const unsigned int SEG_ID[];
-extern const std::map<unsigned int, int16_t> FPR_ID;
-extern const unsigned int size_GPR_ID;
-extern const unsigned int size_FLAG_ID;
-extern const unsigned int size_SEG_ID;
+struct HostState;
 
-#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
-// ============================================================================
-// X86_64 Context
-// ============================================================================
-
-/*! X86 / X86_64 Host context.
- */
-struct HostState {
-  rword sp;
-  rword selector;
-  rword callback;
-  rword data;
-  rword origin;
-  rword executeFlags;
-};
-
-/*! X86 / X86_64 Execution context.
- */
-struct Context {
-
-public:
-  // fprState needs to be first for memory alignement reasons
-  FPRState fprState;
-  GPRState gprState;
-  HostState hostState;
-};
-
-#elif defined(QBDI_ARCH_ARM)
-// ============================================================================
-// ARM Context
-// ============================================================================
-
-/*! ARM Host context.
- */
-struct HostState {
-  rword fp;
-  rword sp;
-  rword selector;
-  rword callback;
-  rword data;
-  rword origin;
-  rword executeFlags;
-};
-
-/*! ARM Execution context.
- */
-struct Context {
-
-public:
-  // hostState needs to be first for relative addressing range reasons
-  HostState hostState;
-  FPRState fprState;
-  GPRState gprState;
-};
-
-#endif // QBDI_ARCH_ARM
+struct Context;
 
 } // namespace QBDI
+
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+#include "ExecBlock/X86_64/Context_X86_64.h"
+#elif defined(QBDI_ARCH_ARM)
+#include "ExecBlock/ARM/Context_ARM.h"
+#elif defined(QBDI_ARCH_AARCH64)
+#include "ExecBlock/AARCH64/Context_AARCH64.h"
+#else
+#error "No context for this architecture"
+#endif
 
 #endif // CONTEXT_H

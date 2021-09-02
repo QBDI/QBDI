@@ -19,6 +19,7 @@
 #define QBDI_CONFIG_H_
 
 #cmakedefine QBDI_ARCH_ARM     @QBDI_ARCH_ARM@
+#cmakedefine QBDI_ARCH_AARCH64 @QBDI_ARCH_AARCH64@
 #cmakedefine QBDI_ARCH_X86     @QBDI_ARCH_X86@
 #cmakedefine QBDI_ARCH_X86_64  @QBDI_ARCH_X86_64@
 
@@ -45,6 +46,7 @@ static constexpr bool is_windows = @QBDI_PLATFORM_WINDOWS@;
 
 
 static constexpr bool is_arm     = @QBDI_ARCH_ARM@;
+static constexpr bool is_aarch64 = @QBDI_ARCH_AARCH64@;
 static constexpr bool is_x86     = @QBDI_ARCH_X86@;
 static constexpr bool is_x86_64  = @QBDI_ARCH_X86_64@;
 

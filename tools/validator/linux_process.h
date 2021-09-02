@@ -20,26 +20,14 @@
 
 #include "process.h"
 
-#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
-
-#define GPR_STRUCT user_regs_struct
 #if defined(QBDI_ARCH_X86_64)
-#define FPR_STRUCT user_fpregs_struct
+#include "X86_64/linux_X86_64.h"
 #elif defined(QBDI_ARCH_X86)
-#define FPR_STRUCT user_fpxregs_struct
-#endif
-#define SIGBRK SIGTRAP
-static const long BRK_MASK = 0xFF;
-static const long BRK_INS = 0xCC;
-
+#include "X86/linux_X86.h"
 #elif defined(QBDI_ARCH_ARM)
-
-#define GPR_STRUCT user_regs
-#define FPR_STRUCT uint8_t
-#define SIGBRK SIGILL
-static const long BRK_MASK = 0xFFFFFFFF;
-static const long BRK_INS = 0xE7FFDEFE;
-
+#include "ARM/linux_ARM.h"
+#elif defined(QBDI_ARCH_AARCH64)
+#include "AARCH64/linux_AARCH64.h"
 #endif
 
 class LinuxProcess : public Process {

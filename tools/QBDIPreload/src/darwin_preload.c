@@ -20,6 +20,7 @@
 
 #include <mach-o/dyld.h>
 #include <mach-o/loader.h>
+#include <mach/mach.h>
 #include <mach/mach_error.h>
 #include <mach/mach_init.h>
 #include <mach/mach_port.h>
@@ -31,9 +32,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
 #include <unistd.h>
 
 #include <QBDI.h>
+
+#if defined(QBDI_ARCH_X86)
+#include "X86/osx_X86.h"
+#elif defined(QBDI_ARCH_X86_64)
+#include "X86_64/osx_X86_64.h"
+#elif defined(QBDI_ARCH_AARCH64)
+#include "AARCH64/osx_AARCH64.h"
+#else
+#error "Architecture not supported"
+#endif
 
 #define DYLD_INTERPOSE(_replacment, _replacee)                                \
   __attribute__((used)) static struct {                                       \
@@ -43,9 +55,6 @@
       (const void *)(unsigned long)&_replacment,                              \
       (const void *)(unsigned long)&_replacee};
 
-#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
-static const uint8_t BRK_INS = 0xCC;
-#endif
 static const size_t STACK_SIZE = 8388608;
 
 static bool HAS_EXITED = false;
@@ -56,168 +65,156 @@ static FPRState ENTRY_FPR;
 
 static struct ExceptionHandler *MAIN_EXCEPTION_HANDLER = NULL;
 
+static void writeCode(rword address, void *data, size_t data_size) {
+  kern_return_t kr;
+  vm_prot_t cur_protection, max_protection;
+  task_t self = mach_task_self();
+  int pageSize = getpagesize();
+
+  // 1. copy the page data to another pages
+  void *pageAddr = mmap(NULL, pageSize, PROT_READ | PROT_WRITE,
+                        MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  if (pageAddr == MAP_FAILED) {
+    perror("Failed to create a new page");
+    exit(QBDIPRELOAD_ERR_STARTUP_FAILED);
+  }
+
+  rword addressPage = address & ~(pageSize - 1);
+
+  memcpy(pageAddr, (void *)addressPage, pageSize);
+
+  // 2. write data
+  memcpy(pageAddr + (address & (pageSize - 1)), data, data_size);
+
+  // 3. protect page to RX
+  kr = mach_vm_protect(self, (mach_vm_address_t)pageAddr, pageSize, false,
+                       VM_PROT_READ | VM_PROT_EXECUTE);
+  if (kr != KERN_SUCCESS) {
+    fprintf(stderr, "Failed to change memory protection to RX: %s",
+            mach_error_string(kr));
+    exit(QBDIPRELOAD_ERR_STARTUP_FAILED);
+  }
+
+  // 4. remap page
+  mach_vm_address_t remapAddr = addressPage;
+  kr = mach_vm_remap(self, &remapAddr, pageSize, 0,
+                     VM_FLAGS_OVERWRITE | VM_FLAGS_FIXED, self,
+                     (mach_vm_address_t)pageAddr, TRUE, &cur_protection,
+                     &max_protection, VM_INHERIT_COPY);
+
+  if (kr != KERN_SUCCESS) {
+    fprintf(stderr, "Failed to remap the page to the origin address: %s\n",
+            mach_error_string(kr));
+    exit(QBDIPRELOAD_ERR_STARTUP_FAILED);
+  }
+  if (remapAddr != addressPage) {
+    fprintf(stderr,
+            "Remap fail to use the given address: "
+            "0x%" PRIRWORD " != 0x%" PRIRWORD "\n",
+            (rword)remapAddr, (rword)address);
+    exit(QBDIPRELOAD_ERR_STARTUP_FAILED);
+  }
+
+  // 5. unmap the temporary map
+  if (munmap(pageAddr, pageSize) == -1) {
+    perror("Failed to munmap");
+  }
+}
+
 static struct {
-  rword address;
-  uint8_t value;
+  rword originPageAddr;
+  rword remapPageAddr;
+  int size;
 } ENTRY_BRK;
-
-#if defined(QBDI_ARCH_X86)
-#define MACH_MAGIC MH_MAGIC
-#define MACH_HEADER mach_header
-#define MACH_SEG_CMD LC_SEGMENT
-#define MACH_SEG segment_command
-#define THREAD_STATE_ID x86_THREAD_STATE32
-#define THREAD_STATE_COUNT x86_THREAD_STATE32_COUNT
-#define THREAD_STATE_FP_ID x86_FLOAT_STATE32
-#define THREAD_STATE_FP_COUNT x86_FLOAT_STATE32_COUNT
-#define THREAD_STATE x86_thread_state32_t
-#define THREAD_STATE_FP x86_float_state32_t
-#define THREAD_STATE_BP __ebp
-#define THREAD_STATE_SP __esp
-#define THREAD_STATE_PC __eip
-#elif defined(QBDI_ARCH_X86_64)
-#define MACH_MAGIC MH_MAGIC_64
-#define MACH_HEADER mach_header_64
-#define MACH_SEG segment_command_64
-#define MACH_SEG_CMD LC_SEGMENT_64
-#define THREAD_STATE_ID x86_THREAD_STATE64
-#define THREAD_STATE_COUNT x86_THREAD_STATE64_COUNT
-#define THREAD_STATE_FP_ID x86_FLOAT_STATE64
-#define THREAD_STATE_FP_COUNT x86_FLOAT_STATE64_COUNT
-#define THREAD_STATE x86_thread_state64_t
-#define THREAD_STATE_FP x86_float_state64_t
-#define THREAD_STATE_BP __rbp
-#define THREAD_STATE_SP __rsp
-#define THREAD_STATE_PC __rip
-#endif
-
-void qbdipreload_threadCtxToGPRState(const void *gprCtx, GPRState *gprState) {
-#if defined(QBDI_ARCH_X86)
-  const x86_thread_state32_t *ts = (x86_thread_state32_t *)gprCtx;
-
-  gprState->eax = ts->__eax;
-  gprState->ebx = ts->__ebx;
-  gprState->ecx = ts->__ecx;
-  gprState->edx = ts->__edx;
-  gprState->esi = ts->__esi;
-  gprState->edi = ts->__edi;
-  gprState->ebp = ts->__ebp;
-  gprState->esp = ts->__esp;
-  gprState->eip = ts->__eip;
-  gprState->eflags = ts->__eflags;
-#else
-  const x86_thread_state64_t *ts = (x86_thread_state64_t *)gprCtx;
-
-  gprState->rax = ts->__rax;
-  gprState->rbx = ts->__rbx;
-  gprState->rcx = ts->__rcx;
-  gprState->rdx = ts->__rdx;
-  gprState->rsi = ts->__rsi;
-  gprState->rdi = ts->__rdi;
-  gprState->rbp = ts->__rbp;
-  gprState->rsp = ts->__rsp;
-  gprState->r8 = ts->__r8;
-  gprState->r9 = ts->__r9;
-  gprState->r10 = ts->__r10;
-  gprState->r11 = ts->__r11;
-  gprState->r12 = ts->__r12;
-  gprState->r13 = ts->__r13;
-  gprState->r14 = ts->__r14;
-  gprState->r15 = ts->__r15;
-  gprState->rip = ts->__rip;
-  gprState->eflags = ts->__rflags;
-#endif
-}
-
-void qbdipreload_floatCtxToFPRState(const void *fprCtx, FPRState *fprState) {
-  const x86_float_state64_t *fs = (x86_float_state64_t *)fprCtx;
-
-#define SYNC_STMM(ID) memcpy(&fprState->stmm##ID, &fs->__fpu_stmm##ID, 10);
-  SYNC_STMM(0);
-  SYNC_STMM(1);
-  SYNC_STMM(2);
-  SYNC_STMM(3);
-  SYNC_STMM(4);
-  SYNC_STMM(5);
-  SYNC_STMM(6);
-  SYNC_STMM(7);
-#undef SYNC_STMM
-#define SYNC_XMM(ID) memcpy(&fprState->xmm##ID, &fs->__fpu_xmm##ID, 16);
-  SYNC_XMM(0);
-  SYNC_XMM(1);
-  SYNC_XMM(2);
-  SYNC_XMM(3);
-  SYNC_XMM(4);
-  SYNC_XMM(5);
-  SYNC_XMM(6);
-  SYNC_XMM(7);
-#if defined(QBDI_ARCH_X86_64)
-  SYNC_XMM(8);
-  SYNC_XMM(9);
-  SYNC_XMM(10);
-  SYNC_XMM(11);
-  SYNC_XMM(12);
-  SYNC_XMM(13);
-  SYNC_XMM(14);
-  SYNC_XMM(15);
-#endif
-#undef SYNC_XMM
-  memcpy(&fprState->rfcw, &fs->__fpu_fcw, 2);
-  memcpy(&fprState->rfsw, &fs->__fpu_fsw, 2);
-  memcpy(&fprState->ftw, &fs->__fpu_ftw, 1);
-  memcpy(&fprState->rsrv1, &fs->__fpu_rsrv1, 1);
-  memcpy(&fprState->fop, &fs->__fpu_fop, 2);
-  memcpy(&fprState->mxcsr, &fs->__fpu_mxcsr, 4);
-  memcpy(&fprState->mxcsrmask, &fs->__fpu_mxcsrmask, 4);
-}
 
 void setEntryBreakpoint(rword address) {
   kern_return_t kr;
-  task_t self = mach_task_self();
+  vm_prot_t cur_protection, max_protection;
 
-  kr = mach_vm_protect(self, address, 1, false, VM_PROT_READ | VM_PROT_WRITE);
+  // 1. get current mach_port_t from current task
+  mach_port_t task;
+  task_t self = mach_task_self();
+  kr = task_for_pid(self, getpid(), &task);
   if (kr != KERN_SUCCESS) {
-    fprintf(stderr,
-            "Failed to change memory protection to RW for setting a "
-            "breakpoint: %s\n",
+    fprintf(stderr, "Failed to get mach_port for self pid: %s\n",
             mach_error_string(kr));
     exit(QBDIPRELOAD_ERR_STARTUP_FAILED);
   }
-  ENTRY_BRK.address = address;
-  ENTRY_BRK.value = *((uint8_t *)address);
-  *((uint8_t *)address) = BRK_INS;
-  kr = mach_vm_protect(self, address, 1, false, VM_PROT_READ | VM_PROT_EXECUTE);
+
+  // 2. iterate on region to find the region of address
+  uint32_t depth = 1;
+  vm_size_t size = 0;
+  vm_address_t addr = 0, next = addr;
+
+  while (1) {
+    struct vm_region_submap_info_64 basic_info;
+    mach_msg_type_number_t count = VM_REGION_SUBMAP_INFO_COUNT_64;
+    kr = vm_region_recurse_64(task, &next, &size, &depth,
+                              (vm_region_recurse_info_t)&basic_info, &count);
+    if (kr != KERN_SUCCESS) {
+      fprintf(stderr, "Cannot found address 0x%" PRIRWORD " : %s\n", address,
+              mach_error_string(kr));
+      exit(QBDIPRELOAD_ERR_STARTUP_FAILED);
+    }
+
+    if (basic_info.is_submap) {
+      depth++;
+      continue;
+    }
+
+    addr = next;
+    next += size;
+
+    // Found region of address
+    if (addr <= address && address < addr + size) {
+      size_t pageSize = getpagesize();
+      // align addr and size
+      ENTRY_BRK.originPageAddr = addr & ~(pageSize - 1);
+      ENTRY_BRK.size =
+          ((addr - ENTRY_BRK.originPageAddr) + size + pageSize - 1) &
+          ~(pageSize - 1);
+      break;
+    }
+  }
+
+  // 3. remap the region
+  ENTRY_BRK.remapPageAddr = 0;
+  kr = mach_vm_remap(self, &ENTRY_BRK.remapPageAddr, ENTRY_BRK.size, 0,
+                     VM_FLAGS_ANYWHERE, self, ENTRY_BRK.originPageAddr, TRUE,
+                     &cur_protection, &max_protection, VM_INHERIT_COPY);
   if (kr != KERN_SUCCESS) {
     fprintf(stderr,
-            "Failed to change memory protection to RX after setting a "
-            "breakpoint: %s\n",
+            "Failed to remap original page before insert breakpoint: "
+            "%s\n",
             mach_error_string(kr));
     exit(QBDIPRELOAD_ERR_STARTUP_FAILED);
   }
+
+  // 4. write the breakpoint
+  writeCode(address, (void *)&BRK_INS, sizeof(BRK_INS));
 }
 
 void unsetEntryBreakpoint() {
   kern_return_t kr;
+  vm_prot_t cur_protection, max_protection;
   task_t self = mach_task_self();
 
-  kr = mach_vm_protect(self, ENTRY_BRK.address, 1, false,
-                       VM_PROT_READ | VM_PROT_WRITE);
+  // 1. remap original code
+  kr = mach_vm_remap(self, &ENTRY_BRK.originPageAddr, ENTRY_BRK.size, 0,
+                     VM_FLAGS_OVERWRITE | VM_FLAGS_FIXED, self,
+                     ENTRY_BRK.remapPageAddr, TRUE, &cur_protection,
+                     &max_protection, VM_INHERIT_COPY);
   if (kr != KERN_SUCCESS) {
     fprintf(stderr,
-            "Failed to change memory protection to RW for unsetting a "
-            "breakpoint: %s\n",
+            "Failed to remap original page after inserted breakpoint: "
+            "%s\n",
             mach_error_string(kr));
     exit(QBDIPRELOAD_ERR_STARTUP_FAILED);
   }
-  *((uint8_t *)ENTRY_BRK.address) = ENTRY_BRK.value;
-  kr = mach_vm_protect(self, ENTRY_BRK.address, 1, false,
-                       VM_PROT_READ | VM_PROT_EXECUTE);
-  if (kr != KERN_SUCCESS) {
-    fprintf(stderr,
-            "Failed to change memory protection to RX after unsetting a "
-            "breakpoint: %s\n",
-            mach_error_string(kr));
-    exit(QBDIPRELOAD_ERR_STARTUP_FAILED);
+
+  // 2. remove copy
+  if (munmap((void *)ENTRY_BRK.remapPageAddr, ENTRY_BRK.size) == -1) {
+    perror("Failed to munmap");
   }
 }
 
@@ -247,7 +244,7 @@ rword getEntrypointAddress() {
         // TODO: support more arch
         case THREAD_STATE_ID: {
           THREAD_STATE *state = (THREAD_STATE *)((uint32_t *)cmd + 4);
-          entryoff = state->THREAD_STATE_PC;
+          entryoff = getPC(state);
           return entryoff + slide;
         }
       }
@@ -351,7 +348,7 @@ kern_return_t redirectExec(mach_port_t exception_port, mach_port_t thread,
   }
 
   // x86 breakpoint quirk
-  threadState.THREAD_STATE_PC -= 1;
+  fixSignalPC(&threadState);
 
   int status =
       qbdipreload_on_premain((void *)&threadState, (void *)&floatState);
@@ -377,12 +374,11 @@ kern_return_t redirectExec(mach_port_t exception_port, mach_port_t thread,
     }
 
     // Swapping to fake stack
-    threadState.THREAD_STATE_BP = (rword)newStack + STACK_SIZE - 8;
-    threadState.THREAD_STATE_SP = threadState.THREAD_STATE_BP;
+    prepareStack(newStack, STACK_SIZE, &threadState);
   }
 
   // Execution redirection
-  threadState.THREAD_STATE_PC = (rword)catchEntrypoint;
+  setPC(&threadState, (rword)catchEntrypoint);
   count = THREAD_STATE_COUNT;
   kr = thread_set_state(thread, THREAD_STATE_ID, (thread_state_t)&threadState,
                         count);
@@ -391,7 +387,6 @@ kern_return_t redirectExec(mach_port_t exception_port, mach_port_t thread,
             mach_error_string(kr));
     exit(QBDIPRELOAD_ERR_STARTUP_FAILED);
   }
-
   return KERN_SUCCESS;
 }
 

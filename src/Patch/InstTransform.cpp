@@ -15,9 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <stdlib.h>
+#include <utility>
+
 #include "llvm/MC/MCInst.h"
 
 #include "Patch/InstTransform.h"
+#include "Patch/TempManager.h"
+#include "Utility/LogSys.h"
 
 namespace QBDI {
 
@@ -77,6 +82,18 @@ void RemoveOperand::transform(llvm::MCInst &inst, rword address,
 void SetOpcode::transform(llvm::MCInst &inst, rword address, size_t instSize,
                           TempManager *temp_manager) const {
   inst.setOpcode(opcode);
+}
+
+void ReplaceOpcode::transform(llvm::MCInst &inst, rword address,
+                              size_t instSize,
+                              TempManager *temp_manager) const {
+  const auto it = opcode.find(inst.getOpcode());
+  if (it != opcode.end()) {
+    inst.setOpcode(it->second);
+  } else {
+    QBDI_ERROR("ReplaceOpcode: opcode not found");
+    abort();
+  }
 }
 
 } // namespace QBDI

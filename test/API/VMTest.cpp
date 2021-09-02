@@ -21,12 +21,10 @@
 
 #include "inttypes.h"
 
-#include "Memory.hpp"
-#include "Platform.h"
+#include "QBDI/Memory.hpp"
+#include "QBDI/Platform.h"
+#include "Utility/LogSys.h"
 #include "Utility/String.h"
-
-#define STACK_SIZE 4096
-#define FAKE_RET_ADDR 0x666
 
 QBDI_DISABLE_ASAN QBDI_NOINLINE int dummyFun0() { return 42; }
 
@@ -78,161 +76,6 @@ QBDI_DISABLE_ASAN QBDI_NOINLINE int dummyFunBB(int arg0, int arg1, int arg2,
     r ^= arg0;
   }
   return r;
-}
-
-#if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
-#define MNEM_COUNT 5u
-#define MNEM_VALIDATION 140u
-#elif defined(QBDI_ARCH_ARM)
-#define MNEM_COUNT 1u
-#define MNEM_VALIDATION 25u
-#endif
-#define MNEM_IMM_SHORT_VAL 66
-#define MNEM_IMM_VAL 42424242
-#define MNEM_IMM_SHORT_STRVAL "66"
-#define MNEM_IMM_STRVAL "42424242"
-
-struct TestInst {
-  uint32_t instSize;
-  uint8_t numOperands;
-  bool isCompare;
-  QBDI::RegisterAccessType flagsAccess;
-  QBDI::OperandAnalysis operands[6];
-};
-
-#if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
-struct TestInst TestInsts[MNEM_COUNT] = {
-    {3,
-     2,
-     true,
-     QBDI::REGISTER_WRITE,
-     {
-         {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 1, 8, 3, "DH",
-          QBDI::REGISTER_READ},
-         {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_NONE, MNEM_IMM_SHORT_VAL, 1, 0,
-          -1, nullptr, QBDI::REGISTER_UNUSED},
-     }},
-#if defined(QBDI_ARCH_X86_64)
-    {3,
-     2,
-     true,
-     QBDI::REGISTER_WRITE,
-     {
-         {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 0, "RAX",
-          QBDI::REGISTER_READ},
-         {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 1, "RBX",
-          QBDI::REGISTER_READ},
-     }},
-#else
-    {3,
-     2,
-     true,
-     QBDI::REGISTER_WRITE,
-     {
-         {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 2, 0, 0, "AX",
-          QBDI::REGISTER_READ},
-         {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 2, 0, 1, "BX",
-          QBDI::REGISTER_READ},
-     }},
-#endif
-    {5,
-     2,
-     true,
-     QBDI::REGISTER_WRITE,
-     {
-         {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_NONE, MNEM_IMM_VAL, 4, 0, -1,
-          nullptr, QBDI::REGISTER_UNUSED},
-         {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 4, 0, 0, "EAX",
-          QBDI::REGISTER_READ},
-     }},
-    {1,
-     5,
-     false,
-     QBDI::REGISTER_READ | QBDI::REGISTER_WRITE,
-     {
-         {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0,
-          5, QBDI::GPR_NAMES[5], QBDI::REGISTER_READ},
-         {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0,
-          4, QBDI::GPR_NAMES[4], QBDI::REGISTER_READ},
-         {QBDI::OPERAND_INVALID, QBDI::OPERANDFLAG_NONE, 0, 0, 0, -1, NULL,
-          QBDI::REGISTER_UNUSED},
-         {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 4, 0, 5, "EDI",
-          QBDI::REGISTER_READ_WRITE},
-         {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 4, 0, 4, "ESI",
-          QBDI::REGISTER_READ_WRITE},
-     }},
-#if defined(QBDI_ARCH_X86_64)
-    {5,
-     6,
-     true,
-     QBDI::REGISTER_WRITE,
-     {
-#else
-    {4,
-     6,
-     true,
-     QBDI::REGISTER_WRITE,
-     {
-#endif
-         {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, sizeof(QBDI::rword), 0,
-          0, QBDI::GPR_NAMES[0], QBDI::REGISTER_READ},
-         {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0,
-          4, QBDI::GPR_NAMES[4], QBDI::REGISTER_READ},
-         {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_ADDR, 1, sizeof(QBDI::rword), 0,
-          -1, NULL, QBDI::REGISTER_UNUSED},
-         {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, sizeof(QBDI::rword), 0,
-          5, QBDI::GPR_NAMES[5], QBDI::REGISTER_READ},
-         {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_ADDR, 3, sizeof(QBDI::rword), 0,
-          -1, NULL, QBDI::REGISTER_UNUSED},
-         {QBDI::OPERAND_INVALID, QBDI::OPERANDFLAG_NONE, 0, 0, 0, -1, NULL,
-          QBDI::REGISTER_UNUSED},
-     }},
-};
-#elif defined(QBDI_ARCH_ARM)
-struct TestInst TestInsts[MNEM_COUNT] = {
-    {4,
-     3,
-     true,
-     {
-         {QBDI::OPERAND_GPR, 0, sizeof(QBDI::rword), 0, 3, "R3",
-          QBDI::REGISTER_READ},
-         {QBDI::OPERAND_IMM, MNEM_IMM_SHORT_VAL, sizeof(QBDI::rword), 0, -1,
-          nullptr, QBDI::REGISTER_UNUSED},
-         {QBDI::OPERAND_PRED, 0, sizeof(QBDI::rword), 0, -1, nullptr,
-          QBDI::REGISTER_UNUSED},
-     }}};
-#endif
-
-QBDI_NOSTACKPROTECTOR QBDI_DISABLE_ASAN QBDI_NOINLINE QBDI::rword
-satanicFun(QBDI::rword arg0) {
-  QBDI::rword volatile res = arg0 + 0x666;
-#if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
-  QBDI::rword p = 0x42;
-  QBDI::rword v[2] = {0x67, 0x45};
-#ifndef QBDI_PLATFORM_WINDOWS
-  asm("cmp $" MNEM_IMM_SHORT_STRVAL ", %%dh" ::: "dh");
-#if defined(QBDI_ARCH_X86_64)
-  asm("cmp %%rbx, %%rax" ::: "rbx", "rax");
-  asm("cmp $" MNEM_IMM_STRVAL ", %%eax" ::: "eax"); // explicit register
-  asm("movq %0, %%rdi; movq %1, %%rsi; cmpsb %%es:(%%rdi), (%%rsi)" ::"r"(&p),
-      "r"(&p)
-      : "rdi", "rsi");
-  asm("mov %0, %%rdi; mov $1, %%rsi; cmp 0x3(%%rsi,%%rdi,1), %%rax" ::"r"(v)
-      : "rdi", "rsi", "rax");
-#else
-  asm("cmp %%bx, %%ax" ::: "bx", "ax");
-  asm("cmp $" MNEM_IMM_STRVAL ", %%eax" ::: "eax"); // explicit register
-  asm("mov %0, %%edi; mov %1, %%esi; cmpsb %%es:(%%edi), (%%esi)" ::"r"(&p),
-      "r"(&p)
-      : "edi", "esi");
-  asm("mov %0, %%edi; mov $1, %%esi; cmp 0x3(%%esi,%%edi,1), %%eax" ::"r"(v)
-      : "edi", "esi", "eax");
-#endif
-#endif
-#elif defined(QBDI_ARCH_ARM)
-  asm("cmp r3, #" MNEM_IMM_SHORT_STRVAL);
-#endif
-  return res;
 }
 
 VMTest::VMTest() {
@@ -310,6 +153,9 @@ TEST_CASE_METHOD(VMTest, "VMTest-Call8") {
 }
 
 TEST_CASE_METHOD(VMTest, "VMTest-ExternalCall") {
+
+  dummyFunCall(42);
+
   QBDI::simulateCall(state, FAKE_RET_ADDR, {42});
 
   vm->run((QBDI::rword)dummyFunCall, (QBDI::rword)FAKE_RET_ADDR);
@@ -380,8 +226,6 @@ TEST_CASE_METHOD(VMTest, "VMTest-InstCallback") {
   SUCCEED();
 }
 
-#define MNEM_CMP "CMP*"
-
 QBDI::VMAction evilMnemCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
                            QBDI::FPRState *fprState, void *data) {
   QBDI::rword *info = (QBDI::rword *)data;
@@ -400,7 +244,7 @@ QBDI::VMAction evilMnemCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
     CHECKED_IF(ana->address < (((QBDI::rword)&satanicFun) + 0x100))
     info[1]++;
     // validate inst size
-    struct TestInst &currentInst = TestInsts[info[0] - 1];
+    const struct TestInst &currentInst = TestInsts[info[0] - 1];
 #if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
     CHECKED_IF(ana->instSize == currentInst.instSize) {
 #else
@@ -559,6 +403,7 @@ TEST_CASE_METHOD(VMTest, "VMTest-VMEvent_BasicBlock") {
 
   for (QBDI::rword j = 0; j < 4; j++) {
     for (QBDI::rword i = 0; i < 8; i++) {
+      QBDI_DEBUG("Begin Loop iteration {} {}", j, i);
       vm->setGPRState(&backup);
 
       data.waitingEnd = false;
@@ -806,6 +651,7 @@ TEST_CASE("VMTest-MoveConstructor") {
 
   QBDI::rword retvalue;
 
+  QBDI_DEBUG("Execute dummyFun1 with the original VM");
   vm->call(&retvalue, (QBDI::rword)dummyFun1, {350});
   REQUIRE(retvalue == 350);
   REQUIRE(data.reachEventCB);
@@ -820,6 +666,7 @@ TEST_CASE("VMTest-MoveConstructor") {
   REQUIRE(vm == data.expectedRef);
 
   // move vm
+  QBDI_DEBUG("Move the VM");
   QBDI::VM movedVM(std::move(*vm));
   vm = nullptr;
 
@@ -829,6 +676,7 @@ TEST_CASE("VMTest-MoveConstructor") {
   REQUIRE(data.expectedRef != &movedVM);
   data.expectedRef = &movedVM;
 
+  QBDI_DEBUG("Execute with the moved VM");
   movedVM.call(&retvalue, (QBDI::rword)dummyFun1, {780});
 
   REQUIRE(retvalue == 780);
@@ -860,6 +708,7 @@ TEST_CASE("VMTest-CopyConstructor") {
 
   QBDI::rword retvalue;
 
+  QBDI_DEBUG("Execute dummyFun1 with the original VM");
   vm->call(&retvalue, (QBDI::rword)dummyFun1, {350});
   REQUIRE(retvalue == 350);
   REQUIRE(data.reachEventCB);
@@ -872,10 +721,12 @@ TEST_CASE("VMTest-CopyConstructor") {
   data.allowedNewBlock = false;
 
   // copy vm
+  QBDI_DEBUG("Copy the VM");
   QBDI::VM movedVM(*vm);
 
   REQUIRE(data.expectedRef != &movedVM);
 
+  QBDI_DEBUG("Execute second time with the original VM");
   vm->call(&retvalue, (QBDI::rword)dummyFun1, {620});
   REQUIRE(retvalue == 620);
   REQUIRE(data.reachEventCB);
@@ -888,6 +739,7 @@ TEST_CASE("VMTest-CopyConstructor") {
   data.allowedNewBlock = true;
   data.expectedRef = &movedVM;
 
+  QBDI_DEBUG("Execute with the copied VM");
   movedVM.call(&retvalue, (QBDI::rword)dummyFun1, {780});
   REQUIRE(retvalue == 780);
   REQUIRE(data.reachEventCB);

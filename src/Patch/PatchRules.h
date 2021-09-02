@@ -37,7 +37,7 @@ getExecBlockEpilogue(Options opts);
 
 std::vector<std::unique_ptr<RelocatableInst>> getTerminator(rword address);
 
-std::vector<PatchRule> getDefaultPatchRules();
+std::vector<PatchRule> getDefaultPatchRules(Options opts);
 
 } // namespace QBDI
 

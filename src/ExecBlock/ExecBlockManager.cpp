@@ -16,25 +16,35 @@
  * limitations under the License.
  */
 #include <algorithm>
-#include <cstdint>
+#include <iterator>
+#include <stdlib.h>
+#include <utility>
 
+#include "Engine/LLVMCPU.h"
 #include "ExecBlock/ExecBlock.h"
 #include "ExecBlock/ExecBlockManager.h"
+#include "ExecBroker/ExecBroker.h"
+#include "Patch/InstMetadata.h"
 #include "Patch/Patch.h"
 #include "Patch/PatchRules.h"
-#include "Utility/Assembly.h"
+#include "Patch/RelocatableInst.h"
 #include "Utility/LogSys.h"
-
-#include "QBDI/State.h"
 
 namespace QBDI {
 
-ExecBlockManager::ExecBlockManager(const Assembly &assembly,
+ExecBlockManager::ExecBlockManager(const LLVMCPUs &llvmCPUs,
                                    VMInstanceRef vminstance)
     : total_translated_size(1), total_translation_size(1),
-      vminstance(vminstance), assembly(assembly), epilogueSize(0),
-      execBlockPrologue(getExecBlockPrologue(assembly.getOptions())),
-      execBlockEpilogue(getExecBlockEpilogue(assembly.getOptions())) {}
+      vminstance(vminstance), llvmCPUs(llvmCPUs),
+      execBlockPrologue(getExecBlockPrologue(llvmCPUs.getOptions())),
+      execBlockEpilogue(getExecBlockEpilogue(llvmCPUs.getOptions())) {
+
+  auto execBrokerBlock = std::make_unique<ExecBlock>(
+      llvmCPUs, vminstance, &execBlockPrologue, &execBlockEpilogue, 0);
+  epilogueSize = execBrokerBlock->getEpilogueSize();
+  execBroker = std::make_unique<ExecBroker>(std::move(execBrokerBlock),
+                                            llvmCPUs, vminstance);
+}
 
 ExecBlockManager::~ExecBlockManager() {
   QBDI_DEBUG_BLOCK({ this->printCacheStatistics(); });
@@ -43,6 +53,7 @@ ExecBlockManager::~ExecBlockManager() {
 
 void ExecBlockManager::changeVMInstanceRef(VMInstanceRef vminstance) {
   this->vminstance = vminstance;
+  execBroker->changeVMInstanceRef(vminstance);
   for (auto &reg : regions) {
     for (auto &block : reg.blocks) {
       block->changeVMInstanceRef(vminstance);
@@ -250,11 +261,8 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch> &basicBlock,
       if (i >= region.blocks.size()) {
         QBDI_REQUIRE_ACTION(i < (1 << 16), abort());
         region.blocks.emplace_back(std::make_unique<ExecBlock>(
-            assembly, vminstance, &execBlockPrologue, &execBlockEpilogue,
+            llvmCPUs, vminstance, &execBlockPrologue, &execBlockEpilogue,
             epilogueSize));
-        if (epilogueSize == 0) {
-          epilogueSize = region.blocks[i]->getEpilogueSize();
-        }
       }
       // Write sequence
       SeqWriteResult res = region.blocks[i]->writeSequence(

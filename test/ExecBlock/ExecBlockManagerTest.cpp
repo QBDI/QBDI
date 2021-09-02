@@ -16,15 +16,18 @@
  * limitations under the License.
  */
 #include <catch2/catch.hpp>
-#include <stdio.h>
+#include <memory>
 
 #include "ExecBlockManagerTest.h"
 
+#include "QBDI/State.h"
+#include "ExecBlock/Context.h"
+#include "ExecBlock/ExecBlock.h"
 #include "ExecBlock/ExecBlockManager.h"
+#include "Patch/InstMetadata.h"
 #include "Patch/Patch.h"
-#include "Patch/PatchRule.h"
 #include "Patch/PatchRules.h"
-#include "Utility/Assembly.h"
+#include "Patch/RelocatableInst.h"
 
 QBDI::Patch::Vec getEmptyBB(QBDI::rword address) {
   QBDI::Patch::Vec bb;
@@ -36,7 +39,7 @@ QBDI::Patch::Vec getEmptyBB(QBDI::rword address) {
 
 TEST_CASE_METHOD(ExecBlockManagerTest,
                  "ExecBlockManagerTest-BasicBlockLookup") {
-  QBDI::ExecBlockManager execBlockManager(*assembly);
+  QBDI::ExecBlockManager execBlockManager(*this);
 
   execBlockManager.writeBasicBlock(getEmptyBB(0x42424242), 1);
   REQUIRE(nullptr == execBlockManager.getProgrammedExecBlock(0x13371337));
@@ -44,7 +47,7 @@ TEST_CASE_METHOD(ExecBlockManagerTest,
 }
 
 TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-ClearCache") {
-  QBDI::ExecBlockManager execBlockManager(*assembly);
+  QBDI::ExecBlockManager execBlockManager(*this);
 
   execBlockManager.writeBasicBlock(getEmptyBB(0x42424242), 1);
   REQUIRE(nullptr != execBlockManager.getProgrammedExecBlock(0x42424242));
@@ -53,7 +56,7 @@ TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-ClearCache") {
 }
 
 TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-ExecBlockReuse") {
-  QBDI::ExecBlockManager execBlockManager(*assembly);
+  QBDI::ExecBlockManager execBlockManager(*this);
 
   execBlockManager.writeBasicBlock(getEmptyBB(0x42424242), 1);
   execBlockManager.writeBasicBlock(getEmptyBB(0x42424243), 1);
@@ -63,7 +66,7 @@ TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-ExecBlockReuse") {
 
 TEST_CASE_METHOD(ExecBlockManagerTest,
                  "ExecBlockManagerTest-ExecBlockRegions") {
-  QBDI::ExecBlockManager execBlockManager(*assembly);
+  QBDI::ExecBlockManager execBlockManager(*this);
 
   execBlockManager.writeBasicBlock(getEmptyBB(0x42424242), 1);
   execBlockManager.writeBasicBlock(getEmptyBB(0x24242424), 1);
@@ -72,7 +75,7 @@ TEST_CASE_METHOD(ExecBlockManagerTest,
 }
 
 TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-ExecBlockAlloc") {
-  QBDI::ExecBlockManager execBlockManager(*assembly);
+  QBDI::ExecBlockManager execBlockManager(*this);
   QBDI::rword address = 0;
 
   for (address = 0; address < 0x1000; address++) {
@@ -84,7 +87,7 @@ TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-ExecBlockAlloc") {
 }
 
 TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-CacheRewrite") {
-  QBDI::ExecBlockManager execBlockManager(*assembly);
+  QBDI::ExecBlockManager execBlockManager(*this);
   unsigned int i = 0;
 
   execBlockManager.writeBasicBlock(getEmptyBB(0x42424242), 1);
@@ -99,7 +102,7 @@ TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-CacheRewrite") {
 
 TEST_CASE_METHOD(ExecBlockManagerTest,
                  "ExecBlockManagerTest-MultipleBasicBlockExecution") {
-  QBDI::ExecBlockManager execBlockManager(*assembly);
+  QBDI::ExecBlockManager execBlockManager(*this);
   QBDI::ExecBlock *block = nullptr;
   // Jit two different terminators
   QBDI::Patch::Vec terminator1 = getEmptyBB(0x42424242);
@@ -125,7 +128,7 @@ TEST_CASE_METHOD(ExecBlockManagerTest,
 }
 
 TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-Stresstest") {
-  QBDI::ExecBlockManager execBlockManager(*assembly);
+  QBDI::ExecBlockManager execBlockManager(*this);
   QBDI::rword address = 0;
 
   for (address = 0; address < 1000; address++) {

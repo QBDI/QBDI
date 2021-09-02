@@ -18,6 +18,8 @@
 #ifndef PATCHRULES_X86_64_H
 #define PATCHRULES_X86_64_H
 
+#include <stdint.h>
+
 #include "Patch/PatchRules.h"
 
 namespace QBDI {

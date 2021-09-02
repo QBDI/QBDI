@@ -15,10 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <map>
+#include <utility>
 
-#include "Patch/PatchRule.h"
-#include "Patch/ExecBlockFlags.h"
+#include "QBDI/Bitmask.h"
+#include "Patch/InstMetadata.h"
+#include "Patch/PatchCondition.h"
 #include "Patch/PatchGenerator.h"
+#include "Patch/PatchRule.h"
+#include "Patch/Register.h"
+#include "Patch/RelocatableInst.h"
+#include "Patch/TempManager.h"
+#include "Patch/Types.h"
 
 namespace QBDI {
 
@@ -30,25 +38,36 @@ PatchRule::~PatchRule() = default;
 
 PatchRule::PatchRule(PatchRule &&) = default;
 
+bool PatchRule::canBeApplied(const llvm::MCInst &inst, rword address,
+                             rword instSize, const LLVMCPU &llvmcpu) const {
+  return condition->test(inst, address, instSize, llvmcpu);
+}
+
 Patch PatchRule::generate(const llvm::MCInst &inst, rword address,
-                          rword instSize, const llvm::MCInstrInfo *MCII,
-                          const llvm::MCRegisterInfo *MRI,
+                          rword instSize, const LLVMCPU &llvmcpu,
                           Patch *toMerge) const {
 
-  Patch patch(inst, address, instSize);
-  patch.metadata.execblockFlags = getExecBlockFlags(inst, MCII, MRI);
+  Patch patch(inst, address, instSize, llvmcpu);
   if (toMerge != nullptr) {
     patch.metadata.address = toMerge->metadata.address;
     patch.metadata.instSize += toMerge->metadata.instSize;
     patch.metadata.execblockFlags |= toMerge->metadata.execblockFlags;
+    for (const auto &e : toMerge->regUsage) {
+      auto e2 = patch.regUsage.find(e.first);
+      if (e2 != patch.regUsage.end()) {
+        patch.regUsage[e.first] = e2->second | e.second;
+      } else {
+        patch.regUsage.insert(e);
+      }
+    }
   }
-  TempManager temp_manager(inst, MCII, MRI);
+
+  TempManager temp_manager(patch, llvmcpu);
   bool modifyPC = false;
   bool merge = false;
 
   for (const auto &g : generators) {
-    patch.append(
-        g->generate(&inst, address, instSize, MCII, &temp_manager, toMerge));
+    patch.append(g->generate(&inst, address, instSize, &temp_manager, toMerge));
     modifyPC |= g->modifyPC();
     merge |= g->doNotInstrument();
   }
@@ -58,11 +77,10 @@ Patch PatchRule::generate(const llvm::MCInst &inst, rword address,
   Reg::Vec used_registers = temp_manager.getUsedRegisters();
 
   for (unsigned int i = 0; i < used_registers.size(); i++) {
-    patch.prepend(SaveReg(used_registers[i], Offset(used_registers[i])));
-  }
-
-  for (unsigned int i = 0; i < used_registers.size(); i++) {
-    patch.append(LoadReg(used_registers[i], Offset(used_registers[i])));
+    if (temp_manager.shouldRestore(used_registers[i])) {
+      patch.prepend(SaveReg(used_registers[i], Offset(used_registers[i])));
+      patch.append(LoadReg(used_registers[i], Offset(used_registers[i])));
+    }
   }
 
   return patch;

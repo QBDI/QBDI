@@ -15,10 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "QBDI/VM_C.h"
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string>
+#include <vector>
+
+#include "QBDI/Callback.h"
 #include "QBDI/Errors.h"
-#include "QBDI/Platform.h"
+#include "QBDI/InstAnalysis.h"
+#include "QBDI/Options.h"
+#include "QBDI/State.h"
 #include "QBDI/VM.h"
+#include "QBDI/VM_C.h"
 #include "Utility/LogSys.h"
 
 namespace QBDI {

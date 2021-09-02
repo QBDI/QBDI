@@ -29,9 +29,6 @@ namespace QBDI {
 
 unsigned getReadSize(const llvm::MCInst &inst);
 unsigned getWriteSize(const llvm::MCInst &inst);
-bool isStackRead(const llvm::MCInst &inst);
-bool isStackWrite(const llvm::MCInst &inst);
-
 unsigned getImmediateSize(const llvm::MCInst &inst,
                           const llvm::MCInstrDesc &desc);
 
@@ -40,6 +37,7 @@ unsigned getImmediateSize(const llvm::MCInst &inst,
 bool useAllRegisters(const llvm::MCInst &inst);
 
 bool unsupportedRead(const llvm::MCInst &inst);
+bool unsupportedWrite(const llvm::MCInst &inst);
 
 }; // namespace QBDI
 

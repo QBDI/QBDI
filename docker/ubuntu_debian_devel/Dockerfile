@@ -28,7 +28,14 @@ RUN apt-get update && \
         ca-certificates \
         zlib1g-dev \
         python3 \
-        python3-dev && \
+        python3-dev \
+        python3-yaml \
+        imagemagick \
+        zip \
+        less \
+        file \
+        xxd \
+        git && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -40,35 +47,6 @@ RUN adduser --disabled-password --gecos '' $USER && \
 # switch to new user
 USER $USER
 
-# install QBDI compilation dependencies
-
-# git archive -o qbdi-deps.tar.gz --prefix=qbdi-deps/ HEAD deps
-ADD qbdi-deps.tar.gz $HOME/
-
-WORKDIR $HOME
-
-RUN sudo chown -R $USER:$USER .
-
-WORKDIR $HOME/qbdi-deps/deps/llvm/
-
-RUN python3 build.py prepare ${QBDI_PLATFORM}-${QBDI_ARCH} && \
-    python3 build.py build ${QBDI_PLATFORM}-${QBDI_ARCH} OFF && \
-    python3 build.py package ${QBDI_PLATFORM}-${QBDI_ARCH} && \
-    python3 build.py clean ${QBDI_PLATFORM}-${QBDI_ARCH}
-
-# install validator dependency after build llvm to use the same cache between devel and release image
-RUN sudo apt-get update && \
-    sudo apt-get install -y --no-install-recommends \
-        python3-yaml \
-        imagemagick \
-        zip \
-        less \
-        file \
-        xxd \
-        git && \
-    sudo apt-get clean  && \
-    sudo rm -rf /var/lib/apt/lists/*
-
 # build / test / install QBDI
 ARG CMAKE_ARGUMENT=""
 
@@ -78,10 +56,6 @@ ADD qbdi.tar.gz $HOME/
 WORKDIR $HOME/qbdi
 
 RUN sudo chown -R $USER:$USER . && \
-    # link llvm
-    rm -rf deps && \
-    ln -s $HOME/qbdi-deps/deps deps && \
-    # build
     mkdir build && \
     cd build && \
     cmake -G Ninja \

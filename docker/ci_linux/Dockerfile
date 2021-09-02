@@ -1,4 +1,4 @@
-ARG DOCKER_IMG="ubuntu:20.04"
+ARG DOCKER_IMG="debian:10"
 
 FROM $DOCKER_IMG
 

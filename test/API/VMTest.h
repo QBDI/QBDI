@@ -20,7 +20,10 @@
 
 #include <memory>
 
-#include "VM.h"
+#include "QBDI/VM.h"
+
+#define STACK_SIZE 4096
+#define FAKE_RET_ADDR 0x666
 
 class VMTest {
 public:
@@ -31,5 +34,17 @@ public:
   QBDI::GPRState *state;
   uint8_t *fakestack;
 };
+
+#if defined(QBDI_ARCH_X86)
+#include "X86/VMTest_X86.h"
+#elif defined(QBDI_ARCH_X86_64)
+#include "X86_64/VMTest_X86_64.h"
+#elif defined(QBDI_ARCH_ARM)
+#include "ARM/VMTest_ARM.h"
+#elif defined(QBDI_ARCH_AARCH64)
+#include "AARCH64/VMTest_AARCH64.h"
+#else
+#error "Architecture not supported"
+#endif
 
 #endif /* QBDITEST_VMTEST_H */

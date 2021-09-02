@@ -20,16 +20,27 @@
 #define QBDITEST_MEMORYACCESSTEST_H
 
 #include <memory>
+#include <string>
+#include <vector>
 
-#include "VM.h"
+#include "TestSetup/InMemoryAssembler.h"
+
+#include "QBDI/VM.h"
 
 class MemoryAccessTest {
+private:
+  std::vector<InMemoryObject> objects;
+
 protected:
   MemoryAccessTest();
   ~MemoryAccessTest();
 
+  QBDI::rword genASM(const char *source,
+                     const std::vector<std::string> mattrs = {});
+
   bool runOnASM(QBDI::rword *retval, const char *source,
-                const std::vector<QBDI::rword> &args = {});
+                const std::vector<QBDI::rword> &args = {},
+                const std::vector<std::string> mattrs = {});
 
   QBDI::VM vm;
   QBDI::GPRState *state;
