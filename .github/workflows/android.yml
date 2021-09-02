@@ -19,7 +19,7 @@ jobs:
             ANDROID_ABI: 'x86'
     env:
       QBDI_PLATFORM: 'android'
-      NDK_VERSION: 'r21d'
+      NDK_VERSION: 'r23'
       ANDROID_PLATFORM: 23
     steps:
       - name: checkout
@@ -30,9 +30,9 @@ jobs:
         with:
           path: |
             ~/.ccache
-          key: ccache-android-${{ matrix.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}-${{ github.run_number }}
+          key: ccache-android-${{ matrix.QBDI_ARCH }}-${{ env.NDK_VERSION }}-${{ env.ANDROID_PLATFORM }}-${{ hashFiles('.github/workflows/ccache.conf') }}-${{ github.run_number }}
           restore-keys: |
-            ccache-android-${{ matrix.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}-
+            ccache-android-${{ matrix.QBDI_ARCH }}-${{ env.NDK_VERSION }}-${{ env.ANDROID_PLATFORM }}-${{ hashFiles('.github/workflows/ccache.conf') }}-
       - if: steps.cache-ccache.outputs.cache-hit != 'true'
         run: |
           mkdir -p ~/.ccache
@@ -43,7 +43,7 @@ jobs:
         with:
           path: |
             android-ndk-${{ env.NDK_VERSION }}/
-          key: ndk-${{ env.NDK_VERSION }}-linux-x86_64
+          key: ndk-${{ env.NDK_VERSION }}-linux
       - name: Cache third-party
         uses: actions/cache@v2
         with:
@@ -55,9 +55,9 @@ jobs:
       - name: Install android NDK ${{ env.NDK_VERSION }}
         if: steps.cache-ndk.outputs.cache-hit != 'true'
         run: |
-          wget --no-verbose https://dl.google.com/android/repository/android-ndk-${{ env.NDK_VERSION }}-linux-x86_64.zip
-          unzip -q android-ndk-${{ env.NDK_VERSION }}-linux-x86_64.zip
-          rm android-ndk-${{ env.NDK_VERSION }}-linux-x86_64.zip
+          wget --no-verbose https://dl.google.com/android/repository/android-ndk-${{ env.NDK_VERSION }}-linux.zip
+          unzip -q android-ndk-${{ env.NDK_VERSION }}-linux.zip
+          rm android-ndk-${{ env.NDK_VERSION }}-linux.zip
       - run: mkdir -p build
       - name: Build Package
         working-directory: ./build
