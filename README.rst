@@ -132,7 +132,7 @@ Compilation
 
 To build this project, the following dependencies are needed on your system:
 
-- cmake >= 3.5
+- cmake >= 3.12
 - ninja or make
 - C++17 toolchain (gcc, clang, Visual Studio 2019, ...)
 
@@ -161,17 +161,7 @@ Create a new directory at the root of the source tree, and execute the Linux con
     mkdir build
     cd build
     ../cmake/config/config-linux-X86_64.sh
-
-If the build script warns you about missing dependencies for your platform (in the case of a first
-compilation), or if you want to rebuild them, execute the following commands::
-
-    make llvm
-
-This will rebuild the binary distribution of those dependencies for your platform. You can
-then relaunch the configuration script from above and compile::
-
-    ../cmake/config/config-linux-X86_64.sh
-    make -j4
+    ninja
 
 x86
 ^^^
@@ -187,25 +177,14 @@ Compiling QBDI on macOS requires a few things:
 * **Xcode** (from the *App Store* or *Apple Developer Tools*)
 * the **Command Line Tools** (``xcode-select --install``)
 * a package manager (preferably **MacPorts**, but *HomeBrew* should also be fine)
-* some packages (``port install cmake wget``)
+* some packages (``port install cmake wget ninja``)
 
 Once requirements are met, create a new directory at the root of the source tree, and execute the macOS configuration script::
 
     mkdir build
     cd build
     ../cmake/config/config-macOS-X86_64.sh
-
-If the build script warns you about missing dependencies for your platform (in the case of a first
-compilation), or if you want to rebuild them, execute the following commands::
-
-    make llvm
-
-
-This will rebuild the binary distribution of those dependencies for your platform. You can
-then relaunch the build script from above and compile::
-
-    ../cmake/config/config-macOS-X86_64.sh
-    make -j4
+    ninja
 
 Windows
 +++++++
@@ -224,16 +203,6 @@ Then, the following commands must be run::
 
     mkdir build
     cd build
-    python ../cmake/config/config-win-X86_64.py
-
-If the build script warns you about missing dependencies for your platform (in the case of a first
-compilation), or if you want to rebuild them, execute the following commands::
-
-    ninja llvm
-
-This will rebuild the binary distribution of those dependencies for your platform. You can
-then relaunch the build script from above and compile::
-
     python ../cmake/config/config-win-X86_64.py
     ninja
 
