@@ -30,10 +30,6 @@
 #include <QBDI.h>
 #include "Utility/LogSys.h"
 
-#if defined(_QBDI_LOG_DEBUG)
-#include <iostream>
-#endif
-
 int SAVED_ERRNO = 0;
 
 struct Pipes {
@@ -110,74 +106,20 @@ static QBDI::VMAction verifyMemoryAccess(QBDI::VMInstanceRef vm,
     // all return instructions read the return address.
     bypassRead |= instAnalysis->isReturn;
     const std::set<std::string> shouldReadInsts{
-        "ARPL16mr",
-        "BOUNDS16rm",
-        "BOUNDS32rm",
-        "CMPSB",
-        "CMPSL",
-        "CMPSQ",
-        "CMPSW",
-        "FBLDm",
-        "FCOM32m",
-        "FCOM64m",
-        "FCOMP32m",
-        "FCOMP64m",
-        "FICOM16m",
-        "FICOM32m",
-        "FICOMP16m",
-        "FICOMP32m",
-        "FLDENVm",
-        "FRSTORm",
-        "LODSB",
-        "LODSL",
-        "LODSQ",
-        "LODSW",
-        "LRETIL",
-        "LRETIQ",
-        "LRETIW",
-        "LRETL",
-        "LRETQ",
-        "LRETW",
-        "MOVDIR64B16",
-        "MOVSB",
-        "MOVSL",
-        "MOVSQ",
-        "MOVSW",
-        "OR32mi8Locked",
-        "RCL16m1"
-        "RCL16mCL",
-        "RCL16mi",
-        "RCL32m1",
-        "RCL32mCL",
-        "RCL32mi",
-        "RCL64m1",
-        "RCL64mCL",
-        "RCL64mi",
-        "RCL8m1",
-        "RCL8mCL",
-        "RCL8mi",
-        "RCR16m1",
-        "RCR16mCL",
-        "RCR16mi",
-        "RCR32m1",
-        "RCR32mCL",
-        "RCR32mi",
-        "RCR64m1",
-        "RCR64mCL",
-        "RCR64mi",
-        "RCR8m1",
-        "RCR8mCL",
-        "RCR8mi",
-        "RETIL",
-        "RETIQ",
-        "RETIW",
-        "RETL",
-        "RETQ",
-        "RETW",
-        "SCASB",
-        "SCASL",
-        "SCASQ",
-        "SCASW",
+        "ARPL16mr",  "BOUNDS16rm", "BOUNDS32rm", "CMPSB",         "CMPSL",
+        "CMPSQ",     "CMPSW",      "FBLDm",      "FCOM32m",       "FCOM64m",
+        "FCOMP32m",  "FCOMP64m",   "FICOM16m",   "FICOM32m",      "FICOMP16m",
+        "FICOMP32m", "FLDENVm",    "FRSTORm",    "LODSB",         "LODSL",
+        "LODSQ",     "LODSW",      "LRETIL",     "LRETIQ",        "LRETIW",
+        "LRETL",     "LRETQ",      "LRETW",      "MOVDIR64B16",   "MOVSB",
+        "MOVSL",     "MOVSQ",      "MOVSW",      "OR32mi8Locked", "RCL16m1",
+        "RCL16mCL",  "RCL16mi",    "RCL32m1",    "RCL32mCL",      "RCL32mi",
+        "RCL64m1",   "RCL64mCL",   "RCL64mi",    "RCL8m1",        "RCL8mCL",
+        "RCL8mi",    "RCR16m1",    "RCR16mCL",   "RCR16mi",       "RCR32m1",
+        "RCR32mCL",  "RCR32mi",    "RCR64m1",    "RCR64mCL",      "RCR64mi",
+        "RCR8m1",    "RCR8mCL",    "RCR8mi",     "RETIL",         "RETIQ",
+        "RETIW",     "RETL",       "RETQ",       "RETW",          "SCASB",
+        "SCASL",     "SCASQ",      "SCASW",
     };
     bypassRead |= (shouldReadInsts.count(instAnalysis->mnemonic) == 1);
 #endif
@@ -305,14 +247,11 @@ void start_instrumented(QBDI::VM *vm, QBDI::rword start, QBDI::rword stop,
                         int ctrlfd, int datafd) {
 
   VM = vm;
-  QBDI::setLogPriority(QBDI::LogPriority::ERROR);
-#if defined(_QBDI_LOG_DEBUG)
-  for (const QBDI::MemoryMap &m : QBDI::getCurrentProcessMaps()) {
-    std::cout << m.name << " (" << m.permission << ") ";
-    m.range.display(std::cout);
-    std::cout << std::endl;
+  if (getenv("QBDI_DEBUG") != NULL) {
+    QBDI::setLogPriority(QBDI::LogPriority::DEBUG);
+  } else {
+    QBDI::setLogPriority(QBDI::LogPriority::ERROR);
   }
-#endif
   // Opening communication FIFO
   PIPES.ctrlPipe = fdopen(ctrlfd, "rb");
   PIPES.dataPipe = fdopen(datafd, "wb");
@@ -322,11 +261,14 @@ void start_instrumented(QBDI::VM *vm, QBDI::rword start, QBDI::rword stop,
   }
 
   vm->addCodeCB(QBDI::PREINST, step, (void *)&PIPES);
-#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86) || \
+    defined(QBDI_ARCH_AARCH64)
   // memory Access are not supported for ARM now
   vm->recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
   vm->addCodeCB(QBDI::POSTINST, verifyMemoryAccess, (void *)&PIPES);
+#endif
 
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
   vm->addMnemonicCB("syscall", QBDI::POSTINST, logSyscall, (void *)&PIPES);
 #endif
   vm->addVMEventCB(QBDI::VMEvent::EXEC_TRANSFER_CALL, logTransfer,

@@ -122,13 +122,16 @@ class ValidatorEngine {
 
   std::vector<std::pair<QBDI::rword, QBDI::rword>> getMapsFromPID(pid_t pid);
 
-  template <typename T>
-  ssize_t diff(const char *regName, T real, T qbdi);
+  ssize_t diff(const char *regName, QBDI::rword real, QBDI::rword qbdi);
 
   ssize_t diffGPR(unsigned regID, QBDI::rword real, QBDI::rword qbdi);
 
-  template <typename T>
-  ssize_t diffSPR(const char *regName, T real, T qbdi);
+  ssize_t diffSPR(const char *regName, QBDI::rword real, QBDI::rword qbdi);
+
+  void compareState(const QBDI::GPRState *gprStateDbg,
+                    const QBDI::FPRState *fprStateDbg,
+                    const QBDI::GPRState *gprStateInstr,
+                    const QBDI::FPRState *fprStateInstr);
 
 public:
   ValidatorEngine(pid_t debugged, pid_t instrumented, LogVerbosity verbosity)
