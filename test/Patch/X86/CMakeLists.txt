@@ -1,6 +1,7 @@
 target_sources(
-  QBDITest PRIVATE "${CMAKE_CURRENT_LIST_DIR}/ComparedExecutor_X86.cpp"
-                   "${CMAKE_CURRENT_LIST_DIR}/MemoryAccessTable_X86.cpp")
+  QBDITest
+  PRIVATE "${CMAKE_CURRENT_LIST_DIR}/ComparedExecutor_X86.cpp"
+          "${CMAKE_CURRENT_LIST_DIR}/../X86_64/MemoryAccessTable_X86_64.cpp")
 
 if(QBDI_PLATFORM_WINDOWS)
   target_sources(QBDITest
