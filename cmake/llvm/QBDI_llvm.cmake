@@ -6,13 +6,13 @@ set(__add_qbdi_llvm ON)
 include(FetchContent)
 
 # configure FetchContent
-set(QBDI_LLVM_VERSION 10.0.1)
+set(QBDI_LLVM_VERSION 12.0.1)
 
 FetchContent_Declare(
   llvm
   URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${QBDI_LLVM_VERSION}/llvm-${QBDI_LLVM_VERSION}.src.tar.xz"
   URL_HASH
-    "SHA256=c5d8e30b57cbded7128d78e5e8dad811bff97a8d471896812f57fa99ee82cdf3"
+    "SHA256=7d9a8405f557cefc5a21bf5672af73903b64749d9bc3a50322239f56f34ffddf"
   DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/llvm-download")
 
 FetchContent_GetProperties(llvm)
@@ -67,6 +67,9 @@ if(NOT llvm_POPULATED)
   set(LLVM_ENABLE_Z3_SOLVER
       OFF
       CACHE BOOL "Disable LLVM_ENABLE_Z3_SOLVER")
+  set(LLVM_ENABLE_ZLIB
+      OFF
+      CACHE BOOL "Disable LLVM_ENABLE_ZLIB")
   set(LLVM_TARGET_ARCH
       ${QBDI_LLVM_ARCH}
       CACHE STRING "set LLVM_ARCH")
@@ -140,18 +143,6 @@ if(NOT llvm_POPULATED)
         CACHE STRING "Enable ASAN")
   endif()
 
-  if(ANDROID)
-    execute_process(
-      COMMAND
-        ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/llvm/lib-Transform-CMakeLists.patch.txt
-        "${llvm_SOURCE_DIR}/lib/Transforms/CMakeLists.txt"
-      COMMAND
-        ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/llvm/test-CMakeLists.patch.txt
-        "${llvm_SOURCE_DIR}/test/CMakeLists.txt")
-  endif()
-
   option(QBDI_LLVM_NATIVE_BUILD "Hack llvm native build" ON)
   # tbl-gen compilation need a native compilation.
   # we need to hack cmake/modules/CrossCompile.cmake:llvm_create_cross_target
@@ -223,8 +214,7 @@ elseif(QBDI_ARCH_AARCH64)
   add_llvm_lib(LLVMAArch64AsmParser LLVMAArch64Desc LLVMAArch64Disassembler
                LLVMAArch64Info LLVMAArch64Utils)
 elseif(QBDI_ARCH_X86_64 OR QBDI_ARCH_X86)
-  add_llvm_lib(LLVMX86AsmParser LLVMX86Disassembler LLVMX86Desc LLVMX86Info
-               LLVMX86Utils)
+  add_llvm_lib(LLVMX86AsmParser LLVMX86Disassembler LLVMX86Desc LLVMX86Info)
 else()
   message(FATAL_ERROR "Unsupported LLVM Architecture.")
 endif()

@@ -377,7 +377,9 @@ constexpr unsigned READ_32[] = {
     llvm::X86::CVTSI2SSrm_Int,
     llvm::X86::CVTSS2SDrm,
     llvm::X86::CVTSS2SDrm_Int,
+    llvm::X86::CVTSS2SI64rm,
     llvm::X86::CVTSS2SI64rm_Int,
+    llvm::X86::CVTSS2SIrm,
     llvm::X86::CVTSS2SIrm_Int,
     llvm::X86::CVTTSS2SI64rm,
     llvm::X86::CVTTSS2SI64rm_Int,
@@ -542,7 +544,9 @@ constexpr unsigned READ_32[] = {
     llvm::X86::VCVTSI2SSrm_Int,
     llvm::X86::VCVTSS2SDrm,
     llvm::X86::VCVTSS2SDrm_Int,
+    llvm::X86::VCVTSS2SI64rm,
     llvm::X86::VCVTSS2SI64rm_Int,
+    llvm::X86::VCVTSS2SIrm,
     llvm::X86::VCVTSS2SIrm_Int,
     llvm::X86::VCVTTSS2SI64rm,
     llvm::X86::VCVTTSS2SI64rm_Int,
@@ -695,7 +699,9 @@ constexpr unsigned READ_64[] = {
     llvm::X86::CRC32r64m64,
     llvm::X86::CVTDQ2PDrm,
     llvm::X86::CVTPS2PDrm,
+    llvm::X86::CVTSD2SI64rm,
     llvm::X86::CVTSD2SI64rm_Int,
+    llvm::X86::CVTSD2SIrm,
     llvm::X86::CVTSD2SIrm_Int,
     llvm::X86::CVTSD2SSrm,
     llvm::X86::CVTSD2SSrm_Int,
@@ -951,7 +957,9 @@ constexpr unsigned READ_64[] = {
     llvm::X86::VCVTDQ2PDrm,
     llvm::X86::VCVTPH2PSrm,
     llvm::X86::VCVTPS2PDrm,
+    llvm::X86::VCVTSD2SI64rm,
     llvm::X86::VCVTSD2SI64rm_Int,
+    llvm::X86::VCVTSD2SIrm,
     llvm::X86::VCVTSD2SIrm_Int,
     llvm::X86::VCVTSD2SSrm,
     llvm::X86::VCVTSD2SSrm_Int,
@@ -1409,6 +1417,10 @@ constexpr unsigned READ_128[] = {
     llvm::X86::VPCMPGTWrm,
     llvm::X86::VPCMPISTRIrm,
     llvm::X86::VPCMPISTRMrm,
+    llvm::X86::VPDPBUSDSrm,
+    llvm::X86::VPDPBUSDrm,
+    llvm::X86::VPDPWSSDSrm,
+    llvm::X86::VPDPWSSDrm,
     llvm::X86::VPERMIL2PDmr,
     llvm::X86::VPERMIL2PDrm,
     llvm::X86::VPERMIL2PSmr,
@@ -1688,6 +1700,10 @@ constexpr unsigned READ_256[] = {
     llvm::X86::VPCMPGTDYrm,
     llvm::X86::VPCMPGTQYrm,
     llvm::X86::VPCMPGTWYrm,
+    llvm::X86::VPDPBUSDSYrm,
+    llvm::X86::VPDPBUSDYrm,
+    llvm::X86::VPDPWSSDSYrm,
+    llvm::X86::VPDPWSSDYrm,
     llvm::X86::VPERM2F128rm,
     llvm::X86::VPERM2I128rm,
     llvm::X86::VPERMDYrm,
@@ -1787,6 +1803,29 @@ constexpr unsigned READ_256[] = {
 };
 
 constexpr size_t READ_256_SIZE = sizeof(READ_256) / sizeof(unsigned);
+
+constexpr unsigned READ_384[] = {
+    // clang-format off
+    llvm::X86::AESDEC128KL,
+    llvm::X86::AESDECWIDE128KL,
+    llvm::X86::AESENC128KL,
+    llvm::X86::AESENCWIDE128KL,
+    // clang-format on
+};
+
+constexpr size_t READ_384_SIZE = sizeof(READ_384) / sizeof(unsigned);
+
+constexpr unsigned READ_512[] = {
+    // clang-format off
+    llvm::X86::AESDEC256KL,
+    llvm::X86::AESDECWIDE256KL,
+    llvm::X86::AESENC256KL,
+    llvm::X86::AESENCWIDE256KL,
+    llvm::X86::LDTILECFG,
+    // clang-format on
+};
+
+constexpr size_t READ_512_SIZE = sizeof(READ_512) / sizeof(unsigned);
 
 constexpr unsigned READ_864[] = {
     // clang-format off
@@ -2320,6 +2359,14 @@ constexpr unsigned WRITE_256[] = {
 
 constexpr size_t WRITE_256_SIZE = sizeof(WRITE_256) / sizeof(unsigned);
 
+constexpr unsigned WRITE_512[] = {
+    // clang-format off
+    llvm::X86::STTILECFG,
+    // clang-format on
+};
+
+constexpr size_t WRITE_512_SIZE = sizeof(WRITE_512) / sizeof(unsigned);
+
 constexpr unsigned WRITE_864[] = {
     // clang-format off
     llvm::X86::FSAVEm,
@@ -2672,6 +2719,8 @@ struct MemAccessArray {
     _initMemAccessRead(READ_128, READ_128_SIZE, 16);
     _initMemAccessRead(READ_224, READ_224_SIZE, 28);
     _initMemAccessRead(READ_256, READ_256_SIZE, 32);
+    _initMemAccessRead(READ_384, READ_384_SIZE, 48);
+    _initMemAccessRead(READ_512, READ_512_SIZE, 64);
     _initMemAccessRead(READ_864, READ_864_SIZE, 108);
     _initMemAccessRead(READ_4096, READ_4096_SIZE, 512);
     _initMemAccessRead(READ_4608, READ_4608_SIZE, 576);
@@ -2684,6 +2733,7 @@ struct MemAccessArray {
     _initMemAccessWrite(WRITE_128, WRITE_128_SIZE, 16);
     _initMemAccessWrite(WRITE_224, WRITE_224_SIZE, 28);
     _initMemAccessWrite(WRITE_256, WRITE_256_SIZE, 32);
+    _initMemAccessWrite(WRITE_512, WRITE_512_SIZE, 64);
     _initMemAccessWrite(WRITE_864, WRITE_864_SIZE, 108);
     _initMemAccessWrite(WRITE_4096, WRITE_4096_SIZE, 512);
     _initMemAccessWrite(WRITE_4608, WRITE_4608_SIZE, 576);
@@ -2733,6 +2783,8 @@ struct MemAccessArray {
     check_table(READ_128, READ_128_SIZE, READ(16), 0x8fff);
     check_table(READ_224, READ_224_SIZE, READ(28), 0x8fff);
     check_table(READ_256, READ_256_SIZE, READ(32), 0x8fff);
+    check_table(READ_384, READ_384_SIZE, READ(48), 0x8fff);
+    check_table(READ_512, READ_512_SIZE, READ(64), 0x8fff);
     check_table(READ_864, READ_864_SIZE, READ(108), 0x8fff);
     check_table(READ_4096, READ_4096_SIZE, READ(512), 0x8fff);
     check_table(READ_4608, READ_4608_SIZE, READ(576), 0x8fff);
@@ -2745,6 +2797,7 @@ struct MemAccessArray {
     check_table(WRITE_128, WRITE_128_SIZE, WRITE(16), 0x8fff << WRITE_POSITION);
     check_table(WRITE_224, WRITE_224_SIZE, WRITE(28), 0x8fff << WRITE_POSITION);
     check_table(WRITE_256, WRITE_256_SIZE, WRITE(32), 0x8fff << WRITE_POSITION);
+    check_table(WRITE_512, WRITE_512_SIZE, WRITE(64), 0x8fff << WRITE_POSITION);
     check_table(WRITE_864, WRITE_864_SIZE, WRITE(108),
                 0x8fff << WRITE_POSITION);
     check_table(WRITE_4096, WRITE_4096_SIZE, WRITE(512),
@@ -2923,6 +2976,8 @@ bool implicitDSIAccess(const llvm::MCInst &inst,
 bool unsupportedRead(const llvm::MCInst &inst) {
 
   switch (inst.getOpcode()) {
+    case llvm::X86::TILELOADD:
+    case llvm::X86::TILELOADDT1:
     case llvm::X86::VGATHERDPDYrm:
     case llvm::X86::VGATHERDPDrm:
     case llvm::X86::VGATHERDPSYrm:
@@ -2945,5 +3000,13 @@ bool unsupportedRead(const llvm::MCInst &inst) {
   }
 }
 
-bool unsupportedWrite(const llvm::MCInst &inst) { return false; }
+bool unsupportedWrite(const llvm::MCInst &inst) {
+  switch (inst.getOpcode()) {
+    case llvm::X86::TILESTORED:
+      return true;
+    default:
+      return false;
+  }
+}
+
 }; // namespace QBDI

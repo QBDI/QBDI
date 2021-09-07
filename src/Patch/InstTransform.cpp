@@ -65,17 +65,33 @@ void AddOperand::transform(llvm::MCInst &inst, rword address, size_t instSize,
     case ImmOperandType:
       inst.insert(inst.begin() + opn, llvm::MCOperand::createImm(imm));
       break;
+    case CpyOperandType:
+      if (inst.getOperand(src).isReg()) {
+        inst.insert(inst.begin() + opn,
+                    llvm::MCOperand::createReg(inst.getOperand(src).getReg()));
+      } else if (inst.getOperand(src).isImm()) {
+        inst.insert(inst.begin() + opn,
+                    llvm::MCOperand::createImm(inst.getOperand(src).getImm()));
+      }
+      break;
   }
 }
 
 void RemoveOperand::transform(llvm::MCInst &inst, rword address,
                               size_t instSize,
                               TempManager *temp_manager) const {
-  for (auto it = inst.begin(); it != inst.end(); ++it) {
-    if (it->isReg() && it->getReg() == reg) {
-      inst.erase(it);
+  switch (type) {
+    case RegType:
+      for (auto it = inst.begin(); it != inst.end(); ++it) {
+        if (it->isReg() && it->getReg() == reg) {
+          inst.erase(it);
+          break;
+        }
+      }
       break;
-    }
+    case OperandType:
+      inst.erase(inst.begin() + opn);
+      break;
   }
 }
 

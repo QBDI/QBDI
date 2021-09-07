@@ -10,7 +10,6 @@ RUN apt-get update && \
         build-essential \
         cmake \
         libstdc++-8-dev \
-        zlib1g-dev \
         python \
         python-dev \
         #gdb \

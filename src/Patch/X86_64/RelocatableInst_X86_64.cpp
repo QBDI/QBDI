@@ -1,5 +1,4 @@
 /*
-:q
  * This file is part of QBDI.
  *
  * Copyright 2017 - 2021 Quarkslab

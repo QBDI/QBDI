@@ -22,6 +22,9 @@
 #include "QBDI/Platform.h"
 #include "Utility/System.h"
 
+#include "llvm/ADT/StringRef.h"
+#include "llvm/ADT/Triple.h"
+#include "llvm/ADT/Twine.h"
 #include "llvm/MC/MCAsmBackend.h"
 #include "llvm/MC/MCAsmInfo.h"
 #include "llvm/MC/MCCodeEmitter.h"
@@ -37,6 +40,7 @@
 #include "llvm/MC/MCTargetOptions.h"
 #include "llvm/MC/SubtargetFeature.h"
 #include "llvm/Object/ObjectFile.h"
+#include "llvm/Support/Host.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/TargetRegistry.h"
 
@@ -63,7 +67,7 @@ InMemoryObject::InMemoryObject(const char *source, const char *cpu,
 
   std::string error;
   // lookup target
-  llvm::Triple processTriple(llvm::sys::getDefaultTargetTriple());
+  llvm::Triple processTriple{llvm::sys::getDefaultTargetTriple()};
   // make sure we don't accidentally use a weak object file format
   processTriple.setObjectFormat(llvm::Triple::ObjectFormatType::ELF);
   processTriple.setOS(llvm::Triple::OSType::Linux);

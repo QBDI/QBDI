@@ -21,8 +21,7 @@ RUN echo "[multilib]" >> /etc/pacman.conf && \
         cmake \
         python3 \
         wget \
-        multilib-devel \
-        lib32-zlib && \
+        multilib-devel && \
     (pacman -Sc --noconfirm || true)
 
 # create a user
