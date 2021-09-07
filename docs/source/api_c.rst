@@ -401,7 +401,7 @@ Exploration
 
 .. doxygenstruct:: qbdi_MemoryMap
     :project: QBDI_C
-    :members: range, permission, name
+    :members: start, end, permission, name
 
 .. doxygenenum:: qbdi_Permission
     :project: QBDI_C

@@ -43,6 +43,8 @@ def detect_QBDI_platform():
             arch = "X86_64"
         else:
             arch = "X86"
+    elif platform.machine() in ['aarch64', 'arm64', 'aarch64_be', 'armv8b', 'armv8l']:
+        arch = "AARCH64"
 
     if os and arch:
         return (os, arch)

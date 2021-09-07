@@ -43,6 +43,8 @@
 #include "QBDI/Range.h"
 #include "QBDI/State.h"
 
+#include "spdlog/fmt/bin_to_hex.h"
+
 // Mask to identify VM events
 #define EVENTID_VM_MASK (1UL << 30)
 
@@ -153,9 +155,6 @@ void Engine::setOptions(Options options) {
 
     Options needRecreate =
         Options::OPT_DISABLE_FPR | Options::OPT_DISABLE_OPTIONAL_FPR;
-#if defined(QBDI_ARCH_AARCH64)
-    needRecreate |= OPT_DISABLE_LOCAL_MONITOR;
-#endif
 
     // need to recreate all ExecBlock
     if (((this->options ^ options) & needRecreate) != 0) {
@@ -274,8 +273,15 @@ std::vector<Patch> Engine::patch(rword start) {
     // Aggregate a complete patch
     do {
       // Disassemble
-      dstatus = llvmcpu.getInstruction(inst, instSize, code.slice(i), i);
       address = start + i;
+      dstatus = llvmcpu.getInstruction(inst, instSize, code.slice(i), address);
+      if (llvm::MCDisassembler::Success != dstatus) {
+        QBDI_CRITICAL(
+            "Disassembly error : fail to parse address 0x{:x} ({:n})", address,
+            spdlog::to_hex(reinterpret_cast<uint8_t *>(address),
+                           reinterpret_cast<uint8_t *>(address + 16)));
+        abort();
+      }
       QBDI_REQUIRE_ACTION(llvm::MCDisassembler::Success == dstatus, abort());
       QBDI_DEBUG_BLOCK({
         std::string disass = llvmcpu.showInst(inst, address);
