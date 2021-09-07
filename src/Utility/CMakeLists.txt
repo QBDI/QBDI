@@ -4,19 +4,24 @@ target_sources(
   INTERFACE "${CMAKE_CURRENT_LIST_DIR}/InstAnalysis.cpp"
             "${CMAKE_CURRENT_LIST_DIR}/LogSys.cpp"
             "${CMAKE_CURRENT_LIST_DIR}/Memory.cpp"
-            "${CMAKE_CURRENT_LIST_DIR}/Memory_${QBDI_PLATFORM}.cpp"
             "${CMAKE_CURRENT_LIST_DIR}/String.cpp"
-            "${CMAKE_CURRENT_LIST_DIR}/System.cpp"
             "${CMAKE_CURRENT_LIST_DIR}/Version.cpp"
             "${CMAKE_CURRENT_LIST_DIR}/memory_ostream.cpp")
 
-if(QBDI_PLATFORM_IOS)
+if(QBDI_PLATFORM_ANDROID OR QBDI_PLATFORM_LINUX)
   target_sources(
-    QBDI_src INTERFACE "${CMAKE_CURRENT_LIST_DIR}/System_iOS.cpp"
-                       "${CMAKE_CURRENT_LIST_DIR}/server-iOS-jit-user.c")
-else()
-  target_sources(QBDI_src
-                 INTERFACE "${CMAKE_CURRENT_LIST_DIR}/System_generic.cpp")
+    QBDI_src INTERFACE "${CMAKE_CURRENT_LIST_DIR}/Memory_linux.cpp"
+                       "${CMAKE_CURRENT_LIST_DIR}/System_generic.cpp")
+elseif(QBDI_PLATFORM_OSX)
+  target_sources(QBDI_src INTERFACE "${CMAKE_CURRENT_LIST_DIR}/Memory_osx.cpp")
+  if(NOT QBDI_ARCH_AARCH64)
+    target_sources(QBDI_src
+                   INTERFACE "${CMAKE_CURRENT_LIST_DIR}/System_generic.cpp")
+  endif()
+elseif(QBDI_PLATFORM_WINDOWS)
+  target_sources(
+    QBDI_src INTERFACE "${CMAKE_CURRENT_LIST_DIR}/Memory_windows.cpp"
+                       "${CMAKE_CURRENT_LIST_DIR}/System_generic.cpp")
 endif()
 
 if(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
