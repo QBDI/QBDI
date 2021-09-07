@@ -26,7 +26,6 @@ RUN apt-get update && \
         pkg-config \
         wget \
         ca-certificates \
-        zlib1g-dev \
         python3 \
         python3-dev && \
     apt-get clean && \

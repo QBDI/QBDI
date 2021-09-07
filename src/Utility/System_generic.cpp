@@ -44,11 +44,11 @@ void releaseMappedMemory(llvm::sys::MemoryBlock &block) {
 }
 
 const std::string getHostCPUName() {
-  const std::string &cpuname = llvm::sys::getHostCPUName();
+  const std::string cpuname = llvm::sys::getHostCPUName().str();
   // set default ARM CPU
   if constexpr (is_arm)
     if (cpuname.empty() || cpuname == "generic")
-      return std::string("cortex-a8");
+      return "cortex-a8";
   return cpuname;
 }
 

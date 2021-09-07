@@ -9,7 +9,6 @@ pkgdesc="QuarkslaB Dynamic binary Instrumentation for linux-X86"
 arch=('x86_64' 'i686')
 url="https://qbdi.quarkslab.com/"
 license=('apache2')
-depends=('lib32-zlib')
 options=(staticlibs)
 makedepends=('cmake' 'ninja' 'gcc' 'python' 'git')
 

@@ -26,6 +26,7 @@
 
 #include "QBDI/Config.h"
 
+#include "Utility/LogSys.h"
 #include "Utility/System.h"
 
 namespace QBDI {
@@ -36,20 +37,25 @@ const std::vector<std::string> getHostCPUFeatures() {
 
   bool ret = llvm::sys::getHostCPUFeatures(features);
 
-  if (ret) {
-    const char *fixupFeatures = getenv("QBDI_FIXUP_FEATURES");
-    if (fixupFeatures != nullptr) {
-      llvm::SubtargetFeatures addFeatures(fixupFeatures);
-      for (const auto &f : addFeatures.getFeatures()) {
-        if (llvm::SubtargetFeatures::hasFlag(f)) {
-          features[llvm::SubtargetFeatures::StripFlag(f)] =
-              llvm::SubtargetFeatures::isEnabled(f);
-        } else {
-          features[f] = true;
-        }
+  if (!ret) {
+    QBDI_WARN("Fail to detect CPUHostFeatures");
+    features.clear();
+  }
+
+  const char *fixupFeatures = getenv("QBDI_FIXUP_FEATURES");
+  if (fixupFeatures != nullptr) {
+    llvm::SubtargetFeatures addFeatures(fixupFeatures);
+    for (const auto &f : addFeatures.getFeatures()) {
+      if (llvm::SubtargetFeatures::hasFlag(f)) {
+        features[llvm::SubtargetFeatures::StripFlag(f)] =
+            llvm::SubtargetFeatures::isEnabled(f);
+      } else {
+        features[f] = true;
       }
     }
+  }
 
+  if (ret || fixupFeatures != nullptr) {
 #if defined(_QBDI_FORCE_DISABLE_AVX)
     const char *disable_avx = "1";
 #else
@@ -94,18 +100,18 @@ const std::vector<std::string> getHostCPUFeatures() {
 #endif
 
     for (const auto &feat : features) {
-      if (!feat.second) {
+      if (!feat.getValue()) {
         continue;
       }
       // XXX: #19 Bad AVX support detection in VM environments
       // fix buggy dynamic detection
-      if (disable_avx != NULL && feat.first().equals(llvm::StringRef("avx"))) {
+      if (disable_avx != NULL && feat.getKey().equals(llvm::StringRef("avx"))) {
         continue;
       }
 #if defined(_QBDI_ASAN_ENABLED_)
       bool blacklist_feature = false;
       for (int i = 0; i < asan_blacklist_feature_size; i++) {
-        if (feat.first().equals(llvm::StringRef(asan_blacklist_feature[i]))) {
+        if (feat.getKey().equals(llvm::StringRef(asan_blacklist_feature[i]))) {
           blacklist_feature = true;
           break;
         }
@@ -114,7 +120,7 @@ const std::vector<std::string> getHostCPUFeatures() {
         continue;
       }
 #endif
-      mattrs.push_back(feat.first());
+      mattrs.push_back(feat.getKey().str());
     }
   }
 

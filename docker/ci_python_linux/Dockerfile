@@ -17,7 +17,6 @@ RUN yum update -y && \
     yum install -y \
         bash \
         wget \
-        zlib-devel \
         ca-certificates && \
     (yum install -y ccache || true) && \
     yum clean all
