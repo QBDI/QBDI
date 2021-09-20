@@ -56,7 +56,6 @@ AArch64   Android, Linux, macOS            :orange:`Supported (*)`    :orange:`S
 =======   ==============================   ========================   =================================
 
 \* The ARM and AArch64 instruction sets are supported for internal use at the moment.
-:q
 
 **stable**
 
