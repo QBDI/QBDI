@@ -945,12 +945,22 @@ class QBDI {
         this.#vmStateStructDesc = this._parseStructDesc(QBDI_C.getVMStateStructDesc());
 
         // add a destructor on garbage collection
-        var that = this;
-        WeakRef.bind(QBDI, function dispose () {
-            if (that.ptr !== null) {
-                that._terminateVM(that.ptr);
-            }
-        });
+        // The name of the API change with frida 15.0.0
+        if (Number(Frida.version.split(".")[0]) < 15) {
+            var that = this;
+            WeakRef.bind(QBDI, function dispose () {
+                if (that.ptr !== null) {
+                    that._terminateVM(that.ptr);
+                }
+            });
+        } else {
+            var that = this;
+            Script.bindWeak(QBDI, function dispose () {
+                if (that.ptr !== null) {
+                    that._terminateVM(that.ptr);
+                }
+            });
+        }
     }
 
     get ptr() {
