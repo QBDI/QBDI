@@ -158,34 +158,39 @@ void qbdi_setOptions(VMInstanceRef instance, Options options) {
 }
 
 uint32_t qbdi_addMnemonicCB(VMInstanceRef instance, const char *mnemonic,
-                            InstPosition pos, InstCallback cbk, void *data) {
+                            InstPosition pos, InstCallback cbk, void *data,
+                            int priority) {
   QBDI_REQUIRE_ACTION(instance, return VMError::INVALID_EVENTID);
-  return static_cast<VM *>(instance)->addMnemonicCB(mnemonic, pos, cbk, data);
+  return static_cast<VM *>(instance)->addMnemonicCB(mnemonic, pos, cbk, data,
+                                                    priority);
 }
 
 uint32_t qbdi_addCodeCB(VMInstanceRef instance, InstPosition pos,
-                        InstCallback cbk, void *data) {
+                        InstCallback cbk, void *data, int priority) {
   QBDI_REQUIRE_ACTION(instance, return VMError::INVALID_EVENTID);
-  return static_cast<VM *>(instance)->addCodeCB(pos, cbk, data);
+  return static_cast<VM *>(instance)->addCodeCB(pos, cbk, data, priority);
 }
 
 uint32_t qbdi_addCodeAddrCB(VMInstanceRef instance, rword address,
-                            InstPosition pos, InstCallback cbk, void *data) {
+                            InstPosition pos, InstCallback cbk, void *data,
+                            int priority) {
   QBDI_REQUIRE_ACTION(instance, return VMError::INVALID_EVENTID);
-  return static_cast<VM *>(instance)->addCodeAddrCB(address, pos, cbk, data);
+  return static_cast<VM *>(instance)->addCodeAddrCB(address, pos, cbk, data,
+                                                    priority);
 }
 
 uint32_t qbdi_addCodeRangeCB(VMInstanceRef instance, rword start, rword end,
-                             InstPosition pos, InstCallback cbk, void *data) {
+                             InstPosition pos, InstCallback cbk, void *data,
+                             int priority) {
   QBDI_REQUIRE_ACTION(instance, return VMError::INVALID_EVENTID);
-  return static_cast<VM *>(instance)->addCodeRangeCB(start, end, pos, cbk,
-                                                     data);
+  return static_cast<VM *>(instance)->addCodeRangeCB(start, end, pos, cbk, data,
+                                                     priority);
 }
 
 uint32_t qbdi_addMemAccessCB(VMInstanceRef instance, MemoryAccessType type,
-                             InstCallback cbk, void *data) {
+                             InstCallback cbk, void *data, int priority) {
   QBDI_REQUIRE_ACTION(instance, return VMError::INVALID_EVENTID);
-  return static_cast<VM *>(instance)->addMemAccessCB(type, cbk, data);
+  return static_cast<VM *>(instance)->addMemAccessCB(type, cbk, data, priority);
 }
 
 uint32_t qbdi_addMemAddrCB(VMInstanceRef instance, rword address,
@@ -306,9 +311,9 @@ uint32_t qbdi_addInstrRuleRange(VMInstanceRef instance, rword start, rword end,
 }
 
 void qbdi_addInstrRuleData(InstrRuleDataVec cbks, InstPosition position,
-                           InstCallback cbk, void *data) {
+                           InstCallback cbk, void *data, int priority) {
   QBDI_REQUIRE_ACTION(cbks, return );
-  cbks->emplace_back(position, cbk, data);
+  cbks->emplace_back(position, cbk, data, priority);
 }
 
 } // namespace QBDI

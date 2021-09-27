@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
   // Constructing a new QBDI vm
   qbdi_initVM(&vm, NULL, NULL, 0);
   // Registering a callback on every memory write to our onwrite() function
-  qbdi_addMemAccessCB(vm, QBDI_MEMORY_WRITE, onwrite, NULL);
+  qbdi_addMemAccessCB(vm, QBDI_MEMORY_WRITE, onwrite, NULL, 0);
   // Instrument this module
   qbdi_addInstrumentedModuleFromAddr(vm, (rword)&cryptolock);
   // Get a pointer to the GPR state of the vm

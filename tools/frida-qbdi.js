@@ -292,16 +292,16 @@ var QBDI_C = Object.freeze({
     getFPRState: _qbdibinder.bind('qbdi_getFPRState', 'pointer', ['pointer']),
     setGPRState: _qbdibinder.bind('qbdi_setGPRState', 'void', ['pointer', 'pointer']),
     setFPRState: _qbdibinder.bind('qbdi_setFPRState', 'void', ['pointer', 'pointer']),
-    addMnemonicCB: _qbdibinder.bind('qbdi_addMnemonicCB', 'uint32', ['pointer', 'pointer', 'uint32', 'pointer', 'pointer']),
-    addMemAccessCB: _qbdibinder.bind('qbdi_addMemAccessCB', 'uint32', ['pointer', 'uint32', 'pointer', 'pointer']),
+    addMnemonicCB: _qbdibinder.bind('qbdi_addMnemonicCB', 'uint32', ['pointer', 'pointer', 'uint32', 'pointer', 'pointer', 'int32']),
+    addMemAccessCB: _qbdibinder.bind('qbdi_addMemAccessCB', 'uint32', ['pointer', 'uint32', 'pointer', 'pointer', 'int32']),
     addInstrRule: _qbdibinder.bind('qbdi_addInstrRule', 'uint32', ['pointer', 'pointer', 'uint32', 'pointer']),
     addInstrRuleRange: _qbdibinder.bind('qbdi_addInstrRuleRange', 'uint32', ['pointer', rword, rword, 'pointer', 'uint32', 'pointer']),
-    addInstrRuleData: _qbdibinder.bind('qbdi_addInstrRuleData', 'void', ['pointer', 'uint32', 'pointer', 'pointer']),
+    addInstrRuleData: _qbdibinder.bind('qbdi_addInstrRuleData', 'void', ['pointer', 'uint32', 'pointer', 'pointer', 'int32']),
     addMemAddrCB: _qbdibinder.bind('qbdi_addMemAddrCB', 'uint32', ['pointer', rword, 'uint32', 'pointer', 'pointer']),
     addMemRangeCB: _qbdibinder.bind('qbdi_addMemRangeCB', 'uint32', ['pointer', rword, rword, 'uint32', 'pointer', 'pointer']),
-    addCodeCB: _qbdibinder.bind('qbdi_addCodeCB', 'uint32', ['pointer', 'uint32', 'pointer', 'pointer']),
-    addCodeAddrCB: _qbdibinder.bind('qbdi_addCodeAddrCB', 'uint32', ['pointer', rword, 'uint32', 'pointer', 'pointer']),
-    addCodeRangeCB: _qbdibinder.bind('qbdi_addCodeRangeCB', 'uint32', ['pointer', rword, rword, 'uint32', 'pointer', 'pointer']),
+    addCodeCB: _qbdibinder.bind('qbdi_addCodeCB', 'uint32', ['pointer', 'uint32', 'pointer', 'pointer', 'int32']),
+    addCodeAddrCB: _qbdibinder.bind('qbdi_addCodeAddrCB', 'uint32', ['pointer', rword, 'uint32', 'pointer', 'pointer', 'int32']),
+    addCodeRangeCB: _qbdibinder.bind('qbdi_addCodeRangeCB', 'uint32', ['pointer', rword, rword, 'uint32', 'pointer', 'pointer', 'int32']),
     addVMEventCB: _qbdibinder.bind('qbdi_addVMEventCB', 'uint32', ['pointer', 'uint32', 'pointer', 'pointer']),
     deleteInstrumentation: _qbdibinder.bind('qbdi_deleteInstrumentation', 'uchar', ['pointer', 'uint32']),
     deleteAllInstrumentations: _qbdibinder.bind('qbdi_deleteAllInstrumentations', 'void', ['pointer']),
@@ -426,6 +426,20 @@ var InstPosition = Object.freeze({
      * Positioned **after** the instruction.
      */
     POSTINST: 1
+});
+
+/**
+ * Priority of callback
+ */
+var CallbackPriority = Object.freeze({
+    /**
+     * Default priority for callback.
+     */
+    PRIORITY_DEFAULT: 0,
+    /**
+     * Maximum priority if getInstMemoryAccess is used in the callback.
+     */
+    PRIORITY_MEMACCESS_LIMIT: 0x1000000
 });
 
 /**
@@ -721,14 +735,16 @@ class InstrRuleDataCBK {
     /**
      * Object to define an :js:func:`InstCallback` in an :js:func:`InstrRuleCallback`
      *
-     * @param {InstPosition} pos    Relative position of the callback (PreInst / PostInst).
-     * @param {InstCallback} cbk    A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
-     * @param {Object}       data   User defined data passed to the callback.
+     * @param {InstPosition} pos       Relative position of the callback (PreInst / PostInst).
+     * @param {InstCallback} cbk       A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
+     * @param {Object}       data      User defined data passed to the callback.
+     * @param {Int}          priority  The priority of the callback.
      */
-    constructor(pos, cbk, data) {
+    constructor(pos, cbk, data, priority = CallbackPriority.PRIORITY_DEFAULT) {
         this.position = pos;
         this.cbk = cbk;
         this.data = data;
+        this.priority = priority;
     }
 }
 
@@ -1171,34 +1187,36 @@ class QBDI {
     /**
      * Register a callback event if the instruction matches the mnemonic.
      *
-     * @param {String}       mnem   Mnemonic to match.
-     * @param {InstPosition} pos    Relative position of the callback (PreInst / PostInst).
-     * @param {InstCallback} cbk    A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
-     * @param {Object}       data   User defined data passed to the callback.
+     * @param {String}       mnem      Mnemonic to match.
+     * @param {InstPosition} pos       Relative position of the callback (PreInst / PostInst).
+     * @param {InstCallback} cbk       A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
+     * @param {Object}       data      User defined data passed to the callback.
+     * @param {Int}          priority  The priority of the callback.
      *
      * @return {Number} The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
      */
-    addMnemonicCB(mnem, pos, cbk, data) {
+    addMnemonicCB(mnem, pos, cbk, data, priority = CallbackPriority.PRIORITY_DEFAULT) {
         var mnemPtr = Memory.allocUtf8String(mnem);
         var vm = this.#vm;
         return this._retainUserData(data, function (dataPtr) {
-            return QBDI_C.addMnemonicCB(vm, mnemPtr, pos, cbk, dataPtr);
+            return QBDI_C.addMnemonicCB(vm, mnemPtr, pos, cbk, dataPtr, priority);
         });
     }
 
     /**
      * Register a callback event for every memory access matching the type bitfield made by the instruction in the range codeStart to codeEnd.
      *
-     * @param {MemoryAccessType} type   A mode bitfield: either MEMORY_READ, MEMORY_WRITE or both (MEMORY_READ_WRITE).
-     * @param {InstCallback}     cbk    A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
-     * @param {Object}           data   User defined data passed to the callback.
+     * @param {MemoryAccessType} type      A mode bitfield: either MEMORY_READ, MEMORY_WRITE or both (MEMORY_READ_WRITE).
+     * @param {InstCallback}     cbk       A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
+     * @param {Object}           data      User defined data passed to the callback.
+     * @param {Int}              priority  The priority of the callback.
      *
      * @return {Number} The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
      */
-    addMemAccessCB(type, cbk, data) {
+    addMemAccessCB(type, cbk, data, priority = CallbackPriority.PRIORITY_DEFAULT) {
         var vm = this.#vm;
         return this._retainUserData(data, function (dataPtr) {
-            return QBDI_C.addMemAccessCB(vm, type, cbk, dataPtr);
+            return QBDI_C.addMemAccessCB(vm, type, cbk, dataPtr, priority);
         });
     }
 
@@ -1276,51 +1294,54 @@ class QBDI {
     /**
      * Register a callback event for a specific instruction event.
      *
-     * @param {InstPosition} pos    Relative position of the callback (PreInst / PostInst).
-     * @param {InstCallback} cbk    A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
-     * @param {Object}       data   User defined data passed to the callback.
+     * @param {InstPosition} pos       Relative position of the callback (PreInst / PostInst).
+     * @param {InstCallback} cbk       A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
+     * @param {Object}       data      User defined data passed to the callback.
+     * @param {Int}          priority  The priority of the callback.
      *
      * @return {Number} The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
      */
-    addCodeCB(pos, cbk, data) {
+    addCodeCB(pos, cbk, data, priority = CallbackPriority.PRIORITY_DEFAULT) {
         var vm = this.#vm;
         return this._retainUserData(data, function (dataPtr) {
-            return QBDI_C.addCodeCB(vm, pos, cbk, dataPtr);
+            return QBDI_C.addCodeCB(vm, pos, cbk, dataPtr, priority);
         });
     }
 
     /**
      * Register a callback for when a specific address is executed.
      *
-     * @param {String|Number} addr   Code address which will trigger the callback.
-     * @param {InstPosition}  pos    Relative position of the callback (PreInst / PostInst).
-     * @param {InstCallback}  cbk    A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
-     * @param {Object}        data   User defined data passed to the callback.
+     * @param {String|Number} addr      Code address which will trigger the callback.
+     * @param {InstPosition}  pos       Relative position of the callback (PreInst / PostInst).
+     * @param {InstCallback}  cbk       A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
+     * @param {Object}        data      User defined data passed to the callback.
+     * @param {Int}           priority  The priority of the callback.
      *
      * @return {Number} The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
      */
-    addCodeAddrCB(addr, pos, cbk, data) {
+    addCodeAddrCB(addr, pos, cbk, data, priority = CallbackPriority.PRIORITY_DEFAULT) {
         var vm = this.#vm;
         return this._retainUserData(data, function (dataPtr) {
-            return QBDI_C.addCodeAddrCB(vm, addr.toRword(), pos, cbk, dataPtr);
+            return QBDI_C.addCodeAddrCB(vm, addr.toRword(), pos, cbk, dataPtr, priority);
         });
     }
 
     /**
      * Register a callback for when a specific address range is executed.
      *
-     * @param {String|Number} start  Start of the address range which will trigger the callback.
-     * @param {String|Number} end    End of the address range which will trigger the callback.
-     * @param {InstPosition}  pos    Relative position of the callback (PreInst / PostInst).
-     * @param {InstCallback}  cbk    A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
-     * @param {Object}        data   User defined data passed to the callback.
+     * @param {String|Number} start     Start of the address range which will trigger the callback.
+     * @param {String|Number} end       End of the address range which will trigger the callback.
+     * @param {InstPosition}  pos       Relative position of the callback (PreInst / PostInst).
+     * @param {InstCallback}  cbk       A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
+     * @param {Object}        data      User defined data passed to the callback.
+     * @param {Int}           priority  The priority of the callback.
      *
      * @return {Number} The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
      */
-    addCodeRangeCB(start, end, pos, cbk, data) {
+    addCodeRangeCB(start, end, pos, cbk, data, priority = CallbackPriority.PRIORITY_DEFAULT) {
         var vm = this.#vm;
         return this._retainUserData(data, function (dataPtr) {
-            return QBDI_C.addCodeRangeCB(vm, start.toRword(), end.toRword(), pos, cbk, dataPtr);
+            return QBDI_C.addCodeRangeCB(vm, start.toRword(), end.toRword(), pos, cbk, dataPtr, priority);
         });
     }
 
@@ -1547,7 +1568,7 @@ class QBDI {
             }
             for (var i = 0; i < res.length; i++) {
                 var d = vm._retainUserDataForInstrRuleCB2(res[i].data, data.id);
-                QBDI_C.addInstrRuleData(cbksPtr, res[i].position, res[i].cbk, d);
+                QBDI_C.addInstrRuleData(cbksPtr, res[i].position, res[i].cbk, d, res[i].priority);
             }
         }
         return new NativeCallback(jcbk, 'void', ['pointer', 'pointer', 'pointer', 'pointer']);
@@ -1935,6 +1956,7 @@ if (typeof(module) !== "undefined") {
         ConditionType: ConditionType,
         GPR_NAMES: GPR_NAMES,
         InstPosition: InstPosition,
+        CallbackPriority: CallbackPriority,
         InstrRuleDataCBK: InstrRuleDataCBK,
         MemoryAccessFlags: MemoryAccessFlags,
         MemoryAccessType: MemoryAccessType,

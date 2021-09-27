@@ -47,6 +47,15 @@ void init_binding_Callback(py::module_ &m) {
              "Positioned after the instruction.")
       .export_values();
 
+  py::enum_<CallbackPriority>(m, "CallbackPriority", "Priority of callback.")
+      .value("PRIORITY_DEFAULT", CallbackPriority::PRIORITY_DEFAULT,
+             "Default priority for callback.")
+      .value("PRIORITY_MEMACCESS_LIMIT",
+             CallbackPriority::PRIORITY_MEMACCESS_LIMIT,
+             "Maximum priority if getInstMemoryAccess "
+             "is used in the callback.")
+      .export_values();
+
   enum_int_flag_<VMEvent>(m, "VMEvent", py::arithmetic())
       .value("SEQUENCE_ENTRY", VMEvent::SEQUENCE_ENTRY,
              "Triggered when the execution enters a sequence.")
@@ -124,8 +133,8 @@ void init_binding_Callback(py::module_ &m) {
       .def_readwrite("flags", &MemoryAccess::flags, "Memory access flags");
 
   py::class_<InstrRuleDataCBKPython>(m, "InstrRuleDataCBK")
-      .def(py::init<PyInstCallback &, py::object &, InstPosition>(), "cbk"_a,
-           "data"_a, "position"_a)
+      .def(py::init<PyInstCallback &, py::object &, InstPosition, int>(),
+           "cbk"_a, "data"_a, "position"_a, "priority"_a = PRIORITY_DEFAULT)
       .def_readwrite(
           "cbk", &InstrRuleDataCBKPython::cbk,
           "Address of the function to call when the instruction is executed")
@@ -133,7 +142,9 @@ void init_binding_Callback(py::module_ &m) {
                      "User defined data which will be forward to cbk.")
       .def_readwrite(
           "position", &InstrRuleDataCBKPython::position,
-          "Relative position of the event callback (PREINST / POSTINST).");
+          "Relative position of the event callback (PREINST / POSTINST).")
+      .def_readwrite("priority", &InstrRuleDataCBKPython::priority,
+                     "Priority of the callback.");
 }
 
 } // namespace pyQBDI

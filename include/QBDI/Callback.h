@@ -78,6 +78,31 @@ typedef enum {
   _QBDI_EI(POSTINST)     /*!< Positioned after the instruction.*/
 } InstPosition;
 
+/*! Priority of callback
+ *
+ * A callback with an higher priority will be call before a callback with a
+ * lower priority.
+ *
+ * ie:
+ *
+ * 1. CBpre(p = 10)
+ * 2. CBpre(p = 0)
+ * 3. CBpre(p = -10)
+ * 4. instrumented instruction
+ * 5. CBpost(p = 10)
+ * 6. CBpost(p = 0)
+ * 7. CBpost(p = -10)
+ *
+ * When the MemoryAccess API is used in a callback, the priority of the callback
+ * must not be greater than PRIORITY_MEMACCESS_LIMIT
+ */
+typedef enum {
+  _QBDI_EI(PRIORITY_DEFAULT) = 0, /*!< Default priority for callback */
+  _QBDI_EI(PRIORITY_MEMACCESS_LIMIT) =
+      0x1000000, /*!< Maximum priority if getInstMemoryAccess
+                  *   is used in the callback */
+} CallbackPriority;
+
 typedef enum {
   _QBDI_EI(NO_EVENT) = 0,
   _QBDI_EI(SEQUENCE_ENTRY) = 1,            /*!< Triggered when the execution
@@ -206,8 +231,11 @@ struct InstrRuleDataCBK {
                           */
   void *data;            /*!< User defined data which will be forward to cbk */
 
-  InstrRuleDataCBK(InstPosition position, InstCallback cbk, void *data)
-      : position(position), cbk(cbk), data(data) {}
+  int priority; /*!< Priority of the callback */
+
+  InstrRuleDataCBK(InstPosition position, InstCallback cbk, void *data,
+                   int priority = PRIORITY_DEFAULT)
+      : position(position), cbk(cbk), data(data), priority(priority) {}
 };
 
 using InstrRuleDataVec = std::vector<InstrRuleDataCBK> *;

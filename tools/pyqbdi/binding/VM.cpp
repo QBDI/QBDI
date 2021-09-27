@@ -128,7 +128,7 @@ trampoline_InstrRuleCallback(VMInstanceRef vm, const InstAnalysis *analysis,
         new TrampData<PyInstCallback>(cb.cbk, cb.data)};
     data->id = cbk->id;
     res.emplace_back(cb.position, trampoline_InstCallback,
-                     static_cast<void *>(data.get()));
+                     static_cast<void *>(data.get()), cb.priority);
     vec.push_back(std::move(data));
   }
 
@@ -227,71 +227,77 @@ void init_binding_VM(py::module_ &m) {
       .def(
           "addMnemonicCB",
           [](VM &vm, const char *mnemonic, InstPosition pos,
-             PyInstCallback &cbk, py::object &obj) {
+             PyInstCallback &cbk, py::object &obj, int priority) {
             std::unique_ptr<TrampData<PyInstCallback>> data{
                 new TrampData<PyInstCallback>(cbk, obj)};
             uint32_t n =
                 vm.addMnemonicCB(mnemonic, pos, &trampoline_InstCallback,
-                                 static_cast<void *>(data.get()));
+                                 static_cast<void *>(data.get()), priority);
             data->id = n;
             return addTrampData(n, InstCallbackMap, std::move(data));
           },
           "Register a callback event if the instruction matches the mnemonic.",
-          "mnemonic"_a, "pos"_a, "cbk"_a, "data"_a)
+          "mnemonic"_a, "pos"_a, "cbk"_a, "data"_a,
+          "priority"_a = PRIORITY_DEFAULT)
       .def(
           "addCodeCB",
-          [](VM &vm, InstPosition pos, PyInstCallback &cbk, py::object &obj) {
+          [](VM &vm, InstPosition pos, PyInstCallback &cbk, py::object &obj,
+             int priority) {
             std::unique_ptr<TrampData<PyInstCallback>> data{
                 new TrampData<PyInstCallback>(cbk, obj)};
-            uint32_t n = vm.addCodeCB(pos, &trampoline_InstCallback,
-                                      static_cast<void *>(data.get()));
+            uint32_t n =
+                vm.addCodeCB(pos, &trampoline_InstCallback,
+                             static_cast<void *>(data.get()), priority);
             data->id = n;
             return addTrampData(n, InstCallbackMap, std::move(data));
           },
           "Register a callback event for every instruction executed.", "pos"_a,
-          "cbk"_a, "data"_a)
+          "cbk"_a, "data"_a, "priority"_a = PRIORITY_DEFAULT)
       .def(
           "addCodeAddrCB",
           [](VM &vm, rword address, InstPosition pos, PyInstCallback &cbk,
-             py::object &obj) {
+             py::object &obj, int priority) {
             std::unique_ptr<TrampData<PyInstCallback>> data{
                 new TrampData<PyInstCallback>(cbk, obj)};
             uint32_t n =
                 vm.addCodeAddrCB(address, pos, &trampoline_InstCallback,
-                                 static_cast<void *>(data.get()));
+                                 static_cast<void *>(data.get()), priority);
             data->id = n;
             return addTrampData(n, InstCallbackMap, std::move(data));
           },
           "Register a callback for when a specific address is executed.",
-          "address"_a, "pos"_a, "cbk"_a, "data"_a)
+          "address"_a, "pos"_a, "cbk"_a, "data"_a,
+          "priority"_a = PRIORITY_DEFAULT)
       .def(
           "addCodeRangeCB",
           [](VM &vm, rword start, rword end, InstPosition pos,
-             PyInstCallback &cbk, py::object &obj) {
+             PyInstCallback &cbk, py::object &obj, int priority) {
             std::unique_ptr<TrampData<PyInstCallback>> data{
                 new TrampData<PyInstCallback>(cbk, obj)};
             uint32_t n =
                 vm.addCodeRangeCB(start, end, pos, &trampoline_InstCallback,
-                                  static_cast<void *>(data.get()));
+                                  static_cast<void *>(data.get()), priority);
             data->id = n;
             return addTrampData(n, InstCallbackMap, std::move(data));
           },
           "Register a callback for when a specific address range is executed.",
-          "start"_a, "end"_a, "pos"_a, "cbk"_a, "data"_a)
+          "start"_a, "end"_a, "pos"_a, "cbk"_a, "data"_a,
+          "priority"_a = PRIORITY_DEFAULT)
       .def(
           "addMemAccessCB",
           [](VM &vm, MemoryAccessType type, PyInstCallback &cbk,
-             py::object &obj) {
+             py::object &obj, int priority) {
             std::unique_ptr<TrampData<PyInstCallback>> data{
                 new TrampData<PyInstCallback>(cbk, obj)};
-            uint32_t n = vm.addMemAccessCB(type, &trampoline_InstCallback,
-                                           static_cast<void *>(data.get()));
+            uint32_t n =
+                vm.addMemAccessCB(type, &trampoline_InstCallback,
+                                  static_cast<void *>(data.get()), priority);
             data->id = n;
             return addTrampData(n, InstCallbackMap, std::move(data));
           },
           "Register a callback event for every memory access matching the type "
           "bitfield made by the instructions.",
-          "type"_a, "cbk"_a, "data"_a)
+          "type"_a, "cbk"_a, "data"_a, "priority"_a = PRIORITY_DEFAULT)
       .def(
           "addMemAddrCB",
           [](VM &vm, rword address, MemoryAccessType type, PyInstCallback &cbk,

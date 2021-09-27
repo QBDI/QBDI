@@ -9,16 +9,13 @@ The root of the source tree is organized as follows:
 ``cmake/``
    Contains files required by the CMake build system.
 
-``deps/``
-   Contains the dependency build system and cache.
-
 ``docker/``
    Contains the Dockerfile for the docker image and the CI.
 
 ``docs/``
    Contains this documentation source and configuration.
 
-``example/``
+``examples/``
    Contains various QBDI usage examples.
 
 ``include/``
@@ -35,6 +32,9 @@ The root of the source tree is organized as follows:
 
 ``test/``
    Contains the functional test suite.
+
+``third-party/``
+   Contains the third party dependency downloaded by cmake.
 
 ``tools/``
    Contains QBDI development tools: the validator and the validation runner.

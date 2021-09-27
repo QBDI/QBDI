@@ -127,7 +127,6 @@ const std::vector<std::string> getHostCPUFeatures() {
 #endif
 
     for (const auto &feat : features) {
-      QBDI_DEBUG("Feature {}: {}", feat.getKeyData(), feat.getValue());
       if (!feat.getValue()) {
         continue;
       }

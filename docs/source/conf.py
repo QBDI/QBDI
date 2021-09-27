@@ -55,11 +55,12 @@ read_the_docs_build = os.environ.get('READTHEDOCS', None) == 'True'
 
 if read_the_docs_build:
     # Update documentation in doxygen config file (what is normally done by cmake)
-    sedcmd = "sed 's/${QBDI_VERSION_MAJOR}/%u/;s/${QBDI_VERSION_MINOR}/%u/;s/${QBDI_VERSION_PATCH}/%u/'" % (VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH)
+    sedcmd = "sed 's/${QBDI_VERSION_MAJOR}/%u/;s/${QBDI_VERSION_MINOR}/%u/;s/${QBDI_VERSION_PATCH}/%u/;s/${CMAKE_CURRENT_BINARY_DIR}/./ '" % (VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH)
     # Call doxygen
     subprocess.call("cd ../; %s qbdi_cpp.doxygen.in > qbdi_cpp.doxygen" % sedcmd, shell=True)
     subprocess.call("cd ../; %s qbdi_c.doxygen.in > qbdi_c.doxygen" % sedcmd, shell=True)
     subprocess.call("cd ../; %s qbdipreload.doxygen.in > qbdipreload.doxygen" % sedcmd, shell=True)
+    subprocess.call("cp ../../include/QBDI/arch/X86_64/* ../../include/QBDI/", shell=True)
     subprocess.call('cd ../; doxygen qbdi_cpp.doxygen', shell=True)
     subprocess.call('cd ../; doxygen qbdi_c.doxygen', shell=True)
     subprocess.call('cd ../; doxygen qbdipreload.doxygen', shell=True)

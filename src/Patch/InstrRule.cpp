@@ -38,9 +38,11 @@ namespace QBDI {
 
 void InstrRule::instrument(Patch &patch, const LLVMCPU &llvmcpu,
                            const PatchGenerator::UniquePtrVec &patchGen,
-                           bool breakToHost, InstPosition position) const {
+                           bool breakToHost, InstPosition position,
+                           int priority) const {
 
   if (patchGen.size() == 0 && breakToHost == false) {
+    QBDI_DEBUG("Empty patch Generator");
     return;
   }
 
@@ -121,16 +123,16 @@ void InstrRule::instrument(Patch &patch, const LLVMCPU &llvmcpu,
     }
   }
 
-  // The resulting instrumentation is either appended or prepended as per the
-  // InstPosition
-  if (position == PREINST) {
-    patch.prepend(std::move(instru));
-  } else if (position == POSTINST) {
-    patch.append(std::move(instru));
-  } else {
-    QBDI_ERROR("Invalid position 0x{:x}", position);
-    abort();
-  }
+  QBDI_DEBUG("Insert {} PatchGen with priority {} and position {} ({})",
+             instru.size(), priority,
+             (position == PREINST) ? "PREINST"
+                                   : ((position == POSTINST) ? "POSTINST" : ""),
+             position);
+
+  // Add the result to the patch
+  // The result is added in a pending list that is sorted by priority
+  // The pending list is flush in the Patch when all InstrRule has been apply
+  patch.addInstsPatch(position, priority, std::move(instru));
 }
 
 // InstrRuleBasic
@@ -209,7 +211,7 @@ bool InstrRuleUser::tryInstrument(Patch &patch, const LLVMCPU &llvmcpu) const {
     return false;
   }
 
-  QBDI_DEBUG("Call user InstrCB at 0x{:x} with analysisType 0x{:x}",
+  QBDI_DEBUG("Call user InstrCB at {} with analysisType 0x{:x}",
              reinterpret_cast<void *>(cbk), analysisType);
 
   const InstAnalysis *ana =
@@ -226,7 +228,7 @@ bool InstrRuleUser::tryInstrument(Patch &patch, const LLVMCPU &llvmcpu) const {
   for (const InstrRuleDataCBK &cbkToAdd : vec) {
     instrument(patch, llvmcpu,
                getCallbackGenerator(cbkToAdd.cbk, cbkToAdd.data), true,
-               cbkToAdd.position);
+               cbkToAdd.position, cbkToAdd.priority);
   }
 
   return true;

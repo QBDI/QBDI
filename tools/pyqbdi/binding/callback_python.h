@@ -33,10 +33,11 @@ struct InstrRuleDataCBKPython {
   PyInstCallback cbk;
   py::object data;
   InstPosition position;
+  int priority;
 
   InstrRuleDataCBKPython(PyInstCallback &cbk, py::object &data,
-                         InstPosition position)
-      : cbk(cbk), data(data), position(position) {}
+                         InstPosition position, int priority = PRIORITY_DEFAULT)
+      : cbk(cbk), data(data), position(position), priority(priority) {}
 };
 
 using PyInstrRuleCallback = std::function<std::vector<InstrRuleDataCBKPython>(

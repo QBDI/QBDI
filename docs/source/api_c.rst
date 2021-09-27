@@ -138,10 +138,10 @@ MemoryAccess
 InstrRuleCallback
 ^^^^^^^^^^^^^^^^^
 
-.. doxygenfunction:: qbdi_addInstrRule(InstrRuleCallback cbk, AnalysisType type, void* data)
+.. doxygenfunction:: qbdi_addInstrRule
     :project: QBDI_C
 
-.. doxygenfunction:: qbdi_addInstrRuleRange(rword start, rword end, InstrRuleCallback cbk, AnalysisType type, void* data)
+.. doxygenfunction:: qbdi_addInstrRuleRange
     :project: QBDI_C
 
 Removal
@@ -223,14 +223,14 @@ Register state
 
     For X86 architecture:
 
-    .. include:: ../../include/QBDI/State.h
+    .. include:: ../../include/QBDI/arch/X86/State.h
        :start-after: SPHINX_X86_GPRSTATE_BEGIN
        :end-before: // SPHINX_X86_GPRSTATE_END
        :code:
 
     For X86_64 architecture:
 
-    .. include:: ../../include/QBDI/State.h
+    .. include:: ../../include/QBDI/arch/X86_64/State.h
        :start-after: SPHINX_X86_64_GPRSTATE_BEGIN
        :end-before: // SPHINX_X86_64_GPRSTATE_END
        :code:
@@ -241,14 +241,14 @@ Register state
 
     For X86 architecture:
 
-    .. include:: ../../include/QBDI/State.h
+    .. include:: ../../include/QBDI/arch/X86/State.h
        :start-after: SPHINX_X86_FPRSTATE_BEGIN
        :end-before: // SPHINX_X86_FPRSTATE_END
        :code:
 
     For X86_64 architecture:
 
-    .. include:: ../../include/QBDI/State.h
+    .. include:: ../../include/QBDI/arch/X86_64/State.h
        :start-after: SPHINX_X86_64_FPRSTATE_BEGIN
        :end-before: // SPHINX_X86_64_FPRSTATE_END
        :code:
@@ -300,6 +300,9 @@ Callback
     An abstract type to append InstCallback for the current instruction
 
 .. doxygenenum:: InstPosition
+    :project: QBDI_C
+
+.. doxygenenum:: CallbackPriority
     :project: QBDI_C
 
 .. doxygenenum:: VMAction
@@ -430,9 +433,14 @@ Log
 .. doxygenenum:: LogPriority
     :project: QBDI_C
 
-.. doxygenfunction:: qbdi_setLogOutput
+.. doxygenfunction:: qbdi_setLogFile
     :project: QBDI_C
 
-.. doxygenfunction:: qbdi_addLogFilter
+.. doxygenfunction:: qbdi_setLogConsole
     :project: QBDI_C
 
+.. doxygenfunction:: qbdi_setLogDefault
+    :project: QBDI_C
+
+.. doxygenfunction:: qbdi_setLogPriority
+    :project: QBDI_C

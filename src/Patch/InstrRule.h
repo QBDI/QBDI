@@ -49,7 +49,7 @@ protected:
   int priority;
 
 public:
-  InstrRule(int priority = 0) : priority(priority) {}
+  InstrRule(int priority = PRIORITY_DEFAULT) : priority(priority) {}
 
   virtual ~InstrRule() = default;
 
@@ -80,7 +80,7 @@ public:
    */
   void instrument(Patch &patch, const LLVMCPU &llvmcpu,
                   const PatchGeneratorUniquePtrVec &patchGen, bool breakToHost,
-                  InstPosition position) const;
+                  InstPosition position, int priority) const;
 };
 
 class InstrRuleBasic : public AutoUnique<InstrRule, InstrRuleBasic> {
@@ -100,14 +100,15 @@ public:
    *                         patch instructions.
    * @param[in] position     An enum indicating wether this instrumentation
    *                         should be positioned before the instruction or
-   * after it.
+   *                         after it.
    * @param[in] breakToHost  A boolean determining whether this instrumentation
    *                         should end with a break to host (in the case of a
-   * callback for example).
+   *                         callback for example).
+   * @param[in] priority     Priority of the callback
    */
   InstrRuleBasic(PatchConditionUniquePtr &&condition,
                  PatchGeneratorUniquePtrVec &&patchGen, InstPosition position,
-                 bool breakToHost, int priority = 0);
+                 bool breakToHost, int priority = PRIORITY_DEFAULT);
 
   ~InstrRuleBasic() override;
 
@@ -131,7 +132,7 @@ public:
   inline bool tryInstrument(Patch &patch,
                             const LLVMCPU &llvmcpu) const override {
     if (canBeApplied(patch, llvmcpu)) {
-      instrument(patch, llvmcpu, patchGen, breakToHost, position);
+      instrument(patch, llvmcpu, patchGen, breakToHost, position, priority);
       return true;
     }
     return false;
@@ -162,10 +163,11 @@ public:
    * @param[in] breakToHost      A boolean determining whether this
    *                             instrumentation should end with a break to
    *                             host (in the case of a callback for example).
+   * @param[in] priority         Priority of the callback
    */
   InstrRuleDynamic(PatchConditionUniquePtr &&condition,
                    PatchGenMethod patchGenMethod, InstPosition position,
-                   bool breakToHost, int priority = 0);
+                   bool breakToHost, int priority = PRIORITY_DEFAULT);
 
   ~InstrRuleDynamic() override;
 
@@ -190,7 +192,7 @@ public:
                             const LLVMCPU &llvmcpu) const override {
     if (canBeApplied(patch, llvmcpu)) {
       instrument(patch, llvmcpu, patchGenMethod(patch, llvmcpu), breakToHost,
-                 position);
+                 position, priority);
       return true;
     }
     return false;

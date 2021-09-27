@@ -578,6 +578,191 @@ TEST_CASE_METHOD(VMTest, "VMTest-DelayedCacheFlush") {
   REQUIRE(count == info.count);
 }
 
+struct PriorityDataCall {
+  QBDI::rword addr;
+  QBDI::InstPosition pos;
+  int priority;
+
+  PriorityDataCall(QBDI::rword addr, QBDI::InstPosition pos, int priority)
+      : addr(addr), pos(pos), priority(priority) {}
+};
+
+static std::vector<QBDI::InstrRuleDataCBK>
+priorityInstrCB(QBDI::VMInstanceRef vm, const QBDI::InstAnalysis *inst,
+                void *data_) {
+  std::vector<QBDI::InstrRuleDataCBK> r;
+
+  r.emplace_back(
+      QBDI::InstPosition::PREINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((std::vector<PriorityDataCall> *)data)
+            ->emplace_back(
+                vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
+                QBDI::InstPosition::PREINST, -100);
+
+        return QBDI::VMAction::CONTINUE;
+      },
+      data_, -100);
+
+  r.emplace_back(
+      QBDI::InstPosition::POSTINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((std::vector<PriorityDataCall> *)data)
+            ->emplace_back(
+                vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
+                QBDI::InstPosition::POSTINST, 0);
+
+        return QBDI::VMAction::CONTINUE;
+      },
+      data_, 0);
+
+  r.emplace_back(
+      QBDI::InstPosition::POSTINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((std::vector<PriorityDataCall> *)data)
+            ->emplace_back(
+                vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
+                QBDI::InstPosition::POSTINST, 100);
+
+        return QBDI::VMAction::CONTINUE;
+      },
+      data_, 100);
+
+  r.emplace_back(
+      QBDI::InstPosition::PREINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((std::vector<PriorityDataCall> *)data)
+            ->emplace_back(
+                vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
+                QBDI::InstPosition::PREINST, 100);
+
+        return QBDI::VMAction::CONTINUE;
+      },
+      data_, 100);
+
+  r.emplace_back(
+      QBDI::InstPosition::PREINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((std::vector<PriorityDataCall> *)data)
+            ->emplace_back(
+                vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
+                QBDI::InstPosition::PREINST, 0);
+
+        return QBDI::VMAction::CONTINUE;
+      },
+      data_, 0);
+
+  r.emplace_back(
+      QBDI::InstPosition::POSTINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((std::vector<PriorityDataCall> *)data)
+            ->emplace_back(
+                vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
+                QBDI::InstPosition::POSTINST, -100);
+
+        return QBDI::VMAction::CONTINUE;
+      },
+      data_, -100);
+
+  return r;
+}
+
+TEST_CASE_METHOD(VMTest, "VMTest-Priority") {
+  std::vector<PriorityDataCall> callList;
+  QBDI::rword retval = 0;
+
+  vm->addCodeCB(
+      QBDI::InstPosition::PREINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((std::vector<PriorityDataCall> *)data)
+            ->emplace_back(
+                vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
+                QBDI::InstPosition::PREINST, -10);
+
+        return QBDI::VMAction::CONTINUE;
+      },
+      &callList, -10);
+
+  vm->addCodeCB(
+      QBDI::InstPosition::POSTINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((std::vector<PriorityDataCall> *)data)
+            ->emplace_back(
+                vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
+                QBDI::InstPosition::POSTINST, -67);
+
+        return QBDI::VMAction::CONTINUE;
+      },
+      &callList, -67);
+
+  vm->addCodeCB(
+      QBDI::InstPosition::POSTINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((std::vector<PriorityDataCall> *)data)
+            ->emplace_back(
+                vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
+                QBDI::InstPosition::POSTINST, 56);
+
+        return QBDI::VMAction::CONTINUE;
+      },
+      &callList, 56);
+
+  vm->addInstrRule(priorityInstrCB, QBDI::ANALYSIS_INSTRUCTION, &callList);
+
+  vm->addCodeCB(
+      QBDI::InstPosition::PREINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((std::vector<PriorityDataCall> *)data)
+            ->emplace_back(
+                vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
+                QBDI::InstPosition::PREINST, 27);
+
+        return QBDI::VMAction::CONTINUE;
+      },
+      &callList, 27);
+
+  vm->addCodeCB(
+      QBDI::InstPosition::PREINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((std::vector<PriorityDataCall> *)data)
+            ->emplace_back(
+                vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
+                QBDI::InstPosition::PREINST, -77);
+
+        return QBDI::VMAction::CONTINUE;
+      },
+      &callList, -77);
+
+  vm->call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+
+  REQUIRE(callList.size() >= 11);
+
+  for (int i = 1; i < callList.size(); i++) {
+    if (callList[i - 1].addr == callList[i].addr) {
+      if (callList[i - 1].pos == callList[i].pos) {
+        REQUIRE(callList[i - 1].priority >= callList[i].priority);
+      } else {
+        REQUIRE(callList[i - 1].pos == QBDI::InstPosition::PREINST);
+        REQUIRE(callList[i].pos == QBDI::InstPosition::POSTINST);
+      }
+    }
+  }
+
+  SUCCEED();
+}
+
 // Test copy/move constructor/assignment operator
 
 struct MoveCallbackStruct {

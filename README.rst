@@ -209,22 +209,30 @@ Then, the following commands must be run::
 Android
 +++++++
 
-Cross-compiling for Android requires the NDK to be installed on your workstation. For now, it has only been tested under Linux.
-If not already installed, you can download the latest Android NDK package through the `official website <https://developer.android.com/ndk/downloads>`_.
-Afterwards, the ``config-android-*.sh`` configuration script needs to be customised to match your NDK installation
-directory and the target platform:
+Cross-compiling for Android requires the NDK (or the SDK) to be installed on your workstation.
+For now, it has only been tested under Linux.
+If not already installed, you can download the latest Android NDK package
+through the `official website <https://developer.android.com/ndk/downloads>`_
+and extract it.
+Afterwards, the ``config-android-*.sh`` configuration script needs to be
+customised to match your NDK installation directory and the target platform.::
 
-* ``NDK_PATH`` should point to your Android NDK
+    # Configure and compile QBDI X86_64 with a NDK
+    mkdir build && cd build
+    NDK_PATH=<your_NDK_PATH> ../cmake/config/config-android-X86_64.sh
+    ninja
 
-At this point, you should be able to continue following the instructions of the Linux section since the procedure is the same.
+    # Configure and compile QBDI X86 with a SDK
+    mkdir build && cd build
+    ANDROID_SDK_ROOT=<your_SDK_PATH> ../cmake/config/config-android-X86.sh
+    ninja
 
 PyQBDI compilation
 ++++++++++++++++++
 
 The PyQDBI library (apart from the wheel package) can be built by solely passing the **'-DQBDI_TOOLS_PYQBDI=ON'** option to the CMake build system.
 
-However, if you want to build the wheel package, you have to compile the LLVM libraries beforehand.
-Once done, you can run these commands::
+However, if you want to build the wheel package, you can run these commands::
 
     python -m pip install --upgrade pip
     python -m pip install setuptools wheel
