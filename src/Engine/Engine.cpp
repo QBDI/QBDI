@@ -341,6 +341,7 @@ void Engine::instrument(std::vector<Patch> &basicBlock, size_t patchEnd) {
         QBDI_DEBUG("Instrumentation rule {:x} applied", item.first);
       }
     }
+    patch.finalizeInstsPatch();
   }
 }
 
@@ -518,7 +519,7 @@ uint32_t Engine::addInstrRule(std::unique_ptr<InstrRule> &&rule) {
   auto it = std::upper_bound(instrRules.begin(), instrRules.end(), v,
                              [](const decltype(instrRules)::value_type &a,
                                 const decltype(instrRules)::value_type &b) {
-                               return a.second->getPriority() <
+                               return a.second->getPriority() >
                                       b.second->getPriority();
                              });
   instrRules.insert(it, std::move(v));

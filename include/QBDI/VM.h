@@ -317,24 +317,28 @@ public:
    *                       (PREINST / POSTINST).
    * @param[in] cbk        A function pointer to the callback.
    * @param[in] data       User defined data passed to the callback.
+   * @param[in] priority   The priority of the callback.
    *
    * @return The id of the registered instrumentation (or
    * VMError::INVALID_EVENTID in case of failure).
    */
   uint32_t addMnemonicCB(const char *mnemonic, InstPosition pos,
-                         InstCallback cbk, void *data);
+                         InstCallback cbk, void *data,
+                         int priority = PRIORITY_DEFAULT);
 
   /*! Register a callback event for every instruction executed.
    *
-   * @param[in] pos   Relative position of the event callback
-   *                  (PREINST / POSTINST).
-   * @param[in] cbk   A function pointer to the callback.
-   * @param[in] data  User defined data passed to the callback.
+   * @param[in] pos        Relative position of the event callback
+   *                       (PREINST / POSTINST).
+   * @param[in] cbk        A function pointer to the callback.
+   * @param[in] data       User defined data passed to the callback.
+   * @param[in] priority   The priority of the callback.
    *
    * @return The id of the registered instrumentation
    * (or VMError::INVALID_EVENTID in case of failure).
    */
-  uint32_t addCodeCB(InstPosition pos, InstCallback cbk, void *data);
+  uint32_t addCodeCB(InstPosition pos, InstCallback cbk, void *data,
+                     int priority = PRIORITY_DEFAULT);
 
   /*! Register a callback for when a specific address is executed.
    *
@@ -342,12 +346,13 @@ public:
    * @param[in] pos      Relative position of the callback (PREINST / POSTINST).
    * @param[in] cbk      A function pointer to the callback.
    * @param[in] data     User defined data passed to the callback.
+   * @param[in] priority The priority of the callback.
    *
    * @return The id of the registered instrumentation (or
    * VMError::INVALID_EVENTID in case of failure).
    */
   uint32_t addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk,
-                         void *data);
+                         void *data, int priority = PRIORITY_DEFAULT);
 
   /*! Register a callback for when a specific address range is executed.
    *
@@ -358,12 +363,14 @@ public:
    * @param[in] pos      Relative position of the callback (PREINST / POSTINST).
    * @param[in] cbk      A function pointer to the callback.
    * @param[in] data     User defined data passed to the callback.
+   * @param[in] priority The priority of the callback.
    *
    * @return The id of the registered instrumentation (or
    * VMError::INVALID_EVENTID in case of failure).
    */
   uint32_t addCodeRangeCB(rword start, rword end, InstPosition pos,
-                          InstCallback cbk, void *data);
+                          InstCallback cbk, void *data,
+                          int priority = PRIORITY_DEFAULT);
 
   /*! Register a callback event for every memory access matching the type
    * bitfield made by the instructions.
@@ -372,16 +379,18 @@ public:
    *                       QBDI::MEMORY_WRITE or both (QBDI::MEMORY_READ_WRITE).
    * @param[in] cbk        A function pointer to the callback.
    * @param[in] data       User defined data passed to the callback.
+   * @param[in] priority   The priority of the callback.
    *
    * @return The id of the registered instrumentation
    * (or VMError::INVALID_EVENTID in case of failure).
    */
-  uint32_t addMemAccessCB(MemoryAccessType type, InstCallback cbk, void *data);
+  uint32_t addMemAccessCB(MemoryAccessType type, InstCallback cbk, void *data,
+                          int priority = PRIORITY_DEFAULT);
 
   /*! Add a virtual callback which is triggered for any memory access at a
    * specific address matching the access type. Virtual callbacks are called via
    * callback forwarding by a gate callback triggered on every memory access.
-   * This incurs a high performance cost.
+   * This incurs a high performance cost. The callback has the default priority.
    *
    * @param[in] address  Code address which will trigger the callback.
    * @param[in] type     A mode bitfield: either QBDI::MEMORY_READ,
@@ -398,7 +407,8 @@ public:
   /*! Add a virtual callback which is triggered for any memory access in a
    * specific address range matching the access type. Virtual callbacks are
    * called via callback forwarding by a gate callback triggered on every memory
-   * access. This incurs a high performance cost.
+   * access. This incurs a high performance cost. The callback has the default
+   * priority.
    *
    * @param[in] start    Start of the address range which will trigger the
    *                     callback.

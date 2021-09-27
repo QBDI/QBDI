@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
   // Constructing a new QBDI VM
   qbdi_initVM(&vm, NULL, NULL, 0);
   // Registering count() callback to be called after every instruction
-  qbdi_addCodeCB(vm, QBDI_POSTINST, count, &counter);
+  qbdi_addCodeCB(vm, QBDI_POSTINST, count, &counter, 0);
 
   // Get a pointer to the GPR state of the VM
   state = qbdi_getGPRState(vm);

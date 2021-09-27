@@ -546,8 +546,8 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-movsb") {
       {(QBDI::rword)&v1, v1, 1, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
   }};
   ExpectedMemoryAccesses expectedPost = {{
-      {(QBDI::rword)&v2, v1, 1, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
       {(QBDI::rword)&v1, v1, 1, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
+      {(QBDI::rword)&v2, v1, 1, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
   }};
 
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
@@ -578,8 +578,8 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-movsw") {
 
   QBDI::rword v1 = 0x789f, v2 = 0xbd67;
   ExpectedMemoryAccesses expected = {{
-      {(QBDI::rword)&v2, v1, 2, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
       {(QBDI::rword)&v1, v1, 2, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
+      {(QBDI::rword)&v2, v1, 2, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
   }};
 
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
@@ -607,8 +607,8 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-movsl") {
 
   QBDI::rword v1 = 0xa579eb9d, v2 = 0x2389befa;
   ExpectedMemoryAccesses expected = {{
-      {(QBDI::rword)&v2, v1, 4, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
       {(QBDI::rword)&v1, v1, 4, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
+      {(QBDI::rword)&v2, v1, 4, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
   }};
 
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
@@ -636,8 +636,8 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-movsq") {
 
   QBDI::rword v1 = 0xb036789eb8ea, v2 = 0xab8e602baef846;
   ExpectedMemoryAccesses expected = {{
-      {(QBDI::rword)&v2, v1, 8, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
       {(QBDI::rword)&v1, v1, 8, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
+      {(QBDI::rword)&v2, v1, 8, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
   }};
 
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
@@ -666,8 +666,8 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-movsb2") {
 
   QBDI::rword v1 = 0x8, v2 = 0x7f;
   ExpectedMemoryAccesses expected = {{
-      {(QBDI::rword)&v2, v1, 1, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
       {(QBDI::rword)&v1, v1, 1, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
+      {(QBDI::rword)&v2, v1, 1, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
   }};
 
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
@@ -696,8 +696,8 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-movsw2") {
 
   QBDI::rword v1 = 0xad63, v2 = 0x6219;
   ExpectedMemoryAccesses expected = {{
-      {(QBDI::rword)&v2, v1, 2, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
       {(QBDI::rword)&v1, v1, 2, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
+      {(QBDI::rword)&v2, v1, 2, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
   }};
 
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
@@ -726,8 +726,8 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-movsl2") {
 
   QBDI::rword v1 = 0xefa036db, v2 = 0xefd7137a;
   ExpectedMemoryAccesses expected = {{
-      {(QBDI::rword)&v2, v1, 4, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
       {(QBDI::rword)&v1, v1, 4, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
+      {(QBDI::rword)&v2, v1, 4, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
   }};
 
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
@@ -756,8 +756,8 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-movsq2") {
 
   QBDI::rword v1 = 0x2360Abed083, v2 = 0xeb0367a801346;
   ExpectedMemoryAccesses expected = {{
-      {(QBDI::rword)&v2, v1, 8, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
       {(QBDI::rword)&v1, v1, 8, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
+      {(QBDI::rword)&v2, v1, 8, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
   }};
 
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
@@ -790,9 +790,9 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-rep_movsl") {
        QBDI::MEMORY_UNKNOWN_VALUE | QBDI::MEMORY_UNKNOWN_SIZE},
   }};
   ExpectedMemoryAccesses expectedPost = {{
-      {(QBDI::rword)&v2, 0, sizeof(v1), QBDI::MEMORY_WRITE,
-       QBDI::MEMORY_UNKNOWN_VALUE},
       {(QBDI::rword)&v1, 0, sizeof(v1), QBDI::MEMORY_READ,
+       QBDI::MEMORY_UNKNOWN_VALUE},
+      {(QBDI::rword)&v2, 0, sizeof(v1), QBDI::MEMORY_WRITE,
        QBDI::MEMORY_UNKNOWN_VALUE},
   }};
 
@@ -832,9 +832,9 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-rep_movsl2") {
        QBDI::MEMORY_UNKNOWN_VALUE | QBDI::MEMORY_UNKNOWN_SIZE},
   }};
   ExpectedMemoryAccesses expectedPost = {{
-      {(QBDI::rword)&v2, 0, sizeof(v1), QBDI::MEMORY_WRITE,
-       QBDI::MEMORY_UNKNOWN_VALUE},
       {(QBDI::rword)&v1, 0, sizeof(v1), QBDI::MEMORY_READ,
+       QBDI::MEMORY_UNKNOWN_VALUE},
+      {(QBDI::rword)&v2, 0, sizeof(v1), QBDI::MEMORY_WRITE,
        QBDI::MEMORY_UNKNOWN_VALUE},
   }};
 
@@ -1379,9 +1379,9 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86_64-xchgrm") {
       {(QBDI::rword)&buff, v1, 8, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
   }};
   ExpectedMemoryAccesses expectedPost = {{
+      {(QBDI::rword)&buff, v1, 8, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
       {(QBDI::rword)&buff, (QBDI::rword)&buff, 8, QBDI::MEMORY_WRITE,
        QBDI::MEMORY_NO_FLAGS},
-      {(QBDI::rword)&buff, v1, 8, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
   }};
 
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);

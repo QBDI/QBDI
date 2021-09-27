@@ -24,6 +24,7 @@
 #include "Patch/Patch.h"
 #include "Patch/Register.h"
 #include "Patch/RelocatableInst.h"
+#include "Utility/LogSys.h"
 
 #include "llvm/MC/MCInst.h"
 
@@ -63,7 +64,11 @@ void Patch::append(RelocatableInst::UniquePtr &&r) {
 
 void Patch::append(RelocatableInst::UniquePtrVec v) {
   metadata.patchSize += v.size();
-  std::move(v.begin(), v.end(), std::back_inserter(insts));
+  if (insts.empty()) {
+    insts.swap(v);
+  } else {
+    std::move(v.begin(), v.end(), std::back_inserter(insts));
+  }
 }
 
 void Patch::prepend(RelocatableInst::UniquePtr &&r) {
@@ -72,11 +77,66 @@ void Patch::prepend(RelocatableInst::UniquePtr &&r) {
 }
 
 void Patch::prepend(RelocatableInst::UniquePtrVec v) {
-  metadata.patchSize += v.size();
-  // front iterator on std::vector may need to move all value at each move
-  // use a back_inserter in v and swap the vector at the end
-  std::move(insts.begin(), insts.end(), std::back_inserter(v));
-  v.swap(insts);
+  if (not v.empty()) {
+    metadata.patchSize += v.size();
+    // front iterator on std::vector may need to move all value at each move
+    // use a back_inserter in v and swap the vector at the end
+    std::move(insts.begin(), insts.end(), std::back_inserter(v));
+    v.swap(insts);
+  }
+}
+
+void Patch::addInstsPatch(InstPosition position, int priority,
+                          std::vector<std::unique_ptr<RelocatableInst>> v) {
+
+  InstrPatch el{position, priority, std::move(v)};
+
+  auto it = std::upper_bound(instsPatchs.begin(), instsPatchs.end(), el,
+                             [](const InstrPatch &a, const InstrPatch &b) {
+                               return a.priority > b.priority;
+                             });
+  instsPatchs.insert(it, std::move(el));
+}
+
+void Patch::finalizeInstsPatch() {
+  if (instsPatchs.empty()) {
+    return;
+  }
+
+  // avoid to used prepend
+  std::vector<std::unique_ptr<RelocatableInst>> prePatch{};
+
+  // Add PREINST callback by priority order
+  for (InstrPatch &el : instsPatchs) {
+    if (el.position == PREINST) {
+      std::vector<std::unique_ptr<RelocatableInst>> v;
+      v.swap(el.insts);
+      std::move(v.begin(), v.end(), std::back_inserter(prePatch));
+    } else if (el.position == POSTINST) {
+      continue;
+    } else {
+      QBDI_ERROR("Invalid position 0x{:x}", el.position);
+      abort();
+    }
+  }
+
+  prepend(std::move(prePatch));
+
+  // Add POSTINST callback by priority order
+  for (InstrPatch &el : instsPatchs) {
+    if (el.position == PREINST) {
+      continue;
+    } else if (el.position == POSTINST) {
+      std::vector<std::unique_ptr<RelocatableInst>> v;
+      v.swap(el.insts);
+      append(std::move(v));
+    } else {
+      QBDI_ERROR("Invalid position 0x{:x}", el.position);
+      abort();
+    }
+  }
+
+  instsPatchs.clear();
 }
 
 } // namespace QBDI

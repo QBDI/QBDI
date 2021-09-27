@@ -392,20 +392,20 @@ std::vector<std::unique_ptr<InstrRule>> getInstrRuleMemAccessRead() {
   return conv_unique<InstrRule>(
       InstrRuleDynamic::unique(DoesReadAccess::unique(),
                                generatePreReadInstrumentPatch, PREINST, false,
-                               0x8000 /* first PREINST */),
+                               PRIORITY_MEMACCESS_LIMIT + 1),
       InstrRuleDynamic::unique(DoesReadAccess::unique(),
                                generatePostReadInstrumentPatch, POSTINST, false,
-                               -0x8000 /* first POSTINST */));
+                               PRIORITY_MEMACCESS_LIMIT + 1));
 }
 
 std::vector<std::unique_ptr<InstrRule>> getInstrRuleMemAccessWrite() {
   return conv_unique<InstrRule>(
       InstrRuleDynamic::unique(DoesWriteAccess::unique(),
                                generatePreWriteInstrumentPatch, PREINST, false,
-                               0x8000 /* first PRETINST */),
+                               PRIORITY_MEMACCESS_LIMIT),
       InstrRuleDynamic::unique(DoesWriteAccess::unique(),
                                generatePostWriteInstrumentPatch, POSTINST,
-                               false, -0x8000 /* first POSTINST */));
+                               false, PRIORITY_MEMACCESS_LIMIT));
 }
 
 } // namespace QBDI

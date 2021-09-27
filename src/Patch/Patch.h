@@ -26,6 +26,7 @@
 #include "Patch/InstMetadata.h"
 #include "Patch/Register.h"
 
+#include "QBDI/Callback.h"
 #include "QBDI/State.h"
 
 namespace llvm {
@@ -36,7 +37,16 @@ namespace QBDI {
 class LLVMCPU;
 class RelocatableInst;
 
+struct InstrPatch {
+  InstPosition position;
+  int priority;
+  std::vector<std::unique_ptr<RelocatableInst>> insts;
+};
+
 class Patch {
+private:
+  std::vector<InstrPatch> instsPatchs;
+
 public:
   InstMetadata metadata;
   std::vector<std::unique_ptr<RelocatableInst>> insts;
@@ -65,6 +75,11 @@ public:
 
   void prepend(std::unique_ptr<RelocatableInst> &&r);
   void prepend(std::vector<std::unique_ptr<RelocatableInst>> v);
+
+  void addInstsPatch(InstPosition position, int priority,
+                     std::vector<std::unique_ptr<RelocatableInst>> v);
+
+  void finalizeInstsPatch();
 };
 
 } // namespace QBDI

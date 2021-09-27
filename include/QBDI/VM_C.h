@@ -284,10 +284,11 @@ QBDI_EXPORT uint32_t qbdi_addInstrRuleRange(VMInstanceRef instance, rword start,
  *                      (QBDI_PREINST / QBDI_POSTINST).
  * @param[in] cbk       A function pointer to the callback
  * @param[in] data      User defined data passed to the callback.
+ * @param[in] priority  Priority of the callback
  */
 QBDI_EXPORT void qbdi_addInstrRuleData(InstrRuleDataVec cbks,
                                        InstPosition position, InstCallback cbk,
-                                       void *data);
+                                       void *data, int priority);
 
 /*! Register a callback event for every memory access matching the type bitfield
  * made by the instructions.
@@ -297,13 +298,15 @@ QBDI_EXPORT void qbdi_addInstrRuleData(InstrRuleDataVec cbks,
  *                       QBDI_MEMORY_WRITE or both (QBDI_MEMORY_READ_WRITE).
  * @param[in] cbk        A function pointer to the callback.
  * @param[in] data       User defined data passed to the callback.
+ * @param[in] priority   The priority of the callback.
  *
  * @return The id of the registered instrumentation (or QBDI_INVALID_EVENTID
  * in case of failure).
  */
 QBDI_EXPORT uint32_t qbdi_addMemAccessCB(VMInstanceRef instance,
                                          MemoryAccessType type,
-                                         InstCallback cbk, void *data);
+                                         InstCallback cbk, void *data,
+                                         int priority);
 
 /*! Add a virtual callback which is triggered for any memory access at a
  * specific address matching the access type. Virtual callbacks are called via
@@ -353,13 +356,15 @@ QBDI_EXPORT uint32_t qbdi_addMemRangeCB(VMInstanceRef instance, rword start,
  *                       (QBDI_PREINST / QBDI_POSTINST).
  * @param[in] cbk        A function pointer to the callback.
  * @param[in] data       User defined data passed to the callback.
+ * @param[in] priority   The priority of the callback.
  *
  * @return The id of the registered instrumentation (or QBDI_INVALID_EVENTID
  * in case of failure).
  */
 QBDI_EXPORT uint32_t qbdi_addMnemonicCB(VMInstanceRef instance,
                                         const char *mnemonic, InstPosition pos,
-                                        InstCallback cbk, void *data);
+                                        InstCallback cbk, void *data,
+                                        int priority);
 
 /*! Register a callback event for a specific instruction event.
  *
@@ -368,12 +373,13 @@ QBDI_EXPORT uint32_t qbdi_addMnemonicCB(VMInstanceRef instance,
  *                      (QBDI_PREINST / QBDI_POSTINST).
  * @param[in] cbk       A function pointer to the callback.
  * @param[in] data      User defined data passed to the callback.
+ * @param[in] priority  The priority of the callback.
  *
  * @return The id of the registered instrumentation (or QBDI_INVALID_EVENTID
  * in case of failure).
  */
 QBDI_EXPORT uint32_t qbdi_addCodeCB(VMInstanceRef instance, InstPosition pos,
-                                    InstCallback cbk, void *data);
+                                    InstCallback cbk, void *data, int priority);
 
 /*! Register a callback for when a specific address is executed.
  *
@@ -383,13 +389,14 @@ QBDI_EXPORT uint32_t qbdi_addCodeCB(VMInstanceRef instance, InstPosition pos,
  *                      (QBDI_PREINST / QBDI_POSTINST).
  * @param[in] cbk       A function pointer to the callback.
  * @param[in] data      User defined data passed to the callback.
+ * @param[in] priority  The priority of the callback.
  *
  * @return The id of the registered instrumentation (or QBDI_INVALID_EVENTID
  * in case of failure).
  */
 QBDI_EXPORT uint32_t qbdi_addCodeAddrCB(VMInstanceRef instance, rword address,
                                         InstPosition pos, InstCallback cbk,
-                                        void *data);
+                                        void *data, int priority);
 
 /*! Register a callback for when a specific address range is executed.
  *
@@ -400,13 +407,15 @@ QBDI_EXPORT uint32_t qbdi_addCodeAddrCB(VMInstanceRef instance, rword address,
  *                   (QBDI_PREINST / QBDI_POSTINST).
  * @param[in] cbk       A function pointer to the callback.
  * @param[in] data      User defined data passed to the callback.
+ * @param[in] priority  The priority of the callback.
  *
  * @return The id of the registered instrumentation (or QBDI_INVALID_EVENTID
  * in case of failure).
  */
 QBDI_EXPORT uint32_t qbdi_addCodeRangeCB(VMInstanceRef instance, rword start,
                                          rword end, InstPosition pos,
-                                         InstCallback cbk, void *data);
+                                         InstCallback cbk, void *data,
+                                         int priority);
 
 /*! Register a callback event for a specific VM event.
  *

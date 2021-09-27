@@ -60,12 +60,12 @@ int main(int argc, char **argv) {
   qbdi_allocateVirtualStack(state, STACK_SIZE, &fakestack);
 
   // Registering showInstruction() callback to print a trace of the execution
-  uint32_t cid = qbdi_addCodeCB(vm, QBDI_PREINST, showInstruction, NULL);
+  uint32_t cid = qbdi_addCodeCB(vm, QBDI_PREINST, showInstruction, NULL, 0);
   assert(cid != QBDI_INVALID_EVENTID);
 
   // Registering countIteration() callback
-  qbdi_addMnemonicCB(vm, "CALL*", QBDI_PREINST, countIteration,
-                     &iterationCount);
+  qbdi_addMnemonicCB(vm, "CALL*", QBDI_PREINST, countIteration, &iterationCount,
+                     0);
 
   // Setup Instrumentation Range
   bool res = qbdi_addInstrumentedModuleFromAddr(vm, (rword)&fibonacci);
