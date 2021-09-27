@@ -107,7 +107,7 @@ a callback for every instruction. The callback can be called before the instruct
 
 .. code:: c
 
-    uint32_t cid = qbdi_addCodeCB(vm, QBDI_PREINST, showInstruction, NULL);
+    uint32_t cid = qbdi_addCodeCB(vm, QBDI_PREINST, showInstruction, NULL, 0);
     assert(cid != QBDI_INVALID_EVENTID);
 
 The function returns a callback ID or the special ID :cpp:enumerator:`QBDI_INVALID_EVENTID <VMError::QBDI_INVALID_EVENTID>` if
@@ -130,7 +130,7 @@ All QBDI callbacks allow users to pass a custom parameter ``data`` of type ``voi
     }
 
     unsigned iterationCount = 0;
-    qbdi_addMnemonicCB(vm, "CALL*", QBDI_PREINST, countIteration, &iterationCount);
+    qbdi_addMnemonicCB(vm, "CALL*", QBDI_PREINST, countIteration, &iterationCount, 0);
 
 
 Set instrumented ranges

@@ -377,45 +377,24 @@ Instruction Conditions
 ^^^^^^^^^^^^^^^^^^^^^^
 
 * :cpp:class:`QBDI::OpIs`
-* :cpp:class:`QBDI::RegIs`
 * :cpp:class:`QBDI::UseReg`
 * :cpp:class:`QBDI::AddressInRange`
-* :cpp:class:`QBDI::OperandIsReg`
-* :cpp:class:`QBDI::OperandIsImm`
 
 .. doxygenfunction:: QBDI::OpIs::OpIs
-
-.. doxygenfunction:: QBDI::RegIs::RegIs
 
 .. doxygenfunction:: QBDI::UseReg::UseReg
 
 .. doxygenfunction:: QBDI::InstructionInRange::InstructionInRange
-
-.. doxygenfunction:: QBDI::OperandIsReg::OperandIsReg
-
-.. doxygenfunction:: QBDI::OperandIsImm::OperandIsImm
 
 Memory Access Conditions
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 * :cpp:class:`QBDI::DoesReadAccess`
 * :cpp:class:`QBDI::DoesWriteAccess`
-* :cpp:class:`QBDI::ReadAccessSizeIs`
-* :cpp:class:`QBDI::WriteAccessSizeIs`
-* :cpp:class:`QBDI::IsStackRead`
-* :cpp:class:`QBDI::IsStackWrite`
 
 .. doxygenfunction:: QBDI::DoesReadAccess::DoesReadAccess
 
 .. doxygenfunction:: QBDI::DoesWriteAccess::DoesWriteAccess
-
-.. doxygenfunction:: QBDI::ReadAccessSizeIs::ReadAccessSizeIs
-
-.. doxygenfunction:: QBDI::WriteAccessSizeIs::WriteAccessSizeIs
-
-.. doxygenfunction:: QBDI::IsStackRead::IsStackRead
-
-.. doxygenfunction:: QBDI::IsStackWrite::IsStackWrite
 
 PatchGenerators
 +++++++++++++++
@@ -432,7 +411,7 @@ Registry and Temporary Operations
 
 .. doxygenfunction:: QBDI::SaveReg::SaveReg(Reg reg, Offset offset)
 
-.. doxygenfunction:: QBDI::CopyReg::CopyReg(Temp temp, Reg reg)
+.. doxygenfunction:: QBDI::CopyReg::CopyReg(Reg reg, Temp temp)
 
 .. doxygenfunction:: QBDI::WriteTemp::WriteTemp(Temp temp, Offset offset)
 
@@ -461,13 +440,13 @@ Memory Access Information Queries
 * :cpp:class:`QBDI::GetReadValue`
 * :cpp:class:`QBDI::GetWriteValue`
 
-.. doxygenfunction:: QBDI::GetReadAddress::GetReadAddress(Temp)
+.. doxygenfunction:: QBDI::GetReadAddress::GetReadAddress
 
-.. doxygenfunction:: QBDI::GetWriteAddress::GetWriteAddress(Temp)
+.. doxygenfunction:: QBDI::GetWriteAddress::GetWriteAddress
 
-.. doxygenfunction:: QBDI::GetReadValue::GetReadValue(Temp)
+.. doxygenfunction:: QBDI::GetReadValue::GetReadValue
 
-.. doxygenfunction:: QBDI::GetWriteValue::GetWriteValue(Temp)
+.. doxygenfunction:: QBDI::GetWriteValue::GetWriteValue
 
 Special
 ^^^^^^^
@@ -475,7 +454,7 @@ Special
 * :cpp:class:`QBDI::ModifyInstruction`
 * :cpp:class:`QBDI::DoNotInstrument`
 
-.. doxygenfunction:: QBDI::ModifyInstruction::ModifyInstruction(InstTransform::SharedPtrVec)
+.. doxygenfunction:: QBDI::ModifyInstruction::ModifyInstruction
 
 .. doxygenfunction:: QBDI::DoNotInstrument::DoNotInstrument()
 

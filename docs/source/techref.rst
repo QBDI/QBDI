@@ -7,4 +7,3 @@ Technical Reference
    Instrumentation Process <instrumentation_process>
    ExecBlock               <execblock>
    PatchDSL                <patchdsl>
-   Logging System          <logs>

@@ -229,6 +229,8 @@ Callback
 
 .. autodata:: pyqbdi.InstPosition
 
+.. autodata:: pyqbdi.CallbackPriority
+
 .. autodata:: pyqbdi.VMAction
 
 .. _instanalysis-pyqbdi:
@@ -332,7 +334,7 @@ Log
 
 .. autodata:: pyqbdi.LogPriority
 
-.. autofunction:: pyqbdi.addLogFilter
+.. autofunction:: pyqbdi.setLogPriority
 
 Range
 +++++

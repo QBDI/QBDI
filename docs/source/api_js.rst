@@ -274,6 +274,11 @@ Callback
     .. js:autoattribute:: PREINST
     .. js:autoattribute:: POSTINST
 
+.. js:autoclass:: CallbackPriority
+
+    .. js:autoattribute:: PRIORITY_DEFAULT
+    .. js:autoattribute:: PRIORITY_MEMACCESS_LIMIT
+
 .. _instanalysis-js:
 
 InstAnalysis

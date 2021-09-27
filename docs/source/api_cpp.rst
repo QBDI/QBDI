@@ -172,14 +172,14 @@ Register state
 
     For X86 architecture:
 
-    .. include:: ../../include/QBDI/State.h
+    .. include:: ../../include/QBDI/arch/X86/State.h
        :start-after: SPHINX_X86_GPRSTATE_BEGIN
        :end-before: // SPHINX_X86_GPRSTATE_END
        :code:
 
     For X86_64 architecture:
 
-    .. include:: ../../include/QBDI/State.h
+    .. include:: ../../include/QBDI/arch/X86_64/State.h
        :start-after: SPHINX_X86_64_GPRSTATE_BEGIN
        :end-before: // SPHINX_X86_64_GPRSTATE_END
        :code:
@@ -190,14 +190,14 @@ Register state
 
     For X86 architecture:
 
-    .. include:: ../../include/QBDI/State.h
+    .. include:: ../../include/QBDI/arch/X86/State.h
        :start-after: SPHINX_X86_FPRSTATE_BEGIN
        :end-before: // SPHINX_X86_FPRSTATE_END
        :code:
 
     For X86_64 architecture:
 
-    .. include:: ../../include/QBDI/State.h
+    .. include:: ../../include/QBDI/arch/X86_64/State.h
        :start-after: SPHINX_X86_64_FPRSTATE_BEGIN
        :end-before: // SPHINX_X86_64_FPRSTATE_END
        :code:
@@ -242,6 +242,8 @@ Callback
     :members:
 
 .. doxygenenum:: QBDI::InstPosition
+
+.. doxygenenum:: QBDI::CallbackPriority
 
 .. doxygenenum:: QBDI::VMAction
 
@@ -340,9 +342,13 @@ Log
 
 .. doxygenenum:: QBDI::LogPriority
 
-.. doxygenfunction:: QBDI::setLogOutput
+.. doxygenfunction:: QBDI::setLogFile
 
-.. doxygenfunction:: QBDI::addLogFilter
+.. doxygenfunction:: QBDI::setLogPriority
+
+.. doxygenfunction:: QBDI::setLogConsole
+
+.. doxygenfunction:: QBDI::setLogDefault
 
 Range
 +++++
