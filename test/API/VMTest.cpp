@@ -583,80 +583,92 @@ struct PriorityDataCall {
   QBDI::InstPosition pos;
   int priority;
 
-  PriorityDataCall(QBDI::rword addr, QBDI::InstPosition pos, int priority) :
-    addr(addr), pos(pos), priority(priority) {}
+  PriorityDataCall(QBDI::rword addr, QBDI::InstPosition pos, int priority)
+      : addr(addr), pos(pos), priority(priority) {}
 };
 
 static std::vector<QBDI::InstrRuleDataCBK>
 priorityInstrCB(QBDI::VMInstanceRef vm, const QBDI::InstAnalysis *inst,
-                 void *data_) {
+                void *data_) {
   std::vector<QBDI::InstrRuleDataCBK> r;
 
-  r.emplace_back(QBDI::InstPosition::PREINST,
+  r.emplace_back(
+      QBDI::InstPosition::PREINST,
       [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
          QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((std::vector<PriorityDataCall> *)data)
+            ->emplace_back(
+                vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
+                QBDI::InstPosition::PREINST, -100);
 
-          ((std::vector<PriorityDataCall>*) data)->emplace_back(
-              vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
-              QBDI::InstPosition::PREINST, -100);
+        return QBDI::VMAction::CONTINUE;
+      },
+      data_, -100);
 
-          return QBDI::VMAction::CONTINUE;
-      }, data_, -100);
-
-  r.emplace_back(QBDI::InstPosition::POSTINST,
+  r.emplace_back(
+      QBDI::InstPosition::POSTINST,
       [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
          QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((std::vector<PriorityDataCall> *)data)
+            ->emplace_back(
+                vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
+                QBDI::InstPosition::POSTINST, 0);
 
-          ((std::vector<PriorityDataCall>*) data)->emplace_back(
-              vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
-              QBDI::InstPosition::POSTINST, 0);
+        return QBDI::VMAction::CONTINUE;
+      },
+      data_, 0);
 
-          return QBDI::VMAction::CONTINUE;
-      }, data_, 0);
-
-  r.emplace_back(QBDI::InstPosition::POSTINST,
+  r.emplace_back(
+      QBDI::InstPosition::POSTINST,
       [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
          QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((std::vector<PriorityDataCall> *)data)
+            ->emplace_back(
+                vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
+                QBDI::InstPosition::POSTINST, 100);
 
-          ((std::vector<PriorityDataCall>*) data)->emplace_back(
-              vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
-              QBDI::InstPosition::POSTINST, 100);
+        return QBDI::VMAction::CONTINUE;
+      },
+      data_, 100);
 
-          return QBDI::VMAction::CONTINUE;
-      }, data_, 100);
-
-  r.emplace_back(QBDI::InstPosition::PREINST,
+  r.emplace_back(
+      QBDI::InstPosition::PREINST,
       [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
          QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((std::vector<PriorityDataCall> *)data)
+            ->emplace_back(
+                vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
+                QBDI::InstPosition::PREINST, 100);
 
-          ((std::vector<PriorityDataCall>*) data)->emplace_back(
-              vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
-              QBDI::InstPosition::PREINST, 100);
+        return QBDI::VMAction::CONTINUE;
+      },
+      data_, 100);
 
-          return QBDI::VMAction::CONTINUE;
-      }, data_, 100);
-
-  r.emplace_back(QBDI::InstPosition::PREINST,
+  r.emplace_back(
+      QBDI::InstPosition::PREINST,
       [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
          QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((std::vector<PriorityDataCall> *)data)
+            ->emplace_back(
+                vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
+                QBDI::InstPosition::PREINST, 0);
 
-          ((std::vector<PriorityDataCall>*) data)->emplace_back(
-              vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
-              QBDI::InstPosition::PREINST, 0);
+        return QBDI::VMAction::CONTINUE;
+      },
+      data_, 0);
 
-          return QBDI::VMAction::CONTINUE;
-      }, data_, 0);
-
-  r.emplace_back(QBDI::InstPosition::POSTINST,
+  r.emplace_back(
+      QBDI::InstPosition::POSTINST,
       [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
          QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((std::vector<PriorityDataCall> *)data)
+            ->emplace_back(
+                vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
+                QBDI::InstPosition::POSTINST, -100);
 
-          ((std::vector<PriorityDataCall>*) data)->emplace_back(
-              vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
-              QBDI::InstPosition::POSTINST, -100);
-
-          return QBDI::VMAction::CONTINUE;
-      }, data_, -100);
+        return QBDI::VMAction::CONTINUE;
+      },
+      data_, -100);
 
   return r;
 }
@@ -665,62 +677,72 @@ TEST_CASE_METHOD(VMTest, "VMTest-Priority") {
   std::vector<PriorityDataCall> callList;
   QBDI::rword retval = 0;
 
-  vm->addCodeCB(QBDI::InstPosition::PREINST,
+  vm->addCodeCB(
+      QBDI::InstPosition::PREINST,
       [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
          QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((std::vector<PriorityDataCall> *)data)
+            ->emplace_back(
+                vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
+                QBDI::InstPosition::PREINST, -10);
 
-          ((std::vector<PriorityDataCall>*) data)->emplace_back(
-              vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
-              QBDI::InstPosition::PREINST, -10);
+        return QBDI::VMAction::CONTINUE;
+      },
+      &callList, -10);
 
-          return QBDI::VMAction::CONTINUE;
-      }, &callList, -10);
-
-  vm->addCodeCB(QBDI::InstPosition::POSTINST,
+  vm->addCodeCB(
+      QBDI::InstPosition::POSTINST,
       [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
          QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((std::vector<PriorityDataCall> *)data)
+            ->emplace_back(
+                vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
+                QBDI::InstPosition::POSTINST, -67);
 
-          ((std::vector<PriorityDataCall>*) data)->emplace_back(
-              vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
-              QBDI::InstPosition::POSTINST, -67);
+        return QBDI::VMAction::CONTINUE;
+      },
+      &callList, -67);
 
-          return QBDI::VMAction::CONTINUE;
-      }, &callList, -67);
-
-  vm->addCodeCB(QBDI::InstPosition::POSTINST,
+  vm->addCodeCB(
+      QBDI::InstPosition::POSTINST,
       [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
          QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((std::vector<PriorityDataCall> *)data)
+            ->emplace_back(
+                vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
+                QBDI::InstPosition::POSTINST, 56);
 
-          ((std::vector<PriorityDataCall>*) data)->emplace_back(
-              vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
-              QBDI::InstPosition::POSTINST, 56);
-
-          return QBDI::VMAction::CONTINUE;
-      }, &callList, 56);
+        return QBDI::VMAction::CONTINUE;
+      },
+      &callList, 56);
 
   vm->addInstrRule(priorityInstrCB, QBDI::ANALYSIS_INSTRUCTION, &callList);
 
-  vm->addCodeCB(QBDI::InstPosition::PREINST,
+  vm->addCodeCB(
+      QBDI::InstPosition::PREINST,
       [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
          QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((std::vector<PriorityDataCall> *)data)
+            ->emplace_back(
+                vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
+                QBDI::InstPosition::PREINST, 27);
 
-          ((std::vector<PriorityDataCall>*) data)->emplace_back(
-              vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
-              QBDI::InstPosition::PREINST, 27);
+        return QBDI::VMAction::CONTINUE;
+      },
+      &callList, 27);
 
-          return QBDI::VMAction::CONTINUE;
-      }, &callList, 27);
-
-  vm->addCodeCB(QBDI::InstPosition::PREINST,
+  vm->addCodeCB(
+      QBDI::InstPosition::PREINST,
       [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
          QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((std::vector<PriorityDataCall> *)data)
+            ->emplace_back(
+                vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
+                QBDI::InstPosition::PREINST, -77);
 
-          ((std::vector<PriorityDataCall>*) data)->emplace_back(
-              vm->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION)->address,
-              QBDI::InstPosition::PREINST, -77);
-
-          return QBDI::VMAction::CONTINUE;
-      }, &callList, -77);
+        return QBDI::VMAction::CONTINUE;
+      },
+      &callList, -77);
 
   vm->call(&retval, (QBDI::rword)dummyFun0);
   REQUIRE(retval == (QBDI::rword)42);
@@ -736,7 +758,6 @@ TEST_CASE_METHOD(VMTest, "VMTest-Priority") {
         REQUIRE(callList[i].pos == QBDI::InstPosition::POSTINST);
       }
     }
-
   }
 
   SUCCEED();
