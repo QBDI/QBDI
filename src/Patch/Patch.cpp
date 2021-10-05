@@ -30,18 +30,11 @@
 
 namespace QBDI {
 
-Patch::Patch() {
-  metadata.patchSize = 0;
-  metadata.cpuMode = CPUMode::DEFAULT;
-}
-
 Patch::Patch(const llvm::MCInst &inst, rword address, rword instSize,
-             const LLVMCPU &llvmcpu) {
+             const LLVMCPU &llvmcpu)
+    : metadata(inst, address, instSize) {
   metadata.patchSize = 0;
   metadata.cpuMode = llvmcpu.getCPUMode();
-  metadata.inst = inst;
-  metadata.address = address;
-  metadata.instSize = instSize;
   metadata.execblockFlags = getExecBlockFlags(inst, llvmcpu);
 
   regUsage = getUsedGPR(metadata.inst, llvmcpu);
