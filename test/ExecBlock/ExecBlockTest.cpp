@@ -19,6 +19,7 @@
 #include <stdio.h>
 
 #include "ExecBlockTest.h"
+#include "PatchEmpty.h"
 
 #include "ExecBlock/ExecBlock.h"
 #include "Patch/Patch.h"
@@ -42,8 +43,8 @@ TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest-MultipleBasicBlock") {
   // Jit two different terminators
   QBDI::Patch::Vec terminator1;
   QBDI::Patch::Vec terminator2;
-  terminator1.push_back(QBDI::Patch());
-  terminator2.push_back(QBDI::Patch());
+  terminator1.push_back(generateEmptyPatch(0x42424242, *this));
+  terminator2.push_back(generateEmptyPatch(0x13371337, *this));
   terminator1[0].append(QBDI::getTerminator(0x42424242));
   terminator1[0].metadata.modifyPC = true;
   terminator2[0].append(QBDI::getTerminator(0x13371337));

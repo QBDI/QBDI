@@ -267,7 +267,7 @@ std::vector<Patch> Engine::patch(rword start) {
     llvm::MCInst inst;
     llvm::MCDisassembler::DecodeStatus dstatus;
     rword address;
-    Patch patch;
+    Patch *patch = nullptr;
     uint64_t instSize = 0;
 
     // Aggregate a complete patch
@@ -291,28 +291,29 @@ std::vector<Patch> Engine::patch(rword start) {
       for (uint32_t j = 0; j < patchRules.size(); j++) {
         if (patchRules[j].canBeApplied(inst, address, instSize, llvmcpu)) {
           QBDI_DEBUG("Patch rule {} applied", j);
-          if (patch.insts.size() == 0) {
-            patch = patchRules[j].generate(inst, address, instSize, llvmcpu);
+          if (patch == nullptr) {
+            basicBlock.push_back(
+                patchRules[j].generate(inst, address, instSize, llvmcpu));
+            patch = &basicBlock.back();
           } else {
             QBDI_DEBUG("Previous instruction merged");
-            patch = patchRules[j].generate(inst, address, instSize, llvmcpu,
-                                           &patch);
+            *patch =
+                patchRules[j].generate(inst, address, instSize, llvmcpu, patch);
           }
           break;
         }
       }
+      QBDI_REQUIRE_ACTION(patch != nullptr, abort());
       i += instSize;
-    } while (patch.metadata.merge);
-    QBDI_DEBUG("Patch of size {:x} generated", patch.metadata.patchSize);
+    } while (patch->metadata.merge);
+    QBDI_DEBUG("Patch of size {:x} generated", patch->metadata.patchSize);
 
-    if (patch.metadata.modifyPC) {
+    if (patch->metadata.modifyPC) {
       QBDI_DEBUG(
           "Basic block starting at address 0x{:x} ended at address 0x{:x}",
           start, address);
       basicBlockEnd = true;
     }
-
-    basicBlock.push_back(std::move(patch));
   }
 
   return basicBlock;

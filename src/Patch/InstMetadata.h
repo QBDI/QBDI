@@ -38,6 +38,15 @@ public:
   uint8_t execblockFlags;
   mutable InstAnalysisPtr analysis;
 
+  InstMetadata(const llvm::MCInst &inst, rword address = 0,
+               uint32_t instSize = 0, uint32_t patchSize = 0,
+               CPUMode cpuMode = CPUMode::DEFAULT, bool modifyPC = false,
+               bool merge = false, uint8_t execblockFlags = 0,
+               InstAnalysisPtr analysis = nullptr)
+      : inst(inst), address(address), instSize(instSize), patchSize(patchSize),
+        cpuMode(cpuMode), modifyPC(modifyPC), merge(merge),
+        execblockFlags(execblockFlags), analysis(std::move(analysis)) {}
+
   inline rword endAddress() const { return address + instSize; }
 
   inline InstMetadata lightCopy() const {

@@ -57,8 +57,6 @@ public:
 
   using Vec = std::vector<Patch>;
 
-  Patch();
-
   Patch(const llvm::MCInst &inst, rword address, rword instSize,
         const LLVMCPU &llvmcpu);
 
