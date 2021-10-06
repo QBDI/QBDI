@@ -58,6 +58,9 @@ RelocatableInst::UniquePtrVec getBreakToHost(Reg temp, const Patch &patch,
   // Jump to the epilogue to break to the host
   append(breakToHost, JmpEpilogue());
 
+  // add target when callback return CONTINUE
+  append(breakToHost, TargetPrologue().generate(&patch, nullptr, nullptr));
+
   return breakToHost;
 }
 

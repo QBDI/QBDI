@@ -390,22 +390,22 @@ generatePostWriteInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
 
 std::vector<std::unique_ptr<InstrRule>> getInstrRuleMemAccessRead() {
   return conv_unique<InstrRule>(
-      InstrRuleDynamic::unique(DoesReadAccess::unique(),
-                               generatePreReadInstrumentPatch, PREINST, false,
-                               PRIORITY_MEMACCESS_LIMIT + 1),
-      InstrRuleDynamic::unique(DoesReadAccess::unique(),
-                               generatePostReadInstrumentPatch, POSTINST, false,
-                               PRIORITY_MEMACCESS_LIMIT + 1));
+      InstrRuleDynamic::unique(
+          DoesReadAccess::unique(), generatePreReadInstrumentPatch, PREINST,
+          false, PRIORITY_MEMACCESS_LIMIT + 1, RelocTagPreInstMemAccess),
+      InstrRuleDynamic::unique(
+          DoesReadAccess::unique(), generatePostReadInstrumentPatch, POSTINST,
+          false, PRIORITY_MEMACCESS_LIMIT + 1, RelocTagPostInstMemAccess));
 }
 
 std::vector<std::unique_ptr<InstrRule>> getInstrRuleMemAccessWrite() {
   return conv_unique<InstrRule>(
-      InstrRuleDynamic::unique(DoesWriteAccess::unique(),
-                               generatePreWriteInstrumentPatch, PREINST, false,
-                               PRIORITY_MEMACCESS_LIMIT),
-      InstrRuleDynamic::unique(DoesWriteAccess::unique(),
-                               generatePostWriteInstrumentPatch, POSTINST,
-                               false, PRIORITY_MEMACCESS_LIMIT));
+      InstrRuleDynamic::unique(
+          DoesWriteAccess::unique(), generatePreWriteInstrumentPatch, PREINST,
+          false, PRIORITY_MEMACCESS_LIMIT, RelocTagPreInstMemAccess),
+      InstrRuleDynamic::unique(
+          DoesWriteAccess::unique(), generatePostWriteInstrumentPatch, POSTINST,
+          false, PRIORITY_MEMACCESS_LIMIT, RelocTagPostInstMemAccess));
 }
 
 } // namespace QBDI

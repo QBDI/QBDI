@@ -22,6 +22,7 @@
 #include "Engine/LLVMCPU.h"
 #include "Patch/ExecBlockFlags.h"
 #include "Patch/Patch.h"
+#include "Patch/PatchGenerator.h"
 #include "Patch/Register.h"
 #include "Patch/RelocatableInst.h"
 #include "Utility/LogSys.h"
@@ -32,7 +33,7 @@ namespace QBDI {
 
 Patch::Patch(const llvm::MCInst &inst, rword address, rword instSize,
              const LLVMCPU &llvmcpu)
-    : metadata(inst, address, instSize) {
+    : metadata(inst, address, instSize), finalize(false) {
   metadata.patchSize = 0;
   metadata.cpuMode = llvmcpu.getCPUMode();
   metadata.execblockFlags = getExecBlockFlags(inst, llvmcpu);
@@ -81,6 +82,7 @@ void Patch::prepend(RelocatableInst::UniquePtrVec v) {
 
 void Patch::addInstsPatch(InstPosition position, int priority,
                           std::vector<std::unique_ptr<RelocatableInst>> v) {
+  QBDI_REQUIRE(not finalize);
 
   InstrPatch el{position, priority, std::move(v)};
 
@@ -92,12 +94,11 @@ void Patch::addInstsPatch(InstPosition position, int priority,
 }
 
 void Patch::finalizeInstsPatch() {
-  if (instsPatchs.empty()) {
-    return;
-  }
-
+  QBDI_REQUIRE(not finalize);
   // avoid to used prepend
-  std::vector<std::unique_ptr<RelocatableInst>> prePatch{};
+  // The begin of the patch is a target for the prologue.
+  std::vector<std::unique_ptr<RelocatableInst>> prePatch =
+      TargetPrologue().generate(this, nullptr, nullptr);
 
   // Add PREINST callback by priority order
   for (InstrPatch &el : instsPatchs) {
@@ -113,7 +114,15 @@ void Patch::finalizeInstsPatch() {
     }
   }
 
+  // add the tag RelocTagPatchBegin
+  prePatch.push_back(RelocTag::unique(RelocTagPatchBegin));
+  // prepend the current RelocInst to the Patch
   prepend(std::move(prePatch));
+  // add the tag RelocTagPatchEnd
+  append(RelocTag::unique(RelocTagPatchEnd));
+
+  // append TargetPrologue for SKIP_INST
+  append(TargetPrologue().generate(this, nullptr, nullptr));
 
   // Add POSTINST callback by priority order
   for (InstrPatch &el : instsPatchs) {
@@ -130,6 +139,7 @@ void Patch::finalizeInstsPatch() {
   }
 
   instsPatchs.clear();
+  finalize = true;
 }
 
 } // namespace QBDI

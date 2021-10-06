@@ -472,6 +472,14 @@ llvm::MCInst wrgsbase64(unsigned int reg) {
   return inst;
 }
 
+llvm::MCInst nop() {
+  llvm::MCInst inst;
+
+  inst.setOpcode(llvm::X86::NOOP);
+
+  return inst;
+}
+
 llvm::MCInst movrr(unsigned int dst, unsigned int src) {
   if constexpr (is_x86_64)
     return mov64rr(dst, src);

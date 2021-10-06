@@ -39,7 +39,7 @@ namespace QBDI {
 void InstrRule::instrument(Patch &patch, const LLVMCPU &llvmcpu,
                            const PatchGenerator::UniquePtrVec &patchGen,
                            bool breakToHost, InstPosition position,
-                           int priority) const {
+                           int priority, RelocatableInstTag tag) const {
 
   if (patchGen.size() == 0 && breakToHost == false) {
     QBDI_DEBUG("Empty patch Generator");
@@ -55,8 +55,7 @@ void InstrRule::instrument(Patch &patch, const LLVMCPU &llvmcpu,
 
   // Generate the instrumentation code from the original instruction context
   for (const PatchGenerator::UniquePtr &g : patchGen) {
-    append(instru, g->generate(&patch.metadata.inst, patch.metadata.address,
-                               patch.metadata.instSize, &tempManager, nullptr));
+    append(instru, g->generate(&patch, &tempManager, nullptr));
   }
 
   // In case we break to the host, we need to ensure the value of PC in the
@@ -68,18 +67,14 @@ void InstrRule::instrument(Patch &patch, const LLVMCPU &llvmcpu,
       switch (position) {
         // In PREINST PC is set to the current address
         case InstPosition::PREINST:
-          append(instru,
-                 GetConstant(Temp(0), Constant(patch.metadata.address))
-                     .generate(&patch.metadata.inst, patch.metadata.address,
-                               patch.metadata.instSize, &tempManager, nullptr));
+          append(instru, GetConstant(Temp(0), Constant(patch.metadata.address))
+                             .generate(&patch, &tempManager, nullptr));
           break;
         // In POSTINST PC is set to the next instruction address
         case InstPosition::POSTINST:
-          append(instru,
-                 GetConstant(Temp(0), Constant(patch.metadata.address +
-                                               patch.metadata.instSize))
-                     .generate(&patch.metadata.inst, patch.metadata.address,
-                               patch.metadata.instSize, &tempManager, nullptr));
+          append(instru, GetConstant(Temp(0), Constant(patch.metadata.address +
+                                                       patch.metadata.instSize))
+                             .generate(&patch, &tempManager, nullptr));
           break;
       }
       append(instru,
@@ -123,11 +118,15 @@ void InstrRule::instrument(Patch &patch, const LLVMCPU &llvmcpu,
     }
   }
 
-  QBDI_DEBUG("Insert {} PatchGen with priority {} and position {} ({})",
-             instru.size(), priority,
-             (position == PREINST) ? "PREINST"
-                                   : ((position == POSTINST) ? "POSTINST" : ""),
-             position);
+  // add Tag
+  instru.insert(instru.begin(), RelocTag::unique(tag));
+
+  QBDI_DEBUG(
+      "Insert {} PatchGen with priority {}, position {} ({}) and tag 0x{:x}",
+      instru.size(), priority,
+      (position == PREINST) ? "PREINST"
+                            : ((position == POSTINST) ? "POSTINST" : ""),
+      position, tag);
 
   // Add the result to the patch
   // The result is added in a pending list that is sorted by priority
@@ -141,11 +140,11 @@ void InstrRule::instrument(Patch &patch, const LLVMCPU &llvmcpu,
 InstrRuleBasic::InstrRuleBasic(PatchConditionUniquePtr &&condition,
                                PatchGeneratorUniquePtrVec &&patchGen,
                                InstPosition position, bool breakToHost,
-                               int priority)
+                               int priority, RelocatableInstTag tag)
     : AutoUnique<InstrRule, InstrRuleBasic>(priority),
       condition(std::forward<PatchConditionUniquePtr>(condition)),
       patchGen(std::forward<PatchGeneratorUniquePtrVec>(patchGen)),
-      position(position), breakToHost(breakToHost) {}
+      position(position), breakToHost(breakToHost), tag(tag) {}
 
 InstrRuleBasic::~InstrRuleBasic() = default;
 
@@ -170,11 +169,11 @@ RangeSet<rword> InstrRuleBasic::affectedRange() const {
 InstrRuleDynamic::InstrRuleDynamic(PatchConditionUniquePtr &&condition,
                                    PatchGenMethod patchGenMethod,
                                    InstPosition position, bool breakToHost,
-                                   int priority)
+                                   int priority, RelocatableInstTag tag)
     : AutoUnique<InstrRule, InstrRuleDynamic>(priority),
       condition(std::forward<PatchConditionUniquePtr>(condition)),
       patchGenMethod(patchGenMethod), position(position),
-      breakToHost(breakToHost) {}
+      breakToHost(breakToHost), tag(tag) {}
 
 InstrRuleDynamic::~InstrRuleDynamic() = default;
 
@@ -228,7 +227,9 @@ bool InstrRuleUser::tryInstrument(Patch &patch, const LLVMCPU &llvmcpu) const {
   for (const InstrRuleDataCBK &cbkToAdd : vec) {
     instrument(patch, llvmcpu,
                getCallbackGenerator(cbkToAdd.cbk, cbkToAdd.data), true,
-               cbkToAdd.position, cbkToAdd.priority);
+               cbkToAdd.position, cbkToAdd.priority,
+               (cbkToAdd.position == PREINST) ? RelocTagPreInstStdCBK
+                                              : RelocTagPostInstStdCBK);
   }
 
   return true;

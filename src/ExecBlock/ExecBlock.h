@@ -60,8 +60,11 @@ struct Context;
 struct InstInfo {
   uint16_t seqID;
   uint16_t offset;
+  uint16_t offsetSkip;
   uint16_t shadowOffset;
   uint16_t shadowSize;
+  uint16_t tagOffset;
+  uint16_t tagSize;
 };
 
 struct SeqInfo {
@@ -84,6 +87,11 @@ struct ShadowInfo {
   uint16_t shadowID;
 };
 
+struct TagInfo {
+  uint16_t tag;
+  uint16_t offset;
+};
+
 static const uint16_t EXEC_BLOCK_FULL = 0xFFFF;
 
 /*! Manages the concept of an exec block made of two contiguous memory blocks
@@ -104,6 +112,7 @@ private:
   Context *context;
   rword *shadows;
   std::vector<ShadowInfo> shadowRegistry;
+  std::vector<TagInfo> tagRegistry;
   uint16_t shadowIdx;
   std::vector<InstMetadata> instMetadata;
   std::vector<InstInfo> instRegistry;
@@ -440,6 +449,22 @@ public:
    * @return a vector of ShadowInfo matching the query
    */
   std::vector<ShadowInfo> queryShadowBySeq(uint16_t seqID, uint16_t tag) const;
+
+  /* Get all registered tag for an instruction
+   *
+   * @param instID  The id of the instruction in the ExecBlock
+   *
+   * @return a vector of tag matching the query
+   */
+  const llvm::ArrayRef<TagInfo> getTagByInst(uint16_t instID) const;
+
+  /* Query registered tag and returns a vector of matching tagID
+   *
+   * @param
+   *
+   * @return a vector of tagID matching the query
+   */
+  std::vector<TagInfo> queryTagByInst(uint16_t instID, uint16_t tag) const;
 
   /* Compute the occupation ratio of the ExecBlock.
    *

@@ -375,14 +375,16 @@ uint32_t VM::addMnemonicCB(const char *mnemonic, InstPosition pos,
   QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
   return engine->addInstrRule(InstrRuleBasic::unique(
       MnemonicIs::unique(mnemonic), getCallbackGenerator(cbk, data), pos, true,
-      priority));
+      priority,
+      (pos == PREINST) ? RelocTagPreInstStdCBK : RelocTagPostInstStdCBK));
 }
 
 uint32_t VM::addCodeCB(InstPosition pos, InstCallback cbk, void *data,
                        int priority) {
   QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
   return engine->addInstrRule(InstrRuleBasic::unique(
-      True::unique(), getCallbackGenerator(cbk, data), pos, true, priority));
+      True::unique(), getCallbackGenerator(cbk, data), pos, true, priority,
+      (pos == PREINST) ? RelocTagPreInstStdCBK : RelocTagPostInstStdCBK));
 }
 
 uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk,
@@ -390,7 +392,8 @@ uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk,
   QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
   return engine->addInstrRule(InstrRuleBasic::unique(
       AddressIs::unique(address), getCallbackGenerator(cbk, data), pos, true,
-      priority));
+      priority,
+      (pos == PREINST) ? RelocTagPreInstStdCBK : RelocTagPostInstStdCBK));
 }
 
 uint32_t VM::addCodeRangeCB(rword start, rword end, InstPosition pos,
@@ -399,7 +402,8 @@ uint32_t VM::addCodeRangeCB(rword start, rword end, InstPosition pos,
   QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
   return engine->addInstrRule(InstrRuleBasic::unique(
       InstructionInRange::unique(start, end), getCallbackGenerator(cbk, data),
-      pos, true, priority));
+      pos, true, priority,
+      (pos == PREINST) ? RelocTagPreInstStdCBK : RelocTagPostInstStdCBK));
 }
 
 uint32_t VM::addMemAccessCB(MemoryAccessType type, InstCallback cbk, void *data,
@@ -410,17 +414,17 @@ uint32_t VM::addMemAccessCB(MemoryAccessType type, InstCallback cbk, void *data,
     case MEMORY_READ:
       return engine->addInstrRule(InstrRuleBasic::unique(
           DoesReadAccess::unique(), getCallbackGenerator(cbk, data),
-          InstPosition::PREINST, true, priority));
+          InstPosition::PREINST, true, priority, RelocTagPreInstStdCBK));
     case MEMORY_WRITE:
       return engine->addInstrRule(InstrRuleBasic::unique(
           DoesWriteAccess::unique(), getCallbackGenerator(cbk, data),
-          InstPosition::POSTINST, true, priority));
+          InstPosition::POSTINST, true, priority, RelocTagPostInstStdCBK));
     case MEMORY_READ_WRITE:
       return engine->addInstrRule(InstrRuleBasic::unique(
           Or::unique(conv_unique<PatchCondition>(DoesReadAccess::unique(),
                                                  DoesWriteAccess::unique())),
           getCallbackGenerator(cbk, data), InstPosition::POSTINST, true,
-          priority));
+          priority, RelocTagPostInstStdCBK));
     default:
       return VMError::INVALID_EVENTID;
   }

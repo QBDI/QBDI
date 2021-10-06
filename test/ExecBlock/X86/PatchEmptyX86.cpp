@@ -27,5 +27,7 @@ QBDI::Patch generateEmptyPatch(QBDI::rword address,
 
   inst.setOpcode(llvm::X86::NOOP);
 
-  return QBDI::Patch(inst, address, 1, llvmcpu.getCPU(QBDI::CPUMode::DEFAULT));
+  QBDI::Patch p{inst, address, 1, llvmcpu.getCPU(QBDI::CPUMode::DEFAULT)};
+  p.finalizeInstsPatch();
+  return p;
 }

@@ -27,10 +27,6 @@
 #include "Patch/PatchUtils.h"
 #include "Patch/Types.h"
 
-namespace llvm {
-class MCInst;
-}
-
 namespace QBDI {
 class Patch;
 class RelocatableInst;
@@ -77,8 +73,8 @@ public:
    *
   */
   std::vector<std::unique_ptr<RelocatableInst>>
-  generate(const llvm::MCInst *inst, rword address, rword instSize,
-           TempManager *temp_manager, Patch *toMerge) const override;
+  generate(const Patch *patch, TempManager *temp_manager,
+           Patch *toMerge) const override;
 };
 
 class SimulateCall : public AutoClone<PatchGenerator, SimulateCall> {
@@ -103,8 +99,8 @@ public:
    * PUSH REG64 temp
    */
   std::vector<std::unique_ptr<RelocatableInst>>
-  generate(const llvm::MCInst *inst, rword address, rword instSize,
-           TempManager *temp_manager, Patch *toMerge) const override;
+  generate(const Patch *patch, TempManager *temp_manager,
+           Patch *toMerge) const override;
 
   bool modifyPC() const override { return true; }
 };
@@ -134,8 +130,8 @@ public:
    * MOV MEM64 DataBlock[Offset(RIP)], REG64 temp
    */
   std::vector<std::unique_ptr<RelocatableInst>>
-  generate(const llvm::MCInst *inst, rword address, rword instSize,
-           TempManager *temp_manager, Patch *toMerge) const override;
+  generate(const Patch *patch, TempManager *temp_manager,
+           Patch *toMerge) const override;
 
   bool modifyPC() const override { return true; }
 };
@@ -165,8 +161,8 @@ public:
    * LEA REG64 temp, MEM64 addr
    */
   std::vector<std::unique_ptr<RelocatableInst>>
-  generate(const llvm::MCInst *inst, rword address, rword instSize,
-           TempManager *temp_manager, Patch *toMerge) const override;
+  generate(const Patch *patch, TempManager *temp_manager,
+           Patch *toMerge) const override;
 };
 
 class GetWriteAddress : public AutoClone<PatchGenerator, GetWriteAddress> {
@@ -191,8 +187,8 @@ public:
    * LEA REG64 temp, MEM64 addr
    */
   std::vector<std::unique_ptr<RelocatableInst>>
-  generate(const llvm::MCInst *inst, rword address, rword instSize,
-           TempManager *temp_manager, Patch *toMerge) const override;
+  generate(const Patch *patch, TempManager *temp_manager,
+           Patch *toMerge) const override;
 };
 
 class GetReadValue : public AutoClone<PatchGenerator, GetReadValue> {
@@ -216,8 +212,8 @@ public:
    * MOV REG64 temp, MEM64 val
    */
   std::vector<std::unique_ptr<RelocatableInst>>
-  generate(const llvm::MCInst *inst, rword address, rword instSize,
-           TempManager *temp_manager, Patch *toMerge) const override;
+  generate(const Patch *patch, TempManager *temp_manager,
+           Patch *toMerge) const override;
 };
 
 class GetWriteValue : public AutoClone<PatchGenerator, GetWriteValue> {
@@ -239,8 +235,8 @@ public:
    * MOV REG64 temp, MEM64 val
    */
   std::vector<std::unique_ptr<RelocatableInst>>
-  generate(const llvm::MCInst *inst, rword address, rword instSize,
-           TempManager *temp_manager, Patch *toMerge) const override;
+  generate(const Patch *patch, TempManager *temp_manager,
+           Patch *toMerge) const override;
 };
 
 } // namespace QBDI

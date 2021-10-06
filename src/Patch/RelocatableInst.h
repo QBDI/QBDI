@@ -36,6 +36,8 @@ public:
 
   RelocatableInst() {}
 
+  virtual RelocatableInstTag getTag() const { return RelocInst; };
+
   virtual std::unique_ptr<RelocatableInst> clone() const = 0;
 
   virtual llvm::MCInst reloc(ExecBlock *exec_block) const = 0;
@@ -55,6 +57,19 @@ public:
 };
 
 // Generic RelocatableInst that must be implemented by each target
+
+class RelocTag : public AutoClone<RelocatableInst, RelocTag> {
+  RelocatableInstTag tag;
+
+public:
+  RelocTag(RelocatableInstTag t) : tag(t) {}
+
+  RelocatableInstTag getTag() const override { return tag; }
+
+  // The Execblock must skip the generation if a RelocatableInst doesn't return
+  // RelocInst. Generate a NOP and a log Error.
+  llvm::MCInst reloc(ExecBlock *execBlock) const override;
+};
 
 class LoadShadow : public AutoClone<RelocatableInst, LoadShadow> {
   unsigned reg;

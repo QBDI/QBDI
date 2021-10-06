@@ -124,6 +124,8 @@ llvm::MCInst wrfsbase(unsigned int reg);
 
 llvm::MCInst wrgsbase(unsigned int reg);
 
+llvm::MCInst nop();
+
 // low level layer 2 architecture abtraction
 
 llvm::MCInst movrr(unsigned int dst, unsigned int src);

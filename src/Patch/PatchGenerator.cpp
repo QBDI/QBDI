@@ -42,13 +42,13 @@ std::unique_ptr<PatchGenerator> ModifyInstruction::clone() const {
 };
 
 RelocatableInst::UniquePtrVec
-ModifyInstruction::generate(const llvm::MCInst *inst, rword address,
-                            rword instSize, TempManager *temp_manager,
+ModifyInstruction::generate(const Patch *patch, TempManager *temp_manager,
                             Patch *toMerge) const {
 
-  llvm::MCInst a(*inst);
+  llvm::MCInst a(patch->metadata.inst);
   for (const auto &t : transforms) {
-    t->transform(a, address, instSize, temp_manager);
+    t->transform(a, patch->metadata.address, patch->metadata.instSize,
+                 temp_manager);
   }
 
   RelocatableInst::UniquePtrVec out;
@@ -66,8 +66,7 @@ ModifyInstruction::generate(const llvm::MCInst *inst, rword address,
 // ===============
 
 RelocatableInst::UniquePtrVec
-DoNotInstrument::generate(const llvm::MCInst *inst, rword address,
-                          rword instSize, TempManager *temp_manager,
+DoNotInstrument::generate(const Patch *patch, TempManager *temp_manager,
                           Patch *toMerge) const {
 
   return {};
@@ -76,16 +75,17 @@ DoNotInstrument::generate(const llvm::MCInst *inst, rword address,
 // GetOperand
 // ==========
 
-RelocatableInst::UniquePtrVec
-GetOperand::generate(const llvm::MCInst *inst, rword address, rword instSize,
-                     TempManager *temp_manager, Patch *toMerge) const {
-  if (inst->getOperand(op).isReg()) {
+RelocatableInst::UniquePtrVec GetOperand::generate(const Patch *patch,
+                                                   TempManager *temp_manager,
+                                                   Patch *toMerge) const {
+  const llvm::MCInst &inst = patch->metadata.inst;
+  if (inst.getOperand(op).isReg()) {
     return conv_unique<RelocatableInst>(MovReg::unique(
-        temp_manager->getRegForTemp(temp), inst->getOperand(op).getReg()));
-  } else if (inst->getOperand(op).isImm()) {
+        temp_manager->getRegForTemp(temp), inst.getOperand(op).getReg()));
+  } else if (inst.getOperand(op).isImm()) {
     return conv_unique<RelocatableInst>(
         LoadImm::unique(temp_manager->getRegForTemp(temp),
-                        Constant(inst->getOperand(op).getImm())));
+                        Constant(inst.getOperand(op).getImm())));
   } else {
     QBDI_ERROR("Invalid operand type for GetOperand()");
     return {};
@@ -95,9 +95,9 @@ GetOperand::generate(const llvm::MCInst *inst, rword address, rword instSize,
 // GetConstant
 // ===========
 
-RelocatableInst::UniquePtrVec
-GetConstant::generate(const llvm::MCInst *inst, rword address, rword instSize,
-                      TempManager *temp_manager, Patch *toMerge) const {
+RelocatableInst::UniquePtrVec GetConstant::generate(const Patch *patch,
+                                                    TempManager *temp_manager,
+                                                    Patch *toMerge) const {
 
   return conv_unique<RelocatableInst>(
       LoadImm::unique(temp_manager->getRegForTemp(temp), cst));
@@ -106,8 +106,7 @@ GetConstant::generate(const llvm::MCInst *inst, rword address, rword instSize,
 // ReadTemp
 // ========
 
-RelocatableInst::UniquePtrVec ReadTemp::generate(const llvm::MCInst *inst,
-                                                 rword address, rword instSize,
+RelocatableInst::UniquePtrVec ReadTemp::generate(const Patch *patch,
                                                  TempManager *temp_manager,
                                                  Patch *toMerge) const {
 
@@ -124,8 +123,7 @@ RelocatableInst::UniquePtrVec ReadTemp::generate(const llvm::MCInst *inst,
 // WriteTemp
 // =========
 
-RelocatableInst::UniquePtrVec WriteTemp::generate(const llvm::MCInst *inst,
-                                                  rword address, rword instSize,
+RelocatableInst::UniquePtrVec WriteTemp::generate(const Patch *patch,
                                                   TempManager *temp_manager,
                                                   Patch *toMerge) const {
 
@@ -136,8 +134,9 @@ RelocatableInst::UniquePtrVec WriteTemp::generate(const llvm::MCInst *inst,
     return conv_unique<RelocatableInst>(
         StoreShadow::unique(temp_manager->getRegForTemp(temp), shadow, true));
   } else if (type == OperandType) {
-    QBDI_REQUIRE_ACTION(inst->getOperand(operand).isReg(), abort());
-    int regNo = getGPRPosition(inst->getOperand(operand).getReg());
+    const llvm::MCInst &inst = patch->metadata.inst;
+    QBDI_REQUIRE_ACTION(inst.getOperand(operand).isReg(), abort());
+    int regNo = getGPRPosition(inst.getOperand(operand).getReg());
     QBDI_REQUIRE_ACTION(regNo != -1, abort());
     return conv_unique<RelocatableInst>(
         MovReg::unique(Reg(regNo), temp_manager->getRegForTemp(temp)));
@@ -148,8 +147,7 @@ RelocatableInst::UniquePtrVec WriteTemp::generate(const llvm::MCInst *inst,
 // LoadReg
 // =======
 
-RelocatableInst::UniquePtrVec LoadReg::generate(const llvm::MCInst *inst,
-                                                rword address, rword instSize,
+RelocatableInst::UniquePtrVec LoadReg::generate(const Patch *patch,
                                                 TempManager *temp_manager,
                                                 Patch *toMerge) const {
 
@@ -159,8 +157,7 @@ RelocatableInst::UniquePtrVec LoadReg::generate(const llvm::MCInst *inst,
 // SaveReg
 // =======
 
-RelocatableInst::UniquePtrVec SaveReg::generate(const llvm::MCInst *inst,
-                                                rword address, rword instSize,
+RelocatableInst::UniquePtrVec SaveReg::generate(const Patch *patch,
                                                 TempManager *temp_manager,
                                                 Patch *toMerge) const {
 
@@ -170,8 +167,7 @@ RelocatableInst::UniquePtrVec SaveReg::generate(const llvm::MCInst *inst,
 // CopyReg
 // =======
 
-RelocatableInst::UniquePtrVec CopyReg::generate(const llvm::MCInst *inst,
-                                                rword address, rword instSize,
+RelocatableInst::UniquePtrVec CopyReg::generate(const Patch *patch,
                                                 TempManager *temp_manager,
                                                 Patch *toMerge) const {
 
@@ -182,8 +178,7 @@ RelocatableInst::UniquePtrVec CopyReg::generate(const llvm::MCInst *inst,
 // GetInstId
 // =========
 
-RelocatableInst::UniquePtrVec GetInstId::generate(const llvm::MCInst *inst,
-                                                  rword address, rword instSize,
+RelocatableInst::UniquePtrVec GetInstId::generate(const Patch *patch,
                                                   TempManager *temp_manager,
                                                   Patch *toMerge) const {
 
