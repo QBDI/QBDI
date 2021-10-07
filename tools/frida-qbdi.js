@@ -402,15 +402,37 @@ var VMAction = Object.freeze({
      */
     CONTINUE: 0,
     /**
-     * The execution breaks and returns to the VM causing a complete reevaluation of
-     * the execution state. A :js:data:`VMAction.BREAK_TO_VM` is needed to ensure that modifications of
-     * the Program Counter or the program code are taken into account.
+     * Available only with PREINST InstCallback.  The instruction and the
+     * remained PREINST callbacks are skip. The execution continue with the
+     * POSTINST instruction.
+     *
+     * We recommand to used this result with a low priority PREINST callback in
+     * order to emulate the instruction without skipping the POSTINST callback.
      */
-    BREAK_TO_VM: 1,
+    SKIP_INST: 1,
+    /*!*
+     * Available only with InstCallback. The current instruction and the
+     * reminding callback (PRE and POST) are skip. The execution continues to
+     * the next instruction.
+     *
+     * For instruction that change the instruction pointer (jump/call/ret),
+     * BREAK_TO_VM must be used insted of SKIP.
+     *
+     * SKIP can break the record of MemoryAccess for the current instruction.
+     */
+    SKIP_PATCH: 2,
     /**
-     * Stops the execution of the program. This causes the run function to return early.
+     * The execution breaks and returns to the VM causing a complete
+     * reevaluation of the execution state. A :js:data:`VMAction.BREAK_TO_VM` is
+     * needed to ensure that modifications of the Program Counter or the program
+     * code are taken into account.
      */
-    STOP: 2
+    BREAK_TO_VM: 3,
+    /**
+     * Stops the execution of the program. This causes the run function to
+     * return early.
+     */
+    STOP: 4
 });
 
 

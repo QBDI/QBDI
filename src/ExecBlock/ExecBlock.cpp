@@ -226,12 +226,30 @@ VMAction ExecBlock::execute() {
                 "Callback returned CONTINUE but change PC: Ignore new value");
           }
           break;
-        case SKIP:
-          QBDI_DEBUG("Callback 0x{:x} returned SKIP",
+        case SKIP_INST:
+          QBDI_DEBUG("Callback 0x{:x} returned SKIP_INST",
                      context->hostState.callback);
           if (not instMetadata[currentInst].modifyPC and
               QBDI_GPR_GET(&context->gprState, REG_PC) != currentPC) {
-            QBDI_WARN("Callback returned SKIP but change PC: Ignore new value");
+            QBDI_WARN(
+                "Callback returned SKIP_INST but change PC: Ignore new value");
+          }
+          if (currentPC == instMetadata[currentInst].address) {
+            context->hostState.selector =
+                reinterpret_cast<rword>(codeBlock.base()) +
+                static_cast<rword>(instRegistry[currentInst].offsetSkip);
+          } else {
+            QBDI_WARN(
+                "POSTINST callback returned SKIP_INST: Use CONTINUE instead");
+          }
+          break;
+        case SKIP_PATCH:
+          QBDI_DEBUG("Callback 0x{:x} returned SKIP_PATCH",
+                     context->hostState.callback);
+          if (not instMetadata[currentInst].modifyPC and
+              QBDI_GPR_GET(&context->gprState, REG_PC) != currentPC) {
+            QBDI_WARN(
+                "Callback returned SKIP_PATCH but change PC: Ignore new value");
           }
           if (instMetadata[currentInst].modifyPC) {
             QBDI_WARN(

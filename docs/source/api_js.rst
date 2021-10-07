@@ -266,6 +266,8 @@ Callback
 .. js:autoclass:: VMAction
 
     .. js:autoattribute:: CONTINUE
+    .. js:autoattribute:: SKIP_INST
+    .. js:autoattribute:: SKIP_PATCH
     .. js:autoattribute:: BREAK_TO_VM
     .. js:autoattribute:: STOP
 

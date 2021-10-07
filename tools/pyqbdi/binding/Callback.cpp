@@ -28,6 +28,19 @@ void init_binding_Callback(py::module_ &m) {
   py::enum_<VMAction>(m, "VMAction", "The callback results.")
       .value("CONTINUE", VMAction::CONTINUE,
              "The execution of the basic block continues.")
+      .value("SKIP_INST", VMAction::SKIP_INST,
+             "Available only with PREINST InstCallback. The instruction and "
+             "the remained PREINST callbacks are skip. The execution continue "
+             "with the POSTINST instruction.\n\nWe recommand to used this "
+             "result with a low priority PREINST callback in order to emulate "
+             "the instruction without skipping the POSTINST callback.")
+      .value("SKIP_PATCH", VMAction::SKIP_PATCH,
+             "Available only with InstCallback. The current instruction and "
+             "the reminding callback (PRE and POST) are skip. The execution "
+             "continues to the next instruction.\n\nFor instruction that "
+             "change the instruction pointer (jump/call/ret), BREAK_TO_VM must "
+             "be used insted of SKIP.\n\nSKIP can break the record of "
+             "MemoryAccess for the current instruction.")
       .value("BREAK_TO_VM", VMAction::BREAK_TO_VM,
              "The execution breaks and returns to the VM causing a complete "
              "reevaluation of "
