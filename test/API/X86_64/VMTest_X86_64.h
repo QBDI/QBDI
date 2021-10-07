@@ -18,7 +18,7 @@
 #ifndef QBDITEST_VMTEST_X86_64_H
 #define QBDITEST_VMTEST_X86_64_H
 
-#include "API/VMTest.h"
+#include "API/X86_64/VMTest_X86_64.h"
 #include "QBDI/Memory.hpp"
 #include "QBDI/Platform.h"
 #include "QBDI/VM.h"

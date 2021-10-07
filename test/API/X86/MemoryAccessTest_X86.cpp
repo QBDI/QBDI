@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 #include <catch2/catch.hpp>
-#include "API/MemoryAccessTest.h"
+#include "API/APITest.h"
 
 #include "inttypes.h"
 
@@ -92,7 +92,7 @@ static QBDI::VMAction checkAccess(QBDI::VMInstanceRef vm,
 // test stack memory access
 // PUSH POP CALL RET
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-push_pop_reg") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-push_pop_reg") {
 
   const char source[] =
       "xchg %esp, %ebx\n"
@@ -130,7 +130,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-push_pop_reg") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-pusha_popa") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-pusha_popa") {
 
   const char source[] =
       "xchg %esp, %ebx\n"
@@ -166,7 +166,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-pusha_popa") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-push_pop_mem") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-push_pop_mem") {
 
   const char source[] =
       "xchg %esp, %ebx\n"
@@ -219,7 +219,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-push_pop_mem") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-call_ret") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-call_ret") {
 
   const char source[] =
       "    xchg %esp, %ebx\n"
@@ -258,7 +258,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-call_ret") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movao") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-movao") {
 
   const char source[] = "mov %gs:0x0, %eax\n";
 
@@ -280,7 +280,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movao") {
 // COMPS MOVS SCAS LODS STOS
 // REP and REPNE prefix
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-cmpsb") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-cmpsb") {
 
   const char source[] = "cmpsb\n";
 
@@ -306,7 +306,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-cmpsb") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-cmpsw") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-cmpsw") {
 
   const char source[] = "cmpsw\n";
 
@@ -332,7 +332,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-cmpsw") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-cmpsd") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-cmpsd") {
 
   const char source[] = "cmpsl\n";
 
@@ -358,7 +358,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-cmpsd") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-rep_cmpsb") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-rep_cmpsb") {
 
   const char source[] =
       "cld\n"
@@ -399,7 +399,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-rep_cmpsb") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-repne_cmpsb") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-repne_cmpsb") {
 
   const char source[] =
       "cld\n"
@@ -440,7 +440,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-repne_cmpsb") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-rep_cmpsb2") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-rep_cmpsb2") {
 
   const char source[] =
       "std\n"
@@ -482,7 +482,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-rep_cmpsb2") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-rep_cmpsw") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-rep_cmpsw") {
 
   const char source[] =
       "cld\n"
@@ -523,7 +523,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-rep_cmpsw") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-rep_cmpsw2") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-rep_cmpsw2") {
 
   const char source[] =
       "std\n"
@@ -565,7 +565,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-rep_cmpsw2") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movsb") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-movsb") {
 
   const char source[] =
       "cld\n"
@@ -600,7 +600,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movsb") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movsw") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-movsw") {
 
   const char source[] =
       "cld\n"
@@ -629,7 +629,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movsw") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movsl") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-movsl") {
 
   const char source[] =
       "cld\n"
@@ -658,7 +658,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movsl") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movsb2") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-movsb2") {
 
   const char source[] =
       "std\n"
@@ -688,7 +688,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movsb2") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movsw2") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-movsw2") {
 
   const char source[] =
       "std\n"
@@ -718,7 +718,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movsw2") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movsl2") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-movsl2") {
 
   const char source[] =
       "std\n"
@@ -748,7 +748,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movsl2") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-rep_movsl") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-rep_movsl") {
 
   const char source[] =
       "cld\n"
@@ -789,7 +789,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-rep_movsl") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-rep_movsl2") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-rep_movsl2") {
 
   const char source[] =
       "std\n"
@@ -831,7 +831,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-rep_movsl2") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-scasb") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-scasb") {
 
   const char source[] =
       "cld\n"
@@ -858,7 +858,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-scasb") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-scasw") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-scasw") {
 
   const char source[] =
       "cld\n"
@@ -885,7 +885,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-scasw") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-scasl") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-scasl") {
 
   const char source[] =
       "cld\n"
@@ -912,7 +912,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-scasl") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-lodsb") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-lodsb") {
 
   const char source[] =
       "cld\n"
@@ -939,7 +939,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-lodsb") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-lodsw") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-lodsw") {
 
   const char source[] =
       "cld\n"
@@ -966,7 +966,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-lodsw") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-lodsl") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-lodsl") {
 
   const char source[] =
       "cld\n"
@@ -993,7 +993,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-lodsl") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-stosb") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-stosb") {
 
   const char source[] =
       "cld\n"
@@ -1021,7 +1021,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-stosb") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-stosw") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-stosw") {
 
   const char source[] =
       "cld\n"
@@ -1049,7 +1049,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-stosw") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-stosl") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-stosl") {
 
   const char source[] =
       "cld\n"
@@ -1077,7 +1077,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-stosl") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-stosb2") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-stosb2") {
 
   const char source[] =
       "std\n"
@@ -1106,7 +1106,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-stosb2") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-stosw2") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-stosw2") {
 
   const char source[] =
       "std\n"
@@ -1135,7 +1135,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-stosw2") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-stosl2") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-stosl2") {
 
   const char source[] =
       "std\n"
@@ -1164,7 +1164,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-stosl2") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movzx") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-movzx") {
 
   const char source[] = "movzbl  0x5(%ebx), %eax\n";
 
@@ -1191,7 +1191,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movzx") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-addmr") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-addmr") {
 
   const char source[] = "addl %eax, (%ebx)";
 
@@ -1228,7 +1228,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-addmr") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-xchgrm") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-xchgrm") {
 
   const char source[] = "xchgl %eax, (%eax)";
 
@@ -1264,7 +1264,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-xchgrm") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-enter-leave") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-enter-leave") {
 
   const char source[] =
       "xchg %esp, %ebx\n"
@@ -1305,7 +1305,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-enter-leave") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-fld-fstp") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-fld-fstp") {
 
   if (!checkFeature("mmx")) {
     return;
@@ -1366,7 +1366,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-fld-fstp") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movapd") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-movapd") {
 
   if (!checkFeature("sse2")) {
     return;
@@ -1420,7 +1420,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movapd") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-maskmovdqu") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-maskmovdqu") {
 
   if (!checkFeature("avx")) {
     return;
@@ -1475,7 +1475,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-maskmovdqu") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-maskmovq") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-maskmovq") {
 
   if (!checkFeature("avx") || !checkFeature("sse")) {
     return;
@@ -1527,7 +1527,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-maskmovq") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-xlat") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-xlat") {
 
   const char source[] = "xlatb\n";
 
@@ -1554,7 +1554,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-xlat") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movdir64b") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-movdir64b") {
 
   if (!checkFeature("movdir64b")) {
     return;
@@ -1599,7 +1599,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-movdir64b") {
     CHECK(e.see);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest_X86-xsave") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-xsave") {
 
   if (!checkFeature("xsave")) {
     return;

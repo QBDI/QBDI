@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 
-#ifndef QBDITEST_MEMORYACCESSTEST_H
-#define QBDITEST_MEMORYACCESSTEST_H
+#ifndef QBDITEST_APITEST_H
+#define QBDITEST_APITEST_H
 
 #include <memory>
 #include <string>
@@ -27,13 +27,19 @@
 
 #include "QBDI/VM.h"
 
-class MemoryAccessTest {
+class APITest {
 private:
   std::vector<InMemoryObject> objects;
 
 protected:
-  MemoryAccessTest();
-  ~MemoryAccessTest();
+  QBDI::GPRState *state;
+  uint8_t *fakestack;
+
+public:
+  QBDI::VM vm;
+
+  APITest();
+  ~APITest();
 
   QBDI::rword genASM(const char *source,
                      const std::vector<std::string> mattrs = {});
@@ -41,10 +47,6 @@ protected:
   bool runOnASM(QBDI::rword *retval, const char *source,
                 const std::vector<QBDI::rword> &args = {},
                 const std::vector<std::string> mattrs = {});
-
-  QBDI::VM vm;
-  QBDI::GPRState *state;
-  uint8_t *fakestack;
 };
 
-#endif /* QBDITEST_MEMORYACCESSTEST_H */
+#endif /* QBDITEST_APITEST_H */
