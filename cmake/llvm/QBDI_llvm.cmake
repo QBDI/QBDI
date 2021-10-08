@@ -6,13 +6,13 @@ set(__add_qbdi_llvm ON)
 include(FetchContent)
 
 # configure FetchContent
-set(QBDI_LLVM_VERSION 12.0.1)
+set(QBDI_LLVM_VERSION 13.0.0)
 
 FetchContent_Declare(
   llvm
   URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${QBDI_LLVM_VERSION}/llvm-${QBDI_LLVM_VERSION}.src.tar.xz"
   URL_HASH
-    "SHA256=7d9a8405f557cefc5a21bf5672af73903b64749d9bc3a50322239f56f34ffddf"
+    "SHA256=408d11708643ea826f519ff79761fcdfc12d641a2510229eec459e72f8163020"
   DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/llvm-download")
 
 FetchContent_GetProperties(llvm)

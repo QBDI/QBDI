@@ -79,13 +79,14 @@ InMemoryObject::InMemoryObject(const char *source, const char *cpu,
       processTarget->createMCRegInfo(tripleName));
   MAI = std::unique_ptr<llvm::MCAsmInfo>(
       processTarget->createMCAsmInfo(*MRI, tripleName, options));
-  MOFI = std::make_unique<llvm::MCObjectFileInfo>();
-  MCTX = std::make_unique<llvm::MCContext>(MAI.get(), MRI.get(), MOFI.get(),
-                                           &SrcMgr);
-  MOFI->InitMCObjectFileInfo(processTriple, false, *MCTX);
   MCII = std::unique_ptr<llvm::MCInstrInfo>(processTarget->createMCInstrInfo());
   MSTI = std::unique_ptr<llvm::MCSubtargetInfo>(
       processTarget->createMCSubtargetInfo(tripleName, cpu, featuresStr));
+  MCTX = std::make_unique<llvm::MCContext>(processTriple, MAI.get(), MRI.get(),
+                                           MSTI.get(), &SrcMgr);
+  MOFI = std::unique_ptr<llvm::MCObjectFileInfo>(
+      processTarget->createMCObjectFileInfo(*MCTX, false));
+  MCTX->setObjectFileInfo(MOFI.get());
   auto MAB = std::unique_ptr<llvm::MCAsmBackend>(
       processTarget->createMCAsmBackend(*MSTI, *MRI, options));
   auto MCE = std::unique_ptr<llvm::MCCodeEmitter>(

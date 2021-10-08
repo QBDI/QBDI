@@ -122,12 +122,14 @@ LLVMCPU::LLVMCPU(const std::string &_cpu, const std::string &_arch,
       target->createMCRegInfo(tripleName));
   MAI = std::unique_ptr<llvm::MCAsmInfo>(
       target->createMCAsmInfo(*MRI, tripleName, MCOptions));
-  MOFI = std::make_unique<llvm::MCObjectFileInfo>();
-  MCTX = std::make_unique<llvm::MCContext>(MAI.get(), MRI.get(), MOFI.get());
-  MOFI->InitMCObjectFileInfo(processTriple, false, *MCTX);
   MCII = std::unique_ptr<llvm::MCInstrInfo>(target->createMCInstrInfo());
   MSTI = std::unique_ptr<llvm::MCSubtargetInfo>(
       target->createMCSubtargetInfo(tripleName, cpu, featuresStr));
+  MCTX = std::make_unique<llvm::MCContext>(processTriple, MAI.get(), MRI.get(),
+                                           MSTI.get());
+  MOFI = std::unique_ptr<llvm::MCObjectFileInfo>(
+      target->createMCObjectFileInfo(*MCTX, false));
+  MCTX->setObjectFileInfo(MOFI.get());
   QBDI_DEBUG("Initialized LLVM subtarget with cpu {} and features {}",
              cpu.c_str(), featuresStr.c_str());
 

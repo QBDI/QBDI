@@ -1113,6 +1113,7 @@ constexpr unsigned READ_128[] = {
     llvm::X86::LDDQUrm,
     llvm::X86::MASKMOVDQU,
     llvm::X86::MASKMOVDQU64,
+    llvm::X86::MASKMOVDQUX32,
     llvm::X86::MAXPDrm,
     llvm::X86::MAXPSrm,
     llvm::X86::MINPDrm,
@@ -1359,6 +1360,7 @@ constexpr unsigned READ_128[] = {
     llvm::X86::VLDDQUrm,
     llvm::X86::VMASKMOVDQU,
     llvm::X86::VMASKMOVDQU64,
+    llvm::X86::VMASKMOVDQUX32,
     llvm::X86::VMASKMOVPDmr,
     llvm::X86::VMASKMOVPDrm,
     llvm::X86::VMASKMOVPSmr,
@@ -2299,6 +2301,7 @@ constexpr unsigned WRITE_128[] = {
     llvm::X86::LCMPXCHG16B,
     llvm::X86::MASKMOVDQU,
     llvm::X86::MASKMOVDQU64,
+    llvm::X86::MASKMOVDQUX32,
     llvm::X86::MOVAPDmr,
     llvm::X86::MOVAPSmr,
     llvm::X86::MOVDQAmr,
@@ -2313,6 +2316,7 @@ constexpr unsigned WRITE_128[] = {
     llvm::X86::VEXTRACTI128mr,
     llvm::X86::VMASKMOVDQU,
     llvm::X86::VMASKMOVDQU64,
+    llvm::X86::VMASKMOVDQUX32,
     llvm::X86::VMASKMOVPDmr,
     llvm::X86::VMASKMOVPSmr,
     llvm::X86::VMOVAPDmr,
@@ -2963,10 +2967,12 @@ bool implicitDSIAccess(const llvm::MCInst &inst,
   switch (inst.getOpcode()) {
     case llvm::X86::MASKMOVDQU:
     case llvm::X86::MASKMOVDQU64:
+    case llvm::X86::MASKMOVDQUX32:
     case llvm::X86::MMX_MASKMOVQ:
     case llvm::X86::MMX_MASKMOVQ64:
     case llvm::X86::VMASKMOVDQU:
     case llvm::X86::VMASKMOVDQU64:
+    case llvm::X86::VMASKMOVDQUX32:
       return true;
     default:
       return false;
