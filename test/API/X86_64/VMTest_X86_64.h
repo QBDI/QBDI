@@ -41,4 +41,6 @@ struct TestInst {
 
 extern const struct TestInst TestInsts[MNEM_COUNT];
 
+#define SKIPTESTASM "nop\nnop\nret\n"
+
 #endif

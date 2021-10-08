@@ -752,6 +752,145 @@ TEST_CASE_METHOD(APITest, "VMTest-Priority") {
   SUCCEED();
 }
 
+struct SkipTestData {
+  uint8_t cbpre1;
+  uint8_t cbpre2;
+  uint8_t cbpre3;
+  uint8_t cbpost;
+  uint8_t cbnumpre;
+  uint8_t cbnumpost;
+};
+
+TEST_CASE_METHOD(APITest, "VMTest-SKIP_INST") {
+
+  SkipTestData data = {0};
+
+  QBDI::rword addr = genASM(SKIPTESTASM);
+
+  vm.addCodeAddrCB(
+      addr, QBDI::InstPosition::PREINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((SkipTestData *)data)->cbpre1++;
+        return QBDI::VMAction::CONTINUE;
+      },
+      &data, 100);
+  vm.addCodeCB(
+      QBDI::InstPosition::PREINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((SkipTestData *)data)->cbnumpre++;
+        return QBDI::VMAction::CONTINUE;
+      },
+      &data, 0);
+  vm.addCodeAddrCB(
+      addr, QBDI::InstPosition::PREINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((SkipTestData *)data)->cbpre2++;
+        return QBDI::VMAction::SKIP_INST;
+      },
+      &data, -100);
+  vm.addCodeAddrCB(
+      addr, QBDI::InstPosition::PREINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((SkipTestData *)data)->cbpre3++;
+        return QBDI::VMAction::CONTINUE;
+      },
+      &data, -200);
+  vm.addCodeAddrCB(
+      addr, QBDI::InstPosition::POSTINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((SkipTestData *)data)->cbpost++;
+        return QBDI::VMAction::CONTINUE;
+      },
+      &data, 0);
+  vm.addCodeCB(
+      QBDI::InstPosition::POSTINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((SkipTestData *)data)->cbnumpost++;
+        return QBDI::VMAction::CONTINUE;
+      },
+      &data, 0);
+
+  QBDI::rword retval = 0;
+  vm.call(&retval, (QBDI::rword)addr);
+  REQUIRE(data.cbpre1 == 1);
+  REQUIRE(data.cbpre2 == 1);
+  REQUIRE(data.cbpre3 == 0);
+  REQUIRE(data.cbpost == 1);
+  REQUIRE(data.cbnumpre == 3);
+  REQUIRE(data.cbnumpost == 3);
+}
+
+TEST_CASE_METHOD(APITest, "VMTest-SKIP_PATCH") {
+
+  SkipTestData data = {0};
+
+  QBDI::rword addr = genASM(SKIPTESTASM);
+
+  vm.addCodeAddrCB(
+      addr, QBDI::InstPosition::PREINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((SkipTestData *)data)->cbpre1++;
+        return QBDI::VMAction::CONTINUE;
+      },
+      &data, 100);
+  vm.addCodeCB(
+      QBDI::InstPosition::PREINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((SkipTestData *)data)->cbnumpre++;
+        return QBDI::VMAction::CONTINUE;
+      },
+      &data, 0);
+  vm.addCodeAddrCB(
+      addr, QBDI::InstPosition::PREINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((SkipTestData *)data)->cbpre2++;
+        return QBDI::VMAction::SKIP_PATCH;
+      },
+      &data, -100);
+  vm.addCodeAddrCB(
+      addr, QBDI::InstPosition::PREINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((SkipTestData *)data)->cbpre3++;
+        return QBDI::VMAction::CONTINUE;
+      },
+      &data, -200);
+  vm.addCodeAddrCB(
+      addr, QBDI::InstPosition::POSTINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((SkipTestData *)data)->cbpost++;
+        return QBDI::VMAction::CONTINUE;
+      },
+      &data, 0);
+  vm.addCodeCB(
+      QBDI::InstPosition::POSTINST,
+      [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+         QBDI::FPRState *fprState, void *data) -> QBDI::VMAction {
+        ((SkipTestData *)data)->cbnumpost++;
+        return QBDI::VMAction::CONTINUE;
+      },
+      &data, 0);
+
+  QBDI::rword retval = 0;
+  vm.call(&retval, (QBDI::rword)addr);
+  REQUIRE(data.cbpre1 == 1);
+  REQUIRE(data.cbpre2 == 1);
+  REQUIRE(data.cbpre3 == 0);
+  REQUIRE(data.cbpost == 0);
+  REQUIRE(data.cbnumpre == 3);
+  REQUIRE(data.cbnumpost == 2);
+}
+
 // Test copy/move constructor/assignment operator
 
 struct MoveCallbackStruct {
