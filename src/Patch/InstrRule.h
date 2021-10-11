@@ -83,9 +83,8 @@ public:
    * @param[in] priority    The priority of this patch
    * @param[in] tag         The tag for this patch
    */
-  void instrument(Patch &patch, const LLVMCPU &llvmcpu,
-                  const PatchGeneratorUniquePtrVec &patchGen, bool breakToHost,
-                  InstPosition position, int priority,
+  void instrument(Patch &patch, const PatchGeneratorUniquePtrVec &patchGen,
+                  bool breakToHost, InstPosition position, int priority,
                   RelocatableInstTag tag) const;
 };
 
@@ -141,8 +140,7 @@ public:
   inline bool tryInstrument(Patch &patch,
                             const LLVMCPU &llvmcpu) const override {
     if (canBeApplied(patch, llvmcpu)) {
-      instrument(patch, llvmcpu, patchGen, breakToHost, position, priority,
-                 tag);
+      instrument(patch, patchGen, breakToHost, position, priority, tag);
       return true;
     }
     return false;
@@ -204,8 +202,8 @@ public:
   inline bool tryInstrument(Patch &patch,
                             const LLVMCPU &llvmcpu) const override {
     if (canBeApplied(patch, llvmcpu)) {
-      instrument(patch, llvmcpu, patchGenMethod(patch, llvmcpu), breakToHost,
-                 position, priority, tag);
+      instrument(patch, patchGenMethod(patch, llvmcpu), breakToHost, position,
+                 priority, tag);
       return true;
     }
     return false;

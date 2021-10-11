@@ -27,6 +27,7 @@
 
 #include "QBDI/Config.h"
 #include "QBDI/Platform.h"
+#include "Engine/LLVMCPU.h"
 #include "Patch/InstInfo.h"
 #include "Patch/Patch.h"
 #include "Patch/RelocatableInst.h"
@@ -130,7 +131,8 @@ GetReadAddress::generate(const Patch *patch, TempManager *temp_manager,
   // Check if this instruction does indeed read something
   unsigned size = getReadSize(inst);
   if (size > 0) {
-    const llvm::MCInstrDesc &desc = temp_manager->MCII.get(inst.getOpcode());
+    const llvm::MCInstrDesc &desc =
+        patch->llvmcpu->getMCII().get(inst.getOpcode());
     uint64_t TSFlags = desc.TSFlags;
     unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
     int memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
@@ -226,7 +228,8 @@ GetWriteAddress::generate(const Patch *patch, TempManager *temp_manager,
   // Check if this instruction does indeed read something
   unsigned size = getWriteSize(inst);
   if (size > 0) {
-    const llvm::MCInstrDesc &desc = temp_manager->MCII.get(inst.getOpcode());
+    const llvm::MCInstrDesc &desc =
+        patch->llvmcpu->getMCII().get(inst.getOpcode());
     uint64_t TSFlags = desc.TSFlags;
     unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
     int memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
@@ -317,7 +320,8 @@ RelocatableInst::UniquePtrVec GetReadValue::generate(const Patch *patch,
   const llvm::MCInst &inst = patch->metadata.inst;
   const unsigned size = getReadSize(inst);
   if (size > 0) {
-    const llvm::MCInstrDesc &desc = temp_manager->MCII.get(inst.getOpcode());
+    const llvm::MCInstrDesc &desc =
+        patch->llvmcpu->getMCII().get(inst.getOpcode());
     uint64_t TSFlags = desc.TSFlags;
     unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
     int memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
@@ -463,7 +467,8 @@ RelocatableInst::UniquePtrVec GetWriteValue::generate(const Patch *patch,
   const llvm::MCInst &inst = patch->metadata.inst;
   const unsigned size = getWriteSize(inst);
   if (size > 0) {
-    const llvm::MCInstrDesc &desc = temp_manager->MCII.get(inst.getOpcode());
+    const llvm::MCInstrDesc &desc =
+        patch->llvmcpu->getMCII().get(inst.getOpcode());
     uint64_t TSFlags = desc.TSFlags;
     unsigned FormDesc = TSFlags & llvm::X86II::FormMask;
     int memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);

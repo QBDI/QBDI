@@ -738,7 +738,7 @@ TEST_CASE_METHOD(APITest, "VMTest-Priority") {
 
   REQUIRE(callList.size() >= 11);
 
-  for (int i = 1; i < callList.size(); i++) {
+  for (size_t i = 1; i < callList.size(); i++) {
     if (callList[i - 1].addr == callList[i].addr) {
       if (callList[i - 1].pos == callList[i].pos) {
         REQUIRE(callList[i - 1].priority >= callList[i].priority);

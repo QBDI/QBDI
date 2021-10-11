@@ -67,6 +67,11 @@ void ExecBlock::run() {
 bool ExecBlock::writePatch(const Patch &p, const LLVMCPU &llvmcpu) {
   QBDI_REQUIRE(p.finalize);
 
+  if (getEpilogueOffset() <= MINIMAL_BLOCK_SIZE) {
+    isFull = true;
+    return false;
+  }
+
   for (const RelocatableInst::UniquePtr &inst : p.insts) {
     if (inst->getTag() != RelocatableInstTag::RelocInst) {
       QBDI_DEBUG("RelocTag 0x{:x}", inst->getTag());

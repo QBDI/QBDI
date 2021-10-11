@@ -62,7 +62,7 @@ Patch PatchRule::generate(const llvm::MCInst &inst, rword address,
     }
   }
 
-  TempManager temp_manager(patch, llvmcpu);
+  TempManager temp_manager(patch);
   bool modifyPC = false;
   bool merge = false;
 

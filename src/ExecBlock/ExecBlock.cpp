@@ -342,11 +342,6 @@ ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt,
 
       QBDI_DEBUG("Rolling back to offset 0x{:x}", rollbackOffset);
 
-      // if nothing has been write since the beginning of the method,
-      // the block is full. We can reject futur writeSequence early.
-      if (codeStream->current_pos() == startOffset) {
-        isFull = true;
-      }
       // Seek to the last complete patch written and terminate it with a
       // terminator
       codeStream->seek(rollbackOffset);

@@ -54,6 +54,7 @@ public:
   std::map<unsigned, RegisterUsage> regUsage;
   // Registers used by the TempRegister for this patch
   std::set<unsigned> tempReg;
+  const LLVMCPU *llvmcpu;
   bool finalize = false;
 
   using Vec = std::vector<Patch>;

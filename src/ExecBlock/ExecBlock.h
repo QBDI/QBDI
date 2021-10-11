@@ -460,11 +460,22 @@ public:
 
   /* Query registered tag and returns a vector of matching tagID
    *
-   * @param
+   * @param instID  The id of the instruction in the ExecBlock
+   * @param tag     The tag to search
    *
    * @return a vector of tagID matching the query
    */
   std::vector<TagInfo> queryTagByInst(uint16_t instID, uint16_t tag) const;
+
+  /* Get TagInfo JITTed address
+   *
+   * @param tinfo A TagInfo of this basicblock
+   *
+   * @return The address of the Tag in this ExecBlock
+   */
+  inline rword getAddressTag(const TagInfo &tinfo) const {
+    return reinterpret_cast<rword>(codeBlock.base()) + tinfo.offset;
+  }
 
   /* Compute the occupation ratio of the ExecBlock.
    *

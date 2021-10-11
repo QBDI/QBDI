@@ -33,7 +33,7 @@ namespace QBDI {
 
 Patch::Patch(const llvm::MCInst &inst, rword address, rword instSize,
              const LLVMCPU &llvmcpu)
-    : metadata(inst, address, instSize), finalize(false) {
+    : metadata(inst, address, instSize), llvmcpu(&llvmcpu), finalize(false) {
   metadata.patchSize = 0;
   metadata.cpuMode = llvmcpu.getCPUMode();
   metadata.execblockFlags = getExecBlockFlags(inst, llvmcpu);

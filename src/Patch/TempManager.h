@@ -40,17 +40,14 @@ class TempManager {
 
   std::vector<std::pair<unsigned int, unsigned int>> temps;
   Patch &patch;
+  const llvm::MCRegisterInfo &MRI;
   bool allowInstRegister;
 
   // list of registers that doesn't need to be restore
   static const std::set<Reg> unrestoreGPR;
 
 public:
-  const llvm::MCInstrInfo &MCII;
-  const llvm::MCRegisterInfo &MRI;
-
-  TempManager(Patch &patch, const LLVMCPU &llvmcpu,
-              bool allowInstRegister = false);
+  TempManager(Patch &patch, bool allowInstRegister = false);
 
   Reg getRegForTemp(unsigned int id);
 

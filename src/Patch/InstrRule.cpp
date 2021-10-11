@@ -36,7 +36,7 @@ namespace QBDI {
 // InstrRule
 // =========
 
-void InstrRule::instrument(Patch &patch, const LLVMCPU &llvmcpu,
+void InstrRule::instrument(Patch &patch,
                            const PatchGenerator::UniquePtrVec &patchGen,
                            bool breakToHost, InstPosition position,
                            int priority, RelocatableInstTag tag) const {
@@ -51,7 +51,7 @@ void InstrRule::instrument(Patch &patch, const LLVMCPU &llvmcpu,
    * each case, can trigger a break to host.
    */
   RelocatableInst::UniquePtrVec instru;
-  TempManager tempManager(patch, llvmcpu, true);
+  TempManager tempManager(patch, true);
 
   // Generate the instrumentation code from the original instruction context
   for (const PatchGenerator::UniquePtr &g : patchGen) {
@@ -225,8 +225,7 @@ bool InstrRuleUser::tryInstrument(Patch &patch, const LLVMCPU &llvmcpu) const {
   }
 
   for (const InstrRuleDataCBK &cbkToAdd : vec) {
-    instrument(patch, llvmcpu,
-               getCallbackGenerator(cbkToAdd.cbk, cbkToAdd.data), true,
+    instrument(patch, getCallbackGenerator(cbkToAdd.cbk, cbkToAdd.data), true,
                cbkToAdd.position, cbkToAdd.priority,
                (cbkToAdd.position == PREINST) ? RelocTagPreInstStdCBK
                                               : RelocTagPostInstStdCBK);
