@@ -87,7 +87,17 @@ void analyseCondition(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
       return;
     }
   }
-  instAnalysis->condition = CONDITION_NONE;
+  switch (inst.getOpcode()) {
+    case llvm::X86::LOOPE:
+      instAnalysis->condition = CONDITION_EQUALS;
+      break;
+    case llvm::X86::LOOPNE:
+      instAnalysis->condition = CONDITION_NOT_EQUALS;
+      break;
+    default:
+      instAnalysis->condition = CONDITION_NONE;
+      break;
+  }
 }
 
 bool isFlagOperand(unsigned opcode, unsigned opNum, unsigned operandType) {
@@ -110,7 +120,14 @@ unsigned getAdditionnalOperandNumber(const llvm::MCInst &inst,
       (desc.isCall() and isStackWrite(inst))) {
     return 1;
   } else {
-    return 0;
+    switch (inst.getOpcode()) {
+      case llvm::X86::LOOP:
+      case llvm::X86::LOOPE:
+      case llvm::X86::LOOPNE:
+        return 1;
+      default:
+        return 0;
+    }
   }
 }
 
@@ -123,6 +140,17 @@ void getAdditionnalOperand(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
     // increment or decrement SP
     OperandAnalysis &opa2 = instAnalysis->operands[instAnalysis->numOperands];
     analyseRegister(opa2, GPR_ID[REG_SP], MRI);
+    opa2.regAccess = REGISTER_READ_WRITE;
+    opa2.flag |= OPERANDFLAG_IMPLICIT;
+    instAnalysis->numOperands++;
+    // try to merge with a previous one
+    tryMergeCurrentRegister(instAnalysis);
+  } else if (inst.getOpcode() == llvm::X86::LOOP or
+             inst.getOpcode() == llvm::X86::LOOPE or
+             inst.getOpcode() == llvm::X86::LOOPNE) {
+    // add ECX
+    OperandAnalysis &opa2 = instAnalysis->operands[instAnalysis->numOperands];
+    analyseRegister(opa2, GPR_ID[2], MRI);
     opa2.regAccess = REGISTER_READ_WRITE;
     opa2.flag |= OPERANDFLAG_IMPLICIT;
     instAnalysis->numOperands++;

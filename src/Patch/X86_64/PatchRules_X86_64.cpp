@@ -375,7 +375,9 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
    *         -->END: DataBlock[Offset(RIP)] := Temp(0)
    */
   rules.emplace_back(
-      OpIs::unique(llvm::X86::JCC_1),
+      Or::unique(conv_unique<PatchCondition>(
+          OpIs::unique(llvm::X86::JCC_1), OpIs::unique(llvm::X86::LOOP),
+          OpIs::unique(llvm::X86::LOOPE), OpIs::unique(llvm::X86::LOOPNE))),
       conv_unique<PatchGenerator>(
           GetPCOffset::unique(Temp(0), Operand(0)),
           ModifyInstruction::unique(

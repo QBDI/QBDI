@@ -300,3 +300,12 @@ const char *StackTricks_s =
     "end:\n"
     "   pop %ebp\n"
     "   movl $0x666, -4(%esp)\n";
+
+const char *LoopCode_s =
+    "    push %ecx\n"
+    "    mov $0x0, %eax\n"
+    "    mov $0x5, %ecx\n"
+    "loop_start:\n"
+    "    addl $0x1, %eax\n"
+    "    loop loop_start\n"
+    "    pop %ecx\n";

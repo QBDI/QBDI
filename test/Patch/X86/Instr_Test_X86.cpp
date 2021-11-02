@@ -18,44 +18,6 @@
 #include <catch2/catch.hpp>
 #include "Patch/Instr_Test.h"
 
-TEST_CASE_METHOD(Instr_Test, "Instr_Test-UnalignedCodeForward_IC") {
-  uint64_t count1 = 0;
-  uint64_t count2 = 0;
-
-  QBDI::Context inputState;
-  memset(&inputState, 0, sizeof(QBDI::Context));
-
-  vm.deleteAllInstrumentations();
-  vm.addCodeCB(QBDI::PREINST, increment, (void *)&count1);
-  vm.addCodeCB(QBDI::POSTINST, increment, (void *)&count2);
-
-  comparedExec(UnalignedCodeForward_s, inputState, 4096);
-
-  REQUIRE((uint64_t)0 < count1);
-  REQUIRE(count1 == count2);
-
-  INFO("Took " << count1 << " instructions\n");
-}
-
-TEST_CASE_METHOD(Instr_Test, "Instr_Test-UnalignedCodeBackward_IC") {
-  uint64_t count1 = 0;
-  uint64_t count2 = 0;
-
-  QBDI::Context inputState;
-  memset(&inputState, 0, sizeof(QBDI::Context));
-
-  vm.deleteAllInstrumentations();
-  vm.addCodeCB(QBDI::PREINST, increment, (void *)&count1);
-  vm.addCodeCB(QBDI::POSTINST, increment, (void *)&count2);
-
-  comparedExec(UnalignedCodeBackward_s, inputState, 4096);
-
-  REQUIRE((uint64_t)0 < count1);
-  REQUIRE(count1 == count2);
-
-  INFO("Took " << count1 << " instructions\n");
-}
-
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-LoopCode_IC") {
   uint64_t count1 = 0;
   uint64_t count2 = 0;
