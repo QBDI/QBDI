@@ -367,3 +367,12 @@ const char *UnalignedCodeBackward_s =
 #undef UB1
 #undef UB16
 #undef UB256
+
+const char *LoopCode_s =
+    "    push %rcx\n"
+    "    mov $0x0, %rax\n"
+    "    mov $0x5, %rcx\n"
+    "loop_start:\n"
+    "    addq $0x1, %rax\n"
+    "    loop loop_start\n"
+    "    pop %rcx\n";

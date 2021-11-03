@@ -29,8 +29,8 @@
 
 namespace QBDI {
 
-static inline void orUsageMap(std::map<unsigned, RegisterUsage> &m,
-                              unsigned reg, RegisterUsage usage) {
+void addRegisterInMap(std::map<unsigned, RegisterUsage> &m, unsigned reg,
+                      RegisterUsage usage) {
   auto e = m.find(reg);
   if (e != m.end()) {
     m[reg] = usage | e->second;
@@ -54,22 +54,24 @@ std::map<unsigned, RegisterUsage> getUsedGPR(const llvm::MCInst &inst,
         continue;
       }
       if (i < e) {
-        orUsageMap(res, getUpperRegister(regNum), RegisterSet);
+        addRegisterInMap(res, getUpperRegister(regNum), RegisterSet);
       } else {
-        orUsageMap(res, getUpperRegister(regNum), RegisterUsed);
+        addRegisterInMap(res, getUpperRegister(regNum), RegisterUsed);
       }
     }
   }
 
   for (const uint16_t *implicitRegs = desc.getImplicitUses();
        implicitRegs && *implicitRegs; ++implicitRegs) {
-    orUsageMap(res, getUpperRegister(*implicitRegs), RegisterUsed);
+    addRegisterInMap(res, getUpperRegister(*implicitRegs), RegisterUsed);
   }
 
   for (const uint16_t *implicitRegs = desc.getImplicitDefs();
        implicitRegs && *implicitRegs; ++implicitRegs) {
-    orUsageMap(res, getUpperRegister(*implicitRegs), RegisterSet);
+    addRegisterInMap(res, getUpperRegister(*implicitRegs), RegisterSet);
   }
+
+  fixLLVMUsedGPR(inst, llvmcpu, res);
 
   QBDI_DEBUG_BLOCK({
     std::ostringstream oss;

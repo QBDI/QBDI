@@ -18,20 +18,6 @@
 #include <catch2/catch.hpp>
 #include "Patch/Patch_Test.h"
 
-TEST_CASE_METHOD(Patch_Test, "Patch_Test-UnalignedCodeForward") {
-  QBDI::Context inputState;
-
-  memset(&inputState, 0, sizeof(QBDI::Context));
-  comparedExec(UnalignedCodeForward_s, inputState, 4096);
-}
-
-TEST_CASE_METHOD(Patch_Test, "Patch_Test-UnalignedCodeBackward") {
-  QBDI::Context inputState;
-
-  memset(&inputState, 0, sizeof(QBDI::Context));
-  comparedExec(UnalignedCodeBackward_s, inputState, 4096);
-}
-
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-LoopCode") {
   QBDI::Context inputState;
 

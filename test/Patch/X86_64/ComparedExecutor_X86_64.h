@@ -33,6 +33,7 @@ extern const char *FibonacciRecursion_s;
 extern const char *StackTricks_s;
 extern const char *UnalignedCodeForward_s;
 extern const char *UnalignedCodeBackward_s;
+extern const char *LoopCode_s;
 
 class ComparedExecutor_X86_64 : public ShellcodeTester {
 

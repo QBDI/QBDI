@@ -891,3 +891,75 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86_64-movdir64b") {
                },
                QBDI::REGISTER_UNUSED);
 }
+
+TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86_64-loop") {
+
+  QBDI::rword addr = writeASM("target:\n    loop target\n");
+
+  checkInst(
+      vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
+      ExpectedInstAnalysis{
+          "LOOP", addr,
+          /* instSize */ 2, /* affectControlFlow */ true, /* isBranch */ true,
+          /* isCall */ false, /* isReturn */ false, /* isCompare */ false,
+          /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ false,
+          /* loadSize */ 0, /* storeSize */ 0,
+          /* condition */ QBDI::CONDITION_NONE});
+  checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
+               {
+                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_PCREL,
+                    static_cast<QBDI::rword>(-2), 1, 0, -1, nullptr,
+                    QBDI::REGISTER_UNUSED},
+                   {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_IMPLICIT, 0, 8, 0, 2,
+                    "RCX", QBDI::REGISTER_READ_WRITE},
+               },
+               QBDI::REGISTER_UNUSED);
+}
+
+TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86_64-loope") {
+
+  QBDI::rword addr = writeASM("target:\n    loope target\n");
+
+  checkInst(
+      vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
+      ExpectedInstAnalysis{
+          "LOOPE", addr,
+          /* instSize */ 2, /* affectControlFlow */ true, /* isBranch */ true,
+          /* isCall */ false, /* isReturn */ false, /* isCompare */ false,
+          /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ false,
+          /* loadSize */ 0, /* storeSize */ 0,
+          /* condition */ QBDI::CONDITION_EQUALS});
+  checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
+               {
+                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_PCREL,
+                    static_cast<QBDI::rword>(-2), 1, 0, -1, nullptr,
+                    QBDI::REGISTER_UNUSED},
+                   {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_IMPLICIT, 0, 8, 0, 2,
+                    "RCX", QBDI::REGISTER_READ_WRITE},
+               },
+               QBDI::REGISTER_UNUSED);
+}
+
+TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86_64-loopne") {
+
+  QBDI::rword addr = writeASM("target:\n    loopne target\n");
+
+  checkInst(
+      vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
+      ExpectedInstAnalysis{
+          "LOOPNE", addr,
+          /* instSize */ 2, /* affectControlFlow */ true, /* isBranch */ true,
+          /* isCall */ false, /* isReturn */ false, /* isCompare */ false,
+          /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ false,
+          /* loadSize */ 0, /* storeSize */ 0,
+          /* condition */ QBDI::CONDITION_NOT_EQUALS});
+  checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
+               {
+                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_PCREL,
+                    static_cast<QBDI::rword>(-2), 1, 0, -1, nullptr,
+                    QBDI::REGISTER_UNUSED},
+                   {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_IMPLICIT, 0, 8, 0, 2,
+                    "RCX", QBDI::REGISTER_READ_WRITE},
+               },
+               QBDI::REGISTER_UNUSED);
+}

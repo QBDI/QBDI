@@ -31,6 +31,7 @@ extern const char *RelativeAddressing_s;
 extern const char *ConditionalBranching_s;
 extern const char *FibonacciRecursion_s;
 extern const char *StackTricks_s;
+extern const char *LoopCode_s;
 
 class ComparedExecutor_X86 : public ShellcodeTester {
 

@@ -600,4 +600,17 @@ unsigned getUpperRegister(unsigned reg, size_t pos) {
   return GPR_ID[p];
 }
 
+void fixLLVMUsedGPR(const llvm::MCInst &inst, const LLVMCPU &llvmcpu,
+                    std::map<unsigned, RegisterUsage> &m) {
+  switch (inst.getOpcode()) {
+    case llvm::X86::LOOP:
+    case llvm::X86::LOOPE:
+    case llvm::X86::LOOPNE:
+      addRegisterInMap(m, /* RCX|ECX */ GPR_ID[2], RegisterUsed | RegisterSet);
+      break;
+    default:
+      break;
+  }
+}
+
 } // namespace QBDI
