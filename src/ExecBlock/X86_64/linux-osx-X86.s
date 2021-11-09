@@ -42,4 +42,3 @@ _skip_save_fpu:
 _skip_restore_fpu:
     cld;
     ret;
-    
