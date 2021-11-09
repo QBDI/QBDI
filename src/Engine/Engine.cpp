@@ -155,6 +155,9 @@ void Engine::setOptions(Options options) {
 
     Options needRecreate =
         Options::OPT_DISABLE_FPR | Options::OPT_DISABLE_OPTIONAL_FPR;
+#if defined(QBDI_ARCH_X86_64)
+    needRecreate |= Options::OPT_ENABLE_FS_GS;
+#endif // QBDI_ARCH_X86_64
 
     // need to recreate all ExecBlock
     if (((this->options ^ options) & needRecreate) != 0) {

@@ -75,8 +75,12 @@ public:
   /*! Instrument a patch by evaluating its generators on the current context.
    * Also handles the temporary register management for this patch.
    *
-   * @param[in] patch     The current patch to instrument.
-   * @param[in] llvmcpu   LLVMCPU object
+   * @param[in] patch       The current patch to instrument.
+   * @param[in] llvmcpu     LLVMCPU object
+   * @param[in] patchGen    The list of patchGenerator to apply
+   * @param[in] breakToHost Add a break to VM need to be add after the patch
+   * @param[in] position    Add the patch before or after the instruction
+   * @param[in] priority    The priority of this patch
    */
   void instrument(Patch &patch, const LLVMCPU &llvmcpu,
                   const PatchGeneratorUniquePtrVec &patchGen, bool breakToHost,

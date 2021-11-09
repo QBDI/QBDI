@@ -87,6 +87,7 @@ public:
    *
    * @param[in] cpu        The name of the CPU
    * @param[in] mattrs     A list of additional attributes
+   * @param[in] opts       The options to enable
    * @param[in] vminstance Pointer to public engine interface
    */
   Engine(const std::string &cpu = "",

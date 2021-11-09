@@ -436,6 +436,42 @@ llvm::MCInst ret() {
   return inst;
 }
 
+llvm::MCInst rdfsbase64(unsigned int reg) {
+  llvm::MCInst inst;
+
+  inst.setOpcode(llvm::X86::RDFSBASE64);
+  inst.addOperand(llvm::MCOperand::createReg(reg));
+
+  return inst;
+}
+
+llvm::MCInst rdgsbase64(unsigned int reg) {
+  llvm::MCInst inst;
+
+  inst.setOpcode(llvm::X86::RDGSBASE64);
+  inst.addOperand(llvm::MCOperand::createReg(reg));
+
+  return inst;
+}
+
+llvm::MCInst wrfsbase64(unsigned int reg) {
+  llvm::MCInst inst;
+
+  inst.setOpcode(llvm::X86::WRFSBASE64);
+  inst.addOperand(llvm::MCOperand::createReg(reg));
+
+  return inst;
+}
+
+llvm::MCInst wrgsbase64(unsigned int reg) {
+  llvm::MCInst inst;
+
+  inst.setOpcode(llvm::X86::WRGSBASE64);
+  inst.addOperand(llvm::MCOperand::createReg(reg));
+
+  return inst;
+}
+
 llvm::MCInst movrr(unsigned int dst, unsigned int src) {
   if constexpr (is_x86_64)
     return mov64rr(dst, src);
@@ -602,6 +638,22 @@ RelocatableInst::UniquePtr Je(int32_t offset) {
 
 RelocatableInst::UniquePtr Jne(int32_t offset) {
   return NoReloc::unique(jne(offset));
+}
+
+RelocatableInst::UniquePtr Rdfsbase(Reg reg) {
+  return NoReloc::unique(rdfsbase64(reg));
+}
+
+RelocatableInst::UniquePtr Rdgsbase(Reg reg) {
+  return NoReloc::unique(rdgsbase64(reg));
+}
+
+RelocatableInst::UniquePtr Wrfsbase(Reg reg) {
+  return NoReloc::unique(wrfsbase64(reg));
+}
+
+RelocatableInst::UniquePtr Wrgsbase(Reg reg) {
+  return NoReloc::unique(wrgsbase64(reg));
 }
 
 } // namespace QBDI

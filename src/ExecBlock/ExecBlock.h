@@ -189,7 +189,6 @@ public:
    *
    * @param seqStart [in] Iterator to the start of a list of patches.
    * @param seqEnd   [in] Iterator to the end of a list of patches.
-   * @param seqType  [in] Type of the sequence.
    *
    * @return A structure detailling the write operation result.
    */
@@ -302,13 +301,13 @@ public:
    */
   const llvm::MCInst &getOriginalMCInst(uint16_t instID) const;
 
-  /*! Obtain the analysis of an instruction metadata. Analysis results are
+  /*! Obtain the analysis of an instruction. Analysis results are
    * cached in the InstAnalysis. The validity of the returned pointer is only
    * guaranteed until the end of the callback, else a deepcopy of the structure
    * is required.
    *
-   * @param[in] instMetadata Metadata to analyze.
-   * @param[in] type         Properties to retrieve during analysis.
+   * @param[in] instID  The ID of the instruction to analyse.
+   * @param[in] type    Properties to retrieve during analysis.
    *
    * @return A InstAnalysis structure containing the analysis result.
    */
