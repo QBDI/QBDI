@@ -150,7 +150,7 @@ int qbdipreload_hook_main(void *main) {
   return QBDIPRELOAD_NO_ERROR;
 }
 
-QBDI_EXPORT void exit(int status) {
+QBDI_FORCE_EXPORT void exit(int status) {
   if (!HAS_EXITED && HAS_PRELOAD) {
     HAS_EXITED = true;
     qbdipreload_on_exit(status);
@@ -159,7 +159,7 @@ QBDI_EXPORT void exit(int status) {
   __builtin_unreachable();
 }
 
-QBDI_EXPORT void _exit(int status) {
+QBDI_FORCE_EXPORT void _exit(int status) {
   if (!HAS_EXITED && HAS_PRELOAD) {
     HAS_EXITED = true;
     qbdipreload_on_exit(status);
@@ -172,10 +172,11 @@ typedef int (*start_main_fn)(int (*)(int, char **, char **), int, char **,
                              void (*)(void), void (*)(void), void (*)(void),
                              void *);
 
-QBDI_EXPORT int __libc_start_main(int (*main)(int, char **, char **), int argc,
-                                  char **ubp_av, void (*init)(void),
-                                  void (*fini)(void), void (*rtld_fini)(void),
-                                  void(*stack_end)) {
+QBDI_FORCE_EXPORT int __libc_start_main(int (*main)(int, char **, char **),
+                                        int argc, char **ubp_av,
+                                        void (*init)(void), void (*fini)(void),
+                                        void (*rtld_fini)(void),
+                                        void(*stack_end)) {
 
   start_main_fn o_libc_start_main =
       (start_main_fn)dlsym(RTLD_NEXT, "__libc_start_main");

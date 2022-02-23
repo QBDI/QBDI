@@ -55,15 +55,13 @@ extern "C" {
  * @param[in] gprCtx     Platform GPRState pointer
  * @param[in] gprState   QBDI GPRState pointer
  */
-QBDI_EXPORT void qbdipreload_threadCtxToGPRState(const void *gprCtx,
-                                                 GPRState *gprState);
+void qbdipreload_threadCtxToGPRState(const void *gprCtx, GPRState *gprState);
 
 /** Convert a QBDIPreload FPR context (platform dependent) to a QBDI FPR state.
  * @param[in] fprCtx     Platform FPRState pointer
  * @param[in] fprState   QBDI FPRState pointer
  */
-QBDI_EXPORT void qbdipreload_floatCtxToFPRState(const void *fprCtx,
-                                                FPRState *fprState);
+void qbdipreload_floatCtxToFPRState(const void *fprCtx, FPRState *fprState);
 
 /** Enable QBDIPreload hook on the main function (using its address)
  *
@@ -72,7 +70,7 @@ QBDI_EXPORT void qbdipreload_floatCtxToFPRState(const void *fprCtx,
  *
  * @param[in] main       Pointer to the main function
  */
-QBDI_EXPORT int qbdipreload_hook_main(void *main);
+int qbdipreload_hook_main(void *main);
 
 /*
  * QBDIPreload callbacks
@@ -133,11 +131,10 @@ extern int qbdipreload_on_exit(int status);
  * Private API
  */
 
-QBDI_EXPORT int qbdipreload_hook_init();
+int qbdipreload_hook_init();
 
-QBDI_EXPORT void *qbdipreload_setup_exception_handler(uint32_t target,
-                                                      uint32_t mask,
-                                                      void *handler);
+void *qbdipreload_setup_exception_handler(uint32_t target, uint32_t mask,
+                                          void *handler);
 
 #ifdef __cplusplus
 } // "C"

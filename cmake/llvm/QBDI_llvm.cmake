@@ -143,6 +143,26 @@ if(NOT llvm_POPULATED)
         CACHE STRING "Enable ASAN")
   endif()
 
+  # build llvm with visibility hidden
+  if(DEFINED CMAKE_C_VISIBILITY_PRESET)
+    set(QBDI_CACHE_CMAKE_C_VISIBILITY_PRESET ${CMAKE_C_VISIBILITY_PRESET})
+  endif()
+  if(DEFINED CMAKE_CXX_VISIBILITY_PRESET)
+    set(QBDI_CACHE_CMAKE_CXX_VISIBILITY_PRESET ${CMAKE_CXX_VISIBILITY_PRESET})
+  endif()
+  set(CMAKE_C_VISIBILITY_PRESET
+      "hidden"
+      CACHE STRING "set CMAKE_C_VISIBILITY_PRESET" FORCE)
+  set(CMAKE_CXX_VISIBILITY_PRESET
+      "hidden"
+      CACHE STRING "set CMAKE_CXX_VISIBILITY_PRESET" FORCE)
+
+  # remove visibility("default") in llvm code
+  configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/llvm/include_llvm_Support_Compiler.h.patch.txt"
+    "${llvm_SOURCE_DIR}/include/llvm/Support/Compiler.h"
+    COPYONLY)
+
   option(QBDI_LLVM_NATIVE_BUILD "Hack llvm native build" ON)
   # tbl-gen compilation need a native compilation.
   # we need to hack cmake/modules/CrossCompile.cmake:llvm_create_cross_target
@@ -164,6 +184,22 @@ if(NOT llvm_POPULATED)
     set(CMAKE_SOURCE_DIR
         "${QBDI_SOURCE_DIR}"
         CACHE STRING "" FORCE)
+  endif()
+
+  # restore visibility
+  if(DEFINED QBDI_CACHE_CMAKE_C_VISIBILITY_PRESET)
+    set(CMAKE_C_VISIBILITY_PRESET
+        ${QBDI_CACHE_CMAKE_C_VISIBILITY_PRESET}
+        CACHE STRING "set CMAKE_C_VISIBILITY_PRESET" FORCE)
+  else()
+    unset(CMAKE_C_VISIBILITY_PRESET CACHE)
+  endif()
+  if(DEFINED QBDI_CACHE_CMAKE_CXX_VISIBILITY_PRESET)
+    set(CMAKE_CXX_VISIBILITY_PRESET
+        ${QBDI_CACHE_CMAKE_CXX_VISIBILITY_PRESET}
+        CACHE STRING "set CMAKE_CXX_VISIBILITY_PRESET" FORCE)
+  else()
+    unset(CMAKE_CXX_VISIBILITY_PRESET CACHE)
   endif()
 endif()
 

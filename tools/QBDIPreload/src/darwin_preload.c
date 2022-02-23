@@ -405,7 +405,7 @@ int qbdipreload_hook_main(void *main) {
   return QBDIPRELOAD_NO_ERROR;
 }
 
-QBDI_EXPORT void intercept_exit(int status) {
+QBDI_FORCE_EXPORT void intercept_exit(int status) {
   if (!HAS_EXITED && HAS_PRELOAD) {
     HAS_EXITED = true;
     qbdipreload_on_exit(status);
@@ -414,7 +414,7 @@ QBDI_EXPORT void intercept_exit(int status) {
 }
 DYLD_INTERPOSE(intercept_exit, exit)
 
-QBDI_EXPORT void intercept__exit(int status) {
+QBDI_FORCE_EXPORT void intercept__exit(int status) {
   if (!HAS_EXITED && HAS_PRELOAD) {
     HAS_EXITED = true;
     qbdipreload_on_exit(status);

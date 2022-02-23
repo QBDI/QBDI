@@ -36,6 +36,7 @@
 
 #cmakedefine QBDI_LOG_DEBUG @QBDI_ENABLE_LOG_DEBUG@
 
+#cmakedefine QBDI_EXPORT_SYM @QBDI_EXPORT_SYM@
 
 #ifdef __cplusplus
 static constexpr bool is_android = @QBDI_PLATFORM_ANDROID@;

@@ -34,7 +34,7 @@ int qbdipreload_on_main(int argc, char **argv) {
 }
 
 int qbdipreload_on_run(VMInstanceRef vm, rword start, rword stop) {
-  qbdi_addCodeCB(vm, QBDI_PREINST, onInstruction, NULL);
+  qbdi_addCodeCB(vm, QBDI_PREINST, onInstruction, NULL, 0);
   qbdi_run(vm, start, stop);
   return QBDIPRELOAD_NO_ERROR;
 }
