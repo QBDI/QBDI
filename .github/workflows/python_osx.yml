@@ -12,7 +12,7 @@ jobs:
     runs-on: macos-10.15
     strategy:
       matrix:
-        python-version: [3.8, 3.9, 3.10]
+        python-version: ['3.8', '3.9', '3.10']
     env:
       QBDI_PLATFORM: 'osx'
       QBDI_ARCH: 'X86_64'
