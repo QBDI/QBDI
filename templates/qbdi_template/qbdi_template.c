@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
   // Add callback on our instruction range
   uint32_t uid =
       qbdi_addCodeRangeCB(vm, (rword)&secretFunc, (rword)&secretFunc + 100,
-                          QBDI_PREINST, showInstruction, vm);
+                          QBDI_PREINST, showInstruction, vm, 0);
   assert(uid != QBDI_INVALID_EVENTID);
 
   // add executable code range
