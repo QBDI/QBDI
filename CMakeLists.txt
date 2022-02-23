@@ -80,10 +80,14 @@ if(APPLE)
   endif("${isSystemDir}" STREQUAL "-1")
 endif()
 
+set(QBDI_EXPORT_SYM 1)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI/Config.h.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/include-shared/QBDI/Config.h" @ONLY)
+unset(QBDI_EXPORT_SYM)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI/Config.h.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/include-static/QBDI/Config.h" @ONLY)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI/Version.h.in"
                "${CMAKE_CURRENT_BINARY_DIR}/include/QBDI/Version.h" @ONLY)
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI/Config.h.in"
-               "${CMAKE_CURRENT_BINARY_DIR}/include/QBDI/Config.h" @ONLY)
 configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI/arch/${QBDI_ARCH}/State.h"
   "${CMAKE_CURRENT_BINARY_DIR}/include/QBDI/State.h" COPYONLY)
@@ -273,6 +277,8 @@ if(QBDI_STATIC_LIBRARY)
   add_library(QBDI_obj STATIC)
   target_link_libraries(QBDI_obj PRIVATE QBDI_src)
   set_target_properties(QBDI_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  target_include_directories(
+    QBDI_obj PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include-static")
 
   set(qbdi_static_libs qbdi-llvm QBDI_obj)
 
@@ -283,7 +289,8 @@ if(QBDI_STATIC_LIBRARY)
     QBDI_static
     PUBLIC $<INSTALL_INTERFACE:include>
            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-           $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>)
+           $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+           $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include-static>)
 
   target_link_libraries(QBDI_static PUBLIC ${QBDI_LLVM_LINK_LIBRARY})
   if(QBDI_PLATFORM_ANDROID)
@@ -314,7 +321,9 @@ if(QBDI_SHARED_LIBRARY)
     QBDI
     PUBLIC $<INSTALL_INTERFACE:include>
            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-           $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>)
+           $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+    INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include-static>
+    PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include-shared>)
 
   target_link_libraries(QBDI PRIVATE QBDI_src QBDI_shared_src qbdi-llvm)
 
@@ -366,6 +375,8 @@ install(
   PATTERN "*.in" EXCLUDE
   PATTERN "arch" EXCLUDE)
 install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include/QBDI"
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include-static/QBDI"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI.h"

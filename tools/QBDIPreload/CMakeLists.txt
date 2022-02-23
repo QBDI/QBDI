@@ -19,6 +19,7 @@ target_compile_options(
 target_include_directories(
   QBDIPreload
   PRIVATE $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
+          $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include-static>
           $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
           $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
           $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
