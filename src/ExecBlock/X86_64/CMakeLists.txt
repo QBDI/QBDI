@@ -1,20 +1,24 @@
 # Add QBDI target
 set(SOURCES "${CMAKE_CURRENT_LIST_DIR}/ExecBlock_X86_64.cpp")
 
-if(QBDI_PLATFORM_OSX
-   OR QBDI_PLATFORM_LINUX
-   OR QBDI_PLATFORM_ANDROID)
-
+if(QBDI_PLATFORM_OSX)
   if(QBDI_ARCH_X86_64)
-    set(ASM_STUB_EXECBLOCK "${CMAKE_CURRENT_LIST_DIR}/linux-osx-X86_64.s")
+    set(ASM_STUB_EXECBLOCK "${CMAKE_CURRENT_LIST_DIR}/osx-X86_64.s")
   else() # QBDI_ARCH_X86
-    set(ASM_STUB_EXECBLOCK "${CMAKE_CURRENT_LIST_DIR}/linux-osx-X86.s")
+    set(ASM_STUB_EXECBLOCK "${CMAKE_CURRENT_LIST_DIR}/osx-X86.s")
   endif()
   list(APPEND SOURCES "${ASM_STUB_EXECBLOCK}")
-  if(NOT QBDI_PLATFORM_OSX)
-    set_property(SOURCE "${ASM_STUB_EXECBLOCK}" PROPERTY COMPILE_FLAGS
-                                                         --noexecstack)
+
+elseif(QBDI_PLATFORM_LINUX OR QBDI_PLATFORM_ANDROID)
+
+  if(QBDI_ARCH_X86_64)
+    set(ASM_STUB_EXECBLOCK "${CMAKE_CURRENT_LIST_DIR}/linux-X86_64.s")
+  else() # QBDI_ARCH_X86
+    set(ASM_STUB_EXECBLOCK "${CMAKE_CURRENT_LIST_DIR}/linux-X86.s")
   endif()
+  list(APPEND SOURCES "${ASM_STUB_EXECBLOCK}")
+  set_property(SOURCE "${ASM_STUB_EXECBLOCK}" PROPERTY COMPILE_FLAGS
+                                                       --noexecstack)
 
 elseif(QBDI_PLATFORM_WINDOWS)
 

@@ -157,6 +157,12 @@ if(NOT llvm_POPULATED)
       "hidden"
       CACHE STRING "set CMAKE_CXX_VISIBILITY_PRESET" FORCE)
 
+  # remove visibility("default") in llvm code
+  configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/llvm/include_llvm_Support_Compiler.h.patch.txt"
+    "${llvm_SOURCE_DIR}/include/llvm/Support/Compiler.h"
+    COPYONLY)
+
   option(QBDI_LLVM_NATIVE_BUILD "Hack llvm native build" ON)
   # tbl-gen compilation need a native compilation.
   # we need to hack cmake/modules/CrossCompile.cmake:llvm_create_cross_target

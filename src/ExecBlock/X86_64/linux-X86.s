@@ -19,7 +19,8 @@
 
 .text
 
-.globl __qbdi_runCodeBlock
+.hidden __qbdi_runCodeBlock
+.globl  __qbdi_runCodeBlock
 
 __qbdi_runCodeBlock:
     mov eax, [esp+4]
