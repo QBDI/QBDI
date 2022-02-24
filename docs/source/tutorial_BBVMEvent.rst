@@ -34,50 +34,50 @@ QBDI detects the beginning of a basic block:
 - potentially if the user changes the callback during the execution (add a new callback, clear the cache, return ``BREAK_TO_VM``, ...)
 
 Due to the dynamic detection of the basic block, some basic block can overlap others.
-For the follow code, QBDI can detect 4 different basic blocks. If the first jump is taken:
-
-- The begin of the method, between 0x10e9 and 0x1103;
-- The block between 0x1103 and 0x1109;
-- The L2 block between 0x1115 and 0x111f.
-
-If the first jump isn't taken:
-
-- The begin of the method, between 0x10e9 and 0x1103;
-- A block composed of L1 and L2 between 0x1109 and 0x111f.
+This behavior can be observed in this code:
 
 .. code:: asm
 
-    // foo:
-    // 10e9:
-    push   rbp
-    mov    rbp,rsp
-    mov    DWORD PTR [rbp-0x14],edi
-    mov    edx,DWORD PTR [rbp-0x14]
-    mov    eax,edx
-    shl    eax,0x2
-    add    eax,edx
-    mov    DWORD PTR [rbp-0x4],eax
-    cmp    DWORD PTR [rbp-0x14],0xa
-    jle    1109 <L1>
-    // 1103:
-    add    DWORD PTR [rbp-0x4],0x33
-    jmp    1115 <L2>
-    // 1109: L1:
-    mov    eax,DWORD PTR [rbp-0x4]
-    imul   eax,eax
-    add    eax,0x57
-    mov    DWORD PTR [rbp-0x4],eax
-    // 1115: L2:
-    mov    edx,DWORD PTR [rbp-0x4]
-    mov    eax,DWORD PTR [rbp-0x14]
-    add    eax,edx
-    pop    rbp
-    ret
-    // 111f:
+    // BB
+    0x0000000000001000:   push rbp
+    0x0000000000001001:   mov  rbp, rsp
+    0x0000000000001004:   mov  dword ptr [rbp - 0x14], edi
+    0x0000000000001007:   mov  edx, dword ptr [rbp - 0x14]
+    0x000000000000100a:   mov  eax, edx
+    0x000000000000100c:   shl  eax, 2
+    0x000000000000100f:   add  eax, edx
+    0x0000000000001011:   mov  dword ptr [rbp - 4], eax
+    0x0000000000001014:   cmp  dword ptr [rbp - 0x14], 0xa
+    0x0000000000001018:   jle  0x1027
+    // BB
+    0x000000000000101e:   add  dword ptr [rbp - 4], 0x33
+    0x0000000000001022:   jmp  0x1033
+    // BB
+    0x0000000000001027:   mov  eax, dword ptr [rbp - 4]
+    0x000000000000102a:   imul eax, eax
+    0x000000000000102d:   add  eax, 0x57
+    0x0000000000001030:   mov  dword ptr [rbp - 4], eax
+    // BB
+    0x0000000000001033:   mov  edx, dword ptr [rbp - 4]
+    0x0000000000001036:   mov  eax, dword ptr [rbp - 0x14]
+    0x0000000000001039:   add  eax, edx
+    0x000000000000103b:   pop  rbp
+    0x000000000000103c:   ret
+
+In this snippet, QBDI can detect 4 different basic blocks. If the first jump is taken:
+
+- The begin of the method, between 0x1000 and 0x101e;
+- The block between 0x101e and 0x1027;
+- The last block between 0x1033 and 0x103c.
+
+If the first jump isn't taken:
+
+- The begin of the method, between 0x1000 and 0x101e;
+- The last block between 0x1027 and 0x103c.
 
 
-Get basic block information
----------------------------
+Getting basic block information
+-------------------------------
 
 To receive basic block information, a ``VMCallback`` should be registered to the VM with ``addVMEventCB`` for
 one of ``BASIC_BLOCK_*`` events. Once a registered event occurs, the callback is called with a description of the VM (``VMState``).
