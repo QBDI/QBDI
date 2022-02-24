@@ -1,6 +1,7 @@
 target_sources(
   QBDITest
   PRIVATE "${CMAKE_CURRENT_LIST_DIR}/AllocTest.cpp"
+          "${CMAKE_CURRENT_LIST_DIR}/APITest.cpp"
           "${CMAKE_CURRENT_LIST_DIR}/RangeTest.cpp"
           "${CMAKE_CURRENT_LIST_DIR}/VMTest.cpp"
           "${CMAKE_CURRENT_LIST_DIR}/MemoryAccessTest.cpp")

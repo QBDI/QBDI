@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "Patch/PatchUtils.h"
+#include "Patch/Types.h"
 
 #include "QBDI/Callback.h"
 #include "QBDI/InstAnalysis.h"
@@ -76,15 +77,15 @@ public:
    * Also handles the temporary register management for this patch.
    *
    * @param[in] patch       The current patch to instrument.
-   * @param[in] llvmcpu     LLVMCPU object
    * @param[in] patchGen    The list of patchGenerator to apply
    * @param[in] breakToHost Add a break to VM need to be add after the patch
    * @param[in] position    Add the patch before or after the instruction
    * @param[in] priority    The priority of this patch
+   * @param[in] tag         The tag for this patch
    */
-  void instrument(Patch &patch, const LLVMCPU &llvmcpu,
-                  const PatchGeneratorUniquePtrVec &patchGen, bool breakToHost,
-                  InstPosition position, int priority) const;
+  void instrument(Patch &patch, const PatchGeneratorUniquePtrVec &patchGen,
+                  bool breakToHost, InstPosition position, int priority,
+                  RelocatableInstTag tag) const;
 };
 
 class InstrRuleBasic : public AutoUnique<InstrRule, InstrRuleBasic> {
@@ -93,6 +94,7 @@ class InstrRuleBasic : public AutoUnique<InstrRule, InstrRuleBasic> {
   PatchGeneratorUniquePtrVec patchGen;
   InstPosition position;
   bool breakToHost;
+  RelocatableInstTag tag;
 
 public:
   /*! Allocate a new instrumentation rule with a condition, a list of
@@ -109,10 +111,12 @@ public:
    *                         should end with a break to host (in the case of a
    *                         callback for example).
    * @param[in] priority     Priority of the callback
+   * @param[in] tag          A tag for the callback
    */
   InstrRuleBasic(PatchConditionUniquePtr &&condition,
                  PatchGeneratorUniquePtrVec &&patchGen, InstPosition position,
-                 bool breakToHost, int priority = PRIORITY_DEFAULT);
+                 bool breakToHost, int priority = PRIORITY_DEFAULT,
+                 RelocatableInstTag tag = RelocTagInvalid);
 
   ~InstrRuleBasic() override;
 
@@ -136,7 +140,7 @@ public:
   inline bool tryInstrument(Patch &patch,
                             const LLVMCPU &llvmcpu) const override {
     if (canBeApplied(patch, llvmcpu)) {
-      instrument(patch, llvmcpu, patchGen, breakToHost, position, priority);
+      instrument(patch, patchGen, breakToHost, position, priority, tag);
       return true;
     }
     return false;
@@ -152,6 +156,7 @@ class InstrRuleDynamic : public AutoUnique<InstrRule, InstrRuleDynamic> {
   PatchGenMethod patchGenMethod;
   InstPosition position;
   bool breakToHost;
+  RelocatableInstTag tag;
 
 public:
   /*! Allocate a new instrumentation rule with a condition, a method to generate
@@ -168,10 +173,12 @@ public:
    *                             instrumentation should end with a break to
    *                             host (in the case of a callback for example).
    * @param[in] priority         Priority of the callback
+   * @param[in] tag              A tag for the callback
    */
   InstrRuleDynamic(PatchConditionUniquePtr &&condition,
                    PatchGenMethod patchGenMethod, InstPosition position,
-                   bool breakToHost, int priority = PRIORITY_DEFAULT);
+                   bool breakToHost, int priority = PRIORITY_DEFAULT,
+                   RelocatableInstTag tag = RelocTagInvalid);
 
   ~InstrRuleDynamic() override;
 
@@ -195,8 +202,8 @@ public:
   inline bool tryInstrument(Patch &patch,
                             const LLVMCPU &llvmcpu) const override {
     if (canBeApplied(patch, llvmcpu)) {
-      instrument(patch, llvmcpu, patchGenMethod(patch, llvmcpu), breakToHost,
-                 position, priority);
+      instrument(patch, patchGenMethod(patch, llvmcpu), breakToHost, position,
+                 priority, tag);
       return true;
     }
     return false;

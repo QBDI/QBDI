@@ -186,6 +186,19 @@ public:
   inline operator unsigned int() const { return idx; }
 };
 
+/* Tag value for RelocatableInst
+ */
+enum RelocatableInstTag {
+  RelocInst = 0,
+  RelocTagPreInstMemAccess = 0x10,
+  RelocTagPreInstStdCBK = 0x11,
+  RelocTagPatchBegin = 0x20,
+  RelocTagPatchEnd = 0x21,
+  RelocTagPostInstMemAccess = 0x30,
+  RelocTagPostInstStdCBK = 0x31,
+  RelocTagInvalid = 0xff,
+};
+
 } // namespace QBDI
 
 #endif // TYPES_H

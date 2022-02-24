@@ -491,7 +491,7 @@ bool Engine::run(rword start, rword stop) {
       QBDI_DEBUG("Receive STOP Action");
       break;
     }
-    if (action == BREAK_TO_VM) {
+    if (action != CONTINUE) {
       basicBlockBeginAddr = 0;
       basicBlockEndAddr = 0;
     }

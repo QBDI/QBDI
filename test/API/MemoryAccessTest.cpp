@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "MemoryAccessTest.h"
 #include <catch2/catch.hpp>
+#include "APITest.h"
 
 #include <sstream>
 #include <string>
@@ -28,7 +28,6 @@
 #include "QBDI/Platform.h"
 #include "QBDI/Range.h"
 
-#define STACK_SIZE 4096
 #define FAKE_RET_ADDR 0x666
 
 #define N_SUM(N) ((N) * ((N) + 1) / 2)
@@ -161,55 +160,6 @@ QBDI::rword mad(volatile uint32_t *a, volatile uint32_t *b,
   cv = (av + cv) * (bv + cv);
   *c = cv;
   return *c;
-}
-
-MemoryAccessTest::MemoryAccessTest() : vm() {
-
-  bool instrumented =
-      vm.addInstrumentedModuleFromAddr((QBDI::rword)&arrayRead8);
-  REQUIRE(instrumented);
-
-  // get GPR state
-  state = vm.getGPRState();
-
-  // Get a pointer to the GPR state of the vm
-  // Setup initial GPR state, this fakestack will produce a ret NULL at the end
-  // of the execution
-  bool ret = QBDI::allocateVirtualStack(state, STACK_SIZE, &fakestack);
-  REQUIRE(ret == true);
-}
-
-MemoryAccessTest::~MemoryAccessTest() {
-  QBDI::alignedFree(fakestack);
-  objects.clear();
-}
-
-QBDI::rword MemoryAccessTest::genASM(const char *source,
-                                     const std::vector<std::string> mattrs) {
-  std::ostringstream finalSource;
-
-  finalSource << source << "\n"
-              << "ret\n";
-
-  objects.emplace_back(finalSource.str().c_str(), "", mattrs);
-
-  const llvm::ArrayRef<uint8_t> &code = objects.back().getCode();
-  llvm::sys::Memory::InvalidateInstructionCache(code.data(), code.size());
-
-  vm.addInstrumentedRange((QBDI::rword)code.data(),
-                          (QBDI::rword)code.data() + code.size());
-  vm.clearCache((QBDI::rword)code.data(),
-                (QBDI::rword)code.data() + code.size());
-
-  return (QBDI::rword)code.data();
-}
-
-bool MemoryAccessTest::runOnASM(QBDI::rword *retval, const char *source,
-                                const std::vector<QBDI::rword> &args,
-                                const std::vector<std::string> mattrs) {
-  QBDI::rword addr = genASM(source, mattrs);
-
-  return vm.call(retval, addr, args);
 }
 
 QBDI::VMAction checkArrayRead8(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
@@ -470,7 +420,7 @@ QBDI::VMAction writeSnooper(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
 
 #if not defined(QBDI_ARCH_ARM)
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Read8") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest-Read8") {
   char buffer[] = "p0p30fd0p3";
   size_t buffer_size = sizeof(buffer) / sizeof(char);
   TestInfo info = {(void *)buffer, sizeof(buffer), 0};
@@ -487,7 +437,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Read8") {
   REQUIRE(OFFSET_SUM(buffer_size) == info.i);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Read16") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest-Read16") {
   uint16_t buffer[] = {44595, 59483, 57377, 31661, 846,
                        56570, 46925, 62955, 25481, 41095};
   size_t buffer_size = sizeof(buffer) / sizeof(uint16_t);
@@ -505,7 +455,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Read16") {
   REQUIRE(OFFSET_SUM(buffer_size) == info.i);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Read32") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest-Read32") {
   uint32_t buffer[] = {3531902336, 1974345459, 1037124602, 2572792182,
                        3451121073, 4105092976, 2050515100, 2786945221,
                        1496976643, 515521533};
@@ -524,7 +474,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Read32") {
   REQUIRE(OFFSET_SUM(buffer_size) == info.i);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Write8") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest-Write8") {
   const size_t buffer_size = 10;
   uint8_t buffer[buffer_size];
   TestInfo info = {(void *)buffer, sizeof(buffer), 0};
@@ -541,7 +491,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Write8") {
   REQUIRE(OFFSET_SUM(buffer_size) == info.i);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Write16") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest-Write16") {
   const size_t buffer_size = 10;
   uint16_t buffer[buffer_size];
   TestInfo info = {(void *)buffer, sizeof(buffer), 0};
@@ -558,7 +508,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Write16") {
   REQUIRE(OFFSET_SUM(buffer_size) == info.i);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Write32") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest-Write32") {
   const size_t buffer_size = 10;
   uint32_t buffer[buffer_size];
   TestInfo info = {(void *)buffer, sizeof(buffer), 0};
@@ -575,7 +525,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-Write32") {
   REQUIRE(OFFSET_SUM(buffer_size) == info.i);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-BasicBlockRead") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest-BasicBlockRead") {
   char buffer[] = "p0p30fd0p3";
   size_t buffer_size = sizeof(buffer) / sizeof(char);
   TestInfo infoInst = {(void *)buffer, sizeof(buffer), 0};
@@ -607,7 +557,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-BasicBlockRead") {
   REQUIRE(infoInst.i == infoBB.i);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-BasicBlockWrite") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest-BasicBlockWrite") {
   const size_t buffer_size = 11;
   char buffer[buffer_size];
   TestInfo infoInst = {(void *)buffer, sizeof(buffer), 0};
@@ -639,7 +589,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-BasicBlockWrite") {
   REQUIRE(infoInst.i == infoBB.i);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-ReadRange") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest-ReadRange") {
   uint32_t buffer[] = {3531902336, 1974345459, 1037124602, 2572792182,
                        3451121073, 4105092976, 2050515100, 2786945221,
                        1496976643, 515521533};
@@ -659,7 +609,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-ReadRange") {
   REQUIRE(OFFSET_SUM(buffer_size) == info.i);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-WriteRange") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest-WriteRange") {
   const size_t buffer_size = 10;
   uint32_t buffer[buffer_size];
   TestInfo info = {(void *)buffer, sizeof(buffer), 0};
@@ -677,7 +627,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-WriteRange") {
   REQUIRE(OFFSET_SUM(buffer_size) == info.i);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-ReadWriteRange") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest-ReadWriteRange") {
   const size_t buffer_size = 10;
   uint32_t buffer[buffer_size];
   TestInfo info = {(void *)buffer, sizeof(buffer), 0};
@@ -708,7 +658,7 @@ TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-ReadWriteRange") {
   REQUIRE(OFFSET_SUM(buffer_size) == info.i);
 }
 
-TEST_CASE_METHOD(MemoryAccessTest, "MemoryAccessTest-MemorySnooping") {
+TEST_CASE_METHOD(APITest, "MemoryAccessTest-MemorySnooping") {
   uint32_t a = 10, b = 42, c = 1337;
   QBDI::rword original = mad(&a, &b, &c);
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);

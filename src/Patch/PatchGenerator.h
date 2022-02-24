@@ -40,8 +40,7 @@ template <typename T>
 class PureEval {
 public:
   operator std::vector<std::unique_ptr<RelocatableInst>>() const {
-    return (static_cast<const T *>(this))
-        ->generate(nullptr, 0, 0, nullptr, nullptr);
+    return (static_cast<const T *>(this))->generate(nullptr, nullptr, nullptr);
   }
 };
 
@@ -65,8 +64,8 @@ public:
   using UniquePtrVec = std::vector<std::unique_ptr<PatchGenerator>>;
 
   virtual std::vector<std::unique_ptr<RelocatableInst>>
-  generate(const llvm::MCInst *inst, rword address, rword instSize,
-           TempManager *temp_manager, Patch *toMerge) const = 0;
+  generate(const Patch *patch, TempManager *temp_manager,
+           Patch *toMerge) const = 0;
 
   virtual ~PatchGenerator() = default;
 
@@ -97,8 +96,8 @@ public:
    *   (depends on the current instructions and transforms)
    */
   std::vector<std::unique_ptr<RelocatableInst>>
-  generate(const llvm::MCInst *inst, rword address, rword instSize,
-           TempManager *temp_manager, Patch *toMerge) const override;
+  generate(const Patch *patch, TempManager *temp_manager,
+           Patch *toMerge) const override;
 };
 
 class DoNotInstrument : public AutoClone<PatchGenerator, DoNotInstrument> {
@@ -114,8 +113,8 @@ public:
    *   (none)
    */
   std::vector<std::unique_ptr<RelocatableInst>>
-  generate(const llvm::MCInst *inst, rword address, rword instSize,
-           TempManager *temp_manager, Patch *toMerge) const override;
+  generate(const Patch *patch, TempManager *temp_manager,
+           Patch *toMerge) const override;
 
   inline bool doNotInstrument() const override { return true; }
 };
@@ -140,8 +139,8 @@ public:
    *   MOV REG64 temp, IMM64/REG64 op
    */
   std::vector<std::unique_ptr<RelocatableInst>>
-  generate(const llvm::MCInst *inst, rword address, rword instSize,
-           TempManager *temp_manager, Patch *toMerge) const override;
+  generate(const Patch *patch, TempManager *temp_manager,
+           Patch *toMerge) const override;
 };
 
 class GetConstant : public AutoClone<PatchGenerator, GetConstant> {
@@ -161,8 +160,8 @@ public:
    * MOV REG64 temp, IMM64 cst
    */
   std::vector<std::unique_ptr<RelocatableInst>>
-  generate(const llvm::MCInst *inst, rword address, rword instSize,
-           TempManager *temp_manager, Patch *toMerge) const override;
+  generate(const Patch *patch, TempManager *temp_manager,
+           Patch *toMerge) const override;
 };
 
 class ReadTemp : public AutoClone<PatchGenerator, ReadTemp> {
@@ -198,8 +197,8 @@ public:
    * MOV REG64 temp, MEM64 DataBlock[offset]
    */
   std::vector<std::unique_ptr<RelocatableInst>>
-  generate(const llvm::MCInst *inst, rword address, rword instSize,
-           TempManager *temp_manager, Patch *toMerge) const override;
+  generate(const Patch *patch, TempManager *temp_manager,
+           Patch *toMerge) const override;
 };
 
 class WriteTemp : public AutoClone<PatchGenerator, WriteTemp> {
@@ -246,8 +245,8 @@ public:
    * MOV MEM64 DataBlock[offset], REG64 temp
    */
   std::vector<std::unique_ptr<RelocatableInst>>
-  generate(const llvm::MCInst *inst, rword address, rword instSize,
-           TempManager *temp_manager, Patch *toMerge) const override;
+  generate(const Patch *patch, TempManager *temp_manager,
+           Patch *toMerge) const override;
 
   inline bool modifyPC() const override {
     return offset == Offset(Reg(REG_PC));
@@ -275,8 +274,8 @@ public:
    * MOV REG64 reg, MEM64 DataBlock[offset]
    */
   std::vector<std::unique_ptr<RelocatableInst>>
-  generate(const llvm::MCInst *inst, rword address, rword instSize,
-           TempManager *temp_manager, Patch *toMerge) const override;
+  generate(const Patch *patch, TempManager *temp_manager,
+           Patch *toMerge) const override;
 };
 
 class SaveReg : public AutoClone<PatchGenerator, SaveReg>,
@@ -300,8 +299,8 @@ public:
    * MOV MEM64 DataBlock[offset], REG64 reg
    */
   std::vector<std::unique_ptr<RelocatableInst>>
-  generate(const llvm::MCInst *inst, rword address, rword instSize,
-           TempManager *temp_manager, Patch *toMerge) const override;
+  generate(const Patch *patch, TempManager *temp_manager,
+           Patch *toMerge) const override;
 };
 
 class CopyReg : public AutoClone<PatchGenerator, CopyReg> {
@@ -321,8 +320,8 @@ public:
    * MOV REG64 temp, REG64 reg
    */
   std::vector<std::unique_ptr<RelocatableInst>>
-  generate(const llvm::MCInst *inst, rword address, rword instSize,
-           TempManager *temp_manager, Patch *toMerge) const override;
+  generate(const Patch *patch, TempManager *temp_manager,
+           Patch *toMerge) const override;
 };
 
 class GetInstId : public AutoClone<PatchGenerator, GetInstId> {
@@ -343,11 +342,27 @@ public:
    * MOV REG64 temp, IMM64 instID
    */
   std::vector<std::unique_ptr<RelocatableInst>>
-  generate(const llvm::MCInst *inst, rword address, rword instSize,
-           TempManager *temp_manager, Patch *toMerge) const override;
+  generate(const Patch *patch, TempManager *temp_manager,
+           Patch *toMerge) const override;
 };
 
 // Generic PatchGenerator that must be implemented by each target
+
+class TargetPrologue : public AutoClone<PatchGenerator, TargetPrologue> {
+
+public:
+  /*! Generate a label where the prologue can jump
+   */
+  TargetPrologue() {}
+
+  /*! Output:
+   *
+   * label
+   */
+  std::vector<std::unique_ptr<RelocatableInst>>
+  generate(const Patch *patch, TempManager *temp_manager,
+           Patch *toMerge) const override;
+};
 
 class JmpEpilogue : public AutoClone<PatchGenerator, JmpEpilogue>,
                     public PureEval<JmpEpilogue> {
@@ -362,8 +377,8 @@ public:
    * JMP Offset(Epilogue)
    */
   std::vector<std::unique_ptr<RelocatableInst>>
-  generate(const llvm::MCInst *inst, rword address, rword instSize,
-           TempManager *temp_manager, Patch *toMerge) const override;
+  generate(const Patch *patch, TempManager *temp_manager,
+           Patch *toMerge) const override;
 };
 
 } // namespace QBDI

@@ -43,10 +43,9 @@ static constexpr unsigned int _QBDI_FIRST_FREE_REGISTER = 0;
 
 namespace QBDI {
 
-TempManager::TempManager(Patch &patch, const LLVMCPU &llvmcpu,
-                         bool allowInstRegister)
-    : patch(patch), allowInstRegister(allowInstRegister),
-      MCII(llvmcpu.getMCII()), MRI(llvmcpu.getMRI()) {}
+TempManager::TempManager(Patch &patch, bool allowInstRegister)
+    : patch(patch), MRI(patch.llvmcpu->getMRI()),
+      allowInstRegister(allowInstRegister) {}
 
 Reg TempManager::getRegForTemp(unsigned int id) {
 

@@ -21,10 +21,19 @@
 #include "ExecBlock/ExecBlock.h"
 #include "Patch/X86_64/Layer2_X86_64.h"
 #include "Patch/X86_64/RelocatableInst_X86_64.h"
+#include "Utility/LogSys.h"
 
 namespace QBDI {
 
 // Generic RelocatableInst that must be implemented by each target
+
+// RelocTag
+// ========
+
+llvm::MCInst RelocTag::reloc(ExecBlock *exec_block) const {
+  QBDI_ERROR("Internal Error: Relocate a Tag instruction.");
+  return nop();
+}
 
 // LoadShadow
 // ==========

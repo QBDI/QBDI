@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 #include <catch2/catch.hpp>
-#include "API/InstAnalysisTest.h"
+#include "API/APITest.h"
 
 #include <algorithm>
 #include <sstream>
@@ -25,20 +25,6 @@
 
 #include "QBDI/Memory.hpp"
 #include "QBDI/Platform.h"
-
-QBDI::rword InstAnalysisTest::writeASM(const char *source) {
-  std::ostringstream finalSource;
-
-  finalSource << source << "\n"
-              << "ret\n";
-
-  objects.emplace_back(finalSource.str().c_str());
-
-  QBDI::rword addr = (QBDI::rword)objects.back().getCode().data();
-  vm.precacheBasicBlock(addr);
-
-  return addr;
-}
 
 struct ExpectedInstAnalysis {
   std::string mnemonic;
@@ -135,9 +121,9 @@ static void checkInst(const QBDI::InstAnalysis *ana,
   }
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-CachedInst") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-CachedInst") {
 
-  QBDI::rword addr = writeASM("leal (%eax), %ebx\n");
+  QBDI::rword addr = genASM("leal (%eax), %ebx\n");
 
   CHECK(vm.getCachedInstAnalysis(addr) != nullptr);
 
@@ -150,9 +136,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-CachedInst") {
   CHECK(vm.getCachedInstAnalysis(addr) != nullptr);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-lea") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-lea") {
 
-  QBDI::rword addr = writeASM("leal (%eax), %ebx\n");
+  QBDI::rword addr = genASM("leal (%eax), %ebx\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -181,9 +167,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-lea") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-lea-same-reg") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-lea-same-reg") {
 
-  QBDI::rword addr = writeASM("leal (%eax,%eax), %eax\n");
+  QBDI::rword addr = genASM("leal (%eax,%eax), %eax\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -212,9 +198,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-lea-same-reg") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-movrm") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-movrm") {
 
-  QBDI::rword addr = writeASM("movl 0x45(%eax,%edx,4), %ebx\n");
+  QBDI::rword addr = genASM("movl 0x45(%eax,%edx,4), %ebx\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -243,9 +229,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-movrm") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-movrm-seg") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-movrm-seg") {
 
-  QBDI::rword addr = writeASM("movl %gs:0x45(%eax,%edx,4), %ebx\n");
+  QBDI::rword addr = genASM("movl %gs:0x45(%eax,%edx,4), %ebx\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -274,9 +260,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-movrm-seg") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-addmi") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-addmi") {
 
-  QBDI::rword addr = writeASM("addl	$0x4157, (%ecx)\n");
+  QBDI::rword addr = genASM("addl	$0x4157, (%ecx)\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -305,9 +291,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-addmi") {
                QBDI::REGISTER_WRITE);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-movrr") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-movrr") {
 
-  QBDI::rword addr = writeASM("mov %ecx, %ebx\n");
+  QBDI::rword addr = genASM("mov %ecx, %ebx\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -328,9 +314,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-movrr") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-movrr8") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-movrr8") {
 
-  QBDI::rword addr = writeASM("mov %ch, %bl\n");
+  QBDI::rword addr = genASM("mov %ch, %bl\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -351,9 +337,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-movrr8") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-xchgrr") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-xchgrr") {
 
-  QBDI::rword addr = writeASM("xchg %ecx, %ebx\n");
+  QBDI::rword addr = genASM("xchg %ecx, %ebx\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -374,9 +360,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-xchgrr") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-addrr") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-addrr") {
 
-  QBDI::rword addr = writeASM("add %ecx, %ebx\n");
+  QBDI::rword addr = genASM("add %ecx, %ebx\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -397,9 +383,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-addrr") {
                QBDI::REGISTER_WRITE);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-movoa") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-movoa") {
 
-  QBDI::rword addr = writeASM("mov %fs:0x0, %eax\n");
+  QBDI::rword addr = genASM("mov %fs:0x0, %eax\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -422,9 +408,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-movoa") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-movsb") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-movsb") {
 
-  QBDI::rword addr = writeASM("movsb\n");
+  QBDI::rword addr = genASM("movsb\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -451,9 +437,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-movsb") {
                QBDI::REGISTER_READ);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-cmpsb") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-cmpsb") {
 
-  QBDI::rword addr = writeASM("cmpsb\n");
+  QBDI::rword addr = genASM("cmpsb\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -480,9 +466,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-cmpsb") {
                QBDI::REGISTER_READ_WRITE);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-cmpmr") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-cmpmr") {
 
-  QBDI::rword addr = writeASM("cmpl %ecx, (%eax,%edx)\n");
+  QBDI::rword addr = genASM("cmpl %ecx, (%eax,%edx)\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -511,9 +497,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-cmpmr") {
                QBDI::REGISTER_WRITE);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-cmprm") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-cmprm") {
 
-  QBDI::rword addr = writeASM("cmpl (%eax,%edx), %ecx\n");
+  QBDI::rword addr = genASM("cmpl (%eax,%edx), %ecx\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -542,9 +528,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-cmprm") {
                QBDI::REGISTER_WRITE);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-ret") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-ret") {
 
-  QBDI::rword addr = writeASM("retl\n");
+  QBDI::rword addr = genASM("retl\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -563,9 +549,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-ret") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-call") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-call") {
 
-  QBDI::rword addr = writeASM("call test_custom_call\ntest_custom_call:\n");
+  QBDI::rword addr = genASM("call test_custom_call\ntest_custom_call:\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -588,9 +574,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-call") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-callr") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-callr") {
 
-  QBDI::rword addr = writeASM("calll *%eax\n");
+  QBDI::rword addr = genASM("calll *%eax\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -613,9 +599,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-callr") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-callm") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-callm") {
 
-  QBDI::rword addr = writeASM("calll *0xa(%eax)\n");
+  QBDI::rword addr = genASM("calll *0xa(%eax)\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -646,9 +632,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-callm") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-jmpi") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-jmpi") {
 
-  QBDI::rword addr = writeASM("jmp test_jmp\ntest_jmp:\n");
+  QBDI::rword addr = genASM("jmp test_jmp\ntest_jmp:\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -667,9 +653,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-jmpi") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-je") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-je") {
 
-  QBDI::rword addr = writeASM("je test_jmp\ntest_jmp:\n");
+  QBDI::rword addr = genASM("je test_jmp\ntest_jmp:\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -688,9 +674,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-je") {
                QBDI::REGISTER_READ);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-jmpm") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-jmpm") {
 
-  QBDI::rword addr = writeASM("jmpl *0xa(%eax)\n");
+  QBDI::rword addr = genASM("jmpl *0xa(%eax)\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -717,9 +703,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-jmpm") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-fldl") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-fldl") {
 
-  QBDI::rword addr = writeASM("fldl (%eax)\n");
+  QBDI::rword addr = genASM("fldl (%eax)\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -750,9 +736,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-fldl") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-fstps") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-fstps") {
 
-  QBDI::rword addr = writeASM("fstps (%eax)\n");
+  QBDI::rword addr = genASM("fstps (%eax)\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -783,9 +769,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-fstps") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-movapd") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-movapd") {
 
-  QBDI::rword addr = writeASM("movapd (%eax), %xmm1\n");
+  QBDI::rword addr = genASM("movapd (%eax), %xmm1\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -815,9 +801,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-movapd") {
       QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-paddb") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-paddb") {
 
-  QBDI::rword addr = writeASM("paddb %mm1, %mm0\n");
+  QBDI::rword addr = genASM("paddb %mm1, %mm0\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -838,9 +824,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-paddb") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-vpaddb") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-vpaddb") {
 
-  QBDI::rword addr = writeASM("vpaddb %xmm2, %xmm1, %xmm0\n");
+  QBDI::rword addr = genASM("vpaddb %xmm2, %xmm1, %xmm0\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -863,9 +849,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-vpaddb") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-xlatb") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-xlatb") {
 
-  QBDI::rword addr = writeASM("xlatb\n");
+  QBDI::rword addr = genASM("xlatb\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -886,9 +872,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-xlatb") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-movdir64b") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-movdir64b") {
 
-  QBDI::rword addr = writeASM("movdir64b 0xc(%eax), %ecx\n");
+  QBDI::rword addr = genASM("movdir64b 0xc(%eax), %ecx\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -917,9 +903,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-movdir64b") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-loop") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-loop") {
 
-  QBDI::rword addr = writeASM("target:\n    loop target\n");
+  QBDI::rword addr = genASM("target:\n    loop target\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -941,9 +927,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-loop") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-loope") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-loope") {
 
-  QBDI::rword addr = writeASM("target:\n    loope target\n");
+  QBDI::rword addr = genASM("target:\n    loope target\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -965,9 +951,9 @@ TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-loope") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(InstAnalysisTest, "InstAnalysisTest_X86-loopne") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-loopne") {
 
-  QBDI::rword addr = writeASM("target:\n    loopne target\n");
+  QBDI::rword addr = genASM("target:\n    loopne target\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),

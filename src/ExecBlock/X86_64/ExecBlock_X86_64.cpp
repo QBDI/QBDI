@@ -65,9 +65,21 @@ void ExecBlock::run() {
 }
 
 bool ExecBlock::writePatch(const Patch &p, const LLVMCPU &llvmcpu) {
+  QBDI_REQUIRE(p.finalize);
+
+  if (getEpilogueOffset() <= MINIMAL_BLOCK_SIZE) {
+    isFull = true;
+    return false;
+  }
 
   for (const RelocatableInst::UniquePtr &inst : p.insts) {
-    if (getEpilogueOffset() > MINIMAL_BLOCK_SIZE) {
+    if (inst->getTag() != RelocatableInstTag::RelocInst) {
+      QBDI_DEBUG("RelocTag 0x{:x}", inst->getTag());
+      tagRegistry.push_back(
+          TagInfo{static_cast<uint16_t>(inst->getTag()),
+                  static_cast<uint16_t>(codeStream->current_pos())});
+      continue;
+    } else if (getEpilogueOffset() > MINIMAL_BLOCK_SIZE) {
       llvmcpu.writeInstruction(inst->reloc(this), codeStream.get());
     } else {
       QBDI_DEBUG("Not enough space left: rollback");

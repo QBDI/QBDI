@@ -37,6 +37,7 @@
 #include "Patch/PatchRules.h"
 #include "Patch/Register.h"
 #include "Patch/RelocatableInst.h"
+#include "Patch/Types.h"
 #include "Utility/InstAnalysis_prive.h"
 #include "Utility/LogSys.h"
 #include "Utility/System.h"
@@ -108,6 +109,9 @@ ExecBlock::ExecBlock(
   if (epilogueSize == 0) {
     // Only way to know the epilogue size is to JIT is somewhere
     for (const auto &inst : *execBlockEpilogue) {
+      if (inst->getTag() != RelocatableInstTag::RelocInst) {
+        continue;
+      }
       llvmcpu.writeInstruction(inst->reloc(this), codeStream.get());
     }
     epilogueSize = codeStream->current_pos();
@@ -117,6 +121,9 @@ ExecBlock::ExecBlock(
   // JIT prologue and epilogue
   codeStream->seek(codeBlock.allocatedSize() - epilogueSize);
   for (const auto &inst : *execBlockEpilogue) {
+    if (inst->getTag() != RelocatableInstTag::RelocInst) {
+      continue;
+    }
     llvmcpu.writeInstruction(inst->reloc(this), codeStream.get());
   }
   QBDI_REQUIRE_ACTION(codeStream->current_pos() == codeBlock.allocatedSize() &&
@@ -125,6 +132,9 @@ ExecBlock::ExecBlock(
 
   codeStream->seek(0);
   for (const auto &inst : *execBlockPrologue) {
+    if (inst->getTag() != RelocatableInstTag::RelocInst) {
+      continue;
+    }
     llvmcpu.writeInstruction(inst->reloc(this), codeStream.get());
   }
 }
@@ -195,6 +205,7 @@ VMAction ExecBlock::execute() {
 
     if (context->hostState.callback != 0) {
       currentInst = context->hostState.origin;
+      rword currentPC = QBDI_GPR_GET(&context->gprState, REG_PC);
 
       QBDI_DEBUG("Callback request by ExecBlock 0x{:x} for callback 0x{:x}",
                  reinterpret_cast<uintptr_t>(this),
@@ -210,6 +221,53 @@ VMAction ExecBlock::execute() {
         case CONTINUE:
           QBDI_DEBUG("Callback 0x{:x} returned CONTINUE",
                      context->hostState.callback);
+          if (QBDI_GPR_GET(&context->gprState, REG_PC) != currentPC) {
+            QBDI_WARN(
+                "Callback returned CONTINUE but change PC: Ignore new value");
+          }
+          break;
+        case SKIP_INST:
+          QBDI_DEBUG("Callback 0x{:x} returned SKIP_INST",
+                     context->hostState.callback);
+          if (not instMetadata[currentInst].modifyPC and
+              QBDI_GPR_GET(&context->gprState, REG_PC) != currentPC) {
+            QBDI_WARN(
+                "Callback returned SKIP_INST but change PC: Ignore new value");
+          }
+          if (currentPC == instMetadata[currentInst].address) {
+            context->hostState.selector =
+                reinterpret_cast<rword>(codeBlock.base()) +
+                static_cast<rword>(instRegistry[currentInst].offsetSkip);
+          } else {
+            QBDI_WARN(
+                "POSTINST callback returned SKIP_INST: Use CONTINUE instead");
+          }
+          break;
+        case SKIP_PATCH:
+          QBDI_DEBUG("Callback 0x{:x} returned SKIP_PATCH",
+                     context->hostState.callback);
+          if (not instMetadata[currentInst].modifyPC and
+              QBDI_GPR_GET(&context->gprState, REG_PC) != currentPC) {
+            QBDI_WARN(
+                "Callback returned SKIP_PATCH but change PC: Ignore new value");
+          }
+          if (instMetadata[currentInst].modifyPC) {
+            QBDI_WARN(
+                "Callback returned SKIP on instruction that change PC. Use "
+                "BREAK_TO_VM instead.");
+            return BREAK_TO_VM;
+          } else if (currentInst == seqRegistry[currentSeq].endInstID) {
+            rword next_address = instMetadata[currentInst].address +
+                                 instMetadata[currentInst].instSize;
+            QBDI_GPR_SET(&context->gprState, REG_PC, next_address);
+            return BREAK_TO_VM;
+          } else {
+            // go to currentInst + 1
+            currentInst += 1;
+            context->hostState.selector =
+                reinterpret_cast<rword>(codeBlock.base()) +
+                static_cast<rword>(instRegistry[currentInst].offset);
+          }
           break;
         case BREAK_TO_VM:
           QBDI_DEBUG("Callback 0x{:x} returned BREAK_TO_VM",
@@ -266,6 +324,7 @@ ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt,
     rword rollbackOffset = codeStream->current_pos();
     uint32_t rollbackShadowIdx = shadowIdx;
     size_t rollbackShadowRegistry = shadowRegistry.size();
+    size_t rollbackTagRegistry = tagRegistry.size();
 
     QBDI_DEBUG_BLOCK({
       std::string disass =
@@ -283,17 +342,13 @@ ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt,
 
       QBDI_DEBUG("Rolling back to offset 0x{:x}", rollbackOffset);
 
-      // if nothing has been write since the beginning of the method,
-      // the block is full. We can reject futur writeSequence early.
-      if (codeStream->current_pos() == startOffset) {
-        isFull = true;
-      }
       // Seek to the last complete patch written and terminate it with a
       // terminator
       codeStream->seek(rollbackOffset);
-      // free shadows allocated by the rollbacked code
+      // free shadows and tag allocated by the rollbacked code
       shadowIdx = rollbackShadowIdx;
       shadowRegistry.resize(rollbackShadowRegistry);
+      tagRegistry.resize(rollbackTagRegistry);
       // It's a NULL rollback, don't terminate it
       if (rollbackOffset == startOffset) {
         QBDI_DEBUG("NULL rollback, nothing written to ExecBlock 0x{:x}",
@@ -308,11 +363,17 @@ ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt,
       instMetadata.push_back(seqIt->metadata.lightCopy());
       instMetadata.back().analysis.reset(seqIt->metadata.analysis.release());
       // Register instruction
-      instRegistry.push_back(
-          InstInfo{seqID, static_cast<uint16_t>(rollbackOffset),
-                   static_cast<uint16_t>(rollbackShadowRegistry),
-                   static_cast<uint16_t>(shadowRegistry.size() -
-                                         rollbackShadowRegistry)});
+      instRegistry.push_back(InstInfo{
+          seqID, static_cast<uint16_t>(rollbackOffset), 0,
+          static_cast<uint16_t>(rollbackShadowRegistry),
+          static_cast<uint16_t>(shadowRegistry.size() - rollbackShadowRegistry),
+          static_cast<uint16_t>(rollbackTagRegistry),
+          static_cast<uint16_t>(tagRegistry.size() - rollbackTagRegistry)});
+      // compute offsetSkip of the new instruction
+      std::vector<TagInfo> endPatchTag =
+          queryTagByInst(instRegistry.size() - 1, RelocTagPatchEnd);
+      QBDI_REQUIRE_ACTION(endPatchTag.size() == 1, abort());
+      instRegistry.back().offsetSkip = endPatchTag[0].offset;
       // Update indexes
       needTerminator = not seqIt->metadata.modifyPC;
       executeFlags |= seqIt->metadata.execblockFlags;
@@ -329,12 +390,18 @@ ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt,
     RelocatableInst::UniquePtrVec terminator =
         getTerminator(instMetadata.back().endAddress());
     for (const RelocatableInst::UniquePtr &inst : terminator) {
+      if (inst->getTag() != RelocatableInstTag::RelocInst) {
+        continue;
+      }
       llvmcpu.writeInstruction(inst->reloc(this), codeStream.get());
     }
   }
   // JIT the jump to epilogue
   RelocatableInst::UniquePtrVec jmpEpilogue = JmpEpilogue();
   for (const RelocatableInst::UniquePtr &inst : jmpEpilogue) {
+    if (inst->getTag() != RelocatableInstTag::RelocInst) {
+      continue;
+    }
     llvmcpu.writeInstruction(inst->reloc(this), codeStream.get());
   }
   // change the flag of the basicblock
@@ -540,6 +607,33 @@ std::vector<ShadowInfo> ExecBlock::queryShadowBySeq(uint16_t seqID,
           (tag == ANY || reg.tag == tag)) {
         result.push_back(reg);
       }
+    }
+  }
+
+  return result;
+}
+
+const llvm::ArrayRef<TagInfo> ExecBlock::getTagByInst(uint16_t instID) const {
+  QBDI_REQUIRE(instID < instRegistry.size());
+  QBDI_REQUIRE(instRegistry[instID].tagOffset <= tagRegistry.size());
+  QBDI_REQUIRE(instRegistry[instID].tagOffset + instRegistry[instID].tagSize <=
+               tagRegistry.size());
+
+  if (instRegistry[instID].tagOffset == tagRegistry.size()) {
+    return llvm::ArrayRef<TagInfo>{};
+  } else {
+    return llvm::ArrayRef<TagInfo>{&tagRegistry[instRegistry[instID].tagOffset],
+                                   instRegistry[instID].tagSize};
+  }
+}
+
+std::vector<TagInfo> ExecBlock::queryTagByInst(uint16_t instID,
+                                               uint16_t tag) const {
+  std::vector<TagInfo> result;
+
+  for (const auto &reg : getTagByInst(instID)) {
+    if (reg.tag == tag) {
+      result.push_back(reg);
     }
   }
 

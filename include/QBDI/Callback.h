@@ -32,14 +32,36 @@ namespace QBDI {
  */
 typedef enum {
   _QBDI_EI(CONTINUE) = 0,    /*!< The execution of the basic block continues. */
-  _QBDI_EI(BREAK_TO_VM) = 1, /*!< The execution breaks and returns to the VM
+  _QBDI_EI(SKIP_INST) = 1,   /*!< Available only with PREINST InstCallback.
+                              *   The instruction and the remained PREINST
+                              *   callbacks are skip. The execution continue
+                              *   with the POSTINST instruction.
+                              *
+                              *   We recommand to used this result with a low
+                              *   priority PREINST callback in order to emulate
+                              *   the instruction without skipping the POSTINST
+                              *   callback.
+                              */
+  _QBDI_EI(SKIP_PATCH) = 2,  /*!< Available only with InstCallback. The current
+                              *   instruction and the reminding callback (PRE
+                              *   and POST) are skip. The execution continues to
+                              *   the next instruction.
+                              *
+                              *   For instruction that change the instruction
+                              *   pointer (jump/call/ret), BREAK_TO_VM must be
+                              *   used insted of SKIP.
+                              *
+                              *   SKIP can break the record of MemoryAccess for
+                              *   the current instruction.
+                              */
+  _QBDI_EI(BREAK_TO_VM) = 3, /*!< The execution breaks and returns to the VM
                               *   causing a complete reevaluation of the
                               *   execution state. A BREAK_TO_VM is needed to
                               *   ensure that modifications of the Program
                               *   Counter or the program code are taken
                               *   into account.
                               */
-  _QBDI_EI(STOP) = 2,        /*!< Stops the execution of the program. This
+  _QBDI_EI(STOP) = 4,        /*!< Stops the execution of the program. This
                               *   causes the run function to return early.
                               */
 } VMAction;

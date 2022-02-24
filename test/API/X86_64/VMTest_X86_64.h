@@ -18,7 +18,6 @@
 #ifndef QBDITEST_VMTEST_X86_64_H
 #define QBDITEST_VMTEST_X86_64_H
 
-#include "API/VMTest.h"
 #include "QBDI/Memory.hpp"
 #include "QBDI/Platform.h"
 #include "QBDI/VM.h"
@@ -40,5 +39,7 @@ struct TestInst {
 };
 
 extern const struct TestInst TestInsts[MNEM_COUNT];
+
+#define SKIPTESTASM "nop\nnop\nret\n"
 
 #endif
