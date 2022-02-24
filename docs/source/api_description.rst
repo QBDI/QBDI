@@ -136,6 +136,7 @@ All user callbacks must be written in C, C++, Python or JS. However, there are a
   - Clear the cache
   - Change the instruction counter register in ``GPRState`` (the other registers can be altered without the need of returning ``BREAK_TO_VM``).
 
+.. _api_desc_InstCallback:
 
 Instruction callbacks
 +++++++++++++++++++++
@@ -155,6 +156,8 @@ Therefore, an ``InstCallback`` can be inserted at two different positions:
 An ``InstCallback`` can be registered for a specific instruction (``addCodeAddrCB``),
 any instruction in a specified range (``addCodeRangeCB``) or any instrumented instruction (``addCodeCB``).
 The instruction also be targeted by their mnemonic (or LLVM opcode) (``addMnemonicCB``).
+
+.. _api_desc_VMCallback:
 
 VM callbacks
 ++++++++++++
