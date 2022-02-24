@@ -1,5 +1,6 @@
-Sphinx==3.3.1
+Sphinx==4.4.0
 docutils==0.17.1
-breathe==4.25.1
-sphinx-js==3.1
-sphinx_rtd_theme
+breathe==4.33.1
+sphinx-js==3.1.2
+markupsafe==2.0.1
+sphinx_rtd_theme==1.0.0
