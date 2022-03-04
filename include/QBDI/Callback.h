@@ -94,7 +94,21 @@ typedef VMInstance *VMInstanceRef;
 typedef VMAction (*InstCallback)(VMInstanceRef vm, GPRState *gprState,
                                  FPRState *fprState, void *data);
 #ifdef __cplusplus
-typedef std::function<VMAction(VMInstanceRef, GPRState *, FPRState *)>
+/*! Instruction callback lambda type.
+ *
+ * @param[in] vm            VM instance of the callback.
+ * @param[in] gprState      A structure containing the state of the
+ *                          General Purpose Registers. Modifying
+ *                          it affects the VM execution accordingly.
+ * @param[in] fprState      A structure containing the state of the
+ *                          Floating Point Registers. Modifying
+ *                          it affects the VM execution accordingly.
+ *
+ * @return                  The callback result used to signal subsequent
+ *                          actions the VM needs to take.
+ */
+typedef std::function<VMAction(VMInstanceRef vm, GPRState *gprState,
+                               FPRState *fprState)>
     InstCbLambda;
 #endif
 
@@ -206,8 +220,22 @@ typedef VMAction (*VMCallback)(VMInstanceRef vm, const VMState *vmState,
                                GPRState *gprState, FPRState *fprState,
                                void *data);
 #ifdef __cplusplus
-typedef std::function<VMAction(VMInstanceRef, const VMState *, GPRState *,
-                               FPRState *)>
+/*! VM callback lambda type.
+ *
+ * @param[in] vm            VM instance of the callback.
+ * @param[in] vmState       A structure containing the current state of the VM.
+ * @param[in] gprState      A structure containing the state of the
+ *                          General Purpose Registers. Modifying
+ *                          it affects the VM execution accordingly.
+ * @param[in] fprState      A structure containing the state of the
+ *                          Floating Point Registers. Modifying
+ *                          it affects the VM execution accordingly.
+ *
+ * @return                  The callback result used to signal subsequent
+ *                          actions the VM needs to take.
+ */
+typedef std::function<VMAction(VMInstanceRef vm, const VMState *vmState,
+                               GPRState *gprState, FPRState *fprState)>
     VMCbLambda;
 #endif
 
@@ -314,8 +342,15 @@ typedef void (*InstrRuleCallbackC)(VMInstanceRef vm, const InstAnalysis *inst,
 typedef std::vector<InstrRuleDataCBK> (*InstrRuleCallback)(
     VMInstanceRef vm, const InstAnalysis *inst, void *data);
 
-typedef std::function<std::vector<InstrRuleDataCBK>(VMInstanceRef,
-                                                    const InstAnalysis *)>
+/*! Instrumentation rule callback lambda type.
+ *
+ * @param[in] vm     VM instance of the callback.
+ * @param[in] inst   AnalysisType of the current instrumented Instruction.
+ *
+ * @return           Return cbk to call when this instruction is run.
+ */
+typedef std::function<std::vector<InstrRuleDataCBK>(VMInstanceRef vm,
+                                                    const InstAnalysis *inst)>
     InstrRuleCbLambda;
 
 } // QBDI::
