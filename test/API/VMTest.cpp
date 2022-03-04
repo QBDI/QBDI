@@ -1598,3 +1598,54 @@ TEST_CASE_METHOD(APITest, "VMTest-InstCbLambda-addCodeRangeCB") {
 
   SUCCEED();
 }
+
+TEST_CASE_METHOD(APITest, "VMTest-InstCbLambda-InstrRuleDataCBK") {
+  QBDI::rword retval;
+  bool cbCalled = false;
+  uint32_t count1 = 0;
+  uint32_t count2 = 0;
+  uint32_t *count = &count1;
+
+  QBDI::InstrRuleCbLambda cbk =
+      [&cbCalled, &count](
+          QBDI::VMInstanceRef,
+          const QBDI::InstAnalysis *) -> std::vector<QBDI::InstrRuleDataCBK> {
+    return {{QBDI::InstPosition::PREINST,
+             [&cbCalled, count](QBDI::VMInstanceRef, QBDI::GPRState *,
+                                QBDI::FPRState *) {
+               cbCalled = true;
+               (*count)++;
+               return QBDI::VMAction::CONTINUE;
+             }}};
+  };
+
+  vm.addInstrRule(cbk, QBDI::ANALYSIS_INSTRUCTION);
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+  REQUIRE(count1 != 0);
+  REQUIRE(count2 == 0);
+
+  uint32_t backcount1 = count1;
+  cbCalled = false;
+  count1 = 0;
+  count = &count2;
+  vm.deleteAllInstrumentations();
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(!cbCalled);
+  REQUIRE(count1 == 0);
+  REQUIRE(count2 == 0);
+
+  vm.addInstrRule(std::move(cbk), QBDI::ANALYSIS_INSTRUCTION);
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+  REQUIRE(count1 == 0);
+  REQUIRE(count2 == backcount1);
+
+  SUCCEED();
+}

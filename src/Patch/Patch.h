@@ -50,6 +50,7 @@ private:
 public:
   InstMetadata metadata;
   std::vector<std::unique_ptr<RelocatableInst>> insts;
+  std::vector<std::unique_ptr<InstCbLambda>> userInstCB;
   // Registers Used and Defs by the instruction
   std::map<unsigned, RegisterUsage> regUsage;
   // Registers used by the TempRegister for this patch

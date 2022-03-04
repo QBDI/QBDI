@@ -263,11 +263,23 @@ struct InstrRuleDataCBK {
                           */
   void *data;            /*!< User defined data which will be forward to cbk */
 
+  InstCbLambda
+      lambdaCbk; /*!< Lambda callback. Replace cbk and data if not nullptr */
+
   int priority; /*!< Priority of the callback */
 
   InstrRuleDataCBK(InstPosition position, InstCallback cbk, void *data,
                    int priority = PRIORITY_DEFAULT)
-      : position(position), cbk(cbk), data(data), priority(priority) {}
+      : position(position), cbk(cbk), data(data), lambdaCbk(nullptr),
+        priority(priority) {}
+  InstrRuleDataCBK(InstPosition position, const InstCbLambda &cbk,
+                   int priority = PRIORITY_DEFAULT)
+      : position(position), cbk(nullptr), data(nullptr), lambdaCbk(cbk),
+        priority(priority) {}
+  InstrRuleDataCBK(InstPosition position, InstCbLambda &&cbk,
+                   int priority = PRIORITY_DEFAULT)
+      : position(position), cbk(nullptr), data(nullptr),
+        lambdaCbk(std::move(cbk)), priority(priority) {}
 };
 
 using InstrRuleDataVec = std::vector<InstrRuleDataCBK> *;

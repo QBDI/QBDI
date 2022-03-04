@@ -35,6 +35,7 @@
 #include "QBDI/VM.h"
 
 #include "Engine/Engine.h"
+#include "Engine/VM_internal.h"
 #include "ExecBlock/ExecBlock.h"
 #include "Patch/InstrRule.h"
 #include "Patch/InstrRules.h"
@@ -49,22 +50,8 @@
 
 namespace QBDI {
 
-struct MemCBInfo {
-  MemoryAccessType type;
-  Range<rword> range;
-  InstCallback cbk;
-  void *data;
-};
-
-struct InstrCBInfo {
-  Range<rword> range;
-  InstrRuleCallbackC cbk;
-  AnalysisType type;
-  void *data;
-};
-
-static VMAction memReadGate(VMInstanceRef vm, GPRState *gprState,
-                            FPRState *fprState, void *data) {
+VMAction memReadGate(VMInstanceRef vm, GPRState *gprState, FPRState *fprState,
+                     void *data) {
   std::vector<std::pair<uint32_t, MemCBInfo>> &memCBInfos =
       *static_cast<std::vector<std::pair<uint32_t, MemCBInfo>> *>(data);
   std::vector<MemoryAccess> memAccesses = vm->getInstMemoryAccess();
@@ -92,8 +79,8 @@ static VMAction memReadGate(VMInstanceRef vm, GPRState *gprState,
   return action;
 }
 
-static VMAction memWriteGate(VMInstanceRef vm, GPRState *gprState,
-                             FPRState *fprState, void *data) {
+VMAction memWriteGate(VMInstanceRef vm, GPRState *gprState, FPRState *fprState,
+                      void *data) {
   std::vector<std::pair<uint32_t, MemCBInfo>> &memCBInfos =
       *static_cast<std::vector<std::pair<uint32_t, MemCBInfo>> *>(data);
   std::vector<MemoryAccess> memAccesses = vm->getInstMemoryAccess();
@@ -131,7 +118,7 @@ static VMAction memWriteGate(VMInstanceRef vm, GPRState *gprState,
   return action;
 }
 
-static std::vector<InstrRuleDataCBK>
+std::vector<InstrRuleDataCBK>
 InstrCBGateC(VMInstanceRef vm, const InstAnalysis *inst, void *_data) {
   InstrCBInfo *data = static_cast<InstrCBInfo *>(_data);
   std::vector<InstrRuleDataCBK> vec{};
@@ -139,27 +126,26 @@ InstrCBGateC(VMInstanceRef vm, const InstAnalysis *inst, void *_data) {
   return vec;
 }
 
-static VMAction VMCBLambdaProxy(VMInstanceRef vm, const VMState *vmState,
-                                GPRState *gprState, FPRState *fprState,
-                                void *_data) {
+VMAction VMCBLambdaProxy(VMInstanceRef vm, const VMState *vmState,
+                         GPRState *gprState, FPRState *fprState, void *_data) {
   VMCbLambda &data = *static_cast<VMCbLambda *>(_data);
   return data(vm, vmState, gprState, fprState);
 }
 
-static VMAction InstCBLambdaProxy(VMInstanceRef vm, GPRState *gprState,
-                                  FPRState *fprState, void *_data) {
+VMAction InstCBLambdaProxy(VMInstanceRef vm, GPRState *gprState,
+                           FPRState *fprState, void *_data) {
   InstCbLambda &data = *static_cast<InstCbLambda *>(_data);
   return data(vm, gprState, fprState);
 }
 
-static std::vector<InstrRuleDataCBK>
+std::vector<InstrRuleDataCBK>
 InstrRuleCBLambdaProxy(VMInstanceRef vm, const InstAnalysis *ana, void *_data) {
   InstrRuleCbLambda &data = *static_cast<InstrRuleCbLambda *>(_data);
   return data(vm, ana);
 }
 
-static VMAction stopCallback(VMInstanceRef vm, GPRState *gprState,
-                             FPRState *fprState, void *data) {
+VMAction stopCallback(VMInstanceRef vm, GPRState *gprState, FPRState *fprState,
+                      void *data) {
   return VMAction::STOP;
 }
 

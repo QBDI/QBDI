@@ -357,7 +357,7 @@ void Engine::handleNewBasicBlock(rword pc) {
   // instrument uncached instruction
   instrument(basicBlock, patchEnd);
   // Write in the cache
-  blockManager->writeBasicBlock(basicBlock, patchEnd);
+  blockManager->writeBasicBlock(std::move(basicBlock), patchEnd);
 }
 
 bool Engine::precacheBasicBlock(rword pc) {

@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <utility>
 
+#include "Engine/VM_internal.h"
 #include "Patch/InstMetadata.h"
 #include "Patch/InstrRule.h"
 #include "Patch/InstrRules.h"
@@ -232,10 +233,21 @@ bool InstrRuleUser::tryInstrument(Patch &patch, const LLVMCPU &llvmcpu) const {
   }
 
   for (const InstrRuleDataCBK &cbkToAdd : vec) {
-    instrument(patch, getCallbackGenerator(cbkToAdd.cbk, cbkToAdd.data), true,
-               cbkToAdd.position, cbkToAdd.priority,
-               (cbkToAdd.position == PREINST) ? RelocTagPreInstStdCBK
-                                              : RelocTagPostInstStdCBK);
+    if (cbkToAdd.lambdaCbk == nullptr) {
+      instrument(patch, getCallbackGenerator(cbkToAdd.cbk, cbkToAdd.data), true,
+                 cbkToAdd.position, cbkToAdd.priority,
+                 (cbkToAdd.position == PREINST) ? RelocTagPreInstStdCBK
+                                                : RelocTagPostInstStdCBK);
+    } else {
+      patch.userInstCB.emplace_back(
+          std::make_unique<InstCbLambda>(cbkToAdd.lambdaCbk));
+      instrument(patch,
+                 getCallbackGenerator(InstCBLambdaProxy,
+                                      patch.userInstCB.back().get()),
+                 true, cbkToAdd.position, cbkToAdd.priority,
+                 (cbkToAdd.position == PREINST) ? RelocTagPreInstStdCBK
+                                                : RelocTagPostInstStdCBK);
+    }
   }
 
   return true;
