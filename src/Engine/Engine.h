@@ -217,6 +217,14 @@ public:
    */
   uint32_t addInstrRule(std::unique_ptr<InstrRule> &&rule);
 
+  /*! Get a registered instrumentation rule from the engine.
+   *
+   * @param[in] id  The id of the rule to get
+   *
+   * @return The instrumentation rule if available, else nullptr
+   */
+  InstrRule *getInstrRule(uint32_t id);
+
   /*! Register a callback event for a specific VM event.
    *
    * @param[in] mask A mask of VM event type which will trigger the callback.
@@ -227,6 +235,16 @@ public:
    * VMError::INVALID_EVENTID in case of failure).
    */
   uint32_t addVMEventCB(VMEvent mask, VMCallback cbk, void *data);
+
+  /*! Set a callback event for a specific VM event.
+   *
+   * @param[in] id   The id of the VMCallback to set.
+   * @param[in] cbk  A function pointer to the callback.
+   * @param[in] data User defined data passed to the callback.
+   *
+   * @return True if the id is valid and value has been set.
+   */
+  bool setVMEventCB(uint32_t id, VMCallback cbk, void *data);
 
   /*! Remove an instrumentation.
    *

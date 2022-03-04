@@ -23,6 +23,7 @@
 #include "QBDI/Platform.h"
 #include "QBDI/State.h"
 #ifdef __cplusplus
+#include <functional>
 #include <vector>
 
 namespace QBDI {
@@ -92,6 +93,10 @@ typedef VMInstance *VMInstanceRef;
  */
 typedef VMAction (*InstCallback)(VMInstanceRef vm, GPRState *gprState,
                                  FPRState *fprState, void *data);
+#ifdef __cplusplus
+typedef std::function<VMAction(VMInstanceRef, GPRState *, FPRState *)>
+    InstCbLambda;
+#endif
 
 /*! Position relative to an instruction.
  */
@@ -200,6 +205,11 @@ typedef struct {
 typedef VMAction (*VMCallback)(VMInstanceRef vm, const VMState *vmState,
                                GPRState *gprState, FPRState *fprState,
                                void *data);
+#ifdef __cplusplus
+typedef std::function<VMAction(VMInstanceRef, const VMState *, GPRState *,
+                               FPRState *)>
+    VMCbLambda;
+#endif
 
 static const uint16_t NO_REGISTRATION = 0xFFFF;
 static const uint16_t NOT_FOUND = 0xFFFF;
@@ -291,6 +301,10 @@ typedef void (*InstrRuleCallbackC)(VMInstanceRef vm, const InstAnalysis *inst,
  */
 typedef std::vector<InstrRuleDataCBK> (*InstrRuleCallback)(
     VMInstanceRef vm, const InstAnalysis *inst, void *data);
+
+typedef std::function<std::vector<InstrRuleDataCBK>(VMInstanceRef,
+                                                    const InstAnalysis *)>
+    InstrRuleCbLambda;
 
 } // QBDI::
 #endif

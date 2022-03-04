@@ -19,6 +19,7 @@
 #define QBDI_VM_H_
 
 #include <cstdarg>
+#include <forward_list>
 #include <memory>
 #include <stdint.h>
 #include <string>
@@ -55,6 +56,9 @@ private:
   std::unique_ptr<
       std::vector<std::pair<uint32_t, std::unique_ptr<InstrCBInfo>>>>
       instrCBInfos;
+  std::forward_list<std::pair<uint32_t, VMCbLambda>> vmCBData;
+  std::forward_list<std::pair<uint32_t, InstCbLambda>> instCBData;
+  std::forward_list<std::pair<uint32_t, InstrRuleCbLambda>> instrRuleCBData;
 
 public:
   /*! Construct a new VM for a given CPU with specific attributes
@@ -277,6 +281,18 @@ public:
   // register C like InstrRuleCallback
   uint32_t addInstrRule(InstrRuleCallbackC cbk, AnalysisType type, void *data);
 
+  /*! Add a custom instrumentation rule to the VM.
+   *
+   * @param[in] cbk       A lambda function to the callback
+   * @param[in] type      Analyse type needed for this instruction function
+   *                      pointer to the callback
+   *
+   * @return The id of the registered instrumentation
+   * (or VMError::INVALID_EVENTID in case of failure).
+   */
+  uint32_t addInstrRule(const InstrRuleCbLambda &cbk, AnalysisType type);
+  uint32_t addInstrRule(InstrRuleCbLambda &&cbk, AnalysisType type);
+
   /*! Add a custom instrumentation rule to the VM on a specify range
    *
    * @param[in] start     Begin of the range of address where apply the rule
@@ -296,6 +312,22 @@ public:
   uint32_t addInstrRuleRange(rword start, rword end, InstrRuleCallbackC cbk,
                              AnalysisType type, void *data);
 
+  /*! Add a custom instrumentation rule to the VM on a specify range
+   *
+   * @param[in] start     Begin of the range of address where apply the rule
+   * @param[in] end       End of the range of address where apply the rule
+   * @param[in] cbk       A lambda function to the callback
+   * @param[in] type      Analyse type needed for this instruction function
+   *                      pointer to the callback
+   *
+   * @return The id of the registered instrumentation (or
+   * VMError::INVALID_EVENTID in case of failure).
+   */
+  uint32_t addInstrRuleRange(rword start, rword end,
+                             const InstrRuleCbLambda &cbk, AnalysisType type);
+  uint32_t addInstrRuleRange(rword start, rword end, InstrRuleCbLambda &&cbk,
+                             AnalysisType type);
+
   /*! Add a custom instrumentation rule to the VM on a specify set of range
    *
    * @param[in] range     Range of address where apply the rule
@@ -309,6 +341,22 @@ public:
    */
   uint32_t addInstrRuleRangeSet(RangeSet<rword> range, InstrRuleCallback cbk,
                                 AnalysisType type, void *data);
+
+  /*! Add a custom instrumentation rule to the VM on a specify set of range
+   *
+   * @param[in] range     Range of address where apply the rule
+   * @param[in] cbk       A lambda function to the callback
+   * @param[in] type      Analyse type needed for this instruction function
+   *                      pointer to the callback
+   *
+   * @return The id of the registered instrumentation
+   * (or VMError::INVALID_EVENTID in case of failure).
+   */
+  uint32_t addInstrRuleRangeSet(RangeSet<rword> range,
+                                const InstrRuleCbLambda &cbk,
+                                AnalysisType type);
+  uint32_t addInstrRuleRangeSet(RangeSet<rword> range, InstrRuleCbLambda &&cbk,
+                                AnalysisType type);
 
   /*! Register a callback event if the instruction matches the mnemonic.
    *
@@ -326,6 +374,23 @@ public:
                          InstCallback cbk, void *data,
                          int priority = PRIORITY_DEFAULT);
 
+  /*! Register a callback event if the instruction matches the mnemonic.
+   *
+   * @param[in] mnemonic   Mnemonic to match.
+   * @param[in] pos        Relative position of the event callback
+   *                       (PREINST / POSTINST).
+   * @param[in] cbk        A lambda function to the callback
+   * @param[in] priority   The priority of the callback.
+   *
+   * @return The id of the registered instrumentation (or
+   * VMError::INVALID_EVENTID in case of failure).
+   */
+  uint32_t addMnemonicCB(const char *mnemonic, InstPosition pos,
+                         const InstCbLambda &cbk,
+                         int priority = PRIORITY_DEFAULT);
+  uint32_t addMnemonicCB(const char *mnemonic, InstPosition pos,
+                         InstCbLambda &&cbk, int priority = PRIORITY_DEFAULT);
+
   /*! Register a callback event for every instruction executed.
    *
    * @param[in] pos        Relative position of the event callback
@@ -338,6 +403,21 @@ public:
    * (or VMError::INVALID_EVENTID in case of failure).
    */
   uint32_t addCodeCB(InstPosition pos, InstCallback cbk, void *data,
+                     int priority = PRIORITY_DEFAULT);
+
+  /*! Register a callback event for every instruction executed.
+   *
+   * @param[in] pos        Relative position of the event callback
+   *                       (PREINST / POSTINST).
+   * @param[in] cbk        A lambda function to the callback
+   * @param[in] priority   The priority of the callback.
+   *
+   * @return The id of the registered instrumentation
+   * (or VMError::INVALID_EVENTID in case of failure).
+   */
+  uint32_t addCodeCB(InstPosition pos, const InstCbLambda &cbk,
+                     int priority = PRIORITY_DEFAULT);
+  uint32_t addCodeCB(InstPosition pos, InstCbLambda &&cbk,
                      int priority = PRIORITY_DEFAULT);
 
   /*! Register a callback for when a specific address is executed.
@@ -353,6 +433,22 @@ public:
    */
   uint32_t addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk,
                          void *data, int priority = PRIORITY_DEFAULT);
+
+  /*! Register a callback for when a specific address is executed.
+   *
+   * @param[in] address  Code address which will trigger the callback.
+   * @param[in] pos      Relative position of the callback (PREINST / POSTINST).
+   * @param[in] cbk      A lambda function to the callback
+   * @param[in] priority The priority of the callback.
+   *
+   * @return The id of the registered instrumentation (or
+   * VMError::INVALID_EVENTID in case of failure).
+   */
+  uint32_t addCodeAddrCB(rword address, InstPosition pos,
+                         const InstCbLambda &cbk,
+                         int priority = PRIORITY_DEFAULT);
+  uint32_t addCodeAddrCB(rword address, InstPosition pos, InstCbLambda &&cbk,
+                         int priority = PRIORITY_DEFAULT);
 
   /*! Register a callback for when a specific address range is executed.
    *
@@ -372,6 +468,25 @@ public:
                           InstCallback cbk, void *data,
                           int priority = PRIORITY_DEFAULT);
 
+  /*! Register a callback for when a specific address range is executed.
+   *
+   * @param[in] start    Start of the address range which will trigger
+   *                     the callback.
+   * @param[in] end      End of the address range which will trigger
+   *                     the callback.
+   * @param[in] pos      Relative position of the callback (PREINST / POSTINST).
+   * @param[in] cbk      A lambda function to the callback
+   * @param[in] priority The priority of the callback.
+   *
+   * @return The id of the registered instrumentation (or
+   * VMError::INVALID_EVENTID in case of failure).
+   */
+  uint32_t addCodeRangeCB(rword start, rword end, InstPosition pos,
+                          const InstCbLambda &cbk,
+                          int priority = PRIORITY_DEFAULT);
+  uint32_t addCodeRangeCB(rword start, rword end, InstPosition pos,
+                          InstCbLambda &&cbk, int priority = PRIORITY_DEFAULT);
+
   /*! Register a callback event for every memory access matching the type
    * bitfield made by the instructions.
    *
@@ -385,6 +500,22 @@ public:
    * (or VMError::INVALID_EVENTID in case of failure).
    */
   uint32_t addMemAccessCB(MemoryAccessType type, InstCallback cbk, void *data,
+                          int priority = PRIORITY_DEFAULT);
+
+  /*! Register a callback event for every memory access matching the type
+   * bitfield made by the instructions.
+   *
+   * @param[in] type       A mode bitfield: either QBDI::MEMORY_READ,
+   *                       QBDI::MEMORY_WRITE or both (QBDI::MEMORY_READ_WRITE).
+   * @param[in] cbk        A lambda function to the callback
+   * @param[in] priority   The priority of the callback.
+   *
+   * @return The id of the registered instrumentation
+   * (or VMError::INVALID_EVENTID in case of failure).
+   */
+  uint32_t addMemAccessCB(MemoryAccessType type, const InstCbLambda &cbk,
+                          int priority = PRIORITY_DEFAULT);
+  uint32_t addMemAccessCB(MemoryAccessType type, InstCbLambda &&cbk,
                           int priority = PRIORITY_DEFAULT);
 
   /*! Add a virtual callback which is triggered for any memory access at a
@@ -403,6 +534,24 @@ public:
    */
   uint32_t addMemAddrCB(rword address, MemoryAccessType type, InstCallback cbk,
                         void *data);
+
+  /*! Add a virtual callback which is triggered for any memory access at a
+   * specific address matching the access type. Virtual callbacks are called via
+   * callback forwarding by a gate callback triggered on every memory access.
+   * This incurs a high performance cost. The callback has the default priority.
+   *
+   * @param[in] address  Code address which will trigger the callback.
+   * @param[in] type     A mode bitfield: either QBDI::MEMORY_READ,
+   *                     QBDI::MEMORY_WRITE or both (QBDI::MEMORY_READ_WRITE).
+   * @param[in] cbk      A lambda function to the callback
+   *
+   * @return The id of the registered instrumentation
+   * (or VMError::INVALID_EVENTID in case of failure).
+   */
+  uint32_t addMemAddrCB(rword address, MemoryAccessType type,
+                        const InstCbLambda &cbk);
+  uint32_t addMemAddrCB(rword address, MemoryAccessType type,
+                        InstCbLambda &&cbk);
 
   /*! Add a virtual callback which is triggered for any memory access in a
    * specific address range matching the access type. Virtual callbacks are
@@ -425,6 +574,28 @@ public:
   uint32_t addMemRangeCB(rword start, rword end, MemoryAccessType type,
                          InstCallback cbk, void *data);
 
+  /*! Add a virtual callback which is triggered for any memory access in a
+   * specific address range matching the access type. Virtual callbacks are
+   * called via callback forwarding by a gate callback triggered on every memory
+   * access. This incurs a high performance cost. The callback has the default
+   * priority.
+   *
+   * @param[in] start    Start of the address range which will trigger the
+   *                     callback.
+   * @param[in] end      End of the address range which will trigger the
+   *                     callback.
+   * @param[in] type     A mode bitfield: either QBDI::MEMORY_READ,
+   *                     QBDI::MEMORY_WRITE or both (QBDI::MEMORY_READ_WRITE).
+   * @param[in] cbk      A lambda function to the callback
+   *
+   * @return The id of the registered instrumentation (or
+   * VMError::INVALID_EVENTID in case of failure).
+   */
+  uint32_t addMemRangeCB(rword start, rword end, MemoryAccessType type,
+                         const InstCbLambda &cbk);
+  uint32_t addMemRangeCB(rword start, rword end, MemoryAccessType type,
+                         InstCbLambda &&cbk);
+
   /*! Register a callback event for a specific VM event.
    *
    * @param[in] mask  A mask of VM event type which will trigger the callback.
@@ -435,6 +606,17 @@ public:
    * VMError::INVALID_EVENTID in case of failure).
    */
   uint32_t addVMEventCB(VMEvent mask, VMCallback cbk, void *data);
+
+  /*! Register a callback event for a specific VM event.
+   *
+   * @param[in] mask  A mask of VM event type which will trigger the callback.
+   * @param[in] cbk   A lambda function to the callback.
+   *
+   * @return The id of the registered instrumentation (or
+   * VMError::INVALID_EVENTID in case of failure).
+   */
+  uint32_t addVMEventCB(VMEvent mask, const VMCbLambda &cbk);
+  uint32_t addVMEventCB(VMEvent mask, VMCbLambda &&cbk);
 
   /*! Remove an instrumentation.
    *

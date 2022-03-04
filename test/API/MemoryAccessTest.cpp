@@ -711,4 +711,270 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest-MemorySnooping") {
   REQUIRE(original == ret);
 }
 
+TEST_CASE_METHOD(APITest, "MemoryAccessTest-VMCpy1") {
+  uint32_t buffer[] = {3531902336, 1974345459, 1037124602, 2572792182,
+                       3451121073, 4105092976, 2050515100, 2786945221,
+                       1496976643, 515521533};
+  size_t buffer_size = sizeof(buffer) / sizeof(uint32_t);
+  TestInfo info = {(void *)buffer, sizeof(buffer), 0};
+
+  // copy constructor
+  QBDI::VM vm2 = vm;
+
+  // copy operator
+  QBDI::VM vm3;
+  vm3.precacheBasicBlock((QBDI::rword)arrayRead32);
+  vm3 = vm;
+
+  vm2.addMemRangeCB((QBDI::rword)buffer, (QBDI::rword)(buffer + buffer_size),
+                    QBDI::MEMORY_READ, checkArrayRead32, &info);
+  vm3.addMemRangeCB((QBDI::rword)buffer, (QBDI::rword)(buffer + buffer_size),
+                    QBDI::MEMORY_READ, checkArrayRead32, &info);
+
+  vm.deleteAllInstrumentations();
+
+  QBDI::rword retval;
+  vm.call(&retval, (QBDI::rword)arrayRead32,
+          {(QBDI::rword)buffer, (QBDI::rword)buffer_size});
+  ;
+  REQUIRE(retval == (QBDI::rword)arrayRead32(buffer, buffer_size));
+  REQUIRE(info.i == 0);
+
+  vm2.call(&retval, (QBDI::rword)arrayRead32,
+           {(QBDI::rword)buffer, (QBDI::rword)buffer_size});
+  REQUIRE(retval == (QBDI::rword)arrayRead32(buffer, buffer_size));
+  REQUIRE(OFFSET_SUM(buffer_size) == info.i);
+
+  info.i = 0;
+  vm3.call(&retval, (QBDI::rword)arrayRead32,
+           {(QBDI::rword)buffer, (QBDI::rword)buffer_size});
+  REQUIRE(retval == (QBDI::rword)arrayRead32(buffer, buffer_size));
+  REQUIRE(OFFSET_SUM(buffer_size) == info.i);
+}
+
+TEST_CASE_METHOD(APITest, "MemoryAccessTest-VMCpy2") {
+  uint32_t buffer[] = {3531902336, 1974345459, 1037124602, 2572792182,
+                       3451121073, 4105092976, 2050515100, 2786945221,
+                       1496976643, 515521533};
+  size_t buffer_size = sizeof(buffer) / sizeof(uint32_t);
+  TestInfo info = {(void *)buffer, sizeof(buffer), 0};
+
+  vm.addMemRangeCB((QBDI::rword)buffer, (QBDI::rword)(buffer + buffer_size),
+                   QBDI::MEMORY_READ, checkArrayRead32, &info);
+
+  // copy constructor
+  QBDI::VM vm2 = vm;
+
+  // copy operator
+  QBDI::VM vm3;
+  vm3.precacheBasicBlock((QBDI::rword)arrayRead32);
+  vm3 = vm;
+
+  vm.deleteAllInstrumentations();
+
+  QBDI::rword retval;
+  vm.call(&retval, (QBDI::rword)arrayRead32,
+          {(QBDI::rword)buffer, (QBDI::rword)buffer_size});
+  ;
+  REQUIRE(retval == (QBDI::rword)arrayRead32(buffer, buffer_size));
+  REQUIRE(info.i == 0);
+
+  vm2.call(&retval, (QBDI::rword)arrayRead32,
+           {(QBDI::rword)buffer, (QBDI::rword)buffer_size});
+  REQUIRE(retval == (QBDI::rword)arrayRead32(buffer, buffer_size));
+  REQUIRE(OFFSET_SUM(buffer_size) == info.i);
+
+  info.i = 0;
+  vm3.call(&retval, (QBDI::rword)arrayRead32,
+           {(QBDI::rword)buffer, (QBDI::rword)buffer_size});
+  REQUIRE(retval == (QBDI::rword)arrayRead32(buffer, buffer_size));
+  REQUIRE(OFFSET_SUM(buffer_size) == info.i);
+}
+
+TEST_CASE_METHOD(APITest, "MemoryAccessTest-InstCbLambda-VMCpy") {
+  uint32_t buffer[] = {3531902336, 1974345459, 1037124602, 2572792182,
+                       3451121073, 4105092976, 2050515100, 2786945221,
+                       1496976643, 515521533};
+  size_t buffer_size = sizeof(buffer) / sizeof(uint32_t);
+  TestInfo info = {(void *)buffer, sizeof(buffer), 0};
+
+  vm.addMemRangeCB((QBDI::rword)buffer, (QBDI::rword)(buffer + buffer_size),
+                   QBDI::MEMORY_READ,
+                   [&info](QBDI::VMInstanceRef vm, QBDI::GPRState *gpr,
+                           QBDI::FPRState *fpr) {
+                     return checkArrayRead32(vm, gpr, fpr, &info);
+                   });
+
+  // copy constructor
+  QBDI::VM vm2 = vm;
+
+  // copy operator
+  QBDI::VM vm3;
+  vm3.precacheBasicBlock((QBDI::rword)arrayRead32);
+  vm3 = vm;
+
+  vm.deleteAllInstrumentations();
+
+  QBDI::rword retval;
+  vm.call(&retval, (QBDI::rword)arrayRead32,
+          {(QBDI::rword)buffer, (QBDI::rword)buffer_size});
+  ;
+  REQUIRE(retval == (QBDI::rword)arrayRead32(buffer, buffer_size));
+  REQUIRE(info.i == 0);
+
+  vm2.call(&retval, (QBDI::rword)arrayRead32,
+           {(QBDI::rword)buffer, (QBDI::rword)buffer_size});
+  REQUIRE(retval == (QBDI::rword)arrayRead32(buffer, buffer_size));
+  REQUIRE(OFFSET_SUM(buffer_size) == info.i);
+
+  info.i = 0;
+  vm3.call(&retval, (QBDI::rword)arrayRead32,
+           {(QBDI::rword)buffer, (QBDI::rword)buffer_size});
+  REQUIRE(retval == (QBDI::rword)arrayRead32(buffer, buffer_size));
+  REQUIRE(OFFSET_SUM(buffer_size) == info.i);
+}
+
+TEST_CASE_METHOD(APITest, "MemoryAccessTest-InstCbLambda-addMemAccessCB") {
+  QBDI::rword retval;
+  uint32_t buffer[] = {3531902336, 1974345459, 1037124602, 2572792182,
+                       3451121073, 4105092976, 2050515100, 2786945221,
+                       1496976643, 515521533};
+  size_t buffer_size = sizeof(buffer) / sizeof(uint32_t);
+  TestInfo info = {(void *)buffer, sizeof(buffer), 0};
+  bool cbCalled = false;
+
+  QBDI::InstCbLambda cbk = [&info, &cbCalled](QBDI::VMInstanceRef vm,
+                                              QBDI::GPRState *gpr,
+                                              QBDI::FPRState *fpr) {
+    cbCalled = true;
+    return checkArrayRead32(vm, gpr, fpr, &info);
+  };
+  vm.addMemAccessCB(QBDI::MEMORY_READ, cbk);
+
+  vm.call(&retval, (QBDI::rword)arrayRead32,
+          {(QBDI::rword)buffer, (QBDI::rword)buffer_size});
+  ;
+  REQUIRE(retval == (QBDI::rword)arrayRead32(buffer, buffer_size));
+  REQUIRE(OFFSET_SUM(buffer_size) == info.i);
+  REQUIRE(cbCalled);
+
+  cbCalled = false;
+  info.i = 0;
+  vm.deleteAllInstrumentations();
+
+  vm.call(&retval, (QBDI::rword)arrayRead32,
+          {(QBDI::rword)buffer, (QBDI::rword)buffer_size});
+  ;
+  REQUIRE(retval == (QBDI::rword)arrayRead32(buffer, buffer_size));
+  REQUIRE(info.i == 0);
+  REQUIRE(!cbCalled);
+
+  vm.addMemAccessCB(QBDI::MEMORY_READ, std::move(cbk));
+
+  vm.call(&retval, (QBDI::rword)arrayRead32,
+          {(QBDI::rword)buffer, (QBDI::rword)buffer_size});
+  ;
+  REQUIRE(retval == (QBDI::rword)arrayRead32(buffer, buffer_size));
+  REQUIRE(OFFSET_SUM(buffer_size) == info.i);
+  REQUIRE(cbCalled);
+
+  SUCCEED();
+}
+
+TEST_CASE_METHOD(APITest, "MemoryAccessTest-InstCbLambda-addMemAddrCB") {
+  QBDI::rword retval;
+  uint32_t buffer[] = {3531902336, 1974345459, 1037124602, 2572792182,
+                       3451121073, 4105092976, 2050515100, 2786945221,
+                       1496976643, 515521533};
+  size_t buffer_size = sizeof(buffer) / sizeof(uint32_t);
+  TestInfo info = {(void *)buffer, sizeof(buffer), 0};
+  bool cbCalled = false;
+
+  QBDI::InstCbLambda cbk = [&info, &cbCalled](QBDI::VMInstanceRef vm,
+                                              QBDI::GPRState *gpr,
+                                              QBDI::FPRState *fpr) {
+    cbCalled = true;
+    return checkArrayRead32(vm, gpr, fpr, &info);
+  };
+  vm.addMemAddrCB((QBDI::rword)buffer + 12, QBDI::MEMORY_READ, cbk);
+
+  vm.call(&retval, (QBDI::rword)arrayRead32,
+          {(QBDI::rword)buffer, (QBDI::rword)buffer_size});
+  ;
+  REQUIRE(retval == (QBDI::rword)arrayRead32(buffer, buffer_size));
+  REQUIRE(info.i == 3);
+  REQUIRE(cbCalled);
+
+  cbCalled = false;
+  info.i = 0;
+  vm.deleteAllInstrumentations();
+
+  vm.call(&retval, (QBDI::rword)arrayRead32,
+          {(QBDI::rword)buffer, (QBDI::rword)buffer_size});
+  ;
+  REQUIRE(retval == (QBDI::rword)arrayRead32(buffer, buffer_size));
+  REQUIRE(info.i == 0);
+  REQUIRE(!cbCalled);
+
+  vm.addMemAddrCB((QBDI::rword)buffer + 16, QBDI::MEMORY_READ, std::move(cbk));
+
+  vm.call(&retval, (QBDI::rword)arrayRead32,
+          {(QBDI::rword)buffer, (QBDI::rword)buffer_size});
+  ;
+  REQUIRE(retval == (QBDI::rword)arrayRead32(buffer, buffer_size));
+  REQUIRE(info.i == 4);
+  REQUIRE(cbCalled);
+
+  SUCCEED();
+}
+
+TEST_CASE_METHOD(APITest, "MemoryAccessTest-InstCbLambda-addMemRangeCB") {
+  QBDI::rword retval;
+  uint32_t buffer[] = {3531902336, 1974345459, 1037124602, 2572792182,
+                       3451121073, 4105092976, 2050515100, 2786945221,
+                       1496976643, 515521533};
+  size_t buffer_size = sizeof(buffer) / sizeof(uint32_t);
+  TestInfo info = {(void *)buffer, sizeof(buffer), 0};
+  bool cbCalled = false;
+
+  QBDI::InstCbLambda cbk = [&info, &cbCalled](QBDI::VMInstanceRef vm,
+                                              QBDI::GPRState *gpr,
+                                              QBDI::FPRState *fpr) {
+    cbCalled = true;
+    return checkArrayRead32(vm, gpr, fpr, &info);
+  };
+  vm.addMemRangeCB((QBDI::rword)buffer, (QBDI::rword)buffer + sizeof(buffer),
+                   QBDI::MEMORY_READ, cbk);
+
+  vm.call(&retval, (QBDI::rword)arrayRead32,
+          {(QBDI::rword)buffer, (QBDI::rword)buffer_size});
+  ;
+  REQUIRE(retval == (QBDI::rword)arrayRead32(buffer, buffer_size));
+  REQUIRE(OFFSET_SUM(buffer_size) == info.i);
+  REQUIRE(cbCalled);
+
+  cbCalled = false;
+  info.i = 0;
+  vm.deleteAllInstrumentations();
+
+  vm.call(&retval, (QBDI::rword)arrayRead32,
+          {(QBDI::rword)buffer, (QBDI::rword)buffer_size});
+  ;
+  REQUIRE(retval == (QBDI::rword)arrayRead32(buffer, buffer_size));
+  REQUIRE(info.i == 0);
+  REQUIRE(!cbCalled);
+
+  vm.addMemRangeCB((QBDI::rword)buffer, (QBDI::rword)buffer + sizeof(buffer),
+                   QBDI::MEMORY_READ, std::move(cbk));
+
+  vm.call(&retval, (QBDI::rword)arrayRead32,
+          {(QBDI::rword)buffer, (QBDI::rword)buffer_size});
+  ;
+  REQUIRE(retval == (QBDI::rword)arrayRead32(buffer, buffer_size));
+  REQUIRE(OFFSET_SUM(buffer_size) == info.i);
+  REQUIRE(cbCalled);
+
+  SUCCEED();
+}
+
 #endif

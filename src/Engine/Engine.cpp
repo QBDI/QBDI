@@ -531,12 +531,40 @@ uint32_t Engine::addInstrRule(std::unique_ptr<InstrRule> &&rule) {
   return id;
 }
 
+InstrRule *Engine::getInstrRule(uint32_t id) {
+  auto it = std::find_if(
+      instrRules.begin(), instrRules.end(),
+      [id](const std::pair<uint32_t, std::unique_ptr<InstrRule>> &el) {
+        return id == el.first;
+      });
+  if (it == instrRules.end()) {
+    return nullptr;
+  } else {
+    return it->second.get();
+  }
+}
+
 uint32_t Engine::addVMEventCB(VMEvent mask, VMCallback cbk, void *data) {
   uint32_t id = vmCallbacksCounter++;
   QBDI_REQUIRE_ACTION(id < EVENTID_VM_MASK, return VMError::INVALID_EVENTID);
   vmCallbacks.emplace_back(id, CallbackRegistration{mask, cbk, data});
   eventMask |= mask;
   return id | EVENTID_VM_MASK;
+}
+
+bool Engine::setVMEventCB(uint32_t id, VMCallback cbk, void *data) {
+  auto it =
+      std::find_if(vmCallbacks.begin(), vmCallbacks.end(),
+                   [id](const std::pair<uint32_t, CallbackRegistration> &el) {
+                     return id == (el.first | EVENTID_VM_MASK);
+                   });
+  if (it == vmCallbacks.end()) {
+    return false;
+  } else {
+    it->second.cbk = cbk;
+    it->second.data = data;
+    return true;
+  }
 }
 
 VMAction Engine::signalEvent(VMEvent event, rword currentPC,
