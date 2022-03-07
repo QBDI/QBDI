@@ -65,6 +65,8 @@ public:
 
   inline virtual void changeVMInstanceRef(VMInstanceRef vminstance){};
 
+  inline virtual bool changeDataPtr(void *data) { return false; };
+
   /*! Determine wheter this rule have to be apply on this Path and instrument if
    * needed.
    *
@@ -88,13 +90,15 @@ public:
                   RelocatableInstTag tag) const;
 };
 
-class InstrRuleBasic : public AutoUnique<InstrRule, InstrRuleBasic> {
+class InstrRuleBasicCBK : public AutoUnique<InstrRule, InstrRuleBasicCBK> {
 
   PatchConditionUniquePtr condition;
   PatchGeneratorUniquePtrVec patchGen;
   InstPosition position;
   bool breakToHost;
   RelocatableInstTag tag;
+  InstCallback cbk;
+  void *data;
 
 public:
   /*! Allocate a new instrumentation rule with a condition, a list of
@@ -102,8 +106,8 @@ public:
    *
    * @param[in] condition    A PatchCondition which determine wheter or not this
    *                         PatchRule applies.
-   * @param[in] patchGen     A vector of PatchGenerator which will produce the
-   *                         patch instructions.
+   * @param[in] cbk          The callback to call
+   * @param[in] data         The data pointer to give to the callback
    * @param[in] position     An enum indicating wether this instrumentation
    *                         should be positioned before the instruction or
    *                         after it.
@@ -113,12 +117,12 @@ public:
    * @param[in] priority     Priority of the callback
    * @param[in] tag          A tag for the callback
    */
-  InstrRuleBasic(PatchConditionUniquePtr &&condition,
-                 PatchGeneratorUniquePtrVec &&patchGen, InstPosition position,
-                 bool breakToHost, int priority = PRIORITY_DEFAULT,
-                 RelocatableInstTag tag = RelocTagInvalid);
+  InstrRuleBasicCBK(PatchConditionUniquePtr &&condition, InstCallback cbk,
+                    void *data, InstPosition position, bool breakToHost,
+                    int priority = PRIORITY_DEFAULT,
+                    RelocatableInstTag tag = RelocTagInvalid);
 
-  ~InstrRuleBasic() override;
+  ~InstrRuleBasicCBK() override;
 
   std::unique_ptr<InstrRule> clone() const override;
 
@@ -136,6 +140,8 @@ public:
    * patch.
    */
   bool canBeApplied(const Patch &patch, const LLVMCPU &llvmcpu) const;
+
+  bool changeDataPtr(void *data) override;
 
   inline bool tryInstrument(Patch &patch,
                             const LLVMCPU &llvmcpu) const override {
@@ -227,6 +233,11 @@ public:
 
   inline void changeVMInstanceRef(VMInstanceRef vminstance) override {
     vm = vminstance;
+  };
+
+  inline bool changeDataPtr(void *data) override {
+    cbk_data = data;
+    return true;
   };
 
   inline RangeSet<rword> affectedRange() const override { return range; }

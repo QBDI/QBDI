@@ -59,6 +59,10 @@ struct ExecRegion {
   std::map<rword, InstLoc> instCache;
   bool toFlush = false;
 
+  // lambda ptr for user callback set with addInstrRule
+  // These pointers should be remove at the same time as the region
+  std::vector<std::unique_ptr<InstCbLambda>> userInstCB;
+
   ExecRegion(ExecRegion &&) = default;
   ExecRegion &operator=(ExecRegion &&) = default;
 };
@@ -112,7 +116,7 @@ public:
 
   size_t preWriteBasicBlock(const std::vector<Patch> &basicBlock);
 
-  void writeBasicBlock(const std::vector<Patch> &basicBlock, size_t patchEnd);
+  void writeBasicBlock(std::vector<Patch> &&basicBlock, size_t patchEnd);
 
   bool isFlushPending() { return needFlush; }
 

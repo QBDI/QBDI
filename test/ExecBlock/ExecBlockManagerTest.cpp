@@ -111,8 +111,8 @@ TEST_CASE_METHOD(ExecBlockManagerTest,
   terminator1[0].metadata.modifyPC = true;
   terminator2[0].append(QBDI::getTerminator(0x13371337));
   terminator2[0].metadata.modifyPC = true;
-  execBlockManager.writeBasicBlock(terminator1, 1);
-  execBlockManager.writeBasicBlock(terminator2, 1);
+  execBlockManager.writeBasicBlock(std::move(terminator1), 1);
+  execBlockManager.writeBasicBlock(std::move(terminator2), 1);
   // Execute the two basic block and get the value of PC from the data block
   block = execBlockManager.getProgrammedExecBlock(0x42424242);
   REQUIRE(nullptr != block);
@@ -135,7 +135,7 @@ TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-Stresstest") {
     QBDI::Patch::Vec terminator = getEmptyBB(address, *this);
     terminator[0].append(QBDI::getTerminator(address));
     terminator[0].metadata.modifyPC = true;
-    execBlockManager.writeBasicBlock(terminator, 1);
+    execBlockManager.writeBasicBlock(std::move(terminator), 1);
     QBDI::ExecBlock *block = execBlockManager.getProgrammedExecBlock(address);
     REQUIRE(nullptr != block);
     block->execute();

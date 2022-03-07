@@ -70,31 +70,51 @@ Callback management
 InstCallback
 ^^^^^^^^^^^^
 
-.. doxygenfunction:: QBDI::VM::addCodeCB
+.. doxygenfunction:: QBDI::VM::addCodeCB(InstPosition pos, InstCallback cbk, void*data, int priority)
+.. doxygenfunction:: QBDI::VM::addCodeCB(InstPosition pos, InstCbLambda &&cbk, int priority)
+.. doxygenfunction:: QBDI::VM::addCodeCB(InstPosition pos, const InstCbLambda &cbk, int priority)
 
-.. doxygenfunction:: QBDI::VM::addCodeAddrCB
+.. doxygenfunction:: QBDI::VM::addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk, void*data, int priority)
+.. doxygenfunction:: QBDI::VM::addCodeAddrCB(rword address, InstPosition pos, InstCbLambda &&cbk, int priority)
+.. doxygenfunction:: QBDI::VM::addCodeAddrCB(rword address, InstPosition pos, const InstCbLambda &cbk, int priority)
 
-.. doxygenfunction:: QBDI::VM::addCodeRangeCB
+.. doxygenfunction:: QBDI::VM::addCodeRangeCB(rword start, rword end, InstPosition pos, InstCallback cbk, void*data, int priority)
+.. doxygenfunction:: QBDI::VM::addCodeRangeCB(rword start, rword end, InstPosition pos, InstCbLambda &&cbk, int priority)
+.. doxygenfunction:: QBDI::VM::addCodeRangeCB(rword start, rword end, InstPosition pos, const InstCbLambda &cbk, int priority)
 
-.. doxygenfunction:: QBDI::VM::addMnemonicCB
+.. doxygenfunction:: QBDI::VM::addMnemonicCB(const char*mnemonic, InstPosition pos, InstCallback cbk, void*data, int priority)
+.. doxygenfunction:: QBDI::VM::addMnemonicCB(const char*mnemonic, InstPosition pos, InstCbLambda &&cbk, int priority)
+.. doxygenfunction:: QBDI::VM::addMnemonicCB(const char*mnemonic, InstPosition pos, const InstCbLambda &cbk, int priority)
+
 
 .. _vmcallback-management-cpp:
 
 VMEvent
 ^^^^^^^
 
-.. doxygenfunction:: QBDI::VM::addVMEventCB
+.. doxygenfunction:: QBDI::VM::addVMEventCB(VMEvent mask, VMCallback cbk, void*data)
+.. doxygenfunction:: QBDI::VM::addVMEventCB(VMEvent mask, VMCbLambda &&cbk)
+.. doxygenfunction:: QBDI::VM::addVMEventCB(VMEvent mask, const VMCbLambda &cbk)
 
 .. _memorycallback-management-cpp:
 
 MemoryAccess
 ^^^^^^^^^^^^
 
-.. doxygenfunction:: QBDI::VM::addMemAccessCB
+.. doxygenfunction:: QBDI::VM::addMemAccessCB(MemoryAccessType type, InstCallback cbk, void*data, int priority)
+.. doxygenfunction:: QBDI::VM::addMemAccessCB(MemoryAccessType type, InstCbLambda &&cbk, int priority)
+.. doxygenfunction:: QBDI::VM::addMemAccessCB(MemoryAccessType type, const InstCbLambda &cbk, int priority)
 
-.. doxygenfunction:: QBDI::VM::addMemAddrCB
 
-.. doxygenfunction:: QBDI::VM::addMemRangeCB
+.. doxygenfunction:: QBDI::VM::addMemAddrCB(rword address, MemoryAccessType type, InstCallback cbk, void*data)
+.. doxygenfunction:: QBDI::VM::addMemAddrCB(rword address, MemoryAccessType type, InstCbLambda &&cbk)
+.. doxygenfunction:: QBDI::VM::addMemAddrCB(rword address, MemoryAccessType type, const InstCbLambda &cbk)
+
+
+.. doxygenfunction:: QBDI::VM::addMemRangeCB(rword start, rword end, MemoryAccessType type, InstCallback cbk, void*data)
+.. doxygenfunction:: QBDI::VM::addMemRangeCB(rword start, rword end, MemoryAccessType type, InstCbLambda &&cbk)
+.. doxygenfunction:: QBDI::VM::addMemRangeCB(rword start, rword end, MemoryAccessType type, const InstCbLambda &cbk)
+
 
 .. _instrrulecallback-management-cpp:
 
@@ -102,10 +122,17 @@ InstrRuleCallback
 ^^^^^^^^^^^^^^^^^
 
 .. doxygenfunction:: QBDI::VM::addInstrRule(InstrRuleCallback cbk, AnalysisType type, void* data)
+.. doxygenfunction:: QBDI::VM::addInstrRule(InstrRuleCbLambda &&cbk, AnalysisType type)
+.. doxygenfunction:: QBDI::VM::addInstrRule(const InstrRuleCbLambda &cbk, AnalysisType type)
 
 .. doxygenfunction:: QBDI::VM::addInstrRuleRange(rword start, rword end, InstrRuleCallback cbk, AnalysisType type, void* data)
+.. doxygenfunction:: QBDI::VM::addInstrRuleRange(rword start, rword end, InstrRuleCbLambda &&cbk, AnalysisType type)
+.. doxygenfunction:: QBDI::VM::addInstrRuleRange(rword start, rword end, const InstrRuleCbLambda &cbk, AnalysisType type)
 
-.. doxygenfunction:: QBDI::VM::addInstrRuleRangeSet
+.. doxygenfunction:: QBDI::VM::addInstrRuleRangeSet(RangeSet<rword> range, InstrRuleCallback cbk, AnalysisType type, void*data)
+.. doxygenfunction:: QBDI::VM::addInstrRuleRangeSet(RangeSet<rword> range, InstrRuleCbLambda &&cbk, AnalysisType type)
+.. doxygenfunction:: QBDI::VM::addInstrRuleRangeSet(RangeSet<rword> range, const InstrRuleCbLambda &cbk, AnalysisType type)
+
 
 Removal
 ^^^^^^^
@@ -233,10 +260,15 @@ Callback
 
 .. doxygentypedef:: QBDI::InstCallback
 
+.. doxygentypedef:: QBDI::InstCbLambda
+
 .. doxygentypedef:: QBDI::VMCallback
+
+.. doxygentypedef:: QBDI::VMCbLambda
 
 .. doxygentypedef:: QBDI::InstrRuleCallback
 
+.. doxygentypedef:: QBDI::InstrRuleCbLambda
 
 .. doxygenstruct:: QBDI::InstrRuleDataCBK
     :members:

@@ -213,7 +213,7 @@ ExecBlockManager::preWriteBasicBlock(const std::vector<Patch> &basicBlock) {
   return patchEnd;
 }
 
-void ExecBlockManager::writeBasicBlock(const std::vector<Patch> &basicBlock,
+void ExecBlockManager::writeBasicBlock(std::vector<Patch> &&basicBlock,
                                        size_t patchEnd) {
   unsigned translated = 0;
   unsigned translation = 0;
@@ -283,6 +283,10 @@ void ExecBlockManager::writeBasicBlock(const std::vector<Patch> &basicBlock,
         for (size_t j = 0; j < res.patchWritten; j++) {
           region.instCache[basicBlock[patchIdx + j].metadata.address] = InstLoc{
               static_cast<uint16_t>(i), static_cast<uint16_t>(startID + j)};
+          std::move(basicBlock[patchIdx + j].userInstCB.begin(),
+                    basicBlock[patchIdx + j].userInstCB.end(),
+                    std::back_inserter(region.userInstCB));
+          basicBlock[patchIdx + j].userInstCB.clear();
         }
         QBDI_DEBUG(
             "Sequence 0x{:x}-0x{:x} written in ExecBlock 0x{:x} as seqID {:x}",

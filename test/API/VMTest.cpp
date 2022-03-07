@@ -1232,3 +1232,420 @@ TEST_CASE("VMTest-CopyAssignmentOperator") {
   REQUIRE_FALSE(data2.reachCB2);
   REQUIRE_FALSE(data2.reachInstrumentCB);
 }
+
+TEST_CASE_METHOD(APITest, "VMTest-VMEventLambda-VMcpy") {
+  QBDI::rword retval;
+  bool cbCalled = false;
+  QBDI::VMCbLambda cbk = [&cbCalled](QBDI::VMInstanceRef, const QBDI::VMState *,
+                                     QBDI::GPRState *, QBDI::FPRState *) {
+    cbCalled = true;
+    return QBDI::VMAction::CONTINUE;
+  };
+
+  vm.addVMEventCB(
+      QBDI::SEQUENCE_ENTRY | QBDI::SEQUENCE_EXIT | QBDI::BASIC_BLOCK_NEW, cbk);
+
+  // copy constructor
+  QBDI::VM vm2 = vm;
+
+  // copy operator
+  QBDI::VM vm3;
+  vm3.precacheBasicBlock((QBDI::rword)dummyFun0);
+  vm3 = vm;
+
+  vm.deleteAllInstrumentations();
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(!cbCalled);
+
+  vm2.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+
+  cbCalled = false;
+  vm3.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+
+  SUCCEED();
+}
+
+TEST_CASE_METHOD(APITest, "VMTest-InstrRuleCbLambda-VMCpy") {
+  QBDI::rword retval;
+  bool cbCalled = false;
+
+  vm.addInstrRule(
+      [&cbCalled](QBDI::VMInstanceRef, const QBDI::InstAnalysis *)
+          -> std::vector<QBDI::InstrRuleDataCBK> {
+        cbCalled = true;
+        return {};
+      },
+      QBDI::ANALYSIS_INSTRUCTION);
+
+  // copy constructor
+  QBDI::VM vm2 = vm;
+
+  // copy operator
+  QBDI::VM vm3;
+  vm3.precacheBasicBlock((QBDI::rword)dummyFun0);
+  vm3 = vm;
+
+  vm.deleteAllInstrumentations();
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(!cbCalled);
+
+  vm2.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+
+  cbCalled = false;
+  vm3.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+}
+
+TEST_CASE_METHOD(APITest, "VMTest-InstCbLambda-VMCpy") {
+  QBDI::rword retval;
+  bool cbCalled = false;
+
+  vm.addCodeCB(
+      QBDI::InstPosition::PREINST,
+      [&cbCalled](QBDI::VMInstanceRef, QBDI::GPRState *, QBDI::FPRState *) {
+        cbCalled = true;
+        return QBDI::VMAction::CONTINUE;
+      });
+
+  // copy constructor
+  QBDI::VM vm2 = vm;
+
+  // copy operator
+  QBDI::VM vm3;
+  vm3.precacheBasicBlock((QBDI::rword)dummyFun0);
+  vm3 = vm;
+
+  vm.deleteAllInstrumentations();
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(!cbCalled);
+
+  vm2.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+
+  cbCalled = false;
+  vm3.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+}
+
+TEST_CASE_METHOD(APITest, "VMTest-VMEventLambda") {
+  QBDI::rword retval;
+  bool cbCalled = false;
+  QBDI::VMCbLambda cbk = [&cbCalled](QBDI::VMInstanceRef, const QBDI::VMState *,
+                                     QBDI::GPRState *, QBDI::FPRState *) {
+    cbCalled = true;
+    return QBDI::VMAction::CONTINUE;
+  };
+
+  vm.addVMEventCB(
+      QBDI::SEQUENCE_ENTRY | QBDI::SEQUENCE_EXIT | QBDI::BASIC_BLOCK_NEW, cbk);
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+
+  cbCalled = false;
+  vm.deleteAllInstrumentations();
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(!cbCalled);
+
+  vm.addVMEventCB(QBDI::SEQUENCE_ENTRY | QBDI::SEQUENCE_EXIT |
+                      QBDI::BASIC_BLOCK_NEW,
+                  std::move(cbk));
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+
+  SUCCEED();
+}
+
+TEST_CASE_METHOD(APITest, "VMTest-InstrRuleCbLambda-addInstrRule") {
+  QBDI::rword retval;
+  bool cbCalled = false;
+  QBDI::InstrRuleCbLambda cbk =
+      [&cbCalled](
+          QBDI::VMInstanceRef,
+          const QBDI::InstAnalysis *) -> std::vector<QBDI::InstrRuleDataCBK> {
+    cbCalled = true;
+    return {};
+  };
+
+  vm.addInstrRule(cbk, QBDI::ANALYSIS_INSTRUCTION);
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+
+  cbCalled = false;
+  vm.deleteAllInstrumentations();
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(!cbCalled);
+
+  vm.addInstrRule(std::move(cbk), QBDI::ANALYSIS_INSTRUCTION);
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+
+  SUCCEED();
+}
+
+TEST_CASE_METHOD(APITest, "VMTest-InstrRuleCbLambda-addInstrRuleRange") {
+  QBDI::rword retval;
+  bool cbCalled = false;
+  QBDI::InstrRuleCbLambda cbk =
+      [&cbCalled](
+          QBDI::VMInstanceRef,
+          const QBDI::InstAnalysis *) -> std::vector<QBDI::InstrRuleDataCBK> {
+    cbCalled = true;
+    return {};
+  };
+
+  vm.addInstrRuleRange((QBDI::rword)dummyFun0, (QBDI::rword)dummyFun0 + 0x100,
+                       cbk, QBDI::ANALYSIS_INSTRUCTION);
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+
+  cbCalled = false;
+  vm.deleteAllInstrumentations();
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(!cbCalled);
+
+  vm.addInstrRuleRange((QBDI::rword)dummyFun0, (QBDI::rword)dummyFun0 + 0x100,
+                       std::move(cbk), QBDI::ANALYSIS_INSTRUCTION);
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+
+  SUCCEED();
+}
+
+TEST_CASE_METHOD(APITest, "VMTest-InstrRuleCbLambda-addInstrRuleRangeSet") {
+  QBDI::rword retval;
+  bool cbCalled = false;
+  QBDI::InstrRuleCbLambda cbk =
+      [&cbCalled](
+          QBDI::VMInstanceRef,
+          const QBDI::InstAnalysis *) -> std::vector<QBDI::InstrRuleDataCBK> {
+    cbCalled = true;
+    return {};
+  };
+  QBDI::RangeSet<QBDI::rword> s;
+  s.add({(QBDI::rword)dummyFun0, (QBDI::rword)dummyFun0 + 0x100});
+
+  vm.addInstrRuleRangeSet(s, cbk, QBDI::ANALYSIS_INSTRUCTION);
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+
+  cbCalled = false;
+  vm.deleteAllInstrumentations();
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(!cbCalled);
+
+  vm.addInstrRuleRangeSet(s, std::move(cbk), QBDI::ANALYSIS_INSTRUCTION);
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+
+  SUCCEED();
+}
+
+TEST_CASE_METHOD(APITest, "VMTest-InstCbLambda-addMnemonicCB") {
+  QBDI::rword retval;
+  bool cbCalled = false;
+  QBDI::InstCbLambda cbk = [&cbCalled](QBDI::VMInstanceRef, QBDI::GPRState *,
+                                       QBDI::FPRState *) {
+    cbCalled = true;
+    return QBDI::VMAction::CONTINUE;
+  };
+  vm.addMnemonicCB("*", QBDI::InstPosition::PREINST, cbk);
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+
+  cbCalled = false;
+  vm.deleteAllInstrumentations();
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(!cbCalled);
+
+  vm.addMnemonicCB("*", QBDI::InstPosition::PREINST, std::move(cbk));
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+
+  SUCCEED();
+}
+
+TEST_CASE_METHOD(APITest, "VMTest-InstCbLambda-addCodeCB") {
+  QBDI::rword retval;
+  bool cbCalled = false;
+  QBDI::InstCbLambda cbk = [&cbCalled](QBDI::VMInstanceRef, QBDI::GPRState *,
+                                       QBDI::FPRState *) {
+    cbCalled = true;
+    return QBDI::VMAction::CONTINUE;
+  };
+  vm.addCodeCB(QBDI::InstPosition::PREINST, cbk);
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+
+  cbCalled = false;
+  vm.deleteAllInstrumentations();
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(!cbCalled);
+
+  vm.addCodeCB(QBDI::InstPosition::PREINST, std::move(cbk));
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+
+  SUCCEED();
+}
+
+TEST_CASE_METHOD(APITest, "VMTest-InstCbLambda-addCodeAddrCB") {
+  QBDI::rword retval;
+  bool cbCalled = false;
+  QBDI::InstCbLambda cbk = [&cbCalled](QBDI::VMInstanceRef, QBDI::GPRState *,
+                                       QBDI::FPRState *) {
+    cbCalled = true;
+    return QBDI::VMAction::CONTINUE;
+  };
+  vm.addCodeAddrCB((QBDI::rword)dummyFun0, QBDI::InstPosition::PREINST, cbk);
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+
+  cbCalled = false;
+  vm.deleteAllInstrumentations();
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(!cbCalled);
+
+  vm.addCodeAddrCB((QBDI::rword)dummyFun0, QBDI::InstPosition::PREINST,
+                   std::move(cbk));
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+
+  SUCCEED();
+}
+
+TEST_CASE_METHOD(APITest, "VMTest-InstCbLambda-addCodeRangeCB") {
+  QBDI::rword retval;
+  bool cbCalled = false;
+  QBDI::InstCbLambda cbk = [&cbCalled](QBDI::VMInstanceRef, QBDI::GPRState *,
+                                       QBDI::FPRState *) {
+    cbCalled = true;
+    return QBDI::VMAction::CONTINUE;
+  };
+  vm.addCodeRangeCB((QBDI::rword)dummyFun0, (QBDI::rword)dummyFun0 + 0x100,
+                    QBDI::InstPosition::PREINST, cbk);
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+
+  cbCalled = false;
+  vm.deleteAllInstrumentations();
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(!cbCalled);
+
+  vm.addCodeRangeCB((QBDI::rword)dummyFun0, (QBDI::rword)dummyFun0 + 0x100,
+                    QBDI::InstPosition::PREINST, std::move(cbk));
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+
+  SUCCEED();
+}
+
+TEST_CASE_METHOD(APITest, "VMTest-InstCbLambda-InstrRuleDataCBK") {
+  QBDI::rword retval;
+  bool cbCalled = false;
+  uint32_t count1 = 0;
+  uint32_t count2 = 0;
+  uint32_t *count = &count1;
+
+  QBDI::InstrRuleCbLambda cbk =
+      [&cbCalled, &count](
+          QBDI::VMInstanceRef,
+          const QBDI::InstAnalysis *) -> std::vector<QBDI::InstrRuleDataCBK> {
+    return {{QBDI::InstPosition::PREINST,
+             [&cbCalled, count](QBDI::VMInstanceRef, QBDI::GPRState *,
+                                QBDI::FPRState *) {
+               cbCalled = true;
+               (*count)++;
+               return QBDI::VMAction::CONTINUE;
+             }}};
+  };
+
+  vm.addInstrRule(cbk, QBDI::ANALYSIS_INSTRUCTION);
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+  REQUIRE(count1 != 0);
+  REQUIRE(count2 == 0);
+
+  uint32_t backcount1 = count1;
+  cbCalled = false;
+  count1 = 0;
+  count = &count2;
+  vm.deleteAllInstrumentations();
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(!cbCalled);
+  REQUIRE(count1 == 0);
+  REQUIRE(count2 == 0);
+
+  vm.addInstrRule(std::move(cbk), QBDI::ANALYSIS_INSTRUCTION);
+
+  vm.call(&retval, (QBDI::rword)dummyFun0);
+  REQUIRE(retval == (QBDI::rword)42);
+  REQUIRE(cbCalled);
+  REQUIRE(count1 == 0);
+  REQUIRE(count2 == backcount1);
+
+  SUCCEED();
+}

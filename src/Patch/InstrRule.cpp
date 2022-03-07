@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <utility>
 
+#include "Engine/VM_internal.h"
 #include "Patch/InstMetadata.h"
 #include "Patch/InstrRule.h"
 #include "Patch/InstrRules.h"
@@ -134,32 +135,38 @@ void InstrRule::instrument(Patch &patch,
   patch.addInstsPatch(position, priority, std::move(instru));
 }
 
-// InstrRuleBasic
-// ==============
+// InstrRuleBasicCBK
+// =================
 
-InstrRuleBasic::InstrRuleBasic(PatchConditionUniquePtr &&condition,
-                               PatchGeneratorUniquePtrVec &&patchGen,
-                               InstPosition position, bool breakToHost,
-                               int priority, RelocatableInstTag tag)
-    : AutoUnique<InstrRule, InstrRuleBasic>(priority),
+InstrRuleBasicCBK::InstrRuleBasicCBK(PatchConditionUniquePtr &&condition,
+                                     InstCallback cbk, void *data,
+                                     InstPosition position, bool breakToHost,
+                                     int priority, RelocatableInstTag tag)
+    : AutoUnique<InstrRule, InstrRuleBasicCBK>(priority),
       condition(std::forward<PatchConditionUniquePtr>(condition)),
-      patchGen(std::forward<PatchGeneratorUniquePtrVec>(patchGen)),
-      position(position), breakToHost(breakToHost), tag(tag) {}
+      patchGen(getCallbackGenerator(cbk, data)), position(position),
+      breakToHost(breakToHost), tag(tag), cbk(cbk), data(data) {}
 
-InstrRuleBasic::~InstrRuleBasic() = default;
+InstrRuleBasicCBK::~InstrRuleBasicCBK() = default;
 
-bool InstrRuleBasic::canBeApplied(const Patch &patch,
-                                  const LLVMCPU &llvmcpu) const {
+bool InstrRuleBasicCBK::canBeApplied(const Patch &patch,
+                                     const LLVMCPU &llvmcpu) const {
   return condition->test(patch.metadata.inst, patch.metadata.address,
                          patch.metadata.instSize, llvmcpu);
 }
 
-std::unique_ptr<InstrRule> InstrRuleBasic::clone() const {
-  return InstrRuleBasic::unique(condition->clone(), cloneVec(patchGen),
-                                position, breakToHost, priority);
+bool InstrRuleBasicCBK::changeDataPtr(void *new_data) {
+  data = new_data;
+  patchGen = getCallbackGenerator(cbk, data);
+  return true;
+}
+
+std::unique_ptr<InstrRule> InstrRuleBasicCBK::clone() const {
+  return InstrRuleBasicCBK::unique(condition->clone(), cbk, data, position,
+                                   breakToHost, priority);
 };
 
-RangeSet<rword> InstrRuleBasic::affectedRange() const {
+RangeSet<rword> InstrRuleBasicCBK::affectedRange() const {
   return condition->affectedRange();
 }
 
@@ -199,7 +206,8 @@ InstrRuleUser::InstrRuleUser(InstrRuleCallback cbk, AnalysisType analysisType,
                              void *cbk_data, VMInstanceRef vm,
                              RangeSet<rword> range, int priority)
     : AutoClone<InstrRule, InstrRuleUser>(priority), cbk(cbk),
-      analysisType(analysisType), cbk_data(cbk_data), vm(vm), range(range) {}
+      analysisType(analysisType), cbk_data(cbk_data), vm(vm),
+      range(std::move(range)) {}
 
 InstrRuleUser::~InstrRuleUser() = default;
 
@@ -225,10 +233,21 @@ bool InstrRuleUser::tryInstrument(Patch &patch, const LLVMCPU &llvmcpu) const {
   }
 
   for (const InstrRuleDataCBK &cbkToAdd : vec) {
-    instrument(patch, getCallbackGenerator(cbkToAdd.cbk, cbkToAdd.data), true,
-               cbkToAdd.position, cbkToAdd.priority,
-               (cbkToAdd.position == PREINST) ? RelocTagPreInstStdCBK
-                                              : RelocTagPostInstStdCBK);
+    if (cbkToAdd.lambdaCbk == nullptr) {
+      instrument(patch, getCallbackGenerator(cbkToAdd.cbk, cbkToAdd.data), true,
+                 cbkToAdd.position, cbkToAdd.priority,
+                 (cbkToAdd.position == PREINST) ? RelocTagPreInstStdCBK
+                                                : RelocTagPostInstStdCBK);
+    } else {
+      patch.userInstCB.emplace_back(
+          std::make_unique<InstCbLambda>(cbkToAdd.lambdaCbk));
+      instrument(patch,
+                 getCallbackGenerator(InstCBLambdaProxy,
+                                      patch.userInstCB.back().get()),
+                 true, cbkToAdd.position, cbkToAdd.priority,
+                 (cbkToAdd.position == PREINST) ? RelocTagPreInstStdCBK
+                                                : RelocTagPostInstStdCBK);
+    }
   }
 
   return true;

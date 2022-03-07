@@ -23,6 +23,7 @@
 #include "QBDI/Platform.h"
 #include "QBDI/State.h"
 #ifdef __cplusplus
+#include <functional>
 #include <vector>
 
 namespace QBDI {
@@ -92,6 +93,24 @@ typedef VMInstance *VMInstanceRef;
  */
 typedef VMAction (*InstCallback)(VMInstanceRef vm, GPRState *gprState,
                                  FPRState *fprState, void *data);
+#ifdef __cplusplus
+/*! Instruction callback lambda type.
+ *
+ * @param[in] vm            VM instance of the callback.
+ * @param[in] gprState      A structure containing the state of the
+ *                          General Purpose Registers. Modifying
+ *                          it affects the VM execution accordingly.
+ * @param[in] fprState      A structure containing the state of the
+ *                          Floating Point Registers. Modifying
+ *                          it affects the VM execution accordingly.
+ *
+ * @return                  The callback result used to signal subsequent
+ *                          actions the VM needs to take.
+ */
+typedef std::function<VMAction(VMInstanceRef vm, GPRState *gprState,
+                               FPRState *fprState)>
+    InstCbLambda;
+#endif
 
 /*! Position relative to an instruction.
  */
@@ -200,6 +219,25 @@ typedef struct {
 typedef VMAction (*VMCallback)(VMInstanceRef vm, const VMState *vmState,
                                GPRState *gprState, FPRState *fprState,
                                void *data);
+#ifdef __cplusplus
+/*! VM callback lambda type.
+ *
+ * @param[in] vm            VM instance of the callback.
+ * @param[in] vmState       A structure containing the current state of the VM.
+ * @param[in] gprState      A structure containing the state of the
+ *                          General Purpose Registers. Modifying
+ *                          it affects the VM execution accordingly.
+ * @param[in] fprState      A structure containing the state of the
+ *                          Floating Point Registers. Modifying
+ *                          it affects the VM execution accordingly.
+ *
+ * @return                  The callback result used to signal subsequent
+ *                          actions the VM needs to take.
+ */
+typedef std::function<VMAction(VMInstanceRef vm, const VMState *vmState,
+                               GPRState *gprState, FPRState *fprState)>
+    VMCbLambda;
+#endif
 
 static const uint16_t NO_REGISTRATION = 0xFFFF;
 static const uint16_t NOT_FOUND = 0xFFFF;
@@ -253,11 +291,23 @@ struct InstrRuleDataCBK {
                           */
   void *data;            /*!< User defined data which will be forward to cbk */
 
+  InstCbLambda
+      lambdaCbk; /*!< Lambda callback. Replace cbk and data if not nullptr */
+
   int priority; /*!< Priority of the callback */
 
   InstrRuleDataCBK(InstPosition position, InstCallback cbk, void *data,
                    int priority = PRIORITY_DEFAULT)
-      : position(position), cbk(cbk), data(data), priority(priority) {}
+      : position(position), cbk(cbk), data(data), lambdaCbk(nullptr),
+        priority(priority) {}
+  InstrRuleDataCBK(InstPosition position, const InstCbLambda &cbk,
+                   int priority = PRIORITY_DEFAULT)
+      : position(position), cbk(nullptr), data(nullptr), lambdaCbk(cbk),
+        priority(priority) {}
+  InstrRuleDataCBK(InstPosition position, InstCbLambda &&cbk,
+                   int priority = PRIORITY_DEFAULT)
+      : position(position), cbk(nullptr), data(nullptr),
+        lambdaCbk(std::move(cbk)), priority(priority) {}
 };
 
 using InstrRuleDataVec = std::vector<InstrRuleDataCBK> *;
@@ -291,6 +341,17 @@ typedef void (*InstrRuleCallbackC)(VMInstanceRef vm, const InstAnalysis *inst,
  */
 typedef std::vector<InstrRuleDataCBK> (*InstrRuleCallback)(
     VMInstanceRef vm, const InstAnalysis *inst, void *data);
+
+/*! Instrumentation rule callback lambda type.
+ *
+ * @param[in] vm     VM instance of the callback.
+ * @param[in] inst   AnalysisType of the current instrumented Instruction.
+ *
+ * @return           Return cbk to call when this instruction is run.
+ */
+typedef std::function<std::vector<InstrRuleDataCBK>(VMInstanceRef vm,
+                                                    const InstAnalysis *inst)>
+    InstrRuleCbLambda;
 
 } // QBDI::
 #endif
