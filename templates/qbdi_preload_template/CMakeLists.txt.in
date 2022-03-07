@@ -5,4 +5,4 @@ find_package(QBDI@QBDI_ARCH@ REQUIRED)
 find_package(QBDIPreload@QBDI_ARCH@ REQUIRED)
 
 add_library(qbdi_tracer SHARED qbdi_preload_template.c)
-target_link_libraries(qbdi_tracer QBDI::@QBDI_ARCH@::QBDI_static QBDIPreload::@QBDI_ARCH@::QBDIPreload)
+target_link_libraries(qbdi_tracer QBDIPreload::@QBDI_ARCH@::QBDIPreload QBDI::@QBDI_ARCH@::QBDI_static)
