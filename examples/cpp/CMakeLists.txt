@@ -6,7 +6,7 @@ add_signature(fibonacci_cpp)
 
 if(QBDI_TOOLS_QBDIPRELOAD)
   add_library(tracer_preload_cpp SHARED tracer_preload.cpp)
-  target_link_libraries(tracer_preload_cpp QBDI_static QBDIPreload)
+  target_link_libraries(tracer_preload_cpp QBDIPreload QBDI_static)
   set_target_properties(tracer_preload_cpp PROPERTIES CXX_STANDARD 11
                                                       CXX_STANDARD_REQUIRED ON)
 endif()
