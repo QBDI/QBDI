@@ -806,19 +806,15 @@ uint32_t VM::addVMEventCB(VMEvent mask, VMCbLambda &&cbk) {
 
 bool VM::deleteInstrumentation(uint32_t id) {
   if (id & EVENTID_VIRTCB_MASK) {
-    auto it = std::find_if(memCBInfos->begin(), memCBInfos->end(),
-                           [id](const std::pair<uint32_t, MemCBInfo> &el) {
-                             return id == el.first;
-                           });
-    if (it == memCBInfos->end()) {
+    auto found = std::remove_if(memCBInfos->begin(), memCBInfos->end(),
+                                [id](const std::pair<uint32_t, MemCBInfo> &el) {
+                                  return id == el.first;
+                                });
+    if (found == memCBInfos->end()) {
       return false;
     }
-    memCBInfos->erase(
-        std::remove_if(memCBInfos->begin(), memCBInfos->end(),
-                       [id](const std::pair<uint32_t, MemCBInfo> &el) {
-                         return id == el.first;
-                       }),
-        memCBInfos->end());
+
+    memCBInfos->erase(found, memCBInfos->end());
     instCBData.remove_if([id](const std::pair<uint32_t, InstCbLambda> &x) {
       return x.first == id;
     });
