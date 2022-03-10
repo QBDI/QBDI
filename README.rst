@@ -60,11 +60,8 @@ AArch64   Android, Linux, macOS            :orange:`Supported (*)`    :orange:`S
 **stable**
 
 .. image:: https://readthedocs.org/projects/qbdi/badge/?version=stable
-    :target: https://qbdi.readthedocs.io/en/stable/?badge=stable
+    :target: https://qbdi.readthedocs.io/en/stable/
     :alt: Documentation Status
-
-.. image:: https://travis-ci.com/QBDI/QBDI.svg?branch=master
-    :target: https://travis-ci.com/QBDI/QBDI
 
 .. image:: https://ci.appveyor.com/api/projects/status/s2qvpu8k8yiau647/branch/master?svg=true
     :target: https://ci.appveyor.com/project/QBDI/qbdi/branch/master
@@ -78,11 +75,8 @@ AArch64   Android, Linux, macOS            :orange:`Supported (*)`    :orange:`S
 **dev**
 
 .. image:: https://readthedocs.org/projects/qbdi/badge/?version=dev-next
-    :target: https://qbdi.readthedocs.io/en/stable/?badge=dev-next
+    :target: https://qbdi.readthedocs.io/en/dev-next/
     :alt: Documentation Status
-
-.. image:: https://travis-ci.com/QBDI/QBDI.svg?branch=dev-next
-    :target: https://travis-ci.com/QBDI/QBDI/branches
 
 .. image:: https://ci.appveyor.com/api/projects/status/s2qvpu8k8yiau647/branch/dev-next?svg=true
     :target: https://ci.appveyor.com/project/QBDI/qbdi/branch/dev-next
