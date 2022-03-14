@@ -1649,3 +1649,83 @@ TEST_CASE_METHOD(APITest, "VMTest-InstCbLambda-InstrRuleDataCBK") {
 
   SUCCEED();
 }
+
+TEST_CASE_METHOD(APITest, "VMTest-InvalidInstruction") {
+  auto code = TestCode["VMTest-InvalidInstruction"];
+  if (code.empty()) {
+    return;
+  }
+  auto start = (QBDI::rword)code.data();
+  auto stop = (QBDI::rword)(code.data() + code.size());
+
+  QBDI::simulateCall(state, FAKE_RET_ADDR);
+
+  // Instrument the whole code but only execute what is valid
+  vm.addInstrumentedRange(start, stop);
+  bool ran = vm.run(start, start + 0x11);
+  REQUIRE(ran);
+
+  SUCCEED();
+}
+
+TEST_CASE_METHOD(APITest, "VMTest-SelfModifyingCode1") {
+  auto code = TestCode["VMTest-SelfModifyingCode1"];
+  if (code.empty()) {
+    return;
+  }
+  auto start = (QBDI::rword)code.data();
+  auto stop = (QBDI::rword)(code.data() + code.size());
+
+  QBDI::simulateCall(state, FAKE_RET_ADDR);
+
+  vm.addInstrumentedRange(start, stop);
+  bool ran = vm.run(start, FAKE_RET_ADDR);
+  REQUIRE(ran);
+
+  QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
+  REQUIRE(ret == (QBDI::rword)42);
+
+  SUCCEED();
+}
+
+TEST_CASE_METHOD(APITest, "VMTest-SelfModifyingCode2") {
+  /**
+   * Test a strategy to handle self modifying code. Add a callback on write in
+   * the current basic block and invalid the cache if so.
+   * */
+  auto code = TestCode["VMTest-SelfModifyingCode2"];
+  if (code.empty()) {
+    return;
+  }
+  auto start = (QBDI::rword)code.data();
+  auto stop = (QBDI::rword)(code.data() + code.size());
+
+  QBDI::simulateCall(state, FAKE_RET_ADDR);
+
+  vm.addInstrumentedRange(start, stop);
+
+  // Callback on overwriting the current basic block
+  vm.addMemRangeCB(start, stop, QBDI::MemoryAccessType::MEMORY_WRITE,
+                   [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+                      QBDI::FPRState *fprState) {
+                     // Invalid the cache and re-intrument the code
+                     auto mem_accesses = vm->getInstMemoryAccess();
+                     REQUIRE(mem_accesses.size() == 1);
+
+                     auto mem_access = mem_accesses.front();
+                     REQUIRE(mem_access.type ==
+                             QBDI::MemoryAccessType::MEMORY_WRITE);
+
+                     vm->clearCache(mem_access.accessAddress,
+                                    mem_access.accessAddress + mem_access.size);
+                     return QBDI::VMAction::BREAK_TO_VM;
+                   });
+
+  bool ran = vm.run(start, FAKE_RET_ADDR);
+  REQUIRE(ran);
+
+  QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
+  REQUIRE(ret == (QBDI::rword)42);
+
+  SUCCEED();
+}

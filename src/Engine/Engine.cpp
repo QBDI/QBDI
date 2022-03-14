@@ -269,21 +269,31 @@ std::vector<Patch> Engine::patch(rword start) {
   while (not basicBlockEnd) {
     llvm::MCInst inst;
     llvm::MCDisassembler::DecodeStatus dstatus;
-    rword address;
+    rword address = start;
     Patch *patch = nullptr;
     uint64_t instSize = 0;
 
     // Aggregate a complete patch
     do {
       // Disassemble
+      rword prev_address = address;
       address = start + i;
       dstatus = llvmcpu.getInstruction(inst, instSize, code.slice(i), address);
       if (llvm::MCDisassembler::Success != dstatus) {
-        QBDI_CRITICAL(
-            "Disassembly error : fail to parse address 0x{:x} ({:n})", address,
-            spdlog::to_hex(reinterpret_cast<uint8_t *>(address),
-                           reinterpret_cast<uint8_t *>(address + 16)));
-        abort();
+        QBDI_DEBUG("Bump into invalid instruction at address {:x}", address);
+        // Current instruction is invalid, stop the basic block right here
+        if (prev_address == address) {
+          QBDI_CRITICAL(
+              "Disassembly error : fail to parse address 0x{:x} ({:n})",
+              address,
+              spdlog::to_hex(reinterpret_cast<uint8_t *>(address),
+                             reinterpret_cast<uint8_t *>(address + 16)));
+          abort();
+        } else {
+          address = prev_address;
+          basicBlockEnd = true;
+          break;
+        }
       }
       QBDI_REQUIRE_ACTION(llvm::MCDisassembler::Success == dstatus, abort());
       QBDI_DEBUG_BLOCK({
@@ -309,9 +319,12 @@ std::vector<Patch> Engine::patch(rword start) {
       QBDI_REQUIRE_ACTION(patch != nullptr, abort());
       i += instSize;
     } while (patch->metadata.merge);
-    QBDI_DEBUG("Patch of size {:x} generated", patch->metadata.patchSize);
 
-    if (patch->metadata.modifyPC) {
+    if (patch) {
+      QBDI_DEBUG("Patch of size {:x} generated", patch->metadata.patchSize);
+    }
+
+    if (basicBlockEnd || patch->metadata.modifyPC) {
       QBDI_DEBUG(
           "Basic block starting at address 0x{:x} ended at address 0x{:x}",
           start, address);

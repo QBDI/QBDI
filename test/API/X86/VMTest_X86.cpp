@@ -105,3 +105,8 @@ QBDI_NOINLINE QBDI::rword satanicFun(QBDI::rword arg0) {
 #endif
   return res;
 }
+
+std::unordered_map<std::string, std::vector<uint8_t>> TestCode = {
+    {"VMTest-InvalidInstruction", {}},
+    {"VMTest-SelfModifyingCode1", {}},
+    {"VMTest-SelfModifyingCode2", {}}};

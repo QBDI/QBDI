@@ -18,6 +18,8 @@
 #ifndef QBDITEST_VMTEST_X86_H
 #define QBDITEST_VMTEST_X86_H
 
+#include <unordered_map>
+
 #include "QBDI/Memory.hpp"
 #include "QBDI/Platform.h"
 #include "QBDI/VM.h"
@@ -39,6 +41,7 @@ struct TestInst {
 };
 
 extern const struct TestInst TestInsts[MNEM_COUNT];
+extern std::unordered_map<std::string, std::vector<uint8_t>> TestCode;
 
 #define SKIPTESTASM "nop\nnop\nret\n"
 
