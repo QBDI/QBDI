@@ -18,6 +18,9 @@
 #ifndef QBDITEST_VMTEST_X86_H
 #define QBDITEST_VMTEST_X86_H
 
+#include <unordered_map>
+#include <vector>
+
 #include "QBDI/Memory.hpp"
 #include "QBDI/Platform.h"
 #include "QBDI/VM.h"
@@ -38,7 +41,13 @@ struct TestInst {
   QBDI::OperandAnalysis operands[MAX_OPERAND];
 };
 
+struct SizedTestCode {
+  std::vector<uint8_t> code;
+  std::size_t size;
+};
+
 extern const struct TestInst TestInsts[MNEM_COUNT];
+extern std::unordered_map<std::string, SizedTestCode> TestCode;
 
 #define SKIPTESTASM "nop\nnop\nret\n"
 

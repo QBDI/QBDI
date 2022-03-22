@@ -1649,3 +1649,109 @@ TEST_CASE_METHOD(APITest, "VMTest-InstCbLambda-InstrRuleDataCBK") {
 
   SUCCEED();
 }
+
+TEST_CASE_METHOD(APITest, "VMTest-InvalidInstruction") {
+  auto tc = TestCode["VMTest-InvalidInstruction"];
+  auto code = tc.code;
+  if (code.empty()) {
+    return;
+  }
+  auto start = (QBDI::rword)code.data();
+  auto stop = (QBDI::rword)(code.data() + code.size());
+
+  QBDI::simulateCall(state, FAKE_RET_ADDR);
+
+  // Instrument the whole code but only execute what is valid
+  vm.addInstrumentedRange(start, stop);
+  bool ran = vm.run(start, start + tc.size);
+  REQUIRE(ran);
+
+  SUCCEED();
+}
+
+TEST_CASE_METHOD(APITest, "VMTest-SelfModifyingCode1") {
+  auto tc = TestCode["VMTest-SelfModifyingCode1"];
+  auto code = tc.code;
+  if (code.empty()) {
+    return;
+  }
+  auto start = (QBDI::rword)code.data();
+  auto stop = (QBDI::rword)(code.data() + code.size());
+
+  QBDI::simulateCall(state, FAKE_RET_ADDR);
+
+  vm.addInstrumentedRange(start, stop);
+  bool ran = vm.run(start, FAKE_RET_ADDR);
+  REQUIRE(ran);
+
+  QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
+  REQUIRE(ret == (QBDI::rword)42);
+
+  SUCCEED();
+}
+
+TEST_CASE_METHOD(APITest, "VMTest-SelfModifyingCode2") {
+  /**
+   * Test a strategy to handle self modifying code. Add a callback on write in
+   * the current basic block and invalid the cache if so.
+   * */
+  auto tc = TestCode["VMTest-SelfModifyingCode2"];
+  auto code = tc.code;
+  if (code.empty()) {
+    return;
+  }
+  auto start = (QBDI::rword)code.data();
+  auto stop = (QBDI::rword)(code.data() + code.size());
+
+  QBDI::simulateCall(state, FAKE_RET_ADDR);
+
+  vm.addInstrumentedRange(start, stop);
+
+  QBDI::RangeSet<QBDI::rword> instrumentedRange{};
+  QBDI::Range<QBDI::rword> currentSeq{0, 0};
+
+  // set the current sequence
+  vm.addVMEventCB(QBDI::VMEvent::SEQUENCE_ENTRY,
+                  [&instrumentedRange, &currentSeq](
+                      QBDI::VMInstanceRef vm, const QBDI::VMState *vmState,
+                      QBDI::GPRState *, QBDI::FPRState *) {
+                    currentSeq = {vmState->sequenceStart, vmState->sequenceEnd};
+                    instrumentedRange.add(currentSeq);
+                    return QBDI::VMAction::CONTINUE;
+                  });
+
+  // Detect self modifing code in already cached code
+  vm.addMemAccessCB(
+      QBDI::MemoryAccessType::MEMORY_WRITE,
+      [&instrumentedRange, &currentSeq](QBDI::VMInstanceRef vm,
+                                        QBDI::GPRState *, QBDI::FPRState *) {
+        for (const auto &acc : vm->getInstMemoryAccess()) {
+          if ((acc.type & QBDI::MemoryAccessType::MEMORY_WRITE) == 0) {
+            continue;
+          }
+          if ((acc.flags & QBDI::MemoryAccessFlags::MEMORY_UNKNOWN_SIZE) != 0) {
+            continue;
+          }
+          if (instrumentedRange.overlaps(
+                  {acc.accessAddress, acc.accessAddress + acc.size})) {
+            // the access override a code address, clear the cache
+            vm->clearCache(acc.accessAddress, acc.accessAddress + acc.size);
+            // if the access is in the current sequence, schedule
+            // the clear now
+            if (currentSeq.overlaps(
+                    {acc.accessAddress, acc.accessAddress + acc.size})) {
+              return QBDI::VMAction::BREAK_TO_VM;
+            }
+          }
+        }
+        return QBDI::VMAction::CONTINUE;
+      });
+
+  bool ran = vm.run(start, FAKE_RET_ADDR);
+  REQUIRE(ran);
+
+  QBDI::rword ret = QBDI_GPR_GET(state, QBDI::REG_RETURN);
+  REQUIRE(ret == (QBDI::rword)42);
+
+  SUCCEED();
+}

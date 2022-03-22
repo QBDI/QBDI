@@ -105,3 +105,42 @@ QBDI_NOINLINE QBDI::rword satanicFun(QBDI::rword arg0) {
 #endif
   return res;
 }
+
+// clang-format off
+std::vector<uint8_t> VMTest_X86_InvalidInstruction = {
+  0xb9, 0x64, 0x00, 0x00, 0x00,   // 00: mov    ecx,0x64
+  0x31, 0xc0,                     // 05: xor    eax,eax
+  0x31, 0xdb,                     // 07: xor    ebx,ebx
+  0x01, 0xc8,                     // 09: add    eax,ecx
+  0x83, 0xe9, 0x01,               // 0b: sub    ecx,0x1
+  0x83, 0xf9, 0x00,               // 0e: cmp    ecx,0x0
+  0x01, 0xc3,                     // 11: add    ebx,eax
+  0xff,                           // 13: invalid instruction
+};
+
+std::vector<uint8_t> VMTest_X86_SelfModifyingCode1 = {
+  0xe8, 0x00, 0x00, 0x00, 0x00,           // 00: call   $+5
+  0x58,                                   // 05: pop    eax
+  0xc6, 0x40, 0x14, 0xc3,                 // 06: mov    BYTE PTR [eax+0x14],0xc3
+  0xb9, 0x2a, 0x00, 0x00, 0x00,           // 0a: mov    ecx,0x2a
+  0x66, 0xc7, 0x40, 0x12, 0x01, 0xc8,     // 0f: mov    WORD PTR [eax+0x12],0xc801
+  0x31, 0xc0,                             // 15: xor    eax, eax
+  0x0f, 0xff,                             // 17: invalid instruction, replaced by 'add    eax,ecx'
+  0x55,                                   // 19: invalid instruction, replaced by 'ret'
+};
+
+std::vector<uint8_t> VMTest_X86_SelfModifyingCode2 = {
+  0xe8, 0x00, 0x00, 0x00, 0x00,           // 00: call   $+5
+  0x58,                                   // 05: pop    eax
+  0xc6, 0x40, 0x12, 0xc3,                 // 06: mov    BYTE PTR [eax+0x12],0xc3
+  0xb9, 0x2a, 0x00, 0x00, 0x00,           // 0a: mov    ecx,0x2a
+  0x66, 0xc7, 0x40, 0x10, 0x89, 0xc8,     // 0f: mov    WORD PTR [eax+0x10],0xc889
+  0x31, 0xc0,                             // 15: xor    eax,eax   , 15: replaced by 'mov    eax,ecx'
+  0xff, 0xe0,                             // 17: jmp    eax       , 17: replaced by 'ret'
+};
+// clang-format on
+
+std::unordered_map<std::string, SizedTestCode> TestCode = {
+    {"VMTest-InvalidInstruction", {VMTest_X86_InvalidInstruction, 0x11}},
+    {"VMTest-SelfModifyingCode1", {VMTest_X86_SelfModifyingCode1}},
+    {"VMTest-SelfModifyingCode2", {VMTest_X86_SelfModifyingCode2}}};
