@@ -1707,22 +1707,45 @@ TEST_CASE_METHOD(APITest, "VMTest-SelfModifyingCode2") {
 
   vm.addInstrumentedRange(start, stop);
 
-  // Callback on overwriting the current basic block
-  vm.addMemRangeCB(start, stop, QBDI::MemoryAccessType::MEMORY_WRITE,
-                   [](QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
-                      QBDI::FPRState *fprState) {
-                     // Invalid the cache and re-intrument the code
-                     auto mem_accesses = vm->getInstMemoryAccess();
-                     REQUIRE(mem_accesses.size() == 1);
+  QBDI::RangeSet<QBDI::rword> instrumentedRange{};
+  QBDI::Range<QBDI::rword> currentSeq{0, 0};
 
-                     auto mem_access = mem_accesses.front();
-                     REQUIRE(mem_access.type ==
-                             QBDI::MemoryAccessType::MEMORY_WRITE);
+  // set the current sequence
+  vm.addVMEventCB(QBDI::VMEvent::SEQUENCE_ENTRY,
+                  [&instrumentedRange, &currentSeq](
+                      QBDI::VMInstanceRef vm, const QBDI::VMState *vmState,
+                      QBDI::GPRState *, QBDI::FPRState *) {
+                    currentSeq = {vmState->sequenceStart, vmState->sequenceEnd};
+                    instrumentedRange.add(currentSeq);
+                    return QBDI::VMAction::CONTINUE;
+                  });
 
-                     vm->clearCache(mem_access.accessAddress,
-                                    mem_access.accessAddress + mem_access.size);
-                     return QBDI::VMAction::BREAK_TO_VM;
-                   });
+  // Detect self modifing code in already cached code
+  vm.addMemAccessCB(
+      QBDI::MemoryAccessType::MEMORY_WRITE,
+      [&instrumentedRange, &currentSeq](QBDI::VMInstanceRef vm,
+                                        QBDI::GPRState *, QBDI::FPRState *) {
+        for (const auto &acc : vm->getInstMemoryAccess()) {
+          if ((acc.type & QBDI::MemoryAccessType::MEMORY_WRITE) == 0) {
+            continue;
+          }
+          if ((acc.flags & QBDI::MemoryAccessFlags::MEMORY_UNKNOWN_SIZE) != 0) {
+            continue;
+          }
+          if (instrumentedRange.overlaps(
+                  {acc.accessAddress, acc.accessAddress + acc.size})) {
+            // the access override a code address, clear the cache
+            vm->clearCache(acc.accessAddress, acc.accessAddress + acc.size);
+            // if the access is in the current sequence, schedule
+            // the clear now
+            if (currentSeq.overlaps(
+                    {acc.accessAddress, acc.accessAddress + acc.size})) {
+              return QBDI::VMAction::BREAK_TO_VM;
+            }
+          }
+        }
+        return QBDI::VMAction::CONTINUE;
+      });
 
   bool ran = vm.run(start, FAKE_RET_ADDR);
   REQUIRE(ran);
