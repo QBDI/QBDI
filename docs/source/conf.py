@@ -46,7 +46,7 @@ def extract_version(cmakefile):
 current_dir = os.path.dirname(os.path.realpath(__file__))
 cmake_path = os.path.join(current_dir, '..', '..', 'cmake', 'QBDIConfig.cmake')
 VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_DEV = extract_version(cmake_path)
-VERSION_FULL = "%u.%u.%u" % (VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH)
+VERSION_FULL = "{}.{}.{}".format(VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH)
 if VERSION_DEV:
     VERSION_FULL = VERSION_FULL + '-devel'
 
@@ -54,16 +54,32 @@ if VERSION_DEV:
 read_the_docs_build = os.environ.get('READTHEDOCS', None) == 'True'
 
 if read_the_docs_build:
+    doxygen_dirs = os.path.join(current_dir, '..')
     # Update documentation in doxygen config file (what is normally done by cmake)
-    sedcmd = "sed 's/${QBDI_VERSION_MAJOR}/%u/;s/${QBDI_VERSION_MINOR}/%u/;s/${QBDI_VERSION_PATCH}/%u/;s/${CMAKE_CURRENT_BINARY_DIR}/./ '" % (VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH)
+    sed_cmd = [
+            's/@QBDI_VERSION_MAJOR@/{:d}/'.format(VERSION_MAJOR),
+            's/@QBDI_VERSION_MINOR@/{:d}/'.format(VERSION_MINOR),
+            's/@QBDI_VERSION_PATCH@/{:d}/'.format(VERSION_PATCH),
+            's/@QBDI_VERSION_DEV@/{:d}/'.format(VERSION_DEV),
+            's/@QBDI_VERSION_STRING@/{}/'.format(VERSION_FULL),
+            's/@CMAKE_CURRENT_BINARY_DIR@/./',
+            's/@CMAKE_CURRENT_SOURCE_DIR@/./',
+            's/@QBDI_ARCH@/X86_64/',
+            's/@QBDI_PLATFORM@/linux/',
+    ]
+    sedcmd = "sed '{}'".format(";".join(sed_cmd))
     # Call doxygen
-    subprocess.call("cd ../; %s qbdi_cpp.doxygen.in > qbdi_cpp.doxygen" % sedcmd, shell=True)
-    subprocess.call("cd ../; %s qbdi_c.doxygen.in > qbdi_c.doxygen" % sedcmd, shell=True)
-    subprocess.call("cd ../; %s qbdipreload.doxygen.in > qbdipreload.doxygen" % sedcmd, shell=True)
-    subprocess.call("cp ../../include/QBDI/arch/X86_64/* ../../include/QBDI/", shell=True)
-    subprocess.call('cd ../; doxygen qbdi_cpp.doxygen', shell=True)
-    subprocess.call('cd ../; doxygen qbdi_c.doxygen', shell=True)
-    subprocess.call('cd ../; doxygen qbdipreload.doxygen', shell=True)
+    subprocess.call("{} qbdi_cpp.doxygen.in > qbdi_cpp.doxygen".format(sedcmd), shell=True, cwd=doxygen_dirs)
+    subprocess.call("{} qbdi_c.doxygen.in > qbdi_c.doxygen".format(sedcmd), shell=True, cwd=doxygen_dirs)
+    subprocess.call("{} qbdipreload.doxygen.in > qbdipreload.doxygen".format(sedcmd), shell=True, cwd=doxygen_dirs)
+    subprocess.call("cp arch/X86_64/* .", shell=True, cwd=os.path.join(current_dir, '..', '..', 'include', 'QBDI'))
+    subprocess.call("{} Version.h.in > Version.h".format(sedcmd), shell=True, cwd=os.path.join(current_dir, '..', '..', 'include', 'QBDI'))
+    subprocess.call('doxygen qbdi_cpp.doxygen', shell=True, cwd=doxygen_dirs)
+    subprocess.call('doxygen qbdi_c.doxygen', shell=True, cwd=doxygen_dirs)
+    subprocess.call('doxygen qbdipreload.doxygen', shell=True, cwd=doxygen_dirs)
+else:
+    doxygen_dirs = os.environ.get("QBDI_DOXYGEN_DIRS", os.path.join(current_dir, '..'))
+
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -337,13 +353,13 @@ texinfo_documents = [
 # -- Breathe --------------------------------------------------------------
 
 breathe_projects = {
-    "QBDI_CPP":"../doxygen_cpp/xml/",
-    "QBDI_C":"../doxygen_c/xml/",
-    "QBDIPRELOAD":"../doxygen_qbdipreload/xml/",
+    "QBDI_CPP": os.path.join(doxygen_dirs, "doxygen_cpp", "xml"),
+    "QBDI_C": os.path.join(doxygen_dirs, "doxygen_c", "xml"),
+    "QBDIPRELOAD": os.path.join(doxygen_dirs, "doxygen_qbdipreload", "xml"),
 }
 
 breathe_use_project_refids = True
 
 # -- Sphinx-JS ------------------------------------------------------------
 
-js_source_path = '../../tools/'
+js_source_path = os.path.join(current_dir, '..', '..', 'tools')
