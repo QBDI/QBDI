@@ -1651,7 +1651,8 @@ TEST_CASE_METHOD(APITest, "VMTest-InstCbLambda-InstrRuleDataCBK") {
 }
 
 TEST_CASE_METHOD(APITest, "VMTest-InvalidInstruction") {
-  auto code = TestCode["VMTest-InvalidInstruction"];
+  auto tc = TestCode["VMTest-InvalidInstruction"];
+  auto code = tc.code;
   if (code.empty()) {
     return;
   }
@@ -1662,14 +1663,15 @@ TEST_CASE_METHOD(APITest, "VMTest-InvalidInstruction") {
 
   // Instrument the whole code but only execute what is valid
   vm.addInstrumentedRange(start, stop);
-  bool ran = vm.run(start, start + 0x11);
+  bool ran = vm.run(start, start + tc.size);
   REQUIRE(ran);
 
   SUCCEED();
 }
 
 TEST_CASE_METHOD(APITest, "VMTest-SelfModifyingCode1") {
-  auto code = TestCode["VMTest-SelfModifyingCode1"];
+  auto tc = TestCode["VMTest-SelfModifyingCode1"];
+  auto code = tc.code;
   if (code.empty()) {
     return;
   }
@@ -1693,7 +1695,8 @@ TEST_CASE_METHOD(APITest, "VMTest-SelfModifyingCode2") {
    * Test a strategy to handle self modifying code. Add a callback on write in
    * the current basic block and invalid the cache if so.
    * */
-  auto code = TestCode["VMTest-SelfModifyingCode2"];
+  auto tc = TestCode["VMTest-SelfModifyingCode2"];
+  auto code = tc.code;
   if (code.empty()) {
     return;
   }

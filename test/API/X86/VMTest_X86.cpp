@@ -140,7 +140,7 @@ std::vector<uint8_t> VMTest_X86_SelfModifyingCode2 = {
 };
 // clang-format on
 
-std::unordered_map<std::string, std::vector<uint8_t>> TestCode = {
-    {"VMTest-InvalidInstruction", VMTest_X86_InvalidInstruction},
-    {"VMTest-SelfModifyingCode1", VMTest_X86_SelfModifyingCode1},
-    {"VMTest-SelfModifyingCode2", VMTest_X86_SelfModifyingCode2}};
+std::unordered_map<std::string, SizedTestCode> TestCode = {
+    {"VMTest-InvalidInstruction", {VMTest_X86_InvalidInstruction, 0x11}},
+    {"VMTest-SelfModifyingCode1", {VMTest_X86_SelfModifyingCode1}},
+    {"VMTest-SelfModifyingCode2", {VMTest_X86_SelfModifyingCode2}}};
