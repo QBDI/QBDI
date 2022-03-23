@@ -28,7 +28,7 @@ var QBDI_PATCH = 1;
 /**
  * Minimum version of QBDI to use Frida bindings
  */
-var QBDI_MINIMUM_VERSION = (QBDI_MAJOR << 8) | (QBDI_MINOR << 4) | QBDI_PATCH;
+var QBDI_MINIMUM_VERSION = (QBDI_MAJOR << 16) | (QBDI_MINOR << 8) | QBDI_PATCH;
 
 if (typeof Duktape === 'object') {
     // Warn about duktape runtime (except on iOS...)
@@ -1026,9 +1026,9 @@ class QBDI {
         var vInt = Memory.readU32(versionPtr);
         version.string = Memory.readCString(vStrPtr);
         version.integer = vInt;
-        version.major = (vInt >> 8) & 0xf;
-        version.minor = (vInt >> 4) & 0xf;
-        version.patch = vInt & 0xf;
+        version.major = (vInt >> 16) & 0xff;
+        version.minor = (vInt >> 8) & 0xff;
+        version.patch = vInt & 0xff;
         Object.freeze(version);
         return version;
     }
