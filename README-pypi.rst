@@ -5,11 +5,17 @@ Introduction
     :target: https://qbdi.readthedocs.io/en/stable/?badge=stable
     :alt: Documentation Status
 
-.. image:: https://travis-ci.com/QBDI/QBDI.svg?branch=master
-    :target: https://travis-ci.com/QBDI/QBDI
-
 .. image:: https://ci.appveyor.com/api/projects/status/s2qvpu8k8yiau647/branch/master?svg=true
     :target: https://ci.appveyor.com/project/QBDI/qbdi/branch/master
+
+.. image:: https://img.shields.io/github/v/release/QBDI/QBDI
+    :target: https://github.com/QBDI/QBDI/releases
+
+.. image:: https://img.shields.io/pypi/pyversions/PyQBDI
+    :target: https://pypi.org/project/PyQBDI/
+
+.. image:: https://img.shields.io/pypi/v/PyQBDI
+    :target: https://pypi.org/project/PyQBDI/
 
 QuarkslaB Dynamic binary Instrumentation (QBDI) is a modular, cross-platform and cross-architecture
 DBI framework. It aims to support Linux, macOS, Android, iOS and Windows operating systems running on

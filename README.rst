@@ -2,9 +2,6 @@
     :target: https://qbdi.readthedocs.io/en/stable/?badge=stable
     :alt: Documentation Status
 
-.. image:: https://travis-ci.com/QBDI/QBDI.svg?branch=master
-    :target: https://travis-ci.com/QBDI/QBDI
-
 .. image:: https://ci.appveyor.com/api/projects/status/s2qvpu8k8yiau647/branch/master?svg=true
     :target: https://ci.appveyor.com/project/QBDI/qbdi/branch/master
 
@@ -130,14 +127,9 @@ To build this project, the following dependencies are needed on your system:
 - ninja or make
 - C++17 toolchain (gcc, clang, Visual Studio 2019, ...)
 
-The compilation is a two-step process:
-
-* local library distribution of LLVM is built.
-* QBDI is built using the LLVM library.
-
-This local built of LLVM is required because QBDI uses private APIs not exported by regular LLVM installations and
-because our code is only compatible with a specific version of those APIs. This first step is
-cached and only needs to be run once, subsequent builds only need to repeat the second step.
+A local version of llvm is statically build within QBDI because QBDI uses private APIs
+not exported by regular LLVM installations and because our code is only compatible
+with a specific version of those APIs.
 
 QBDI build system relies on CMake and requires to pass build configuration flags. To help with
 this step we provide shell scripts for common build configurations which follow the naming pattern
