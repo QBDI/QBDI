@@ -13,14 +13,13 @@ RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
         bash \
-        sudo \
         git \
         build-essential \
         cmake \
         ccache \
         g++ \
         g++-multilib \
-        libstdc++-8-dev \
+        libstdc++-10-dev \
         make \
         ninja-build \
         pkg-config \
@@ -38,9 +37,7 @@ RUN apt-get update && \
 ARG USER_ID=1000
 
 # create a user
-RUN adduser --uid $USER_ID --disabled-password --gecos '' $USER && \
-    adduser $USER sudo && \
-    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+RUN adduser --uid $USER_ID --disabled-password --gecos '' $USER
 
 WORKDIR $HOME
 
