@@ -1,8 +1,80 @@
 CHANGELOG
 =========
 
-Next Release
-------------
+Next Release (0.9.0)
+--------------------
+
+2022-xx-xx QBDI Team <qbdi@quarkslab.com>
+
+* Change internal log system (`#174 <https://github.com/QBDI/QBDI/pull/174>`_).
+
+  * The API ``QBDI::addLogFilter`` has been replaced by :cpp:func:`QBDI::setLogPriority`.
+  * The API ``QBDI::setLogOutput`` has been replaced by
+    :cpp:func:`QBDI::setLogFile`, :cpp:func:`QBDI::setLogConsole` and
+    :cpp:func:`QBDI::setLogDefault`.
+
+* Fix templates (`#186 <https://github.com/QBDI/QBDI/pull/186>`_)
+* Fix Frida-QBDI for Frida 15.0.0 (`#192 <https://github.com/QBDI/QBDI/pull/192>`_)
+* Change behavior of :cpp:func:`QBDI::VM::addInstrumentedModuleFromAddr` to work
+  with mmap region (`#193 <https://github.com/QBDI/QBDI/pull/193>`_)
+* Add Priority to InstCallback API (`#194 <https://github.com/QBDI/QBDI/pull/194>`_).
+  If two or more InstCallback target the same position (PRE or POST) of the same
+  instruction, the priority parameter allows to specify wich InstCallback should
+  be called before. see :cpp:enum:`QBDI::CallbackPriority`
+* Support for X86 ``loop``, ``loope`` and ``loopne`` instructions
+  (`#200 <https://github.com/QBDI/QBDI/pull/200>`_)
+* Add support for ``FS`` and ``GS`` segment in X86_64
+  (`#190 <https://github.com/QBDI/QBDI/pull/190>`_). To support the feature, the
+  kernel must support ``RDFSBASE``, ``RDGSBASE``, ``WRFSBASE`` and ``WRGSBASE``
+  instructions (linux >= 5.9). To enable the support, the option
+  :cpp:enumerator:`QBDI::Options::OPT_ENABLE_FS_GS` must be enabled.
+* Hide LLVM symbols from shared library and QBDIPrelaod
+  (`#205 <https://github.com/QBDI/QBDI/pull/205>`_)
+* Support python 3.10 for PyQBDI
+  (`#206 <https://github.com/QBDI/QBDI/pull/206>`_)
+* Add VMAction :cpp:enumerator:`QBDI::VMAction::SKIP_INST` and
+  :cpp:enumerator:`QBDI::VMAction::SKIP_PATCH`
+  (`#197 <https://github.com/QBDI/QBDI/pull/197>`_)
+
+  * :cpp:enumerator:`QBDI::VMAction::SKIP_INST` can be used to emulate the
+    instruction with a PREINST callback. When this VMAction is returned by a
+    PREINST callback, QBDI will directly jump to the POSTINST callback.
+  * :cpp:enumerator:`QBDI::VMAction::SKIP_PATCH` can be used to jump over all
+    the reminding callback for the current instruction. If uses in PREINST
+    position, the instruction will not be executed.
+
+  The value associated with the existing :cpp:enum:`QBDI::VMAction` has changed.
+
+* Add tutorial for basic block VMEvent (`#165 <https://github.com/QBDI/QBDI/pull/165>`_)
+* Support C++ lambda with capture. (`#207 <https://github.com/QBDI/QBDI/pull/207>`_)
+  see :cpp:type:`QBDI::InstCbLambda`, :cpp:type:`QBDI::VMCbLambda`
+  and :cpp:type:`QBDI::InstrRuleCbLambda`
+* Fix QBDIPreload link order (`#209 <https://github.com/QBDI/QBDI/pull/209>`_)
+* Remove new name of libc in QBDIPrelaod (`#211 <https://github.com/QBDI/QBDI/pull/211>`_)
+* Support of some self-modifying code (`#212 <https://github.com/QBDI/QBDI/pull/212>`_).
+  QBDI will not crash if invalid instruction is found when handle a new basic
+  block.
+* Add tutorial for ExecBroker VMEvent (`#166 <https://github.com/QBDI/QBDI/pull/166>`_)
+* Change :cpp:func:`QBDI::getVersion` out parameter to return version to the form ``0xMMmmpp`` (`#214 <https://github.com/QBDI/QBDI/pull/214>`_)
+
+Internal update:
+
+* Add static library licenses in LICENSE.txt (`#169 <https://github.com/QBDI/QBDI/pull/169>`_)
+* Format code with clang-format and cmake-format (`#175 <https://github.com/QBDI/QBDI/pull/175>`_)
+* Fix integer overflow in cache optimisation (`#168 <https://github.com/QBDI/QBDI/pull/168>`_)
+* Refactor build system, add llvm build in main cmake with FetchContent,
+  move all LLVM object in a new LLVMCPU class, split internal class, split state by architecture
+  (`#178 <https://github.com/QBDI/QBDI/pull/178>`_,
+  `#179 <https://github.com/QBDI/QBDI/pull/179>`_ and
+  `#188 <https://github.com/QBDI/QBDI/pull/188>`_)
+* Update LLVM to LLVM 13.0.0, remove zlib dependency
+  (`#180 <https://github.com/QBDI/QBDI/pull/189>`_, `#196 <https://github.com/QBDI/QBDI/pull/196>`_)
+* Remove empty Patch not associated to an MCInst (`#195 <https://github.com/QBDI/QBDI/pull/195>`_)
+* Compile assembly with ``--noexecstack`` to have a ``rw-`` stack when used QBDI
+  on linux (`#201 <https://github.com/QBDI/QBDI/pull/201>`_)
+* Use build directory to build the documentation (`#213 <https://github.com/QBDI/QBDI/pull/213>`_)
+* Use Doxygen 1.9.2 in readthedocs (`#214 <https://github.com/QBDI/QBDI/pull/214>`_)
+
 
 Version 0.8.0
 -------------
