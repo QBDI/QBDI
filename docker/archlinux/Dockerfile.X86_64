@@ -1,4 +1,4 @@
-FROM archlinux/base:latest
+FROM archlinux:base-devel
 LABEL maintainer="QBDI Team <qbdi@quarkslab.com>"
 
 ENV USER="docker" \
@@ -17,7 +17,6 @@ RUN pacman -Suy --noconfirm && \
         git \
         ninja \
         cmake \
-        python2 \
         python3 \
         wget && \
     (pacman -Sc --noconfirm || true)

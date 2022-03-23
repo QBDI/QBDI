@@ -10,7 +10,7 @@ arch=('x86_64')
 url="https://qbdi.quarkslab.com/"
 license=('apache2')
 options=(staticlibs)
-makedepends=('cmake' 'ninja' 'gcc' 'python2' 'python' 'git')
+makedepends=('cmake' 'ninja' 'gcc' 'python' 'git')
 
 prepare() {
     mkdir "$pkgname-$pkgver"

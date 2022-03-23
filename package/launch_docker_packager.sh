@@ -22,8 +22,13 @@ build_ubuntu_debian() {
         DOCKER_IMG="${OS}:${TAG}"
     fi
 
-    docker build "${BASEDIR}" -t ${IMG_TAG} \
-                              -f "${GITDIR}/docker/ubuntu_debian/Dockerfile" \
+    if [[ "${OS}" = "ubuntu" && "${TAG}" = "18.04" ]]; then
+      DOCKERFILE="${GITDIR}/docker/ubuntu_debian/Dockerfile.ubuntu18_04"
+    else
+      DOCKERFILE="${GITDIR}/docker/ubuntu_debian/Dockerfile"
+    fi
+
+    docker build "${BASEDIR}" -t ${IMG_TAG} -f "${DOCKERFILE}" \
                               --build-arg DOCKER_IMG="${DOCKER_IMG}" \
                               --build-arg QBDI_ARCH="$TARGET" \
                               --build-arg CMAKE_ARGUMENT="$CMAKE_ARGUMENT" \
@@ -53,11 +58,11 @@ build_archlinux () {
 
 prepare_archive
 
-# debian10 x86
-build_ubuntu_debian debian 10 X86
+# debian11 x86
+build_ubuntu_debian debian 11 X86
 
-# debian10 x64
-build_ubuntu_debian debian 10 X86_64
+# debian11 x64
+build_ubuntu_debian debian 11 X86_64
 
 # ubuntu 18.04 x86
 build_ubuntu_debian ubuntu 18.04 X86
@@ -65,8 +70,8 @@ build_ubuntu_debian ubuntu 18.04 X86
 # ubuntu lts x64
 build_ubuntu_debian ubuntu 20.04 X86_64
 
-# ubuntu 19.04 x64
-build_ubuntu_debian ubuntu 20.10 X86_64
+# ubuntu 21.10 x64
+build_ubuntu_debian ubuntu 21.10 X86_64
 
 # archlinux x64
 build_archlinux X86_64

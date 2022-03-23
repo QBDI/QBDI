@@ -21,7 +21,7 @@ RUN apt-get update && \
         g++ \
         g++-multilib \
         git \
-        libstdc++-8-dev \
+        libstdc++-10-dev \
         ninja-build \
         pkg-config \
         wget \
@@ -39,12 +39,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # create a user
-RUN adduser --disabled-password --gecos '' $USER && \
-    adduser $USER sudo && \
-    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-
-# switch to new user
-USER $USER
+RUN adduser --disabled-password --gecos '' $USER
 
 # build / test / install QBDI
 ARG CMAKE_ARGUMENT=""
@@ -54,8 +49,12 @@ ADD qbdi.tar.gz $HOME/
 
 WORKDIR $HOME/qbdi
 
-RUN sudo chown -R $USER:$USER . && \
-    mkdir build && \
+RUN chown -R $USER:$USER .
+
+# switch to new user
+USER $USER
+
+RUN mkdir build && \
     cd build && \
     cmake -G Ninja \
           -DCMAKE_BUILD_TYPE=Release \
@@ -77,6 +76,13 @@ RUN sudo chown -R $USER:$USER . && \
     rm -f QBDI-*-$QBDI_PLATFORM.deb && \
     cpack -G DEB && \
     sudo dpkg -i QBDI-*-$QBDI_PLATFORM-$QBDI_ARCH.deb
+
+# add user in sudo to ease debug
+USER root
+
+RUN adduser $USER sudo && \
+    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+USER $USER
 
 WORKDIR $HOME
 
