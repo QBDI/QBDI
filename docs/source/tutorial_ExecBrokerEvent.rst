@@ -5,8 +5,8 @@ Introduction
 ------------
 
 One limitation of QBDI is to share the heap and some shared library with the instrumented code.
-With this design, the user may use any shared library and doesn't need to statically link all his
-dependencies with his code. However, some method must not be instrumented in QBDI:
+With this design, the user may use any shared library and doesn't need to statically link all their
+dependencies with their code. However, some method must not be instrumented in QBDI:
 
 - The heap allocator method (malloc, free, ...).
 - Any no reentrant method shared between the target code and QBDI itself.
@@ -39,7 +39,7 @@ With dladdr
 +++++++++++
 
 ``dladdr`` may not find the symbol associated with an address if it's not an exported symbol.
-If many symbols are associated, only one will be returning.
+If many symbols are associated, only one will be returned.
 
 .. code:: c
 
@@ -96,10 +96,10 @@ With lief
 `Lief <https://lief.quarkslab.com/>`_ is a C, C++ and python library
 that aims to parse ELF, PE and MachO file formats. With this library,
 we can extract all the symbols associated with an address, included the no-exported one.
-This solution can resolve more address, but could be slower than ``dladdr``.
+This solution can resolve more addresses, but could be slower than ``dladdr``.
 
-For ELF binary, the followed code will print for each ``EXEC_TRANSFER_CALL``
-event, the symbols associated with the target address. For PE library, you may
+For ELF binary, the following code will print for each ``EXEC_TRANSFER_CALL``
+event, the symbols associated with the target address. For PE library, the user may
 need to parse the PDB file of the library to get the symbol associated with the
 target address.
 
@@ -360,4 +360,3 @@ is displayed.
     Call ['__memcpy_avx_unaligned', '__memmove_avx_unaligned'] (addr: 0x7f2aed2ab4a0)
     Call ['getenv', '__GI_getenv'] (addr: 0x7f2aed186b20)
     ....
-
