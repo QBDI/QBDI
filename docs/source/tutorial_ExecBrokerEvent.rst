@@ -4,7 +4,7 @@ Execution transfert event
 Introduction
 ------------
 
-One limitation of QBDI is to share the heap and some shared library with the instrumented code.
+One limitation of QBDI is it shares the heap and some library with the instrumented code.
 With this design, the user may use any shared library and doesn't need to statically link all their
 dependencies with their code. However, some method must not be instrumented in QBDI:
 
@@ -39,7 +39,7 @@ With dladdr
 +++++++++++
 
 ``dladdr`` may not find the symbol associated with an address if it's not an exported symbol.
-If many symbols are associated, only one will be returned.
+If several symbols are associated, only one is returned.
 
 .. code:: c
 
@@ -94,11 +94,11 @@ With lief
 +++++++++
 
 `Lief <https://lief.quarkslab.com/>`_ is a C, C++ and python library
-that aims to parse ELF, PE and MachO file formats. With this library,
-we can extract all the symbols associated with an address, included the no-exported one.
+that aims to parse ELF, PE and MachO file formats. This library can
+extract all the symbols associated with an address, including the non-exported one.
 This solution can resolve more addresses, but could be slower than ``dladdr``.
 
-For ELF binary, the following code will print for each ``EXEC_TRANSFER_CALL``
+For ELF binary, the following code prints for each ``EXEC_TRANSFER_CALL``
 event, the symbols associated with the target address. For PE library, the user may
 need to parse the PDB file of the library to get the symbol associated with the
 target address.
@@ -131,7 +131,7 @@ target address.
             std::map<QBDI::rword, std::vector<std::string>> resolv_cache;
 
             void cacheModules();
-            const Module* getModule(QBDI::rword addr);
+            const Module* getModule(QBDI::rword addr, bool reload = true);
             void loadModule(const Module& m);
 
         public:
@@ -156,17 +156,14 @@ target address.
         }
     }
 
-    const Module* AddrResolver::getModule(QBDI::rword addr) {
+    const Module* AddrResolver::getModule(QBDI::rword addr, bool reload) {
         const auto r = std::find_if(std::begin(modules), std::end(modules),
                 [&](const Module& m){return m.range.contains(addr);});
         if (r != std::end(modules)) {
             return &*r;
-        }
-        cacheModules();
-        const auto r2 = std::find_if(std::begin(modules), std::end(modules),
-                [&](const Module& m){return m.range.contains(addr);});
-        if (r2 != std::end(modules)) {
-            return &*r2;
+        } else if (reload) {
+            cacheModules();
+            return getModule(addr, false);
         } else {
             return nullptr;
         }
@@ -331,8 +328,7 @@ target address.
 
     vm.addVMEventCB(pyqbdi.EXEC_TRANSFER_CALL, transfertcbk, ctx)
 
-When combine the python snippet with PyQBDIPreload, the call to the libc library
-is displayed.
+Using this snippet with PyQBDIPreload prints the libc calls.
 
 .. code:: text
 
