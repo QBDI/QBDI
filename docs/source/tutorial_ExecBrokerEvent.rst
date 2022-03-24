@@ -127,8 +127,8 @@ target address.
     class AddrResolver {
         private:
             std::vector<Module> modules;
-            std::vector<std::string> loaded_path;
-            std::map<QBDI::rword, std::vector<std::string>> resolv_cache;
+            std::unordered_set<std::string> loaded_path;
+            std::unordered_map<QBDI::rword, std::unordered_set<std::string>> resolv_cache;
 
             void cacheModules();
             const Module* getModule(QBDI::rword addr, bool reload = true);
@@ -171,9 +171,7 @@ target address.
 
     void AddrResolver::loadModule(const Module& m) {
         std::cout << "Load Module " << m.path << std::endl;
-        const auto r = std::find_if(std::begin(loaded_path), std::end(loaded_path),
-                [&](const std::string& path){return path == m.path;});
-        if (r != std::end(loaded_path)) {
+        if (loaded_path.find(m.path) != loaded_path.end()) {
             return;
         }
         std::unique_ptr<LIEF::ELF::Binary> externlib = LIEF::ELF::Parser::parse(m.path);
@@ -182,42 +180,27 @@ target address.
         }
         for (const auto& s: externlib->symbols()) {
             QBDI::rword addr = s.value() + m.range.start();
-            auto it = resolv_cache.find(addr);
-            if (it != resolv_cache.end()) {
-                std::string symname = s.demangled_name();
-                const auto it_str = std::find_if(std::begin(it->second), std::end(it->second),
-                        [&](const std::string& symbol){return symbol == symname;});
-                if (it_str == std::end(it->second)) {
-                    it->second.emplace_back(symname);
-                }
-            } else {
-                resolv_cache[addr] = {s.demangled_name()};
-            }
+            resolv_cache[addr].emplace(s.demangled_name());
         }
 
-        loaded_path.emplace_back(m.path);
+        loaded_path.emplace(m.path);
     }
 
-    const std::vector<std::string>& AddrResolver::resolve(QBDI::rword addr) {
-        const auto it = resolv_cache.find(addr);
-        if (it != resolv_cache.end()) {
-            return it->second;
+    const std::unordered_set<std::string>& AddrResolver::resolve(QBDI::rword addr) {
+        const auto & symnames = resolv_cache[addr];
+        if (!symnames.empty()) {
+            return symnames;
         }
         std::cout << std::setbase(16) << "Fail to found 0x" << addr << std::endl;
         const Module* m = getModule(addr);
         if (m != nullptr) {
             loadModule(*m);
-            const auto it2 = resolv_cache.find(addr);
-            if (it2 != resolv_cache.end()) {
-                return it2->second;
-            }
         }
-        resolv_cache[addr] = {};
-        return resolv_cache[addr];
+        return symnames;
     }
 
     QBDI::VMAction transfertCBK(QBDI::VMInstanceRef vm, const QBDI::VMState* vmState, QBDI::GPRState* gprState, QBDI::FPRState* fprState, void* data) {
-        const std::vector<std::string>& r = static_cast<AddrResolver*>(data)->resolve(gprState->rip);
+        const std::unordered_set<std::string>& r = static_cast<AddrResolver*>(data)->resolve(gprState->rip);
 
         if (r.empty()) {
             std::cout << std::setbase(16) << "Call addr: 0x" << gprState->rip << std::endl;
