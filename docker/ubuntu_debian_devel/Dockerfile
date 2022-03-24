@@ -9,6 +9,9 @@ ENV USER="docker" \
     PREFIX="/usr" \
     QBDI_PLATFORM="linux"
 
+# create a user
+RUN adduser --disabled-password --gecos '' --home $HOME $USER
+
 # Get latest package list, upgrade packages, install required packages
 # and cleanup to keep container as small as possible
 RUN apt-get update && \
@@ -37,9 +40,6 @@ RUN apt-get update && \
         git && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
-# create a user
-RUN adduser --disabled-password --gecos '' $USER
 
 # build / test / install QBDI
 ARG CMAKE_ARGUMENT=""
