@@ -10,7 +10,7 @@ ENV USER="docker" \
     QBDI_PLATFORM="linux"
 
 # create a user
-RUN adduser --disabled-password --gecos '' --home $HOME $USER
+RUN adduser --disabled-password --gecos '' --home "$HOME" "$USER"
 
 # Get latest package list, upgrade packages, install required packages
 # and cleanup to keep container as small as possible
