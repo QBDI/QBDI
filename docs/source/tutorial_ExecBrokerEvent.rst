@@ -139,7 +139,7 @@ target address.
                 cacheModules();
             }
 
-            const std::vector<std::string>& resolve(QBDI::rword addr);
+            const std::unordered_set<std::string>& resolve(QBDI::rword addr);
     };
 
     void AddrResolver::cacheModules() {
