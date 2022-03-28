@@ -1,4 +1,0 @@
-python-dateutil
-pygit2
-requests
-

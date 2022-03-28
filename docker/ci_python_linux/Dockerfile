@@ -11,6 +11,11 @@ ENV USER="docker" \
     CCACHE_VERSION="4.1" \
     CCACHE_HASH="cdeefb827b3eef3b42b5454858123881a4a90abbd46cc72cf8c20b3bd039deb7"
 
+ARG USER_ID=1000
+
+# create a user
+RUN adduser --uid "$USER_ID" --password '' -m "$USER"
+
 # Get latest package list, upgrade packages, install required packages
 # and cleanup to keep container as small as possible
 RUN yum update -y && \
@@ -40,11 +45,6 @@ RUN if ! which ccache >/dev/null 2>&1; then \
         cd /; \
         rm -rf "/tmp/ccache-${CCACHE_VERSION}" "/tmp/${CCACHE_ARCHIVE}"; \
     fi
-
-ARG USER_ID=1000
-
-# create a user
-RUN adduser --uid $USER_ID --password '' -m $USER
 
 WORKDIR $HOME
 

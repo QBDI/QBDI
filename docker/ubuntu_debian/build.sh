@@ -28,11 +28,18 @@ DISTRIB="${DOCKER_IMG##*/}"
 
 DOCKER_TAG="qbdi:x${ARCH: -2}_${DOCKER_IMG##*/}_${TAG}"
 
+if [[ "${DISTRIB}" = "ubuntu" && "${TAG}" = "18.04" ]]; then
+  DOCKERFILE="${BASEDIR}/Dockerfile.ubuntu18_04"
+else
+  DOCKERFILE="${BASEDIR}/Dockerfile"
+fi
+
 prepare_archive
 
-docker build "${BASEDIR}" -t "${DOCKER_TAG}" --build-arg DOCKER_IMG="${DOCKER_IMG}:${TAG}" \
-                                             --build-arg QBDI_ARCH="$ARCH" \
-                                             --build-arg CMAKE_ARGUMENT="${CMAKE_ARGUMENT}"
+docker build "${BASEDIR}" -t "${DOCKER_TAG}" -f "${DOCKERFILE}" \
+             --build-arg DOCKER_IMG="${DOCKER_IMG}:${TAG}" \
+             --build-arg QBDI_ARCH="$ARCH" \
+             --build-arg CMAKE_ARGUMENT="${CMAKE_ARGUMENT}"
 
 delete_archive
 

@@ -74,6 +74,7 @@ if read_the_docs_build:
     subprocess.call("{} qbdipreload.doxygen.in > qbdipreload.doxygen".format(sedcmd), shell=True, cwd=doxygen_dirs)
     subprocess.call("cp arch/X86_64/* .", shell=True, cwd=os.path.join(current_dir, '..', '..', 'include', 'QBDI'))
     subprocess.call("{} Version.h.in > Version.h".format(sedcmd), shell=True, cwd=os.path.join(current_dir, '..', '..', 'include', 'QBDI'))
+    subprocess.call('doxygen --version', shell=True, cwd=doxygen_dirs)
     subprocess.call('doxygen qbdi_cpp.doxygen', shell=True, cwd=doxygen_dirs)
     subprocess.call('doxygen qbdi_c.doxygen', shell=True, cwd=doxygen_dirs)
     subprocess.call('doxygen qbdipreload.doxygen', shell=True, cwd=doxygen_dirs)

@@ -1,3 +1,6 @@
+python-dateutil
+pygit2
+requests
 Sphinx==4.4.0
 docutils==0.17.1
 breathe==4.33.1

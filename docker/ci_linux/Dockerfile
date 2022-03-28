@@ -7,20 +7,24 @@ ENV USER="docker" \
     PREFIX="/usr" \
     CLICOLOR_FORCE=1
 
+ARG USER_ID=1000
+
+# create a user
+RUN adduser --uid "$USER_ID" --disabled-password --gecos '' --home "$HOME" "$USER"
+
 # Get latest package list, upgrade packages, install required packages 
 # and cleanup to keep container as small as possible
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
         bash \
-        sudo \
         git \
         build-essential \
         cmake \
         ccache \
         g++ \
         g++-multilib \
-        libstdc++-8-dev \
+        libstdc++-10-dev \
         make \
         ninja-build \
         pkg-config \
@@ -34,13 +38,6 @@ RUN apt-get update && \
         xxd && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
-ARG USER_ID=1000
-
-# create a user
-RUN adduser --uid $USER_ID --disabled-password --gecos '' $USER && \
-    adduser $USER sudo && \
-    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 WORKDIR $HOME
 

@@ -3,6 +3,10 @@ version: 2
 build:
   image: latest
 
+# install doxygen >= 1.9.2
+conda:
+  environment: .readthedocs.condaenv.yml
+
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
   configuration: docs/source/conf.py
@@ -14,7 +18,5 @@ formats:
 python:
   version: 3.8
   install:
-    - requirements: docs/requirements.txt
-    - requirements: docs/requirements.readthedocs.txt
     - method: setuptools
       path: docs/rtd_pyqbdi_artifact

@@ -9,19 +9,21 @@ ENV USER="docker" \
     PREFIX="/usr" \
     QBDI_PLATFORM="linux"
 
+# create a user
+RUN adduser --disabled-password --gecos '' --home "$HOME" "$USER"
+
 # Get latest package list, upgrade packages, install required packages
 # and cleanup to keep container as small as possible
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
         bash \
-        sudo \
         build-essential \
         cmake \
         g++ \
         g++-multilib \
         git \
-        libstdc++-8-dev \
+        libstdc++-10-dev \
         ninja-build \
         pkg-config \
         wget \
@@ -31,14 +33,6 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# create a user
-RUN adduser --disabled-password --gecos '' $USER && \
-    adduser $USER sudo && \
-    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-
-# switch to new user
-USER $USER
-
 # build / test / install QBDI
 ARG CMAKE_ARGUMENT=""
 
@@ -47,8 +41,12 @@ ADD qbdi.tar.gz $HOME/
 
 WORKDIR $HOME/qbdi
 
-RUN sudo chown -R $USER:$USER . && \
-    mkdir build && \
+RUN chown -R $USER:$USER .
+
+# switch to new user
+USER $USER
+
+RUN mkdir build && \
     cd build && \
     cmake -G Ninja \
           -DCMAKE_BUILD_TYPE=Release \
@@ -56,7 +54,7 @@ RUN sudo chown -R $USER:$USER . && \
           -DQBDI_PLATFORM=$QBDI_PLATFORM \
           -DQBDI_ARCH=$QBDI_ARCH \
           -DCMAKE_INSTALL_PREFIX=$PREFIX \
-          -DQBDI_TOOLS_PYQBDI=ON \
+          -DQBDI_TOOLS_PYQBDI=OFF \
           -DQBDI_CCACHE=OFF \
           $CMAKE_ARGUMENT \
           ../ && \
