@@ -6,35 +6,35 @@ Basic block events
 Introduction
 ------------
 
-The :ref:`Instrument Callback <api_desc_InstCallback>` allows inserting callbacks on all or specific instruction.
-With a callback at each instruction, it's trivial to follow the execution pointer and obtain a trace of the execution.
-However, the performances are slow, as the execution should be stopped at each instruction from executing the callback.
-For some traces, a higher-level callback can have better performances.
+The :ref:`Instrument Callback <api_desc_InstCallback>` can insert callbacks on all or specific instructions.
+With a callback on every instruction, it's trivial to follow the execution pointer and obtain a trace of the execution.
+However, performances are bad because the execution is stopped on each instruction for the callback to be run.
+For some traces, a higher-level callback may have better performances.
 
 The :ref:`api_desc_VMCallback` is called when some conditions are reached during the execution. This tutorial
 introduces 3 `VMEvent`:
 
-- ``BASIC_BLOCK_NEW`` : this event is triggered when a new basic block has been instrumented and add to the cache. It can be used to create
+- ``BASIC_BLOCK_NEW`` is triggered when a new basic block has been instrumented and added to the cache. It can be used to create
   coverage of the execution.
-- ``BASIC_BLOCK_ENTRY``: this event is triggered before the execution of a basic block.
-- ``BASIC_BLOCK_EXIT``: this event is triggered after the execution of a basic block.
+- ``BASIC_BLOCK_ENTRY`` is triggered before the execution of a basic block.
+- ``BASIC_BLOCK_EXIT`` is triggered after the execution of a basic block.
 
 A basic block in QBDI
 ---------------------
 
-QBDI doesn't analyse the whole program before the run. Basic blocks are detected dynamically and may not match the basic block given by other tools.
-In QBDI, a basic block is a sequence of consecutive instructions that doesn't change the instruction pointer except the last one.
-Any instruction that may change the instruction pointer (method call, jump, conditional jump, method return, ...) are always the
+QBDI doesn't analyze the whole program before the run. Basic blocks are dynamically detected and so may not match basic blocks given by other tools.
+In QBDI, a basic block is a sequence of consecutive instructions that do not modify the instruction pointer except for the last one.
+Any instruction that may modify the instruction pointer (method call, jump, conditional jump, method return, ...) are always the
 last instruction of a basic block.
 
-QBDI detects the beginning of a basic block:
+For QBDI, is the beginning for a basic block:
 
-- when the instruction is the first to be executed in QBDI;
-- after the end of the previous basic block;
-- potentially if the user changes the callback during the execution (add a new callback, clear the cache, return ``BREAK_TO_VM``, ...)
+- the very first instruction to be executed in QBDI;
+- the first instruction to be executed after the end of the previous basic block;
+- the first instruction to be executed if the user modifies the execution flow (add a new callback, clear the cache, return ``BREAK_TO_VM``, ...)
 
-Due to the dynamic detection of the basic block, some basic block can overlap others.
-This behavior can be observed in this code:
+Due to the dynamic detection of the basic block, basic blocks may overlap each other.
+This behavior can be observed in the following code:
 
 .. code:: asm
 
@@ -64,32 +64,32 @@ This behavior can be observed in this code:
     0x000000000000103b:   pop  rbp
     0x000000000000103c:   ret
 
-In this snippet, QBDI can detect 4 different basic blocks. If the first jump is taken:
+In this snippet, QBDI can detect 4 different basic blocks. If the first jump isn't taken:
 
 - The begin of the method, between 0x1000 and 0x101e;
 - The block between 0x101e and 0x1027;
-- The last block between 0x1033 and 0x103c.
+- The last block between 0x1033 and 0x103d.
 
-If the first jump isn't taken:
+If the first jump is taken:
 
 - The begin of the method, between 0x1000 and 0x101e;
-- The last block between 0x1027 and 0x103c.
+- The last block between 0x1027 and 0x103d.
 
 
 Getting basic block information
 -------------------------------
 
 To receive basic block information, a ``VMCallback`` should be registered to the VM with ``addVMEventCB`` for
-one of ``BASIC_BLOCK_*`` events. Once a registered event occurs, the callback is called with a description of the VM (``VMState``).
+one of ``BASIC_BLOCK_*`` events. Once a registered event occurs, the callback is ran with a description of the VM (``VMState``).
 
 The address of the current basic block can be retrieved with ``VMState.basicBlockStart`` and ``VMState.basicBlockEnd``.
 
 .. note::
 
-    ``BASIC_BLOCK_NEW`` can be triggered with ``BASIC_BLOCK_ENTRY``. A callback registered with both events will
-    only be called once. You can retrieve the events that triggered the callback in ``VMState.event``.
+    A callback may register for both ``BASIC_BLOCK_NEW`` and ``BASIC_BLOCK_ENTRY`` events but would be called only once would these two events happen at the same time.
+    You can retrieve the events that triggered the callback in ``VMState.event``.
 
-The follow example registers the three events in the VM and displays the basic block's address when one event triggers.
+The following example registers for the three events in the VM and displays the basic block's bounds.
 
 C basic block information
 +++++++++++++++++++++++++
@@ -183,17 +183,18 @@ Reference: :js:func:`VMCallback`, :js:func:`QBDI.addVMEventCB`, :js:class:`VMSta
 Basic block coverage
 --------------------
 
-To perform a code coverage, ``BASIC_BLOCK_NEW`` can be used to detect the new basic block JITed by QBDI.
-Some precautions should be taken:
+To perform code coverage, ``BASIC_BLOCK_NEW`` can be used to detect the new basic block JITed by QBDI.
+However, it wouldn't work in the following cases:
 
-- If a vm is reused to different coverage, the cache must be clear between each run to have independent coverage.
-  However, if you reused the vm to perform incremental coverage, we can keep the cache between runs.
-- The coverage only covers the instrumented range.
-- This method supposes that the execution of the basic block won't trigger an interruption (exception, signal, ...).
-- Code has no overlapping instructions or other forms of obfuscation.
+- If the code jumps outside of the instrumented range.
+- If the code triggers an interruption (exception, signal, ...)
+- If the code uses overlapping instructions or other forms of obfuscation.
 
-For more precise coverage, ``BASIC_BLOCK_ENTRY`` or ``BASIC_BLOCK_EXIT`` can be used instead of ``BASIC_BLOCK_NEW``, but
-the callback may be called more than once for each basic block.
+Moreover, if a VM is reused from an execution to another, cache will be kept
+and so coverage would be incremental. Clear the cache between every run to have
+independent coverage results
+
+For more precise coverage, a user may register ``BASIC_BLOCK_ENTRY`` or ``BASIC_BLOCK_EXIT`` events and handle deduplication themselves.
 
 
 C coverage
@@ -299,6 +300,5 @@ Frida/QBDI coverage
 Edge coverage
 -------------
 
-The ``BASIC_BLOCK_EXIT`` event can be used to detect the edge between basic block. As the event is triggered after the execution of the basic block,
-the next address can be found in the GPRState. The address pair ``(state.basicBlockEnd, gpr.rip)`` is the edge to store in the coverage.
-
+The ``BASIC_BLOCK_EXIT`` event can be used to detect the edge between basic blocks. As the event is triggered at the end of a basic block (ie. after instruction pointer is modified),
+the next address can be found in the GPRState. So, the couple ``(state.basicBlockEnd, gpr.rip)`` is the edge to store in the coverage.
