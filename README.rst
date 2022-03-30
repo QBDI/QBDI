@@ -127,7 +127,7 @@ To build this project, the following dependencies are needed on your system:
 - ninja or make
 - C++17 toolchain (gcc, clang, Visual Studio 2019, ...)
 
-A local version of llvm is statically build within QBDI because QBDI uses private APIs
+A local version of llvm is statically built within QBDI because QBDI uses private APIs
 not exported by regular LLVM installations and because our code is only compatible
 with a specific version of those APIs.
 
