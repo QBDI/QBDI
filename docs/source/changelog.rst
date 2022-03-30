@@ -19,8 +19,8 @@ Next Release (0.9.0)
   with mmap region (`#193 <https://github.com/QBDI/QBDI/pull/193>`_)
 * Add Priority to InstCallback API (`#194 <https://github.com/QBDI/QBDI/pull/194>`_).
   If two or more InstCallback target the same position (PRE or POST) of the same
-  instruction, the priority parameter allows to specify wich InstCallback should
-  be called before. see :cpp:enum:`QBDI::CallbackPriority`
+  instruction, the priority parameter allows to specify which InstCallback should
+  be called first. see :cpp:enum:`QBDI::CallbackPriority`
 * Support for X86 ``loop``, ``loope`` and ``loopne`` instructions
   (`#200 <https://github.com/QBDI/QBDI/pull/200>`_)
 * Add support for ``FS`` and ``GS`` segment in X86_64
@@ -28,7 +28,7 @@ Next Release (0.9.0)
   kernel must support ``RDFSBASE``, ``RDGSBASE``, ``WRFSBASE`` and ``WRGSBASE``
   instructions (linux >= 5.9). To enable the support, the option
   :cpp:enumerator:`QBDI::Options::OPT_ENABLE_FS_GS` must be enabled.
-* Hide LLVM symbols from shared library and QBDIPrelaod
+* Hide LLVM symbols from shared library and QBDIPreload
   (`#205 <https://github.com/QBDI/QBDI/pull/205>`_)
 * Support python 3.10 for PyQBDI
   (`#206 <https://github.com/QBDI/QBDI/pull/206>`_)
@@ -49,10 +49,10 @@ Next Release (0.9.0)
 * Support C++ lambda with capture. (`#207 <https://github.com/QBDI/QBDI/pull/207>`_)
   see :cpp:type:`QBDI::InstCbLambda`, :cpp:type:`QBDI::VMCbLambda`
   and :cpp:type:`QBDI::InstrRuleCbLambda`
-* Fix QBDIPreload link order (`#209 <https://github.com/QBDI/QBDI/pull/209>`_)
-* Remove new name of libc in QBDIPrelaod (`#211 <https://github.com/QBDI/QBDI/pull/211>`_)
+* Fix a bug where some symbols were missing in QBDIPreload (`#209 <https://github.com/QBDI/QBDI/pull/209>`_)
+* Remove new name of libc in QBDIPreload (`#211 <https://github.com/QBDI/QBDI/pull/211>`_)
 * Support of some self-modifying code (`#212 <https://github.com/QBDI/QBDI/pull/212>`_).
-  QBDI will not crash if invalid instruction is found when handle a new basic
+  QBDI will not crash if invalid instructions are found when handling a new basic
   block.
 * Add tutorial for ExecBroker VMEvent (`#166 <https://github.com/QBDI/QBDI/pull/166>`_)
 * Change :cpp:func:`QBDI::getVersion` out parameter to return version to the form ``0xMMmmpp`` (`#214 <https://github.com/QBDI/QBDI/pull/214>`_)
@@ -70,7 +70,7 @@ Internal update:
 * Update LLVM to LLVM 13.0.0, remove zlib dependency
   (`#180 <https://github.com/QBDI/QBDI/pull/189>`_, `#196 <https://github.com/QBDI/QBDI/pull/196>`_)
 * Remove empty Patch not associated to an MCInst (`#195 <https://github.com/QBDI/QBDI/pull/195>`_)
-* Compile assembly with ``--noexecstack`` to have a ``rw-`` stack when used QBDI
+* Compile assembly with ``--noexecstack`` to have a ``rw-`` stack when using QBDI
   on linux (`#201 <https://github.com/QBDI/QBDI/pull/201>`_)
 * Use build directory to build the documentation (`#213 <https://github.com/QBDI/QBDI/pull/213>`_)
 * Use Doxygen 1.9.2 in readthedocs (`#214 <https://github.com/QBDI/QBDI/pull/214>`_)
