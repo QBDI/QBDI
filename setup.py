@@ -2,7 +2,7 @@
 
 # This file is part of pyQBDI (python binding for QBDI).
 #
-# Copyright 2017 - 2021 Quarkslab
+# Copyright 2017 - 2022 Quarkslab
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -108,7 +108,7 @@ with open("README-pypi.rst", "r") as f:
 
 setup(
     name='PyQBDI',
-    version='0.8.1b0',
+    version='0.9.0b0',
     author='Nicolas Surbayrole',
     license = "apache2",
     license_files = ('LICENSE.txt',),
