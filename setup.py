@@ -108,7 +108,7 @@ with open("README-pypi.rst", "r") as f:
 
 setup(
     name='PyQBDI',
-    version='0.9.0b0',
+    version='0.9.0',
     author='Nicolas Surbayrole',
     license = "apache2",
     license_files = ('LICENSE.txt',),

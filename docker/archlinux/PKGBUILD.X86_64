@@ -2,7 +2,7 @@
 # Maintainer: QBDI Team <qbdi@quarkslab.com>
 
 pkgname=QBDI-X86_64
-pkgver=0.9.0_devel
+pkgver=0.9.0
 pkgrel=1
 epoch=
 pkgdesc="QuarkslaB Dynamic binary Instrumentation for linux-X86_64"

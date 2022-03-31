@@ -1,10 +1,10 @@
 CHANGELOG
 =========
 
-Next Release (0.9.0)
---------------------
+Version 0.9.0
+-------------
 
-2022-xx-xx QBDI Team <qbdi@quarkslab.com>
+2022-03-31 QBDI Team <qbdi@quarkslab.com>
 
 * Change internal log system (`#174 <https://github.com/QBDI/QBDI/pull/174>`_).
 
