@@ -1,6 +1,9 @@
 CHANGELOG
 =========
 
+Next Release
+------------
+
 Version 0.9.0
 -------------
 
