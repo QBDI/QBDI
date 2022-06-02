@@ -88,9 +88,9 @@ class CMakeBuild(build_ext):
                 cmake_args += ["-G", "Ninja"]
             else:
                 build_args.append('-j4')
-
-        if 'QBDI_LLVM_PREFIX' in os.environ:
-            cmake_args.append('-DQBDI_LLVM_PREFIX={}'.format(os.environ.get('QBDI_LLVM_PREFIX')))
+        for opt in ['QBDI_LLVM_PREFIX', 'Python3_INCLUDE_DIR', 'Python3_LIBRARY']:
+          if opt in os.environ:
+              cmake_args.append('-D{}={}'.format(opt, os.environ.get(opt)))
 
         env = os.environ.copy()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),

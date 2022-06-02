@@ -64,16 +64,22 @@ build_script:
   - cmd: cd ..
   # build 3.8
   - "SET PATH=%PYTHON38%;%PYTHON38%\\Scripts;%OLDPATH%"
+  - "SET Python3_LIBRARY=%PYTHON38%\\libs\\python38.lib"
+  - "SET Python3_INCLUDE_DIR=%PYTHON38%\\include"
   - ps: if ($env:BUILD_ALL_WHEEL -eq "True") { Invoke-Expression "$env:PYTHON38\python.exe -m pip install --upgrade pip" }
   - ps: if ($env:BUILD_ALL_WHEEL -eq "True") { Invoke-Expression "$env:PYTHON38\python.exe -m pip install setuptools wheel" }
   - ps: if ($env:BUILD_ALL_WHEEL -eq "True") { Invoke-Expression "$env:PYTHON38\python.exe setup.py bdist_wheel" }
   # build 3.9
   - "SET PATH=%PYTHON39%;%PYTHON39%\\Scripts;%OLDPATH%"
+  - "SET Python3_LIBRARY=%PYTHON39%\\libs\\python39.lib"
+  - "SET Python3_INCLUDE_DIR=%PYTHON39%\\include"
   - ps: if ($env:BUILD_ALL_WHEEL -eq "True") { Invoke-Expression "$env:PYTHON39\python.exe -m pip install --upgrade pip" }
   - ps: if ($env:BUILD_ALL_WHEEL -eq "True") { Invoke-Expression "$env:PYTHON39\python.exe -m pip install setuptools wheel" }
   - ps: if ($env:BUILD_ALL_WHEEL -eq "True") { Invoke-Expression "$env:PYTHON39\python.exe setup.py bdist_wheel" }
   # build 3.10
   - "SET PATH=%PYTHON310%;%PYTHON310%\\Scripts;%OLDPATH%"
+  - "SET Python3_LIBRARY=%PYTHON310%\\libs\\python310.lib"
+  - "SET Python3_INCLUDE_DIR=%PYTHON310%\\include"
   - ps: Invoke-Expression "$env:PYTHON310\python.exe -m pip install --upgrade pip"
   - ps: Invoke-Expression "$env:PYTHON310\python.exe -m pip install setuptools wheel"
   - ps: Invoke-Expression "$env:PYTHON310\python.exe setup.py bdist_wheel"
