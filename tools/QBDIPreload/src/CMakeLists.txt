@@ -10,6 +10,17 @@ elseif(QBDI_PLATFORM_OSX)
     QBDIPreload
     PRIVATE "${CMAKE_CURRENT_LIST_DIR}/darwin_preload.c"
             "${CMAKE_CURRENT_LIST_DIR}/darwin_exceptd.c" "mach_excServer.c")
+elseif(QBDI_PLATFORM_WINDOWS)
+  if(QBDI_ARCH_X86)
+    target_sources(QBDIPreload
+                  PRIVATE "${CMAKE_CURRENT_LIST_DIR}/win_preload.c"
+                  PRIVATE "${CMAKE_CURRENT_LIST_DIR}/X86/trampoline_x86.asm")
+    set_source_files_properties("${CMAKE_CURRENT_LIST_DIR}/X86/trampoline_x86.asm" PROPERTIES COMPILE_FLAGS "/safeseh")
+  elseif(QBDI_ARCH_X86_64)
+    target_sources(QBDIPreload
+                  PRIVATE "${CMAKE_CURRENT_LIST_DIR}/win_preload.c"
+                  PRIVATE "${CMAKE_CURRENT_LIST_DIR}/X86_64/trampoline_x64.asm")
+  endif()
 else()
   message(FATAL_ERROR "No QBDIPreload for platform ${QBDI_PLATFORM}")
 endif()
