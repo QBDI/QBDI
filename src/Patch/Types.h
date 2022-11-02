@@ -27,6 +27,48 @@
 
 namespace QBDI {
 
+/*! Structure representing a register in LLVM.
+ *
+ * The goals of this structure is to force the manipulation of the
+ * integer llvm id by the method getValue().
+ *
+ * With this method, the compiler cannot not longuer perform the followed
+ * implicit conversion:
+ *  - Reg((unsigned) Reg(x) )
+ */
+struct RegLLVM {
+  unsigned int id;
+
+public:
+  /*! Create a new register variable.
+   *
+   *  @param[in] id The llvm id of the register to represent.
+   */
+  inline RegLLVM(unsigned int id = 0) : id(id){};
+
+  /*! Get the llvm value of the register
+   *
+   * @return llvm register id.
+   */
+  inline unsigned int getValue() const { return id; }
+
+  inline bool operator==(const RegLLVM &o) const { return id == o.id; }
+
+  inline bool operator!=(const RegLLVM &o) const { return id != o.id; }
+
+  /*! Needed to create a std::map
+   */
+  inline bool operator<(const RegLLVM &o) const { return id < o.id; }
+};
+
+inline bool operator==(unsigned int id, const RegLLVM &reg) {
+  return reg == id;
+}
+
+inline bool operator!=(unsigned int id, const RegLLVM &reg) {
+  return reg != id;
+}
+
 /*! Structure representing a register variable in PatchDSL.
  */
 struct Reg {
@@ -41,17 +83,23 @@ public:
    */
   inline Reg(unsigned int id) : id(id){};
 
-  /*! Convert this structure to an LLVM register id.
-   *
-   * @return LLVM register id.
-   */
-  inline operator unsigned int() const { return GPR_ID[id]; }
-
   /*! Get back the id of the register in GPRState
    *
    * @return GPRState register id.
    */
   inline unsigned int getID() const { return id; }
+
+  /*! Convert this structure to an LLVM register id.
+   *
+   * @return LLVM register id.
+   */
+  inline operator RegLLVM() const { return GPR_ID[id]; }
+
+  /*! Get the llvm value of the register
+   *
+   * @return llvm register id.
+   */
+  inline unsigned int getValue() const { return GPR_ID[id].getValue(); }
 
   /*! Return the offset of this register storage in the context part of the data
    * block.
@@ -61,6 +109,19 @@ public:
   inline rword offset() const {
     return offsetof(Context, gprState) + sizeof(rword) * id;
   }
+
+  inline bool operator==(const RegLLVM &o) const { return o == *this; }
+
+  inline bool operator!=(const RegLLVM &o) const { return o != *this; }
+
+  /* Anbigious method: do we compare the index or the llvm integer ?
+   */
+  inline bool operator==(unsigned int id) const = delete;
+  inline bool operator!=(unsigned int id) const = delete;
+
+  /*! Needed to create a std::set
+   */
+  inline bool operator<(const Reg &o) const { return id < o.id; }
 };
 
 /*! Structure representing a shadow variable in PatchDSL.
@@ -190,12 +251,14 @@ public:
  */
 enum RelocatableInstTag {
   RelocInst = 0,
-  RelocTagPreInstMemAccess = 0x10,
-  RelocTagPreInstStdCBK = 0x11,
-  RelocTagPatchBegin = 0x20,
-  RelocTagPatchEnd = 0x21,
-  RelocTagPostInstMemAccess = 0x30,
-  RelocTagPostInstStdCBK = 0x31,
+  RelocTagChangeScratchRegister = 0x1,
+  RelocTagPatchBegin = 0x10,
+  RelocTagPreInstMemAccess = 0x20,
+  RelocTagPreInstStdCBK = 0x21,
+  RelocTagPatchInstBegin = 0x30,
+  RelocTagPatchInstEnd = 0x31,
+  RelocTagPostInstMemAccess = 0x40,
+  RelocTagPostInstStdCBK = 0x41,
   RelocTagInvalid = 0xff,
 };
 

@@ -42,10 +42,12 @@ public:
   ~APITest();
 
   QBDI::rword genASM(const char *source,
+                     QBDI::CPUMode cpuMode = QBDI::CPUMode::DEFAULT,
                      const std::vector<std::string> mattrs = {});
 
   bool runOnASM(QBDI::rword *retval, const char *source,
                 const std::vector<QBDI::rword> &args = {},
+                QBDI::CPUMode cpuMode = QBDI::CPUMode::DEFAULT,
                 const std::vector<std::string> mattrs = {});
 };
 

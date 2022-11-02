@@ -6,6 +6,11 @@ include(GNUInstallDirs)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/"
      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/llvm")
 
+# Avoid warning about DOWNLOAD_EXTRACT_TIMESTAMP in CMake 3.24:
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
+  cmake_policy(SET CMP0135 NEW)
+endif()
+
 # Config platform & arch
 include(QBDIConfig)
 # Option
@@ -190,6 +195,15 @@ else()
       -fvisibility=hidden
       -fPIC
       -fno-rtti)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    list(APPEND QBDI_COMMON_C_FLAGS -Wno-missing-template-keyword)
+    list(APPEND QBDI_COMMON_CXX_FLAGS -Wno-missing-template-keyword)
+    check_c_compiler_flag(-Wno-psabi HAS_NO_PSABI)
+    if(HAS_NO_PSABI)
+      list(APPEND QBDI_COMMON_C_FLAGS -Wno-psabi)
+      list(APPEND QBDI_COMMON_CXX_FLAGS -Wno-psabi)
+    endif()
+  endif()
   if(NOT QBDI_PLATFORM_ANDROID)
     set(QBDI_COMMON_DEFINITION
         ${QBDI_COMMON_DEFINITION} -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS
@@ -207,7 +221,6 @@ endif()
 # ============
 set(QBDI_THIRD_PARTY_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/third-party/")
 include(QBDI_llvm)
-include(spdlog)
 
 # Setup assembly compile
 if(QBDI_PLATFORM_WINDOWS)
@@ -240,20 +253,26 @@ endif()
 
 # Disable thumb on ARM (until we support it)
 if(QBDI_ARCH_ARM)
-  # Some armv6 toolchains don't support this
-  check_c_compiler_flag(-mno-thumb HAS_NO_THUMB)
-  if(HAS_NO_THUMB)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mno-thumb")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mno-thumb")
+  # detect if -mthumb-interwork is needed
+  check_c_compiler_flag(-mthumb-interwork HAS_THUMB_INTERWORK)
+  if(HAS_THUMB_INTERWORK)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mthumb-interwork")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mthumb-interwork")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mthumb-interwork")
+    set(CMAKE_SHARED_LINKER_FLAGS
+        "${CMAKE_SHARED_LINKER_FLAGS} -mthumb-interwork")
+    set(CMAKE_MODULE_LINKER_FLAGS
+        "${CMAKE_MODULE_LINKER_FLAGS} -mthumb-interwork")
   endif()
 endif()
+
+include(spdlog)
 
 # Add QBDI source file in QBDI_obj
 add_library(QBDI_src INTERFACE)
 add_library(QBDI_shared_src INTERFACE)
 
-target_link_libraries(QBDI_src INTERFACE qbdi-llvm)
-target_link_libraries(QBDI_src INTERFACE spdlog_header_only)
+target_link_libraries(QBDI_src INTERFACE qbdi-llvm spdlog)
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/src/CMakeLists.txt")
 
@@ -280,7 +299,7 @@ if(QBDI_STATIC_LIBRARY)
   target_include_directories(
     QBDI_obj PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include-static")
 
-  set(qbdi_static_libs qbdi-llvm QBDI_obj)
+  set(qbdi_static_libs qbdi-llvm QBDI_obj spdlog)
 
   merge_static_libs(QBDI_static QBDI \${qbdi_static_libs})
 

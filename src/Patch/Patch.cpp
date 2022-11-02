@@ -25,20 +25,21 @@
 #include "Patch/PatchGenerator.h"
 #include "Patch/Register.h"
 #include "Patch/RelocatableInst.h"
+#include "Patch/Types.h"
 #include "Utility/LogSys.h"
 
 #include "llvm/MC/MCInst.h"
 
 namespace QBDI {
 
-Patch::Patch(const llvm::MCInst &inst, rword address, rword instSize,
+Patch::Patch(const llvm::MCInst &inst, rword address, uint32_t instSize,
              const LLVMCPU &llvmcpu)
-    : metadata(inst, address, instSize), llvmcpu(&llvmcpu), finalize(false) {
+    : metadata(inst, address, instSize, llvmcpu.getCPUMode(),
+               getExecBlockFlags(inst, llvmcpu)),
+      regUsage({RegisterUnused}), llvmcpu(&llvmcpu), finalize(false) {
   metadata.patchSize = 0;
-  metadata.cpuMode = llvmcpu.getCPUMode();
-  metadata.execblockFlags = getExecBlockFlags(inst, llvmcpu);
 
-  regUsage = getUsedGPR(metadata.inst, llvmcpu);
+  getUsedGPR(metadata.inst, llvmcpu, regUsage, regUsageExtra);
 }
 
 Patch::~Patch() = default;
@@ -46,8 +47,6 @@ Patch::~Patch() = default;
 Patch::Patch(Patch &&) = default;
 
 Patch &Patch::operator=(Patch &&) = default;
-
-void Patch::setMerge(bool merge) { metadata.merge = merge; }
 
 void Patch::setModifyPC(bool modifyPC) { metadata.modifyPC = modifyPC; }
 
@@ -68,15 +67,31 @@ void Patch::append(RelocatableInst::UniquePtrVec v) {
 void Patch::prepend(RelocatableInst::UniquePtr &&r) {
   insts.insert(insts.begin(), std::forward<RelocatableInst::UniquePtr>(r));
   metadata.patchSize += 1;
+  patchGenFlagsOffset += 1;
 }
 
 void Patch::prepend(RelocatableInst::UniquePtrVec v) {
   if (not v.empty()) {
     metadata.patchSize += v.size();
+    patchGenFlagsOffset += v.size();
     // front iterator on std::vector may need to move all value at each move
     // use a back_inserter in v and swap the vector at the end
     std::move(insts.begin(), insts.end(), std::back_inserter(v));
     v.swap(insts);
+  }
+}
+
+void Patch::insertAt(unsigned position, RelocatableInst::UniquePtrVec v) {
+  if (not v.empty()) {
+    metadata.patchSize += v.size();
+    for (auto &p : patchGenFlags) {
+      if (p.first >= position) {
+        p.first += v.size();
+      }
+    }
+    std::move(
+        v.begin(), v.end(),
+        std::inserter(insts, insts.begin() + position + patchGenFlagsOffset));
   }
 }
 
@@ -96,45 +111,47 @@ void Patch::addInstsPatch(InstPosition position, int priority,
 void Patch::finalizeInstsPatch() {
   QBDI_REQUIRE(not finalize);
   // avoid to used prepend
+  RelocatableInst::UniquePtrVec prePatch;
+  // add the tag RelocTagPatchInstBegin
+  prePatch.push_back(RelocTag::unique(RelocTagPatchBegin));
+
   // The begin of the patch is a target for the prologue.
-  std::vector<std::unique_ptr<RelocatableInst>> prePatch =
-      TargetPrologue().generate(this, nullptr, nullptr);
+  auto v = TargetPrologue().genReloc(*this);
+  std::move(v.begin(), v.end(), std::back_inserter(prePatch));
 
   // Add PREINST callback by priority order
   for (InstrPatch &el : instsPatchs) {
     if (el.position == PREINST) {
-      std::vector<std::unique_ptr<RelocatableInst>> v;
+      RelocatableInst::UniquePtrVec v;
       v.swap(el.insts);
       std::move(v.begin(), v.end(), std::back_inserter(prePatch));
     } else if (el.position == POSTINST) {
       continue;
     } else {
-      QBDI_ERROR("Invalid position 0x{:x}", el.position);
-      abort();
+      QBDI_ABORT_PATCH(*this, "Invalid position 0x{:x}", el.position);
     }
   }
 
-  // add the tag RelocTagPatchBegin
-  prePatch.push_back(RelocTag::unique(RelocTagPatchBegin));
+  // add the tag RelocTagPatchInstBegin
+  prePatch.push_back(RelocTag::unique(RelocTagPatchInstBegin));
   // prepend the current RelocInst to the Patch
   prepend(std::move(prePatch));
-  // add the tag RelocTagPatchEnd
-  append(RelocTag::unique(RelocTagPatchEnd));
+  // add the tag RelocTagPatchInstEnd
+  append(RelocTag::unique(RelocTagPatchInstEnd));
 
   // append TargetPrologue for SKIP_INST
-  append(TargetPrologue().generate(this, nullptr, nullptr));
+  append(TargetPrologue().genReloc(*this));
 
   // Add POSTINST callback by priority order
   for (InstrPatch &el : instsPatchs) {
     if (el.position == PREINST) {
       continue;
     } else if (el.position == POSTINST) {
-      std::vector<std::unique_ptr<RelocatableInst>> v;
+      RelocatableInst::UniquePtrVec v;
       v.swap(el.insts);
       append(std::move(v));
     } else {
-      QBDI_ERROR("Invalid position 0x{:x}", el.position);
-      abort();
+      QBDI_ABORT_PATCH(*this, "Invalid position 0x{:x}", el.position);
     }
   }
 

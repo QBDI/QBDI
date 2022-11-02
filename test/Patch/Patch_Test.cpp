@@ -19,60 +19,59 @@
 #include <catch2/catch.hpp>
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-EmptyFunction") {
+  INFO("TEST_SEED=" << seed_random());
   QBDI::Context inputState;
 
-  memset(&inputState, 0, sizeof(QBDI::Context));
+  initContext(inputState);
   comparedExec("", inputState, 4096);
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-GPRSave") {
+  INFO("TEST_SEED=" << seed_random());
   QBDI::Context inputState;
 
-  memset(&inputState, 0, sizeof(QBDI::Context));
+  initContext(inputState);
   comparedExec(GPRSave_s, inputState, 4096);
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-GPRShuffle") {
+  INFO("TEST_SEED=" << seed_random());
   QBDI::Context inputState;
 
-  memset(&inputState, 0, sizeof(QBDI::Context));
-  for (uint32_t i = 0; i < QBDI::AVAILABLE_GPR; i++)
-    QBDI_GPR_SET(&inputState.gprState, i, i);
+  initContext(inputState);
   comparedExec(GPRShuffle_s, inputState, 4096);
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-RelativeAddressing") {
+  INFO("TEST_SEED=" << seed_random());
   QBDI::Context inputState;
 
-  memset(&inputState, 0, sizeof(QBDI::Context));
-  QBDI_GPR_SET(&inputState.gprState, 0, get_random());
-  QBDI_GPR_SET(&inputState.gprState, 1, get_random());
+  initContext(inputState);
   comparedExec(RelativeAddressing_s, inputState, 4096);
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-ConditionalBranching") {
+  INFO("TEST_SEED=" << seed_random());
   QBDI::Context inputState;
 
-  memset(&inputState, 0, sizeof(QBDI::Context));
-  QBDI_GPR_SET(&inputState.gprState, 0, get_random());
-  QBDI_GPR_SET(&inputState.gprState, 1, get_random());
-  QBDI_GPR_SET(&inputState.gprState, 2, get_random());
-  QBDI_GPR_SET(&inputState.gprState, 3, get_random());
+  initContext(inputState);
   comparedExec(ConditionalBranching_s, inputState, 4096);
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-FibonacciRecursion") {
+  INFO("TEST_SEED=" << seed_random());
   QBDI::Context inputState;
 
-  memset(&inputState, 0, sizeof(QBDI::Context));
+  initContext(inputState);
   QBDI_GPR_SET(&inputState.gprState, 0, (rand() % 20) + 2);
   comparedExec(FibonacciRecursion_s, inputState, 4096);
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-StackTricks") {
+  INFO("TEST_SEED=" << seed_random());
   QBDI::Context inputState;
 
-  memset(&inputState, 0, sizeof(QBDI::Context));
+  initContext(inputState);
   QBDI_GPR_SET(&inputState.gprState, 0, (rand() % 20) + 2);
   comparedExec(StackTricks_s, inputState, 4096);
 }

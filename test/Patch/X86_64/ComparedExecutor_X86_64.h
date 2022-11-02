@@ -45,6 +45,8 @@ public:
                          llvm::sys::MemoryBlock &stack);
 
   InMemoryObject compileWithContextSwitch(const char *source);
+
+  void initContext(QBDI::Context &ctx);
 };
 
 #endif

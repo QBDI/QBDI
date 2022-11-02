@@ -22,6 +22,7 @@
 #include "X86InstrInfo.h"
 
 #include "Patch/Register.h"
+#include "Patch/Types.h"
 #include "Utility/LogSys.h"
 
 #include "QBDI/Config.h"
@@ -29,7 +30,7 @@
 
 namespace QBDI {
 
-const unsigned int GPR_ID[] = {
+const RegLLVM GPR_ID[] = {
 #if defined(QBDI_ARCH_X86_64)
     llvm::X86::RAX, llvm::X86::RBX,    llvm::X86::RCX, llvm::X86::RDX,
     llvm::X86::RSI, llvm::X86::RDI,    llvm::X86::R8,  llvm::X86::R9,
@@ -45,16 +46,16 @@ const unsigned int GPR_ID[] = {
 #endif
 };
 
-const unsigned int FLAG_ID[] = {
+const RegLLVM FLAG_ID[] = {
     llvm::X86::DF,
 };
 
-const unsigned int SEG_ID[] = {
+const RegLLVM SEG_ID[] = {
     llvm::X86::SS, llvm::X86::CS, llvm::X86::DS,  llvm::X86::ES,
     llvm::X86::FS, llvm::X86::GS, llvm::X86::SSP,
 };
 
-const std::map<unsigned int, int16_t> FPR_ID = {
+const std::map<RegLLVM, int16_t> FPR_ID = {
     {llvm::X86::FPCW, offsetof(FPRState, rfcw)},
     {llvm::X86::FPSW, offsetof(FPRState, rfsw)},
     {llvm::X86::ST0, offsetof(FPRState, stmm0)},
@@ -193,9 +194,9 @@ const std::map<unsigned int, int16_t> FPR_ID = {
     {llvm::X86::ZMM31, -1},
 };
 
-const unsigned int size_GPR_ID = sizeof(GPR_ID) / sizeof(unsigned int);
-const unsigned int size_FLAG_ID = sizeof(FLAG_ID) / sizeof(unsigned int);
-const unsigned int size_SEG_ID = sizeof(SEG_ID) / sizeof(unsigned int);
+const unsigned int size_GPR_ID = sizeof(GPR_ID) / sizeof(RegLLVM);
+const unsigned int size_FLAG_ID = sizeof(FLAG_ID) / sizeof(RegLLVM);
+const unsigned int size_SEG_ID = sizeof(SEG_ID) / sizeof(RegLLVM);
 
 namespace {
 
@@ -562,7 +563,8 @@ struct RegisterInfoArray {
     }
   }
 
-  inline uint8_t getSize(size_t reg) const {
+  inline uint8_t getSize(RegLLVM reg_) const {
+    const size_t reg = reg_.getValue();
     if (reg < llvm::X86::NUM_TARGET_REGS)
       return size[reg];
 
@@ -570,7 +572,8 @@ struct RegisterInfoArray {
     return -1;
   }
 
-  inline int8_t getPos(size_t reg) const {
+  inline int8_t getPos(RegLLVM reg_) const {
+    const size_t reg = reg_.getValue();
     if (reg < llvm::X86::NUM_TARGET_REGS)
       return pos[reg];
 
@@ -583,13 +586,15 @@ struct RegisterInfoArray {
 
 static constexpr RegisterInfoArray arrayInfo;
 
-uint8_t getRegisterSize(unsigned reg) { return arrayInfo.getSize(reg); }
+uint8_t getRegisterSize(RegLLVM reg) { return arrayInfo.getSize(reg); }
 
-uint8_t getRegisterPacked(unsigned reg) { return 1; }
+uint8_t getRegisterPacked(RegLLVM reg) { return 1; }
 
-size_t getGPRPosition(unsigned reg) { return arrayInfo.getPos(reg); }
+uint8_t getRegisterSpaced(RegLLVM reg) { return 1; }
 
-unsigned getUpperRegister(unsigned reg, size_t pos) {
+size_t getGPRPosition(RegLLVM reg) { return arrayInfo.getPos(reg); }
+
+RegLLVM getUpperRegister(RegLLVM reg, size_t pos) {
   if (pos != 0) {
     return llvm::X86::NoRegister;
   }
@@ -600,13 +605,21 @@ unsigned getUpperRegister(unsigned reg, size_t pos) {
   return GPR_ID[p];
 }
 
+RegLLVM getPackedRegister(RegLLVM reg, size_t pos) {
+  if (pos != 0) {
+    return llvm::X86::NoRegister;
+  }
+  return reg;
+}
+
 void fixLLVMUsedGPR(const llvm::MCInst &inst, const LLVMCPU &llvmcpu,
-                    std::map<unsigned, RegisterUsage> &m) {
+                    std::array<RegisterUsage, NUM_GPR> &arr,
+                    std::map<RegLLVM, RegisterUsage> &m) {
   switch (inst.getOpcode()) {
     case llvm::X86::LOOP:
     case llvm::X86::LOOPE:
     case llvm::X86::LOOPNE:
-      addRegisterInMap(m, /* RCX|ECX */ GPR_ID[2], RegisterUsed | RegisterSet);
+      arr[2] |= RegisterUsed | RegisterSet;
       break;
     default:
       break;

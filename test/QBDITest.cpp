@@ -27,7 +27,7 @@
 
 int main(int argc, char **argv) {
 
-  srand(time(nullptr));
+  srand(time(nullptr) | getpid());
 
   if (getenv("TEST_DEBUG") != nullptr) {
     QBDI::setLogPriority(QBDI::LogPriority::DEBUG);

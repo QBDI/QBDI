@@ -41,11 +41,13 @@ int writeCString(const char *str, FILE *pipe);
 int readInstructionEvent(QBDI::rword *address, char *mnemonic,
                          size_t mnemonic_len, char *disassembly,
                          size_t disassembly_len, QBDI::GPRState *gprState,
-                         QBDI::FPRState *fprState, FILE *pipe);
+                         QBDI::FPRState *fprState, bool *debuggerSkip,
+                         FILE *pipe);
 
 int writeInstructionEvent(QBDI::rword address, const char *mnemonic,
                           const char *disassembly, QBDI::GPRState *gprState,
-                          QBDI::FPRState *fprState, FILE *pipe);
+                          QBDI::FPRState *fprState, bool debuggerSkip,
+                          FILE *pipe);
 
 int readMismatchMemAccessEvent(QBDI::rword *address, bool *doRead,
                                bool *mayRead, bool *doWrite, bool *mayWrite,

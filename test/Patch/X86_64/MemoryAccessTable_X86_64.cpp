@@ -367,7 +367,8 @@ const std::set<unsigned> fixupNoWrite{
 
 TEST_CASE_METHOD(MemoryAccessTable, "MemoryAccessTable-CrossCheck") {
 
-  const llvm::MCInstrInfo &MCII = getCPU(QBDI::CPUMode::DEFAULT).getMCII();
+  const QBDI::LLVMCPU &llvmcpu = getCPU(QBDI::CPUMode::DEFAULT);
+  const llvm::MCInstrInfo &MCII = llvmcpu.getMCII();
 
   for (unsigned opcode = 0; opcode < llvm::X86::INSTRUCTION_LIST_END;
        opcode++) {
@@ -377,9 +378,23 @@ TEST_CASE_METHOD(MemoryAccessTable, "MemoryAccessTable-CrossCheck") {
     const llvm::MCInstrDesc &desc = MCII.get(opcode);
     const char *mnemonic = MCII.getName(opcode).data();
 
+    // InstInfo_X86_64.cpp only use inst->getOpcode(). The MCInst doesn't need
+    // to have his operand
+    llvm::MCInst inst;
+    inst.setOpcode(opcode);
+
+    bool doRead = (QBDI::getReadSize(inst, llvmcpu) != 0);
+    bool doWrite = (QBDI::getWriteSize(inst, llvmcpu) != 0);
+    bool mayRead = desc.mayLoad();
+    bool mayWrite = desc.mayStore();
+
     // the opcode is a pseudo instruction used by LLVM internally
-    if (desc.isPseudo())
+    if (desc.isPseudo()) {
+      if (doRead or doWrite) {
+        WARN("Pseudo instruction " << mnemonic << " in InstInfo");
+      }
       continue;
+    }
 
     // some no pseudo instructions are also pseudo ...
     if ((desc.TSFlags & llvm::X86II::FormMask) == llvm::X86II::Pseudo)
@@ -393,16 +408,6 @@ TEST_CASE_METHOD(MemoryAccessTable, "MemoryAccessTable-CrossCheck") {
     // not support XOP. (AMD eXtended Operations)
     if ((desc.TSFlags & llvm::X86II::EncodingMask) == llvm::X86II::XOP)
       continue;
-
-    // InstInfo_X86_64.cpp only use inst->getOpcode(). The MCInst doesn't need
-    // to have his operand
-    llvm::MCInst inst;
-    inst.setOpcode(opcode);
-
-    bool doRead = (QBDI::getReadSize(inst) != 0);
-    bool doWrite = (QBDI::getWriteSize(inst) != 0);
-    bool mayRead = desc.mayLoad();
-    bool mayWrite = desc.mayStore();
 
     bool bypassRead = false;
     bool bypassWrite = false;

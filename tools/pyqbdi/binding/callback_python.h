@@ -1,5 +1,5 @@
 /*
- * This file is part of QBDI.
+ * This file is part of pyQBDI.
  *
  * Copyright 2017 - 2022 Quarkslab
  *

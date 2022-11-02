@@ -52,11 +52,11 @@ void InstrRule::instrument(Patch &patch,
    * each case, can trigger a break to host.
    */
   RelocatableInst::UniquePtrVec instru;
-  TempManager tempManager(patch, true);
+  TempManager tempManager(patch);
 
   // Generate the instrumentation code from the original instruction context
   for (const PatchGenerator::UniquePtr &g : patchGen) {
-    append(instru, g->generate(&patch, &tempManager, nullptr));
+    append(instru, g->generate(patch, tempManager));
   }
 
   // In case we break to the host, we need to ensure the value of PC in the
@@ -65,21 +65,29 @@ void InstrRule::instrument(Patch &patch,
   // set PC.
   if (breakToHost) {
     if (position == InstPosition::PREINST || patch.metadata.modifyPC == false) {
+      rword address;
       switch (position) {
         // In PREINST PC is set to the current address
         case InstPosition::PREINST:
-          append(instru, GetConstant(Temp(0), Constant(patch.metadata.address))
-                             .generate(&patch, &tempManager, nullptr));
+          address = patch.metadata.address;
           break;
         // In POSTINST PC is set to the next instruction address
         case InstPosition::POSTINST:
-          append(instru, GetConstant(Temp(0), Constant(patch.metadata.address +
-                                                       patch.metadata.instSize))
-                             .generate(&patch, &tempManager, nullptr));
+          address = patch.metadata.endAddress();
           break;
+        default:
+          QBDI_ABORT_PATCH(patch, "Invalid position {}", position);
       }
-      append(instru,
-             SaveReg(tempManager.getRegForTemp(0), Offset(Reg(REG_PC))));
+#if defined(QBDI_ARCH_ARM)
+      if (patch.metadata.cpuMode == CPUMode::Thumb) {
+        address |= 1;
+      }
+#endif
+      append(
+          instru,
+          GetConstant(Temp(0), Constant(address)).generate(patch, tempManager));
+      append(instru, SaveReg(tempManager.getRegForTemp(0), Offset(Reg(REG_PC)))
+                         .genReloc(*patch.llvmcpu));
     }
   }
 
@@ -89,34 +97,29 @@ void InstrRule::instrument(Patch &patch,
     tempManager.getRegForTemp(Temp(0));
   }
 
-  // Get all used temporary register
-  Reg::Vec usedRegisters = tempManager.getUsedRegisters();
+  RelocatableInst::UniquePtrVec saveReg, restoreReg;
+  Reg::Vec unrestoredReg;
 
   // In the break to host case the first used register is not restored and
   // instead given to the break to host code as a scratch. It will later be
   // restored by the break to host code.
   if (breakToHost) {
-    for (uint32_t i = 1; i < usedRegisters.size(); i++) {
-      if (tempManager.shouldRestore(usedRegisters[i])) {
-        append(instru, LoadReg(usedRegisters[i], Offset(usedRegisters[i])));
-        prepend(instru, SaveReg(usedRegisters[i], Offset(usedRegisters[i])));
-      }
-    }
-    bool restoreLast = tempManager.shouldRestore(usedRegisters[0]);
-    if (restoreLast) {
-      prepend(instru, SaveReg(usedRegisters[0], Offset(usedRegisters[0])));
-    }
-    append(instru, getBreakToHost(usedRegisters[0], patch, restoreLast));
+    tempManager.generateSaveRestoreInstructions(1, saveReg, restoreReg,
+                                                unrestoredReg);
+    QBDI_REQUIRE(unrestoredReg.size() >= 1);
+
+    prepend(instru, std::move(saveReg));
+    append(instru, std::move(restoreReg));
+    append(instru, getBreakToHost(unrestoredReg[0], patch,
+                                  tempManager.shouldRestore(unrestoredReg[0])));
   }
   // Normal case where we append the temporary register restoration code to the
   // instrumentation
   else {
-    for (uint32_t i = 0; i < usedRegisters.size(); i++) {
-      if (tempManager.shouldRestore(usedRegisters[i])) {
-        append(instru, LoadReg(usedRegisters[i], Offset(usedRegisters[i])));
-        prepend(instru, SaveReg(usedRegisters[i], Offset(usedRegisters[i])));
-      }
-    }
+    tempManager.generateSaveRestoreInstructions(0, saveReg, restoreReg,
+                                                unrestoredReg);
+    prepend(instru, std::move(saveReg));
+    append(instru, std::move(restoreReg));
   }
 
   // add Tag
@@ -151,8 +154,7 @@ InstrRuleBasicCBK::~InstrRuleBasicCBK() = default;
 
 bool InstrRuleBasicCBK::canBeApplied(const Patch &patch,
                                      const LLVMCPU &llvmcpu) const {
-  return condition->test(patch.metadata.inst, patch.metadata.address,
-                         patch.metadata.instSize, llvmcpu);
+  return condition->test(patch, llvmcpu);
 }
 
 bool InstrRuleBasicCBK::changeDataPtr(void *new_data) {
@@ -186,8 +188,7 @@ InstrRuleDynamic::~InstrRuleDynamic() = default;
 
 bool InstrRuleDynamic::canBeApplied(const Patch &patch,
                                     const LLVMCPU &llvmcpu) const {
-  return condition->test(patch.metadata.inst, patch.metadata.address,
-                         patch.metadata.instSize, llvmcpu);
+  return condition->test(patch, llvmcpu);
 }
 
 std::unique_ptr<InstrRule> InstrRuleDynamic::clone() const {

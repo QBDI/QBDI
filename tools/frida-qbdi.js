@@ -355,11 +355,11 @@ if (Process.arch === 'x64') {
     var REG_RETURN = "X0";
     var REG_PC = "PC";
     var REG_SP = "SP";
-//} else if (Process.arch === 'arm') {
-//    var GPR_NAMES = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R12","FP","SP","LR","PC","CPSR"];
-//    var REG_RETURN = "R0";
-//    var REG_PC = "PC";
-//    var REG_SP = "SP";
+} else if (Process.arch === 'arm') {
+    var GPR_NAMES = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R12","FP","SP","LR","PC","CPSR"];
+    var REG_RETURN = "R0";
+    var REG_PC = "PC";
+    var REG_SP = "SP";
 } else if (Process.arch === 'ia32'){
     var GPR_NAMES = ["EAX","EBX","ECX","EDX","ESI","EDI","EBP","ESP","EIP","EFLAGS"];
     var REG_RETURN = "EAX";
@@ -732,7 +732,7 @@ var AnalysisType = Object.freeze({
 /**
  * QBDI VM Options
  */
-var Options = Object.freeze({
+var Options = {
     /**
      * Default value
      */
@@ -747,17 +747,61 @@ var Options = Object.freeze({
      * execblock doesn't used FPR.
      */
     OPT_DISABLE_OPTIONAL_FPR : 1<<1,
-    /**
-     * Used the AT&T syntax for instruction disassembly (for X86 and X86_64)
-     */
-    OPT_ATT_SYNTAX : 1<<24,
-    /**
-     * Enable Backup/Restore of FS/GS segment. 
-     * This option uses the instructions (RD|WR)(FS|GS)BASE that must be 
-     * supported by the operating system.
-     */
-    OPT_ENABLE_FS_GS : 1<<25
-});
+};
+if (Process.arch === 'x64') {
+  /**
+   * Used the AT&T syntax for instruction disassembly (for X86 and X86_64)
+   */
+  Options.OPT_ATT_SYNTAX = 1<<24;
+  /**
+   * Enable Backup/Restore of FS/GS segment. 
+   * This option uses the instructions (RD|WR)(FS|GS)BASE that must be 
+   * supported by the operating system.
+   */
+  Options.OPT_ENABLE_FS_GS = 1<<25;
+} else if (Process.arch === 'ia32') {
+  /**
+   * Used the AT&T syntax for instruction disassembly (for X86 and X86_64)
+   */
+  Options.OPT_ATT_SYNTAX = 1<<24;
+} else if (Process.arch === 'arm64') {
+  /**
+   * Disable the emulation of the local monitor by QBDI
+   */
+  Options.OPT_DISABLE_LOCAL_MONITOR = 1<<24;
+  /**
+   * Disable pointeur authentication
+   */
+  Options.OPT_BYPASS_PAUTH = 1<<25;
+  /**
+   * Enable BTI on instrumented code
+   */
+  Options.OPT_ENABLE_BTI = 1<<26;
+} else if (Process.arch === 'arm') {
+  /**
+   * Disable the emulation of the local monitor by QBDI
+   */
+  Options.OPT_DISABLE_LOCAL_MONITOR = 1<<24;
+  /**
+   * Disable the used of D16-D31 register
+   */
+  Options.OPT_DISABLE_D16_D31 = 1<<25;
+  /**
+   * Change between ARM and Thumb as an ARMv4 CPU
+   */
+  Options.OPT_ARMv4 = 3<<26;
+  /**
+   * Change between ARM and Thumb as an ARMv5T or ARMv6 CPU
+   */
+  Options.OPT_ARMv5T_6 = 1<<27;
+  /**
+   * Change between ARM and Thumb as an ARMv7 CPU (default)
+   */
+  Options.OPT_ARMv7 = 0;
+  Options.OPT_ARM_MASK = 3<<26;
+}
+
+Options = Object.freeze(Options);
 
 class InstrRuleDataCBK {
     /**
@@ -1970,6 +2014,8 @@ class QBDI {
         } else {
             analysis.module = "";
         }
+        p = ptr.add(this.#instAnalysisStructDesc.offsets[22]);
+        analysis.cpuMode = Memory.readU8(p);
         Object.freeze(analysis);
         return analysis;
     }

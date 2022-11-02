@@ -24,18 +24,14 @@
 #include <utility>
 #include <vector>
 
+#include "Patch/Patch.h"
 #include "Patch/PatchUtils.h"
 #include "Patch/Types.h"
 
 #include "QBDI/Range.h"
 #include "QBDI/State.h"
 
-namespace llvm {
-class MCInst;
-} // namespace llvm
-
 namespace QBDI {
-
 class LLVMCPU;
 
 class PatchCondition {
@@ -45,8 +41,7 @@ public:
 
   virtual UniquePtr clone() const = 0;
 
-  virtual bool test(const llvm::MCInst &inst, rword address, rword instSize,
-                    const LLVMCPU &llvmcpu) const = 0;
+  virtual bool test(const Patch &patch, const LLVMCPU &llvmcpu) const = 0;
 
   virtual RangeSet<rword> affectedRange() const {
     RangeSet<rword> r;
@@ -69,8 +64,7 @@ public:
    */
   MnemonicIs(const char *mnemonic) : mnemonic(mnemonic){};
 
-  bool test(const llvm::MCInst &inst, rword address, rword instSize,
-            const LLVMCPU &llvmcpu) const override;
+  bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
 };
 
 class OpIs : public AutoClone<PatchCondition, OpIs> {
@@ -83,8 +77,7 @@ public:
    */
   OpIs(unsigned int op) : op(op){};
 
-  bool test(const llvm::MCInst &inst, rword address, rword instSize,
-            const LLVMCPU &llvmcpu) const override;
+  bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
 };
 
 class UseReg : public AutoClone<PatchCondition, UseReg> {
@@ -97,8 +90,7 @@ public:
    */
   UseReg(Reg reg) : reg(reg){};
 
-  bool test(const llvm::MCInst &inst, rword address, rword instSize,
-            const LLVMCPU &llvmcpu) const override;
+  bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
 };
 
 class InstructionInRange
@@ -112,11 +104,16 @@ public:
    * @param[in] start Start of the range.
    * @param[in] end   End of the range (not included).
    */
-  InstructionInRange(Constant start, Constant end) : range(start, end){};
+  InstructionInRange(Constant start, Constant end) : range(start, end) {
+    // for ARM, remove the LSB
+    if constexpr (is_arm) {
+      range.setStart(range.start() & (~1));
+    }
+  };
 
-  bool test(const llvm::MCInst &inst, rword address, rword instSize,
-            const LLVMCPU &llvmcpu) const override {
-    return range.contains(Range<rword>(address, address + instSize));
+  bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override {
+    return range.contains(
+        Range<rword>(patch.metadata.address, patch.metadata.endAddress()));
   }
 
   RangeSet<rword> affectedRange() const override {
@@ -132,11 +129,15 @@ class AddressIs : public AutoClone<PatchCondition, AddressIs> {
 public:
   /*! Return true if on specified address
    */
-  AddressIs(rword breakpoint) : breakpoint(breakpoint){};
+  AddressIs(rword breakpoint_) : breakpoint(breakpoint_) {
+    // for ARM, remove the LSB
+    if constexpr (is_arm) {
+      breakpoint &= (~1);
+    }
+  };
 
-  bool test(const llvm::MCInst &inst, rword address, rword instSize,
-            const LLVMCPU &llvmcpu) const override {
-    return address == breakpoint;
+  bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override {
+    return patch.metadata.address == breakpoint;
   }
 
   RangeSet<rword> affectedRange() const override {
@@ -158,11 +159,10 @@ public:
   And(PatchCondition::UniquePtrVec &&conditions)
       : conditions(std::forward<PatchCondition::UniquePtrVec>(conditions)){};
 
-  bool test(const llvm::MCInst &inst, rword address, rword instSize,
-            const LLVMCPU &llvmcpu) const override {
+  bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override {
     return std::all_of(conditions.begin(), conditions.end(),
                        [&](const PatchCondition::UniquePtr &cond) {
-                         return cond->test(inst, address, instSize, llvmcpu);
+                         return cond->test(patch, llvmcpu);
                        });
   }
 
@@ -192,11 +192,10 @@ public:
   Or(PatchCondition::UniquePtrVec &&conditions)
       : conditions(std::forward<PatchCondition::UniquePtrVec>(conditions)){};
 
-  bool test(const llvm::MCInst &inst, rword address, rword instSize,
-            const LLVMCPU &llvmcpu) const override {
+  bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override {
     return std::any_of(conditions.begin(), conditions.end(),
                        [&](const PatchCondition::UniquePtr &cond) {
-                         return cond->test(inst, address, instSize, llvmcpu);
+                         return cond->test(patch, llvmcpu);
                        });
   }
 
@@ -224,9 +223,8 @@ public:
   Not(PatchCondition::UniquePtr &&condition)
       : condition(std::forward<PatchCondition::UniquePtr>(condition)){};
 
-  bool test(const llvm::MCInst &inst, rword address, rword instSize,
-            const LLVMCPU &llvmcpu) const override {
-    return !condition->test(inst, address, instSize, llvmcpu);
+  bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override {
+    return !condition->test(patch, llvmcpu);
   }
 
   inline std::unique_ptr<PatchCondition> clone() const override {
@@ -240,8 +238,7 @@ public:
    */
   True(){};
 
-  bool test(const llvm::MCInst &inst, rword address, rword instSize,
-            const LLVMCPU &llvmcpu) const override {
+  bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override {
     return true;
   }
 };
@@ -252,8 +249,7 @@ public:
    */
   DoesReadAccess(){};
 
-  bool test(const llvm::MCInst &inst, rword address, rword instSize,
-            const LLVMCPU &llvmcpu) const override;
+  bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
 };
 
 class DoesWriteAccess : public AutoClone<PatchCondition, DoesWriteAccess> {
@@ -262,8 +258,7 @@ public:
    */
   DoesWriteAccess(){};
 
-  bool test(const llvm::MCInst &inst, rword address, rword instSize,
-            const LLVMCPU &llvmcpu) const override;
+  bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
 };
 
 } // namespace QBDI

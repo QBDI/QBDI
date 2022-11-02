@@ -142,4 +142,6 @@ message(STATUS "")
 
 if(QBDI_LOG_DEBUG)
   set(QBDI_ENABLE_LOG_DEBUG 1)
+else()
+  set(QBDI_ENABLE_LOG_DEBUG 0)
 endif()

@@ -22,9 +22,12 @@
 
 #include "QBDI/InstAnalysis.h"
 
+#include "Patch/Types.h"
+
 namespace llvm {
 class MCInstrDesc;
 class MCInstrInfo;
+class MCOperandInfo;
 class MCRegisterInfo;
 } // namespace llvm
 
@@ -44,7 +47,9 @@ const InstAnalysis *analyzeInstMetadata(const InstMetadata &instMetadata,
                                         const LLVMCPU &llvmcpu);
 namespace InstructionAnalysis {
 
-void analyseRegister(OperandAnalysis &opa, unsigned int regNo,
+ConditionType ConditionLLVM2QBDI(unsigned cond);
+
+void analyseRegister(OperandAnalysis &opa, RegLLVM regNo,
                      const llvm::MCRegisterInfo &MRI);
 void tryMergeCurrentRegister(InstAnalysis *instAnalysis);
 
@@ -52,8 +57,9 @@ void tryMergeCurrentRegister(InstAnalysis *instAnalysis);
 // =============
 
 void analyseCondition(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
-                      const llvm::MCInstrDesc &desc);
-bool isFlagOperand(unsigned opcode, unsigned opNum, unsigned operandType);
+                      const llvm::MCInstrDesc &desc, const LLVMCPU &llvmcpu);
+bool isFlagOperand(unsigned opcode, unsigned opNum,
+                   const llvm::MCOperandInfo &opdesc);
 unsigned getBias(const llvm::MCInstrDesc &desc);
 
 // Missing operand in LLVM Description

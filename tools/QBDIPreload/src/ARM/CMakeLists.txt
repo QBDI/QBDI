@@ -1,0 +1,5 @@
+if(QBDI_PLATFORM_LINUX OR QBDI_PLATFORM_ANDROID)
+  target_sources(QBDIPreload PRIVATE "${CMAKE_CURRENT_LIST_DIR}/linux_ARM.c")
+else()
+  message(FATAL_ERROR "No QBDIPreload for architecture ${QBDI_ARCH}")
+endif()

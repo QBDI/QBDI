@@ -19,22 +19,25 @@
 #include "Patch/Patch_Test.h"
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-UnalignedCodeForward") {
+  INFO("TEST_SEED=" << seed_random());
   QBDI::Context inputState;
 
-  memset(&inputState, 0, sizeof(QBDI::Context));
+  initContext(inputState);
   comparedExec(UnalignedCodeForward_s, inputState, 4096);
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-UnalignedCodeBackward") {
+  INFO("TEST_SEED=" << seed_random());
   QBDI::Context inputState;
 
-  memset(&inputState, 0, sizeof(QBDI::Context));
+  initContext(inputState);
   comparedExec(UnalignedCodeBackward_s, inputState, 4096);
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-LoopCode") {
+  INFO("TEST_SEED=" << seed_random());
   QBDI::Context inputState;
 
-  memset(&inputState, 0, sizeof(QBDI::Context));
+  initContext(inputState);
   comparedExec(LoopCode_s, inputState, 4096);
 }

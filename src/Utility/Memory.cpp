@@ -180,7 +180,7 @@ qbdi_MemoryMap *convert_MemoryMap_to_C(std::vector<MemoryMap> maps,
   }
   qbdi_MemoryMap *cmaps =
       (qbdi_MemoryMap *)malloc(*size * sizeof(qbdi_MemoryMap));
-  QBDI_REQUIRE_ACTION(cmaps != NULL, abort());
+  QBDI_REQUIRE_ABORT(cmaps != NULL, "Allocation Fail");
   for (size_t i = 0; i < *size; i++) {
     cmaps[i].start = maps[i].range.start();
     cmaps[i].end = maps[i].range.end();
@@ -221,7 +221,7 @@ char **qbdi_getModuleNames(size_t *size) {
     return NULL;
   }
   char **names = (char **)malloc(modules.size() * sizeof(char *));
-  QBDI_REQUIRE_ACTION(names != NULL, abort());
+  QBDI_REQUIRE_ABORT(names != NULL, "Allocation Fail");
   for (size_t i = 0; i < modules.size(); i++) {
     names[i] = strdup(modules[i].c_str());
   }

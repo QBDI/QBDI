@@ -26,6 +26,7 @@
 #include <sys/wait.h>
 #include "Utility/LogSys.h"
 
+#ifndef QBDI_ARCH_ARM
 void LinuxProcess::setBreakpoint(void *address) {
   this->brk_address = address;
   this->brk_value = ptrace(PTRACE_PEEKDATA, this->pid, address, NULL);
@@ -35,6 +36,7 @@ void LinuxProcess::setBreakpoint(void *address) {
     exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
   }
 }
+#endif
 
 void LinuxProcess::unsetBreakpoint() {
   if (ptrace(PTRACE_POKEDATA, this->pid, this->brk_address, this->brk_value) ==

@@ -19,11 +19,12 @@
 #include "Patch/Instr_Test.h"
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-UnalignedCodeForward_IC") {
+  INFO("TEST_SEED=" << seed_random());
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
   QBDI::Context inputState;
-  memset(&inputState, 0, sizeof(QBDI::Context));
+  initContext(inputState);
 
   vm.deleteAllInstrumentations();
   vm.addCodeCB(QBDI::PREINST, increment, (void *)&count1);
@@ -38,11 +39,12 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-UnalignedCodeForward_IC") {
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-UnalignedCodeBackward_IC") {
+  INFO("TEST_SEED=" << seed_random());
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
   QBDI::Context inputState;
-  memset(&inputState, 0, sizeof(QBDI::Context));
+  initContext(inputState);
 
   vm.deleteAllInstrumentations();
   vm.addCodeCB(QBDI::PREINST, increment, (void *)&count1);
@@ -57,11 +59,12 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-UnalignedCodeBackward_IC") {
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-LoopCode_IC") {
+  INFO("TEST_SEED=" << seed_random());
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
   QBDI::Context inputState;
-  memset(&inputState, 0, sizeof(QBDI::Context));
+  initContext(inputState);
 
   vm.deleteAllInstrumentations();
   vm.addCodeCB(QBDI::PREINST, increment, (void *)&count1);

@@ -22,12 +22,14 @@
 #include "llvm/MC/MCInst.h"
 
 QBDI::Patch generateEmptyPatch(QBDI::rword address,
-                               const QBDI::LLVMCPUs &llvmcpu) {
+                               const QBDI::LLVMCPUs &llvmcpus) {
   llvm::MCInst inst;
 
   inst.setOpcode(llvm::X86::NOOP);
 
-  QBDI::Patch p{inst, address, 1, llvmcpu.getCPU(QBDI::CPUMode::DEFAULT)};
+  const QBDI::LLVMCPU &llvmcpu = llvmcpus.getCPU(QBDI::CPUMode::DEFAULT);
+
+  QBDI::Patch p{inst, address, 1, llvmcpu};
   p.finalizeInstsPatch();
   return p;
 }

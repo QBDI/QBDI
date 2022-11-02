@@ -256,8 +256,9 @@ QBDI::VMAction evilMnemCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
     // validate operands
     CHECKED_IF(ana->operands != nullptr) {
       info[1]++;
-      for (uint8_t idx = 0;
+      for (unsigned idx = 0;
            idx < std::min(ana->numOperands, currentInst.numOperands); idx++) {
+        INFO("For operand " << idx);
         const QBDI::OperandAnalysis &cmpOp = currentInst.operands[idx];
         const QBDI::OperandAnalysis &op = ana->operands[idx];
         CHECKED_IF(op.type == cmpOp.type) { info[1]++; }
@@ -283,6 +284,14 @@ QBDI::VMAction evilMnemCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
 }
 
 TEST_CASE_METHOD(APITest, "VMTest-MnemCallback") {
+#ifdef QBDI_ARCH_ARM
+  bool isThumb = ((((QBDI::rword)satanicFun) & 1) == 1);
+  // not compatible with Thumb
+  if (isThumb) {
+    return;
+  }
+#endif
+
   QBDI::rword info[3] = {0, 0, 42};
   QBDI::rword retval = 0;
   const char *noop = MNEM_CMP;
@@ -1665,6 +1674,34 @@ TEST_CASE_METHOD(APITest, "VMTest-InvalidInstruction") {
   vm.addInstrumentedRange(start, stop);
   bool ran = vm.run(start, start + tc.size);
   REQUIRE(ran);
+
+  SUCCEED();
+}
+
+TEST_CASE_METHOD(APITest, "VMTest-BreakingInstruction") {
+  auto tc = TestCode["VMTest-BreakingInstruction"];
+  auto code = tc.code;
+  if (code.empty()) {
+    return;
+  }
+  auto start = (QBDI::rword)code.data();
+
+  // Instrument only a part of the code
+  vm.addInstrumentedRange(start, start + tc.size);
+
+  // set the current sequence
+  int countBB = 0;
+  vm.addVMEventCB(QBDI::VMEvent::BASIC_BLOCK_NEW,
+                  [&countBB](QBDI::VMInstanceRef vm,
+                             const QBDI::VMState *vmState, QBDI::GPRState *,
+                             QBDI::FPRState *) {
+                    countBB++;
+                    return QBDI::VMAction::CONTINUE;
+                  });
+  QBDI::rword retval;
+  bool ran = vm.call(&retval, start);
+  REQUIRE(ran);
+  REQUIRE(countBB == 2);
 
   SUCCEED();
 }

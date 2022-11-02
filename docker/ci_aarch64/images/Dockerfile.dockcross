@@ -1,0 +1,19 @@
+ARG DOCKER_IMG="dockcross/linux-arm64"
+
+FROM $DOCKER_IMG
+
+ENV CLICOLOR_FORCE=1
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive \
+    apt-get install -y --no-install-recommends \
+        bash \
+        ca-certificates \
+        ccache \
+        git \
+        python3 \
+        wget \
+        zip && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+

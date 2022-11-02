@@ -25,9 +25,9 @@
 #include "ExecBlock/Context.h"
 #include "ExecBlock/ExecBlock.h"
 #include "ExecBlock/ExecBlockManager.h"
+#include "Patch/ExecBlockPatch.h"
 #include "Patch/InstMetadata.h"
 #include "Patch/Patch.h"
-#include "Patch/PatchRules.h"
 #include "Patch/RelocatableInst.h"
 
 QBDI::Patch::Vec getEmptyBB(QBDI::rword address,
@@ -41,37 +41,45 @@ TEST_CASE_METHOD(ExecBlockManagerTest,
                  "ExecBlockManagerTest-BasicBlockLookup") {
   QBDI::ExecBlockManager execBlockManager(*this);
 
-  execBlockManager.writeBasicBlock(getEmptyBB(0x42424242, *this), 1);
-  REQUIRE(nullptr == execBlockManager.getProgrammedExecBlock(0x13371337));
-  REQUIRE(nullptr != execBlockManager.getProgrammedExecBlock(0x42424242));
+  execBlockManager.writeBasicBlock(getEmptyBB(0x42424240, *this), 1);
+  REQUIRE(nullptr == execBlockManager.getProgrammedExecBlock(
+                         0x13371338, QBDI::CPUMode::DEFAULT));
+  REQUIRE(nullptr != execBlockManager.getProgrammedExecBlock(
+                         0x42424240, QBDI::CPUMode::DEFAULT));
 }
 
 TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-ClearCache") {
   QBDI::ExecBlockManager execBlockManager(*this);
 
-  execBlockManager.writeBasicBlock(getEmptyBB(0x42424242, *this), 1);
-  REQUIRE(nullptr != execBlockManager.getProgrammedExecBlock(0x42424242));
+  execBlockManager.writeBasicBlock(getEmptyBB(0x42424240, *this), 1);
+  REQUIRE(nullptr != execBlockManager.getProgrammedExecBlock(
+                         0x42424240, QBDI::CPUMode::DEFAULT));
   execBlockManager.clearCache();
-  REQUIRE(nullptr == execBlockManager.getProgrammedExecBlock(0x42424242));
+  REQUIRE(nullptr == execBlockManager.getProgrammedExecBlock(
+                         0x42424240, QBDI::CPUMode::DEFAULT));
 }
 
 TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-ExecBlockReuse") {
   QBDI::ExecBlockManager execBlockManager(*this);
 
-  execBlockManager.writeBasicBlock(getEmptyBB(0x42424242, *this), 1);
-  execBlockManager.writeBasicBlock(getEmptyBB(0x42424243, *this), 1);
-  REQUIRE(execBlockManager.getProgrammedExecBlock(0x42424242) ==
-          execBlockManager.getProgrammedExecBlock(0x42424243));
+  execBlockManager.writeBasicBlock(getEmptyBB(0x42424240, *this), 1);
+  execBlockManager.writeBasicBlock(getEmptyBB(0x42424244, *this), 1);
+  REQUIRE(execBlockManager.getProgrammedExecBlock(0x42424240,
+                                                  QBDI::CPUMode::DEFAULT) ==
+          execBlockManager.getProgrammedExecBlock(0x42424244,
+                                                  QBDI::CPUMode::DEFAULT));
 }
 
 TEST_CASE_METHOD(ExecBlockManagerTest,
                  "ExecBlockManagerTest-ExecBlockRegions") {
   QBDI::ExecBlockManager execBlockManager(*this);
 
-  execBlockManager.writeBasicBlock(getEmptyBB(0x42424242, *this), 1);
+  execBlockManager.writeBasicBlock(getEmptyBB(0x42424240, *this), 1);
   execBlockManager.writeBasicBlock(getEmptyBB(0x24242424, *this), 1);
-  REQUIRE(execBlockManager.getProgrammedExecBlock(0x42424242) !=
-          execBlockManager.getProgrammedExecBlock(0x24242424));
+  REQUIRE(execBlockManager.getProgrammedExecBlock(0x42424240,
+                                                  QBDI::CPUMode::DEFAULT) !=
+          execBlockManager.getProgrammedExecBlock(0x24242424,
+                                                  QBDI::CPUMode::DEFAULT));
 }
 
 TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-ExecBlockAlloc") {
@@ -82,72 +90,81 @@ TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-ExecBlockAlloc") {
     execBlockManager.writeBasicBlock(getEmptyBB(address, *this), 1);
   }
 
-  REQUIRE(execBlockManager.getProgrammedExecBlock(0) !=
-          execBlockManager.getProgrammedExecBlock(0xfff));
+  REQUIRE(
+      execBlockManager.getProgrammedExecBlock(0, QBDI::CPUMode::DEFAULT) !=
+      execBlockManager.getProgrammedExecBlock(0xfff, QBDI::CPUMode::DEFAULT));
 }
 
 TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-CacheRewrite") {
   QBDI::ExecBlockManager execBlockManager(*this);
   unsigned int i = 0;
 
-  execBlockManager.writeBasicBlock(getEmptyBB(0x42424242, *this), 1);
-  QBDI::ExecBlock *block1 = execBlockManager.getProgrammedExecBlock(0x42424242);
+  execBlockManager.writeBasicBlock(getEmptyBB(0x42424240, *this), 1);
+  QBDI::ExecBlock *block1 = execBlockManager.getProgrammedExecBlock(
+      0x42424240, QBDI::CPUMode::DEFAULT);
   for (i = 0; i < 0x1000; i++) {
-    execBlockManager.writeBasicBlock(getEmptyBB(0x42424242, *this), 1);
+    execBlockManager.writeBasicBlock(getEmptyBB(0x42424240, *this), 1);
   }
-  QBDI::ExecBlock *block2 = execBlockManager.getProgrammedExecBlock(0x42424242);
+  QBDI::ExecBlock *block2 = execBlockManager.getProgrammedExecBlock(
+      0x42424240, QBDI::CPUMode::DEFAULT);
 
   REQUIRE(block1 == block2);
 }
 
 TEST_CASE_METHOD(ExecBlockManagerTest,
                  "ExecBlockManagerTest-MultipleBasicBlockExecution") {
+  const QBDI::LLVMCPU &llvmcpu = this->getCPU(QBDI::CPUMode::DEFAULT);
   QBDI::ExecBlockManager execBlockManager(*this);
   QBDI::ExecBlock *block = nullptr;
   // Jit two different terminators
-  QBDI::Patch::Vec terminator1 = getEmptyBB(0x42424242, *this);
-  QBDI::Patch::Vec terminator2 = getEmptyBB(0x13371337, *this);
-  terminator1[0].append(QBDI::getTerminator(0x42424242));
+  QBDI::Patch::Vec terminator1 = getEmptyBB(0x42424240, *this);
+  QBDI::Patch::Vec terminator2 = getEmptyBB(0x13371338, *this);
+  terminator1[0].append(QBDI::getTerminator(llvmcpu, 0x42424240));
   terminator1[0].metadata.modifyPC = true;
-  terminator2[0].append(QBDI::getTerminator(0x13371337));
+  terminator2[0].append(QBDI::getTerminator(llvmcpu, 0x13371338));
   terminator2[0].metadata.modifyPC = true;
   execBlockManager.writeBasicBlock(std::move(terminator1), 1);
   execBlockManager.writeBasicBlock(std::move(terminator2), 1);
   // Execute the two basic block and get the value of PC from the data block
-  block = execBlockManager.getProgrammedExecBlock(0x42424242);
+  block = execBlockManager.getProgrammedExecBlock(0x42424240,
+                                                  QBDI::CPUMode::DEFAULT);
   REQUIRE(nullptr != block);
   block->execute();
-  REQUIRE((QBDI::rword)0x42424242 ==
+  REQUIRE((QBDI::rword)0x42424240 ==
           QBDI_GPR_GET(&block->getContext()->gprState, QBDI::REG_PC));
 
-  block = execBlockManager.getProgrammedExecBlock(0x13371337);
+  block = execBlockManager.getProgrammedExecBlock(0x13371338,
+                                                  QBDI::CPUMode::DEFAULT);
   REQUIRE(nullptr != block);
   block->execute();
-  REQUIRE((QBDI::rword)0x13371337 ==
+  REQUIRE((QBDI::rword)0x13371338 ==
           QBDI_GPR_GET(&block->getContext()->gprState, QBDI::REG_PC));
 }
 
 TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-Stresstest") {
+  const unsigned align = 4;
+  const QBDI::LLVMCPU &llvmcpu = this->getCPU(QBDI::CPUMode::DEFAULT);
   QBDI::ExecBlockManager execBlockManager(*this);
   QBDI::rword address = 0;
 
-  for (address = 0; address < 1000; address++) {
+  for (address = 0; address < 1000 * align; address += align) {
     QBDI::Patch::Vec terminator = getEmptyBB(address, *this);
-    terminator[0].append(QBDI::getTerminator(address));
+    terminator[0].append(QBDI::getTerminator(llvmcpu, address));
     terminator[0].metadata.modifyPC = true;
     execBlockManager.writeBasicBlock(std::move(terminator), 1);
-    QBDI::ExecBlock *block = execBlockManager.getProgrammedExecBlock(address);
+    QBDI::ExecBlock *block = execBlockManager.getProgrammedExecBlock(
+        address, QBDI::CPUMode::DEFAULT);
     REQUIRE(nullptr != block);
     block->execute();
     REQUIRE(address ==
             QBDI_GPR_GET(&block->getContext()->gprState, QBDI::REG_PC));
   }
-  for (; address > 0; address--) {
-    QBDI::ExecBlock *block =
-        execBlockManager.getProgrammedExecBlock(address - 1);
+  for (; address > 0; address -= align) {
+    QBDI::ExecBlock *block = execBlockManager.getProgrammedExecBlock(
+        address - align, QBDI::CPUMode::DEFAULT);
     REQUIRE(nullptr != block);
     block->execute();
-    REQUIRE(address - 1 ==
+    REQUIRE(address - align ==
             QBDI_GPR_GET(&block->getContext()->gprState, QBDI::REG_PC));
   }
 }

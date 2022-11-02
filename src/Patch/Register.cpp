@@ -22,68 +22,115 @@
 #include "llvm/MC/MCInstrDesc.h"
 #include "llvm/MC/MCInstrInfo.h"
 
+#include "devVariable.h"
 #include "Engine/LLVMCPU.h"
+#include "Patch/InstInfo.h"
 #include "Patch/Register.h"
+#include "Patch/Types.h"
 
 #include "Utility/LogSys.h"
 
+#if DEBUG_INST_OPERAND
+#define DEBUG_REGISTER QBDI_DEBUG
+#else
+#define DEBUG_REGISTER(...)
+#endif
+
 namespace QBDI {
 
-void addRegisterInMap(std::map<unsigned, RegisterUsage> &m, unsigned reg,
-                      RegisterUsage usage) {
-  auto e = m.find(reg);
-  if (e != m.end()) {
-    m[reg] = usage | e->second;
-  } else {
-    m[reg] = usage;
+static void addRegisterInfo(std::array<RegisterUsage, NUM_GPR> &regArr,
+                            std::map<RegLLVM, RegisterUsage> &regMap,
+                            RegLLVM reg_, RegisterUsage usage) {
+
+  for (int i = 0; i < getRegisterPacked(reg_); i++) {
+
+    RegLLVM reg = getUpperRegister(reg_, i);
+    int id = getGPRPosition(reg);
+    if (id < 0 or ((unsigned)id) >= NUM_GPR) {
+      auto e = regMap.find(reg);
+      if (e != regMap.end()) {
+        regMap[reg] = usage | e->second;
+      } else {
+        regMap[reg] = usage;
+      }
+    } else {
+      regArr[id] |= usage;
+    }
   }
 }
 
-std::map<unsigned, RegisterUsage> getUsedGPR(const llvm::MCInst &inst,
-                                             const LLVMCPU &llvmcpu) {
-  std::map<unsigned, RegisterUsage> res{};
+void getUsedGPR(const llvm::MCInst &inst, const LLVMCPU &llvmcpu,
+                std::array<RegisterUsage, NUM_GPR> &regUsage,
+                std::map<RegLLVM, RegisterUsage> &regUsageExtra) {
 
-  const llvm::MCInstrDesc &desc = llvmcpu.getMCII().get(inst.getOpcode());
-  unsigned e = desc.isVariadic() ? inst.getNumOperands() : desc.getNumDefs();
+  const llvm::MCInstrInfo &MCII = llvmcpu.getMCII();
+  const llvm::MCInstrDesc &desc = MCII.get(inst.getOpcode());
+  unsigned opIsUsedBegin = desc.getNumDefs();
+  unsigned opIsUsedEnd = inst.getNumOperands();
+  if (desc.isVariadic() and variadicOpsIsWrite(inst)) {
+    if (desc.getNumOperands() < 1) {
+      opIsUsedEnd = 0;
+    } else {
+      opIsUsedEnd = desc.getNumOperands() - 1;
+    }
+  }
+  DEBUG_REGISTER(
+      "Opcode : {}, Variadic : {}, opIsUsedBegin : {}, opIsUsedEnd : {}",
+      MCII.getName(inst.getOpcode()), desc.isVariadic(), opIsUsedBegin,
+      opIsUsedEnd);
 
   for (unsigned int i = 0; i < inst.getNumOperands(); i++) {
     const llvm::MCOperand &op = inst.getOperand(i);
     if (op.isReg()) {
-      unsigned regNum = op.getReg();
+      RegLLVM regNum = op.getReg();
       if (regNum == /* llvm::X86|AArch64::NoRegister */ 0) {
+        DEBUG_REGISTER("{} Reg {}", i, regNum.getValue());
         continue;
       }
-      if (i < e) {
-        addRegisterInMap(res, getUpperRegister(regNum), RegisterSet);
+      if (i < opIsUsedBegin or opIsUsedEnd <= i) {
+        DEBUG_REGISTER("{} Reg Set {}", i, llvmcpu.getRegisterName(regNum));
+        addRegisterInfo(regUsage, regUsageExtra, regNum, RegisterSet);
       } else {
-        addRegisterInMap(res, getUpperRegister(regNum), RegisterUsed);
+        DEBUG_REGISTER("{} Reg Used {}", i, llvmcpu.getRegisterName(regNum));
+        addRegisterInfo(regUsage, regUsageExtra, regNum, RegisterUsed);
       }
+    } else if (op.isImm()) {
+      DEBUG_REGISTER("{} Imm 0x{:x}", i, op.getImm());
+    } else {
+      DEBUG_REGISTER("{} Unknown", i);
     }
   }
 
   for (const uint16_t *implicitRegs = desc.getImplicitUses();
        implicitRegs && *implicitRegs; ++implicitRegs) {
-    addRegisterInMap(res, getUpperRegister(*implicitRegs), RegisterUsed);
+    DEBUG_REGISTER("Reg ImplicitUses {}",
+                   llvmcpu.getRegisterName(*implicitRegs));
+    addRegisterInfo(regUsage, regUsageExtra, *implicitRegs, RegisterUsed);
   }
 
   for (const uint16_t *implicitRegs = desc.getImplicitDefs();
        implicitRegs && *implicitRegs; ++implicitRegs) {
-    addRegisterInMap(res, getUpperRegister(*implicitRegs), RegisterSet);
+    DEBUG_REGISTER("Reg ImplicitDefs {}",
+                   llvmcpu.getRegisterName(*implicitRegs));
+    addRegisterInfo(regUsage, regUsageExtra, *implicitRegs, RegisterSet);
   }
 
-  fixLLVMUsedGPR(inst, llvmcpu, res);
+  fixLLVMUsedGPR(inst, llvmcpu, regUsage, regUsageExtra);
 
   QBDI_DEBUG_BLOCK({
     std::ostringstream oss;
     bool first = true;
-    for (const auto &e : res) {
+    for (unsigned i = 0; i < NUM_GPR; i++) {
+      if (regUsage[i] == 0) {
+        continue;
+      }
       if (not first) {
         oss << ", ";
       } else {
         first = false;
       }
-      oss << llvmcpu.getRegisterName(e.first);
-      switch (e.second) {
+      oss << llvmcpu.getRegisterName(GPR_ID[i]);
+      switch (regUsage[i] & RegisterBoth) {
         case RegisterUsed:
           oss << " (r-)";
           break;
@@ -95,10 +142,27 @@ std::map<unsigned, RegisterUsage> getUsedGPR(const llvm::MCInst &inst,
           break;
       }
     }
-    QBDI_DEBUG("Found Register Usage : {}", oss.str());
+    for (const auto &e : regUsageExtra) {
+      if (not first) {
+        oss << ", ";
+      } else {
+        first = false;
+      }
+      oss << llvmcpu.getRegisterName(e.first);
+      switch (e.second & RegisterBoth) {
+        case RegisterUsed:
+          oss << " (r-)";
+          break;
+        case RegisterSet:
+          oss << " (-w)";
+          break;
+        case RegisterBoth:
+          oss << " (rw)";
+          break;
+      }
+    }
+    DEBUG_REGISTER("Found Register Usage : {}", oss.str());
   });
-
-  return res;
 }
 
 } // namespace QBDI

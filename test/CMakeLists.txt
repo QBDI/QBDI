@@ -32,8 +32,7 @@ if(QBDI_TEST)
     PRIVATE "${CMAKE_BINARY_DIR}/include" "${CMAKE_SOURCE_DIR}/include"
             "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/../src")
 
-  target_link_libraries(QBDITest QBDI_static qbdi-llvm Catch2::Catch2
-                        spdlog_header_only)
+  target_link_libraries(QBDITest QBDI_static qbdi-llvm Catch2::Catch2 spdlog)
   target_compile_options(QBDITest
                          PUBLIC $<$<COMPILE_LANGUAGE:C>:${QBDI_COMMON_C_FLAGS}>)
   target_compile_options(

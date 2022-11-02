@@ -6,6 +6,7 @@ set(__add_qbdi_llvm ON)
 include(FetchContent)
 
 # configure FetchContent
+set(QBDI_LLVM_MAJOR_VERSION 13)
 set(QBDI_LLVM_VERSION 13.0.0)
 
 FetchContent_Declare(
@@ -118,12 +119,18 @@ if(NOT llvm_POPULATED)
         CACHE STRING "set LLVM_DEFAULT_TARGET_TRIPLE")
   endif()
 
-  # check if llvm-tblgen-X is available
-  find_program(LLVM_TABLEN_BIN NAMES llvm-tblgen-10)
-  message(STATUS "LLVM Table Gen found: ${LLVM_TABLEN_BIN}")
-  if(${LLVM_TABLEN_BIN_FOUND})
+  if("${NATIVE_TABLEN_PATH}" STREQUAL "")
+    # check if llvm-tblgen-X is available
+    find_program(LLVM_TABLEN_BIN NAMES llvm-tblgen-${QBDI_LLVM_MAJOR_VERSION})
+    message(STATUS "LLVM Table Gen found: ${LLVM_TABLEN_BIN}")
+    if(${LLVM_TABLEN_BIN_FOUND})
+      set(LLVM_TABLEGEN
+          "${LLVM_TABLEN_BIN}"
+          CACHE STRING "force tablegen")
+    endif()
+  else()
     set(LLVM_TABLEGEN
-        "${LLVM_TABLEN_BIN}"
+        "${NATIVE_TABLEN_PATH}"
         CACHE STRING "force tablegen")
   endif()
 
@@ -249,14 +256,8 @@ if(QBDI_PLATFORM_OSX OR QBDI_PLATFORM_IOS)
 endif()
 
 if(QBDI_ARCH_ARM)
-  add_llvm_lib(
-    LLVMARMCodeGen
-    LLVMARMAsmParser
-    LLVMARMDisassembler
-    LLVMARMAsmPrinter
-    LLVMARMDesc
-    LLVMARMInfo
-    LLVMARMUtils)
+  add_llvm_lib(LLVMARMAsmParser LLVMARMDisassembler LLVMARMDesc LLVMARMInfo
+               LLVMARMUtils)
 elseif(QBDI_ARCH_AARCH64)
   add_llvm_lib(LLVMAArch64AsmParser LLVMAArch64Desc LLVMAArch64Disassembler
                LLVMAArch64Info LLVMAArch64Utils)

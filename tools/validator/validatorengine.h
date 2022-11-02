@@ -21,6 +21,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -113,6 +114,14 @@ class ValidatorEngine {
   uint64_t execID;
   uint64_t accessError;
 
+  // Shared variable of the Thread
+  std::thread outputCMPThread;
+  bool threadStop;
+  int stdoutDbg;
+  int stdoutDbi;
+  std::vector<uint8_t> outputDbg;
+  std::vector<uint8_t> outputDbi;
+
   ssize_t logEntryLookup(uint64_t execID);
 
   QBDI::MemoryMap *getModule(QBDI::rword address);
@@ -133,14 +142,28 @@ class ValidatorEngine {
                     const QBDI::GPRState *gprStateInstr,
                     const QBDI::FPRState *fprStateInstr);
 
+  void startCompareThread();
+  void outputCompareThread();
+  void syncCompareThread();
+
 public:
-  ValidatorEngine(pid_t debugged, pid_t instrumented, LogVerbosity verbosity)
+  ValidatorEngine(pid_t debugged, pid_t instrumented, int stdoutDbg,
+                  int stdoutDbi, LogVerbosity verbosity)
       : lastLogEntry(nullptr), curLogEntry(nullptr), debugged(debugged),
         instrumented(instrumented), verbosity(verbosity), execID(0),
-        accessError(0) {}
+        accessError(0), threadStop(false), stdoutDbg(stdoutDbg),
+        stdoutDbi(stdoutDbi) {
+      startCompareThread();
+  }
+
+  ValidatorEngine(const ValidatorEngine& o) = delete;
+  ValidatorEngine(ValidatorEngine&& o) = delete;
+
+  ValidatorEngine& operator=(const ValidatorEngine& other) = delete;
+  ValidatorEngine& operator=(ValidatorEngine&& other) = delete;
 
   void signalNewState(QBDI::rword address, const char *mnemonic,
-                      const char *disassembly,
+                      const char *disassembly, bool skipDebugger,
                       const QBDI::GPRState *gprStateDbg,
                       const QBDI::FPRState *fprStateDbg,
                       const QBDI::GPRState *gprStateInstr,

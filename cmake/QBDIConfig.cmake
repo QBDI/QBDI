@@ -66,8 +66,7 @@ endif()
 set(QBDI_SUPPORTED_PLATFORMS "android" "linux" "windows" "osx" "ios")
 
 set(QBDI_SUPPORTED_ARCH #    "ARM" # no maintained since 0.7.0
-    #    "AARCH64" # private support
-    "X86" "X86_64")
+    "AARCH64" "X86" "X86_64")
 
 set(QBDI_PLATFORM_WINDOWS 0)
 set(QBDI_PLATFORM_LINUX 0)

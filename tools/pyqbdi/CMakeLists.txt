@@ -1,6 +1,7 @@
 if(QBDI_ARCH_X86
    OR QBDI_ARCH_X86_64
-   OR QBDI_ARCH_AARCH64)
+   OR QBDI_ARCH_AARCH64
+   OR QBDI_ARCH_ARM)
   include(FetchContent)
 
   find_package(Python3 REQUIRED COMPONENTS Interpreter)
@@ -37,7 +38,8 @@ if(QBDI_ARCH_X86
       FATAL_ERROR
         "PyQBDI with Python ${PYTHON_BIT} is not compatible with the architecture ${QBDI_ARCH}"
     )
-  elseif((${PYTHON_BIT} STREQUAL "32bit") AND NOT QBDI_ARCH_X86)
+  elseif((${PYTHON_BIT} STREQUAL "32bit") AND NOT (QBDI_ARCH_X86
+                                                   OR QBDI_ARCH_ARM))
     message(
       FATAL_ERROR
         "PyQBDI with Python ${PYTHON_BIT} is not compatible with the architecture ${QBDI_ARCH}"
@@ -48,7 +50,7 @@ if(QBDI_ARCH_X86
     pybind11
     URL "https://github.com/pybind/pybind11/archive/v2.6.1.zip"
     URL_HASH
-      SHA256=e3f9408fca4e8ebf2d22229d5256adb49098073832aad87f3f6078d91a6942b2
+      "SHA256=e3f9408fca4e8ebf2d22229d5256adb49098073832aad87f3f6078d91a6942b2"
     DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/pybind11-download")
   FetchContent_GetProperties(pybind11)
   if(NOT pybind11_POPULATED)
