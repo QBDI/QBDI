@@ -25,18 +25,22 @@ include(cmake/merge_archives.cmake)
 # CCACHE
 # ======
 if(QBDI_CCACHE)
-  find_program(CCACHE_FOUND ccache)
-  if(CCACHE_FOUND)
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ${CCACHE_FOUND})
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ${CCACHE_FOUND})
-    message(STATUS "found CCACHE at ${CCACHE_FOUND}")
-  else()
-    # fallback to sccache (ccache doesn't work with MSVC
+  if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     find_program(SCCACHE_FOUND sccache)
     if(SCCACHE_FOUND)
       set(CMAKE_C_COMPILER_LAUNCHER ${SCCACHE_FOUND})
       set(CMAKE_CXX_COMPILER_LAUNCHER ${SCCACHE_FOUND})
       message(STATUS "found SCCACHE at ${SCCACHE_FOUND}")
+    else()
+      set(QBDI_CCACHE OFF)
+      message(WARNING "CCACHE or SCCACHE not found: disabled")
+    endif()
+  else()
+    find_program(CCACHE_FOUND ccache)
+    if(CCACHE_FOUND)
+      set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ${CCACHE_FOUND})
+      set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ${CCACHE_FOUND})
+      message(STATUS "found CCACHE at ${CCACHE_FOUND}")
     else()
       set(QBDI_CCACHE OFF)
       message(WARNING "CCACHE or SCCACHE not found: disabled")
@@ -122,6 +126,7 @@ if(QBDI_PLATFORM_WINDOWS)
       -D_CRT_NONSTDC_NO_WARNINGS
       -D_SCL_SECURE_NO_DEPRECATE
       -D_SCL_SECURE_NO_WARNINGS
+      -w14062
       -wd4141
       -wd4146
       -wd4180
@@ -140,7 +145,6 @@ if(QBDI_PLATFORM_WINDOWS)
       -wd4624
       -wd4722
       -wd4800
-      -w14062
       -we4238
       -D__STDC_CONSTANT_MACROS
       -D__STDC_FORMAT_MACROS
@@ -157,6 +161,7 @@ if(QBDI_PLATFORM_WINDOWS)
       -D_CRT_NONSTDC_NO_WARNINGS
       -D_SCL_SECURE_NO_DEPRECATE
       -D_SCL_SECURE_NO_WARNINGS
+      -w14062
       -wd4141
       -wd4146
       -wd4180
@@ -175,7 +180,6 @@ if(QBDI_PLATFORM_WINDOWS)
       -wd4624
       -wd4722
       -wd4800
-      -w14062
       -we4238
       -D__STDC_CONSTANT_MACROS
       -D__STDC_FORMAT_MACROS
