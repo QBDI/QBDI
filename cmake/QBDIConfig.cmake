@@ -159,10 +159,30 @@ if(QBDI_PLATFORM_IOS AND NOT (QBDI_ARCH_ARM OR QBDI_ARCH_AARCH64))
       "IOS platform is only supported for ARM and AARCH64 architecture.")
 endif()
 
+if(QBDI_PLATFORM_OSX)
+  if(QBDI_ARCH_X86_64 AND NOT ("${CMAKE_HOST_SYSTEM_PROCESSOR}" STREQUAL
+                               "x86_64"))
+    set(CMAKE_OSX_ARCHITECTURES
+        "x86_64"
+        CACHE STRING "" FORCE)
+    set(CMAKE_CROSSCOMPILING
+        "TRUE"
+        CACHE STRING "" FORCE)
+  elseif(QBDI_ARCH_AARCH64 AND NOT ("${CMAKE_HOST_SYSTEM_PROCESSOR}" STREQUAL
+                                    "arm64"))
+    set(CMAKE_OSX_ARCHITECTURES
+        "arm64"
+        CACHE STRING "" FORCE)
+    set(CMAKE_CROSSCOMPILING
+        "TRUE"
+        CACHE STRING "" FORCE)
+  endif()
+endif()
+
 message(STATUS "")
 message(STATUS "== QBDI Target ==")
-message(STATUS "QBDI Platform: ${QBDI_PLATFORM}")
-message(STATUS "QBDI ARCH:     ${QBDI_ARCH}")
-message(STATUS "LLVM ARCH:     ${QBDI_LLVM_ARCH}")
-message(STATUS "Version:       ${QBDI_VERSION_FULL_STRING}")
+message(STATUS "QBDI Platform:      ${QBDI_PLATFORM}")
+message(STATUS "QBDI ARCH:          ${QBDI_ARCH}")
+message(STATUS "LLVM ARCH:          ${QBDI_LLVM_ARCH}")
+message(STATUS "Version:            ${QBDI_VERSION_FULL_STRING}")
 message(STATUS "")
