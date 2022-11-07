@@ -39,13 +39,6 @@
 #include "Utility/LogSys.h"
 
 namespace QBDI {
-class Patch;
-
-template <typename T>
-RelocatableInst::UniquePtrVec
-PureEval<T>::generate(const Patch &patch, TempManager &temp_manager) const {
-  return this->genReloc(*patch.llvmcpu);
-}
 
 // Generic PatchGenerator that must be implemented by each target
 

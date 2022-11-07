@@ -39,6 +39,19 @@ PureEval<T>::generate(const Patch &patch, TempManager &temp_manager) const {
   return this->genReloc(*patch.llvmcpu);
 }
 
+template RelocatableInst::UniquePtrVec
+PureEval<AutoClone<PatchGenerator, PatchGenFlags>>::generate(
+    const Patch &patch, TempManager &temp_manager) const;
+template RelocatableInst::UniquePtrVec
+PureEval<AutoClone<PatchGenerator, LoadReg>>::generate(
+    const Patch &patch, TempManager &temp_manager) const;
+template RelocatableInst::UniquePtrVec
+PureEval<AutoClone<PatchGenerator, SaveReg>>::generate(
+    const Patch &patch, TempManager &temp_manager) const;
+template RelocatableInst::UniquePtrVec
+PureEval<AutoClone<PatchGenerator, JmpEpilogue>>::generate(
+    const Patch &patch, TempManager &temp_manager) const;
+
 // ModifyInstruction
 // =================
 

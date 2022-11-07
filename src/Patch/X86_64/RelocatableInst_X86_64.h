@@ -59,11 +59,11 @@ public:
 };
 
 class SetRegtoPCRel : public AutoClone<RelocatableInst, SetRegtoPCRel> {
-  unsigned reg;
+  Reg reg;
   rword offset;
 
 public:
-  SetRegtoPCRel(unsigned reg, rword offset)
+  SetRegtoPCRel(Reg reg, rword offset)
       : AutoClone<RelocatableInst, SetRegtoPCRel>(), reg(reg), offset(offset) {}
 
   // set reg to currentPC + offset

@@ -57,7 +57,7 @@ TempManager::TempManager(Patch &patch)
       lockNewTmpReg(true) {}
 
 bool TempManager::usedRegister(Reg reg) const {
-  return (usedRegisterBitField & (1 << reg.getID())) != 0;
+  return (usedRegisterBitField & (((rword)1) << reg.getID())) != 0;
 }
 
 bool TempManager::isAllocatedId(unsigned int id) const {
@@ -81,7 +81,7 @@ void TempManager::associatedReg(unsigned int id, Reg reg) {
 
   temps.emplace_back(id, reg);
   patch.tempReg.insert(reg);
-  usedRegisterBitField |= (1 << reg.getID());
+  usedRegisterBitField |= (((rword)1) << reg.getID());
 }
 
 Reg TempManager::getRegForTemp(unsigned int id) {
