@@ -3030,7 +3030,7 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest_Thumb-ldrexd") {
 
   const char source[] = "ldrexd r1, r2, [r0]\n";
 
-  QBDI::rword v[] = {0x13eb7e46, 0x4a56ebc9};
+  alignas(16) QBDI::rword v[] = {0x13eb7e46, 0x4a56ebc9};
   ExpectedMemoryAccesses expectedPre = {{
       {(QBDI::rword)&v[0], v[0], 4, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
       {(QBDI::rword)&v[1], v[1], 4, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
@@ -3230,8 +3230,8 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest_Thumb-strexd1") {
 
   const char source[] = "strexd r10, r1, r2, [r0]\n";
 
-  QBDI::rword v[] = {0x7112a12e, 0xb0e356d9};
-  QBDI::rword v1[] = {0, 0};
+  alignas(16) QBDI::rword v[] = {0x7112a12e, 0xb0e356d9};
+  alignas(16) QBDI::rword v1[] = {0, 0};
   ExpectedMemoryAccesses expectedPost = {{
       {(QBDI::rword)&v1[0], 0, 4, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
       {(QBDI::rword)&v1[1], 0, 4, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
@@ -3261,8 +3261,8 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest_Thumb-strexd2") {
 
   const char source[] = "strexd r10, r1, r2, [r0]\n";
 
-  QBDI::rword v[] = {0x7112a12e, 0xb0e356d9};
-  QBDI::rword v1[] = {0, 0};
+  alignas(16) QBDI::rword v[] = {0x7112a12e, 0xb0e356d9};
+  alignas(16) QBDI::rword v1[] = {0, 0};
   ExpectedMemoryAccesses expectedPost = {{
       {(QBDI::rword)&v1[0], v[0], 4, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
       {(QBDI::rword)&v1[1], v[1], 4, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
