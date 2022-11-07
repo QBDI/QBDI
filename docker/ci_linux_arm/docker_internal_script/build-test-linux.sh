@@ -33,7 +33,7 @@ clean_env() {
 clean_env \
     cmake -G Ninja \
       -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
-      -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+      -DCMAKE_BUILD_TYPE=Release \
       -DQBDI_LLVM_TABLEN_TOOLSCHAIN="${EMPTY_TOOLCHAINS}" \
       -DQBDI_PLATFORM="${QBDI_PLATFORM}" \
       -DQBDI_ARCH="${QBDI_ARCH}" \
