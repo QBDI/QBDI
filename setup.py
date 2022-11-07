@@ -45,6 +45,12 @@ def detect_QBDI_platform():
             arch = "X86"
     elif platform.machine() in ['aarch64', 'arm64', 'aarch64_be', 'armv8b', 'armv8l']:
         arch = "AARCH64"
+    elif platform.machine() in ['arm'] or \
+         platform.machine().startswith('armv4') or \
+         platform.machine().startswith('armv5') or \
+         platform.machine().startswith('armv6') or \
+         platform.machine().startswith('armv7'):
+        arch = "ARM"
 
     if os and arch:
         return (os, arch)
@@ -103,39 +109,7 @@ class CMakeBuild(build_ext):
         if not os.path.isdir(extdir):
             raise RuntimeError("Compile Error : No library available.")
 
-with open("README-pypi.rst", "r") as f:
-    long_description = f.read()
-
 setup(
-    name='PyQBDI',
-    version='0.9.1b0',
-    author='Nicolas Surbayrole',
-    license = "apache2",
-    license_files = ('LICENSE.txt',),
-    author_email='qbdi@quarkslab.com',
-    description='Python binding for QBDI',
-    long_description=long_description,
-    long_description_content_type="text/x-rst",
-    classifiers=[
-        "Development Status :: 5 - Production/Stable",
-        "License :: OSI Approved :: Apache Software License",
-        "Operating System :: Microsoft :: Windows",
-        "Operating System :: MacOS",
-        "Operating System :: POSIX :: Linux",
-        "Programming Language :: C++",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Topic :: Security",
-        "Topic :: Software Development :: Debuggers",
-    ],
-    python_requires='>=3.8',
-    project_urls={
-        'Documentation': 'https://qbdi.readthedocs.io/',
-        'Source': 'https://github.com/QBDI/QBDI',
-        'Homepage': 'https://qbdi.quarkslab.com/',
-    },
     ext_modules=[CMakeExtension('pyqbdi')],
-    cmdclass=dict(build_ext=CMakeBuild),
-    zip_safe=False,
+    cmdclass={ "build_ext" : CMakeBuild },
 )
