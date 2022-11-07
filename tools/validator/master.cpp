@@ -28,8 +28,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-void start_master(Process *debugged, pid_t instrumented, int ctrlfd,
-                  int datafd, int stdoutDbg, int stdoutDbi) {
+void start_master(Process *debugged, pid_t instrumented, int ctrlfd, int datafd,
+                  int stdoutDbg, int stdoutDbi) {
   const size_t BUFFER_SIZE = 128;
   char mnemonic[BUFFER_SIZE], disassembly[BUFFER_SIZE];
   char *env = nullptr;

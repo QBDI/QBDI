@@ -53,8 +53,8 @@ int QBDI::qbdipreload_on_main(int argc, char **argv) {
   } else {
     LinuxProcess *debuggedProcess = nullptr;
     debuggedProcess = new LinuxProcess(debugged);
-    start_master(debuggedProcess, instrumented, ctrlfd, datafd,
-                 outputDBGfd, outputDBIfd);
+    start_master(debuggedProcess, instrumented, ctrlfd, datafd, outputDBGfd,
+                 outputDBIfd);
     delete debuggedProcess;
     return QBDIPRELOAD_NO_ERROR;
   }
@@ -129,8 +129,8 @@ int QBDI::qbdipreload_on_start(void *main) {
   debugged = fork();
   if (debugged == 0) {
     // we want to keep the same number of filedescriptor
-    if (dup2(dummyfds[0], ctrlfds[0]) == -1 or dup2(dummyfds[1], datafds[1]) == -1 or
-        dup2(outputDBGfds[1], 1) == -1) {
+    if (dup2(dummyfds[0], ctrlfds[0]) == -1 or
+        dup2(dummyfds[1], datafds[1]) == -1 or dup2(outputDBGfds[1], 1) == -1) {
       perror("debugged: fail to dup2");
     }
     close(ctrlfds[1]);

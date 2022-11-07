@@ -153,14 +153,14 @@ public:
         instrumented(instrumented), verbosity(verbosity), execID(0),
         accessError(0), threadStop(false), stdoutDbg(stdoutDbg),
         stdoutDbi(stdoutDbi) {
-      startCompareThread();
+    startCompareThread();
   }
 
-  ValidatorEngine(const ValidatorEngine& o) = delete;
-  ValidatorEngine(ValidatorEngine&& o) = delete;
+  ValidatorEngine(const ValidatorEngine &o) = delete;
+  ValidatorEngine(ValidatorEngine &&o) = delete;
 
-  ValidatorEngine& operator=(const ValidatorEngine& other) = delete;
-  ValidatorEngine& operator=(ValidatorEngine&& other) = delete;
+  ValidatorEngine &operator=(const ValidatorEngine &other) = delete;
+  ValidatorEngine &operator=(ValidatorEngine &&other) = delete;
 
   void signalNewState(QBDI::rword address, const char *mnemonic,
                       const char *disassembly, bool skipDebugger,

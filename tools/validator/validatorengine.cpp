@@ -383,7 +383,7 @@ void ValidatorEngine::logCascades() {
     fprintf(stderr, "Encountered %zu memoryAccess unique errors\n",
             memAccessMnemonicSet.size());
     fprintf(stderr, "SizeOutput: %zu %zu\n", outputDbg.size(),
-                                               outputDbi.size());
+            outputDbi.size());
     if (outputDbg.size() == outputDbi.size() and
         memcmp(outputDbg.data(), outputDbi.data(), outputDbi.size()) == 0) {
       fprintf(stderr, "SameOutput: True\n");
@@ -547,10 +547,9 @@ void ValidatorEngine::logCoverage(const char *filename) {
   fclose(coverageFile);
 }
 
-
 void ValidatorEngine::startCompareThread() {
   threadStop = false;
-  //outputCMPThread = std::thread(&ValidatorEngine::outputCompareThread, this);
+  outputCMPThread = std::thread(&ValidatorEngine::outputCompareThread, this);
 }
 
 void ValidatorEngine::outputCompareThread() {
@@ -597,6 +596,5 @@ void ValidatorEngine::outputCompareThread() {
 
 void ValidatorEngine::syncCompareThread() {
   threadStop = true;
-  //outputCMPThread.join();
-  outputCompareThread();
+  outputCMPThread.join();
 }

@@ -60,8 +60,10 @@ kern_return_t onBreakpoint(mach_port_t exception_port, mach_port_t thread,
       exit(VALIDATOR_ERR_UNEXPECTED_API_FAILURE);
     }
 
+#if defined(QBDI_ARCH_X86) || defined(QBDI_ARCH_X86_64)
     // x86 breakpoint quirk
     threadState.THREAD_STATE_PC -= 1;
+#endif
 
     // Setting thread state
     count = THREAD_STATE_COUNT;

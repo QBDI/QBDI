@@ -44,8 +44,8 @@ int QBDI::qbdipreload_on_main(int argc, char **argv) {
 
   if (ROLE == Role::Master) {
     DarwinProcess *debuggedProcess = new DarwinProcess(DEBUGGED);
-    start_master(debuggedProcess, INSTRUMENTED, ctrlfd, datafd,
-                 outputDBGfd, outputDBIfd);
+    start_master(debuggedProcess, INSTRUMENTED, ctrlfd, datafd, outputDBGfd,
+                 outputDBIfd);
     delete debuggedProcess;
   } else if (ROLE == Role::Instrumented) {
     QBDI::VM *vm = new QBDI::VM();
@@ -164,8 +164,8 @@ int QBDI::qbdipreload_on_start(void *main) {
   if (DEBUGGED == 0) {
 
     ROLE = Role::Debugged;
-    if (dup2(dummyfds[0], ctrlfds[0]) == -1 or dup2(dummyfds[1], datafds[1]) == -1 or
-        dup2(outputDBGfds[1], 1) == -1) {
+    if (dup2(dummyfds[0], ctrlfds[0]) == -1 or
+        dup2(dummyfds[1], datafds[1]) == -1 or dup2(outputDBGfds[1], 1) == -1) {
       perror("debugged: fail to dup2");
     }
     close(ctrlfds[1]);
