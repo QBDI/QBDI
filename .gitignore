@@ -15,6 +15,7 @@ docs/qbdipreload.doxygen
 qbdi-deps.tar.gz
 qbdi.tar.gz
 package/QBDI-*
+package/package-*
 
 third-party
 
