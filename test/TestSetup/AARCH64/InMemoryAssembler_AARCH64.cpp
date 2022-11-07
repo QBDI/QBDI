@@ -45,7 +45,7 @@ void InMemoryObject::perform_reloc(llvm::object::ObjectFile *object,
     // only relocated the text section, our bytes code
     if (not relocatedSection->isText()) {
       QBDI_ABORT("Found unexpected relocation sections for {}",
-                 relocatedSection->getName().get());
+                 relocatedSection->getName()->str());
       continue;
     }
 
