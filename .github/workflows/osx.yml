@@ -1,13 +1,22 @@
 name: Tests and Package OSX
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    branches:
+      - master
+      - dev-next
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: macos-10.15
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        QBDI_ARCH: ['X86_64', 'AARCH64']
+      fail-fast: false
     env:
       QBDI_PLATFORM: 'osx'
-      QBDI_ARCH: 'X86_64'
       MACOSX_DEPLOYMENT_TARGET: '10.14'
     steps:
       - name: Install system dependencies
@@ -15,22 +24,22 @@ jobs:
           brew install cmake ninja ccache
           python3 -m pip install --upgrade pip setuptools wheel
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Cache ccache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-ccache
         with:
           path: |
             ~/.ccache
-          key: ccache-osx-X86_64-${{ hashFiles('.github/workflows/ccache.conf') }}-${{ github.run_number }}
+          key: ccache-osx-${{ matrix.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}-${{ github.run_number }}
           restore-keys: |
-            ccache-osx-X86_64-${{ hashFiles('.github/workflows/ccache.conf') }}-
+            ccache-osx-${{ matrix.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}-
       - if: steps.cache-ccache.outputs.cache-hit != 'true'
         run: |
           mkdir -p ~/.ccache
           cp .github/workflows/ccache.conf ~/.ccache/ccache.conf
       - name: Cache third-party
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             third-party
@@ -41,9 +50,8 @@ jobs:
         run: |
           cmake -G Ninja \
                 -DCMAKE_BUILD_TYPE=Release \
-                -DCMAKE_CROSSCOMPILING=FALSE \
-                -DQBDI_PLATFORM=${QBDI_PLATFORM} \
-                -DQBDI_ARCH=${QBDI_ARCH} \
+                -DQBDI_PLATFORM=${{ env.QBDI_PLATFORM }} \
+                -DQBDI_ARCH=${{ matrix.QBDI_ARCH }} \
                 -DQBDI_TOOLS_VALIDATOR=ON \
                 -DQBDI_EXAMPLES=ON \
                 ..
@@ -51,11 +59,12 @@ jobs:
           cpack
       - name: test QBDI
         working-directory: ./build/test
+        if: matrix.QBDI_ARCH == 'X86_64'
         run: |
           ./QBDITest
       - name: Export package
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
-          name: package OSX X86_64
+          name: package OSX ${{ matrix.QBDI_ARCH }}
           path: build/QBDI-*.pkg
 

@@ -4,12 +4,12 @@ on: [push, pull_request]
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
-      CLANG_FORMAT_VERSION: 11
+      CLANG_FORMAT_VERSION: 14
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Install system dependencies
         run: |
           sudo apt install -y --no-install-recommends clang-format-${{ env.CLANG_FORMAT_VERSION }}

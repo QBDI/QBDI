@@ -9,27 +9,28 @@ on:
 
 jobs:
   build-pyqbdi:
-    runs-on: macos-10.15
+    runs-on: macos-latest
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10']
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+      fail-fast: false
     env:
       QBDI_PLATFORM: 'osx'
       QBDI_ARCH: 'X86_64'
       MACOSX_DEPLOYMENT_TARGET: '10.14'
     steps:
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install system dependencies
         run: |
           brew install cmake ninja ccache
-          python3 -m pip install --upgrade pip setuptools wheel
+          python3 -m pip install --upgrade pip setuptools wheel build
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Cache ccache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-ccache-python
         with:
           path: |
@@ -43,7 +44,7 @@ jobs:
           mkdir -p ~/.ccache
           cp .github/workflows/ccache.conf ~/.ccache/ccache.conf
       - name: Cache third-party
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             third-party
@@ -52,9 +53,9 @@ jobs:
       - name: Build PyQBDI ${{ matrix.python-version }}
         run: |
           python3 --version
-          python3 setup.py bdist_wheel
+          python3 -m build -w
       - name: Export package
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: PyQBDI OSX X86_64 ${{ matrix.python-version }}
           path: dist/*
