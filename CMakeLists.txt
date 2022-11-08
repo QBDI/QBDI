@@ -405,134 +405,137 @@ install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include-static/QBDI"
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI.h"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
-# Configure install
-if(UNIX AND NOT (QBDI_ARCH_ARM AND (QBDI_PLATFORM_IOS OR QBDI_PLATFORM_ANDROID)
-                ))
-  set(FULL_PACKAGE true)
-else()
-  set(FULL_PACKAGE false)
-endif()
+if(QBDI_INSTALL)
+  # Configure install
+  if(UNIX AND NOT (QBDI_ARCH_ARM AND (QBDI_PLATFORM_IOS OR QBDI_PLATFORM_ANDROID
+                                     )))
+    set(FULL_PACKAGE true)
+  else()
+    set(FULL_PACKAGE false)
+  endif()
 
-if(FULL_PACKAGE)
-  #string(REPLACE ";" " " LLVM_LIBS_STR "${LLVM_LIBS}")
-  #configure_file("${CMAKE_CURRENT_SOURCE_DIR}/package/qbdi.pc.in"
-  #               "${CMAKE_CURRENT_BINARY_DIR}/package/qbdi.pc" @ONLY)
-  #install(FILES "${CMAKE_CURRENT_BINARY_DIR}/package/qbdi.pc"
-  #        DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig/")
+  if(FULL_PACKAGE)
+    #string(REPLACE ";" " " LLVM_LIBS_STR "${LLVM_LIBS}")
+    #configure_file("${CMAKE_CURRENT_SOURCE_DIR}/package/qbdi.pc.in"
+    #               "${CMAKE_CURRENT_BINARY_DIR}/package/qbdi.pc" @ONLY)
+    #install(FILES "${CMAKE_CURRENT_BINARY_DIR}/package/qbdi.pc"
+    #        DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig/")
 
-  set(RESOURCES_PREFIX "${CMAKE_INSTALL_DATADIR}/qbdi${QBDI_ARCH}")
+    set(RESOURCES_PREFIX "${CMAKE_INSTALL_DATADIR}/qbdi${QBDI_ARCH}")
 
-  install(
-    FILES "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt"
-    DESTINATION "${RESOURCES_PREFIX}"
-    COMPONENT QBDI)
+    install(
+      FILES "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt"
+      DESTINATION "${RESOURCES_PREFIX}"
+      COMPONENT QBDI)
 
-  install(
-    EXPORT QBDI_targets
-    FILE QBDIConfig.cmake
-    NAMESPACE QBDI::
-    DESTINATION ${RESOURCES_PREFIX}/cmake)
+    install(
+      EXPORT QBDI_targets
+      FILE QBDIConfig.cmake
+      NAMESPACE QBDI::
+      DESTINATION ${RESOURCES_PREFIX}/cmake)
 
-  install(
-    EXPORT QBDI_targets
-    FILE QBDI${QBDI_ARCH}Config.cmake
-    NAMESPACE QBDI::${QBDI_ARCH}::
-    DESTINATION ${RESOURCES_PREFIX}/cmake)
+    install(
+      EXPORT QBDI_targets
+      FILE QBDI${QBDI_ARCH}Config.cmake
+      NAMESPACE QBDI::${QBDI_ARCH}::
+      DESTINATION ${RESOURCES_PREFIX}/cmake)
 
-  # QBDI template
-  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/package/qbdi-template.in"
-                 "${CMAKE_CURRENT_BINARY_DIR}/package/qbdi-template")
-  configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/templates/qbdi_template/CMakeLists.txt.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/templates/qbdi_template/CMakeLists.txt" @ONLY)
-  install(
-    DIRECTORY templates/qbdi_template
-    DESTINATION "${RESOURCES_PREFIX}"
-    COMPONENT QBDITemplate
-    PATTERN "CMakeLists.txt.in" EXCLUDE)
-  install(
-    FILES "${CMAKE_CURRENT_BINARY_DIR}/templates/qbdi_template/CMakeLists.txt"
-    DESTINATION "${RESOURCES_PREFIX}/qbdi_template")
-  install(
-    PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/package/qbdi-template"
-    DESTINATION "${CMAKE_INSTALL_BINDIR}"
-    COMPONENT QBDITemplate
-    RENAME "qbdi-template-${QBDI_ARCH}")
-
-  set(PRELOAD_RESOURCES_PREFIX
-      "${CMAKE_INSTALL_DATADIR}/qbdipreload${QBDI_ARCH}")
-  # QBDI preload template
-  if(QBDI_TOOLS_QBDIPRELOAD)
+    # QBDI template
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/package/qbdi-template.in"
+                   "${CMAKE_CURRENT_BINARY_DIR}/package/qbdi-template")
     configure_file(
-      "${CMAKE_CURRENT_SOURCE_DIR}/package/qbdi-preload-template.in"
-      "${CMAKE_CURRENT_BINARY_DIR}/package/qbdi-preload-template")
-    configure_file(
-      "${CMAKE_CURRENT_SOURCE_DIR}/templates/qbdi_preload_template/CMakeLists.txt.in"
-      "${CMAKE_CURRENT_BINARY_DIR}/templates/qbdi_preload_template/CMakeLists.txt"
+      "${CMAKE_CURRENT_SOURCE_DIR}/templates/qbdi_template/CMakeLists.txt.in"
+      "${CMAKE_CURRENT_BINARY_DIR}/templates/qbdi_template/CMakeLists.txt"
       @ONLY)
     install(
-      DIRECTORY templates/qbdi_preload_template
-      DESTINATION "${PRELOAD_RESOURCES_PREFIX}"
+      DIRECTORY templates/qbdi_template
+      DESTINATION "${RESOURCES_PREFIX}"
       COMPONENT QBDITemplate
       PATTERN "CMakeLists.txt.in" EXCLUDE)
     install(
-      FILES
-        "${CMAKE_CURRENT_BINARY_DIR}/templates/qbdi_preload_template/CMakeLists.txt"
-      DESTINATION "${PRELOAD_RESOURCES_PREFIX}/qbdi_preload_template")
+      FILES "${CMAKE_CURRENT_BINARY_DIR}/templates/qbdi_template/CMakeLists.txt"
+      DESTINATION "${RESOURCES_PREFIX}/qbdi_template")
     install(
-      PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/package/qbdi-preload-template"
+      PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/package/qbdi-template"
       DESTINATION "${CMAKE_INSTALL_BINDIR}"
       COMPONENT QBDITemplate
-      RENAME "qbdi-preload-template-${QBDI_ARCH}")
-  endif()
+      RENAME "qbdi-template-${QBDI_ARCH}")
 
-  # Frida template
-  if(QBDI_TOOLS_FRIDAQBDI)
-    configure_file(package/qbdi-frida-template.in package/qbdi-frida-template)
+    set(PRELOAD_RESOURCES_PREFIX
+        "${CMAKE_INSTALL_DATADIR}/qbdipreload${QBDI_ARCH}")
+    # QBDI preload template
+    if(QBDI_TOOLS_QBDIPRELOAD)
+      configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/package/qbdi-preload-template.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/package/qbdi-preload-template")
+      configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/templates/qbdi_preload_template/CMakeLists.txt.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/templates/qbdi_preload_template/CMakeLists.txt"
+        @ONLY)
+      install(
+        DIRECTORY templates/qbdi_preload_template
+        DESTINATION "${PRELOAD_RESOURCES_PREFIX}"
+        COMPONENT QBDITemplate
+        PATTERN "CMakeLists.txt.in" EXCLUDE)
+      install(
+        FILES
+          "${CMAKE_CURRENT_BINARY_DIR}/templates/qbdi_preload_template/CMakeLists.txt"
+        DESTINATION "${PRELOAD_RESOURCES_PREFIX}/qbdi_preload_template")
+      install(
+        PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/package/qbdi-preload-template"
+        DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        COMPONENT QBDITemplate
+        RENAME "qbdi-preload-template-${QBDI_ARCH}")
+    endif()
+
+    # Frida template
+    if(QBDI_TOOLS_FRIDAQBDI)
+      configure_file(package/qbdi-frida-template.in package/qbdi-frida-template)
+      install(
+        DIRECTORY templates/qbdi_frida_template
+        DESTINATION "${RESOURCES_PREFIX}"
+        COMPONENT QBDIFridaTemplate)
+      install(
+        PROGRAMS ${CMAKE_BINARY_DIR}/package/qbdi-frida-template
+        DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        COMPONENT QBDIFridaTemplate
+        RENAME "qbdi-frida-template-${QBDI_ARCH}")
+      install(FILES tools/frida-qbdi.js DESTINATION "${RESOURCES_PREFIX}")
+    endif()
+
+  else()
     install(
-      DIRECTORY templates/qbdi_frida_template
-      DESTINATION "${RESOURCES_PREFIX}"
-      COMPONENT QBDIFridaTemplate)
+      EXPORT QBDI_targets
+      FILE QBDIConfig.cmake
+      NAMESPACE QBDI::
+      DESTINATION cmake)
+
     install(
-      PROGRAMS ${CMAKE_BINARY_DIR}/package/qbdi-frida-template
-      DESTINATION "${CMAKE_INSTALL_BINDIR}"
-      COMPONENT QBDIFridaTemplate
-      RENAME "qbdi-frida-template-${QBDI_ARCH}")
-    install(FILES tools/frida-qbdi.js DESTINATION "${RESOURCES_PREFIX}")
+      EXPORT QBDI_targets
+      FILE QBDI${QBDI_ARCH}Config.cmake
+      NAMESPACE QBDI::${QBDI_ARCH}::
+      DESTINATION cmake)
+
+    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt" DESTINATION .)
+
+    install(DIRECTORY templates/qbdi_template/
+            DESTINATION templates/qbdi_template)
+
+    if(QBDI_TOOLS_QBDIPRELOAD)
+      install(DIRECTORY templates/qbdi_preload_template
+              DESTINATION templates/qbdi_preload_template)
+    endif()
+
+    if(QBDI_TOOLS_FRIDAQBDI)
+      install(DIRECTORY templates/qbdi_frida_template
+              DESTINATION templates/qbdi_frida_template)
+      install(FILES tools/frida-qbdi.js DESTINATION .)
+    endif()
+
+    install(FILES LICENSE.txt package/Readme.txt DESTINATION .)
+
+    set(PRELOAD_RESOURCES_PREFIX qbdipreload)
   endif()
-
-else()
-  install(
-    EXPORT QBDI_targets
-    FILE QBDIConfig.cmake
-    NAMESPACE QBDI::
-    DESTINATION cmake)
-
-  install(
-    EXPORT QBDI_targets
-    FILE QBDI${QBDI_ARCH}Config.cmake
-    NAMESPACE QBDI::${QBDI_ARCH}::
-    DESTINATION cmake)
-
-  install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt" DESTINATION .)
-
-  install(DIRECTORY templates/qbdi_template/
-          DESTINATION templates/qbdi_template)
-
-  if(QBDI_TOOLS_QBDIPRELOAD)
-    install(DIRECTORY templates/qbdi_preload_template
-            DESTINATION templates/qbdi_preload_template)
-  endif()
-
-  if(QBDI_TOOLS_FRIDAQBDI)
-    install(DIRECTORY templates/qbdi_frida_template
-            DESTINATION templates/qbdi_frida_template)
-    install(FILES tools/frida-qbdi.js DESTINATION .)
-  endif()
-
-  install(FILES LICENSE.txt package/Readme.txt DESTINATION .)
-
-  set(PRELOAD_RESOURCES_PREFIX qbdipreload)
 endif()
 
 # Configure iOS code signature
@@ -571,9 +574,11 @@ if(QBDI_EXAMPLES)
 endif()
 
 # Add documentation
-
-add_subdirectory(docs)
+if(QBDI_INCLUDE_DOCS)
+  add_subdirectory(docs)
+endif()
 
 # Add packaging
-
-add_subdirectory(package)
+if(QBDI_INCLUDE_PACKAGE)
+  add_subdirectory(package)
+endif()

@@ -64,7 +64,6 @@ class CMakeExtension(Extension):
         Extension.__init__(self, name, sources=[])
         self.sourcedir = os.path.abspath(sourcedir)
 
-
 class CMakeBuild(build_ext):
 
     @staticmethod
@@ -79,24 +78,25 @@ class CMakeBuild(build_ext):
                       '-DCMAKE_BUILD_TYPE=Release',
                       '-DQBDI_PLATFORM=' + detected_platform,
                       '-DQBDI_ARCH=' + detected_arch,
-                      '-DQBDI_TOOLS_PYQBDI=On',
-                      '-DQBDI_TEST=Off',
-                      '-DQBDI_BENCHMARK=Off',
-                      '-DQBDI_SHARED_LIBRARY=Off',
+                      '-DQBDI_BENCHMARK=OFF',
+                      '-DQBDI_INSTALL=OFF',
+                      '-DQBDI_INCLUDE_DOCS=OFF',
+                      '-DQBDI_INCLUDE_PACKAGE=OFF',
+                      '-DQBDI_SHARED_LIBRARY=OFF',
+                      '-DQBDI_TEST=OFF',
+                      '-DQBDI_TOOLS_FRIDAQBDI=OFF',
+                      '-DQBDI_TOOLS_PYQBDI=ON',
                      ]
         build_args = ['--config', 'Release', '--']
 
         if platform.system() == "Windows":
             cmake_args += ["-G", "Ninja"]
         else:
-            cmake_args += ['-DQBDI_TOOLS_QBDIPRELOAD=On']
+            cmake_args += ['-DQBDI_TOOLS_QBDIPRELOAD=ON']
             if self.has_ninja():
                 cmake_args += ["-G", "Ninja"]
             else:
                 build_args.append('-j4')
-
-        if 'QBDI_LLVM_PREFIX' in os.environ:
-            cmake_args.append('-DQBDI_LLVM_PREFIX={}'.format(os.environ.get('QBDI_LLVM_PREFIX')))
 
         env = os.environ.copy()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
@@ -111,5 +111,7 @@ class CMakeBuild(build_ext):
 
 setup(
     ext_modules=[CMakeExtension('pyqbdi')],
-    cmdclass={ "build_ext" : CMakeBuild },
+    cmdclass={
+        "build_ext": CMakeBuild,
+    },
 )
