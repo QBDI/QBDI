@@ -1,5 +1,5 @@
 // QBDI
-import { VM, InstPosition, VMAction } from "../frida-qbdi.js";
+import { VM, InstPosition, VMAction } from "./frida-qbdi.js";
 
 // Initialize QBDI
 var vm = new VM();

@@ -765,9 +765,6 @@ if (Process.arch === 'x64') {
    */
   Options.OPT_ENABLE_FS_GS = 1<<25;
 } else if (Process.arch === 'ia32') {
-  /**
-   * Used the AT&T syntax for instruction disassembly (for X86 and X86_64)
-   */
   Options.OPT_ATT_SYNTAX = 1<<24;
 } else if (Process.arch === 'arm64') {
   /**
@@ -783,9 +780,6 @@ if (Process.arch === 'x64') {
    */
   Options.OPT_ENABLE_BTI = 1<<26;
 } else if (Process.arch === 'arm') {
-  /**
-   * Disable the emulation of the local monitor by QBDI
-   */
   Options.OPT_DISABLE_LOCAL_MONITOR = 1<<24;
   /**
    * Disable the used of D16-D31 register

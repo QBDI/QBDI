@@ -20,7 +20,7 @@ QBDI class
 
 With Frida API, the QBDI object is the equivalent of the VM object in C++ API.
 
-.. js:autoclass:: QBDI
+.. js:autoclass:: VM
    :members:
    :exclude-members: newInstrRuleCallback, newInstCallback, newVMCallback, addMnemonicCB,
                      addCodeCB, addCodeAddrCB, addCodeRangeCB, addVMEventCB, addMemAccessCB, addMemAddrCB, addMemRangeCB,
@@ -34,22 +34,22 @@ With Frida API, the QBDI object is the equivalent of the VM object in C++ API.
 Options
 +++++++
 
-.. js:autofunction:: QBDI#getOptions
+.. js:autofunction:: VM#getOptions
 
-.. js:autofunction:: QBDI#setOptions
+.. js:autofunction:: VM#setOptions
 
 .. _state-management-js:
 
 State management
 ++++++++++++++++
 
-.. js:autofunction:: QBDI#getGPRState
+.. js:autofunction:: VM#getGPRState
 
-.. js:autofunction:: QBDI#getFPRState
+.. js:autofunction:: VM#getFPRState
 
-.. js:autofunction:: QBDI#setGPRState
+.. js:autofunction:: VM#setGPRState
 
-.. js:autofunction:: QBDI#setFPRState
+.. js:autofunction:: VM#setFPRState
 
 .. _instrumentation-range-js:
 
@@ -59,24 +59,24 @@ Instrumentation range
 Addition
 ^^^^^^^^
 
-.. js:autofunction:: QBDI#addInstrumentedRange
+.. js:autofunction:: VM#addInstrumentedRange
 
-.. js:autofunction:: QBDI#addInstrumentedModule
+.. js:autofunction:: VM#addInstrumentedModule
 
-.. js:autofunction:: QBDI#addInstrumentedModuleFromAddr
+.. js:autofunction:: VM#addInstrumentedModuleFromAddr
 
-.. js:autofunction:: QBDI#instrumentAllExecutableMaps
+.. js:autofunction:: VM#instrumentAllExecutableMaps
 
 Removal
 ^^^^^^^
 
-.. js:autofunction:: QBDI#removeInstrumentedRange
+.. js:autofunction:: VM#removeInstrumentedRange
 
-.. js:autofunction:: QBDI#removeInstrumentedModule
+.. js:autofunction:: VM#removeInstrumentedModule
 
-.. js:autofunction:: QBDI#removeInstrumentedModuleFromAddr
+.. js:autofunction:: VM#removeInstrumentedModuleFromAddr
 
-.. js:autofunction:: QBDI#removeAllInstrumentedRanges
+.. js:autofunction:: VM#removeAllInstrumentedRanges
 
 Callback management
 +++++++++++++++++++
@@ -84,58 +84,58 @@ Callback management
 Creation
 ^^^^^^^^
 
-.. js:autofunction:: QBDI#newInstCallback
+.. js:autofunction:: VM#newInstCallback
 
-.. js:autofunction:: QBDI#newInstrRuleCallback
+.. js:autofunction:: VM#newInstrRuleCallback
 
-.. js:autofunction:: QBDI#newVMCallback
+.. js:autofunction:: VM#newVMCallback
 
 .. _instcallback-management-js:
 
 InstCallback
 ^^^^^^^^^^^^
 
-.. js:autofunction:: QBDI#addCodeCB
+.. js:autofunction:: VM#addCodeCB
 
-.. js:autofunction:: QBDI#addCodeAddrCB
+.. js:autofunction:: VM#addCodeAddrCB
 
-.. js:autofunction:: QBDI#addCodeRangeCB
+.. js:autofunction:: VM#addCodeRangeCB
 
-.. js:autofunction:: QBDI#addMnemonicCB
+.. js:autofunction:: VM#addMnemonicCB
 
 .. _vmcallback-management-js:
 
 VMEvent
 ^^^^^^^
 
-.. js:autofunction:: QBDI#addVMEventCB
+.. js:autofunction:: VM#addVMEventCB
 
 .. _memorycallback-management-js:
 
 MemoryAccess
 ^^^^^^^^^^^^
 
-.. js:autofunction:: QBDI#addMemAccessCB
+.. js:autofunction:: VM#addMemAccessCB
 
-.. js:autofunction:: QBDI#addMemAddrCB
+.. js:autofunction:: VM#addMemAddrCB
 
-.. js:autofunction:: QBDI#addMemRangeCB
+.. js:autofunction:: VM#addMemRangeCB
 
 .. _instrrulecallback-management-js:
 
 InstrRuleCallback
 ^^^^^^^^^^^^^^^^^
 
-.. js:autofunction:: QBDI#addInstrRule
+.. js:autofunction:: VM#addInstrRule
 
-.. js:autofunction:: QBDI#addInstrRuleRange
+.. js:autofunction:: VM#addInstrRuleRange
 
 Removal
 ^^^^^^^
 
-.. js:autofunction:: QBDI#deleteInstrumentation
+.. js:autofunction:: VM#deleteInstrumentation
 
-.. js:autofunction:: QBDI#deleteAllInstrumentations
+.. js:autofunction:: VM#deleteAllInstrumentations
 
 Memory management
 +++++++++++++++++
@@ -143,55 +143,55 @@ Memory management
 Allocation
 ^^^^^^^^^^
 
-.. js:autofunction:: QBDI#alignedAlloc
+.. js:autofunction:: VM#alignedAlloc
 
-.. js:autofunction:: QBDI#allocateVirtualStack
+.. js:autofunction:: VM#allocateVirtualStack
 
-.. js:autofunction:: QBDI#alignedFree
+.. js:autofunction:: VM#alignedFree
 
 
 Exploration
 ^^^^^^^^^^^
 
-.. js:autofunction:: QBDI#getModuleNames
+.. js:autofunction:: VM#getModuleNames
 
 Run
 +++
 
-.. js:autofunction:: QBDI#run
+.. js:autofunction:: VM#run
 
-.. js:autofunction:: QBDI#call
+.. js:autofunction:: VM#call
 
-.. js:autofunction:: QBDI#simulateCall
+.. js:autofunction:: VM#simulateCall
 
 .. _instanalysis-getter-js:
 
 InstAnalysis
 ++++++++++++
 
-.. js:autofunction:: QBDI#getInstAnalysis
+.. js:autofunction:: VM#getInstAnalysis
 
-.. js:autofunction:: QBDI#getCachedInstAnalysis
+.. js:autofunction:: VM#getCachedInstAnalysis
 
 .. _memaccess-getter-js:
 
 MemoryAccess
 ++++++++++++
 
-.. js:autofunction:: QBDI#getInstMemoryAccess
+.. js:autofunction:: VM#getInstMemoryAccess
 
-.. js:autofunction:: QBDI#getBBMemoryAccess
+.. js:autofunction:: VM#getBBMemoryAccess
 
-.. js:autofunction:: QBDI#recordMemoryAccess
+.. js:autofunction:: VM#recordMemoryAccess
 
 Cache management
 ++++++++++++++++
 
-.. js:autofunction:: QBDI#precacheBasicBlock
+.. js:autofunction:: VM#precacheBasicBlock
 
-.. js:autofunction:: QBDI#clearCache
+.. js:autofunction:: VM#clearCache
 
-.. js:autofunction:: QBDI#clearAllCache
+.. js:autofunction:: VM#clearAllCache
 
 .. _register-state-js:
 

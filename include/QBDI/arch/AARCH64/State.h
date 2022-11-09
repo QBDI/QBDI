@@ -44,7 +44,7 @@ typedef enum { AARCH64 = 0, DEFAULT = 0, COUNT } CPUMode;
 typedef uint64_t rword;
 typedef int64_t sword;
 
-// SPHINX_ARM_FPRSTATE_BEGIN
+// SPHINX_AARCH64_FPRSTATE_BEGIN
 /*! ARM Floating Point Register context.
  */
 typedef struct QBDI_ALIGNED(8) {
@@ -91,9 +91,9 @@ typedef struct QBDI_ALIGNED(8) {
   rword fpcr;
   rword fpsr;
 } FPRState;
-// SPHINX_ARM_FPRSTATE_END
+// SPHINX_AARCH64_FPRSTATE_END
 
-// SPHINX_ARM_GPRSTATE_BEGIN
+// SPHINX_AARCH64_GPRSTATE_BEGIN
 /*! ARM General Purpose Register context.
  */
 typedef struct QBDI_ALIGNED(8) {
@@ -144,7 +144,7 @@ typedef struct QBDI_ALIGNED(8) {
   } localMonitor;
 
 } GPRState;
-// SPHINX_ARM_GPRSTATE_END
+// SPHINX_AARCH64_GPRSTATE_END
 
 static const char *const GPR_NAMES[] = {
     "X0",  "X1",   "X2",  "X3",  "X4",  "X5",  "X6",  "X7",  "X8",  "X9",
