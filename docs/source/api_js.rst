@@ -11,7 +11,7 @@ We provide bindings for Frida, most C/C++ APIs are exported and available throug
 Nevertheless, this API slightly differs from the C++ API:
 
 - Every callback must be created as a native function.
-  The callback registration can be done through calling :js:func:`QBDI.newInstCallback`, :js:func:`QBDI.newVMCallback` and :js:func:`QBDI.newInstrRuleCallback`.
+  The callback registration can be done through calling :js:func:`VM.newInstCallback`, :js:func:`VM.newVMCallback` and :js:func:`VM.newInstrRuleCallback`.
 - The *QBDI* class is the equivalent of the *VM* class we have in the C++ API.
 
 
@@ -223,12 +223,12 @@ Callback
 
     This is the prototype of a function callback for:
 
-    - :js:func:`QBDI.addCodeCB`, :js:func:`QBDI.addCodeAddrCB` and :js:func:`QBDI.addCodeRangeCB`
-    - :js:func:`QBDI.addMnemonicCB`
-    - :js:func:`QBDI.addMemAccessCB`, :js:func:`QBDI.addMemAddrCB` and :js:func:`QBDI.addMemRangeCB`
+    - :js:func:`VM.addCodeCB`, :js:func:`VM.addCodeAddrCB` and :js:func:`VM.addCodeRangeCB`
+    - :js:func:`VM.addMnemonicCB`
+    - :js:func:`VM.addMemAccessCB`, :js:func:`VM.addMemAddrCB` and :js:func:`VM.addMemRangeCB`
     - :js:class:`InstrRuleDataCBK`.
 
-    The function must be registered with :js:func:`QBDI.newInstCallback`.
+    The function must be registered with :js:func:`VM.newInstCallback`.
 
     :param QBDI     vm:    The current QBDI object
     :param GPRState gpr:   The current GPRState
@@ -239,8 +239,8 @@ Callback
 
 .. js:function:: VMCallback(vm, vmState, gpr, fpr, data)
 
-    This is the prototype of a function callback for :js:func:`QBDI.addVMEventCB`.
-    The function must be registered with :js:func:`QBDI.newVMCallback`.
+    This is the prototype of a function callback for :js:func:`VM.addVMEventCB`.
+    The function must be registered with :js:func:`VM.newVMCallback`.
 
     :param QBDI     vm:      The current QBDI object
     :param VMState  vmState: A structure containing the current state of the VM.
@@ -252,8 +252,8 @@ Callback
 
 .. js:function:: InstrRuleCallback(vm, ana, data)
 
-    This is the prototype of a function callback for :js:func:`QBDI.addInstrRule` and :js:func:`QBDI.addInstrRuleRange`.
-    The function must be registered with :js:func:`QBDI.newInstrRuleCallback`.
+    This is the prototype of a function callback for :js:func:`VM.addInstrRule` and :js:func:`VM.addInstrRuleRange`.
+    The function must be registered with :js:func:`VM.newInstrRuleCallback`.
 
     :param QBDI         vm:   The current QBDI object
     :param InstAnalysis ana:  The current QBDI object

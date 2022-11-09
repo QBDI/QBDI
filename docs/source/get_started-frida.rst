@@ -54,11 +54,11 @@ If you have a function that takes a buffer or a string as an input, you might ne
     var str = Memory.allocUtf8String("Hello World !");
 
 
-Initialise a QBDI object
-++++++++++++++++++++++++
+Initialise a VM object
+++++++++++++++++++++++
 
 If `frida-qbdi.js` (or a script requiring it) is successfully loaded in Frida,
-a new :js:class:`QBDI` object becomes available.
+a new :js:class:`VM` object becomes available.
 It provides an object oriented access to the framework features.
 
 .. code-block:: javascript
