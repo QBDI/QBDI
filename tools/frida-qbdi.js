@@ -22,13 +22,13 @@
  * $ frida -n Twitter -l frida-qbdi.js
  *
  */
-var QBDI_MAJOR = 0;
-var QBDI_MINOR = 9;
-var QBDI_PATCH = 1;
+export var QBDI_MAJOR = 0;
+export var QBDI_MINOR = 9;
+export var QBDI_PATCH = 1;
 /**
  * Minimum version of QBDI to use Frida bindings
  */
-var QBDI_MINIMUM_VERSION = (QBDI_MAJOR << 16) | (QBDI_MINOR << 8) | QBDI_PATCH;
+export var QBDI_MINIMUM_VERSION = (QBDI_MAJOR << 16) | (QBDI_MINOR << 8) | QBDI_PATCH;
 
 if (typeof Duktape === 'object') {
     // Warn about duktape runtime (except on iOS...)
@@ -199,7 +199,7 @@ var QBDI_LIB_FULLPATH = _qbdibinder.load();
 /**
  * An alias to Frida uint type with the size of general registers (**uint64** or **uint32**)
  */
-var rword = Process.pointerSize === 8 ? 'uint64' : 'uint32';
+export var rword = Process.pointerSize === 8 ? 'uint64' : 'uint32';
 
 Memory.readRword = Process.pointerSize === 8 ? Memory.readU64 : Memory.readU32;
 
@@ -265,7 +265,7 @@ String.prototype.toRword = function() {
  *
  * @return pointer value as padded string (ex: "0x00004242")
  */
-function hexPointer(ptr) {
+export function hexPointer(ptr) {
     return ptr.toString(16).leftPad("0000000000000000", Process.pointerSize * 2);
 }
 
@@ -334,43 +334,48 @@ var QBDI_C = Object.freeze({
 
 // Init some globals
 if (Process.arch === 'x64') {
-    /**
-     * An array holding register names.
-     */
-    var GPR_NAMES = ["RAX","RBX","RCX","RDX","RSI","RDI","R8","R9","R10","R11","R12","R13","R14","R15","RBP","RSP","RIP","EFLAGS","FS","GS"];
-    /**
-     * A constant string representing the register carrying the return value of a function.
-     */
-    var REG_RETURN = "RAX";
-    /**
-     * String of the instruction pointer register.
-     */
-    var REG_PC = "RIP";
-    /**
-     * String of the stack pointer register.
-     */
-    var REG_SP = "RSP";
+    var GPR_NAMES_ = ["RAX","RBX","RCX","RDX","RSI","RDI","R8","R9","R10","R11","R12","R13","R14","R15","RBP","RSP","RIP","EFLAGS","FS","GS"];
+    var REG_RETURN_ = "RAX";
+    var REG_PC_ = "RIP";
+    var REG_SP_ = "RSP";
 } else if (Process.arch === 'arm64') {
-    var GPR_NAMES = ["X0","X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12","X13","X14","X15","X16","X17","X18","X19","X20","X21","X22","X23","X24","X25","X26","X27","X28","FP","LR","SP","NZCV","PC"];
-    var REG_RETURN = "X0";
-    var REG_PC = "PC";
-    var REG_SP = "SP";
+    var GPR_NAMES_ = ["X0","X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12","X13","X14","X15","X16","X17","X18","X19","X20","X21","X22","X23","X24","X25","X26","X27","X28","FP","LR","SP","NZCV","PC"];
+    var REG_RETURN_ = "X0";
+    var REG_PC_ = "PC";
+    var REG_SP_ = "SP";
 } else if (Process.arch === 'arm') {
-    var GPR_NAMES = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R12","FP","SP","LR","PC","CPSR"];
-    var REG_RETURN = "R0";
-    var REG_PC = "PC";
-    var REG_SP = "SP";
+    var GPR_NAMES_ = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R12","FP","SP","LR","PC","CPSR"];
+    var REG_RETURN_ = "R0";
+    var REG_PC_ = "PC";
+    var REG_SP_ = "SP";
 } else if (Process.arch === 'ia32'){
-    var GPR_NAMES = ["EAX","EBX","ECX","EDX","ESI","EDI","EBP","ESP","EIP","EFLAGS"];
-    var REG_RETURN = "EAX";
-    var REG_PC = "EIP";
-    var REG_SP = "ESP";
+    var GPR_NAMES_ = ["EAX","EBX","ECX","EDX","ESI","EDI","EBP","ESP","EIP","EFLAGS"];
+    var REG_RETURN_ = "EAX";
+    var REG_PC_ = "EIP";
+    var REG_SP_ = "ESP";
 }
+
+/**
+ * An array holding register names.
+ */
+export var GPR_NAMES = GPR_NAMES_;
+/**
+ * A constant string representing the register carrying the return value of a function.
+ */
+export var REG_RETURN = REG_RETURN_;
+/**
+ * String of the instruction pointer register.
+ */
+export var REG_PC = REG_PC_;
+/**
+ * String of the stack pointer register.
+ */
+export var REG_SP = REG_SP_;
 
 /**
  * Error return by the QBDI VM
  */
-var VMError = Object.freeze({
+export var VMError = Object.freeze({
     /**
      * Returned event is invalid.
      */
@@ -380,7 +385,7 @@ var VMError = Object.freeze({
 /**
  * Synchronisation direction between Frida and QBDI GPR contexts
  */
-var SyncDirection = Object.freeze({
+export var SyncDirection = Object.freeze({
     /**
      * Constant variable used to synchronize QBDI's context to Frida's.
      *
@@ -396,7 +401,7 @@ var SyncDirection = Object.freeze({
 /**
  * The callback results.
  */
-var VMAction = Object.freeze({
+export var VMAction = Object.freeze({
     /**
      * The execution of the basic block continues.
      */
@@ -439,7 +444,7 @@ var VMAction = Object.freeze({
 /**
  * Position relative to an instruction.
  */
-var InstPosition = Object.freeze({
+export var InstPosition = Object.freeze({
     /**
      * Positioned **before** the instruction.
      */
@@ -453,7 +458,7 @@ var InstPosition = Object.freeze({
 /**
  * Priority of callback
  */
-var CallbackPriority = Object.freeze({
+export var CallbackPriority = Object.freeze({
     /**
      * Default priority for callback.
      */
@@ -467,7 +472,7 @@ var CallbackPriority = Object.freeze({
 /**
  * Events triggered by the virtual machine.
  */
-var VMEvent = Object.freeze({
+export var VMEvent = Object.freeze({
     /**
      * Triggered when the execution enters a sequence.
      */
@@ -513,7 +518,7 @@ var VMEvent = Object.freeze({
 /**
  * Memory access type (read / write / ...)
  */
-var MemoryAccessType = Object.freeze({
+export var MemoryAccessType = Object.freeze({
     /**
      * Memory read access.
      */
@@ -531,7 +536,7 @@ var MemoryAccessType = Object.freeze({
 /**
  * Memory access flags
  */
-var MemoryAccessFlags = Object.freeze({
+export var MemoryAccessFlags = Object.freeze({
     /**
      * Empty flag.
      */
@@ -553,7 +558,7 @@ var MemoryAccessFlags = Object.freeze({
 /**
  * Register access type (read / write / rw)
  */
-var RegisterAccessType = Object.freeze({
+export var RegisterAccessType = Object.freeze({
     /**
      * Register is read.
      */
@@ -571,7 +576,7 @@ var RegisterAccessType = Object.freeze({
 /**
  * Instruction Condition
  */
-var ConditionType = Object.freeze({
+export var ConditionType = Object.freeze({
     /**
      * The instruction is unconditionnal
      */
@@ -654,7 +659,7 @@ var ConditionType = Object.freeze({
 /**
  * Register access type (read / write / rw)
  */
-var OperandType = Object.freeze({
+export var OperandType = Object.freeze({
     /**
      * Invalid operand.
      */
@@ -684,7 +689,7 @@ var OperandType = Object.freeze({
 /**
  * Operand flag
  */
-var OperandFlag = Object.freeze({
+export var OperandFlag = Object.freeze({
     /**
      * No flag
      */
@@ -710,7 +715,7 @@ var OperandFlag = Object.freeze({
 /**
  * Properties to retrieve during an instruction analysis.
  */
-var AnalysisType = Object.freeze({
+export var AnalysisType = Object.freeze({
     /**
      * Instruction analysis (address, mnemonic, ...).
      */
@@ -732,7 +737,7 @@ var AnalysisType = Object.freeze({
 /**
  * QBDI VM Options
  */
-var Options = {
+export var Options = {
     /**
      * Default value
      */
@@ -803,12 +808,12 @@ if (Process.arch === 'x64') {
 
 Options = Object.freeze(Options);
 
-class InstrRuleDataCBK {
+export class InstrRuleDataCBK {
     /**
      * Object to define an :js:func:`InstCallback` in an :js:func:`InstrRuleCallback`
      *
      * @param {InstPosition} pos       Relative position of the callback (PreInst / PostInst).
-     * @param {InstCallback} cbk       A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
+     * @param {InstCallback} cbk       A **native** InstCallback returned by :js:func:`VM.newInstCallback`.
      * @param {Object}       data      User defined data passed to the callback.
      * @param {Int}          priority  The priority of the callback.
      */
@@ -1002,7 +1007,7 @@ class FPRState extends State {
     }
 }
 
-class QBDI {
+export class VM {
     // private member
     #vm = null;
     #memoryAccessDesc = null;
@@ -1014,7 +1019,7 @@ class QBDI {
     #userDataPointer = 0;
 
     /**
-     * Create a new instrumentation virtual machine using "**new QBDI()**"
+     * Create a new instrumentation virtual machine using "**new VM()**"
      */
     constructor() {
         // Enforce a minimum QBDI version (API compatibility)
@@ -1036,14 +1041,14 @@ class QBDI {
         // The name of the API change with frida 15.0.0
         if (Number(Frida.version.split(".")[0]) < 15) {
             var that = this;
-            WeakRef.bind(QBDI, function dispose () {
+            WeakRef.bind(VM, function dispose () {
                 if (that.ptr !== null) {
                     that._terminateVM(that.ptr);
                 }
             });
         } else {
             var that = this;
-            Script.bindWeak(QBDI, function dispose () {
+            Script.bindWeak(VM, function dispose () {
                 if (that.ptr !== null) {
                     that._terminateVM(that.ptr);
                 }
@@ -1261,7 +1266,7 @@ class QBDI {
      *
      * @param {String}       mnem      Mnemonic to match.
      * @param {InstPosition} pos       Relative position of the callback (PreInst / PostInst).
-     * @param {InstCallback} cbk       A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
+     * @param {InstCallback} cbk       A **native** InstCallback returned by :js:func:`VM.newInstCallback`.
      * @param {Object}       data      User defined data passed to the callback.
      * @param {Int}          priority  The priority of the callback.
      *
@@ -1279,7 +1284,7 @@ class QBDI {
      * Register a callback event for every memory access matching the type bitfield made by the instruction in the range codeStart to codeEnd.
      *
      * @param {MemoryAccessType} type      A mode bitfield: either MEMORY_READ, MEMORY_WRITE or both (MEMORY_READ_WRITE).
-     * @param {InstCallback}     cbk       A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
+     * @param {InstCallback}     cbk       A **native** InstCallback returned by :js:func:`VM.newInstCallback`.
      * @param {Object}           data      User defined data passed to the callback.
      * @param {Int}              priority  The priority of the callback.
      *
@@ -1295,7 +1300,7 @@ class QBDI {
     /**
      * Add a custom instrumentation rule to the VM.
      *
-     * @param {InstrRuleCallback}  cbk    A **native** InstrRuleCallback returned by :js:func:`QBDI.newInstrRuleCallback`.
+     * @param {InstrRuleCallback}  cbk    A **native** InstrRuleCallback returned by :js:func:`VM.newInstrRuleCallback`.
      * @param {AnalysisType}       type   Analyse type needed for this instruction function pointer to the callback
      * @param {Object}             data   User defined data passed to the callback.
      *
@@ -1313,7 +1318,7 @@ class QBDI {
      *
      * @param {String|Number}      start  Begin of the range of address where apply the rule
      * @param {String|Number}      end    End of the range of address where apply the rule
-     * @param {InstrRuleCallback}  cbk    A **native** InstrRuleCallback returned by :js:func:`QBDI.newInstrRuleCallback`.
+     * @param {InstrRuleCallback}  cbk    A **native** InstrRuleCallback returned by :js:func:`VM.newInstrRuleCallback`.
      * @param {AnalysisType}       type   Analyse type needed for this instruction function pointer to the callback
      * @param {Object}             data   User defined data passed to the callback.
      *
@@ -1332,7 +1337,7 @@ class QBDI {
      *
      * @param {String|Number}     addr   Code address which will trigger the callback.
      * @param {MemoryAccessType}  type   A mode bitfield: either MEMORY_READ, MEMORY_WRITE or both (MEMORY_READ_WRITE).
-     * @param {InstCallback}      cbk    A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
+     * @param {InstCallback}      cbk    A **native** InstCallback returned by :js:func:`VM.newInstCallback`.
      * @param {Object}            data   User defined data passed to the callback.
      *
      * @return {Number} The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
@@ -1351,7 +1356,7 @@ class QBDI {
      * @param {String|Number}     start    Start of the address range which will trigger the callback.
      * @param {String|Number}     end      End of the address range which will trigger the callback.
      * @param {MemoryAccessType}  type     A mode bitfield: either MEMORY_READ, MEMORY_WRITE or both (MEMORY_READ_WRITE).
-     * @param {InstCallback}      cbk      A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
+     * @param {InstCallback}      cbk      A **native** InstCallback returned by :js:func:`VM.newInstCallback`.
      * @param {Object}            data     User defined data passed to the callback.
      *
      * @return {Number} The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
@@ -1367,7 +1372,7 @@ class QBDI {
      * Register a callback event for a specific instruction event.
      *
      * @param {InstPosition} pos       Relative position of the callback (PreInst / PostInst).
-     * @param {InstCallback} cbk       A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
+     * @param {InstCallback} cbk       A **native** InstCallback returned by :js:func:`VM.newInstCallback`.
      * @param {Object}       data      User defined data passed to the callback.
      * @param {Int}          priority  The priority of the callback.
      *
@@ -1385,7 +1390,7 @@ class QBDI {
      *
      * @param {String|Number} addr      Code address which will trigger the callback.
      * @param {InstPosition}  pos       Relative position of the callback (PreInst / PostInst).
-     * @param {InstCallback}  cbk       A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
+     * @param {InstCallback}  cbk       A **native** InstCallback returned by :js:func:`VM.newInstCallback`.
      * @param {Object}        data      User defined data passed to the callback.
      * @param {Int}           priority  The priority of the callback.
      *
@@ -1404,7 +1409,7 @@ class QBDI {
      * @param {String|Number} start     Start of the address range which will trigger the callback.
      * @param {String|Number} end       End of the address range which will trigger the callback.
      * @param {InstPosition}  pos       Relative position of the callback (PreInst / PostInst).
-     * @param {InstCallback}  cbk       A **native** InstCallback returned by :js:func:`QBDI.newInstCallback`.
+     * @param {InstCallback}  cbk       A **native** InstCallback returned by :js:func:`VM.newInstCallback`.
      * @param {Object}        data      User defined data passed to the callback.
      * @param {Int}           priority  The priority of the callback.
      *
@@ -1421,7 +1426,7 @@ class QBDI {
      * Register a callback event for a specific VM event.
      *
      * @param {VMEvent}    mask   A mask of VM event type which will trigger the callback.
-     * @param {VMCallback} cbk    A **native** VMCallback returned by :js:func:`QBDI.newVMCallback`.
+     * @param {VMCallback} cbk    A **native** VMCallback returned by :js:func:`VM.newVMCallback`.
      * @param {Object}     data   User defined data passed to the callback.
      *
      * @return {Number} The id of the registered instrumentation (or VMError.INVALID_EVENTID in case of failure).
@@ -1714,7 +1719,7 @@ class QBDI {
      * with the ``.toRword()`` interface (like ``NativePointer`` or ``UInt64``).
      *
      * Example:
-     *       >>> var vm = new QBDI();
+     *       >>> var vm = new VM();
      *       >>> var state = vm.getGPRState();
      *       >>> vm.allocateVirtualStack(state, 0x1000000);
      *       >>> var aFunction = Module.findExportByName(null, "Secret");
@@ -2022,40 +2027,3 @@ class QBDI {
 
 };
 
-
-// nodejs export
-if (typeof(module) !== "undefined") {
-    var exports = module.exports = {
-        AnalysisType: AnalysisType,
-        ConditionType: ConditionType,
-        GPR_NAMES: GPR_NAMES,
-        InstPosition: InstPosition,
-        CallbackPriority: CallbackPriority,
-        InstrRuleDataCBK: InstrRuleDataCBK,
-        MemoryAccessFlags: MemoryAccessFlags,
-        MemoryAccessType: MemoryAccessType,
-        OperandFlag: OperandFlag,
-        OperandType: OperandType,
-        Options: Options,
-        QBDI: QBDI,
-        QBDI_LIB_FULLPATH: QBDI_LIB_FULLPATH,
-        REG_PC: REG_PC,
-        REG_RETURN: REG_RETURN,
-        REG_SP: REG_SP,
-        RegisterAccessType: RegisterAccessType,
-        SyncDirection: SyncDirection,
-        VMAction: VMAction,
-        VMError: VMError,
-        VMEvent: VMEvent,
-        rword: rword,
-
-        // Allow automagic exposure of QBDI interface in nodejs GLOBAL
-        import: function() {
-            for (var key in this) {
-                if (key !== "import") {
-                    global[key] = this[key];
-                }
-            }
-        }
-    };
-}
