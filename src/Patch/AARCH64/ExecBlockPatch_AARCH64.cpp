@@ -43,7 +43,7 @@ RelocatableInst::UniquePtrVec getExecBlockPrologue(const LLVMCPU &llvmcpu) {
 
   // Save return address
   // ===================
-  prologue.push_back(StrPre(Reg(REG_LR), Reg(REG_SP), Constant(-8)));
+  prologue.push_back(StrPre(Reg(REG_LR), Reg(REG_SP), Constant(-16)));
 
   // Save Host SP
   // ============
@@ -199,7 +199,7 @@ RelocatableInst::UniquePtrVec getExecBlockEpilogue(const LLVMCPU &llvmcpu) {
 
   // Return to host
   // ==============
-  epilogue.push_back({LdrPost(Reg(REG_LR), Reg(REG_SP), Constant(8))});
+  epilogue.push_back({LdrPost(Reg(REG_LR), Reg(REG_SP), Constant(16))});
 
   epilogue.push_back(Ret());
   return epilogue;
