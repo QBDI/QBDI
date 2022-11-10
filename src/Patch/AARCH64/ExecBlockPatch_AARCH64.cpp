@@ -154,7 +154,7 @@ RelocatableInst::UniquePtrVec getExecBlockEpilogue(const LLVMCPU &llvmcpu) {
   // ===================
   static_assert(offsetof(GPRState, sp) + 8 == offsetof(GPRState, nzcv));
   epilogue.push_back(ReadNZCV(Reg(1)));
-  epilogue.push_back({Mov(Reg(0), Reg(REG_SP))});
+  epilogue.push_back(Mov(Reg(0), Reg(REG_SP)));
   epilogue.push_back(
       Stp(Reg(0), Reg(1), Reg(28), offsetof(Context, gprState.sp)));
 
@@ -193,13 +193,13 @@ RelocatableInst::UniquePtrVec getExecBlockEpilogue(const LLVMCPU &llvmcpu) {
   // Restore Host SP
   // ===============
   epilogue.push_back(
-      {Ldr(Reg(0), Reg(28), Offset(offsetof(Context, hostState.sp)))});
+      Ldr(Reg(0), Reg(28), Offset(offsetof(Context, hostState.sp))));
 
-  epilogue.push_back({Mov(Reg(REG_SP), Reg(0))});
+  epilogue.push_back(Mov(Reg(REG_SP), Reg(0)));
 
   // Return to host
   // ==============
-  epilogue.push_back({LdrPost(Reg(REG_LR), Reg(REG_SP), Constant(16))});
+  epilogue.push_back(LdrPost(Reg(REG_LR), Reg(REG_SP), Constant(16)));
 
   epilogue.push_back(Ret());
   return epilogue;
