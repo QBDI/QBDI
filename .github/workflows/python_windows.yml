@@ -65,22 +65,22 @@ jobs:
       - name: build PyQBDI 3.8
         run: |
           python --version
-          pip --version
-          pip install --upgrade pip
-          pip install setuptools wheel build
+          python -m pip --version
+          python -m pip install --upgrade pip
+          python -m pip install setuptools wheel build
           python -m build -w
 
-      - name: Set up Python "3.9"
+      - name: Set up Python 3.9
         uses: actions/setup-python@v4
         with:
-          python-version: 3.9
+          python-version: "3.9"
           architecture: ${{ matrix.WINDOWS_ARCH }}
       - name: build PyQBDI 3.9
         run: |
           python --version
-          pip --version
-          pip install --upgrade pip
-          pip install setuptools wheel build
+          python -m pip --version
+          python -m pip install --upgrade pip
+          python -m pip install setuptools wheel build
           python -m build -w
 
       - name: Set up Python 3.10
@@ -91,9 +91,9 @@ jobs:
       - name: build PyQBDI 3.10
         run: |
           python --version
-          pip --version
-          pip install --upgrade pip
-          pip install setuptools wheel build
+          python -m pip --version
+          python -m pip install --upgrade pip
+          python -m pip install setuptools wheel build
           python -m build -w
 
       - name: Set up Python 3.11
@@ -104,15 +104,15 @@ jobs:
       - name: build PyQBDI 3.11
         run: |
           python --version
-          pip --version
-          pip install --upgrade pip
-          pip install setuptools wheel build
+          python -m pip --version
+          python -m pip install --upgrade pip
+          python -m pip install setuptools wheel build
           python -m build -w
 
       - name: Export package
         uses: actions/upload-artifact@v3
         with:
-          name: package PyQBDI ${{ matrix.WINDOWS_ARCH }}
+          name: PyQBDI windows ${{ matrix.QBDI_ARCH }}
           path: dist\PyQBDI-*.whl
       - name: Stop sccache server
         run: sccache --stop-server

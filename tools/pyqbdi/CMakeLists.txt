@@ -4,8 +4,11 @@ if(QBDI_ARCH_X86
    OR QBDI_ARCH_ARM)
   include(FetchContent)
 
-  find_package(Python3 REQUIRED COMPONENTS Interpreter)
-  find_package(Python3 COMPONENTS Development)
+  find_package(Python3 COMPONENTS Interpreter Development)
+
+  if(NOT Python3_Interpreter_FOUND)
+    message(FATAL_ERROR "Python3 Interpreter not found")
+  endif()
 
   # in manylinux image, python doesn't have a library
   # If Python3::Development is not found, try to found the include with the executable
