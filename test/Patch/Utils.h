@@ -21,5 +21,6 @@
 #include "QBDI/State.h"
 
 QBDI::rword get_random();
+QBDI::rword seed_random();
 
 #endif /* UTILS_H */

@@ -26,6 +26,7 @@
 
 #include "Engine/LLVMCPU.h"
 #include "Patch/ExecBlockFlags.h"
+#include "Patch/Types.h"
 #include "Patch/X86_64/ExecBlockFlags_X86_64.h"
 #include "Utility/LogSys.h"
 
@@ -52,7 +53,8 @@ struct ExecBlockFlagsArray {
     }
   }
 
-  inline uint8_t get(size_t reg) const {
+  inline uint8_t get(RegLLVM reg_) const {
+    size_t reg = reg_.getValue();
     if (reg < llvm::X86::NUM_TARGET_REGS)
       return arr[reg];
 

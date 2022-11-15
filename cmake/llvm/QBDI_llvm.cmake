@@ -6,6 +6,7 @@ set(__add_qbdi_llvm ON)
 include(FetchContent)
 
 # configure FetchContent
+set(QBDI_LLVM_MAJOR_VERSION 13)
 set(QBDI_LLVM_VERSION 13.0.0)
 
 FetchContent_Declare(
@@ -118,31 +119,6 @@ if(NOT llvm_POPULATED)
         CACHE STRING "set LLVM_DEFAULT_TARGET_TRIPLE")
   endif()
 
-  # check if llvm-tblgen-X is available
-  find_program(LLVM_TABLEN_BIN NAMES llvm-tblgen-10)
-  message(STATUS "LLVM Table Gen found: ${LLVM_TABLEN_BIN}")
-  if(${LLVM_TABLEN_BIN_FOUND})
-    set(LLVM_TABLEGEN
-        "${LLVM_TABLEN_BIN}"
-        CACHE STRING "force tablegen")
-  endif()
-
-  if(QBDI_CCACHE AND CCACHE_FOUND)
-    set(LLVM_CCACHE_BUILD
-        ON
-        CACHE BOOL "Enable CCACHE in llvm")
-  else()
-    set(LLVM_CCACHE_BUILD
-        OFF
-        CACHE BOOL "Enable CCACHE in llvm")
-  endif()
-
-  if(QBDI_ASAN AND HAVE_FLAG_SANITIZE_ADDRESS)
-    set(LLVM_USE_SANITIZER
-        Address
-        CACHE STRING "Enable ASAN")
-  endif()
-
   # build llvm with visibility hidden
   if(DEFINED CMAKE_C_VISIBILITY_PRESET)
     set(QBDI_CACHE_CMAKE_C_VISIBILITY_PRESET ${CMAKE_C_VISIBILITY_PRESET})
@@ -163,28 +139,46 @@ if(NOT llvm_POPULATED)
     "${llvm_SOURCE_DIR}/include/llvm/Support/Compiler.h"
     COPYONLY)
 
-  option(QBDI_LLVM_NATIVE_BUILD "Hack llvm native build" ON)
-  # tbl-gen compilation need a native compilation.
-  # we need to hack cmake/modules/CrossCompile.cmake:llvm_create_cross_target
-  if(QBDI_LLVM_NATIVE_BUILD AND (CMAKE_CROSSCOMPILING OR ANDROID))
-    set(${CMAKE_PROJECT_NAME}_NATIVE_BUILD "${CMAKE_BINARY_DIR}/QBDI_NATIVE")
+  if(NOT ("${NATIVE_TABLEN_PATH}" STREQUAL ""))
+    set(LLVM_TABLEGEN
+        "${NATIVE_TABLEN_PATH}"
+        CACHE STRING "force tablegen")
+  elseif(NOT ("${QBDI_LLVM_TABLEN_TOOLSCHAIN}" STREQUAL ""))
+    # create a second directory to build the native llvm-tblgen
+    # mostly use when crosscompile and need another compiler to create a native
+    # target
+    include(QBDI_llvm_tblgen)
+    set(LLVM_TABLEGEN
+        "${QBDI_LLVM_NATIVE_TBLGEN}"
+        CACHE STRING "force tablegen")
+  else()
+    # check if llvm-tblgen-X is available
+    find_program(LLVM_TABLEN_BIN NAMES llvm-tblgen-${QBDI_LLVM_MAJOR_VERSION})
+    message(STATUS "LLVM Table Gen found: ${LLVM_TABLEN_BIN}")
+    if(${LLVM_TABLEN_BIN_FOUND})
+      set(LLVM_TABLEGEN
+          "${LLVM_TABLEN_BIN}"
+          CACHE STRING "force tablegen")
+    endif()
+  endif()
+
+  if(QBDI_CCACHE AND CCACHE_FOUND)
+    set(LLVM_CCACHE_BUILD
+        ON
+        CACHE BOOL "Enable CCACHE in llvm")
+  else()
+    set(LLVM_CCACHE_BUILD
+        OFF
+        CACHE BOOL "Enable CCACHE in llvm")
+  endif()
+
+  if(QBDI_ASAN AND HAVE_FLAG_SANITIZE_ADDRESS)
+    set(LLVM_USE_SANITIZER
+        Address
+        CACHE STRING "Enable ASAN")
   endif()
 
   add_subdirectory(${llvm_SOURCE_DIR} ${llvm_BINARY_DIR} EXCLUDE_FROM_ALL)
-
-  if(QBDI_LLVM_NATIVE_BUILD AND (CMAKE_CROSSCOMPILING OR ANDROID))
-    set(QBDI_SOURCE_DIR "${CMAKE_SOURCE_DIR}")
-    set(CMAKE_SOURCE_DIR
-        "${llvm_SOURCE_DIR}"
-        CACHE STRING "" FORCE)
-
-    llvm_create_cross_target("${CMAKE_PROJECT_NAME}" NATIVE "" Release
-                             -DLLVM_CCACHE_BUILD=${LLVM_CCACHE_BUILD})
-
-    set(CMAKE_SOURCE_DIR
-        "${QBDI_SOURCE_DIR}"
-        CACHE STRING "" FORCE)
-  endif()
 
   # restore visibility
   if(DEFINED QBDI_CACHE_CMAKE_C_VISIBILITY_PRESET)
@@ -249,14 +243,8 @@ if(QBDI_PLATFORM_OSX OR QBDI_PLATFORM_IOS)
 endif()
 
 if(QBDI_ARCH_ARM)
-  add_llvm_lib(
-    LLVMARMCodeGen
-    LLVMARMAsmParser
-    LLVMARMDisassembler
-    LLVMARMAsmPrinter
-    LLVMARMDesc
-    LLVMARMInfo
-    LLVMARMUtils)
+  add_llvm_lib(LLVMARMAsmParser LLVMARMDisassembler LLVMARMDesc LLVMARMInfo
+               LLVMARMUtils)
 elseif(QBDI_ARCH_AARCH64)
   add_llvm_lib(LLVMAArch64AsmParser LLVMAArch64Desc LLVMAArch64Disassembler
                LLVMAArch64Info LLVMAArch64Utils)

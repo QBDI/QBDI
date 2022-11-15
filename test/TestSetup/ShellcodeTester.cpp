@@ -46,7 +46,12 @@ void ShellcodeTester::comparedExec(const char *source, QBDI::Context &inputCtx,
   const llvm::ArrayRef<uint8_t> &code = object.getCode();
   llvm::sys::Memory::InvalidateInstructionCache(code.data(), code.size());
 
-  realCtx = realExec(code, inputCtx, realStack);
+  // use the same stack for the 2 executions
+  memset(jitStack.base(), 0, jitStack.allocatedSize());
+  realCtx = realExec(code, inputCtx, jitStack);
+  memcpy(realStack.base(), jitStack.base(), jitStack.allocatedSize());
+
+  memset(jitStack.base(), 0, jitStack.allocatedSize());
   jitCtx = jitExec(code, inputCtx, jitStack);
 
   for (uint32_t i = 0; i < QBDI::AVAILABLE_GPR; i++) {
@@ -72,6 +77,8 @@ void ShellcodeTester::comparedExec(const char *source, QBDI::Context &inputCtx,
     INFO("The offset is " << i << " / " << realStack.allocatedSize());
     CHECK(((char *)realStack.base())[i] == ((char *)jitStack.base())[i]);
   }
+
+  inputCtx = jitCtx;
 
   freeStack(realStack);
   freeStack(jitStack);

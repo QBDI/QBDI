@@ -52,31 +52,54 @@ APITest::~APITest() {
   objects.clear();
 }
 
-QBDI::rword APITest::genASM(const char *source,
+QBDI::rword APITest::genASM(const char *source, QBDI::CPUMode cpuMode,
                             const std::vector<std::string> mattrs) {
   std::ostringstream finalSource;
 
+#ifdef QBDI_ARCH_ARM
+  if (cpuMode == QBDI::CPUMode::Thumb) {
+    finalSource << ".thumb\n";
+  }
+  finalSource << source << "\n"
+              << "bx lr\n";
+  if (cpuMode == QBDI::CPUMode::ARM) {
+    objects.emplace_back(finalSource.str().c_str(), "", "arm", mattrs);
+  } else {
+    objects.emplace_back(finalSource.str().c_str(), "", "thumb", mattrs);
+  }
+#else
   finalSource << source << "\n"
               << "ret\n";
-
-  objects.emplace_back(finalSource.str().c_str(), "", mattrs);
+  if constexpr (QBDI::is_aarch64) {
+    objects.emplace_back(finalSource.str().c_str(), "", "aarch64", mattrs);
+  } else {
+    objects.emplace_back(finalSource.str().c_str(), "", "", mattrs);
+  }
+#endif
 
   const llvm::ArrayRef<uint8_t> &code = objects.back().getCode();
+  QBDI::rword codeAddr = (QBDI::rword)code.data();
   llvm::sys::Memory::InvalidateInstructionCache(code.data(), code.size());
 
-  vm.addInstrumentedRange((QBDI::rword)code.data(),
-                          (QBDI::rword)code.data() + code.size());
-  vm.clearCache((QBDI::rword)code.data(),
-                (QBDI::rword)code.data() + code.size());
-  vm.precacheBasicBlock((QBDI::rword)code.data());
+  vm.addInstrumentedRange(codeAddr, codeAddr + code.size());
+  vm.clearCache(codeAddr, codeAddr + code.size());
 
-  return (QBDI::rword)code.data();
+#ifdef QBDI_ARCH_ARM
+  if (cpuMode == QBDI::CPUMode::Thumb) {
+    codeAddr |= 1;
+  }
+#endif
+
+  vm.precacheBasicBlock(codeAddr);
+
+  return codeAddr;
 }
 
 bool APITest::runOnASM(QBDI::rword *retval, const char *source,
                        const std::vector<QBDI::rword> &args,
+                       QBDI::CPUMode cpuMode,
                        const std::vector<std::string> mattrs) {
-  QBDI::rword addr = genASM(source, mattrs);
+  QBDI::rword addr = genASM(source, cpuMode, mattrs);
 
   return vm.call(retval, addr, args);
 }

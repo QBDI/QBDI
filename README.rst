@@ -2,9 +2,6 @@
     :target: https://qbdi.readthedocs.io/en/stable/?badge=stable
     :alt: Documentation Status
 
-.. image:: https://ci.appveyor.com/api/projects/status/s2qvpu8k8yiau647/branch/master?svg=true
-    :target: https://ci.appveyor.com/project/QBDI/qbdi/branch/master
-
 .. image:: https://img.shields.io/github/v/release/QBDI/QBDI
     :target: https://github.com/QBDI/QBDI/releases
 
@@ -48,11 +45,11 @@ CPU       Operating Systems                Execution                  Memory Acc
 =======   ==============================   ========================   =================================
 x86-64    Android, Linux, macOS, Windows   :green:`Supported`         :green:`Supported`
 x86       Android, Linux, macOS, Windows   :green:`Supported`         :green:`Supported`
-ARM       Linux, Android, iOS              :orange:`Planned (*)`      :orange:`Planned (*)`
-AArch64   Android, Linux, macOS            :orange:`Supported (*)`    :orange:`Supported (*)`
+ARM       Android, Linux                   :yellow:`Supported (*)`    :yellow:`Supported (*)`
+AArch64   Android, Linux, macOS            :yellow:`Supported (*)`    :yellow:`Supported (*)`
 =======   ==============================   ========================   =================================
 
-\* The ARM and AArch64 instruction sets are supported for internal use at the moment.
+\* The ARM and AArch64 instruction sets are supported but in early support.
 
 **stable**
 
@@ -60,14 +57,14 @@ AArch64   Android, Linux, macOS            :orange:`Supported (*)`    :orange:`S
     :target: https://qbdi.readthedocs.io/en/stable/
     :alt: Documentation Status
 
-.. image:: https://ci.appveyor.com/api/projects/status/s2qvpu8k8yiau647/branch/master?svg=true
-    :target: https://ci.appveyor.com/project/QBDI/qbdi/branch/master
+.. image:: https://github.com/QBDI/QBDI/actions/workflows/windows.yml/badge.svg?branch=master
+    :target: https://github.com/QBDI/QBDI/actions/workflows/windows.yml?query=branch%3Amaster
 
-.. image:: https://github.com/QBDI/QBDI/workflows/Tests%20and%20Package%20Linux/badge.svg?branch=master
-    :target: https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Tests+and+Package+Linux%22+branch%3Amaster
+.. image:: https://github.com/QBDI/QBDI/actions/workflows/linux.yml/badge.svg?branch=master
+    :target: https://github.com/QBDI/QBDI/actions/workflows/linux.yml?query=branch%3Amaster
 
-.. image:: https://github.com/QBDI/QBDI/workflows/Tests%20and%20Package%20OSX/badge.svg?branch=master
-    :target: https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Tests+and+Package+OSX%22+branch%3Amaster
+.. image:: https://github.com/QBDI/QBDI/actions/workflows/osx.yml/badge.svg?branch=master
+    :target: https://github.com/QBDI/QBDI/actions/workflows/osx.yml?query=branch%3Amaster
 
 **dev**
 
@@ -75,14 +72,14 @@ AArch64   Android, Linux, macOS            :orange:`Supported (*)`    :orange:`S
     :target: https://qbdi.readthedocs.io/en/dev-next/
     :alt: Documentation Status
 
-.. image:: https://ci.appveyor.com/api/projects/status/s2qvpu8k8yiau647/branch/dev-next?svg=true
-    :target: https://ci.appveyor.com/project/QBDI/qbdi/branch/dev-next
+.. image:: https://github.com/QBDI/QBDI/actions/workflows/windows.yml/badge.svg?branch=dev-next
+    :target: https://github.com/QBDI/QBDI/actions/workflows/windows.yml?query=branch%3Adev-next
 
-.. image:: https://github.com/QBDI/QBDI/workflows/Tests%20and%20Package%20Linux/badge.svg?branch=dev-next
-    :target: https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Tests+and+Package+Linux%22+branch%3Adev-next
+.. image:: https://github.com/QBDI/QBDI/actions/workflows/linux.yml/badge.svg?branch=dev-next
+    :target: https://github.com/QBDI/QBDI/actions/workflows/linux.yml?query=branch%3Adev-next
 
-.. image:: https://github.com/QBDI/QBDI/workflows/Tests%20and%20Package%20OSX/badge.svg?branch=dev-next
-    :target: https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Tests+and+Package+OSX%22+branch%3Adev-next
+.. image:: https://github.com/QBDI/QBDI/actions/workflows/osx.yml/badge.svg?branch=dev-next
+    :target: https://github.com/QBDI/QBDI/actions/workflows/osx.yml?query=branch%3Adev-next
 
 .. intro-end
 
@@ -110,12 +107,13 @@ There is no strict development timeline or scheduled release plan for the QBDI p
 All the new features and fixes are merged onto the ``dev-next`` branch.
 Devel packages can be downloaded in the artefacts of:
 
-- `Appveyor <https://ci.appveyor.com/project/QBDI/qbdi/branch/dev-next>`_ for windows packages (C/C++ API and PyQBDI)
-- `Github Actions <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Tests+and+Package+Linux%22+branch%3Adev-next>`_ for Linux C/C++/frida API (based on ubuntu)
-- `Github Actions <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Tests+and+Package+OSX%22+branch%3Adev-next>`_ for OSX C/C++/frida API
-- `Github Actions <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Package+Android%22+branch%3Adev-next>`_ for android C/C++/frida API
-- `Github Actions <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22PyQBDI+Linux+package%22+branch%3Adev-next>`_ for Linux PyQBDI
-- `Github Actions <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22PyQBDI+OSX+package%22+branch%3Adev-next>`_ for OSX PyQBDI
+- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/android.yml?query=branch%3Adev-next>`_ for Android C/C++/frida API
+- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/linux.yml?query=branch%3Adev-next>`_ for Linux C/C++/frida API (based on ubuntu)
+- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/osx.yml?query=branch%3Adev-next>`_ for OSX C/C++/frida API
+- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/windows.yml?query=branch%3Adev-next>`_ for Windows packages C/C++ API
+- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/python_linux.yml?query=branch%3Adev-next>`_ for Linux PyQBDI
+- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/python_osx.yml?query=branch%3Adev-next>`_ for OSX PyQBDI
+- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/python_windows.yml?query=branch%3Adev-next>`_ for windows PyQBDI
 
 Compilation
 ===========
@@ -221,15 +219,9 @@ The PyQDBI library (apart from the wheel package) can be built by solely passing
 However, if you want to build the wheel package, you can run these commands::
 
     python -m pip install --upgrade pip
-    python -m pip install setuptools wheel
-    python setup.py bdist_wheel
+    python -m pip install setuptools wheel build
+    python -m build -w
 
 A 32-bit version of Python is mandatory for the X86 architecture whereas a 64-bit one is required for the X86-64 architecture.
 
 .. compil-end
-
-About the ARM support
-=====================
-
-QBDI supports the ARM architecture up to its `0.6.2 <https://github.com/QBDI/QBDI/releases/tag/v0.6.2>`_ version.
-Unfortunately, the ARM architecture hasn't been recently tested so is now marked as deprecated.

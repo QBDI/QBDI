@@ -25,6 +25,7 @@
 namespace QBDI {
 
 class ExecBlock;
+class LLVMCPU;
 
 void analyseMemoryAccess(const ExecBlock &currentExecBlock, uint16_t instID,
                          bool afterInst, std::vector<MemoryAccess> &dest);

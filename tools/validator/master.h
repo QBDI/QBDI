@@ -22,7 +22,7 @@
 
 #include "process.h"
 
-void start_master(Process *debugged, pid_t instrumented, int ctrlfd,
-                  int datafd);
+void start_master(Process *debugged, pid_t instrumented, int ctrlfd, int datafd,
+                  int stdoutDbg, int stdoutDbi);
 
 #endif // MASTER_H

@@ -24,249 +24,29 @@
 #include "QBDI/Config.h"
 #include "QBDI/Options.h"
 #include "QBDI/State.h"
+#include "Engine/LLVMCPU.h"
 #include "ExecBlock/Context.h"
 #include "Patch/InstTransform.h"
 #include "Patch/PatchCondition.h"
 #include "Patch/PatchGenerator.h"
 #include "Patch/PatchRule.h"
-#include "Patch/PatchRules.h"
+#include "Patch/PatchRuleAssembly.h"
 #include "Patch/PatchUtils.h"
 #include "Patch/RelocatableInst.h"
 #include "Patch/Types.h"
 #include "Patch/X86_64/ExecBlockFlags_X86_64.h"
 #include "Patch/X86_64/Layer2_X86_64.h"
 #include "Patch/X86_64/PatchGenerator_X86_64.h"
-#include "Patch/X86_64/PatchRules_X86_64.h"
 #include "Utility/LogSys.h"
 #include "Utility/System.h"
 
 namespace QBDI {
 
-RelocatableInst::UniquePtrVec getExecBlockPrologue(Options opts) {
-  RelocatableInst::UniquePtrVec prologue;
+namespace {
 
-  // Save host SP
-  append(prologue,
-         SaveReg(Reg(REG_SP), Offset(offsetof(Context, hostState.sp))));
-  // Restore FPR
-  if ((opts & Options::OPT_DISABLE_FPR) == 0) {
-    if ((opts & Options::OPT_DISABLE_OPTIONAL_FPR) == 0) {
-      append(
-          prologue,
-          LoadReg(Reg(0), Offset(offsetof(Context, hostState.executeFlags))));
-      prologue.push_back(Test(Reg(0), ExecBlockFlags::needFPU));
-      prologue.push_back(Je(7 + 4));
-    }
-    prologue.push_back(Fxrstor(Offset(offsetof(Context, fprState))));
-    // target je needFPU
-    if (isHostCPUFeaturePresent("avx")) {
-      QBDI_DEBUG("AVX support enabled in guest context switches");
-      // don't restore if not needed
-      if ((opts & Options::OPT_DISABLE_OPTIONAL_FPR) == 0) {
-        prologue.push_back(Test(Reg(0), ExecBlockFlags::needAVX));
-        if constexpr (is_x86_64)
-          prologue.push_back(Je(16 * 10 + 4));
-        else
-          prologue.push_back(Je(8 * 10 + 4));
-      }
-      prologue.push_back(Vinsertf128(
-          llvm::X86::YMM0,
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm0)), 1));
-      prologue.push_back(Vinsertf128(
-          llvm::X86::YMM1,
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm1)), 1));
-      prologue.push_back(Vinsertf128(
-          llvm::X86::YMM2,
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm2)), 1));
-      prologue.push_back(Vinsertf128(
-          llvm::X86::YMM3,
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm3)), 1));
-      prologue.push_back(Vinsertf128(
-          llvm::X86::YMM4,
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm4)), 1));
-      prologue.push_back(Vinsertf128(
-          llvm::X86::YMM5,
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm5)), 1));
-      prologue.push_back(Vinsertf128(
-          llvm::X86::YMM6,
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm6)), 1));
-      prologue.push_back(Vinsertf128(
-          llvm::X86::YMM7,
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm7)), 1));
-#if defined(QBDI_ARCH_X86_64)
-      prologue.push_back(Vinsertf128(
-          llvm::X86::YMM8,
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm8)), 1));
-      prologue.push_back(Vinsertf128(
-          llvm::X86::YMM9,
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm9)), 1));
-      prologue.push_back(Vinsertf128(
-          llvm::X86::YMM10,
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm10)), 1));
-      prologue.push_back(Vinsertf128(
-          llvm::X86::YMM11,
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm11)), 1));
-      prologue.push_back(Vinsertf128(
-          llvm::X86::YMM12,
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm12)), 1));
-      prologue.push_back(Vinsertf128(
-          llvm::X86::YMM13,
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm13)), 1));
-      prologue.push_back(Vinsertf128(
-          llvm::X86::YMM14,
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm14)), 1));
-      prologue.push_back(Vinsertf128(
-          llvm::X86::YMM15,
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm15)), 1));
-#endif // QBDI_ARCH_X86_64
-       // target je needAVX
-    }
-  }
-#if defined(QBDI_ARCH_X86_64)
-  // if enable FS GS
-  if ((opts & Options::OPT_ENABLE_FS_GS) == Options::OPT_ENABLE_FS_GS) {
-    QBDI_REQUIRE_ACTION(isHostCPUFeaturePresent("fsgsbase"), abort());
-
-    append(prologue,
-           LoadReg(Reg(0), Offset(offsetof(Context, hostState.executeFlags))));
-    prologue.push_back(Test(Reg(0), ExecBlockFlags::needFSGS));
-    prologue.push_back(Je(5 * 4 + 7 * 4 + 4));
-
-    append(prologue, LoadReg(Reg(3), Offset(offsetof(Context, gprState.fs))));
-    append(prologue, LoadReg(Reg(4), Offset(offsetof(Context, gprState.gs))));
-    prologue.push_back(Rdfsbase(Reg(1)));
-    prologue.push_back(Rdgsbase(Reg(2)));
-    prologue.push_back(Wrfsbase(Reg(3)));
-    prologue.push_back(Wrgsbase(Reg(4)));
-    append(prologue, SaveReg(Reg(1), Offset(offsetof(Context, hostState.fs))));
-    append(prologue, SaveReg(Reg(2), Offset(offsetof(Context, hostState.gs))));
-  }
-#endif // QBDI_ARCH_X86_64
-  // Restore EFLAGS
-  append(prologue, LoadReg(Reg(0), Offset(offsetof(Context, gprState.eflags))));
-  prologue.push_back(Pushr(Reg(0)));
-  prologue.push_back(Popf());
-  // Restore GPR
-  for (unsigned int i = 0; i < NUM_GPR - 1; i++)
-    append(prologue, LoadReg(Reg(i), Offset(Reg(i))));
-  // Jump selector
-  prologue.push_back(JmpM(Offset(offsetof(Context, hostState.selector))));
-
-  return prologue;
-}
-
-RelocatableInst::UniquePtrVec getExecBlockEpilogue(Options opts) {
-  RelocatableInst::UniquePtrVec epilogue;
-
-  // Save GPR
-  for (unsigned int i = 0; i < NUM_GPR - 1; i++)
-    append(epilogue, SaveReg(Reg(i), Offset(Reg(i))));
-  // Restore host SP
-  append(epilogue,
-         LoadReg(Reg(REG_SP), Offset(offsetof(Context, hostState.sp))));
-  // Save EFLAGS
-  epilogue.push_back(Pushf());
-  epilogue.push_back(Popr(Reg(0)));
-  append(epilogue, SaveReg(Reg(0), Offset(offsetof(Context, gprState.eflags))));
-#if defined(QBDI_ARCH_X86_64)
-  // if enable FS GS
-  if ((opts & Options::OPT_ENABLE_FS_GS) == Options::OPT_ENABLE_FS_GS) {
-    QBDI_REQUIRE_ACTION(isHostCPUFeaturePresent("fsgsbase"), abort());
-
-    append(epilogue,
-           LoadReg(Reg(0), Offset(offsetof(Context, hostState.executeFlags))));
-    epilogue.push_back(Test(Reg(0), ExecBlockFlags::needFSGS));
-    epilogue.push_back(Je(5 * 4 + 7 * 4 + 4));
-
-    append(epilogue, LoadReg(Reg(3), Offset(offsetof(Context, hostState.fs))));
-    append(epilogue, LoadReg(Reg(4), Offset(offsetof(Context, hostState.gs))));
-    epilogue.push_back(Rdfsbase(Reg(1)));
-    epilogue.push_back(Rdgsbase(Reg(2)));
-    epilogue.push_back(Wrfsbase(Reg(3)));
-    epilogue.push_back(Wrgsbase(Reg(4)));
-    append(epilogue, SaveReg(Reg(1), Offset(offsetof(Context, gprState.fs))));
-    append(epilogue, SaveReg(Reg(2), Offset(offsetof(Context, gprState.gs))));
-  }
-#endif // QBDI_ARCH_X86_64
-  // Save FPR
-  if ((opts & Options::OPT_DISABLE_FPR) == 0) {
-    if ((opts & Options::OPT_DISABLE_OPTIONAL_FPR) == 0) {
-      append(
-          epilogue,
-          LoadReg(Reg(0), Offset(offsetof(Context, hostState.executeFlags))));
-      epilogue.push_back(Test(Reg(0), ExecBlockFlags::needFPU));
-      epilogue.push_back(Je(7 + 4));
-    }
-    epilogue.push_back(Fxsave(Offset(offsetof(Context, fprState))));
-    // target je needFPU
-    if (isHostCPUFeaturePresent("avx")) {
-      QBDI_DEBUG("AVX support enabled in guest context switches");
-      // don't save if not needed
-      if ((opts & Options::OPT_DISABLE_OPTIONAL_FPR) == 0) {
-        epilogue.push_back(Test(Reg(0), ExecBlockFlags::needAVX));
-        if constexpr (is_x86_64)
-          epilogue.push_back(Je(16 * 10 + 4));
-        else
-          epilogue.push_back(Je(8 * 10 + 4));
-      }
-      epilogue.push_back(Vextractf128(
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm0)),
-          llvm::X86::YMM0, 1));
-      epilogue.push_back(Vextractf128(
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm1)),
-          llvm::X86::YMM1, 1));
-      epilogue.push_back(Vextractf128(
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm2)),
-          llvm::X86::YMM2, 1));
-      epilogue.push_back(Vextractf128(
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm3)),
-          llvm::X86::YMM3, 1));
-      epilogue.push_back(Vextractf128(
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm4)),
-          llvm::X86::YMM4, 1));
-      epilogue.push_back(Vextractf128(
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm5)),
-          llvm::X86::YMM5, 1));
-      epilogue.push_back(Vextractf128(
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm6)),
-          llvm::X86::YMM6, 1));
-      epilogue.push_back(Vextractf128(
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm7)),
-          llvm::X86::YMM7, 1));
-#if defined(QBDI_ARCH_X86_64)
-      epilogue.push_back(Vextractf128(
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm8)),
-          llvm::X86::YMM8, 1));
-      epilogue.push_back(Vextractf128(
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm9)),
-          llvm::X86::YMM9, 1));
-      epilogue.push_back(Vextractf128(
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm10)),
-          llvm::X86::YMM10, 1));
-      epilogue.push_back(Vextractf128(
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm11)),
-          llvm::X86::YMM11, 1));
-      epilogue.push_back(Vextractf128(
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm12)),
-          llvm::X86::YMM12, 1));
-      epilogue.push_back(Vextractf128(
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm13)),
-          llvm::X86::YMM13, 1));
-      epilogue.push_back(Vextractf128(
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm14)),
-          llvm::X86::YMM14, 1));
-      epilogue.push_back(Vextractf128(
-          Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm15)),
-          llvm::X86::YMM15, 1));
-#endif // QBDI_ARCH_X86_64
-       // target je needAVX
-    }
-  }
-  // return to host
-  epilogue.push_back(Ret());
-
-  return epilogue;
-}
+enum PatchGeneratorFlagsX86_64 {
+  MergeFlag = PatchGeneratorFlags::ArchSpecificFlags
+};
 
 std::vector<PatchRule> getDefaultPatchRules(Options opts) {
   std::vector<PatchRule> rules;
@@ -292,7 +72,7 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
           OpIs::unique(llvm::X86::XACQUIRE_PREFIX),
           OpIs::unique(llvm::X86::XRELEASE_PREFIX))),
       conv_unique<PatchGenerator>(
-          DoNotInstrument::unique(),
+          PatchGenFlags::unique(PatchGeneratorFlagsX86_64::MergeFlag),
           ModifyInstruction::unique(InstTransform::UniquePtrVec())));
 
   /* Rule #1: Simulate jmp to memory value using RIP addressing.
@@ -495,17 +275,131 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
   return rules;
 }
 
-// Patch allowing to terminate a basic block early by writing address into
-// DataBlock[Offset(RIP)]
-RelocatableInst::UniquePtrVec getTerminator(rword address) {
-  RelocatableInst::UniquePtrVec terminator;
+} // namespace
 
-  append(terminator, SaveReg(Reg(0), Offset(Reg(0))));
-  terminator.push_back(NoReloc::unique(movri(Reg(0), address)));
-  append(terminator, SaveReg(Reg(0), Offset(Reg(REG_PC))));
-  append(terminator, LoadReg(Reg(0), Offset(Reg(0))));
+PatchRuleAssembly::PatchRuleAssembly(Options opts)
+    : patchRules(getDefaultPatchRules(opts)), options(opts),
+      mergePending(false) {}
 
-  return terminator;
+PatchRuleAssembly::~PatchRuleAssembly() = default;
+
+void PatchRuleAssembly::reset() { mergePending = false; }
+
+bool PatchRuleAssembly::changeOptions(Options opts) {
+  // reset the current state. Options cannot be change during the Engine::patch
+  // method
+  reset();
+
+  const Options needRecreate = Options::OPT_DISABLE_FPR |
+#if defined(QBDI_ARCH_X86_64)
+                               Options::OPT_ENABLE_FS_GS |
+#endif
+                               Options::OPT_DISABLE_OPTIONAL_FPR;
+  if ((opts & needRecreate) != (options & needRecreate)) {
+    patchRules = getDefaultPatchRules(opts);
+    options = opts;
+    return true;
+  }
+  options = opts;
+  return false;
+}
+
+static void setRegisterSaved(Patch &patch) {
+
+  if constexpr (is_x86) {
+    switch (patch.metadata.inst.getOpcode()) {
+      case llvm::X86::PUSHA16:
+      case llvm::X86::PUSHA32:
+      case llvm::X86::POPA16:
+      case llvm::X86::POPA32:
+        // allows TmpManager to reuse the register
+        for (unsigned i = 0; i < AVAILABLE_GPR; i++) {
+          patch.regUsage[i] |= RegisterUsage::RegisterSaved;
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  return;
+}
+
+bool PatchRuleAssembly::generate(const llvm::MCInst &inst, rword address,
+                                 uint32_t instSize, const LLVMCPU &llvmcpu,
+                                 std::vector<Patch> &patchList) {
+
+  Patch instPatch{inst, address, instSize, llvmcpu};
+  setRegisterSaved(instPatch);
+
+  for (uint32_t j = 0; j < patchRules.size(); j++) {
+    if (patchRules[j].canBeApplied(instPatch, llvmcpu)) {
+      QBDI_DEBUG("Patch rule {} applied", j);
+      if (mergePending) {
+        QBDI_REQUIRE_ABORT(patchList.size() > 0, "No previous patch to merge");
+        QBDI_DEBUG("Previous instruction merged");
+
+        // 1. generate the patch for the current instruction
+        patchRules[j].apply(instPatch, llvmcpu);
+
+        // 2. get insert position
+        int position = -1;
+        for (auto &p : instPatch.patchGenFlags) {
+          if (p.second == PatchGeneratorFlags::ModifyInstructionBeginFlags) {
+            position = p.first;
+            break;
+          }
+        }
+        QBDI_REQUIRE_ABORT_PATCH(
+            position != -1, instPatch,
+            "Fail to get the position to insert the new patch");
+
+        // 3. add the instruction to merge at the flags ModifyInstructionFlags
+        Patch &mergePatch = patchList.back();
+        instPatch.insertAt(position, std::move(mergePatch.insts));
+
+        // 4. keep some metadata
+        instPatch.metadata.address = mergePatch.metadata.address;
+        instPatch.metadata.instSize += mergePatch.metadata.instSize;
+        instPatch.metadata.execblockFlags |= mergePatch.metadata.execblockFlags;
+
+        // 5. replace the patch
+        mergePatch = std::move(instPatch);
+
+      } else {
+        patchRules[j].apply(instPatch, llvmcpu);
+        patchList.push_back(std::move(instPatch));
+      }
+      Patch &patch = patchList.back();
+      mergePending = false;
+      for (auto &p : patch.patchGenFlags) {
+        mergePending |= (p.second == PatchGeneratorFlagsX86_64::MergeFlag);
+      }
+
+      if (mergePending) {
+        return false;
+      } else if (patch.metadata.modifyPC) {
+        reset();
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+  QBDI_ABORT_PATCH(instPatch, "Not PatchRule found for:");
+}
+
+bool PatchRuleAssembly::earlyEnd(const LLVMCPU &llvmcpu,
+                                 std::vector<Patch> &patchList) {
+  if (mergePending) {
+    if (patchList.size() == 0) {
+      QBDI_CRITICAL("Cannot remove pending Patch");
+      return false;
+    }
+    patchList.pop_back();
+  }
+  reset();
+  return true;
 }
 
 } // namespace QBDI

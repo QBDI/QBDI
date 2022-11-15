@@ -23,14 +23,14 @@
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstrDesc.h"
 
+#include "devVariable.h"
+#include "Engine/LLVMCPU.h"
 #include "Patch/InstInfo.h"
 #include "Patch/X86_64/InstInfo_X86_64.h"
 #include "Utility/LogSys.h"
 
 #include "QBDI/Config.h"
 #include "QBDI/State.h"
-
-#define CHECK_TABLE 0
 
 namespace QBDI {
 /* TODO instruction (no yet supported)
@@ -2763,7 +2763,7 @@ struct MemAccessArray {
     }
   }
 
-#if CHECK_TABLE
+#if CHECK_INSTINFO_TABLE
   void check_table(const unsigned buff[], size_t buff_size, uint32_t value,
                    uint32_t mask) const {
     for (size_t i = 0; i < buff_size; i++) {
@@ -2848,17 +2848,17 @@ struct MemAccessArray {
 
 static constexpr MemAccessArray memAccessCache;
 
-#if CHECK_TABLE
+#if CHECK_INSTINFO_TABLE
 static int __check_debug = memAccessCache.check();
 #endif
 
 } // anonymous namespace
 
-unsigned getReadSize(const llvm::MCInst &inst) {
+unsigned getReadSize(const llvm::MCInst &inst, const LLVMCPU &llvmcpu) {
   return GET_READ_SIZE(memAccessCache.get(inst.getOpcode()));
 }
 
-unsigned getWriteSize(const llvm::MCInst &inst) {
+unsigned getWriteSize(const llvm::MCInst &inst, const LLVMCPU &llvmcpu) {
   return GET_WRITE_SIZE(memAccessCache.get(inst.getOpcode()));
 }
 
@@ -2878,25 +2878,14 @@ bool isMinSizeWrite(const llvm::MCInst &inst) {
   return IS_MIN_SIZE_WRITE(memAccessCache.get(inst.getOpcode()));
 }
 
-unsigned getImmediateSize(const llvm::MCInst &inst,
-                          const llvm::MCInstrDesc &desc) {
-  return llvm::X86II::getSizeOfImm(desc.TSFlags);
+sword getFixedOperandValue(const llvm::MCInst &inst, const LLVMCPU &llvmcpu,
+                           unsigned index, int64_t value) {
+  return static_cast<rword>(value);
 }
 
-bool useAllRegisters(const llvm::MCInst &inst) {
-  if constexpr (is_x86) {
-    switch (inst.getOpcode()) {
-      case llvm::X86::PUSHA16:
-      case llvm::X86::PUSHA32:
-      case llvm::X86::POPA16:
-      case llvm::X86::POPA32:
-        return true;
-      default:
-        break;
-    }
-  }
-
-  return false;
+unsigned getImmediateSize(const llvm::MCInst &inst, const LLVMCPU &llvmcpu) {
+  const llvm::MCInstrDesc &desc = llvmcpu.getMCII().get(inst.getOpcode());
+  return llvm::X86II::getSizeOfImm(desc.TSFlags);
 }
 
 bool isDoubleRead(const llvm::MCInst &inst) {
@@ -3013,6 +3002,12 @@ bool unsupportedWrite(const llvm::MCInst &inst) {
     default:
       return false;
   }
+}
+
+bool variadicOpsIsWrite(const llvm::MCInst &inst) { return false; }
+
+unsigned getInstSize(const llvm::MCInst &inst, const LLVMCPU &llvmcpu) {
+  return llvmcpu.getMCInstSize(inst);
 }
 
 }; // namespace QBDI

@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 #include "ComparedExecutor_X86_64.h"
+#include "Patch/Utils.h"
 
 #if defined(_M_X64)
 
@@ -161,6 +162,24 @@ QBDI::Context ComparedExecutor_X86_64::realExec(llvm::ArrayRef<uint8_t> code,
   return outputState;
 }
 
+void ComparedExecutor_X86_64::initContext(QBDI::Context &ctx) {
+  memset(&ctx, 0, sizeof(QBDI::Context));
+  ctx.gprState.rax = get_random();
+  ctx.gprState.rbx = get_random();
+  ctx.gprState.rcx = get_random();
+  ctx.gprState.rdx = get_random();
+  ctx.gprState.rsi = get_random();
+  ctx.gprState.rdi = get_random();
+  ctx.gprState.r8 = get_random();
+  ctx.gprState.r9 = get_random();
+  ctx.gprState.r10 = get_random();
+  ctx.gprState.r11 = get_random();
+  ctx.gprState.r12 = get_random();
+  ctx.gprState.r13 = get_random();
+  ctx.gprState.r14 = get_random();
+  ctx.gprState.r15 = get_random();
+}
+
 const char *GPRSave_s =
     "    mov $0x1, %rax\n"
     "    mov $0x2, %rbx\n"
@@ -240,7 +259,7 @@ const char *ConditionalBranching_s =
     "    inc %rcx\n"
     "    cmpq $32, %rcx\n"
     "    jb loop\n"
-    "    lea cheksum(%rip), %rsi\n"
+    "    lea checksum(%rip), %rsi\n"
     "    mov (%rsi), %rdi\n"
     "    cmp %rdx, %rdi\n"
     "    jne bad\n"

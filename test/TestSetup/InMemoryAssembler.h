@@ -24,7 +24,18 @@
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/Support/Memory.h"
 
+namespace llvm::object {
+class ObjectFile;
+}
+
+namespace QBDI {
+class LLVMCPUs;
+}
+
 class InMemoryObject {
+private:
+  void perform_reloc(llvm::object::ObjectFile *obj,
+                     const QBDI::LLVMCPUs &llvmcpus);
 
 protected:
   using PF = llvm::sys::Memory::ProtectionFlags;
@@ -34,6 +45,7 @@ protected:
 
 public:
   InMemoryObject(const char *source, const char *cpu = "",
+                 const char *arch = "",
                  const std::vector<std::string> mattrs = {});
 
   InMemoryObject(const InMemoryObject &vm) = delete;

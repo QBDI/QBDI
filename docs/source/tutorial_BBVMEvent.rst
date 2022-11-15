@@ -158,7 +158,7 @@ Reference: :py:func:`pyqbdi.VMCallback`, :py:func:`pyqbdi.VM.addVMEventCB`, :py:
 Frida/QBDI basic block information
 ++++++++++++++++++++++++++++++++++
 
-Reference: :js:func:`VMCallback`, :js:func:`QBDI.addVMEventCB`, :js:class:`VMState`
+Reference: :js:func:`VMCallback`, :js:func:`VM.addVMEventCB`, :js:class:`VMState`
 
 .. code:: js
 

@@ -20,14 +20,21 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include <QBDI/Config.h>
 #include <QBDI/Logs.h>
 
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
 
+#ifdef QBDI_PLATFORM_WINDOWS
+#include <Windows.h>
+
+static int getpid() { return GetCurrentProcessId(); }
+#endif
+
 int main(int argc, char **argv) {
 
-  srand(time(nullptr));
+  srand(time(nullptr) | getpid());
 
   if (getenv("TEST_DEBUG") != nullptr) {
     QBDI::setLogPriority(QBDI::LogPriority::DEBUG);

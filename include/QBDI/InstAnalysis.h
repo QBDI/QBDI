@@ -101,7 +101,7 @@ typedef struct {
   // Common fields
   OperandType type; /*!< Operand type */
   OperandFlag flag; /*!< Operand flag */
-  rword value;      /*!< Operand value (if immediate), or register Id */
+  sword value;      /*!< Operand value (if immediate), or register Id */
   uint8_t size;     /*!< Operand size (in bytes) */
   // Register specific fields
   uint8_t regOff;      /*!< Sub-register offset in register (in bits) */

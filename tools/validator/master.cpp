@@ -28,8 +28,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-void start_master(Process *debugged, pid_t instrumented, int ctrlfd,
-                  int datafd) {
+void start_master(Process *debugged, pid_t instrumented, int ctrlfd, int datafd,
+                  int stdoutDbg, int stdoutDbi) {
   const size_t BUFFER_SIZE = 128;
   char mnemonic[BUFFER_SIZE], disassembly[BUFFER_SIZE];
   char *env = nullptr;
@@ -39,6 +39,7 @@ void start_master(Process *debugged, pid_t instrumented, int ctrlfd,
   QBDI::FPRState fprStateInstr, fprStateDbg;
   QBDI::rword address;
   EVENT event;
+  bool skipDebugger = false;
   bool running = true;
   int error = 0;
 
@@ -68,7 +69,8 @@ void start_master(Process *debugged, pid_t instrumented, int ctrlfd,
       QBDI_WARN("Did not understood VALIDATOR_VERBOSITY parameter: {}\n", env);
   }
 
-  ValidatorEngine validator(debugged->getPID(), instrumented, verbosity);
+  ValidatorEngine validator(debugged->getPID(), instrumented, stdoutDbg,
+                            stdoutDbi, verbosity);
 
   running = true;
   while (running) {
@@ -80,6 +82,7 @@ void start_master(Process *debugged, pid_t instrumented, int ctrlfd,
     }
     if (event == EVENT::EXIT) {
       debugged->continueExecution();
+      running = false;
       break;
     } else if (event == EVENT::EXEC_TRANSFER) {
       QBDI::rword transferAddress;
@@ -99,41 +102,45 @@ void start_master(Process *debugged, pid_t instrumented, int ctrlfd,
       }
       if (readInstructionEvent(&address, mnemonic, BUFFER_SIZE, disassembly,
                                BUFFER_SIZE, &gprStateInstr, &fprStateInstr,
-                               dataPipe) != 1) {
+                               &skipDebugger, dataPipe) != 1) {
         QBDI_ERROR("Lost the data pipe, exiting!");
         debugged->continueExecution();
         error = VALIDATOR_ERR_DATA_PIPE_LOST;
         break;
       }
-      debugged->setBreakpoint(
-          (void *)QBDI_GPR_GET(&gprStateInstr, QBDI::REG_PC));
-      do {
-        debugged->continueExecution();
-        status = debugged->waitForStatus();
-        if (hasExited(status)) {
-          QBDI_ERROR("Execution diverged, debugged process exited!");
-          validator.signalCriticalState();
-          running = false;
-          writeCommand(COMMAND::STOP, ctrlPipe);
-          error = VALIDATOR_ERR_DBG_EXITED;
-          break;
-        } else if (hasCrashed(status)) {
-          QBDI_ERROR(
-              "Something went really wrong, debugged process encoutered signal "
-              "{}",
-              WSTOPSIG(status));
-          validator.signalCriticalState();
-          running = false;
-          writeCommand(COMMAND::STOP, ctrlPipe);
-          error = VALIDATOR_ERR_DBG_CRASH;
-          break;
-        }
-        debugged->getProcessGPR(&gprStateDbg);
-        debugged->getProcessFPR(&fprStateDbg);
-      } while (QBDI_GPR_GET(&gprStateDbg, QBDI::REG_PC) !=
-               QBDI_GPR_GET(&gprStateInstr, QBDI::REG_PC));
-      validator.signalNewState(address, mnemonic, disassembly, &gprStateDbg,
-                               &fprStateDbg, &gprStateInstr, &fprStateInstr);
+      if (not skipDebugger) {
+        debugged->setBreakpoint(
+            (void *)QBDI_GPR_GET(&gprStateInstr, QBDI::REG_PC));
+        do {
+          debugged->continueExecution();
+          status = debugged->waitForStatus();
+          if (hasExited(status)) {
+            QBDI_ERROR("Execution diverged, debugged process exited!");
+            validator.signalCriticalState();
+            running = false;
+            writeCommand(COMMAND::STOP, ctrlPipe);
+            error = VALIDATOR_ERR_DBG_EXITED;
+            break;
+          } else if (hasCrashed(status)) {
+            QBDI_ERROR(
+                "Something went really wrong, debugged process encoutered "
+                "signal "
+                "{}",
+                WSTOPSIG(status));
+            validator.signalCriticalState();
+            running = false;
+            writeCommand(COMMAND::STOP, ctrlPipe);
+            error = VALIDATOR_ERR_DBG_CRASH;
+            break;
+          }
+          debugged->getProcessGPR(&gprStateDbg);
+          debugged->getProcessFPR(&fprStateDbg);
+        } while (QBDI_GPR_GET(&gprStateDbg, QBDI::REG_PC) !=
+                 QBDI_GPR_GET(&gprStateInstr, QBDI::REG_PC));
+      }
+      validator.signalNewState(address, mnemonic, disassembly, skipDebugger,
+                               &gprStateDbg, &fprStateDbg, &gprStateInstr,
+                               &fprStateInstr);
       if (running) {
         debugged->unsetBreakpoint();
       }

@@ -22,9 +22,9 @@
 #include "PatchEmpty.h"
 
 #include "ExecBlock/ExecBlock.h"
+#include "Patch/ExecBlockPatch.h"
 #include "Patch/Patch.h"
 #include "Patch/PatchRule.h"
-#include "Patch/PatchRules.h"
 #include "Patch/RelocatableInst.h"
 
 TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest-EmptyBasicBlock") {
@@ -38,16 +38,17 @@ TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest-EmptyBasicBlock") {
 }
 
 TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest-MultipleBasicBlock") {
+  const QBDI::LLVMCPU &llvmcpu = this->getCPU(QBDI::CPUMode::DEFAULT);
   // Allocate ExecBlock
   QBDI::ExecBlock execBlock(*this);
   // Jit two different terminators
   QBDI::Patch::Vec terminator1;
   QBDI::Patch::Vec terminator2;
-  terminator1.push_back(generateEmptyPatch(0x42424242, *this));
-  terminator2.push_back(generateEmptyPatch(0x13371337, *this));
-  terminator1[0].append(QBDI::getTerminator(0x42424242));
+  terminator1.push_back(generateEmptyPatch(0x42424240, *this));
+  terminator2.push_back(generateEmptyPatch(0x13371338, *this));
+  terminator1[0].append(QBDI::getTerminator(llvmcpu, 0x42424240));
   terminator1[0].metadata.modifyPC = true;
-  terminator2[0].append(QBDI::getTerminator(0x13371337));
+  terminator2[0].append(QBDI::getTerminator(llvmcpu, 0x13371338));
   terminator2[0].metadata.modifyPC = true;
   QBDI::SeqWriteResult block1 =
       execBlock.writeSequence(terminator1.begin(), terminator1.end());

@@ -1,9 +1,8 @@
 // QBDI
-const qbdi = require('/usr/local/share/qbdi/frida-qbdi'); // import QBDI bindings
-qbdi.import(); // Set bindings to global environment
+import { VM, InstPosition, VMAction } from "./frida-qbdi.js";
 
 // Initialize QBDI
-var vm = new QBDI();
+var vm = new VM();
 var state = vm.getGPRState();
 var stack = vm.allocateVirtualStack(state, 0x100000);
 

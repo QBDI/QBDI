@@ -15,16 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef PATCHRULES_X86_64_H
-#define PATCHRULES_X86_64_H
+#ifndef ExecBlockFlags_AARCH64_H
+#define ExecBlockFlags_AARCH64_H
 
 #include <stdint.h>
 
-#include "Patch/PatchRules.h"
-
 namespace QBDI {
 
-static const uint32_t MINIMAL_BLOCK_SIZE = 64;
+typedef enum : uint8_t { Default = 0 } ExecBlockFlags;
 
 }
 

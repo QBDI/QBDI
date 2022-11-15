@@ -15,30 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef PATCHRULES_H
-#define PATCHRULES_H
+#ifndef TempManager_ARM_H
+#define TempManager_ARM_H
 
-#include <memory>
-#include <vector>
-
-#include "QBDI/Options.h"
-#include "QBDI/State.h"
+#include <set>
+#include "Patch/Types.h"
 
 namespace QBDI {
 
-class PatchRule;
-class RelocatableInst;
+static const std::set<Reg> TempManagerUnrestoreGPR = {};
 
-std::vector<std::unique_ptr<RelocatableInst>>
-getExecBlockPrologue(Options opts);
-
-std::vector<std::unique_ptr<RelocatableInst>>
-getExecBlockEpilogue(Options opts);
-
-std::vector<std::unique_ptr<RelocatableInst>> getTerminator(rword address);
-
-std::vector<PatchRule> getDefaultPatchRules(Options opts);
-
-} // namespace QBDI
+}
 
 #endif

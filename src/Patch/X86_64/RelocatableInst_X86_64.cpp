@@ -30,7 +30,7 @@ namespace QBDI {
 // RelocTag
 // ========
 
-llvm::MCInst RelocTag::reloc(ExecBlock *exec_block) const {
+llvm::MCInst RelocTag::reloc(ExecBlock *execBlock, CPUMode cpumode) const {
   QBDI_ERROR("Internal Error: Relocate a Tag instruction.");
   return nop();
 }
@@ -38,122 +38,214 @@ llvm::MCInst RelocTag::reloc(ExecBlock *exec_block) const {
 // LoadShadow
 // ==========
 
-llvm::MCInst LoadShadow::reloc(ExecBlock *exec_block) const {
-  uint16_t id = exec_block->getLastShadow(tag);
-  unsigned int shadowOffset = exec_block->getShadowOffset(id);
+llvm::MCInst LoadShadow::reloc(ExecBlock *execBlock, CPUMode cpumode) const {
+  uint16_t id = execBlock->getLastShadow(tag);
+  unsigned int shadowOffset = execBlock->getShadowOffset(id);
 
   if constexpr (is_x86_64) {
-    return movrm(reg, Reg(REG_PC), 1, 0,
-                 exec_block->getDataBlockOffset() + shadowOffset - 7, 0);
+    return mov64rm(reg, Reg(REG_PC), 1, 0,
+                   execBlock->getDataBlockOffset() + shadowOffset - 7, 0);
   } else {
-    return movrm(reg, 0, 0, 0, exec_block->getDataBlockBase() + shadowOffset,
-                 0);
+    return mov32rm(reg, 0, 0, 0, execBlock->getDataBlockBase() + shadowOffset,
+                   0);
+  }
+}
+
+int LoadShadow::getSize(const LLVMCPU &llvmcpu) const {
+  if constexpr (is_x86_64) {
+    return 7;
+  } else {
+    return 6;
   }
 }
 
 // StoreShadow
 // ===========
 
-llvm::MCInst StoreShadow::reloc(ExecBlock *exec_block) const {
+llvm::MCInst StoreShadow::reloc(ExecBlock *execBlock, CPUMode cpumode) const {
   uint16_t id;
   if (create) {
-    id = exec_block->newShadow(tag);
+    id = execBlock->newShadow(tag);
   } else {
-    id = exec_block->getLastShadow(tag);
+    id = execBlock->getLastShadow(tag);
   }
-  unsigned int shadowOffset = exec_block->getShadowOffset(id);
+  unsigned int shadowOffset = execBlock->getShadowOffset(id);
 
   if constexpr (is_x86_64) {
-    return movmr(Reg(REG_PC), 1, 0,
-                 exec_block->getDataBlockOffset() + shadowOffset - 7, 0, reg);
+    return mov64mr(Reg(REG_PC), 1, 0,
+                   execBlock->getDataBlockOffset() + shadowOffset - 7, 0, reg);
   } else {
-    return movmr(0, 0, 0, exec_block->getDataBlockBase() + shadowOffset, 0,
-                 reg);
+    return mov32mr(0, 0, 0, execBlock->getDataBlockBase() + shadowOffset, 0,
+                   reg);
+  }
+}
+
+int StoreShadow::getSize(const LLVMCPU &llvmcpu) const {
+  if constexpr (is_x86_64) {
+    return 7;
+  } else {
+    return 6;
   }
 }
 
 // LoadDataBlock
 // =============
 
-llvm::MCInst LoadDataBlock::reloc(ExecBlock *exec_block) const {
+llvm::MCInst LoadDataBlock::reloc(ExecBlock *execBlock, CPUMode cpumode) const {
 
   if constexpr (is_x86_64) {
-    return movrm(reg, Reg(REG_PC), 1, 0,
-                 exec_block->getDataBlockOffset() + offset - 7, 0);
+    return mov64rm(reg, Reg(REG_PC), 1, 0,
+                   execBlock->getDataBlockOffset() + offset - 7, 0);
   } else {
-    return movrm(reg, 0, 0, 0, exec_block->getDataBlockBase() + offset, 0);
+    return mov32rm(reg, 0, 0, 0, execBlock->getDataBlockBase() + offset, 0);
+  }
+}
+
+int LoadDataBlock::getSize(const LLVMCPU &llvmcpu) const {
+  if constexpr (is_x86_64) {
+    return 7;
+  } else {
+    return 6;
   }
 }
 
 // StoreDataBlock
 // ==============
 
-llvm::MCInst StoreDataBlock::reloc(ExecBlock *exec_block) const {
+llvm::MCInst StoreDataBlock::reloc(ExecBlock *execBlock,
+                                   CPUMode cpumode) const {
 
   if constexpr (is_x86_64) {
-    return movmr(Reg(REG_PC), 1, 0,
-                 exec_block->getDataBlockOffset() + offset - 7, 0, reg);
+    return mov64mr(Reg(REG_PC), 1, 0,
+                   execBlock->getDataBlockOffset() + offset - 7, 0, reg);
   } else {
-    return movmr(0, 0, 0, exec_block->getDataBlockBase() + offset, 0, reg);
+    return mov32mr(0, 0, 0, execBlock->getDataBlockBase() + offset, 0, reg);
+  }
+}
+
+int StoreDataBlock::getSize(const LLVMCPU &llvmcpu) const {
+  if constexpr (is_x86_64) {
+    return 7;
+  } else {
+    return 6;
   }
 }
 
 // MovReg
 // ======
 
-llvm::MCInst MovReg::reloc(ExecBlock *exec_block) const {
-  return movrr(dst, src);
+llvm::MCInst MovReg::reloc(ExecBlock *execBlock, CPUMode cpumode) const {
+  if constexpr (is_x86_64)
+    return mov64rr(dst, src);
+  else
+    return mov32rr(dst, src);
+}
+
+int MovReg::getSize(const LLVMCPU &llvmcpu) const {
+  if constexpr (is_x86_64) {
+    return 3;
+  } else {
+    return 2;
+  }
 }
 
 // LoadImm
 // =======
 
-llvm::MCInst LoadImm::reloc(ExecBlock *exec_block) const {
-  return movri(reg, imm);
+llvm::MCInst LoadImm::reloc(ExecBlock *execBlock, CPUMode cpumode) const {
+  if constexpr (is_x86_64) {
+    if (imm < -0x80000000ull or 0x80000000ull <= imm) {
+      return mov64ri(reg, imm);
+    } else {
+      return mov64ri32(reg, imm);
+    }
+  } else {
+    return mov32ri(reg, imm);
+  }
+}
+
+int LoadImm::getSize(const LLVMCPU &llvmcpu) const {
+  if constexpr (is_x86_64) {
+    if (imm < -0x80000000ull or 0x80000000ull <= imm) {
+      return 10;
+    } else {
+      return 7;
+    }
+  } else {
+    return 5;
+  }
 }
 
 // InstId
 // ======
 
-llvm::MCInst InstId::reloc(ExecBlock *exec_block) const {
-  return movri(reg, exec_block->getNextInstID());
+llvm::MCInst InstId::reloc(ExecBlock *execBlock, CPUMode cpumode) const {
+  if constexpr (is_x86_64) {
+    return mov64ri32(reg, execBlock->getNextInstID());
+  } else {
+    return mov32ri(reg, execBlock->getNextInstID());
+  }
+}
+
+int InstId::getSize(const LLVMCPU &llvmcpu) const {
+  if constexpr (is_x86_64) {
+    return 7;
+  } else {
+    return 5;
+  }
 }
 
 // Target Specific RelocatableInst
 
-// EpilogueRel
-// ===========
+// EpilogueJump
+// ============
 
-llvm::MCInst EpilogueRel::reloc(ExecBlock *exec_block) const {
-  llvm::MCInst res = inst;
-  res.getOperand(opn).setImm(offset + exec_block->getEpilogueOffset());
-  return res;
+llvm::MCInst EpilogueJump::reloc(ExecBlock *execBlock, CPUMode cpumode) const {
+  return jmp(execBlock->getEpilogueOffset() - 1);
 }
 
-// HostPCRel
-// =========
+int EpilogueJump::getSize(const LLVMCPU &llvmcpu) const { return 5; }
 
-llvm::MCInst HostPCRel::reloc(ExecBlock *exec_block) const {
-  llvm::MCInst res = inst;
-  res.getOperand(opn).setImm(offset + exec_block->getCurrentPC());
-  return res;
+// SetRegtoPCRel
+// =============
+
+llvm::MCInst SetRegtoPCRel::reloc(ExecBlock *execBlock, CPUMode cpumode) const {
+  if constexpr (is_x86_64)
+    return mov64ri(reg, offset + execBlock->getCurrentPC());
+  else
+    return mov32ri(reg, offset + execBlock->getCurrentPC());
+}
+
+int SetRegtoPCRel::getSize(const LLVMCPU &llvmcpu) const {
+  if constexpr (is_x86_64) {
+    return 10;
+  } else {
+    return 5;
+  }
 }
 
 // DataBlockRel
 // ============
 
-llvm::MCInst DataBlockRel::reloc(ExecBlock *exec_block) const {
+llvm::MCInst DataBlockRel::reloc(ExecBlock *execBlock, CPUMode cpumode) const {
   llvm::MCInst res = inst;
-  res.getOperand(opn).setImm(offset + exec_block->getDataBlockOffset());
+  QBDI_REQUIRE_ABORT(opn < res.getNumOperands(), "Invalid operand {}", opn);
+  QBDI_REQUIRE_ABORT(res.getOperand(opn).isImm(), "Unexpected operand type");
+
+  res.getOperand(opn).setImm(offset + execBlock->getDataBlockOffset());
   return res;
 }
 
 // DataBlockAbsRel
 // ===============
 
-llvm::MCInst DataBlockAbsRel::reloc(ExecBlock *exec_block) const {
+llvm::MCInst DataBlockAbsRel::reloc(ExecBlock *execBlock,
+                                    CPUMode cpumode) const {
   llvm::MCInst res = inst;
-  res.getOperand(opn).setImm(exec_block->getDataBlockBase() + offset);
+  QBDI_REQUIRE_ABORT(opn < res.getNumOperands(), "Invalid operand {}", opn);
+  QBDI_REQUIRE_ABORT(res.getOperand(opn).isImm(), "Unexpected operand type");
+
+  res.getOperand(opn).setImm(execBlock->getDataBlockBase() + offset);
   return res;
 }
 

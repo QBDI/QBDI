@@ -211,6 +211,20 @@ Register state
        :end-before: // SPHINX_X86_64_GPRSTATE_END
        :code:
 
+    For ARM architecture:
+
+    .. include:: ../../include/QBDI/arch/ARM/State.h
+       :start-after: SPHINX_ARM_GPRSTATE_BEGIN
+       :end-before: // SPHINX_ARM_GPRSTATE_END
+       :code:
+
+    For AARCH64 architecture:
+
+    .. include:: ../../include/QBDI/arch/AARCH64/State.h
+       :start-after: SPHINX_AARCH64_GPRSTATE_BEGIN
+       :end-before: // SPHINX_AARCH64_GPRSTATE_END
+       :code:
+
 .. cpp:struct:: QBDI::FPRState
 
     Floating Point Register context.
@@ -227,6 +241,20 @@ Register state
     .. include:: ../../include/QBDI/arch/X86_64/State.h
        :start-after: SPHINX_X86_64_FPRSTATE_BEGIN
        :end-before: // SPHINX_X86_64_FPRSTATE_END
+       :code:
+
+    For ARM architecture:
+
+    .. include:: ../../include/QBDI/arch/ARM/State.h
+       :start-after: SPHINX_ARM_FPRSTATE_BEGIN
+       :end-before: // SPHINX_ARM_FPRSTATE_END
+       :code:
+
+    For AARCH64 architecture:
+
+    .. include:: ../../include/QBDI/arch/AARCH64/State.h
+       :start-after: SPHINX_AARCH64_FPRSTATE_BEGIN
+       :end-before: // SPHINX_AARCH64_FPRSTATE_END
        :code:
 
 .. doxygenstruct:: QBDI::MMSTReg
@@ -357,7 +385,79 @@ Exploration
 Other globals
 -------------
 
-.. doxygenenum:: QBDI::Options
+.. cpp:enum:: QBDI::Options
+
+  Note: some value are available only for some architecture
+
+  Values for all architecture :
+
+  .. cpp:enumerator:: NO_OPT
+
+      Default Value
+
+  .. cpp:enumerator:: OPT_DISABLE_FPR
+
+      Disable all operation on FPU (SSE, AVX, SIMD). May break the execution if the target use the FPU
+
+  .. cpp:enumerator:: OPT_DISABLE_OPTIONAL_FPR
+
+      Disable context switch optimisation when the target execblock doesn't used FPR
+
+  Values for AARCH64 and ARM only :
+
+  .. cpp:enumerator:: OPT_DISABLE_LOCAL_MONITOR
+
+      Disable the local monitor for instruction like strex
+
+  Values for AARCH64 only :
+
+  .. cpp:enumerator:: OPT_BYPASS_PAUTH
+
+      Disable pointeur authentication
+
+  .. cpp:enumerator:: OPT_ENABLE_BTI
+
+      Enable BTI on instrumented code
+
+  Values for ARM only :
+
+  .. cpp:enumerator:: OPT_DISABLE_D16_D31
+
+      Disable the used of D16-D31 register
+
+  .. cpp:enumerator:: OPT_ARMv4
+
+      Change between ARM and Thumb as an ARMv4 CPU
+
+  .. cpp:enumerator:: OPT_ARMv5T_6
+
+      Change between ARM and Thumb as an ARMv5T or ARMv6 CPU
+
+  .. cpp:enumerator:: OPT_ARMv7
+
+      Change between ARM and Thumb as an ARMv7 CPU (default)
+
+  .. cpp:enumerator:: OPT_ARM_MASK
+
+      When apply :cpp:enumerator:`OPT_ARMv4`,
+      :cpp:enumerator:`OPT_ARMv5T_6` or
+      :cpp:enumerator:`OPT_ARMv7`, this mask must be clear.
+
+  Values for X86 and X86_64 only :
+
+  .. cpp:enumerator:: OPT_ATT_SYNTAX
+
+      Used the AT&T syntax for instruction disassembly
+
+  Values for X86_64 only :
+
+  .. cpp:enumerator:: OPT_ENABLE_FS_GS
+
+      Enable Backup/Restore of FS/GS  segment. This option uses the
+      instructions (RD|WR)(FS|GS)BASE that must be supported by the operating
+      system
+
+
 
 .. doxygenenum:: QBDI::VMError
 

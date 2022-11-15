@@ -32,6 +32,7 @@ namespace QBDI {
 class LLVMCPU;
 class PatchGenerator;
 class PatchCondition;
+class RelocatableInst;
 
 /*! A patch rule written in PatchDSL.
  */
@@ -57,33 +58,21 @@ public:
   /*! Determine wheter this rule applies by evaluating this rule condition on
    * the current context.
    *
-   * @param[in] inst      The current instruction.
-   * @param[in] address   The current instruction address.
-   * @param[in] instSize  The current instruction size.
+   * @param[in] patch     The Patch to check
    * @param[in] llvmcpu   LLVMCPU object
    *
    * @return True if this patch condition evaluate to true on this context.
    */
-  bool canBeApplied(const llvm::MCInst &inst, rword address, rword instSize,
-                    const LLVMCPU &llvmcpu) const;
+  bool canBeApplied(const Patch &patch, const LLVMCPU &llvmcpu) const;
 
   /*! Generate this rule output patch by evaluating its generators on the
    * current context. Also handles the temporary register management for this
    * patch.
    *
-   * @param[in] inst      The current instruction.
-   * @param[in] address   The current instruction address.
-   * @param[in] instSize  The current instruction size.
+   * @param[in] patch     The Patch where to apply the rule
    * @param[in] llvmcpu   LLVMCPU object
-   * @param[in] toMerge   An eventual previous patch which is to be merged
-   *                      with the current instruction. The patch is empty
-   *                      after the merge.
-   *
-   * @return A Patch which is composed of the input context and a series of
-   * RelocatableInst.
    */
-  Patch generate(const llvm::MCInst &inst, rword address, rword instSize,
-                 const LLVMCPU &llvmcpu, Patch *toMerge = nullptr) const;
+  void apply(Patch &patch, const LLVMCPU &llvmcpu) const;
 };
 
 } // namespace QBDI

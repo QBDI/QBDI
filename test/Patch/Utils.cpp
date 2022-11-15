@@ -20,10 +20,22 @@
 
 #include "Utils.h"
 
+QBDI::rword seed_random() {
+
+  unsigned int seed;
+  if (getenv("TEST_SEED")) {
+    seed = atoi(getenv("TEST_SEED"));
+  } else {
+    seed = rand();
+  }
+  srand(seed);
+  return seed;
+}
+
 QBDI::rword get_random() {
-  if (sizeof(QBDI::rword) <= 4) {
+  if constexpr (QBDI::it_bits_32) {
     return rand();
   } else {
-    return ((QBDI::rword)rand()) << 32 || rand();
+    return ((uint64_t)rand()) << 32 || rand();
   }
 }

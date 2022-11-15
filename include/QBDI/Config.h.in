@@ -39,6 +39,8 @@
 #cmakedefine QBDI_EXPORT_SYM @QBDI_EXPORT_SYM@
 
 #ifdef __cplusplus
+namespace QBDI {
+
 static constexpr bool is_android = @QBDI_PLATFORM_ANDROID@;
 static constexpr bool is_linux   = @QBDI_PLATFORM_LINUX@;
 static constexpr bool is_osx     = @QBDI_PLATFORM_OSX@;
@@ -53,6 +55,9 @@ static constexpr bool is_x86_64  = @QBDI_ARCH_X86_64@;
 
 static constexpr bool it_bits_32 = @QBDI_BITS_32@;
 static constexpr bool is_bits_64 = @QBDI_BITS_64@;
+
+static constexpr bool has_debug_log = @QBDI_ENABLE_LOG_DEBUG@;
+}
 #endif // __cplusplus
 
 #endif // QBDI_CONFIG_H_

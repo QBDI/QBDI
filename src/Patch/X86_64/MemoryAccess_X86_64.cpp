@@ -69,7 +69,8 @@ enum MemoryTag : uint16_t {
 
 void analyseMemoryAccessAddrValue(const ExecBlock &curExecBlock,
                                   llvm::ArrayRef<ShadowInfo> &shadows,
-                                  std::vector<MemoryAccess> &dest) {
+                                  std::vector<MemoryAccess> &dest,
+                                  const LLVMCPU &llvmcpu) {
   if (shadows.size() < 1) {
     return;
   }
@@ -84,7 +85,7 @@ void analyseMemoryAccessAddrValue(const ExecBlock &curExecBlock,
       return;
     case MEM_READ_ADDRESS_TAG:
       access.type = MEMORY_READ;
-      access.size = getReadSize(inst);
+      access.size = getReadSize(inst, llvmcpu);
       expectValueTag = MEM_READ_VALUE_TAG;
       if (isMinSizeRead(inst)) {
         access.flags |= MEMORY_MINIMUM_SIZE;
@@ -92,7 +93,7 @@ void analyseMemoryAccessAddrValue(const ExecBlock &curExecBlock,
       break;
     case MEM_WRITE_ADDRESS_TAG:
       access.type = MEMORY_WRITE;
-      access.size = getWriteSize(inst);
+      access.size = getWriteSize(inst, llvmcpu);
       expectValueTag = MEM_WRITE_VALUE_TAG;
       if (isMinSizeRead(inst)) {
         access.flags |= MEMORY_MINIMUM_SIZE;
@@ -131,7 +132,8 @@ void analyseMemoryAccessAddrValue(const ExecBlock &curExecBlock,
 void analyseMemoryAccessAddrRange(const ExecBlock &curExecBlock,
                                   llvm::ArrayRef<ShadowInfo> &shadows,
                                   bool postInst,
-                                  std::vector<MemoryAccess> &dest) {
+                                  std::vector<MemoryAccess> &dest,
+                                  const LLVMCPU &llvmcpu) {
   if (shadows.size() < 1) {
     return;
   }
@@ -146,20 +148,20 @@ void analyseMemoryAccessAddrRange(const ExecBlock &curExecBlock,
     case MEM_READ_0_BEGIN_ADDRESS_TAG:
       access.type = MEMORY_READ;
       expectValueTag = MEM_READ_0_END_ADDRESS_TAG;
-      accessAtomicSize =
-          getReadSize(curExecBlock.getOriginalMCInst(shadows[0].instID));
+      accessAtomicSize = getReadSize(
+          curExecBlock.getOriginalMCInst(shadows[0].instID), llvmcpu);
       break;
     case MEM_READ_1_BEGIN_ADDRESS_TAG:
       access.type = MEMORY_READ;
       expectValueTag = MEM_READ_1_END_ADDRESS_TAG;
-      accessAtomicSize =
-          getReadSize(curExecBlock.getOriginalMCInst(shadows[0].instID));
+      accessAtomicSize = getReadSize(
+          curExecBlock.getOriginalMCInst(shadows[0].instID), llvmcpu);
       break;
     case MEM_WRITE_BEGIN_ADDRESS_TAG:
       access.type = MEMORY_WRITE;
       expectValueTag = MEM_WRITE_END_ADDRESS_TAG;
-      accessAtomicSize =
-          getWriteSize(curExecBlock.getOriginalMCInst(shadows[0].instID));
+      accessAtomicSize = getWriteSize(
+          curExecBlock.getOriginalMCInst(shadows[0].instID), llvmcpu);
       break;
   }
 
@@ -167,7 +169,7 @@ void analyseMemoryAccessAddrRange(const ExecBlock &curExecBlock,
   access.flags |= MEMORY_UNKNOWN_VALUE;
   access.value = 0;
 
-  if (!postInst) {
+  if (not postInst) {
     access.accessAddress = curExecBlock.getShadow(shadows[0].shadowID);
     access.flags |= MEMORY_UNKNOWN_SIZE;
     access.size = 0;
@@ -210,29 +212,32 @@ void analyseMemoryAccess(const ExecBlock &curExecBlock, uint16_t instID,
                          bool afterInst, std::vector<MemoryAccess> &dest) {
 
   llvm::ArrayRef<ShadowInfo> shadows = curExecBlock.getShadowByInst(instID);
+  const LLVMCPU &llvmcpu = curExecBlock.getLLVMCPUByInst(instID);
   QBDI_DEBUG("Got {} shadows for Instruction {:x}", shadows.size(), instID);
 
-  while (!shadows.empty()) {
+  while (not shadows.empty()) {
     QBDI_REQUIRE(shadows[0].instID == instID);
 
     switch (shadows[0].tag) {
       default:
         break;
       case MEM_READ_ADDRESS_TAG:
-        analyseMemoryAccessAddrValue(curExecBlock, shadows, dest);
+        analyseMemoryAccessAddrValue(curExecBlock, shadows, dest, llvmcpu);
         break;
       case MEM_WRITE_ADDRESS_TAG:
         if (afterInst) {
-          analyseMemoryAccessAddrValue(curExecBlock, shadows, dest);
+          analyseMemoryAccessAddrValue(curExecBlock, shadows, dest, llvmcpu);
         }
         break;
       case MEM_READ_0_BEGIN_ADDRESS_TAG:
       case MEM_READ_1_BEGIN_ADDRESS_TAG:
-        analyseMemoryAccessAddrRange(curExecBlock, shadows, afterInst, dest);
+        analyseMemoryAccessAddrRange(curExecBlock, shadows, afterInst, dest,
+                                     llvmcpu);
         break;
       case MEM_WRITE_BEGIN_ADDRESS_TAG:
         if (afterInst) {
-          analyseMemoryAccessAddrRange(curExecBlock, shadows, afterInst, dest);
+          analyseMemoryAccessAddrRange(curExecBlock, shadows, afterInst, dest,
+                                       llvmcpu);
         }
         break;
     }
@@ -261,7 +266,7 @@ generatePreReadInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
   }
   // instruction with double read
   else if (isDoubleRead(patch.metadata.inst)) {
-    if (getReadSize(patch.metadata.inst) > sizeof(rword)) {
+    if (getReadSize(patch.metadata.inst, llvmcpu) > sizeof(rword)) {
       static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
           GetReadAddress::unique(Temp(0), 0),
           WriteTemp::unique(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
@@ -272,16 +277,16 @@ generatePreReadInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
       static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
           GetReadAddress::unique(Temp(0), 0),
           WriteTemp::unique(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
-          GetReadValue::unique(Temp(0), 0),
+          GetReadValue::unique(Temp(0), Temp(0)),
           WriteTemp::unique(Temp(0), Shadow(MEM_READ_VALUE_TAG)),
           GetReadAddress::unique(Temp(0), 1),
           WriteTemp::unique(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
-          GetReadValue::unique(Temp(0), 1),
+          GetReadValue::unique(Temp(0), Temp(0)),
           WriteTemp::unique(Temp(0), Shadow(MEM_READ_VALUE_TAG)));
       return r;
     }
   } else {
-    if (getReadSize(patch.metadata.inst) > sizeof(rword)) {
+    if (getReadSize(patch.metadata.inst, llvmcpu) > sizeof(rword)) {
       static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
           GetReadAddress::unique(Temp(0)),
           WriteTemp::unique(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)));
@@ -290,7 +295,7 @@ generatePreReadInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
       static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
           GetReadAddress::unique(Temp(0)),
           WriteTemp::unique(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
-          GetReadValue::unique(Temp(0)),
+          GetReadValue::unique(Temp(0), Temp(0)),
           WriteTemp::unique(Temp(0), Shadow(MEM_READ_VALUE_TAG)));
       return r;
     }
@@ -334,8 +339,8 @@ generatePreWriteInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
     return r;
   }
   // Some instruction need to have the address get before the instruction
-  else if (mayChangeWriteAddr(patch.metadata.inst, desc) &&
-           !isStackWrite(patch.metadata.inst)) {
+  else if (mayChangeWriteAddr(patch.metadata.inst, desc) and
+           not isStackWrite(patch.metadata.inst)) {
     static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
         GetWriteAddress::unique(Temp(0)),
         WriteTemp::unique(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)));
@@ -359,20 +364,20 @@ generatePostWriteInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
     return r;
   }
   // Some instruction need to have the address get before the instruction
-  else if (mayChangeWriteAddr(patch.metadata.inst, desc) &&
-           !isStackWrite(patch.metadata.inst)) {
-    if (getWriteSize(patch.metadata.inst) > sizeof(rword)) {
+  else if (mayChangeWriteAddr(patch.metadata.inst, desc) and
+           not isStackWrite(patch.metadata.inst)) {
+    if (getWriteSize(patch.metadata.inst, llvmcpu) > sizeof(rword)) {
       static const PatchGenerator::UniquePtrVec r;
       return r;
     } else {
       static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
           ReadTemp::unique(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
-          GetWriteValue::unique(Temp(0)),
+          GetWriteValue::unique(Temp(0), Temp(0)),
           WriteTemp::unique(Temp(0), Shadow(MEM_WRITE_VALUE_TAG)));
       return r;
     }
   } else {
-    if (getWriteSize(patch.metadata.inst) > sizeof(rword)) {
+    if (getWriteSize(patch.metadata.inst, llvmcpu) > sizeof(rword)) {
       static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
           GetWriteAddress::unique(Temp(0)),
           WriteTemp::unique(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)));
@@ -381,7 +386,7 @@ generatePostWriteInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
       static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
           GetWriteAddress::unique(Temp(0)),
           WriteTemp::unique(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
-          GetWriteValue::unique(Temp(0)),
+          GetWriteValue::unique(Temp(0), Temp(0)),
           WriteTemp::unique(Temp(0), Shadow(MEM_WRITE_VALUE_TAG)));
       return r;
     }

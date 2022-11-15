@@ -37,20 +37,20 @@ void init_binding_Range(py::module_ &m) {
            "Return True if two ranges are equal (same boundaries).", "r"_a)
 
       .def("contains",
-           (bool (Range<rword>::*)(const rword) const) & Range<rword>::contains,
+           (bool(Range<rword>::*)(const rword) const) & Range<rword>::contains,
            "Return True if an value is inside current range boundaries.", "t"_a)
 
       .def("contains",
-           (bool (Range<rword>::*)(const Range<rword> &) const) &
+           (bool(Range<rword>::*)(const Range<rword> &) const) &
                Range<rword>::contains,
            "Return True if a range is inside current range boundaries.", "r"_a)
 
       .def("__contains__",
-           (bool (Range<rword>::*)(const rword) const) & Range<rword>::contains,
+           (bool(Range<rword>::*)(const rword) const) & Range<rword>::contains,
            "Return True if an value is inside current range boundaries.", "t"_a)
 
       .def("__contains__",
-           (bool (Range<rword>::*)(const Range<rword> &) const) &
+           (bool(Range<rword>::*)(const Range<rword> &) const) &
                Range<rword>::contains,
            "Return True if a range is inside current range boundaries.", "r"_a)
 

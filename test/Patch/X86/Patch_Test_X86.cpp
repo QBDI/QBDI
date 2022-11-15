@@ -19,8 +19,9 @@
 #include "Patch/Patch_Test.h"
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-LoopCode") {
+  INFO("TEST_SEED=" << seed_random());
   QBDI::Context inputState;
 
-  memset(&inputState, 0, sizeof(QBDI::Context));
+  initContext(inputState);
   comparedExec(LoopCode_s, inputState, 4096);
 }

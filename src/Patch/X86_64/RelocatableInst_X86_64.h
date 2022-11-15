@@ -32,74 +32,79 @@
 namespace QBDI {
 class ExecBlock;
 
-class EpilogueRel : public AutoClone<RelocatableInst, EpilogueRel> {
+class NoRelocSized : public AutoClone<RelocatableInst, NoRelocSized> {
   llvm::MCInst inst;
-  unsigned int opn;
-  rword offset;
+  int size;
 
 public:
-  EpilogueRel(llvm::MCInst &&inst, unsigned int opn, rword offset)
-      : AutoClone<RelocatableInst, EpilogueRel>(),
-        inst(std::forward<llvm::MCInst>(inst)), opn(opn), offset(offset) {}
+  NoRelocSized(llvm::MCInst &&inst, int size)
+      : inst(std::forward<llvm::MCInst>(inst)), size(size) {}
 
-  // Set an operand to epilogueOffset + offset
-  llvm::MCInst reloc(ExecBlock *exec_block) const override;
+  llvm::MCInst reloc(ExecBlock *execBlock, CPUMode cpumode) const override {
+    return inst;
+  }
+
+  int getSize(const LLVMCPU &llvmcpu) const override { return size; };
 };
 
-class HostPCRel : public AutoClone<RelocatableInst, HostPCRel> {
-  llvm::MCInst inst;
-  unsigned int opn;
+class EpilogueJump : public AutoClone<RelocatableInst, EpilogueJump> {
+
+public:
+  EpilogueJump() : AutoClone<RelocatableInst, EpilogueJump>() {}
+
+  // Set an operand to epilogueOffset + offset
+  llvm::MCInst reloc(ExecBlock *execBlock, CPUMode cpumode) const override;
+
+  int getSize(const LLVMCPU &llvmcpu) const override;
+};
+
+class SetRegtoPCRel : public AutoClone<RelocatableInst, SetRegtoPCRel> {
+  Reg reg;
   rword offset;
 
 public:
-  HostPCRel(llvm::MCInst &&inst, unsigned int opn, rword offset)
-      : AutoClone<RelocatableInst, HostPCRel>(),
-        inst(std::forward<llvm::MCInst>(inst)), opn(opn), offset(offset) {}
+  SetRegtoPCRel(Reg reg, rword offset)
+      : AutoClone<RelocatableInst, SetRegtoPCRel>(), reg(reg), offset(offset) {}
 
-  // set a an operand at currentPC + offset
-  llvm::MCInst reloc(ExecBlock *exec_block) const override;
+  // set reg to currentPC + offset
+  llvm::MCInst reloc(ExecBlock *execBlock, CPUMode cpumode) const override;
+
+  int getSize(const LLVMCPU &llvmcpu) const override;
 };
 
 class DataBlockRel : public AutoClone<RelocatableInst, DataBlockRel> {
   llvm::MCInst inst;
   unsigned int opn;
   rword offset;
+  int size;
 
 public:
-  DataBlockRel(llvm::MCInst &&inst, unsigned int opn, rword offset)
+  DataBlockRel(llvm::MCInst &&inst, unsigned int opn, rword offset, int size)
       : AutoClone<RelocatableInst, DataBlockRel>(),
-        inst(std::forward<llvm::MCInst>(inst)), opn(opn), offset(offset) {}
+        inst(std::forward<llvm::MCInst>(inst)), opn(opn), offset(offset),
+        size(size) {}
 
-  llvm::MCInst reloc(ExecBlock *exec_block) const override;
+  llvm::MCInst reloc(ExecBlock *execBlock, CPUMode cpumode) const override;
+
+  int getSize(const LLVMCPU &llvmcpu) const override { return size; }
 };
 
 class DataBlockAbsRel : public AutoClone<RelocatableInst, DataBlockAbsRel> {
   llvm::MCInst inst;
   unsigned int opn;
   rword offset;
+  int size;
 
 public:
-  DataBlockAbsRel(llvm::MCInst &&inst, unsigned int opn, rword offset)
+  DataBlockAbsRel(llvm::MCInst &&inst, unsigned int opn, rword offset, int size)
       : AutoClone<RelocatableInst, DataBlockAbsRel>(),
-        inst(std::forward<llvm::MCInst>(inst)), opn(opn), offset(offset) {}
+        inst(std::forward<llvm::MCInst>(inst)), opn(opn), offset(offset),
+        size(size) {}
 
-  llvm::MCInst reloc(ExecBlock *exec_block) const override;
+  llvm::MCInst reloc(ExecBlock *execBlock, CPUMode cpumode) const override;
+
+  int getSize(const LLVMCPU &llvmcpu) const override { return size; }
 };
-
-inline std::unique_ptr<RelocatableInst> DataBlockRelx86(llvm::MCInst &&inst,
-                                                        unsigned int opn,
-                                                        rword offset,
-                                                        rword inst_size) {
-  if constexpr (is_x86_64) {
-    inst.getOperand(opn /* AddrBaseReg */).setReg(Reg(REG_PC));
-    return DataBlockRel::unique(std::forward<llvm::MCInst>(inst),
-                                opn + 3 /* AddrDisp */, offset - inst_size);
-  } else {
-    inst.getOperand(opn /* AddrBaseReg */).setReg(0);
-    return DataBlockAbsRel::unique(std::forward<llvm::MCInst>(inst),
-                                   opn + 3 /* AddrDisp */, offset);
-  }
-}
 
 } // namespace QBDI
 

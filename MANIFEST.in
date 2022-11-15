@@ -1,0 +1,19 @@
+
+## include any cmake file
+
+include CMakeLists.txt
+recursive-include cmake *
+recursive-exclude cmake config/*
+
+## include tools
+
+include tools/CMakeLists.txt
+recursive-include tools/pyqbdi *
+recursive-include tools/QBDIPreload *
+
+## include code
+
+recursive-include src *
+recursive-include include *
+
+include README-pypi.rst

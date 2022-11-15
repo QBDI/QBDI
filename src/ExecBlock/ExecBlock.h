@@ -65,6 +65,7 @@ struct InstInfo {
   uint16_t shadowSize;
   uint16_t tagOffset;
   uint16_t tagSize;
+  ScratchRegisterSeqInfo sr;
 };
 
 struct SeqInfo {
@@ -107,7 +108,7 @@ private:
   VMInstanceRef vminstance;
   llvm::sys::MemoryBlock codeBlock;
   llvm::sys::MemoryBlock dataBlock;
-  std::unique_ptr<memory_ostream> codeStream;
+  memory_ostream codeStream;
   const LLVMCPUs &llvmCPUs;
   Context *context;
   rword *shadows;
@@ -147,7 +148,14 @@ private:
   void initScratchRegisterForPatch(std::vector<Patch>::const_iterator seqStart,
                                    std::vector<Patch>::const_iterator seqEnd);
 
-  bool writePatch(const Patch &p, const LLVMCPU &llvmcpu);
+  bool writePatch(std::vector<Patch>::const_iterator seqCurrent,
+                  std::vector<Patch>::const_iterator seqEnd,
+                  const LLVMCPU &llvmcpu);
+
+  bool
+  applyRelocatedInst(const std::vector<std::unique_ptr<RelocatableInst>> &reloc,
+                     std::vector<TagInfo> *tags, const LLVMCPU &llvmcpu,
+                     unsigned limit = 0);
 
   void finalizeScratchRegisterForPatch();
 
@@ -226,7 +234,7 @@ public:
    * @return The computed offset.
    */
   rword getDataBlockOffset() const {
-    return codeBlock.allocatedSize() - codeStream->current_pos();
+    return codeBlock.allocatedSize() - codeStream.current_pos();
   }
 
   /*! Compute the offset between the current code stream position and the start
@@ -236,7 +244,7 @@ public:
    * @return The computed offset.
    */
   rword getEpilogueOffset() const {
-    return codeBlock.allocatedSize() - epilogueSize - codeStream->current_pos();
+    return codeBlock.allocatedSize() - epilogueSize - codeStream.current_pos();
   }
 
   /*! Get the size of the epilogue
@@ -251,8 +259,7 @@ public:
    * @return The PC value.
    */
   rword getCurrentPC() const {
-    return reinterpret_cast<rword>(codeBlock.base()) +
-           codeStream->current_pos();
+    return reinterpret_cast<rword>(codeBlock.base()) + codeStream.current_pos();
   }
 
   /*! Obtain the current instruction ID.
@@ -267,10 +274,11 @@ public:
    * match the start of the instruction).
    *
    * @param address The address of the start of the instruction.
+   * @param cpumode The mode of the instruction
    *
    * @return The instruction ID or NOT_FOUND.
    */
-  uint16_t getInstID(rword address) const;
+  uint16_t getInstID(rword address, CPUMode cpumode) const;
 
   /*! Obtain the current instruction ID.
    *
@@ -337,7 +345,7 @@ public:
    *
    * @return The sequence ID or NOT_FOUND.
    */
-  uint16_t getSeqID(rword address) const;
+  uint16_t getSeqID(rword address, CPUMode cpumode) const;
 
   /*! Obtain the sequence ID containing a specific instruction ID.
    *
@@ -484,6 +492,14 @@ public:
   float occupationRatio() const;
 
   const ScratchRegisterInfo &getScratchRegisterInfo() const { return srInfo; }
+
+  /* Get the LLVMCPU used by an instruction
+   *
+   * @param instID  The id of the instruction in the ExecBlock
+   *
+   * @return the LLVMCPU for the instruction
+   */
+  const LLVMCPU &getLLVMCPUByInst(uint16_t instID) const;
 };
 
 } // namespace QBDI

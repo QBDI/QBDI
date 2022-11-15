@@ -26,8 +26,12 @@
 #include <QBDI.h>
 
 #define SIGBRK SIGTRAP
-static const long BRK_MASK = 0xFF;
-static const long BRK_INS = 0xCC;
+
+static inline void *correctAddress(void *address, long *bytecode, long *mask) {
+  *bytecode = 0xCC;
+  *mask = 0xFF;
+  return address;
+}
 
 void qbdipreload_threadCtxToGPRState(const void *gprCtx, GPRState *gprState);
 void qbdipreload_floatCtxToFPRState(const void *fprCtx, FPRState *fprState);

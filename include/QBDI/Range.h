@@ -18,6 +18,7 @@
 #ifndef QBDI_RANGE_H_
 #define QBDI_RANGE_H_
 
+#include <algorithm>
 #include <ostream>
 #include <vector>
 
@@ -123,6 +124,12 @@ public:
 };
 
 template <typename T>
+std::ostream &operator<<(std::ostream &os, const Range<T> &obj) {
+  obj.display(os);
+  return os;
+}
+
+template <typename T>
 class RangeSet {
 
 private:
@@ -141,176 +148,207 @@ public:
     return sum;
   }
 
-  bool contains(const T t) const {
-    for (const Range<T> &r : ranges) {
-      if (r.contains(t)) {
-        return true;
-      }
-      if (r.start() > t) {
-        return false;
-      }
+  const Range<T> *getElementRange(const T &t) const {
+    auto lower = std::lower_bound(
+        ranges.cbegin(), ranges.cend(), t,
+        [](const Range<T> &r, const T &value) { return r.end() <= value; });
+    if (lower == ranges.cend() || (!lower->contains(t))) {
+      return nullptr;
+    } else {
+      return &*lower;
     }
-    return false;
   }
 
+  bool contains(const T &t) const { return getElementRange(t) != nullptr; }
+
   bool contains(const Range<T> &t) const {
-    for (const Range<T> &r : ranges) {
-      if (r.contains(t)) {
-        return true;
-      }
-      if (r.start() > t.end()) {
-        return false;
-      }
+    if (t.end() <= t.start()) {
+      return true;
     }
-    return false;
+    auto lower = std::lower_bound(
+        ranges.cbegin(), ranges.cend(), t.start(),
+        [](const Range<T> &r, const T &value) { return r.end() <= value; });
+    if (lower == ranges.cend()) {
+      return false;
+    } else {
+      return lower->contains(t);
+    }
   }
 
   bool overlaps(const Range<T> &t) const {
-    for (const Range<T> &r : ranges) {
-      if (r.overlaps(t)) {
-        return true;
-      }
-      if (r.end() < t.start()) {
-        return false;
-      }
+    if (t.end() <= t.start()) {
+      return true;
     }
-    return false;
+    auto lower = std::lower_bound(
+        ranges.cbegin(), ranges.cend(), t.start(),
+        [](const Range<T> &r, const T &value) { return r.end() <= value; });
+    if (lower == ranges.cend()) {
+      return false;
+    } else {
+      return lower->overlaps(t);
+    }
   }
 
   void add(const Range<T> &t) {
-    size_t i = 0;
-    size_t r = 0;
-
     // Exception for empty ranges
     if (t.end() <= t.start()) {
       return;
     }
 
-    // Find start in sorted range list
-    for (i = 0; i < ranges.size(); i++) {
-      if (ranges[i].end() >= t.start()) {
-        // Add a new range before ranges[i]
-        if (ranges[i].start() > t.start()) {
-          ranges.insert(ranges.begin() + i, t);
-        }
-        // else extend ranges[i]
-        r = i;
-        break;
-      }
-    }
-    // If no range to extend or insert before was found
-    if (i == ranges.size()) {
+    // Find lower element in sorted range list
+    auto lower = std::lower_bound(
+        ranges.begin(), ranges.end(), t.start(),
+        [](const Range<T> &r, const T &value) { return r.end() < value; });
+
+    // if no range match, push the new range at the end of the list
+    if (lower == ranges.end()) {
       ranges.push_back(t);
       return;
     }
-    // Determine range [r+1,i] of blocks that are covered by t
-    // and will be deleted
-    for (i = r; i < ranges.size() && t.end() >= ranges[i].end(); i++)
-      ;
-    // If t.end() is inside another range, merge it
-    if (i < ranges.size() && t.end() >= ranges[i].start()) {
-      ranges[r].setEnd(ranges[i].end());
-      if (i > r) {
-        ranges.erase(ranges.begin() + r + 1, ranges.begin() + i + 1);
-      }
+
+    // if t is strictly before lower, just insert it before lower
+    if (t.end() < lower->start()) {
+      ranges.insert(lower, t);
+      return;
     }
-    // Else finish normally
-    else {
-      ranges[r].setEnd(t.end());
-      if (i > r + 1) {
-        ranges.erase(ranges.begin() + r + 1, ranges.begin() + i);
-      }
+
+    // lower and t either intersect, or t is right before lower
+    // Extend the start of lower
+    if (t.start() < lower->start()) {
+      lower->setStart(t.start());
     }
+    // Extend the end of lower
+    if (lower->end() < t.end()) {
+      lower->setEnd(t.end());
+    }
+
+    // we extend the end of lower, but we must verify that the new end isn't
+    // overlapsed nested element
+    auto endEraseList = lower + 1;
+    while (endEraseList != ranges.end()) {
+      if (lower->end() < endEraseList->start()) {
+        break;
+      }
+      if (lower->end() < endEraseList->end()) {
+        lower->setEnd(endEraseList->end());
+      }
+      endEraseList++;
+    }
+    ranges.erase(lower + 1, endEraseList);
   }
 
   void add(const RangeSet<T> &t) {
-    for (const Range<T> &r : t.getRanges()) {
+    for (const Range<T> &r : t.ranges) {
       add(r);
     }
   }
 
   void remove(const Range<T> &t) {
-    size_t i = 0;
-    size_t r = 0;
-
     // Exception for empty ranges
     if (t.end() <= t.start()) {
       return;
     }
 
-    // Find deletion start
-    for (i = 0; i < ranges.size(); i++) {
-      if (ranges[i].end() >= t.start()) {
-        // start inside a range
-        if (ranges[i].start() < t.start()) {
-          // Split a range
-          if (t.end() < ranges[i].end()) {
-            ranges.insert(ranges.begin() + i,
-                          Range<T>(ranges[i].start(), t.start()));
-            ranges[i + 1].setStart(t.end());
-            return;
-          }
-          // Truncate a range
-          else {
-            ranges[i].setEnd(t.start());
-            r = i + 1;
-            break;
-          }
-        }
-        // start before a range
-        r = i;
-        break;
-      }
-    }
-    // If no range to delete was found
-    if (i == ranges.size()) {
+    // Find lower element in sorted range list
+    auto lower = std::lower_bound(
+        ranges.begin(), ranges.end(), t.start(),
+        [](const Range<T> &r, const T &value) { return r.end() <= value; });
+
+    // if no range match, do nothing
+    if (lower == ranges.end()) {
       return;
     }
-    // Determine set of ranges contained inside t which will be deleted
-    for (i = r; i < ranges.size() && t.end() >= ranges[i].end(); i++)
-      ;
-    // Truncate a range
-    if (i < ranges.size() && t.end() >= ranges[i].start()) {
-      ranges[i].setStart(t.end());
+
+    // if t is before lower, do nothing
+    if (t.end() <= lower->start()) {
+      return;
     }
-    // Delete covered range
-    if (i > r) {
-      ranges.erase(ranges.begin() + r, ranges.begin() + i);
+    // lower and t intersect
+
+    // managed case where t begin inside a range
+    if (lower->start() < t.start()) {
+
+      if (t.end() < lower->end()) {
+        // t is a part of lower, but with extra both at the start and the end
+        // -> split lower in two
+        Range<T> preRange = {lower->start(), t.start()};
+        lower->setStart(t.end());
+        ranges.insert(lower, preRange);
+        return;
+      }
+
+      // lower begins before t, but end inside t (or has the same end).
+      // => reduce lower
+      lower->setEnd(t.start());
+
+      // lower is not longuer inside t, go to the next element;
+      lower++;
     }
+
+    // Erase all range that are inside t
+    auto beginEraseList = lower;
+    while (lower != ranges.end()) {
+      // lower is after t, exit
+      if (t.end() <= lower->start()) {
+        break;
+      }
+
+      // lower overlaps t but the end
+      if (t.end() < lower->end()) {
+        lower->setStart(t.end());
+        break;
+      }
+
+      // lower is included in t, erase it at the end
+      lower++;
+    }
+    ranges.erase(beginEraseList, lower);
   }
 
   void remove(const RangeSet<T> &t) {
-    for (const Range<T> &r : t.getRanges()) {
+    for (const Range<T> &r : t.ranges) {
       remove(r);
     }
   }
 
   void intersect(const RangeSet<T> &t) {
     RangeSet<T> intersected;
-    for (size_t i = 0; i < ranges.size(); i++) {
-      if (t.contains(ranges[i])) {
-        intersected.add(ranges[i]);
+    auto itThis = ranges.cbegin();
+    auto itOther = t.ranges.cbegin();
+    while (itThis != ranges.cend() && itOther != t.ranges.cend()) {
+      if (itThis->overlaps(*itOther)) {
+        intersected.add(itThis->intersect(*itOther));
+      }
+      // select the iterator to step
+      if (itThis->end() < itOther->end()) {
+        itThis++;
+      } else if (itThis->end() == itOther->end()) {
+        itThis++;
+        itOther++;
       } else {
-        for (const Range<T> &r : t.getRanges()) {
-          if (r.overlaps(ranges[i])) {
-            intersected.add(r.intersect(ranges[i]));
-          }
-        }
+        itOther++;
       }
     }
-    ranges = intersected.getRanges();
+    ranges.swap(intersected.ranges);
   }
 
   void intersect(const Range<T> &t) {
-    RangeSet<T> intersected;
-    for (size_t i = 0; i < ranges.size(); i++) {
-      if (t.contains(ranges[i])) {
-        intersected.add(ranges[i]);
-      } else if (t.overlaps(ranges[i])) {
-        intersected.add(t.intersect(ranges[i]));
-      }
+    auto lower = std::lower_bound(
+        ranges.cbegin(), ranges.cend(), t.start(),
+        [](const Range<T> &r, const T &value) { return r.end() <= value; });
+
+    if (lower == ranges.cend()) {
+      clear();
+      return;
     }
-    ranges = intersected.getRanges();
+
+    RangeSet<T> intersected;
+    while (lower != ranges.cend() && t.overlaps(*lower)) {
+      intersected.add(t.intersect(*lower));
+      lower++;
+    }
+
+    ranges.swap(intersected.ranges);
   }
 
   void clear() { ranges.clear(); }
@@ -325,7 +363,7 @@ public:
   }
 
   bool operator==(const RangeSet &r) const {
-    const std::vector<Range<T>> &ranges = r.getRanges();
+    const std::vector<Range<T>> &ranges = r.ranges;
 
     if (this->ranges.size() != ranges.size()) {
       return false;
@@ -340,6 +378,12 @@ public:
     return true;
   }
 };
+
+template <typename T>
+std::ostream &operator<<(std::ostream &os, const RangeSet<T> &obj) {
+  obj.display(os);
+  return os;
+}
 
 } // namespace QBDI
 

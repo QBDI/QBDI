@@ -37,7 +37,7 @@ struct QBDI_ALIGNED(8) HostState {
 
 /*! X86_64 Execution context.
  */
-struct QBDI_ALIGNED(8) Context {
+struct QBDI_ALIGNED(16) Context {
 
 public:
   // fprState needs to be first for memory alignement reasons

@@ -52,25 +52,46 @@ static struct {
   long value;
 } ENTRY_BRK;
 
-void setEntryBreakpoint(void *address) {
+void setEntryBreakpoint(void *address_) {
+  long mask, bytecode;
+  void *address = correctAddress(address_, &bytecode, &mask);
   long pageSize = sysconf(_SC_PAGESIZE);
   uintptr_t base = (uintptr_t)address - ((uintptr_t)address % pageSize);
+  bool twoPages = ((((uintptr_t)address) + sizeof(long)) > (base + pageSize));
 
   ENTRY_BRK.address = address;
   mprotect((void *)base, pageSize, PROT_READ | PROT_WRITE);
+  if (twoPages) {
+    mprotect((void *)(base + pageSize), pageSize, PROT_READ | PROT_WRITE);
+  }
+
   ENTRY_BRK.value = *((long *)address);
-  *((long *)address) = BRK_INS | (ENTRY_BRK.value & (~BRK_MASK));
+  *((long *)address) = bytecode | (ENTRY_BRK.value & (~mask));
+
   mprotect((void *)base, pageSize, PROT_READ | PROT_EXEC);
+  if (twoPages) {
+    mprotect((void *)(base + pageSize), pageSize, PROT_READ | PROT_EXEC);
+  }
 }
 
 void unsetEntryBreakpoint() {
   long pageSize = sysconf(_SC_PAGESIZE);
   uintptr_t base =
       (uintptr_t)ENTRY_BRK.address - ((uintptr_t)ENTRY_BRK.address % pageSize);
+  bool twoPages =
+      ((((uintptr_t)ENTRY_BRK.address) + sizeof(long)) > (base + pageSize));
 
   mprotect((void *)base, pageSize, PROT_READ | PROT_WRITE);
+  if (twoPages) {
+    mprotect((void *)(base + pageSize), pageSize, PROT_READ | PROT_WRITE);
+  }
+
   *((long *)ENTRY_BRK.address) = ENTRY_BRK.value;
+
   mprotect((void *)base, pageSize, PROT_READ | PROT_EXEC);
+  if (twoPages) {
+    mprotect((void *)(base + pageSize), pageSize, PROT_READ | PROT_EXEC);
+  }
 }
 
 void catchEntrypoint(int argc, char **argv) {

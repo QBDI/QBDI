@@ -21,8 +21,10 @@
 #include "QBDI/Memory.hpp"
 #include "Utility/LogSys.h"
 
-#include <Psapi.h>
+// clang-format off
 #include <Windows.h>
+#include <Psapi.h>
+// clang-format on
 #ifdef UNICODE
 #include <codecvt>
 #include <locale>

@@ -19,6 +19,8 @@
 #include <algorithm>
 #include <cstring>
 #include <inttypes.h>
+#include <poll.h>
+#include <unistd.h>
 
 std::pair<QBDI::rword, QBDI::rword> getValidOffsetRange(QBDI::rword address,
                                                         pid_t pid) {
@@ -273,14 +275,16 @@ ssize_t ValidatorEngine::diffSPR(const char *regName, QBDI::rword real,
 }
 
 void ValidatorEngine::signalNewState(QBDI::rword address, const char *mnemonic,
-                                     const char *disassembly,
+                                     const char *disassembly, bool skipDebugger,
                                      const QBDI::GPRState *gprStateDbg,
                                      const QBDI::FPRState *fprStateDbg,
                                      const QBDI::GPRState *gprStateInstr,
                                      const QBDI::FPRState *fprStateInstr) {
 
   if (curLogEntry != nullptr) {
-    compareState(gprStateDbg, fprStateDbg, gprStateInstr, fprStateInstr);
+    if (not skipDebugger) {
+      compareState(gprStateDbg, fprStateDbg, gprStateInstr, fprStateInstr);
+    }
     // If this logEntry generated at least one new error, saved it
     if (!curLogEntry->saved) {
       for (const ssize_t eID : curLogEntry->errorIDs) {
@@ -360,6 +364,7 @@ void ValidatorEngine::flushLastLog() {
     }
     curLogEntry = nullptr;
   }
+  syncCompareThread();
 }
 
 void ValidatorEngine::logCascades() {
@@ -377,6 +382,14 @@ void ValidatorEngine::logCascades() {
             accessError);
     fprintf(stderr, "Encountered %zu memoryAccess unique errors\n",
             memAccessMnemonicSet.size());
+    fprintf(stderr, "SizeOutput: %zu %zu\n", outputDbg.size(),
+            outputDbi.size());
+    if (outputDbg.size() == outputDbi.size() and
+        memcmp(outputDbg.data(), outputDbi.data(), outputDbi.size()) == 0) {
+      fprintf(stderr, "SameOutput: True\n");
+    } else {
+      fprintf(stderr, "SameOutput: False\n");
+    }
     fprintf(stderr, "Encountered %zu errors:\n", errors.size());
     // Compute error stats, assemble cascades
     for (const DiffError &error : errors) {
@@ -532,4 +545,56 @@ void ValidatorEngine::logCoverage(const char *filename) {
   }
 
   fclose(coverageFile);
+}
+
+void ValidatorEngine::startCompareThread() {
+  threadStop = false;
+  outputCMPThread = std::thread(&ValidatorEngine::outputCompareThread, this);
+}
+
+void ValidatorEngine::outputCompareThread() {
+  uint8_t buffer[4096];
+  outputDbg.clear();
+  outputDbi.clear();
+
+  int retryBeforeExit = 2;
+
+  while (retryBeforeExit > 0) {
+    struct pollfd fds[2];
+
+    fds[0].fd = stdoutDbg;
+    fds[1].fd = stdoutDbi;
+    fds[0].events = POLLIN | POLLRDBAND;
+    fds[1].events = POLLIN | POLLRDBAND;
+
+    int ret = poll(fds, 2, 100);
+
+    if (ret < 0) {
+      perror("select()");
+      break;
+    }
+
+    bool hasRead = false;
+
+    if (fds[0].revents & (POLLIN | POLLRDBAND)) {
+      size_t readLen = read(stdoutDbg, buffer, sizeof(buffer));
+      outputDbg.insert(outputDbg.end(), buffer, buffer + readLen);
+      hasRead = true;
+    }
+
+    if (fds[1].revents & (POLLIN | POLLRDBAND)) {
+      size_t readLen = read(stdoutDbi, buffer, sizeof(buffer));
+      outputDbi.insert(outputDbi.end(), buffer, buffer + readLen);
+      hasRead = true;
+    }
+
+    if (threadStop and not hasRead) {
+      retryBeforeExit -= 1;
+    }
+  }
+}
+
+void ValidatorEngine::syncCompareThread() {
+  threadStop = true;
+  outputCMPThread.join();
 }

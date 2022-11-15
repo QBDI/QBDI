@@ -23,11 +23,14 @@
 
 #include "llvm/MC/MCInst.h"
 
+#include "QBDI/State.h"
+#include "Patch/InstInfo.h"
 #include "Patch/PatchUtils.h"
 #include "Patch/Types.h"
 
 namespace QBDI {
 class ExecBlock;
+class LLVMCPU;
 
 class RelocatableInst {
 public:
@@ -40,20 +43,35 @@ public:
 
   virtual std::unique_ptr<RelocatableInst> clone() const = 0;
 
-  virtual llvm::MCInst reloc(ExecBlock *exec_block) const = 0;
+  virtual int getSize(const LLVMCPU &llvmcpu) const = 0;
+
+  virtual llvm::MCInst reloc(ExecBlock *execBlock, CPUMode cpumode) const = 0;
 
   virtual ~RelocatableInst() = default;
 };
+
+static inline int getUniquePtrVecSize(const RelocatableInst::UniquePtrVec &vec,
+                                      const LLVMCPU &llvmcpu) {
+  int size = 0;
+  for (const auto &r : vec) {
+    size += r->getSize(llvmcpu);
+  }
+  return size;
+}
 
 class NoReloc : public AutoClone<RelocatableInst, NoReloc> {
   llvm::MCInst inst;
 
 public:
-  NoReloc(llvm::MCInst &&inst)
-      : AutoClone<RelocatableInst, NoReloc>(),
-        inst(std::forward<llvm::MCInst>(inst)) {}
+  NoReloc(llvm::MCInst &&inst) : inst(std::forward<llvm::MCInst>(inst)) {}
 
-  llvm::MCInst reloc(ExecBlock *exec_block) const override { return inst; }
+  llvm::MCInst reloc(ExecBlock *execBlock, CPUMode cpumode) const override {
+    return inst;
+  }
+
+  int getSize(const LLVMCPU &llvmcpu) const override {
+    return getInstSize(inst, llvmcpu);
+  };
 };
 
 // Generic RelocatableInst that must be implemented by each target
@@ -68,94 +86,110 @@ public:
 
   // The Execblock must skip the generation if a RelocatableInst doesn't return
   // RelocInst. Generate a NOP and a log Error.
-  llvm::MCInst reloc(ExecBlock *execBlock) const override;
+  llvm::MCInst reloc(ExecBlock *execBlock, CPUMode cpumode) const override;
+
+  int getSize(const LLVMCPU &llvmcpu) const override { return 0; }
 };
 
 class LoadShadow : public AutoClone<RelocatableInst, LoadShadow> {
-  unsigned reg;
+  RegLLVM reg;
   uint16_t tag;
 
 public:
-  LoadShadow(unsigned reg, Shadow tag)
+  LoadShadow(RegLLVM reg, Shadow tag)
       : AutoClone<RelocatableInst, LoadShadow>(), reg(reg), tag(tag.getTag()) {}
 
   // Load a value from the last shadow with the given tag
-  llvm::MCInst reloc(ExecBlock *execBlock) const override;
+  llvm::MCInst reloc(ExecBlock *execBlock, CPUMode cpumode) const override;
+
+  int getSize(const LLVMCPU &llvmcpu) const override;
 };
 
 class StoreShadow : public AutoClone<RelocatableInst, StoreShadow> {
-  unsigned reg;
+  RegLLVM reg;
   uint16_t tag;
   bool create;
 
 public:
-  StoreShadow(unsigned reg, Shadow tag, bool create)
+  StoreShadow(RegLLVM reg, Shadow tag, bool create)
       : AutoClone<RelocatableInst, StoreShadow>(), reg(reg), tag(tag.getTag()),
         create(create) {}
 
   // Store a value to a shadow
   // if create, the shadow is create in the ExecBlock with the given tag
   // otherwise, the last shadow with this tag is used
-  llvm::MCInst reloc(ExecBlock *execBlock) const override;
+  llvm::MCInst reloc(ExecBlock *execBlock, CPUMode cpumode) const override;
+
+  int getSize(const LLVMCPU &llvmcpu) const override;
 };
 
 class LoadDataBlock : public AutoClone<RelocatableInst, LoadDataBlock> {
-  unsigned reg;
+  RegLLVM reg;
   int64_t offset;
 
 public:
-  LoadDataBlock(unsigned reg, int64_t offset)
+  LoadDataBlock(RegLLVM reg, int64_t offset)
       : AutoClone<RelocatableInst, LoadDataBlock>(), reg(reg), offset(offset) {}
 
   // Load a value from the specified offset of the datablock
-  llvm::MCInst reloc(ExecBlock *execBlock) const override;
+  llvm::MCInst reloc(ExecBlock *execBlock, CPUMode cpumode) const override;
+
+  int getSize(const LLVMCPU &llvmcpu) const override;
 };
 
 class StoreDataBlock : public AutoClone<RelocatableInst, StoreDataBlock> {
-  unsigned reg;
+  RegLLVM reg;
   int64_t offset;
 
 public:
-  StoreDataBlock(unsigned reg, int64_t offset)
+  StoreDataBlock(RegLLVM reg, int64_t offset)
       : AutoClone<RelocatableInst, StoreDataBlock>(), reg(reg), offset(offset) {
   }
 
   // Store a value to the specified offset of the datablock
-  llvm::MCInst reloc(ExecBlock *execBlock) const override;
+  llvm::MCInst reloc(ExecBlock *execBlock, CPUMode cpumode) const override;
+
+  int getSize(const LLVMCPU &llvmcpu) const override;
 };
 
 class MovReg : public AutoClone<RelocatableInst, MovReg> {
-  unsigned dst;
-  unsigned src;
+  RegLLVM dst;
+  RegLLVM src;
 
 public:
-  MovReg(unsigned dst, unsigned src)
+  MovReg(RegLLVM dst, RegLLVM src)
       : AutoClone<RelocatableInst, MovReg>(), dst(dst), src(src) {}
 
   // Move a value from a register to another
-  llvm::MCInst reloc(ExecBlock *execBlock) const override;
+  llvm::MCInst reloc(ExecBlock *execBlock, CPUMode cpumode) const override;
+
+  int getSize(const LLVMCPU &llvmcpu) const override;
 };
 
 class LoadImm : public AutoClone<RelocatableInst, LoadImm> {
-  unsigned reg;
+  RegLLVM reg;
   Constant imm;
 
 public:
-  LoadImm(unsigned reg, Constant imm)
+  LoadImm(RegLLVM reg, Constant imm)
       : AutoClone<RelocatableInst, LoadImm>(), reg(reg), imm(imm) {}
 
   // Set the register to this value
-  llvm::MCInst reloc(ExecBlock *execBlock) const override;
+  llvm::MCInst reloc(ExecBlock *execBlock, CPUMode cpumode) const override;
+
+  int getSize(const LLVMCPU &llvmcpu) const override;
 };
 
 class InstId : public AutoClone<RelocatableInst, InstId> {
-  unsigned reg;
+  RegLLVM reg;
 
 public:
-  InstId(unsigned reg) : AutoClone<RelocatableInst, InstId>(), reg(reg) {}
+  InstId(RegLLVM reg) : AutoClone<RelocatableInst, InstId>(), reg(reg) {}
 
   // Store the current instruction ID in the register
-  llvm::MCInst reloc(ExecBlock *exec_block) const override;
+  llvm::MCInst reloc(ExecBlock *execBlock, CPUMode cpumode) const override;
+
+  int getSize(const LLVMCPU &llvmcpu) const override;
 };
 
 } // namespace QBDI

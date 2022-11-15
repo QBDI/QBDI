@@ -74,6 +74,7 @@ typedef struct {
 } MMSTReg;
 
 typedef uint32_t rword;
+typedef int32_t sword;
 
 /*! X86 Floating Point Register context.
  */ // SPHINX_X86_FPRSTATE_BEGIN

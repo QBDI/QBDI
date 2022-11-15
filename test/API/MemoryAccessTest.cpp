@@ -418,8 +418,6 @@ QBDI::VMAction writeSnooper(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
   return QBDI::VMAction::CONTINUE;
 }
 
-#if not defined(QBDI_ARCH_ARM)
-
 TEST_CASE_METHOD(APITest, "MemoryAccessTest-Read8") {
   char buffer[] = "p0p30fd0p3";
   size_t buffer_size = sizeof(buffer) / sizeof(char);
@@ -976,5 +974,3 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest-InstCbLambda-addMemRangeCB") {
 
   SUCCEED();
 }
-
-#endif

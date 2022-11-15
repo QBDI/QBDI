@@ -45,6 +45,16 @@ static const uint8_t BRK_INS = 0xCC;
 #define THREAD_STATE_BP __rbp
 #define THREAD_STATE_SP __rsp
 #define THREAD_STATE_PC __rip
+#elif defined(QBDI_ARCH_AARCH64)
+#define THREAD_STATE_ID ARM_THREAD_STATE64
+#define THREAD_STATE_COUNT ARM_THREAD_STATE64_COUNT
+#define THREAD_STATE_FP_ID ARM_NEON_STATE64
+#define THREAD_STATE_FP_COUNT ARM_NEON_STATE64_COUNT
+#define THREAD_STATE arm_thread_state64_t
+#define THREAD_STATE_FP arm_neon_state64_t
+#define THREAD_STATE_BP __fp
+#define THREAD_STATE_SP __sp
+#define THREAD_STATE_PC __pc
 #endif
 
 class DarwinProcess : public Process {

@@ -51,7 +51,7 @@ def run_test(test, env, idx):
 
     test_result = TestResult(test, retcode, result, coverage, error)
 
-    if test_result.retcode == 0:
+    if test_result.retcode == 0 and test_result.same_output == 1:
         print('[{}] Validated {}'.format(idx, test.command_line()))
     else:
         print('[{}] Failed validation {}'.format(idx, test.command_line()))

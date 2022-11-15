@@ -1,3 +1,4 @@
 #!/bin/sh
 cp @CMAKE_INSTALL_PREFIX@/@RESOURCES_PREFIX@/qbdi_frida_template/* .
+cp @CMAKE_INSTALL_PREFIX@/@RESOURCES_PREFIX@/frida-qbdi.js .
 

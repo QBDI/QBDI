@@ -43,8 +43,16 @@ endif()
 # example
 option(QBDI_EXAMPLES "Compile examples" OFF)
 
-# tools
+# docs
+option(QBDI_INCLUDE_DOCS "Include cmake docs" ON)
 
+# package
+option(QBDI_INCLUDE_PACKAGE "Include cmake package (for cpack)" ON)
+
+# package
+option(QBDI_INSTALL "Prepare install target" ON)
+
+# tools
 if(NOT
    (QBDI_PLATFORM_WINDOWS
     OR QBDI_PLATFORM_IOS
@@ -142,4 +150,6 @@ message(STATUS "")
 
 if(QBDI_LOG_DEBUG)
   set(QBDI_ENABLE_LOG_DEBUG 1)
+else()
+  set(QBDI_ENABLE_LOG_DEBUG 0)
 endif()
