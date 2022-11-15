@@ -116,6 +116,7 @@ WritePC::generate(const Patch &patch, TempManager &temp_manager) const {
     case llvm::ARM::BL_pred:
     case llvm::ARM::Bcc:
     case llvm::ARM::t2B:
+    case llvm::ARM::t2BXAUT:
     case llvm::ARM::t2Bcc:
     case llvm::ARM::t2TBB:
     case llvm::ARM::t2TBH:
@@ -386,6 +387,7 @@ SetExchange::generate(const Patch &patch, TempManager &temp_manager) const {
     case llvm::ARM::BX:
     case llvm::ARM::BX_RET:
     case llvm::ARM::BX_pred:
+    case llvm::ARM::t2BXAUT:
     case llvm::ARM::tBLXi:
     case llvm::ARM::tBLXr:
     case llvm::ARM::tBX:
@@ -2325,6 +2327,42 @@ T2TBBTBHPatchGen::generate(const Patch &patch,
 
   // 4. save next PC
   append(relocInstList, WritePC(temp2).generate(patch, temp_manager));
+
+  return relocInstList;
+}
+
+// T2BXAUTPatchGen
+// ===============
+
+RelocatableInst::UniquePtrVec
+T2BXAUTPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
+
+  const llvm::MCInst &inst = patch.metadata.inst;
+  const CPUMode cpumode = patch.llvmcpu->getCPUMode();
+  QBDI_REQUIRE_ABORT_PATCH(cpumode == CPUMode::Thumb, patch,
+                           "Only available in Thumb mode");
+
+  // get instruction operand
+  QBDI_REQUIRE_ABORT_PATCH(5 <= inst.getNumOperands(), patch,
+                           "Invalid instruction");
+  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(2).isReg(), patch,
+                           "Unexpected operand type");
+  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(3).isReg(), patch,
+                           "Unexpected operand type");
+  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(4).isReg(), patch,
+                           "Unexpected operand type");
+  RegLLVM targetReg = inst.getOperand(2).getReg();
+  RegLLVM contextReg = inst.getOperand(3).getReg();
+  RegLLVM encryptedReg = inst.getOperand(4).getReg();
+
+  // begin patch
+  RelocatableInst::UniquePtrVec relocInstList;
+
+  if (patch.metadata.archMetadata.cond != llvm::ARMCC::AL) {
+    append(relocInstList, ItPatch(false).generate(patch, temp_manager));
+  }
+  relocInstList.push_back(NoReloc::unique(t2autg(
+      targetReg, contextReg, encryptedReg, patch.metadata.archMetadata.cond)));
 
   return relocInstList;
 }

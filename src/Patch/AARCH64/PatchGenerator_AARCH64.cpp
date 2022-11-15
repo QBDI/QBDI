@@ -138,6 +138,7 @@ GetPCOffset::generate(const Patch &patch, TempManager &temp_manager) const {
           case llvm::AArch64::B:
           case llvm::AArch64::BL:
           case llvm::AArch64::Bcc:
+          case llvm::AArch64::BCcc:
           case llvm::AArch64::CBNZW:
           case llvm::AArch64::CBNZX:
           case llvm::AArch64::CBZW:

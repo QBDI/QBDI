@@ -6,14 +6,30 @@ set(__add_qbdi_llvm ON)
 include(FetchContent)
 
 # configure FetchContent
-set(QBDI_LLVM_MAJOR_VERSION 13)
-set(QBDI_LLVM_VERSION 13.0.0)
+set(QBDI_LLVM_MAJOR_VERSION 15)
+set(QBDI_LLVM_VERSION 15.0.5)
+
+# download and include llvm cmake module
+option(QBDI_INCLUDE_LLVM_CMAKE_MODUKE "Include llvm cmake module" ON)
+if(QBDI_INCLUDE_LLVM_CMAKE_MODUKE)
+  FetchContent_Declare(
+    llvm_cmake
+    URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${QBDI_LLVM_VERSION}/cmake-${QBDI_LLVM_VERSION}.src.tar.xz"
+    URL_HASH
+      "SHA256=61a9757f2fb7dd4c992522732531eb58b2bb031a2ca68848ff1cfda1fc07b7b3"
+    DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/llvm-cmake-download")
+
+  if(NOT llvm_cmake_POPULATED)
+    FetchContent_Populate(llvm_cmake)
+  endif()
+  list(APPEND CMAKE_MODULE_PATH "${llvm_cmake_SOURCE_DIR}/Modules")
+endif()
 
 FetchContent_Declare(
   llvm
   URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${QBDI_LLVM_VERSION}/llvm-${QBDI_LLVM_VERSION}.src.tar.xz"
   URL_HASH
-    "SHA256=408d11708643ea826f519ff79761fcdfc12d641a2510229eec459e72f8163020"
+    "SHA256=4428688b567ab1c9911aa9e13cb44c9bc1b14431713c14de491e10369f2b0370"
   DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/llvm-download")
 
 FetchContent_GetProperties(llvm)
@@ -71,6 +87,9 @@ if(NOT llvm_POPULATED)
   set(LLVM_ENABLE_ZLIB
       OFF
       CACHE BOOL "Disable LLVM_ENABLE_ZLIB")
+  set(LLVM_ENABLE_ZSTD
+      OFF
+      CACHE BOOL "Disable LLVM_ENABLE_ZSTD")
   set(LLVM_TARGET_ARCH
       ${QBDI_LLVM_ARCH}
       CACHE STRING "set LLVM_ARCH")
@@ -132,12 +151,6 @@ if(NOT llvm_POPULATED)
   set(CMAKE_CXX_VISIBILITY_PRESET
       "hidden"
       CACHE STRING "set CMAKE_CXX_VISIBILITY_PRESET" FORCE)
-
-  # remove visibility("default") in llvm code
-  configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/llvm/include_llvm_Support_Compiler.h.patch.txt"
-    "${llvm_SOURCE_DIR}/include/llvm/Support/Compiler.h"
-    COPYONLY)
 
   if(NOT ("${NATIVE_TABLEN_PATH}" STREQUAL ""))
     set(LLVM_TABLEGEN

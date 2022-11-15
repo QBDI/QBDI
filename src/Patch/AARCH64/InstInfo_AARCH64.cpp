@@ -408,6 +408,59 @@ constexpr unsigned READ_128_P4[] = {
 
 constexpr size_t READ_128_P4_SIZE = sizeof(READ_128_P4) / sizeof(unsigned);
 
+constexpr unsigned READ_DYN[] = {
+    llvm::AArch64::CPYE,      llvm::AArch64::CPYEN,
+    llvm::AArch64::CPYERN,    llvm::AArch64::CPYERT,
+    llvm::AArch64::CPYERTN,   llvm::AArch64::CPYERTRN,
+    llvm::AArch64::CPYERTWN,  llvm::AArch64::CPYET,
+    llvm::AArch64::CPYETN,    llvm::AArch64::CPYETRN,
+    llvm::AArch64::CPYETWN,   llvm::AArch64::CPYEWN,
+    llvm::AArch64::CPYEWT,    llvm::AArch64::CPYEWTN,
+    llvm::AArch64::CPYEWTRN,  llvm::AArch64::CPYEWTWN,
+    llvm::AArch64::CPYFE,     llvm::AArch64::CPYFEN,
+    llvm::AArch64::CPYFERN,   llvm::AArch64::CPYFERT,
+    llvm::AArch64::CPYFERTN,  llvm::AArch64::CPYFERTRN,
+    llvm::AArch64::CPYFERTWN, llvm::AArch64::CPYFET,
+    llvm::AArch64::CPYFETN,   llvm::AArch64::CPYFETRN,
+    llvm::AArch64::CPYFETWN,  llvm::AArch64::CPYFEWN,
+    llvm::AArch64::CPYFEWT,   llvm::AArch64::CPYFEWTN,
+    llvm::AArch64::CPYFEWTRN, llvm::AArch64::CPYFEWTWN,
+    llvm::AArch64::CPYFM,     llvm::AArch64::CPYFMN,
+    llvm::AArch64::CPYFMRN,   llvm::AArch64::CPYFMRT,
+    llvm::AArch64::CPYFMRTN,  llvm::AArch64::CPYFMRTRN,
+    llvm::AArch64::CPYFMRTWN, llvm::AArch64::CPYFMT,
+    llvm::AArch64::CPYFMTN,   llvm::AArch64::CPYFMTRN,
+    llvm::AArch64::CPYFMTWN,  llvm::AArch64::CPYFMWN,
+    llvm::AArch64::CPYFMWT,   llvm::AArch64::CPYFMWTN,
+    llvm::AArch64::CPYFMWTRN, llvm::AArch64::CPYFMWTWN,
+    llvm::AArch64::CPYFP,     llvm::AArch64::CPYFPN,
+    llvm::AArch64::CPYFPRN,   llvm::AArch64::CPYFPRT,
+    llvm::AArch64::CPYFPRTN,  llvm::AArch64::CPYFPRTRN,
+    llvm::AArch64::CPYFPRTWN, llvm::AArch64::CPYFPT,
+    llvm::AArch64::CPYFPTN,   llvm::AArch64::CPYFPTRN,
+    llvm::AArch64::CPYFPTWN,  llvm::AArch64::CPYFPWN,
+    llvm::AArch64::CPYFPWT,   llvm::AArch64::CPYFPWTN,
+    llvm::AArch64::CPYFPWTRN, llvm::AArch64::CPYFPWTWN,
+    llvm::AArch64::CPYM,      llvm::AArch64::CPYMN,
+    llvm::AArch64::CPYMRN,    llvm::AArch64::CPYMRT,
+    llvm::AArch64::CPYMRTN,   llvm::AArch64::CPYMRTRN,
+    llvm::AArch64::CPYMRTWN,  llvm::AArch64::CPYMT,
+    llvm::AArch64::CPYMTN,    llvm::AArch64::CPYMTRN,
+    llvm::AArch64::CPYMTWN,   llvm::AArch64::CPYMWN,
+    llvm::AArch64::CPYMWT,    llvm::AArch64::CPYMWTN,
+    llvm::AArch64::CPYMWTRN,  llvm::AArch64::CPYMWTWN,
+    llvm::AArch64::CPYP,      llvm::AArch64::CPYPN,
+    llvm::AArch64::CPYPRN,    llvm::AArch64::CPYPRT,
+    llvm::AArch64::CPYPRTN,   llvm::AArch64::CPYPRTRN,
+    llvm::AArch64::CPYPRTWN,  llvm::AArch64::CPYPT,
+    llvm::AArch64::CPYPTN,    llvm::AArch64::CPYPTRN,
+    llvm::AArch64::CPYPTWN,   llvm::AArch64::CPYPWN,
+    llvm::AArch64::CPYPWT,    llvm::AArch64::CPYPWTN,
+    llvm::AArch64::CPYPWTRN,  llvm::AArch64::CPYPWTWN,
+};
+
+constexpr size_t READ_DYN_SIZE = sizeof(READ_DYN) / sizeof(unsigned);
+
 // Write Instructions
 // ==================
 constexpr unsigned WRITE_8_P1[] = {
@@ -728,22 +781,89 @@ constexpr unsigned WRITE_128_P4[] = {
 
 constexpr size_t WRITE_128_P4_SIZE = sizeof(WRITE_128_P4) / sizeof(unsigned);
 
+constexpr unsigned WRITE_DYN[] = {
+    llvm::AArch64::CPYE,       llvm::AArch64::CPYEN,
+    llvm::AArch64::CPYERN,     llvm::AArch64::CPYERT,
+    llvm::AArch64::CPYERTN,    llvm::AArch64::CPYERTRN,
+    llvm::AArch64::CPYERTWN,   llvm::AArch64::CPYET,
+    llvm::AArch64::CPYETN,     llvm::AArch64::CPYETRN,
+    llvm::AArch64::CPYETWN,    llvm::AArch64::CPYEWN,
+    llvm::AArch64::CPYEWT,     llvm::AArch64::CPYEWTN,
+    llvm::AArch64::CPYEWTRN,   llvm::AArch64::CPYEWTWN,
+    llvm::AArch64::CPYFE,      llvm::AArch64::CPYFEN,
+    llvm::AArch64::CPYFERN,    llvm::AArch64::CPYFERT,
+    llvm::AArch64::CPYFERTN,   llvm::AArch64::CPYFERTRN,
+    llvm::AArch64::CPYFERTWN,  llvm::AArch64::CPYFET,
+    llvm::AArch64::CPYFETN,    llvm::AArch64::CPYFETRN,
+    llvm::AArch64::CPYFETWN,   llvm::AArch64::CPYFEWN,
+    llvm::AArch64::CPYFEWT,    llvm::AArch64::CPYFEWTN,
+    llvm::AArch64::CPYFEWTRN,  llvm::AArch64::CPYFEWTWN,
+    llvm::AArch64::CPYFM,      llvm::AArch64::CPYFMN,
+    llvm::AArch64::CPYFMRN,    llvm::AArch64::CPYFMRT,
+    llvm::AArch64::CPYFMRTN,   llvm::AArch64::CPYFMRTRN,
+    llvm::AArch64::CPYFMRTWN,  llvm::AArch64::CPYFMT,
+    llvm::AArch64::CPYFMTN,    llvm::AArch64::CPYFMTRN,
+    llvm::AArch64::CPYFMTWN,   llvm::AArch64::CPYFMWN,
+    llvm::AArch64::CPYFMWT,    llvm::AArch64::CPYFMWTN,
+    llvm::AArch64::CPYFMWTRN,  llvm::AArch64::CPYFMWTWN,
+    llvm::AArch64::CPYFP,      llvm::AArch64::CPYFPN,
+    llvm::AArch64::CPYFPRN,    llvm::AArch64::CPYFPRT,
+    llvm::AArch64::CPYFPRTN,   llvm::AArch64::CPYFPRTRN,
+    llvm::AArch64::CPYFPRTWN,  llvm::AArch64::CPYFPT,
+    llvm::AArch64::CPYFPTN,    llvm::AArch64::CPYFPTRN,
+    llvm::AArch64::CPYFPTWN,   llvm::AArch64::CPYFPWN,
+    llvm::AArch64::CPYFPWT,    llvm::AArch64::CPYFPWTN,
+    llvm::AArch64::CPYFPWTRN,  llvm::AArch64::CPYFPWTWN,
+    llvm::AArch64::CPYM,       llvm::AArch64::CPYMN,
+    llvm::AArch64::CPYMRN,     llvm::AArch64::CPYMRT,
+    llvm::AArch64::CPYMRTN,    llvm::AArch64::CPYMRTRN,
+    llvm::AArch64::CPYMRTWN,   llvm::AArch64::CPYMT,
+    llvm::AArch64::CPYMTN,     llvm::AArch64::CPYMTRN,
+    llvm::AArch64::CPYMTWN,    llvm::AArch64::CPYMWN,
+    llvm::AArch64::CPYMWT,     llvm::AArch64::CPYMWTN,
+    llvm::AArch64::CPYMWTRN,   llvm::AArch64::CPYMWTWN,
+    llvm::AArch64::CPYP,       llvm::AArch64::CPYPN,
+    llvm::AArch64::CPYPRN,     llvm::AArch64::CPYPRT,
+    llvm::AArch64::CPYPRTN,    llvm::AArch64::CPYPRTRN,
+    llvm::AArch64::CPYPRTWN,   llvm::AArch64::CPYPT,
+    llvm::AArch64::CPYPTN,     llvm::AArch64::CPYPTRN,
+    llvm::AArch64::CPYPTWN,    llvm::AArch64::CPYPWN,
+    llvm::AArch64::CPYPWT,     llvm::AArch64::CPYPWTN,
+    llvm::AArch64::CPYPWTRN,   llvm::AArch64::CPYPWTWN,
+    llvm::AArch64::MOPSSETGE,  llvm::AArch64::MOPSSETGEN,
+    llvm::AArch64::MOPSSETGET, llvm::AArch64::MOPSSETGETN,
+    llvm::AArch64::SETE,       llvm::AArch64::SETEN,
+    llvm::AArch64::SETET,      llvm::AArch64::SETETN,
+    llvm::AArch64::SETGM,      llvm::AArch64::SETGMN,
+    llvm::AArch64::SETGMT,     llvm::AArch64::SETGMTN,
+    llvm::AArch64::SETGP,      llvm::AArch64::SETGPN,
+    llvm::AArch64::SETGPT,     llvm::AArch64::SETGPTN,
+    llvm::AArch64::SETM,       llvm::AArch64::SETMN,
+    llvm::AArch64::SETMT,      llvm::AArch64::SETMTN,
+    llvm::AArch64::SETP,       llvm::AArch64::SETPN,
+    llvm::AArch64::SETPT,      llvm::AArch64::SETPTN,
+};
+
+constexpr size_t WRITE_DYN_SIZE = sizeof(WRITE_DYN) / sizeof(unsigned);
+
 /* Highest 16 bits are the write access, lowest 16 bits are the read access.
  *
- * ------------------------------------------------
- * | 0x1f            WRITE ACCESS            0x10 |
- * ------------------------------------------------
- * | 5 bits unused | 11 bits unsigned access size |
- * ------------------------------------------------
+ * ------------------------------------------------------------
+ * | 0x1f                  WRITE ACCESS                  0x10 |
+ * ------------------------------------------------------------
+ * | 1 bit dyn | 4 bits unused | 11 bits unsigned access size |
+ * ------------------------------------------------------------
  *
- * ------------------------------------------------
- * | 0xf             READ ACCESS              0x0 |
- * ------------------------------------------------
- * | 5 bits unused | 11 bits unsigned access size |
- * ------------------------------------------------
+ * ------------------------------------------------------------
+ * | 0xf                   READ ACCESS                    0x0 |
+ * ------------------------------------------------------------
+ * | 1 bit dyn | 4 bits unused | 11 bits unsigned access size |
+ * ------------------------------------------------------------
  */
 
+constexpr uint32_t READ_DYN_FLAGS = 15;
 constexpr uint32_t WRITE_POSITION = 16;
+constexpr uint32_t WRITE_DYN_FLAGS = WRITE_POSITION + READ_DYN_FLAGS;
 constexpr uint32_t READ(uint32_t s, uint32_t p) { return (s * p) & 0x3ff; }
 constexpr uint32_t WRITE(uint32_t s, uint32_t p) {
   return ((s * p) & 0x3ff) << WRITE_POSITION;
@@ -751,6 +871,10 @@ constexpr uint32_t WRITE(uint32_t s, uint32_t p) {
 constexpr uint32_t GET_READ_SIZE(uint32_t v) { return v & 0x3ff; }
 constexpr uint32_t GET_WRITE_SIZE(uint32_t v) {
   return (v >> WRITE_POSITION) & 0x3ff;
+}
+constexpr uint32_t IS_READ_DYN(uint32_t v) { return (v >> READ_DYN_FLAGS) & 1; }
+constexpr uint32_t IS_WRITE_DYN(uint32_t v) {
+  return (v >> WRITE_DYN_FLAGS) & 1;
 }
 
 struct MemAccessArray {
@@ -769,6 +893,14 @@ struct MemAccessArray {
                                             uint32_t pack) {
     for (size_t i = 0; i < buffSize; i++) {
       arr[buff[i]] |= WRITE(len, pack);
+    }
+  }
+
+  constexpr inline void _initMemAccessFlags(const unsigned buff[],
+                                            const size_t buffSize,
+                                            uint32_t flags) {
+    for (size_t i = 0; i < buffSize; i++) {
+      arr[buff[i]] |= flags;
     }
   }
 
@@ -795,6 +927,8 @@ struct MemAccessArray {
     _initMemAccessRead(READ_128_P2, READ_128_P2_SIZE, 16, 2);
     _initMemAccessRead(READ_128_P3, READ_128_P3_SIZE, 16, 3);
     _initMemAccessRead(READ_128_P4, READ_128_P4_SIZE, 16, 4);
+    // read dyn
+    _initMemAccessFlags(READ_DYN, READ_DYN_SIZE, (1 << READ_DYN_FLAGS));
     // write
     _initMemAccessWrite(WRITE_8_P1, WRITE_8_P1_SIZE, 1, 1);
     _initMemAccessWrite(WRITE_8_P2, WRITE_8_P2_SIZE, 1, 2);
@@ -817,6 +951,8 @@ struct MemAccessArray {
     _initMemAccessWrite(WRITE_128_P2, WRITE_128_P2_SIZE, 16, 2);
     _initMemAccessWrite(WRITE_128_P3, WRITE_128_P3_SIZE, 16, 3);
     _initMemAccessWrite(WRITE_128_P4, WRITE_128_P4_SIZE, 16, 4);
+    // write dyn
+    _initMemAccessFlags(WRITE_DYN, WRITE_DYN_SIZE, (1 << WRITE_DYN_FLAGS));
   }
 
 #if CHECK_INSTINFO_TABLE
@@ -857,6 +993,8 @@ struct MemAccessArray {
     check_table(READ_128_P2, READ_128_P2_SIZE, READ(16, 2), 0x7ff);
     check_table(READ_128_P3, READ_128_P3_SIZE, READ(16, 3), 0x7ff);
     check_table(READ_128_P4, READ_128_P4_SIZE, READ(16, 4), 0x7ff);
+    check_table(READ_DYN, READ_DYN_SIZE, (1 << READ_DYN_FLAGS),
+                (1 << READ_DYN_FLAGS));
     // write
     check_table(WRITE_8_P1, WRITE_8_P1_SIZE, WRITE(1, 1),
                 0x7ff << WRITE_POSITION);
@@ -900,6 +1038,8 @@ struct MemAccessArray {
                 0x7ff << WRITE_POSITION);
     check_table(WRITE_128_P4, WRITE_128_P4_SIZE, WRITE(16, 4),
                 0x7ff << WRITE_POSITION);
+    check_table(WRITE_DYN, WRITE_DYN_SIZE, (1 << WRITE_DYN_FLAGS),
+                (1 << WRITE_DYN_FLAGS));
     return 0;
   }
 #endif
@@ -943,10 +1083,63 @@ unsigned getImmediateSize(const llvm::MCInst &inst, const LLVMCPU &llvmcpu) {
   return 2;
 }
 
-bool unsupportedRead(const llvm::MCInst &inst) { return false; }
+bool unsupportedRead(const llvm::MCInst &inst) {
+  return IS_READ_DYN(memAccessCache.get(inst.getOpcode()));
+}
 
-bool unsupportedWrite(const llvm::MCInst &inst) { return false; }
+bool unsupportedWrite(const llvm::MCInst &inst) {
+  return IS_WRITE_DYN(memAccessCache.get(inst.getOpcode()));
+}
 
 bool variadicOpsIsWrite(const llvm::MCInst &inst) { return false; }
+
+bool isMOPSPrologue(const llvm::MCInst &inst) {
+
+  switch (inst.getOpcode()) {
+    default:
+      return false;
+    case llvm::AArch64::CPYFP:
+    case llvm::AArch64::CPYFPN:
+    case llvm::AArch64::CPYFPRN:
+    case llvm::AArch64::CPYFPRT:
+    case llvm::AArch64::CPYFPRTN:
+    case llvm::AArch64::CPYFPRTRN:
+    case llvm::AArch64::CPYFPRTWN:
+    case llvm::AArch64::CPYFPT:
+    case llvm::AArch64::CPYFPTN:
+    case llvm::AArch64::CPYFPTRN:
+    case llvm::AArch64::CPYFPTWN:
+    case llvm::AArch64::CPYFPWN:
+    case llvm::AArch64::CPYFPWT:
+    case llvm::AArch64::CPYFPWTN:
+    case llvm::AArch64::CPYFPWTRN:
+    case llvm::AArch64::CPYFPWTWN:
+    case llvm::AArch64::CPYP:
+    case llvm::AArch64::CPYPN:
+    case llvm::AArch64::CPYPRN:
+    case llvm::AArch64::CPYPRT:
+    case llvm::AArch64::CPYPRTN:
+    case llvm::AArch64::CPYPRTRN:
+    case llvm::AArch64::CPYPRTWN:
+    case llvm::AArch64::CPYPT:
+    case llvm::AArch64::CPYPTN:
+    case llvm::AArch64::CPYPTRN:
+    case llvm::AArch64::CPYPTWN:
+    case llvm::AArch64::CPYPWN:
+    case llvm::AArch64::CPYPWT:
+    case llvm::AArch64::CPYPWTN:
+    case llvm::AArch64::CPYPWTRN:
+    case llvm::AArch64::CPYPWTWN:
+    case llvm::AArch64::SETGP:
+    case llvm::AArch64::SETGPN:
+    case llvm::AArch64::SETGPT:
+    case llvm::AArch64::SETGPTN:
+    case llvm::AArch64::SETP:
+    case llvm::AArch64::SETPN:
+    case llvm::AArch64::SETPT:
+    case llvm::AArch64::SETPTN:
+      return true;
+  }
+}
 
 } // namespace QBDI

@@ -834,7 +834,27 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
                                   WritePC::unique(Temp(0)),
                                   SetExchange::unique(Temp(0))));
 
-  /* Rule #10: CBZ|CBNZ <reg>, imm
+  /* Rule #10: bxaut <reg>
+   */
+  rules.emplace_back(
+      And::unique(conv_unique<PatchCondition>(OpIs::unique(llvm::ARM::t2BXAUT),
+                                              LastInITBlock::unique())),
+      conv_unique<PatchGenerator>(
+          T2BXAUTPatchGen::unique(), GetOperand::unique(Temp(0), Operand(2)),
+          WritePC::unique(Temp(0)), SetExchange::unique(Temp(0))));
+
+  /* Rule #11: bxaut <reg>
+   */
+  rules.emplace_back(
+      And::unique(conv_unique<PatchCondition>(
+          OpIs::unique(llvm::ARM::t2BXAUT), Not::unique(InITBlock::unique()))),
+      conv_unique<PatchGenerator>(
+          T2BXAUTPatchGen::unique(),
+          GetNextInstAddr::unique(Temp(0), /* keepCond */ false),
+          GetOperandCC::unique(Temp(0), Operand(2)), WritePC::unique(Temp(0)),
+          SetExchange::unique(Temp(0))));
+
+  /* Rule #12: CBZ|CBNZ <reg>, imm
    *
    *    no SetExchange, as CBZ|CBNZ doesn't perform the change of mode
    */
@@ -850,7 +870,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
           GetNextInstAddr::unique(Temp(0), /* keepCond */ false),
           WritePC::unique(Temp(0))));
 
-  /* Rule #11: TBB|TBH [<reg>, <reg>{, LSL #1}]
+  /* Rule #13: TBB|TBH [<reg>, <reg>{, LSL #1}]
    *
    *    no SetExchange, as TBB|TBH doesn't perform the change of mode
    */
@@ -862,7 +882,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
               Not::unique(InITBlock::unique()), LastInITBlock::unique())))),
       conv_unique<PatchGenerator>(T2TBBTBHPatchGen::unique(Temp(0), Temp(1))));
 
-  /* Rule #12: LDR <reg>, [pc, #<imm>]
+  /* Rule #14: LDR <reg>, [pc, #<imm>]
    */
   rules.emplace_back(
       OpIs::unique(llvm::ARM::tLDRpci),
@@ -873,7 +893,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
               SetOpcode::unique(llvm::ARM::t2LDRi12),
               AddOperand::unique(Operand(1), Temp(0))))));
 
-  /* Rule #13: LDR.w pc, [pc, #<imm>]
+  /* Rule #15: LDR.w pc, [pc, #<imm>]
    * not in ITBlock
    *
    * need specific rules, because the immediate size is 12 bits when PC, but
@@ -892,7 +912,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
               SetOperand::unique(Operand(2), Constant(0)))),
           WritePC::unique(Temp(0)), SetExchange::unique(Temp(0))));
 
-  /* Rule #14: LDR.w pc, [pc, #<imm>]
+  /* Rule #16: LDR.w pc, [pc, #<imm>]
    * Last in ITBlock
    */
   rules.emplace_back(
@@ -911,7 +931,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
                                   /* invCond */ true),
           WritePC::unique(Temp(0)), SetExchange::unique(Temp(0))));
 
-  /* Rule #15: LDR.w <reg>, [pc, #<imm>]
+  /* Rule #17: LDR.w <reg>, [pc, #<imm>]
    */
   rules.emplace_back(
       And::unique(conv_unique<PatchCondition>(
@@ -940,7 +960,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
   // ===========================
   //
 
-  /* Rule #16:
+  /* Rule #18:
    * - PC in the first (dest) and third operand (src)
    * - PC in the first (dest) and second operand (src)
    * not in ITBlock
@@ -963,7 +983,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
               SubstituteWithTemp::unique(Reg(REG_PC), Temp(0)))),
           WritePC::unique(Temp(0)), SetExchange::unique(Temp(0))));
 
-  /* Rule #17:
+  /* Rule #19:
    * - PC in the first (dest) and third operand (src)
    * - PC in the first (dest) and second operand (src)
    * Last in ITBlock
@@ -992,7 +1012,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
   // Instruction with PC 1 time
   // ==========================
   //
-  /* Rule #18: ADD... with PC in the first (dest)
+  /* Rule #20: ADD... with PC in the first (dest)
    * not in ITBlock
    */
   rules.emplace_back(
@@ -1008,7 +1028,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
               SetOperand::unique(Operand(0), Temp(0)))),
           WritePC::unique(Temp(0)), SetExchange::unique(Temp(0))));
 
-  /* Rule #19: ADD... with PC in the first (dest)
+  /* Rule #21: ADD... with PC in the first (dest)
    * Last in ITBlock
    */
   rules.emplace_back(
@@ -1026,7 +1046,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
               SetOperand::unique(Operand(0), Temp(0)))),
           WritePC::unique(Temp(0)), SetExchange::unique(Temp(0))));
 
-  /* Rule # 20:
+  /* Rule #22:
    * - PC in the second operand (src only)
    * - PC in the third operand (src only)
    */
@@ -1054,7 +1074,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
   // Special case: LDM POP PUSH STM
   // ==============================
 
-  /* Rule #21: LDM with PC
+  /* Rule #23: LDM with PC
    */
   rules.emplace_back(
       And::unique(conv_unique<PatchCondition>(
@@ -1068,7 +1088,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
               OpIs::unique(llvm::ARM::t2LDMDB_UPD))))),
       conv_unique<PatchGenerator>(T2LDMPatchGen::unique(Temp(0), true),
                                   SetExchange::unique(Temp(0))));
-  /* Rule #22: LDM without PC
+  /* Rule #24: LDM without PC
    */
   rules.emplace_back(
       And::unique(conv_unique<PatchCondition>(
@@ -1080,7 +1100,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
               OpIs::unique(llvm::ARM::t2LDMDB_UPD))))),
       conv_unique<PatchGenerator>(T2LDMPatchGen::unique(Temp(0), false)));
 
-  /* Rule #23: POP with PC
+  /* Rule #25: POP with PC
    */
   rules.emplace_back(
       And::unique(conv_unique<PatchCondition>(
@@ -1090,7 +1110,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
       conv_unique<PatchGenerator>(TPopPatchGen::unique(Temp(0)),
                                   SetExchange::unique(Temp(0))));
 
-  /* Rule #24: STM
+  /* Rule #26: STM
    *
    * Note: PC and SP cannot be store in Thumb mode
    */
@@ -1109,7 +1129,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
 
   if ((opts & Options::OPT_DISABLE_LOCAL_MONITOR) == 0) {
 
-    /* Rule #25: Clear local monitor state
+    /* Rule #27: Clear local monitor state
      */
     rules.emplace_back(
         Or::unique(conv_unique<PatchCondition>(OpIs::unique(llvm::ARM::t2CLREX),
@@ -1124,7 +1144,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
                 Temp(0),
                 Offset(offsetof(Context, gprState.localMonitor.enable)))));
 
-    /* Rule #26: exclusive load 1 register
+    /* Rule #28: exclusive load 1 register
      */
     rules.emplace_back(
         Or::unique(
@@ -1146,7 +1166,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
             ItPatch::unique(false),
             ModifyInstruction::unique(InstTransform::UniquePtrVec())));
 
-    /* Rule #27: exclusive load 1 register + offset
+    /* Rule #29: exclusive load 1 register + offset
      */
     rules.emplace_back(
         OpIs::unique(llvm::ARM::t2LDREX),
@@ -1161,7 +1181,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
             ItPatch::unique(false),
             ModifyInstruction::unique(InstTransform::UniquePtrVec())));
 
-    /* Rule #28: exclusive load 2 registers
+    /* Rule #30: exclusive load 2 registers
      */
     rules.emplace_back(
         OpIs::unique(llvm::ARM::t2LDREXD),
@@ -1176,7 +1196,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
             ItPatch::unique(false),
             ModifyInstruction::unique(InstTransform::UniquePtrVec())));
 
-    /* Rule #29: exclusive store
+    /* Rule #31: exclusive store
      */
     rules.emplace_back(
         Or::unique(conv_unique<PatchCondition>(
@@ -1195,7 +1215,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
   // Instruction with no PC
   // ======================
 
-  /* Rule #30: instruction to skip (it, barrier, preload)
+  /* Rule #32: instruction to skip (it, barrier, preload)
    */
   rules.emplace_back(
       Or::unique(conv_unique<PatchCondition>(
@@ -1209,7 +1229,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
               )),
       PatchGenerator::UniquePtrVec());
 
-  /* Rule #31: all other
+  /* Rule #33: all other
    */
   rules.emplace_back(
       Not::unique(Or::unique(conv_unique<PatchCondition>(
@@ -1217,13 +1237,13 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
           // unsupported instruction
           OpIs::unique(llvm::ARM::tSETEND), OpIs::unique(llvm::ARM::t2BXJ),
           // operand invalid with the current ITBlock
-          OpIs::unique(llvm::ARM::t2B), OpIs::unique(llvm::ARM::t2Bcc),
-          OpIs::unique(llvm::ARM::t2TBB), OpIs::unique(llvm::ARM::t2TBH),
-          OpIs::unique(llvm::ARM::tB), OpIs::unique(llvm::ARM::tBL),
-          OpIs::unique(llvm::ARM::tBLXi), OpIs::unique(llvm::ARM::tBLXr),
-          OpIs::unique(llvm::ARM::tBX), OpIs::unique(llvm::ARM::tBcc),
-          OpIs::unique(llvm::ARM::tCBNZ), OpIs::unique(llvm::ARM::tCBZ),
-          OpIs::unique(llvm::ARM::tLDRpci)
+          OpIs::unique(llvm::ARM::t2B), OpIs::unique(llvm::ARM::t2BXAUT),
+          OpIs::unique(llvm::ARM::t2Bcc), OpIs::unique(llvm::ARM::t2TBB),
+          OpIs::unique(llvm::ARM::t2TBH), OpIs::unique(llvm::ARM::tB),
+          OpIs::unique(llvm::ARM::tBL), OpIs::unique(llvm::ARM::tBLXi),
+          OpIs::unique(llvm::ARM::tBLXr), OpIs::unique(llvm::ARM::tBX),
+          OpIs::unique(llvm::ARM::tBcc), OpIs::unique(llvm::ARM::tCBNZ),
+          OpIs::unique(llvm::ARM::tCBZ), OpIs::unique(llvm::ARM::tLDRpci)
 
               ))),
       conv_unique<PatchGenerator>(

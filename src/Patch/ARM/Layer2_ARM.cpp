@@ -1622,6 +1622,23 @@ llvm::MCInst bkpt(unsigned int value) {
   return inst;
 }
 
+llvm::MCInst t2autg(RegLLVM reg, RegLLVM ctx, RegLLVM tag) {
+  return t2autg(reg, ctx, tag, llvm::ARMCC::AL);
+}
+
+llvm::MCInst t2autg(RegLLVM reg, RegLLVM ctx, RegLLVM tag, unsigned cond) {
+  llvm::MCInst inst;
+
+  inst.setOpcode(llvm::ARM::t2AUTG);
+  inst.addOperand(llvm::MCOperand::createImm(cond));
+  inst.addOperand(llvm::MCOperand::createReg(getCondReg(cond)));
+  inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
+  inst.addOperand(llvm::MCOperand::createReg(ctx.getValue()));
+  inst.addOperand(llvm::MCOperand::createReg(tag.getValue()));
+
+  return inst;
+}
+
 // High level layer 2
 
 RelocatableInst::UniquePtr Popr1(CPUMode cpuMode, Reg reg) {

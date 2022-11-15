@@ -63,7 +63,7 @@ ExecBlock::ExecBlock(
   uint64_t pageSize =
       is_ios ? 4096
              : llvm::expectedToOptional(llvm::sys::Process::getPageSize())
-                   .getValueOr(4096);
+                   .value_or(4096);
   unsigned mflags = PF::MF_READ | PF::MF_WRITE;
 
   if constexpr (is_ios)

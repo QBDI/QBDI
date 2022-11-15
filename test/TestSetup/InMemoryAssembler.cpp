@@ -43,11 +43,11 @@
 #include "llvm/MC/MCSubtargetInfo.h"
 #include "llvm/MC/MCTargetOptions.h"
 #include "llvm/MC/SubtargetFeature.h"
+#include "llvm/MC/TargetRegistry.h"
 #include "llvm/Object/ELFObjectFile.h"
 #include "llvm/Object/ObjectFile.h"
 #include "llvm/Support/Host.h"
 #include "llvm/Support/SourceMgr.h"
-#include "llvm/Support/TargetRegistry.h"
 
 void writeResult(const char *source,
                  const llvm::SmallVector<char, 1024> &objectVector) {
@@ -119,7 +119,7 @@ InMemoryObject::InMemoryObject(const char *source, const char *cpu,
   auto MAB = std::unique_ptr<llvm::MCAsmBackend>(
       processTarget->createMCAsmBackend(*MSTI, *MRI, options));
   auto MCE = std::unique_ptr<llvm::MCCodeEmitter>(
-      processTarget->createMCCodeEmitter(*MCII, *MRI, *MCTX));
+      processTarget->createMCCodeEmitter(*MCII, *MCTX));
 
   // Wrap output object into raw_ostream
   // raw_pwrite_string_ostream rpsos(objectStr);
@@ -144,7 +144,7 @@ InMemoryObject::InMemoryObject(const char *source, const char *cpu,
       processTarget->createMCAsmParser(*MSTI, *parser, *MCII, parserOpts);
   parser->setTargetParser(*tap);
   // Finally do something we care about
-  mcStr->InitSections(false);
+  mcStr->initSections(false, *MSTI);
   REQUIRE_FALSE(parser->Run(true));
   delete parser;
   delete tap;

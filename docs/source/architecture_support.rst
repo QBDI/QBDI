@@ -24,6 +24,13 @@ AARCH64
 The AARCH64 support with the Memory Access.
 The support is more recent that X86_64 and some bug should be expected.
 
+Some extensions isn't supported by QBDI, in particular:
+
+- Scalable Vector Extension (SVE and SVE2)
+- Scalable Matrix Extension (SME)
+- Memory Tagging Extension (MTE)
+- Transactional Memory Extension (TME)
+
 For OSX, the register X18 is defined as platforms reserved. QBDI doesn't set or
 used this register.
 

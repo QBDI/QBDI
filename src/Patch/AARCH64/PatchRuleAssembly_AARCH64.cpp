@@ -106,14 +106,16 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
    *        |   Temp(0) := PC + 4
    *        --> DataBlock[Offset(RIP)] := Temp(0)
    */
-  rules.emplace_back(OpIs::unique(llvm::AArch64::Bcc),
-                     conv_unique<PatchGenerator>(
-                         GetPCOffset::unique(Temp(0), Operand(1)),
-                         ModifyInstruction::unique(conv_unique<InstTransform>(
-                             SetOperand::unique(Operand(1), Constant(8 / 4)))),
-                         GetPCOffset::unique(Temp(0), Constant(4)),
-                         WriteTemp::unique(Temp(0), Offset(Reg(REG_PC))),
-                         SaveX28IfSet::unique()));
+  rules.emplace_back(
+      Or::unique(conv_unique<PatchCondition>(
+          OpIs::unique(llvm::AArch64::Bcc), OpIs::unique(llvm::AArch64::BCcc))),
+      conv_unique<PatchGenerator>(
+          GetPCOffset::unique(Temp(0), Operand(1)),
+          ModifyInstruction::unique(conv_unique<InstTransform>(
+              SetOperand::unique(Operand(1), Constant(8 / 4)))),
+          GetPCOffset::unique(Temp(0), Constant(4)),
+          WriteTemp::unique(Temp(0), Offset(Reg(REG_PC))),
+          SaveX28IfSet::unique()));
 
   /* Rule #6: Simulate ADR and ADRP
    * Target:  ADR Xn, IMM

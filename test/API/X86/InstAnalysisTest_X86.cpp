@@ -532,7 +532,7 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-ret") {
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
       ExpectedInstAnalysis{
-          "RETL", addr,
+          "RET32", addr,
           /* instSize */ 1, /* affectControlFlow */ true, /* isBranch */ false,
           /* isCall */ false, /* isReturn */ true, /* isCompare */ false,
           /* isPredicable */ false, /* mayLoad */ true, /* mayStore */ false,
@@ -805,7 +805,7 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-paddb") {
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
       ExpectedInstAnalysis{
-          "MMX_PADDBirr", addr,
+          "MMX_PADDBrr", addr,
           /* instSize */ 3, /* affectControlFlow */ false, /* isBranch */ false,
           /* isCall */ false, /* isReturn */ false, /* isCompare */ false,
           /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ false,

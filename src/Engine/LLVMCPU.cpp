@@ -39,8 +39,8 @@
 #include "llvm/MC/MCTargetOptions.h"
 #include "llvm/MC/MCValue.h"
 #include "llvm/MC/SubtargetFeature.h"
+#include "llvm/MC/TargetRegistry.h"
 #include "llvm/Support/Host.h"
-#include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -139,8 +139,6 @@ LLVMCPU::LLVMCPU(const std::string &_cpu, const std::string &_arch,
 
   auto MAB = std::unique_ptr<llvm::MCAsmBackend>(
       target->createMCAsmBackend(*MSTI, *MRI, MCOptions));
-  MCE = std::unique_ptr<llvm::MCCodeEmitter>(
-      target->createMCCodeEmitter(*MCII, *MRI, *MCTX));
 
   // assembler, disassembler and printer
   null_ostream = std::make_unique<llvm::raw_null_ostream>();
@@ -149,7 +147,7 @@ LLVMCPU::LLVMCPU(const std::string &_cpu, const std::string &_arch,
       target->createMCDisassembler(*MSTI, *MCTX));
 
   auto codeEmitter = std::unique_ptr<llvm::MCCodeEmitter>(
-      target->createMCCodeEmitter(*MCII, *MRI, *MCTX));
+      target->createMCCodeEmitter(*MCII, *MCTX));
 
   auto objectWriter = std::unique_ptr<llvm::MCObjectWriter>(
       MAB->createObjectWriter(*null_ostream));

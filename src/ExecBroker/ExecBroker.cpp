@@ -31,7 +31,7 @@ ExecBroker::ExecBroker(std::unique_ptr<ExecBlock> _transferBlock,
                        const LLVMCPUs &llvmCPUs, VMInstanceRef vminstance)
     : transferBlock(std::move(_transferBlock)) {
   pageSize = llvm::expectedToOptional(llvm::sys::Process::getPageSize())
-                 .getValueOr(4096);
+                 .value_or(4096);
   initExecBrokerSequences(llvmCPUs);
 }
 

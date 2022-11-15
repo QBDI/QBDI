@@ -283,6 +283,8 @@ llvm::MCInst t2cmp(RegLLVM src, rword imm, unsigned cond);
 llvm::MCInst t2it(unsigned int cond, unsigned pred);
 llvm::MCInst nop();
 llvm::MCInst bkpt(unsigned int value);
+llvm::MCInst t2autg(RegLLVM reg, RegLLVM ctx, RegLLVM tag);
+llvm::MCInst t2autg(RegLLVM reg, RegLLVM ctx, RegLLVM tag, unsigned cond);
 
 // High level layer 2
 

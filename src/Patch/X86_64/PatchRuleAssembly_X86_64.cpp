@@ -259,9 +259,9 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
    */
   rules.emplace_back(
       Or::unique(conv_unique<PatchCondition>(
-          OpIs::unique(llvm::X86::RETL), OpIs::unique(llvm::X86::RETQ),
-          OpIs::unique(llvm::X86::RETW), OpIs::unique(llvm::X86::RETIL),
-          OpIs::unique(llvm::X86::RETIQ), OpIs::unique(llvm::X86::RETIW))),
+          OpIs::unique(llvm::X86::RET32), OpIs::unique(llvm::X86::RET64),
+          OpIs::unique(llvm::X86::RET16), OpIs::unique(llvm::X86::RETI32),
+          OpIs::unique(llvm::X86::RETI64), OpIs::unique(llvm::X86::RETI16))),
       conv_unique<PatchGenerator>(SimulateRet::unique(Temp(0))));
 
   /* Rule #14: Default rule for every other instructions.
