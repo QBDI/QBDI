@@ -18,6 +18,8 @@ jobs:
       QBDI_PLATFORM: 'osx'
       QBDI_ARCH: 'X86_64'
       MACOSX_DEPLOYMENT_TARGET: '10.14'
+      _PYTHON_HOST_PLATFORM: "macosx-10.14-x86_64"
+      ARCHFLAGS: "-arch x86_64"
     steps:
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
