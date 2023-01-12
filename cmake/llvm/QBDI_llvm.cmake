@@ -7,7 +7,7 @@ include(FetchContent)
 
 # configure FetchContent
 set(QBDI_LLVM_MAJOR_VERSION 15)
-set(QBDI_LLVM_VERSION 15.0.5)
+set(QBDI_LLVM_VERSION 15.0.7)
 
 # download and include llvm cmake module
 option(QBDI_INCLUDE_LLVM_CMAKE_MODUKE "Include llvm cmake module" ON)
@@ -16,7 +16,7 @@ if(QBDI_INCLUDE_LLVM_CMAKE_MODUKE)
     llvm_cmake
     URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${QBDI_LLVM_VERSION}/cmake-${QBDI_LLVM_VERSION}.src.tar.xz"
     URL_HASH
-      "SHA256=61a9757f2fb7dd4c992522732531eb58b2bb031a2ca68848ff1cfda1fc07b7b3"
+      "SHA256=8986f29b634fdaa9862eedda78513969fe9788301c9f2d938f4c10a3e7a3e7ea"
     DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/llvm-cmake-download")
 
   if(NOT llvm_cmake_POPULATED)
@@ -29,7 +29,7 @@ FetchContent_Declare(
   llvm
   URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${QBDI_LLVM_VERSION}/llvm-${QBDI_LLVM_VERSION}.src.tar.xz"
   URL_HASH
-    "SHA256=4428688b567ab1c9911aa9e13cb44c9bc1b14431713c14de491e10369f2b0370"
+    "SHA256=4ad8b2cc8003c86d0078d15d987d84e3a739f24aae9033865c027abae93ee7a4"
   DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/llvm-download")
 
 FetchContent_GetProperties(llvm)
