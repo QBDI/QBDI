@@ -36,6 +36,15 @@ FetchContent_GetProperties(llvm)
 if(NOT llvm_POPULATED)
   FetchContent_Populate(llvm)
 
+  if(QBDI_INCLUDE_LLVM_CMAKE_MODUKE)
+    # copy the module files in cmake/modules
+    file(
+      COPY "${llvm_cmake_SOURCE_DIR}/Modules/"
+      DESTINATION "${llvm_SOURCE_DIR}/cmake/modules/"
+      FILES_MATCHING
+      PATTERN "*.cmake")
+  endif()
+
   set(CMAKE_CXX_STANDARD
       17
       CACHE STRING "USE CPP 17")
