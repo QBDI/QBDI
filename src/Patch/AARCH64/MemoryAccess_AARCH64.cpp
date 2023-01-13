@@ -1077,7 +1077,7 @@ constexpr MemoryAccessInfoArray memoryAccessInfo;
 #if CHECK_MEMORYACCESS_TABLE
 
 struct AddressGenerator {
-  const unsigned (&insts)[];
+  const unsigned *insts;
   size_t nbInsts;
   AddressGenFn *fn;
 };
