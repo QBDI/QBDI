@@ -36,6 +36,8 @@ FetchContent_GetProperties(llvm)
 if(NOT llvm_POPULATED)
   FetchContent_Populate(llvm)
 
+  # hack of llvm compilation : when crosscompile,
+  #   the nested cmake need to access to module.
   if(QBDI_INCLUDE_LLVM_CMAKE_MODUKE)
     # copy the module files in cmake/modules
     file(
@@ -44,6 +46,17 @@ if(NOT llvm_POPULATED)
       FILES_MATCHING
       PATTERN "*.cmake")
   endif()
+
+  # hack of llvm compilation : when crosscompile,
+  #   the nested compilation ignore
+  #   LLVM_INCLUDE_BENCHMARKS, and force the inclusion of
+  #   ${llvm_cmake_SOURCE_DIR}/../third-party/benchmark
+  #   Just creates an empty file there and emtpies
+  #   ${llvm_cmake_SOURCE_DIR}/benchmarks/CMakeLists.txt
+  file(MAKE_DIRECTORY "${llvm_SOURCE_DIR}/../third-party/benchmark")
+  file(REMOVE "${llvm_SOURCE_DIR}/benchmarks/CMakeLists.txt")
+  file(TOUCH "${llvm_SOURCE_DIR}/../third-party/benchmark/CMakeLists.txt"
+       "${llvm_SOURCE_DIR}/benchmarks/CMakeLists.txt")
 
   set(CMAKE_CXX_STANDARD
       17
