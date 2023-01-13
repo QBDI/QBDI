@@ -21,7 +21,6 @@ RUN apt-get update && \
         build-essential \
         cmake \
         g++ \
-        g++-multilib \
         git \
         libstdc++-10-dev \
         ninja-build \
