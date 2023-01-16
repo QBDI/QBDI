@@ -31,7 +31,11 @@ def detect_QBDI_platform():
     current_os = None
     arch = None
     if hasattr(sys.implementation, "_multiarch"):
-        base_arch, base_os = sys.implementation._multiarch.split('-')[:2]
+        if '-' in sys.implementation._multiarch:
+            base_arch, base_os = sys.implementation._multiarch.split('-')[:2]
+        else:
+            base_arch = sys.implementation._multiarch
+            base_os = platform.system()
     else:
         base_arch = platform.machine()
         base_os = platform.system()
