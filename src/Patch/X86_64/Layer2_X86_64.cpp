@@ -438,7 +438,7 @@ llvm::MCInst pushf64() {
 llvm::MCInst ret() {
   llvm::MCInst inst;
 
-  inst.setOpcode(llvm::X86::RETQ);
+  inst.setOpcode(llvm::X86::RET64);
 
   return inst;
 }

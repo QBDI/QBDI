@@ -729,6 +729,21 @@ public:
   inline bool modifyPC() const override { return true; }
 };
 
+class T2BXAUTPatchGen : public AutoClone<PatchGenerator, T2BXAUTPatchGen> {
+
+public:
+  /*! A patchGenerator for thumb2 BXAUT instruction to perform AUTG operation
+   */
+  T2BXAUTPatchGen() {}
+
+  /*! Output:
+   *
+   * AUTG
+   */
+  std::vector<std::unique_ptr<RelocatableInst>>
+  generate(const Patch &patch, TempManager &temp_manager) const override;
+};
+
 } // namespace QBDI
 
 #endif

@@ -15,19 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef INSTINFO_AARCH64_H
-#define INSTINFO_AARCH64_H
-
-namespace llvm {
-class MCInst;
-}
+#include "Patch/AARCH64/PatchCondition_AARCH64.h"
+#include "Engine/LLVMCPU.h"
+#include "Patch/AARCH64/InstInfo_AARCH64.h"
+#include "Patch/InstInfo.h"
+#include "Utility/LogSys.h"
 
 namespace QBDI {
 
-unsigned getReadPack(const llvm::MCInst &inst);
-unsigned getWritePack(const llvm::MCInst &inst);
-bool isMOPSPrologue(const llvm::MCInst &inst);
+bool IsMOPSReadPrologue::test(const Patch &patch,
+                              const LLVMCPU &llvmcpu) const {
+  return isMOPSPrologue(patch.metadata.inst) and
+         unsupportedRead(patch.metadata.inst);
+}
 
-}; // namespace QBDI
+bool IsMOPSWritePrologue::test(const Patch &patch,
+                               const LLVMCPU &llvmcpu) const {
+  return isMOPSPrologue(patch.metadata.inst) and
+         unsupportedWrite(patch.metadata.inst);
+}
 
-#endif
+} // namespace QBDI

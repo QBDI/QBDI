@@ -61,7 +61,6 @@ private:
   CPUMode cpumode;
 
   std::unique_ptr<llvm::MCAsmInfo> MAI;
-  std::unique_ptr<llvm::MCCodeEmitter> MCE;
   std::unique_ptr<llvm::MCContext> MCTX;
   std::unique_ptr<llvm::MCInstrInfo> MCII;
   std::unique_ptr<llvm::MCObjectFileInfo> MOFI;

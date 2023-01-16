@@ -1411,13 +1411,13 @@ constexpr MemoryAccessInfoArray memoryAccessInfo;
 #if CHECK_MEMORYACCESS_TABLE
 
 struct AddressGenerator {
-  const unsigned (&insts)[];
+  const unsigned *insts;
   size_t nbInsts;
   AddressGenFn *fn;
 };
 
 int checkTable() {
-  const std::vector<AddressGenerator> addrInfo{
+  const std::vector<AddressGenerator> addrInfo = {
       {ADDR_REG_1_TABLE, ADDR_REG_1_SIZE, ADDR_REG_1_FN},
       {ADDR_REG_2_TABLE, ADDR_REG_2_SIZE, ADDR_REG_2_FN},
       {ADDR_REG_3_TABLE, ADDR_REG_3_SIZE, ADDR_REG_3_FN},

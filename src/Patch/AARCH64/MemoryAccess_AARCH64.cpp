@@ -35,6 +35,7 @@
 #include "Patch/AARCH64/InstInfo_AARCH64.h"
 #include "Patch/AARCH64/Layer2_AARCH64.h"
 #include "Patch/AARCH64/MemoryAccess_AARCH64.h"
+#include "Patch/AARCH64/PatchCondition_AARCH64.h"
 #include "Patch/AARCH64/PatchGenerator_AARCH64.h"
 #include "Patch/AARCH64/RelocatableInst_AARCH64.h"
 #include "Patch/InstInfo.h"
@@ -1076,7 +1077,7 @@ constexpr MemoryAccessInfoArray memoryAccessInfo;
 #if CHECK_MEMORYACCESS_TABLE
 
 struct AddressGenerator {
-  const unsigned (&insts)[];
+  const unsigned *insts;
   size_t nbInsts;
   AddressGenFn *fn;
 };
@@ -1195,6 +1196,8 @@ enum MemoryTag : uint16_t {
   MEM_READ_VALUE_TAG = MEMORY_TAG_BEGIN + 2,
   MEM_WRITE_VALUE_TAG = MEMORY_TAG_BEGIN + 3,
   MEM_VALUE_EXTENDED_TAG = MEMORY_TAG_BEGIN + 4,
+
+  MEM_MOPS_SIZE_TAG = MEMORY_TAG_BEGIN + 5,
 };
 
 const PatchGenerator::UniquePtrVec &
@@ -1393,12 +1396,92 @@ generatePostWriteInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
   }
 }
 
+// MOPS prologue instruction
+const PatchGenerator::UniquePtrVec &
+generateMOPSReadInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
+
+  static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
+      GetOperand::unique(Temp(0), Operand(1)),
+      WriteTemp::unique(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+      GetOperand::unique(Temp(0), Operand(2)),
+      WriteTemp::unique(Temp(0), Shadow(MEM_MOPS_SIZE_TAG)));
+  return r;
+}
+
+const PatchGenerator::UniquePtrVec &
+generateMOPSWriteInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
+
+  switch (patch.metadata.inst.getOpcode()) {
+    case llvm::AArch64::CPYFP:
+    case llvm::AArch64::CPYFPN:
+    case llvm::AArch64::CPYFPRN:
+    case llvm::AArch64::CPYFPRT:
+    case llvm::AArch64::CPYFPRTN:
+    case llvm::AArch64::CPYFPRTRN:
+    case llvm::AArch64::CPYFPRTWN:
+    case llvm::AArch64::CPYFPT:
+    case llvm::AArch64::CPYFPTN:
+    case llvm::AArch64::CPYFPTRN:
+    case llvm::AArch64::CPYFPTWN:
+    case llvm::AArch64::CPYFPWN:
+    case llvm::AArch64::CPYFPWT:
+    case llvm::AArch64::CPYFPWTN:
+    case llvm::AArch64::CPYFPWTRN:
+    case llvm::AArch64::CPYFPWTWN:
+    case llvm::AArch64::CPYP:
+    case llvm::AArch64::CPYPN:
+    case llvm::AArch64::CPYPRN:
+    case llvm::AArch64::CPYPRT:
+    case llvm::AArch64::CPYPRTN:
+    case llvm::AArch64::CPYPRTRN:
+    case llvm::AArch64::CPYPRTWN:
+    case llvm::AArch64::CPYPT:
+    case llvm::AArch64::CPYPTN:
+    case llvm::AArch64::CPYPTRN:
+    case llvm::AArch64::CPYPTWN:
+    case llvm::AArch64::CPYPWN:
+    case llvm::AArch64::CPYPWT:
+    case llvm::AArch64::CPYPWTN:
+    case llvm::AArch64::CPYPWTRN:
+    case llvm::AArch64::CPYPWTWN: {
+      static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
+          GetOperand::unique(Temp(0), Operand(0)),
+          WriteTemp::unique(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
+          GetOperand::unique(Temp(0), Operand(2)),
+          WriteTemp::unique(Temp(0), Shadow(MEM_MOPS_SIZE_TAG)));
+      return r;
+    }
+    case llvm::AArch64::SETGP:
+    case llvm::AArch64::SETGPN:
+    case llvm::AArch64::SETGPT:
+    case llvm::AArch64::SETGPTN:
+    case llvm::AArch64::SETP:
+    case llvm::AArch64::SETPN:
+    case llvm::AArch64::SETPT:
+    case llvm::AArch64::SETPTN: {
+      static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
+          GetOperand::unique(Temp(0), Operand(0)),
+          WriteTemp::unique(Temp(0), Shadow(MEM_WRITE_ADDRESS_TAG)),
+          GetOperand::unique(Temp(0), Operand(1)),
+          WriteTemp::unique(Temp(0), Shadow(MEM_MOPS_SIZE_TAG)));
+      return r;
+    }
+    default:
+      QBDI_ABORT_PATCH(patch, "Unexpected instruction");
+  }
+}
+
 } // anonymous namespace
 
 std::vector<std::unique_ptr<InstrRule>> getInstrRuleMemAccessRead() {
-  return conv_unique<InstrRule>(InstrRuleDynamic::unique(
-      DoesReadAccess::unique(), generateReadInstrumentPatch, PREINST, false,
-      PRIORITY_MEMACCESS_LIMIT + 1, RelocTagPreInstMemAccess));
+  return conv_unique<InstrRule>(
+      InstrRuleDynamic::unique(
+          DoesReadAccess::unique(), generateReadInstrumentPatch, PREINST, false,
+          PRIORITY_MEMACCESS_LIMIT + 1, RelocTagPreInstMemAccess),
+      InstrRuleDynamic::unique(IsMOPSReadPrologue::unique(),
+                               generateMOPSReadInstrumentPatch, PREINST, false,
+                               PRIORITY_MEMACCESS_LIMIT + 1,
+                               RelocTagPreInstMemAccess));
 }
 
 std::vector<std::unique_ptr<InstrRule>> getInstrRuleMemAccessWrite() {
@@ -1408,7 +1491,10 @@ std::vector<std::unique_ptr<InstrRule>> getInstrRuleMemAccessWrite() {
           false, PRIORITY_MEMACCESS_LIMIT, RelocTagPreInstMemAccess),
       InstrRuleDynamic::unique(
           DoesWriteAccess::unique(), generatePostWriteInstrumentPatch, POSTINST,
-          false, PRIORITY_MEMACCESS_LIMIT, RelocTagPostInstMemAccess));
+          false, PRIORITY_MEMACCESS_LIMIT, RelocTagPostInstMemAccess),
+      InstrRuleDynamic::unique(
+          IsMOPSWritePrologue::unique(), generateMOPSWriteInstrumentPatch,
+          PREINST, false, PRIORITY_MEMACCESS_LIMIT, RelocTagPreInstMemAccess));
 }
 
 // Analyse MemoryAccess from Shadow
@@ -1436,17 +1522,11 @@ void analyseMemoryAccessAddrValue(const ExecBlock &curExecBlock,
       access.type = MEMORY_READ;
       access.size = getReadSize(inst, llvmcpu);
       expectValueTag = MEM_READ_VALUE_TAG;
-      // if (isMinSizeRead(inst)) {
-      //  access.flags |= MEMORY_MINIMUM_SIZE;
-      //}
       break;
     case MEM_WRITE_ADDRESS_TAG:
       access.type = MEMORY_WRITE;
       access.size = getWriteSize(inst, llvmcpu);
       expectValueTag = MEM_WRITE_VALUE_TAG;
-      // if (isMinSizeRead(inst)) {
-      //  access.flags |= MEMORY_MINIMUM_SIZE;
-      //}
       break;
   }
 
@@ -1464,6 +1544,20 @@ void analyseMemoryAccessAddrValue(const ExecBlock &curExecBlock,
       return;
     }
     QBDI_REQUIRE_ACTION(shadows[0].instID == shadows[index].instID, return );
+    // special case for MOPS instruction
+    if (shadows[index].tag == MEM_MOPS_SIZE_TAG) {
+      rword size = curExecBlock.getShadow(shadows[index].shadowID);
+      access.value = size;
+      if (size > 0xffff) {
+        access.size = 0xffff;
+        access.flags = MEMORY_UNKNOWN_VALUE | MEMORY_MINIMUM_SIZE;
+      } else {
+        access.size = size;
+        access.flags = MEMORY_UNKNOWN_VALUE;
+      }
+      dest.push_back(access);
+      return;
+    }
   } while (shadows[index].tag != expectValueTag);
 
   access.value = curExecBlock.getShadow(shadows[index].shadowID);

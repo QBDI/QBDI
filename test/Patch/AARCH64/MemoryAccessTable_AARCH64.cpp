@@ -45,7 +45,17 @@ const std::set<unsigned> unsupportedInst{
     SPACE,
     STGloop,
     STZGloop,
-    // ARMv8 SVE
+    // ARMv8 SME
+    EXTRACT_ZPMXI_H_B,
+    EXTRACT_ZPMXI_H_D,
+    EXTRACT_ZPMXI_H_H,
+    EXTRACT_ZPMXI_H_Q,
+    EXTRACT_ZPMXI_H_S,
+    EXTRACT_ZPMXI_V_B,
+    EXTRACT_ZPMXI_V_D,
+    EXTRACT_ZPMXI_V_H,
+    EXTRACT_ZPMXI_V_Q,
+    EXTRACT_ZPMXI_V_S,
     LD1_MXIPXX_H_B,
     LD1_MXIPXX_H_D,
     LD1_MXIPXX_H_H,
@@ -406,33 +416,37 @@ const std::set<unsigned> unsupportedInst{
     PRFH_S_PZI,
     PRFH_S_SXTW_SCALED,
     PRFH_S_UXTW_SCALED,
-    PRFS_PRR,
     PRFW_D_PZI,
     PRFW_D_SCALED,
     PRFW_D_SXTW_SCALED,
     PRFW_D_UXTW_SCALED,
     PRFW_PRI,
+    PRFW_PRR,
     PRFW_S_PZI,
     PRFW_S_SXTW_SCALED,
     PRFW_S_UXTW_SCALED,
+    PSEL_PPPRI_B,
+    PSEL_PPPRI_D,
+    PSEL_PPPRI_H,
+    PSEL_PPPRI_S,
     SETFFR,
+    SST1B_D,
     SST1B_D_IMM,
-    SST1B_D_REAL,
     SST1B_D_SXTW,
     SST1B_D_UXTW,
     SST1B_S_IMM,
     SST1B_S_SXTW,
     SST1B_S_UXTW,
+    SST1D,
     SST1D_IMM,
-    SST1D_REAL,
-    SST1D_SCALED_SCALED_REAL,
+    SST1D_SCALED,
     SST1D_SXTW,
     SST1D_SXTW_SCALED,
     SST1D_UXTW,
     SST1D_UXTW_SCALED,
+    SST1H_D,
     SST1H_D_IMM,
-    SST1H_D_REAL,
-    SST1H_D_SCALED_SCALED_REAL,
+    SST1H_D_SCALED,
     SST1H_D_SXTW,
     SST1H_D_SXTW_SCALED,
     SST1H_D_UXTW,
@@ -442,9 +456,9 @@ const std::set<unsigned> unsupportedInst{
     SST1H_S_SXTW_SCALED,
     SST1H_S_UXTW,
     SST1H_S_UXTW_SCALED,
+    SST1W_D,
     SST1W_D_IMM,
-    SST1W_D_REAL,
-    SST1W_D_SCALED_SCALED_REAL,
+    SST1W_D_SCALED,
     SST1W_D_SXTW,
     SST1W_D_SXTW_SCALED,
     SST1W_D_UXTW,
@@ -544,12 +558,6 @@ const std::set<unsigned> unsupportedInst{
     STZGPostIndex,
     STZGPreIndex,
 
-    // ARMv8 Pauth
-    LDRAAindexed,
-    LDRAAwriteback,
-    LDRABindexed,
-    LDRABwriteback,
-
     // ARMv9 TME
     TCANCEL,
     TCOMMIT,
@@ -634,8 +642,10 @@ TEST_CASE_METHOD(MemoryAccessTable, "MemoryAccessTable-CrossCheck") {
     llvm::MCInst inst;
     inst.setOpcode(opcode);
 
-    bool doRead = (QBDI::getReadSize(inst, llvmcpu) != 0);
-    bool doWrite = (QBDI::getWriteSize(inst, llvmcpu) != 0);
+    bool doRead =
+        (QBDI::getReadSize(inst, llvmcpu) != 0 or QBDI::unsupportedRead(inst));
+    bool doWrite = (QBDI::getWriteSize(inst, llvmcpu) != 0 or
+                    QBDI::unsupportedWrite(inst));
     bool mayRead = desc.mayLoad();
     bool mayWrite = desc.mayStore();
 
