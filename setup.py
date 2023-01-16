@@ -34,8 +34,8 @@ def detect_QBDI_platform():
         if '-' in sys.implementation._multiarch:
             base_arch, base_os = sys.implementation._multiarch.split('-')[:2]
         else:
-            base_arch = sys.implementation._multiarch
-            base_os = platform.system()
+            base_arch = platform.machine()
+            base_os = sys.implementation._multiarch
     else:
         base_arch = platform.machine()
         base_os = platform.system()
@@ -73,7 +73,7 @@ def detect_QBDI_platform():
         return (current_os, arch)
 
     raise RuntimeError("Cannot determine the QBDI platform : system={}, machine={}, is64bits={}".format(
-                            platform.system(), platform.machine(), sys.maxsize > 2**32))
+                            base_arch, base_os, sys.maxsize > 2**32))
 
 
 class CMakeExtension(Extension):
