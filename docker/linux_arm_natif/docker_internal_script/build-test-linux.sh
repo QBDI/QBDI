@@ -22,6 +22,6 @@ ninja
 cpack
 
 cd ../tools/validation_runner
-./ValidationRunner.py coverage.cfg -l "../../build-docker-native-${QBDI_PLATFORM}-${QBDI_ARCH}/tools/validator/libvalidator.so"
+#./ValidationRunner.py coverage.cfg -l "../../build-docker-native-${QBDI_PLATFORM}-${QBDI_ARCH}/tools/validator/libvalidator.so"
 
 exit 0

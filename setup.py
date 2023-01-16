@@ -28,32 +28,45 @@ from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
 
 def detect_QBDI_platform():
-    os = None
+    current_os = None
     arch = None
-    if platform.system() == 'Darwin':
-        os = 'osx'
-    elif platform.system() == 'Windows':
-        os = 'windows'
-    elif platform.system() == 'Linux':
-        os = 'linux'
+    if hasattr(sys.implementation, "_multiarch"):
+        base_arch, base_os = sys.implementation._multiarch.split('-')[:2]
+    else:
+        base_arch = platform.machine()
+        base_os = platform.system()
 
-    if platform.machine() in ['AMD64', 'AMD', 'x64', 'x86_64', 'x86', 'i386', 'i686']:
+    base_arch = base_arch.lower()
+    base_os = base_os.lower()
+
+    if base_os == 'darwin':
+        current_os = 'osx'
+    elif base_os == 'windows':
+        current_os = 'windows'
+    elif base_os == 'linux':
+        current_os = 'linux'
+
+    if base_arch in ['amd64', 'amd', 'x64', 'x86_64', 'x86', 'i386', 'i686']:
         # intel arch
         if sys.maxsize > 2**32:
             arch = "X86_64"
         else:
             arch = "X86"
-    elif platform.machine() in ['aarch64', 'arm64', 'aarch64_be', 'armv8b', 'armv8l']:
+
+    elif base_arch in ['aarch64', 'arm64', 'aarch64_be', 'armv8b', 'armv8l']:
+        assert sys.maxsize > 2**32
         arch = "AARCH64"
-    elif platform.machine() in ['arm'] or \
+
+    elif base_arch == "arm" or \
          platform.machine().startswith('armv4') or \
          platform.machine().startswith('armv5') or \
          platform.machine().startswith('armv6') or \
          platform.machine().startswith('armv7'):
+        assert sys.maxsize < 2**32
         arch = "ARM"
 
-    if os and arch:
-        return (os, arch)
+    if current_os and arch:
+        return (current_os, arch)
 
     raise RuntimeError("Cannot determine the QBDI platform : system={}, machine={}, is64bits={}".format(
                             platform.system(), platform.machine(), sys.maxsize > 2**32))
