@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-pyqbdi:
+  build-pyqbdi-x64:
     runs-on: macos-latest
     strategy:
       matrix:
@@ -51,7 +51,6 @@ jobs:
           path: |
             third-party
           key: QBDI-third-party-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**/*.cmake') }}
-      - run: mkdir -p build
       - name: Build PyQBDI ${{ matrix.python-version }}
         run: |
           python3 --version
@@ -62,3 +61,50 @@ jobs:
           name: PyQBDI OSX X86_64 ${{ matrix.python-version }}
           path: dist/*
 
+  build-pyqbdi-aarch64:
+    runs-on: [self-hosted, macOS, ARM64]
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+      fail-fast: false
+    env:
+      QBDI_ARCH: 'AARCH64'
+      QBDI_PLATFORM: 'osx'
+      MACOSX_DEPLOYMENT_TARGET: '11.0'
+      _PYTHON_HOST_PLATFORM: "macosx-11.0-arm64"
+      ARCHFLAGS: "-arch arm64"
+    steps:
+      - name: Install system dependencies
+        run: |
+          python${{ matrix.python-version }} -m pip install --upgrade pip setuptools wheel build
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: Cache ccache
+        uses: actions/cache@v3
+        id: cache-ccache-python
+        with:
+          path: |
+            ~/.ccache
+          key: ccache-osx-AARCH64-${{ hashFiles('.github/workflows/ccache.conf') }}-python-${{ matrix.python-version }}-${{ github.run_number }}
+          restore-keys: |
+            ccache-osx-AARCH64-${{ hashFiles('.github/workflows/ccache.conf') }}-python-${{ matrix.python-version }}-
+            ccache-osx-AARCH64-${{ hashFiles('.github/workflows/ccache.conf') }}-
+      - if: steps.cache-ccache-python.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/.ccache
+          cp .github/workflows/ccache.conf ~/.ccache/ccache.conf
+      - name: Cache third-party
+        uses: actions/cache@v3
+        with:
+          path: |
+            third-party
+          key: QBDI-third-party-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**/*.cmake') }}
+      - name: Build PyQBDI ${{ matrix.python-version }}
+        run: |
+          python${{ matrix.python-version }} --version
+          python${{ matrix.python-version }} -m build -w
+      - name: Export package
+        uses: actions/upload-artifact@v3
+        with:
+          name: PyQBDI OSX AARCH64 ${{ matrix.python-version }}
+          path: dist/*
