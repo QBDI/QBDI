@@ -83,7 +83,7 @@ if(QBDI_ARCH_X86
   # Shared library with QBDIPreload (if available)
   ##
   set(PYQBDI_SRC_MODULE "${CMAKE_CURRENT_SOURCE_DIR}/pyqbdi_module.cpp")
-  pybind11_add_module(pyqbdi SHARED ${PYQBDI_SRC_MODULE})
+  pybind11_add_module(pyqbdi ${PYQBDI_SRC_MODULE})
   target_include_directories(
     pyqbdi PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
                    ${CMAKE_CURRENT_SOURCE_DIR} ${Python3_INCLUDE_DIRS})
@@ -102,10 +102,8 @@ if(QBDI_ARCH_X86
   set_target_properties(pyqbdi PROPERTIES PREFIX "")
 
   if(QBDI_PLATFORM_OSX)
-    set_target_properties(pyqbdi PROPERTIES MACOSX_RPATH ".")
     set_target_properties(pyqbdi PROPERTIES LINK_FLAGS
-                                            "-undefined dynamic_lookup -s")
-    set_target_properties(pyqbdi PROPERTIES SUFFIX ".so")
+                                            "-undefined dynamic_lookup")
   elseif(QBDI_PLATFORM_LINUX)
     set_target_properties(pyqbdi PROPERTIES LINK_FLAGS "-s")
     set_target_properties(pyqbdi PROPERTIES SUFFIX ".so")
