@@ -61,7 +61,7 @@ jobs:
       - name: Export package
         uses: actions/upload-artifact@v3
         with:
-          name: package OSX ${{ env.QBDI_ARCH }}
+          name: package_OSX_${{ env.QBDI_ARCH }}
           path: build/QBDI-*.pkg
 
   build-aarch64:
@@ -115,5 +115,5 @@ jobs:
       - name: Export package
         uses: actions/upload-artifact@v3
         with:
-          name: package OSX ${{ env.QBDI_ARCH }}
+          name: package_OSX_${{ env.QBDI_ARCH }}
           path: build/QBDI-*.pkg

@@ -83,7 +83,7 @@ jobs:
       - name: Export package
         uses: actions/upload-artifact@v3
         with:
-          name: package android ${{ matrix.QBDI_ARCH }}
+          name: package_android_${{ matrix.QBDI_ARCH }}
           path: build/QBDI-*-android-${{ matrix.QBDI_ARCH }}.tar.gz
 
 

@@ -112,7 +112,7 @@ jobs:
       - name: Export package
         uses: actions/upload-artifact@v3
         with:
-          name: PyQBDI windows ${{ matrix.QBDI_ARCH }}
+          name: PyQBDI_windows_${{ matrix.QBDI_ARCH }}
           path: dist\PyQBDI-*.whl
       - name: Stop sccache server
         run: sccache --stop-server
