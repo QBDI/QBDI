@@ -22,6 +22,36 @@
 #include "pyqbdi.hpp"
 #include "QBDIPreload.h"
 
+/* pyQBDI module */
+
+namespace QBDI {
+namespace pyQBDI {
+
+PYBIND11_EMBEDDED_MODULE(pyqbdi, m) {
+  m.doc() = "python binding for QBDI";
+  m.attr("__version__") = getVersion(nullptr);
+  m.attr("__debug__") = PYQBDI_DEBUG;
+  m.attr("__arch__") = QBDI_ARCHITECTURE_STRING;
+  m.attr("__platform__") = QBDI_PLATFORM_STRING;
+  m.attr("__preload__") = true;
+
+  init_binding_Range(m);
+  init_binding_State(m);
+  init_binding_Options(m);
+  init_binding_Memory(m);
+  init_binding_InstAnalysis(m);
+  init_binding_Callback(m);
+  init_binding_VM(m);
+  init_binding_Logs(m);
+  init_binding_Errors(m);
+
+  init_utils_Float(m);
+  init_utils_Memory(m);
+}
+
+} // namespace pyQBDI
+} // namespace QBDI
+
 namespace py = pybind11;
 
 /* Init the QBDIPreload */
@@ -64,8 +94,6 @@ int QBDI::qbdipreload_on_main(int argc, char **argv) {
 #elif defined(QBDI_PLATFORM_LINUX) || defined(QBDI_PLATFORM_ANDROID)
     os.attr("environ").attr("__delitem__")("LD_PRELOAD");
 #endif
-    py::module_ pyqbdi = py::module_::import("pyqbdi");
-    pyqbdi.attr("__preload__") = true;
 
     // load file before create VM object
     try {

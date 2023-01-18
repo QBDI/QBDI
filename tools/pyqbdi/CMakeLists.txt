@@ -88,13 +88,6 @@ if(QBDI_ARCH_X86
     pyqbdi PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
                    ${CMAKE_CURRENT_SOURCE_DIR} ${Python3_INCLUDE_DIRS})
 
-  if(QBDI_TOOLS_QBDIPRELOAD)
-    target_sources(pyqbdi PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/preload.cpp")
-    target_include_directories(
-      pyqbdi PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../QBDIPreload/include")
-    target_link_libraries(pyqbdi PRIVATE QBDIPreload)
-  endif()
-
   target_link_libraries(pyqbdi PRIVATE pyqbdi_module pyqbdi_utils QBDI_static)
   set_target_properties(pyqbdi PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED
                                                           ON)
@@ -111,6 +104,46 @@ if(QBDI_ARCH_X86
     set_target_properties(pyqbdi PROPERTIES SUFFIX ".pyd")
   endif()
 
+  if(QBDI_TOOLS_QBDIPRELOAD)
+    pybind11_add_module(pyqbdipreloadlib SHARED
+                        "${CMAKE_CURRENT_SOURCE_DIR}/preload.cpp")
+    target_include_directories(
+      pyqbdipreloadlib
+      PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+              "${CMAKE_CURRENT_SOURCE_DIR}"
+              "${CMAKE_CURRENT_SOURCE_DIR}/../QBDIPreload/include"
+              ${Python3_INCLUDE_DIRS})
+
+    target_link_libraries(pyqbdipreloadlib PRIVATE pyqbdi_module pyqbdi_utils
+                                                   QBDIPreload QBDI_static)
+    set_target_properties(pyqbdipreloadlib PROPERTIES CXX_STANDARD 14
+                                                      CXX_STANDARD_REQUIRED ON)
+    set_target_properties(pyqbdipreloadlib PROPERTIES PREFIX "")
+
+    if(QBDI_PLATFORM_OSX)
+      set_target_properties(pyqbdipreloadlib
+                            PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
+      execute_process(
+        COMMAND xcrun -f codesign
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        OUTPUT_VARIABLE CODESIGN_BINARY)
+
+      add_custom_command(
+        TARGET pyqbdipreloadlib
+        POST_BUILD
+        COMMAND
+          "${Python3_EXECUTABLE}"
+          "${CMAKE_CURRENT_SOURCE_DIR}/fix_preload_lib_osx.py"
+          $<TARGET_FILE:pyqbdipreloadlib>
+        COMMAND "${CODESIGN_BINARY}" --force --sign -
+                $<TARGET_FILE:pyqbdipreloadlib>)
+    elseif(QBDI_PLATFORM_LINUX)
+      set_target_properties(pyqbdipreloadlib PROPERTIES LINK_FLAGS "-s")
+      set_target_properties(pyqbdipreloadlib PROPERTIES SUFFIX ".so")
+    endif()
+
+  endif()
+
   if(PYQBDI_OUTPUT_DIRECTORY)
     message(STATUS "export PYQBDI to ${PYQBDI_OUTPUT_DIRECTORY}/")
     add_custom_command(
@@ -118,12 +151,17 @@ if(QBDI_ARCH_X86
       POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pyqbdi>
               ${PYQBDI_OUTPUT_DIRECTORY}/$<TARGET_FILE_NAME:pyqbdi>)
-    add_custom_command(
-      TARGET pyqbdi
-      POST_BUILD
-      COMMAND
-        ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/pyqbdipreload.py"
-        "${PYQBDI_OUTPUT_DIRECTORY}/pyqbdipreload.py")
+    if(QBDI_TOOLS_QBDIPRELOAD)
+      add_custom_command(
+        TARGET pyqbdipreloadlib
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pyqbdipreloadlib>
+                ${PYQBDI_OUTPUT_DIRECTORY}/$<TARGET_FILE_NAME:pyqbdipreloadlib>
+        COMMAND
+          ${CMAKE_COMMAND} -E copy
+          "${CMAKE_CURRENT_SOURCE_DIR}/pyqbdipreload.py"
+          "${PYQBDI_OUTPUT_DIRECTORY}/pyqbdipreload.py")
+    endif()
   endif()
 
   ##

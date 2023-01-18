@@ -23,6 +23,69 @@ from ctypes import util as ctypesutil
 import sys
 import os
 import argparse
+import subprocess
+
+class OSXLibFixup:
+
+    def __init__(self, libpath):
+        self.libpath = libpath
+
+    def read_header(self):
+        p = subprocess.run(["otool", "-l", self.libpath],
+                           check=True,
+                           capture_output=True)
+        newCommand = False
+        getRPath = False
+        rpath = []
+        dlib = []
+        for l in p.stdout.decode("utf8").split("\n"):
+            l = l.strip(' ')
+            if l.startswith("Load command"):
+                newCommand = True
+                getRPath = False
+                continue
+            if newCommand and l.startswith("cmd"):
+                newCommand = False
+                getRPath = l.endswith("LC_RPATH")
+                continue
+            if getRPath and l.startswith("path"):
+                getRPath = False
+                newPath = l.split(' ', 1)[1]
+                if newPath[-1] == ")":
+                    newPath = newPath[:newPath.rindex(' (')]
+                rpath.append(newPath)
+        return rpath
+
+    def addRpath(self, path):
+        subprocess.run(["install_name_tool", "-add_rpath", path, self.libpath],
+                       check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNUL)
+
+    def removeRpath(self, path):
+        subprocess.run(["install_name_tool", "-delete_rpath", path, self.libpath],
+                       check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNUL)
+
+    def resign(self):
+        subprocess.run(["codesign", "--force", "--sign", "-", self.libpath],
+                       check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    def fixMachOLib(self):
+
+        rpaths = self.read_header()
+        found_base_prefix = False
+        needResign = False
+
+        for rpath in rpaths:
+            if rpath == sys.base_prefix:
+                found_base_prefix = True
+            else:
+                self.removeRpath(rpath)
+
+        if not found_base_prefix:
+            self.addRpath(sys.base_prefix)
+            needResign = True
+
+        if needResign:
+            self.resign()
 
 def run():
 
@@ -39,9 +102,20 @@ def run():
     args = [args.target] + args.args
     environ = os.environ.copy()
 
+    preloadlib = os.path.join(
+            os.path.dirname(pyqbdi.__file__),
+            os.path.basename(pyqbdi.__file__).replace("pyqbdi", "pyqbdipreloadlib"))
+
+    if not os.path.isfile(preloadlib):
+        print("Cannot found pyqbdi preload library : {}".format(preloadlib))
+        exit(1)
+
     # add LD_PRELOAD or DYLD_INSERT_LIBRARIES
     if platform.system() == 'Darwin':
-        environ["DYLD_INSERT_LIBRARIES"] = pyqbdi.__file__
+        OSXLibFixup(preloadlib).fixMachOLib()
+
+        environ["DYLD_INSERT_LIBRARIES"] = preloadlib
+        environ["DYLD_BIND_AT_LAUNCH"] = "1"
     elif platform.system() == 'Linux':
         libpythonname = "python{}.{}".format(sys.version_info.major, sys.version_info.minor)
         libpython = ctypesutil.find_library(libpythonname)
@@ -52,7 +126,7 @@ def run():
                 print("PyQBDI in PRELOAD mode need lib{}.so".format(libpythonname))
                 exit(1)
 
-        environ["LD_PRELOAD"] = os.pathsep.join([libpython, pyqbdi.__file__])
+        environ["LD_PRELOAD"] = os.pathsep.join([libpython, preloadlib])
         environ["LD_BIND_NOW"] = "1"
     else:
         print("PyQBDI in PRELOAD mode is not supported on this platform")
