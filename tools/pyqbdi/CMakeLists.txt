@@ -99,7 +99,6 @@ if(QBDI_ARCH_X86
                                             "-undefined dynamic_lookup")
   elseif(QBDI_PLATFORM_LINUX)
     set_target_properties(pyqbdi PROPERTIES LINK_FLAGS "-s")
-    set_target_properties(pyqbdi PROPERTIES SUFFIX ".so")
   elseif(QBDI_PLATFORM_WINDOWS)
     set_target_properties(pyqbdi PROPERTIES SUFFIX ".pyd")
   endif()
@@ -123,23 +122,20 @@ if(QBDI_ARCH_X86
     if(QBDI_PLATFORM_OSX)
       set_target_properties(pyqbdipreloadlib
                             PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
-      execute_process(
-        COMMAND xcrun -f codesign
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        OUTPUT_VARIABLE CODESIGN_BINARY)
-
+      # fix import library of pyqbdipreloadlib:
+      # - remove all rpath
+      # - change id
+      # - replace Python lib by libpythonX.Y.dylib
+      # - resign
       add_custom_command(
         TARGET pyqbdipreloadlib
         POST_BUILD
         COMMAND
           "${Python3_EXECUTABLE}"
           "${CMAKE_CURRENT_SOURCE_DIR}/fix_preload_lib_osx.py"
-          $<TARGET_FILE:pyqbdipreloadlib>
-        COMMAND "${CODESIGN_BINARY}" --force --sign -
-                $<TARGET_FILE:pyqbdipreloadlib>)
+          $<TARGET_FILE:pyqbdipreloadlib>)
     elseif(QBDI_PLATFORM_LINUX)
       set_target_properties(pyqbdipreloadlib PROPERTIES LINK_FLAGS "-s")
-      set_target_properties(pyqbdipreloadlib PROPERTIES SUFFIX ".so")
     endif()
 
   endif()
