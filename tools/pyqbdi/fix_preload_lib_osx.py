@@ -80,9 +80,10 @@ def run():
     for lib in dlib:
         if 'Python' not in lib:
             continue
-        # set python lib to @rpath/lib/libpythonX.Y.dylib
-        # rpath will be set just before use
-        targetlib = "@rpath/lib/libpython{}.{}.dylib".format(sys.version_info.major, sys.version_info.minor)
+        # set python lib to libpythonX.Y.dylib
+        # the path of libpython will be add to DYLD_LIBRARY_PATH
+        # at runtime by pyqbdipreload.py
+        targetlib = "libpython{}.{}.dylib".format(sys.version_info.major, sys.version_info.minor)
         movLib(libpath, lib, targetlib)
 
     for r in rpath:
