@@ -74,7 +74,7 @@ jobs:
       - name: Export package
         uses: actions/upload-artifact@v3
         with:
-          name: package Windows ${{ matrix.WINDOWS_ARCH }}
+          name: package_Windows_${{ matrix.WINDOWS_ARCH }}
           path: build/QBDI-*.exe
       - name: Stop sccache server
         run: sccache --stop-server

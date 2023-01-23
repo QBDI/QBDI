@@ -139,3 +139,61 @@ The binary responsible for generating a template is shipped in the release packa
     mkdir build && cd build
     cmake ..
     make
+
+MacOS setup
+-----------
+
+When QBDIPreload (and also PyQBDIPreload) are used on macOS, the injection can
+failed for various reasons.
+
+Copy the target binary
+++++++++++++++++++++++
+
+If the binary is a system binary, the
+`System Integrity Protection <https://support.apple.com/en-us/HT204899>`_
+prevent the injection of library with ``DYLD_INSERT_LIBRARIES``. You can try to
+copy the binary in your user home folder before the instrumentation to avoid the
+protection.
+
+Run the instrumentation as root
++++++++++++++++++++++++++++++++
+
+The injection of library can be disable for standard user. Run the injection
+with ``sudo`` can bypass this limitation.
+
+Instrument ``arm64e`` binary
+++++++++++++++++++++++++++++
+
+QBDIPreload is not compatible with ``arm64e`` binary. To verify if your binary is a
+``arm64e`` binary, you can execute the followed command:
+
+.. code:: bash
+
+    lipo -archs $BINARY_PATH
+
+You can try to convert your target binary from ``arm64e`` to ``arm64`` with the
+followed script. However, this don't work if the target binary use some ``arm64e`` bind
+opcode (like ``BIND_OPCODE_THREADED``).
+
+.. code:: python
+
+    import lief
+    import subprocess
+
+    binary = lief.MachO.parse(inputfile)
+    for index in range(binary.size):
+        if binary.at(index).header.cpu_type == lief.MachO.CPU_TYPES.ARM64:
+            binary.at(index).header.cpu_subtype ^= (~2)
+    binary.write(outputfile)
+    subprocess.run(["codesign", "--force", "--sign", "-", outputfile], check=True)
+
+Disable System Integrity Protection
++++++++++++++++++++++++++++++++++++
+
+We recommand to disable the `System Integrity Protection` only as a last resort,
+as we successfully inject the QBDIPreload under ``macOS Ventura`` (version
+13.1).  However, this may help you to debug the injection and bypass some
+signature validation.  You can found the procedure `here
+<https://developer.apple.com/documentation/security/disabling_and_enabling_system_integrity_protection>`_.
+
+Don't forget to reenable it afterwards.

@@ -219,13 +219,68 @@ void unsetEntryBreakpoint() {
 }
 
 rword getEntrypointAddress() {
+  uint32_t imageIndex = -1;
+  bool foundImageIndex = false;
+  char *execPath = NULL;
+  char *execBaseName = NULL;
+  uint32_t execPathLen = 0;
+
   unsigned i = 0, j = 0;
   rword segaddr = 0;
   rword entryoff = 0;
-  // 0 is the process base binary image index
-  rword slide = _dyld_get_image_vmaddr_slide(0);
-  const struct MACH_HEADER *header =
-      (struct MACH_HEADER *)_dyld_get_image_header(0);
+  rword slide;
+  const struct MACH_HEADER *header;
+
+  // get path of the binary and extract basename
+  _NSGetExecutablePath(NULL, &execPathLen);
+  if (execPathLen <= 0) {
+    fprintf(stderr, "Fail to get binary path\n");
+    exit(QBDIPRELOAD_ERR_STARTUP_FAILED);
+  }
+  execPathLen += 1;
+  execPath = (char *)malloc(execPathLen);
+  if (execPath == NULL) {
+    fprintf(stderr, "Buffer allocation fail\n");
+    exit(QBDIPRELOAD_ERR_STARTUP_FAILED);
+  }
+  memset(execPath, '\0', execPathLen);
+  if (_NSGetExecutablePath(execPath, &execPathLen) != 0) {
+    free(execPath);
+    fprintf(stderr, "Fail to get binary path\n");
+    exit(QBDIPRELOAD_ERR_STARTUP_FAILED);
+  }
+
+  execBaseName = strrchr(execPath, '/');
+  if (execBaseName == NULL) {
+    execBaseName = execPath;
+  } else {
+    // skip '/'
+    execBaseName++;
+  }
+
+  // search image index that match the basename
+  while (!foundImageIndex) {
+    const char *currentImageName = _dyld_get_image_name(++imageIndex);
+    const char *currentBaseName;
+    if (currentImageName == NULL) {
+      free(execPath);
+      fprintf(stderr, "Fail to found binary index\n");
+      exit(QBDIPRELOAD_ERR_STARTUP_FAILED);
+    }
+    currentBaseName = strrchr(currentImageName, '/');
+    if (currentBaseName == NULL) {
+      currentBaseName = currentImageName;
+    } else {
+      // skip '/'
+      currentBaseName++;
+    }
+    foundImageIndex = (strcmp(currentBaseName, execBaseName) == 0);
+  }
+  free(execPath);
+
+  // get header of the binary
+  slide = _dyld_get_image_vmaddr_slide(imageIndex);
+  header = (struct MACH_HEADER *)_dyld_get_image_header(imageIndex);
 
   // Checking that it is indeed a mach binary
   if (header->magic != MACH_MAGIC) {
@@ -264,7 +319,7 @@ rword getEntrypointAddress() {
   }
 
   if (j != 3) {
-    fprintf(stderr, "Could not find process entry point");
+    fprintf(stderr, "Could not find process entry point\n");
     exit(QBDIPRELOAD_ERR_STARTUP_FAILED);
   }
 

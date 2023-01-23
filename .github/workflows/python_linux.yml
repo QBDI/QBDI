@@ -49,7 +49,7 @@ jobs:
       - name: Export wheel
         uses: actions/upload-artifact@v3
         with:
-          name: PyQBDI linux ${{ matrix.QBDI_ARCH }}
+          name: PyQBDI_linux_${{ matrix.QBDI_ARCH }}
           path: outwheel/*
 
   trigger-rtd:

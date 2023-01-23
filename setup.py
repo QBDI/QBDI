@@ -22,6 +22,7 @@ import sys
 import platform
 import subprocess
 import shutil
+import ninja
 
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
@@ -83,18 +84,23 @@ class CMakeExtension(Extension):
 
 class CMakeBuild(build_ext):
 
-    @staticmethod
-    def has_ninja():
-        return bool(shutil.which('ninja'))
-
     def build_extension(self, ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         detected_platform, detected_arch = detect_QBDI_platform()
-        cmake_args = ['-DPYQBDI_OUTPUT_DIRECTORY=' + extdir,
-                      '-DPython3_EXECUTABLE=' + sys.executable,
+
+        ninja_executable_path = os.path.abspath(os.path.join(ninja.BIN_DIR,
+                "ninja.exe" if detected_platform == 'windows' else "ninja"))
+
+        if not os.path.isfile(ninja_executable_path):
+            raise RuntimeError("Compile Error : Cannot found ninja binary.")
+
+        cmake_args = ['-G', 'Ninja',
+                      '-DCMAKE_MAKE_PROGRAM:FILEPATH={}'.format(ninja_executable_path),
+                      '-DPYQBDI_OUTPUT_DIRECTORY={}'.format(extdir),
+                      '-DPython3_EXECUTABLE={}'.format(sys.executable),
                       '-DCMAKE_BUILD_TYPE=Release',
-                      '-DQBDI_PLATFORM=' + detected_platform,
-                      '-DQBDI_ARCH=' + detected_arch,
+                      '-DQBDI_PLATFORM={}'.format(detected_platform),
+                      '-DQBDI_ARCH={}'.format(detected_arch),
                       '-DQBDI_BENCHMARK=OFF',
                       '-DQBDI_INSTALL=OFF',
                       '-DQBDI_INCLUDE_DOCS=OFF',
@@ -105,15 +111,6 @@ class CMakeBuild(build_ext):
                       '-DQBDI_TOOLS_PYQBDI=ON',
                      ]
         build_args = ['--config', 'Release', '--']
-
-        if platform.system() == "Windows":
-            cmake_args += ["-G", "Ninja"]
-        else:
-            cmake_args += ['-DQBDI_TOOLS_QBDIPRELOAD=ON']
-            if self.has_ninja():
-                cmake_args += ["-G", "Ninja"]
-            else:
-                build_args.append('-j4')
 
         env = os.environ.copy()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
