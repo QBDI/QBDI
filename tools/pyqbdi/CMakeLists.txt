@@ -49,6 +49,8 @@ if(QBDI_ARCH_X86
     )
   endif()
 
+  set(PYTHON_EXECUTABLE "${Python3_EXECUTABLE}")
+
   FetchContent_Declare(
     pybind11
     URL "https://github.com/pybind/pybind11/archive/v2.10.1.zip"
