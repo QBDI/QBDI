@@ -32,7 +32,7 @@ CMAKE_ARGUMENT="$3"
 
 DISTRIB="${DOCKER_IMG##*/}"
 
-DOCKER_TAG="qbdi:x${ARCH: -2}_${DOCKER_IMG##*/}_${TAG}"
+DOCKER_TAG="qbdi:${ARCH}_${DOCKER_IMG##*/}_${TAG}"
 
 if [[ "${DISTRIB}" = "ubuntu" && "${TAG}" = "18.04" ]]; then
   DOCKERFILE="${BASEDIR}/Dockerfile.ubuntu18_04"

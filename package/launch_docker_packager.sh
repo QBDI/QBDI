@@ -1,9 +1,11 @@
-#!/bin/sh
+#!/usr/bin/env bash
 set -e
 set -x
 
 BASEDIR=$(cd $(dirname "$0") && pwd -P)
 GITDIR=$(git rev-parse --show-toplevel)
+
+TARGET_ARCH="$1"
 
 . "${GITDIR}/docker/common.sh"
 
@@ -16,8 +18,16 @@ build_ubuntu_debian() {
     CMAKE_ARGUMENT="$4"
     IMG_TAG="qbdi:package_${OS}_${TAG}_${TARGET}"
 
+    if [[ -n "$TARGET_ARCH" ]] && [[ "$TARGET" != "$TARGET_ARCH" ]]; then
+        return
+    fi
+
     if [[ "$TARGET" = "X86" ]]; then
         DOCKER_IMG="i386/${OS}:${TAG}"
+    elif [[ "$TARGET" = "ARM" ]]; then
+        DOCKER_IMG="arm32v7/${OS}:${TAG}"
+    elif [[ "$TARGET" = "AARCH64" ]]; then
+        DOCKER_IMG="arm64v8/${OS}:${TAG}"
     else
         DOCKER_IMG="${OS}:${TAG}"
     fi
@@ -46,6 +56,10 @@ build_archlinux () {
     TARGET="$1"
     IMG_TAG="qbdi:package_archlinux_${TARGET}"
 
+    if [[ -n "$TARGET_ARCH" ]] && [[ "$TARGET" != "$TARGET_ARCH" ]]; then
+        return
+    fi
+
     docker build "${BASEDIR}" -t ${IMG_TAG} \
                               -f "${GITDIR}/docker/archlinux/Dockerfile.${TARGET}" \
                               --build-arg QBDI_ARCH="$TARGET" \
@@ -57,6 +71,12 @@ build_archlinux () {
 }
 
 prepare_archive
+
+# debian11 ARM
+build_ubuntu_debian debian 11 ARM
+
+# debian11 AARCH64
+build_ubuntu_debian debian 11 AARCH64
 
 # debian11 x86
 build_ubuntu_debian debian 11 X86
@@ -70,8 +90,20 @@ build_ubuntu_debian ubuntu 18.04 X86
 # ubuntu lts x64
 build_ubuntu_debian ubuntu 22.04 X86_64
 
+# ubuntu lts ARM
+build_ubuntu_debian ubuntu 22.04 ARM
+
+# ubuntu lts AARCH64
+build_ubuntu_debian ubuntu 22.04 AARCH64
+
 # ubuntu 22.10 x64
 build_ubuntu_debian ubuntu 22.10 X86_64
+
+# ubuntu 22.10 ARM
+build_ubuntu_debian ubuntu 22.10 ARM
+
+# ubuntu 22.10 AARCH64
+build_ubuntu_debian ubuntu 22.10 AARCH64
 
 # archlinux x64
 build_archlinux X86_64
