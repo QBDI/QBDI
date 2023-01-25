@@ -144,20 +144,21 @@ QBDI::Context ComparedExecutor_Thumb::realExec(llvm::ArrayRef<uint8_t> code,
   // Copy the input context
   memcpy(ctxBlock.base(), (void *)&inputState, sizeof(QBDI::Context));
   // Execute
-  asm volatile inline(
-      //"bkpt #0\n"
-      "mov r1, %1\n"
-      "mov r2, %0\n"
-      "push {r0, lr}\n"
-      "blx r2\n"
-      "pop {r0, lr}\n"
-      :
-      : "r"(((QBDI::rword)code.data()) | 1), "r"(ctxBlock.base())
-      : "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11",
-        "r12", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d9",
-        "d10", "d11", "d12", "d13", "d14", "d15", "d16", "d17", "d18", "d19",
-        "d20", "d21", "d22", "d23", "d24", "d25", "d26", "d27", "d28", "d29",
-        "d30", "d31", "memory");
+  {
+      register uint32_t ctxBlockBase asm("r1") = (uint32_t) ctxBlock.base();
+      register uint32_t codeData asm("r2") = (((uint32_t) code.data()) | 1);
+      asm volatile inline(
+          "push {r0, lr}\n"
+          "blx r2\n"
+          "pop {r0, lr}\n"
+          :
+          : "r"(codeData), "r"(ctxBlockBase)
+          : "r0", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11",
+            "r12", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d9",
+            "d10", "d11", "d12", "d13", "d14", "d15", "d16", "d17", "d18", "d19",
+            "d20", "d21", "d22", "d23", "d24", "d25", "d26", "d27", "d28", "d29",
+            "d30", "d31", "memory");
+  }
   // Get the output context
   memcpy((void *)&outputState, ctxBlock.base(), sizeof(QBDI::Context));
 
