@@ -56,7 +56,7 @@ Installation
 Python API (PyQBDI)
 +++++++++++++++++++
 
-PyQBDI is available through PyPI. The wheel package can be either `downloaded <https://pypi.org/project/PyQBDI/#files>`_ or installed with the following command:
+PyQBDI is available through PyPI. The wheel package can be either `downloaded <https://pypi.org/project/PyQBDI/#files>`__ or installed with the following command:
 
     pip install PyQBDI
 

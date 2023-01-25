@@ -94,7 +94,7 @@ Every new QBDI version is compiled and made available on the Github `release pag
 Python API (PyQBDI)
 +++++++++++++++++++
 
-PyQBDI is available through PyPI. The wheel package can be either `downloaded <https://pypi.org/project/PyQBDI/#files>`_ or installed with the following command:
+PyQBDI is available through PyPI. The wheel package can be either `downloaded <https://pypi.org/project/PyQBDI/#files>`__ or installed with the following command:
 
     pip install PyQBDI
 
@@ -107,13 +107,13 @@ There is no strict development timeline or scheduled release plan for the QBDI p
 All the new features and fixes are merged onto the ``dev-next`` branch.
 Devel packages can be downloaded in the artefacts of:
 
-- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/android.yml?query=branch%3Adev-next>`_ for Android C/C++/frida API
-- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/linux.yml?query=branch%3Adev-next>`_ for Linux C/C++/frida API (based on ubuntu)
-- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/osx.yml?query=branch%3Adev-next>`_ for OSX C/C++/frida API
-- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/windows.yml?query=branch%3Adev-next>`_ for Windows packages C/C++ API
-- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/python_linux.yml?query=branch%3Adev-next>`_ for Linux PyQBDI
-- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/python_osx.yml?query=branch%3Adev-next>`_ for OSX PyQBDI
-- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/python_windows.yml?query=branch%3Adev-next>`_ for windows PyQBDI
+- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/android.yml?query=branch%3Adev-next>`__ for Android C/C++/frida API
+- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/linux.yml?query=branch%3Adev-next>`__ for Linux C/C++/frida API (based on ubuntu)
+- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/osx.yml?query=branch%3Adev-next>`__ for OSX C/C++/frida API
+- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/windows.yml?query=branch%3Adev-next>`__ for Windows packages C/C++ API
+- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/python_linux.yml?query=branch%3Adev-next>`__ for Linux PyQBDI
+- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/python_osx.yml?query=branch%3Adev-next>`__ for OSX PyQBDI
+- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/python_windows.yml?query=branch%3Adev-next>`__ for windows PyQBDI
 
 Compilation
 ===========
@@ -196,7 +196,7 @@ Android
 Cross-compiling for Android requires the NDK (or the SDK) to be installed on your workstation.
 For now, it has only been tested under Linux.
 If not already installed, you can download the latest Android NDK package
-through the `official website <https://developer.android.com/ndk/downloads>`_
+through the `official website <https://developer.android.com/ndk/downloads>`__
 and extract it.
 Afterwards, the ``config-android-*.sh`` configuration script needs to be
 customised to match your NDK installation directory and the target platform.::

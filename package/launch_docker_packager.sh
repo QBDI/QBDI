@@ -70,8 +70,8 @@ build_ubuntu_debian ubuntu 18.04 X86
 # ubuntu lts x64
 build_ubuntu_debian ubuntu 22.04 X86_64
 
-# ubuntu 21.10 x64
-build_ubuntu_debian ubuntu 21.10 X86_64
+# ubuntu 22.10 x64
+build_ubuntu_debian ubuntu 22.10 X86_64
 
 # archlinux x64
 build_archlinux X86_64

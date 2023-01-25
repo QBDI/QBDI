@@ -23,7 +23,7 @@ if [[ "$1" = "X86" ]] || [[ "$1" = "x86" ]]; then
 elif [[ "$1" = "ARM" ]] || [[ "$1" = "arm" ]] || [[ "$1" = "arm32" ]]; then
     ARCH="ARM"
     DOCKER_IMG="arm32v7/$DOCKER_IMG"
-elif [[ "$1" = "AARCH64" ]] || [[ "$1" = "aarch64" ]] || [[ "$1" = "arm64" ]]; then
+elif [[ "$1" = "AARCH64" ]] || [[ "$1" = "aarch64" ]] || [[ "$1" = "arm64" ]]; then
     ARCH="AARCH64"
     DOCKER_IMG="arm64v8/$DOCKER_IMG"
 fi

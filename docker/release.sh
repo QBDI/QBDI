@@ -18,8 +18,8 @@ GITDIR=$(git rev-parse --show-toplevel)
 # ubuntu x86 => qbdi:x86_ubuntu_18.04
 "${BASEDIR}/ubuntu_debian/build.sh" "X86" "ubuntu:18.04"
 
-# ubuntu x64 => qbdi:x64_ubuntu_21.10
-"${BASEDIR}/ubuntu_debian/build.sh" "X64" "ubuntu:21.10"
+# ubuntu x64 => qbdi:x64_ubuntu_22.10
+"${BASEDIR}/ubuntu_debian/build.sh" "X64" "ubuntu:22.10"
 
 # ubuntu x64 => qbdi:x64_ubuntu_22.04
 "${BASEDIR}/ubuntu_debian/build.sh" "X64" "ubuntu:22.04"
@@ -64,8 +64,8 @@ push_images "qbdi:x64_ubuntu_22.04" \
     "x64_ubuntu" \
     "x64"
 
-push_images "qbdi:x64_ubuntu_21.10" \
-    "x64_ubuntu_21.10"
+push_images "qbdi:x64_ubuntu_22.10" \
+    "x64_ubuntu_22.10"
 
 docker tag "qbdi:x64_ubuntu_22.04" "${DOCKERHUB_REPO}:latest"
 push_image "${DOCKERHUB_REPO}:latest"
@@ -84,7 +84,7 @@ echo -n "" > "$HASHFILE"
 print_hash "x86_debian_bullseye"
 print_hash "x64_debian_bullseye"
 print_hash "x86_ubuntu_18.04"
-print_hash "x64_ubuntu_21.10"
+print_hash "x64_ubuntu_22.10"
 print_hash "x64_ubuntu_22.04"
 
 cat "$HASHFILE"
