@@ -54,17 +54,17 @@ If you have a function that takes a buffer or a string as an input, you might ne
     var str = Memory.allocUtf8String("Hello World !");
 
 
-Initialise a QBDI object
-++++++++++++++++++++++++
+Initialise a VM object
+++++++++++++++++++++++
 
 If `frida-qbdi.js` (or a script requiring it) is successfully loaded in Frida,
-a new :js:class:`QBDI` object becomes available.
+a new :js:class:`VM` object becomes available.
 It provides an object oriented access to the framework features.
 
 .. code-block:: javascript
 
     // initialise QBDI
-    var vm = new QBDI();
+    var vm = new VM();
     console.log("QBDI version is " + vm.version.string);
     var state = vm.getGPRState();
 
@@ -113,10 +113,9 @@ the bindings with all the `nodejs` ecosystem.
 
 .. code-block:: javascript
 
-    const qbdi = require('/usr/local/share/qbdi/frida-qbdi'); // import QBDI bindings
-    qbdi.import(); // set bindings to the global environment
+    import { VM } from "./frida-qbdi.js";
 
-    var vm = new QBDI();
+    var vm = new VM();
     console.log("QBDI version is " + vm.version.string);
 
 It will be possible to load it in Frida in place of `frida-qbdi.js`, allowing to
@@ -130,7 +129,12 @@ In order to actually import QBDI bindings into your project, your script needs b
 Installing it requires you to have ``npm`` installed. The `babelify package <https://www.npmjs.com/package/babelify>`_ might be also needed.
 Otherwise, you will not be able to successfully compile/load it and some errors will show up once running it with Frida.
 
+Before running frida-compile, be sure that the script ``frida-qbdi.js`` is
+inside you current directory.
+
 .. code:: bash
+
+    find <archive_extracted_path> -name frida-qbdi.js -exec cp {} . \;
 
     # if frida-compile is not already installed
     npm install frida-compile babelify

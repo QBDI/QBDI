@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ static const size_t STACK_SIZE = 8388608;
 static QBDI::GPRState ENTRY_GPR;
 static QBDI::FPRState ENTRY_FPR;
 static pid_t DEBUGGED, INSTRUMENTED;
-int ctrlfd, datafd;
+int ctrlfd, datafd, outputDBIfd, outputDBGfd;
 
 enum Role { Master, Instrumented, Debugged } ROLE;
 
@@ -44,7 +44,8 @@ int QBDI::qbdipreload_on_main(int argc, char **argv) {
 
   if (ROLE == Role::Master) {
     DarwinProcess *debuggedProcess = new DarwinProcess(DEBUGGED);
-    start_master(debuggedProcess, INSTRUMENTED, ctrlfd, datafd);
+    start_master(debuggedProcess, INSTRUMENTED, ctrlfd, datafd, outputDBGfd,
+                 outputDBIfd);
     delete debuggedProcess;
   } else if (ROLE == Role::Instrumented) {
     QBDI::VM *vm = new QBDI::VM();
@@ -126,7 +127,11 @@ int QBDI::qbdipreload_on_exit(int status) {
 int QBDI::qbdipreload_on_start(void *main) {
   int ctrlfds[2];
   int datafds[2];
-  if (pipe(ctrlfds) != 0 || pipe(datafds) != 0) {
+  int outputDBIfds[2];
+  int outputDBGfds[2];
+  int dummyfds[2];
+  if (pipe(ctrlfds) != 0 or pipe(datafds) != 0 or pipe(outputDBIfds) != 0 or
+      pipe(outputDBGfds) != 0 or pipe(dummyfds) != 0) {
     fprintf(stderr,
             "validator: fatal error, fail create pipe for intrumented process "
             "!\n\n");
@@ -141,6 +146,15 @@ int QBDI::qbdipreload_on_start(void *main) {
     datafd = datafds[1];
     close(ctrlfds[1]);
     close(datafds[0]);
+    if (dup2(outputDBIfds[1], 1) == -1) {
+      perror("instrumented: fail to dup2");
+    }
+    close(outputDBIfds[0]);
+    close(outputDBIfds[1]);
+    close(outputDBGfds[0]);
+    close(outputDBGfds[1]);
+    close(dummyfds[0]);
+    close(dummyfds[1]);
 
     QBDI::qbdipreload_hook_main(main);
     return QBDIPRELOAD_NO_ERROR;
@@ -150,8 +164,18 @@ int QBDI::qbdipreload_on_start(void *main) {
   if (DEBUGGED == 0) {
 
     ROLE = Role::Debugged;
+    if (dup2(dummyfds[0], ctrlfds[0]) == -1 or
+        dup2(dummyfds[1], datafds[1]) == -1 or dup2(outputDBGfds[1], 1) == -1) {
+      perror("debugged: fail to dup2");
+    }
     close(ctrlfds[1]);
     close(datafds[0]);
+    close(outputDBIfds[0]);
+    close(outputDBIfds[1]);
+    close(outputDBGfds[0]);
+    close(outputDBGfds[1]);
+    close(dummyfds[0]);
+    close(dummyfds[1]);
 
     // We put ourself to sleep, waiting for our charming prince
     task_suspend(mach_task_self());
@@ -160,8 +184,14 @@ int QBDI::qbdipreload_on_start(void *main) {
 
   ctrlfd = ctrlfds[1];
   datafd = datafds[0];
+  outputDBIfd = outputDBIfds[0];
+  outputDBGfd = outputDBGfds[0];
   close(ctrlfds[0]);
   close(datafds[1]);
+  close(outputDBIfds[1]);
+  close(outputDBGfds[1]);
+  close(dummyfds[0]);
+  close(dummyfds[1]);
 
   QBDI::qbdipreload_hook_main(main);
   ROLE = Role::Master;

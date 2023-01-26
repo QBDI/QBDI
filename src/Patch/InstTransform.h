@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ public:
   virtual std::unique_ptr<InstTransform> clone() const = 0;
 
   virtual void transform(llvm::MCInst &inst, rword address, size_t instSize,
-                         TempManager *temp_manager) const = 0;
+                         TempManager &temp_manager) const = 0;
 
   virtual ~InstTransform() = default;
 };
@@ -83,7 +83,7 @@ public:
       : opn(opn), type(ImmOperandType), temp(0), reg(0), imm(imm) {}
 
   void transform(llvm::MCInst &inst, rword address, size_t instSize,
-                 TempManager *temp_manager) const override;
+                 TempManager &temp_manager) const override;
 };
 
 class SubstituteWithTemp : public AutoClone<InstTransform, SubstituteWithTemp> {
@@ -100,7 +100,7 @@ public:
   SubstituteWithTemp(Reg reg, Temp temp) : reg(reg), temp(temp){};
 
   void transform(llvm::MCInst &inst, rword address, size_t instSize,
-                 TempManager *temp_manager) const override;
+                 TempManager &temp_manager) const override;
 };
 
 class AddOperand : public AutoClone<InstTransform, AddOperand> {
@@ -152,7 +152,7 @@ public:
       : opn(opn), type(CpyOperandType), temp(0), reg(0), imm(0), src(src) {}
 
   void transform(llvm::MCInst &inst, rword address, size_t instSize,
-                 TempManager *temp_manager) const override;
+                 TempManager &temp_manager) const override;
 };
 
 class RemoveOperand : public AutoClone<InstTransform, RemoveOperand> {
@@ -175,7 +175,7 @@ public:
   RemoveOperand(Operand opn) : reg(0), opn(opn), type(OperandType) {}
 
   void transform(llvm::MCInst &inst, rword address, size_t instSize,
-                 TempManager *temp_manager) const override;
+                 TempManager &temp_manager) const override;
 };
 
 class SetOpcode : public AutoClone<InstTransform, SetOpcode> {
@@ -190,7 +190,7 @@ public:
   SetOpcode(unsigned int opcode) : opcode(opcode) {}
 
   void transform(llvm::MCInst &inst, rword address, size_t instSize,
-                 TempManager *temp_manager) const override;
+                 TempManager &temp_manager) const override;
 };
 
 class ReplaceOpcode : public AutoClone<InstTransform, ReplaceOpcode> {
@@ -205,7 +205,7 @@ public:
   ReplaceOpcode(std::map<unsigned, unsigned> opcode) : opcode(opcode) {}
 
   void transform(llvm::MCInst &inst, rword address, size_t instSize,
-                 TempManager *temp_manager) const override;
+                 TempManager &temp_manager) const override;
 };
 
 } // namespace QBDI

@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,11 +41,13 @@ int writeCString(const char *str, FILE *pipe);
 int readInstructionEvent(QBDI::rword *address, char *mnemonic,
                          size_t mnemonic_len, char *disassembly,
                          size_t disassembly_len, QBDI::GPRState *gprState,
-                         QBDI::FPRState *fprState, FILE *pipe);
+                         QBDI::FPRState *fprState, bool *debuggerSkip,
+                         FILE *pipe);
 
 int writeInstructionEvent(QBDI::rword address, const char *mnemonic,
                           const char *disassembly, QBDI::GPRState *gprState,
-                          QBDI::FPRState *fprState, FILE *pipe);
+                          QBDI::FPRState *fprState, bool debuggerSkip,
+                          FILE *pipe);
 
 int readMismatchMemAccessEvent(QBDI::rword *address, bool *doRead,
                                bool *mayRead, bool *doWrite, bool *mayWrite,

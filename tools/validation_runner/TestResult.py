@@ -1,7 +1,7 @@
 #
 # This file is part of QBDI.
 #
-# Copyright 2017 - 2022 Quarkslab
+# Copyright 2017 - 2023 Quarkslab
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -74,6 +74,9 @@ class TestResult:
                 self.critical_casc = int(scan_for_pattern(result, 'Critical cascades: (\d+)')[0])
                 self.memaccess_error = int(scan_for_pattern(result, 'Encountered (\d+) memoryAccess errors')[0])
                 self.memaccess_unique_error = int(scan_for_pattern(result, 'Encountered (\d+) memoryAccess unique errors')[0])
+                self.output_len_dbg = int(scan_for_pattern(result, 'SizeOutput: (\d+) (\d+)')[0])
+                self.output_len_dbi = int(scan_for_pattern(result, 'SizeOutput: (\d+) (\d+)')[1])
+                self.same_output = 1 if 'SameOutput: True' in result else 0
             except Scan_Pattern_Exception as e:
                 print("[!] {}".format(e))
                 error = True
@@ -103,6 +106,9 @@ class TestResult:
             self.critical_casc = 0
             self.memaccess_error = 0
             self.memaccess_unique_error = 0
+            self.output_len_dbg = 0
+            self.output_len_dbi = 0
+            self.same_output = 0
 
             # Storing logs
             self.memaccess_log = ""
@@ -132,6 +138,9 @@ class TestResult:
         self.cascades_log = d['cascades_log']
         self.coverage_log = d['coverage_log']
         self.memaccess_unique_log = d['memaccess_unique_log']
+        self.output_len_dbg = d['output_len_dbg']
+        self.output_len_dbi = d['output_len_dbi']
+        self.same_output = d['same_output']
         #Rebuild coverage
         self.coverage = {}
         self.memaccess_unique = {}

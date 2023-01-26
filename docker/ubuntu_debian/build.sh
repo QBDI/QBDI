@@ -17,16 +17,22 @@ if [[ -n "$2" ]]; then
     DOCKER_IMG="${2%%:*}"
 fi
 
-if [[ "$1" = "X86" || "$1" = "x86" ]]; then
+if [[ "$1" = "X86" ]] || [[ "$1" = "x86" ]]; then
     ARCH="X86"
     DOCKER_IMG="i386/$DOCKER_IMG"
+elif [[ "$1" = "ARM" ]] || [[ "$1" = "arm" ]] || [[ "$1" = "arm32" ]]; then
+    ARCH="ARM"
+    DOCKER_IMG="arm32v7/$DOCKER_IMG"
+elif [[ "$1" = "AARCH64" ]] || [[ "$1" = "aarch64" ]] || [[ "$1" = "arm64" ]]; then
+    ARCH="AARCH64"
+    DOCKER_IMG="arm64v8/$DOCKER_IMG"
 fi
 
 CMAKE_ARGUMENT="$3"
 
 DISTRIB="${DOCKER_IMG##*/}"
 
-DOCKER_TAG="qbdi:x${ARCH: -2}_${DOCKER_IMG##*/}_${TAG}"
+DOCKER_TAG="qbdi:${ARCH}_${DOCKER_IMG##*/}_${TAG}"
 
 if [[ "${DISTRIB}" = "ubuntu" && "${TAG}" = "18.04" ]]; then
   DOCKERFILE="${BASEDIR}/Dockerfile.ubuntu18_04"

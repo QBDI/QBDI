@@ -161,6 +161,10 @@ Cache management
 Register state
 --------------
 
+This documentation only shows the register for the X86_64 architectures. For ARM
+and AARCH64, the GPRState and FPRState are similar to the C/C++
+:cpp:class:`QBDI::GPRState` and :cpp:class:`QBDI::FPRState`.
+
 .. autoclass:: pyqbdi.GPRState
     :members:
     :undoc-members:
@@ -306,6 +310,9 @@ Exploration
 
 Other globals
 -------------
+
+This documentation only shows the options available for the X86_64 architectures. For ARM
+and AARCH64, refer the C/C++ API :cpp:enum:`QBDI::Options`.
 
 .. autodata:: pyqbdi.Options
 

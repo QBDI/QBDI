@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,12 @@
 #include "Patch/Instr_Test.h"
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-UnalignedCodeForward_IC") {
+  INFO("TEST_SEED=" << seed_random());
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
   QBDI::Context inputState;
-  memset(&inputState, 0, sizeof(QBDI::Context));
+  initContext(inputState);
 
   vm.deleteAllInstrumentations();
   vm.addCodeCB(QBDI::PREINST, increment, (void *)&count1);
@@ -38,11 +39,12 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-UnalignedCodeForward_IC") {
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-UnalignedCodeBackward_IC") {
+  INFO("TEST_SEED=" << seed_random());
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
   QBDI::Context inputState;
-  memset(&inputState, 0, sizeof(QBDI::Context));
+  initContext(inputState);
 
   vm.deleteAllInstrumentations();
   vm.addCodeCB(QBDI::PREINST, increment, (void *)&count1);
@@ -57,11 +59,12 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-UnalignedCodeBackward_IC") {
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-LoopCode_IC") {
+  INFO("TEST_SEED=" << seed_random());
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
   QBDI::Context inputState;
-  memset(&inputState, 0, sizeof(QBDI::Context));
+  initContext(inputState);
 
   vm.deleteAllInstrumentations();
   vm.addCodeCB(QBDI::PREINST, increment, (void *)&count1);

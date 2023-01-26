@@ -18,6 +18,146 @@ Instructions below are listed using their mnemonic (or LLVM MC opcode). This nam
 between size and operand variants of the same mnemonic: ``ADD64rm`` is a 64 bits add of a memory
 value to a register while ``ADD32ri8`` is a 32 bits add of an 8 bits immediate to a register.
 
+AARCH64
+-------
+
+The AARCH64 support with the Memory Access.
+The support is more recent that X86_64 and some bug should be expected.
+
+Some extensions isn't supported by QBDI, in particular:
+
+- Scalable Vector Extension (SVE and SVE2)
+- Scalable Matrix Extension (SME)
+- Memory Tagging Extension (MTE)
+- Transactional Memory Extension (TME)
+
+For OSX, the register X18 is defined as platforms reserved. QBDI doesn't set or
+used this register.
+
+Local Monitor
+^^^^^^^^^^^^^
+
+The AARCH64 support includes an emulator of the Local Monitor. You can disable it
+with the option :cpp:enumerator:`OPT_DISABLE_LOCAL_MONITOR`.
+
+Instruction Coverage
+^^^^^^^^^^^^^^^^^^^^
+
+TODO
+
+ARMv7
+-----
+
+The ARMv7 has been refactor to support both ARM and Thumb mode with the Memory Access.
+The support is more recent that X86_64 and some bug should be expected.
+
+Thumb Mode
+^^^^^^^^^^
+
+When the CPU is in Thumb Mode, the LSB of ``GPRState.PC`` is set to 1. However,
+QBDI doesn't set the corrsponding byte in ``GPRState.CPSR``. In addition, when
+an InstAnalysis is provided for a Thumb instruction, the ``address`` field
+always has his LSB set to 0 and the field ``cpuMode`` must be used to distinguish
+an ARM instruction from a Thumb instruction.
+
+QBDI support the Thumb2 instruction IT. However, this instruction is handle
+internally. The ``GPRState.CPSR`` doesn't include the ITSTATE. To avoid
+undefined behavior, you must not:
+- Clear the VM cache during the execution of an ITBlock.
+- Start or restart the execution of QBDI in the middle of a ITBlock.
+
+Local Monitor
+^^^^^^^^^^^^^
+
+The ARM support includes an emulator of the Local Monitor. You can disable it
+with the option :cpp:enumerator:`OPT_DISABLE_LOCAL_MONITOR`.
+
+Instruction Coverage
+^^^^^^^^^^^^^^^^^^^^
+
+.. code-block::
+
+    ADCri
+    ADDri ADDrr ADDrsi
+    ANDri
+    Bcc BL BX_RET
+    CMNri
+    CMPri CMPrr
+    EORri
+    FCONSTD
+    FMSTAT
+    LDMIA_UPD
+    LDRBi12 LDRD LDRH LDRi12 LDR_PRE_IMM LDRrs
+    MOVi MOVr MOVsi
+    MVNi
+    ORRri ORRrr
+    STMDB_UPD
+    STRBi12 STRBrs STRD STRi12
+    SUBri
+    UBFX
+    UXTB UXTH
+    VABSD VADD VCMPD VCMPE VCMPEZD VDIVD
+    VLDMDIA_UPD VLDRD VLDRS
+    VMLAD VMOVD VMOVDRR VMOVRRD
+    VMOVRS VMOVSR VMULD VNMLSD VSITOD
+    VSTMDDB_UPD VSTRD VSTRS
+    VSUBD VTOSIZD VTOUIZD VUITOD
+
+    tADC t2ADCri t2ADCrr t2ADCrs
+    tADDhirr tADDi3 tADDi8 tADDrr tADDrSPi tADDspi t2ADDri t2ADDri12 t2ADDrr t2ADDrs t2ADDspImm t2ADDspImm12
+    tADR t2ADR
+    tAND t2ANDri t2ANDrr t2ANDrs
+    tASRri tASRrr t2ASRri t2ASRrr
+    tB tBcc tBL tBLXi tBLXr tBX t2B t2Bcc
+    t2BICri t2BICrr t2BICrs
+    t2CLZ
+    tCBNZ tCBZ
+    tCMNz t2CMNri t2CMNzrr
+    tCMPhir tCMPi8 tCMPr t2CMPri t2CMPrr t2CMPrs
+    t2DMB
+    tEOR t2EORri t2EORrr t2EORrs
+    tHINT t2HINT
+    t2IT
+    tLDMIA t2LDMIA t2LDMIA_UPD
+    t2LDRBi12 t2LDRBi8
+    tLDRBi tLDRBr t2LDRB_POST t2LDRB_PRE t2LDRBs
+    t2LDRDi8
+    t2LDREX
+    tLDRHi tLDRHr t2LDRHi12 t2LDRHi8 t2LDRH_POST t2LDRHs
+    tLDRi tLDRpci tLDRr tLDRspi t2LDRi12 t2LDRi8 t2LDRpci t2LDR_POST t2LDR_PRE t2LDRs
+    tLDRSB t2LDRSBi12
+    tLSLri tLSLrr tLSRri tLSRrr t2LSLri t2LSLrr t2LSRri t2LSRrr
+    t2MLA t2MLS
+    tMOVi8 tMOVr tMOVSr t2MOVi t2MOVi16 t2MOVTi16
+    t2MRC
+    t2MUL
+    tMVN t2MVNi t2MVNr
+    t2ORNri t2ORNrr
+    tORR t2ORRri t2ORRrr t2ORRrs
+    tPOP
+    tPUSH
+    tREV tREV16 t2REV
+    t2RORri t2RSBri
+    tRSB
+    tSBC t2SBCri t2SBCrr t2SBCrs
+    t2SMULL
+    tSTMIA_UPD t2STMDB_UPD t2STMIA t2STMIA_UPD
+    tSTRBi tSTRBr t2STRBi12 t2STRBi8 t2STRB_POST t2STRB_PRE t2STRBs
+    t2STRDi8 t2STRD_PRE
+    t2STREX
+    tSTRHi tSTRHr t2STRHi12 t2STRHi8 t2STRH_PRE t2STRHs
+    tSTRi TSTri tSTRr tSTRspi t2STRi12 t2STRi8 t2STR_POST t2STR_PRE t2STRs
+    tSUBi3 tSUBi8 tSUBrr tSUBspi t2SUBri t2SUBri12 t2SUBrr t2SUBrs t2SUBspImm t2SUBspImm12
+    tSXTB tSXTH
+    t2TBB t2TBH
+    t2TEQri
+    tTST t2TSTri t2TSTrr
+    t2UBFX
+    t2UMLAL t2UMULL
+    tUXTB
+    tUXTH
+    t2UXTAH t2UXTB
+
 Intel x86-64
 ------------
 
@@ -220,3 +360,4 @@ Instruction Coverage
     XCH_F
     XOR16rr XOR32i32 XOR32mr XOR32ri XOR32ri8 XOR32rm XOR32rr XOR8rm
     XORPSrr
+

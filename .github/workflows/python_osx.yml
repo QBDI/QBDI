@@ -8,28 +8,31 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-pyqbdi:
-    runs-on: macos-10.15
+  build-pyqbdi-x64:
+    runs-on: macos-latest
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10']
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+      fail-fast: false
     env:
       QBDI_PLATFORM: 'osx'
       QBDI_ARCH: 'X86_64'
       MACOSX_DEPLOYMENT_TARGET: '10.14'
+      _PYTHON_HOST_PLATFORM: "macosx-10.14-x86_64"
+      ARCHFLAGS: "-arch x86_64"
     steps:
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install system dependencies
         run: |
           brew install cmake ninja ccache
-          python3 -m pip install --upgrade pip setuptools wheel
+          python3 -m pip install --upgrade pip setuptools wheel build
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Cache ccache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-ccache-python
         with:
           path: |
@@ -43,18 +46,65 @@ jobs:
           mkdir -p ~/.ccache
           cp .github/workflows/ccache.conf ~/.ccache/ccache.conf
       - name: Cache third-party
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             third-party
           key: QBDI-third-party-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**/*.cmake') }}
-      - run: mkdir -p build
       - name: Build PyQBDI ${{ matrix.python-version }}
         run: |
           python3 --version
-          python3 setup.py bdist_wheel
+          python3 -m build -w
       - name: Export package
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
-          name: PyQBDI OSX X86_64 ${{ matrix.python-version }}
+          name: PyQBDI_OSX_X86_64_${{ matrix.python-version }}
+          path: dist/*
+
+  build-pyqbdi-aarch64:
+    runs-on: [self-hosted, macOS, ARM64]
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+      fail-fast: false
+    env:
+      QBDI_ARCH: 'AARCH64'
+      QBDI_PLATFORM: 'osx'
+      MACOSX_DEPLOYMENT_TARGET: '11.0'
+      _PYTHON_HOST_PLATFORM: "macosx-11.0-arm64"
+      ARCHFLAGS: "-arch arm64"
+    steps:
+      - name: Install system dependencies
+        run: |
+          python${{ matrix.python-version }} -m pip install --upgrade pip setuptools wheel build
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: Cache ccache
+        uses: actions/cache@v3
+        id: cache-ccache-python
+        with:
+          path: |
+            ~/.ccache
+          key: ccache-osx-AARCH64-${{ hashFiles('.github/workflows/ccache.conf') }}-python-${{ matrix.python-version }}-${{ github.run_number }}
+          restore-keys: |
+            ccache-osx-AARCH64-${{ hashFiles('.github/workflows/ccache.conf') }}-python-${{ matrix.python-version }}-
+            ccache-osx-AARCH64-${{ hashFiles('.github/workflows/ccache.conf') }}-
+      - if: steps.cache-ccache-python.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/.ccache
+          cp .github/workflows/ccache.conf ~/.ccache/ccache.conf
+      - name: Cache third-party
+        uses: actions/cache@v3
+        with:
+          path: |
+            third-party
+          key: QBDI-third-party-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**/*.cmake') }}
+      - name: Build PyQBDI ${{ matrix.python-version }}
+        run: |
+          python${{ matrix.python-version }} --version
+          python${{ matrix.python-version }} -m build -w
+      - name: Export package
+        uses: actions/upload-artifact@v3
+        with:
+          name: PyQBDI_OSX_AARCH64_${{ matrix.python-version }}
           path: dist/*

@@ -115,7 +115,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'QBDI'
-copyright = '2015-2022, Quarkslab'
+copyright = '2015-2023, Quarkslab'
 author = 'Quarkslab'
 
 # The version info for the project you're documenting, acts as replacement for

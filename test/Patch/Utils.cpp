@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,22 @@
 
 #include "Utils.h"
 
+QBDI::rword seed_random() {
+
+  unsigned int seed;
+  if (getenv("TEST_SEED")) {
+    seed = atoi(getenv("TEST_SEED"));
+  } else {
+    seed = rand();
+  }
+  srand(seed);
+  return seed;
+}
+
 QBDI::rword get_random() {
-  if (sizeof(QBDI::rword) <= 4) {
+  if constexpr (QBDI::it_bits_32) {
     return rand();
   } else {
-    return ((QBDI::rword)rand()) << 32 || rand();
+    return ((uint64_t)rand()) << 32 || rand();
   }
 }

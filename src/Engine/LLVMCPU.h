@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@
 #include <vector>
 
 #include "llvm/ADT/ArrayRef.h"
-#include "llvm/MC/MCDisassembler/MCDisassembler.h"
 
 #include "QBDI/Options.h"
 #include "QBDI/State.h"
@@ -35,6 +34,7 @@ class MCAsmInfo;
 class MCAssembler;
 class MCCodeEmitter;
 class MCContext;
+class MCDisassembler;
 class MCInst;
 class MCInstPrinter;
 class MCInstrInfo;
@@ -47,6 +47,7 @@ class raw_pwrite_stream;
 
 namespace QBDI {
 class memory_ostream;
+struct RegLLVM;
 
 class LLVMCPU {
 
@@ -60,7 +61,6 @@ private:
   CPUMode cpumode;
 
   std::unique_ptr<llvm::MCAsmInfo> MAI;
-  std::unique_ptr<llvm::MCCodeEmitter> MCE;
   std::unique_ptr<llvm::MCContext> MCTX;
   std::unique_ptr<llvm::MCInstrInfo> MCII;
   std::unique_ptr<llvm::MCObjectFileInfo> MOFI;
@@ -85,15 +85,18 @@ public:
   LLVMCPU(const LLVMCPU &) = delete;
   LLVMCPU &operator=(const LLVMCPU &) = delete;
 
-  void writeInstruction(llvm::MCInst inst, memory_ostream *stream) const;
+  void writeInstruction(llvm::MCInst inst, memory_ostream &stream) const;
 
-  llvm::MCDisassembler::DecodeStatus
-  getInstruction(llvm::MCInst &inst, uint64_t &size,
-                 llvm::ArrayRef<uint8_t> bytes, uint64_t address) const;
+  bool getInstruction(llvm::MCInst &inst, uint64_t &size,
+                      llvm::ArrayRef<uint8_t> bytes, uint64_t address) const;
 
-  std::string showInst(const llvm::MCInst &inst, uint64_t address) const;
+  std::string showInst(const llvm::MCInst &inst, rword address) const;
 
-  const char *getRegisterName(unsigned int id) const;
+  const char *getInstOpcodeName(const llvm::MCInst &inst) const;
+
+  const char *getInstOpcodeName(unsigned opcode) const;
+
+  const char *getRegisterName(RegLLVM id) const;
 
   inline const std::string &getCPU() const { return cpu; }
 
@@ -101,12 +104,16 @@ public:
 
   inline const CPUMode getCPUMode() const { return cpumode; }
 
+  inline operator CPUMode() const { return cpumode; }
+
   inline const llvm::MCInstrInfo &getMCII() const { return *MCII; }
 
   inline const llvm::MCRegisterInfo &getMRI() const { return *MRI; }
 
   Options getOptions() const { return options; }
   void setOptions(Options opts);
+
+  int getMCInstSize(const llvm::MCInst &inst) const;
 };
 
 class LLVMCPUs {

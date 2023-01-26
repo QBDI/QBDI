@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 #include "llvm/MC/MCInst.h"
 
 #include "QBDI/Platform.h"
+#include "Engine/LLVMCPU.h"
 #include "Patch/InstMetadata.h"
 #include "Patch/InstTransform.h"
 #include "Patch/Patch.h"
@@ -27,9 +28,29 @@
 #include "Patch/Register.h"
 #include "Patch/RelocatableInst.h"
 #include "Patch/TempManager.h"
+#include "Patch/Types.h"
 #include "Utility/LogSys.h"
 
 namespace QBDI {
+
+template <typename T>
+RelocatableInst::UniquePtrVec
+PureEval<T>::generate(const Patch &patch, TempManager &temp_manager) const {
+  return this->genReloc(*patch.llvmcpu);
+}
+
+template RelocatableInst::UniquePtrVec
+PureEval<AutoClone<PatchGenerator, PatchGenFlags>>::generate(
+    const Patch &patch, TempManager &temp_manager) const;
+template RelocatableInst::UniquePtrVec
+PureEval<AutoClone<PatchGenerator, LoadReg>>::generate(
+    const Patch &patch, TempManager &temp_manager) const;
+template RelocatableInst::UniquePtrVec
+PureEval<AutoClone<PatchGenerator, SaveReg>>::generate(
+    const Patch &patch, TempManager &temp_manager) const;
+template RelocatableInst::UniquePtrVec
+PureEval<AutoClone<PatchGenerator, JmpEpilogue>>::generate(
+    const Patch &patch, TempManager &temp_manager) const;
 
 // ModifyInstruction
 // =================
@@ -42,52 +63,63 @@ std::unique_ptr<PatchGenerator> ModifyInstruction::clone() const {
 };
 
 RelocatableInst::UniquePtrVec
-ModifyInstruction::generate(const Patch *patch, TempManager *temp_manager,
-                            Patch *toMerge) const {
+ModifyInstruction::generate(const Patch &patch,
+                            TempManager &temp_manager) const {
 
-  llvm::MCInst a(patch->metadata.inst);
+  llvm::MCInst a(patch.metadata.inst);
   for (const auto &t : transforms) {
-    t->transform(a, patch->metadata.address, patch->metadata.instSize,
+    t->transform(a, patch.metadata.address, patch.metadata.instSize,
                  temp_manager);
   }
-
-  RelocatableInst::UniquePtrVec out;
-  if (toMerge != nullptr) {
-    RelocatableInst::UniquePtrVec t;
-    t.swap(toMerge->insts);
-    toMerge->metadata.patchSize = 0;
-    append(out, std::move(t));
-  }
-  out.push_back(NoReloc::unique(std::move(a)));
-  return out;
+  return conv_unique<RelocatableInst>(NoReloc::unique(std::move(a)));
 }
 
-// DoNotInstrument
-// ===============
+// PatchGenFlags
+// =============
 
 RelocatableInst::UniquePtrVec
-DoNotInstrument::generate(const Patch *patch, TempManager *temp_manager,
-                          Patch *toMerge) const {
-
+PatchGenFlags::genReloc(const LLVMCPU &llvmcpu) const {
   return {};
 }
 
 // GetOperand
 // ==========
 
-RelocatableInst::UniquePtrVec GetOperand::generate(const Patch *patch,
-                                                   TempManager *temp_manager,
-                                                   Patch *toMerge) const {
-  const llvm::MCInst &inst = patch->metadata.inst;
+RelocatableInst::UniquePtrVec
+GetOperand::generate(const Patch &patch, TempManager &temp_manager) const {
+  const llvm::MCInst &inst = patch.metadata.inst;
+  Reg destReg = reg;
+  if (type == TmpType) {
+    destReg = temp_manager.getRegForTemp(temp);
+  }
+  QBDI_REQUIRE_ABORT_PATCH(op < inst.getNumOperands(), patch,
+                           "Invalid operand {}", op);
   if (inst.getOperand(op).isReg()) {
-    return conv_unique<RelocatableInst>(MovReg::unique(
-        temp_manager->getRegForTemp(temp), inst.getOperand(op).getReg()));
+    return conv_unique<RelocatableInst>(
+        MovReg::unique(destReg, inst.getOperand(op).getReg()));
   } else if (inst.getOperand(op).isImm()) {
     return conv_unique<RelocatableInst>(
-        LoadImm::unique(temp_manager->getRegForTemp(temp),
-                        Constant(inst.getOperand(op).getImm())));
+        LoadImm::unique(destReg, Constant(inst.getOperand(op).getImm())));
   } else {
     QBDI_ERROR("Invalid operand type for GetOperand()");
+    return {};
+  }
+}
+
+// WriteOperand
+// ============
+
+RelocatableInst::UniquePtrVec
+WriteOperand::generate(const Patch &patch, TempManager &temp_manager) const {
+  const llvm::MCInst &inst = patch.metadata.inst;
+
+  QBDI_REQUIRE_ABORT_PATCH(op < inst.getNumOperands(), patch,
+                           "Invalid operand {}", op);
+  if (inst.getOperand(op).isReg()) {
+    return conv_unique<RelocatableInst>(
+        StoreDataBlock::unique(inst.getOperand(op).getReg(), offset));
+  } else {
+    QBDI_ERROR("Invalid operand type for WriteOperand()");
     return {};
   }
 }
@@ -95,27 +127,39 @@ RelocatableInst::UniquePtrVec GetOperand::generate(const Patch *patch,
 // GetConstant
 // ===========
 
-RelocatableInst::UniquePtrVec GetConstant::generate(const Patch *patch,
-                                                    TempManager *temp_manager,
-                                                    Patch *toMerge) const {
+RelocatableInst::UniquePtrVec
+GetConstant::generate(const Patch &patch, TempManager &temp_manager) const {
 
   return conv_unique<RelocatableInst>(
-      LoadImm::unique(temp_manager->getRegForTemp(temp), cst));
+      LoadImm::unique(temp_manager.getRegForTemp(temp), cst));
+}
+
+// GetConstantMap
+// ==============
+
+RelocatableInst::UniquePtrVec
+GetConstantMap::generate(const Patch &patch, TempManager &temp_manager) const {
+  const llvm::MCInst &inst = patch.metadata.inst;
+  const auto it = opcodeMap.find(inst.getOpcode());
+  QBDI_REQUIRE_ABORT_PATCH(it != opcodeMap.end(), temp_manager.getPatch(),
+                           "Opcode not found");
+
+  return conv_unique<RelocatableInst>(
+      LoadImm::unique(temp_manager.getRegForTemp(temp), it->second));
 }
 
 // ReadTemp
 // ========
 
-RelocatableInst::UniquePtrVec ReadTemp::generate(const Patch *patch,
-                                                 TempManager *temp_manager,
-                                                 Patch *toMerge) const {
+RelocatableInst::UniquePtrVec
+ReadTemp::generate(const Patch &patch, TempManager &temp_manager) const {
 
   if (type == OffsetType) {
     return conv_unique<RelocatableInst>(
-        LoadDataBlock::unique(temp_manager->getRegForTemp(temp), offset));
+        LoadDataBlock::unique(temp_manager.getRegForTemp(temp), offset));
   } else if (type == ShadowType) {
     return conv_unique<RelocatableInst>(
-        LoadShadow::unique(temp_manager->getRegForTemp(temp), shadow));
+        LoadShadow::unique(temp_manager.getRegForTemp(temp), shadow));
   }
   _QBDI_UNREACHABLE();
 }
@@ -123,23 +167,26 @@ RelocatableInst::UniquePtrVec ReadTemp::generate(const Patch *patch,
 // WriteTemp
 // =========
 
-RelocatableInst::UniquePtrVec WriteTemp::generate(const Patch *patch,
-                                                  TempManager *temp_manager,
-                                                  Patch *toMerge) const {
+RelocatableInst::UniquePtrVec
+WriteTemp::generate(const Patch &patch, TempManager &temp_manager) const {
 
   if (type == OffsetType) {
     return conv_unique<RelocatableInst>(
-        StoreDataBlock::unique(temp_manager->getRegForTemp(temp), offset));
+        StoreDataBlock::unique(temp_manager.getRegForTemp(temp), offset));
   } else if (type == ShadowType) {
     return conv_unique<RelocatableInst>(
-        StoreShadow::unique(temp_manager->getRegForTemp(temp), shadow, true));
+        StoreShadow::unique(temp_manager.getRegForTemp(temp), shadow, true));
   } else if (type == OperandType) {
-    const llvm::MCInst &inst = patch->metadata.inst;
-    QBDI_REQUIRE_ACTION(inst.getOperand(operand).isReg(), abort());
+    const llvm::MCInst &inst = patch.metadata.inst;
+    QBDI_REQUIRE_ABORT_PATCH(operand < inst.getNumOperands(), patch,
+                             "Invalid operand {}", operand);
+    QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(operand).isReg(), patch,
+                             "Unexpected operand type");
     int regNo = getGPRPosition(inst.getOperand(operand).getReg());
-    QBDI_REQUIRE_ACTION(regNo != -1, abort());
+    QBDI_REQUIRE_ABORT_PATCH(regNo != -1, patch, "Unexpected GPRregister {}",
+                             inst.getOperand(operand).getReg());
     return conv_unique<RelocatableInst>(
-        MovReg::unique(Reg(regNo), temp_manager->getRegForTemp(temp)));
+        MovReg::unique(Reg(regNo), temp_manager.getRegForTemp(temp)));
   }
   _QBDI_UNREACHABLE();
 }
@@ -147,19 +194,26 @@ RelocatableInst::UniquePtrVec WriteTemp::generate(const Patch *patch,
 // LoadReg
 // =======
 
-RelocatableInst::UniquePtrVec LoadReg::generate(const Patch *patch,
-                                                TempManager *temp_manager,
-                                                Patch *toMerge) const {
+RelocatableInst::UniquePtrVec LoadReg::genReloc(const LLVMCPU &llvmcpu) const {
 
   return conv_unique<RelocatableInst>(LoadDataBlock::unique(reg, offset));
+}
+
+// SaveTemp
+// ========
+
+RelocatableInst::UniquePtrVec
+SaveTemp::generate(const Patch &patch, TempManager &temp_manager) const {
+
+  Reg reg = temp_manager.getRegForTemp(temp);
+  return conv_unique<RelocatableInst>(
+      StoreDataBlock::unique(reg, reg.offset()));
 }
 
 // SaveReg
 // =======
 
-RelocatableInst::UniquePtrVec SaveReg::generate(const Patch *patch,
-                                                TempManager *temp_manager,
-                                                Patch *toMerge) const {
+RelocatableInst::UniquePtrVec SaveReg::genReloc(const LLVMCPU &llvmcpu) const {
 
   return conv_unique<RelocatableInst>(StoreDataBlock::unique(reg, offset));
 }
@@ -167,23 +221,50 @@ RelocatableInst::UniquePtrVec SaveReg::generate(const Patch *patch,
 // CopyReg
 // =======
 
-RelocatableInst::UniquePtrVec CopyReg::generate(const Patch *patch,
-                                                TempManager *temp_manager,
-                                                Patch *toMerge) const {
+RelocatableInst::UniquePtrVec
+CopyReg::generate(const Patch &patch, TempManager &temp_manager) const {
 
-  return conv_unique<RelocatableInst>(
-      MovReg::unique(reg, temp_manager->getRegForTemp(temp)));
+  if (type == Reg2Temp) {
+    return conv_unique<RelocatableInst>(
+        MovReg::unique(temp_manager.getRegForTemp(destTemp), src));
+  } else if (type == Reg2Reg) {
+    return conv_unique<RelocatableInst>(MovReg::unique(destReg, src));
+  }
+  _QBDI_UNREACHABLE();
+}
+
+// CopyTemp
+// ========
+
+RelocatableInst::UniquePtrVec
+CopyTemp::generate(const Patch &patch, TempManager &temp_manager) const {
+
+  if (type == Temp2Temp) {
+    return conv_unique<RelocatableInst>(MovReg::unique(
+        temp_manager.getRegForTemp(destTemp), temp_manager.getRegForTemp(src)));
+  } else if (type == Temp2Reg) {
+    return conv_unique<RelocatableInst>(
+        MovReg::unique(destReg, temp_manager.getRegForTemp(src)));
+  }
+  _QBDI_UNREACHABLE();
 }
 
 // GetInstId
 // =========
 
-RelocatableInst::UniquePtrVec GetInstId::generate(const Patch *patch,
-                                                  TempManager *temp_manager,
-                                                  Patch *toMerge) const {
+RelocatableInst::UniquePtrVec
+GetInstId::generate(const Patch &patch, TempManager &temp_manager) const {
 
   return conv_unique<RelocatableInst>(
-      InstId::unique(temp_manager->getRegForTemp(temp)));
+      InstId::unique(temp_manager.getRegForTemp(temp)));
+}
+
+// TargetPrologue
+// ==============
+
+RelocatableInst::UniquePtrVec
+TargetPrologue::generate(const Patch &patch, TempManager &temp_manager) const {
+  return genReloc(patch);
 }
 
 } // namespace QBDI

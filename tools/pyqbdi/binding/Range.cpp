@@ -1,7 +1,7 @@
 /*
  * This file is part of pyQBDI (python binding for QBDI).
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,20 +37,20 @@ void init_binding_Range(py::module_ &m) {
            "Return True if two ranges are equal (same boundaries).", "r"_a)
 
       .def("contains",
-           (bool (Range<rword>::*)(const rword) const) & Range<rword>::contains,
+           (bool(Range<rword>::*)(const rword) const) & Range<rword>::contains,
            "Return True if an value is inside current range boundaries.", "t"_a)
 
       .def("contains",
-           (bool (Range<rword>::*)(const Range<rword> &) const) &
+           (bool(Range<rword>::*)(const Range<rword> &) const) &
                Range<rword>::contains,
            "Return True if a range is inside current range boundaries.", "r"_a)
 
       .def("__contains__",
-           (bool (Range<rword>::*)(const rword) const) & Range<rword>::contains,
+           (bool(Range<rword>::*)(const rword) const) & Range<rword>::contains,
            "Return True if an value is inside current range boundaries.", "t"_a)
 
       .def("__contains__",
-           (bool (Range<rword>::*)(const Range<rword> &) const) &
+           (bool(Range<rword>::*)(const Range<rword> &) const) &
                Range<rword>::contains,
            "Return True if a range is inside current range boundaries.", "r"_a)
 

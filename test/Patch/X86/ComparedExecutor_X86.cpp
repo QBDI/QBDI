@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Veesion 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 #include "ComparedExecutor_X86.h"
+#include "Patch/Utils.h"
 
 #if defined(_M_IX86)
 
@@ -146,6 +147,16 @@ QBDI::Context ComparedExecutor_X86::realExec(llvm::ArrayRef<uint8_t> code,
   return outputState;
 }
 
+void ComparedExecutor_X86::initContext(QBDI::Context &ctx) {
+  memset(&ctx, 0, sizeof(QBDI::Context));
+  ctx.gprState.eax = get_random();
+  ctx.gprState.ebx = get_random();
+  ctx.gprState.ecx = get_random();
+  ctx.gprState.edx = get_random();
+  ctx.gprState.esi = get_random();
+  ctx.gprState.edi = get_random();
+}
+
 const char *GPRSave_s =
     "    mov $0x1, %eax\n"
     "    mov $0x2, %ebx\n"
@@ -212,7 +223,7 @@ const char *ConditionalBranching_s =
     "    inc %ecx\n"
     "    cmpl $16, %ecx\n"
     "    jb loop\n"
-    "    lea cheksum-L1(%ebx), %esi\n"
+    "    lea checksum-L1(%ebx), %esi\n"
     "    mov (%esi), %edi\n"
     "    cmp %edx, %edi\n"
     "    jne bad\n"

@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include <bitset>
 #include <cstdint>
 #include <map>
@@ -33,6 +34,7 @@
 #include "Patch/InstInfo.h"
 #include "Patch/InstMetadata.h"
 #include "Patch/Register.h"
+#include "Patch/Types.h"
 #include "Utility/InstAnalysis_prive.h"
 #include "Utility/LogSys.h"
 
@@ -51,7 +53,7 @@
 namespace QBDI {
 namespace InstructionAnalysis {
 
-static bool isFlagRegister(unsigned int regNo) {
+static bool isFlagRegister(RegLLVM regNo) {
   if (regNo == /* llvm::X86|ARM::NoRegister */ 0) {
     return false;
   }
@@ -66,13 +68,13 @@ static bool isFlagRegister(unsigned int regNo) {
   return false;
 }
 
-void analyseRegister(OperandAnalysis &opa, unsigned int regNo,
+void analyseRegister(OperandAnalysis &opa, RegLLVM regNo,
                      const llvm::MCRegisterInfo &MRI) {
-  opa.regName = MRI.getName(regNo);
+  opa.regName = MRI.getName(regNo.getValue());
   if (opa.regName != nullptr && opa.regName[0] == '\x00') {
     opa.regName = nullptr;
   }
-  opa.value = regNo;
+  opa.value = regNo.getValue();
   opa.size = 0;
   opa.flag = OPERANDFLAG_NONE;
   opa.regOff = 0;
@@ -85,23 +87,27 @@ void analyseRegister(OperandAnalysis &opa, unsigned int regNo,
   // try to match register in our GPR context
   size_t gprIndex = getGPRPosition(regNo);
   if (gprIndex != ((size_t)-1)) {
-    if (MRI.isSubRegisterEq(GPR_ID[gprIndex], regNo)) {
+    if (MRI.isSubRegisterEq(GPR_ID[gprIndex].getValue(), regNo.getValue())) {
       if (GPR_ID[gprIndex] != regNo) {
-        unsigned int subregidx = MRI.getSubRegIndex(GPR_ID[gprIndex], regNo);
-        opa.regOff = MRI.getSubRegIdxOffset(subregidx);
+        RegLLVM subregidx =
+            MRI.getSubRegIndex(GPR_ID[gprIndex].getValue(), regNo.getValue());
+        opa.regOff = MRI.getSubRegIdxOffset(subregidx.getValue());
       }
       opa.regCtxIdx = gprIndex;
       opa.size = getRegisterSize(regNo);
       opa.type = OPERAND_GPR;
       if (!opa.size) {
-        QBDI_WARN("register {} ({}) with size null", regNo, opa.regName);
+        QBDI_WARN("register {} ({}) with size null", regNo.getValue(),
+                  opa.regName);
       }
       return;
     }
-    QBDI_WARN("register {} ({}) has index {} but isn't a subregister", regNo,
-              opa.regName, gprIndex);
+    if (getRegisterPacked(regNo) <= 1) {
+      QBDI_WARN("register {} ({}) has index {} but isn't a subregister",
+                regNo.getValue(), opa.regName, gprIndex);
+    }
   }
-  // try to match register in our GPR context
+  // try to match register in our FPR context
   auto it = FPR_ID.find(regNo);
   if (it != FPR_ID.end()) {
     opa.regCtxIdx = it->second;
@@ -109,7 +115,8 @@ void analyseRegister(OperandAnalysis &opa, unsigned int regNo,
     opa.size = getRegisterSize(regNo);
     opa.type = OPERAND_FPR;
     if (!opa.size) {
-      QBDI_WARN("register {} ({}) with size null", regNo, opa.regName);
+      QBDI_WARN("register {} ({}) with size null", regNo.getValue(),
+                opa.regName);
     }
     return;
   }
@@ -120,16 +127,86 @@ void analyseRegister(OperandAnalysis &opa, unsigned int regNo,
       opa.size = getRegisterSize(regNo);
       opa.type = OPERAND_SEG;
       if (!opa.size) {
-        QBDI_WARN("register {} ({}) with size null", regNo, opa.regName);
+        QBDI_WARN("register {} ({}) with size null", regNo.getValue(),
+                  opa.regName);
       }
       return;
     }
   }
-  // unsupported register
-  QBDI_WARN("Unknown register {} : {}", regNo, opa.regName);
-  opa.regCtxIdx = -1;
-  opa.regOff = 0;
-  opa.size = 0;
+  if (getRegisterPacked(regNo) > 1) {
+    // multiple register, the operand analyse is handled by the target
+    opa.regCtxIdx = -1;
+    opa.regOff = 0;
+    opa.size = 0;
+    opa.type = OPERAND_INVALID;
+  } else {
+    // unsupported register
+    QBDI_WARN("Unknown register {} : {}", regNo.getValue(), opa.regName);
+    opa.regCtxIdx = -1;
+    opa.regOff = 0;
+    opa.size = 0;
+    opa.type = OPERAND_SEG;
+  }
+  return;
+}
+
+void breakPackedRegister(InstAnalysis *instAnalysis, OperandAnalysis &opa,
+                         RegLLVM regNo, const llvm::MCRegisterInfo &MRI) {
+
+  size_t gprIndex = getGPRPosition(regNo);
+
+  // packed GPR
+  if (gprIndex != (size_t)-1) {
+    opa.regCtxIdx = gprIndex;
+    opa.size = getRegisterSize(regNo);
+    opa.type = OPERAND_GPR;
+    opa.regName = MRI.getName(getPackedRegister(regNo, 0).getValue());
+    if (opa.regName != nullptr && opa.regName[0] == '\x00') {
+      opa.regName = nullptr;
+    }
+
+    for (unsigned p = 1; p < getRegisterPacked(regNo); p++) {
+      OperandAnalysis &opa2 = instAnalysis->operands[instAnalysis->numOperands];
+      memcpy(&opa2, &opa, sizeof(OperandAnalysis));
+      opa2.regCtxIdx = getGPRPosition(getPackedRegister(regNo, p));
+      opa2.regName = MRI.getName(getPackedRegister(regNo, p).getValue());
+      if (opa2.regName != nullptr && opa2.regName[0] == '\x00') {
+        opa2.regName = nullptr;
+      }
+      QBDI_REQUIRE(opa2.regCtxIdx != -1);
+      instAnalysis->numOperands++;
+    }
+    return;
+  }
+  // packed FPR
+  auto it = FPR_ID.find(getPackedRegister(regNo, 0));
+  if (it != FPR_ID.end()) {
+    opa.regCtxIdx = it->second;
+    opa.size = getRegisterSize(regNo);
+    opa.type = OPERAND_FPR;
+    opa.regName = MRI.getName(getPackedRegister(regNo, 0).getValue());
+    if (opa.regName != nullptr && opa.regName[0] == '\x00') {
+      opa.regName = nullptr;
+    }
+    for (unsigned p = 1; p < getRegisterPacked(regNo); p++) {
+      OperandAnalysis &opa2 = instAnalysis->operands[instAnalysis->numOperands];
+      memcpy(&opa2, &opa, sizeof(OperandAnalysis));
+      auto it2 = FPR_ID.find(getPackedRegister(regNo, p));
+      if (it2 != FPR_ID.end()) {
+        opa2.regCtxIdx = it2->second;
+      } else {
+        opa2.regCtxIdx = -1;
+      }
+      opa2.regName = MRI.getName(getPackedRegister(regNo, p).getValue());
+      if (opa2.regName != nullptr && opa2.regName[0] == '\x00') {
+        opa2.regName = nullptr;
+      }
+      instAnalysis->numOperands++;
+    }
+    return;
+  }
+  // unsupported Packed Register
+  QBDI_WARN("Unknown register {} : {}", regNo.getValue(), opa.regName);
   opa.type = OPERAND_SEG;
   return;
 }
@@ -191,12 +268,14 @@ void analyseImplicitRegisters(InstAnalysis *instAnalysis,
 }
 
 void analyseOperands(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
-                     const llvm::MCInstrDesc &desc,
-                     const llvm::MCRegisterInfo &MRI) {
+                     const LLVMCPU &llvmcpu) {
   if (!instAnalysis) {
     // no instruction analysis
     return;
   }
+  const llvm::MCInstrDesc &desc = llvmcpu.getMCII().get(inst.getOpcode());
+  const llvm::MCRegisterInfo &MRI = llvmcpu.getMRI();
+
   instAnalysis->numOperands = 0; // updated later because we could skip some
   instAnalysis->operands = NULL;
   // number of first def operand that are tied to a later used operand
@@ -207,26 +286,51 @@ void analyseOperands(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
                            desc.getNumImplicitUses() - operandBias;
   // (R|E)SP are missing for RET and CALL in x86
   numOperandsMax += getAdditionnalOperandNumber(inst, desc);
+  // packedRegister
+  for (unsigned i = 0; i < inst.getNumOperands(); i++) {
+    const llvm::MCOperand &op = inst.getOperand(i);
+    if (op.isReg() and getRegisterPacked(op.getReg()) > 1) {
+      numOperandsMax += getRegisterPacked(op.getReg()) - 1;
+    }
+  }
   if (numOperandsMax == 0) {
     // no operand to analyse
     return;
   }
   instAnalysis->operands = new OperandAnalysis[numOperandsMax]();
+  // limit operandDescription
+  unsigned maxOperandDesc = desc.getNumOperands();
+  if (desc.isVariadic()) {
+    QBDI_REQUIRE(maxOperandDesc >= 1 or numOperands == 0);
+    maxOperandDesc--;
+  } else {
+    QBDI_REQUIRE(numOperands == maxOperandDesc);
+  }
   // find written registers
-  std::bitset<16> regWrites;
-  for (unsigned i = 0, e = desc.isVariadic() ? inst.getNumOperands()
-                                             : desc.getNumDefs();
-       i != e; ++i) {
+  std::bitset<32> regWrites;
+  for (unsigned i = 0, e = desc.getNumDefs(); i != e; ++i) {
     const llvm::MCOperand &op = inst.getOperand(i);
     if (op.isReg()) {
       regWrites.set(i, true);
     }
   }
+  if (desc.isVariadic() and variadicOpsIsWrite(inst)) {
+    for (unsigned i = maxOperandDesc, e = inst.getNumOperands(); i != e; ++i) {
+      const llvm::MCOperand &op = inst.getOperand(i);
+      if (op.isReg()) {
+        regWrites.set(i, true);
+      }
+    }
+  }
   // for each instruction operands
   for (uint8_t i = operandBias; i < numOperands; i++) {
     const llvm::MCOperand &op = inst.getOperand(i);
-    const llvm::MCOperandInfo &opdesc = desc.OpInfo[i];
+    // if the instruction is variadic, the opdesc for the variadic operand is
+    // the last opdesc
+    const llvm::MCOperandInfo &opdesc =
+        (i < maxOperandDesc) ? desc.OpInfo[i] : desc.OpInfo[maxOperandDesc];
     // fill a new operand analysis
+    QBDI_REQUIRE(instAnalysis->numOperands < numOperandsMax);
     OperandAnalysis &opa = instAnalysis->operands[instAnalysis->numOperands];
     // reinitialise the opa if a previous iteration has write some value
     memset(&opa, 0, sizeof(OperandAnalysis));
@@ -236,13 +340,33 @@ void analyseOperands(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
     }
     if (op.isReg()) {
       unsigned int regNo = op.getReg();
+      int tied_to = desc.getOperandConstraint(i, llvm::MCOI::TIED_TO);
+
+      // if the operand is tied_to the previous operand, add the access to the
+      // operand.
+      if (tied_to != -1 and operandBias == 0) {
+        QBDI_REQUIRE(tied_to == i - 1);
+        QBDI_REQUIRE(inst.getOperand(i - 1).isReg());
+        if constexpr (is_arm)
+          QBDI_REQUIRE(not isFlagOperand(inst.getOpcode(), i, opdesc));
+        QBDI_REQUIRE(not isFlagRegister(regNo));
+        instAnalysis->operands[instAnalysis->numOperands - 1].regAccess |=
+            regWrites.test(i) ? REGISTER_WRITE : REGISTER_READ;
+        continue;
+      }
       // don't reject regNo == 0 tp keep the same position of operand
       // ex : "lea rax, [rbx+10]" and "lea rax, [rbx+4*rcx+10]" will have the
       // same number of operand
-      if (isFlagRegister(regNo)) {
-        instAnalysis->flagsAccess |=
-            regWrites.test(i) ? REGISTER_WRITE : REGISTER_READ;
-        continue;
+      if constexpr (is_arm) {
+        if (isFlagOperand(inst.getOpcode(), i, opdesc)) {
+          continue;
+        }
+      } else {
+        if (isFlagRegister(regNo)) {
+          instAnalysis->flagsAccess |=
+              regWrites.test(i) ? REGISTER_WRITE : REGISTER_READ;
+          continue;
+        }
       }
       // fill the operand analysis
       analyseRegister(opa, regNo, MRI);
@@ -263,32 +387,33 @@ void analyseOperands(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
       if (regNo != 0) {
         opa.regAccess = regWrites.test(i) ? REGISTER_WRITE : REGISTER_READ;
 
-        if (operandBias != 0) {
-          // verify if the register is allocate in the same place as anothe
-          // register
-          int tied_to = desc.getOperandConstraint(i, llvm::MCOI::TIED_TO);
-          if (tied_to != -1) {
-            opa.regAccess |=
-                regWrites.test(tied_to) ? REGISTER_WRITE : REGISTER_READ;
-          }
+        // verify if the register is allocate in the same place as anothe
+        // register
+        if (tied_to != -1 and operandBias != 0) {
+          opa.regAccess |=
+              regWrites.test(tied_to) ? REGISTER_WRITE : REGISTER_READ;
         }
       }
       instAnalysis->numOperands++;
+      if (opa.type == OPERAND_INVALID and getRegisterPacked(regNo) > 1) {
+        breakPackedRegister(instAnalysis, opa, regNo, MRI);
+        QBDI_REQUIRE(instAnalysis->numOperands <= numOperandsMax);
+      }
     } else if (op.isImm()) {
-      if (isFlagOperand(inst.getOpcode(), i, opdesc.OperandType)) {
+      if (isFlagOperand(inst.getOpcode(), i, opdesc)) {
         continue;
       }
       // fill the operand analysis
       switch (opdesc.OperandType) {
         case llvm::MCOI::OPERAND_IMMEDIATE:
-          opa.size = getImmediateSize(inst, desc);
+          opa.size = getImmediateSize(inst, llvmcpu);
           break;
         case llvm::MCOI::OPERAND_MEMORY:
           opa.flag |= OPERANDFLAG_ADDR;
           opa.size = sizeof(rword);
           break;
         case llvm::MCOI::OPERAND_PCREL:
-          opa.size = getImmediateSize(inst, desc);
+          opa.size = getImmediateSize(inst, llvmcpu);
           opa.flag |= OPERANDFLAG_PCREL;
           break;
         case llvm::MCOI::OPERAND_UNKNOWN:
@@ -305,7 +430,7 @@ void analyseOperands(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
       } else {
         opa.type = OPERAND_IMM;
       }
-      opa.value = static_cast<rword>(op.getImm());
+      opa.value = getFixedOperandValue(inst, llvmcpu, i, op.getImm());
       instAnalysis->numOperands++;
     }
   }
@@ -318,6 +443,19 @@ void analyseOperands(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
 
   // (R|E)SP are missing for RET and CALL in x86
   getAdditionnalOperand(instAnalysis, inst, desc, MRI);
+
+  // reduce operands buffer if possible
+  if (instAnalysis->numOperands < numOperandsMax) {
+    OperandAnalysis *oldbuff = instAnalysis->operands;
+    if (instAnalysis->numOperands == 0) {
+      instAnalysis->operands = nullptr;
+    } else {
+      instAnalysis->operands = new OperandAnalysis[instAnalysis->numOperands]();
+      memcpy(instAnalysis->operands, oldbuff,
+             sizeof(OperandAnalysis) * instAnalysis->numOperands);
+    }
+    delete[] oldbuff;
+  }
 }
 
 } // namespace InstructionAnalysis
@@ -372,6 +510,7 @@ const InstAnalysis *analyzeInstMetadata(const InstMetadata &instMetadata,
   if (missingType & ANALYSIS_INSTRUCTION) {
     instAnalysis->address = instMetadata.address;
     instAnalysis->instSize = instMetadata.instSize;
+    instAnalysis->cpuMode = instMetadata.cpuMode;
     instAnalysis->affectControlFlow = instMetadata.modifyPC;
     instAnalysis->isBranch = desc.isBranch();
     instAnalysis->isCall = desc.isCall();
@@ -379,23 +518,29 @@ const InstAnalysis *analyzeInstMetadata(const InstMetadata &instMetadata,
     instAnalysis->isCompare = desc.isCompare();
     instAnalysis->isPredicable = desc.isPredicable();
     instAnalysis->isMoveImm = desc.isMoveImmediate();
-    instAnalysis->loadSize = getReadSize(inst);
-    instAnalysis->storeSize = getWriteSize(inst);
+    instAnalysis->loadSize = getReadSize(inst, llvmcpu);
+    instAnalysis->storeSize = getWriteSize(inst, llvmcpu);
     instAnalysis->mayLoad =
         instAnalysis->loadSize != 0 || unsupportedRead(inst);
     instAnalysis->mayStore =
         instAnalysis->storeSize != 0 || unsupportedWrite(inst);
     instAnalysis->mayLoad_LLVM = desc.mayLoad();
     instAnalysis->mayStore_LLVM = desc.mayStore();
-    instAnalysis->mnemonic = MCII.getName(inst.getOpcode()).data();
+    instAnalysis->mnemonic = llvmcpu.getInstOpcodeName(inst);
 
-    InstructionAnalysis::analyseCondition(instAnalysis, inst, desc);
+    InstructionAnalysis::analyseCondition(instAnalysis, inst, desc, llvmcpu);
   }
 
   if (missingType & ANALYSIS_OPERANDS) {
+    if constexpr (is_arm) {
+      // for arm, analyseCondition analyse the usage of the flags
+      if (not(missingType & ANALYSIS_INSTRUCTION)) {
+        InstructionAnalysis::analyseCondition(instAnalysis, inst, desc,
+                                              llvmcpu);
+      }
+    }
     // analyse operands (immediates / registers)
-    InstructionAnalysis::analyseOperands(instAnalysis, inst, desc,
-                                         llvmcpu.getMRI());
+    InstructionAnalysis::analyseOperands(instAnalysis, inst, llvmcpu);
   }
 
   if (missingType & ANALYSIS_SYMBOL) {

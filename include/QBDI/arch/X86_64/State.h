@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,6 +74,7 @@ typedef struct {
 } MMSTReg;
 
 typedef uint64_t rword;
+typedef int64_t sword;
 
 /*! X86_64 Floating Point Register context.
  */ // SPHINX_X86_64_FPRSTATE_BEGIN

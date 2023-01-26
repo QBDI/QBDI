@@ -2,7 +2,7 @@
 
 # This file is part of pyQBDI (python binding for QBDI).
 #
-# Copyright 2017 - 2022 Quarkslab
+# Copyright 2017 - 2023 Quarkslab
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,35 +22,63 @@ import sys
 import platform
 import subprocess
 import shutil
+try:
+    import ninja
+    HAS_NINJA = True
+except:
+    HAS_NINJA = False
 
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
 
 def detect_QBDI_platform():
-    os = None
+    current_os = None
     arch = None
-    if platform.system() == 'Darwin':
-        os = 'osx'
-    elif platform.system() == 'Windows':
-        os = 'windows'
-    elif platform.system() == 'Linux':
-        os = 'linux'
+    if hasattr(sys.implementation, "_multiarch"):
+        if '-' in sys.implementation._multiarch:
+            base_arch, base_os = sys.implementation._multiarch.split('-')[:2]
+        else:
+            base_arch = platform.machine()
+            base_os = sys.implementation._multiarch
+    else:
+        base_arch = platform.machine()
+        base_os = platform.system()
 
-    if platform.machine() in ['AMD64', 'AMD', 'x64', 'x86_64', 'x86', 'i386', 'i686']:
+    base_arch = base_arch.lower()
+    base_os = base_os.lower()
+
+    if base_os == 'darwin':
+        current_os = 'osx'
+    elif base_os == 'windows':
+        current_os = 'windows'
+    elif base_os == 'linux':
+        current_os = 'linux'
+
+    if base_arch in ['amd64', 'amd', 'x64', 'x86_64', 'x86', 'i386', 'i686']:
         # intel arch
         if sys.maxsize > 2**32:
             arch = "X86_64"
         else:
             arch = "X86"
-    elif platform.machine() in ['aarch64', 'arm64', 'aarch64_be', 'armv8b', 'armv8l']:
+
+    elif base_arch in ['aarch64', 'arm64', 'aarch64_be', 'armv8b', 'armv8l']:
+        assert sys.maxsize > 2**32
         arch = "AARCH64"
 
-    if os and arch:
-        return (os, arch)
+    elif base_arch == "arm" or \
+         platform.machine().startswith('armv4') or \
+         platform.machine().startswith('armv5') or \
+         platform.machine().startswith('armv6') or \
+         platform.machine().startswith('armv7'):
+        assert sys.maxsize < 2**32
+        arch = "ARM"
+
+    if current_os and arch:
+        return (current_os, arch)
 
     raise RuntimeError("Cannot determine the QBDI platform : system={}, machine={}, is64bits={}".format(
-                            platform.system(), platform.machine(), sys.maxsize > 2**32))
+                            base_arch, base_os, sys.maxsize > 2**32))
 
 
 class CMakeExtension(Extension):
@@ -58,84 +86,61 @@ class CMakeExtension(Extension):
         Extension.__init__(self, name, sources=[])
         self.sourcedir = os.path.abspath(sourcedir)
 
-
 class CMakeBuild(build_ext):
-
-    @staticmethod
-    def has_ninja():
-        return bool(shutil.which('ninja'))
 
     def build_extension(self, ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         detected_platform, detected_arch = detect_QBDI_platform()
-        cmake_args = ['-DPYQBDI_OUTPUT_DIRECTORY=' + extdir,
-                      '-DPython3_EXECUTABLE=' + sys.executable,
+
+        cmake_args = ['-G', 'Ninja',
+                      '-DPYQBDI_OUTPUT_DIRECTORY={}'.format(extdir),
+                      '-DPython3_EXECUTABLE={}'.format(sys.executable),
                       '-DCMAKE_BUILD_TYPE=Release',
-                      '-DQBDI_PLATFORM=' + detected_platform,
-                      '-DQBDI_ARCH=' + detected_arch,
-                      '-DQBDI_TOOLS_PYQBDI=On',
-                      '-DQBDI_TEST=Off',
-                      '-DQBDI_BENCHMARK=Off',
-                      '-DQBDI_SHARED_LIBRARY=Off',
+                      '-DQBDI_PLATFORM={}'.format(detected_platform),
+                      '-DQBDI_ARCH={}'.format(detected_arch),
+                      '-DQBDI_BENCHMARK=OFF',
+                      '-DQBDI_INSTALL=OFF',
+                      '-DQBDI_INCLUDE_DOCS=OFF',
+                      '-DQBDI_INCLUDE_PACKAGE=OFF',
+                      '-DQBDI_SHARED_LIBRARY=OFF',
+                      '-DQBDI_TEST=OFF',
+                      '-DQBDI_TOOLS_FRIDAQBDI=OFF',
+                      '-DQBDI_TOOLS_PYQBDI=ON',
                      ]
         build_args = ['--config', 'Release', '--']
 
-        if platform.system() == "Windows":
-            cmake_args += ["-G", "Ninja"]
-        else:
-            cmake_args += ['-DQBDI_TOOLS_QBDIPRELOAD=On']
-            if self.has_ninja():
-                cmake_args += ["-G", "Ninja"]
-            else:
-                build_args.append('-j4')
+        if HAS_NINJA:
+            ninja_executable_path = os.path.abspath(os.path.join(ninja.BIN_DIR,
+                    "ninja.exe" if detected_platform == 'windows' else "ninja"))
 
-        if 'QBDI_LLVM_PREFIX' in os.environ:
-            cmake_args.append('-DQBDI_LLVM_PREFIX={}'.format(os.environ.get('QBDI_LLVM_PREFIX')))
+            if not os.path.isfile(ninja_executable_path):
+                raise RuntimeError("Compile Error : Cannot found ninja binary.")
+
+            cmake_args.append('-DCMAKE_MAKE_PROGRAM:FILEPATH={}'.format(ninja_executable_path))
+        elif not bool(shutil.which('ninja')):
+            raise RuntimeError("Compile Error : Cannot found ninja binary.")
 
         env = os.environ.copy()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
                                                               self.distribution.get_version())
+        for var in ["Python3_ROOT_DIR"]:
+            if var in env:
+                cmake_args.append("-D{}={}".format(var, env[var]))
+            elif var.upper() in env:
+                cmake_args.append("-D{}={}".format(var, env[var.upper()]))
+
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
+
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
         subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 
         if not os.path.isdir(extdir):
             raise RuntimeError("Compile Error : No library available.")
 
-with open("README-pypi.rst", "r") as f:
-    long_description = f.read()
-
 setup(
-    name='PyQBDI',
-    version='0.9.0',
-    author='Nicolas Surbayrole',
-    license = "apache2",
-    license_files = ('LICENSE.txt',),
-    author_email='qbdi@quarkslab.com',
-    description='Python binding for QBDI',
-    long_description=long_description,
-    long_description_content_type="text/x-rst",
-    classifiers=[
-        "Development Status :: 5 - Production/Stable",
-        "License :: OSI Approved :: Apache Software License",
-        "Operating System :: Microsoft :: Windows",
-        "Operating System :: MacOS",
-        "Operating System :: POSIX :: Linux",
-        "Programming Language :: C++",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Topic :: Security",
-        "Topic :: Software Development :: Debuggers",
-    ],
-    python_requires='>=3.8',
-    project_urls={
-        'Documentation': 'https://qbdi.readthedocs.io/',
-        'Source': 'https://github.com/QBDI/QBDI',
-        'Homepage': 'https://qbdi.quarkslab.com/',
-    },
     ext_modules=[CMakeExtension('pyqbdi')],
-    cmdclass=dict(build_ext=CMakeBuild),
-    zip_safe=False,
+    cmdclass={
+        "build_ext": CMakeBuild,
+    },
 )

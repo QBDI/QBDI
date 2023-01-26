@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,79 +32,79 @@ class RelocatableInst;
 
 // low level layer 2
 
-llvm::MCInst mov32rr(unsigned int dst, unsigned int src);
+llvm::MCInst mov32rr(RegLLVM dst, RegLLVM src);
 
-llvm::MCInst mov32ri(unsigned int reg, rword imm);
+llvm::MCInst mov32ri(RegLLVM reg, rword imm);
 
-llvm::MCInst mov32mr(unsigned int base, rword scale, unsigned int offset,
-                     rword displacement, unsigned int seg, unsigned int src);
+llvm::MCInst mov32mr(RegLLVM base, rword scale, RegLLVM offset,
+                     rword displacement, RegLLVM seg, RegLLVM src);
 
-llvm::MCInst mov32rm8(unsigned int dst, unsigned int base, rword scale,
-                      unsigned int offset, rword displacement,
-                      unsigned int seg);
+llvm::MCInst mov32rm8(RegLLVM dst, RegLLVM base, rword scale, RegLLVM offset,
+                      rword displacement, RegLLVM seg);
 
-llvm::MCInst mov32rm16(unsigned int dst, unsigned int base, rword scale,
-                       unsigned int offset, rword displacement,
-                       unsigned int seg);
+llvm::MCInst mov32rm16(RegLLVM dst, RegLLVM base, rword scale, RegLLVM offset,
+                       rword displacement, RegLLVM seg);
 
-llvm::MCInst mov32rm(unsigned int dst, unsigned int base, rword scale,
-                     unsigned int offset, rword displacement, unsigned int seg);
+llvm::MCInst mov32rm(RegLLVM dst, RegLLVM base, rword scale, RegLLVM offset,
+                     rword displacement, RegLLVM seg);
 
-llvm::MCInst movzx32rr8(unsigned int dst, unsigned int src);
+llvm::MCInst movzx32rr8(RegLLVM dst, RegLLVM src);
 
-llvm::MCInst mov64rr(unsigned int dst, unsigned int src);
+llvm::MCInst mov64rr(RegLLVM dst, RegLLVM src);
 
-llvm::MCInst mov64ri(unsigned int reg, rword imm);
+llvm::MCInst mov64ri(RegLLVM reg, rword imm);
 
-llvm::MCInst mov64mr(unsigned int base, rword scale, unsigned int offset,
-                     rword displacement, unsigned int seg, unsigned int src);
+llvm::MCInst mov64ri32(RegLLVM reg, rword imm);
 
-llvm::MCInst mov64rm(unsigned int dst, unsigned int base, rword scale,
-                     unsigned int offset, rword displacement, unsigned int seg);
+llvm::MCInst mov64mr(RegLLVM base, rword scale, RegLLVM offset,
+                     rword displacement, RegLLVM seg, RegLLVM src);
 
-llvm::MCInst movzx64rr8(unsigned int dst, unsigned int src);
+llvm::MCInst mov64rm(RegLLVM dst, RegLLVM base, rword scale, RegLLVM offset,
+                     rword displacement, RegLLVM seg);
 
-llvm::MCInst test32ri(unsigned int base, uint32_t imm);
+llvm::MCInst movzx64rr8(RegLLVM dst, RegLLVM src);
 
-llvm::MCInst test64ri32(unsigned int base, uint32_t imm);
+llvm::MCInst test32ri(RegLLVM base, uint32_t imm);
+
+llvm::MCInst test64ri32(RegLLVM base, uint32_t imm);
 
 llvm::MCInst je(int32_t offset);
 
 llvm::MCInst jne(int32_t offset);
 
-llvm::MCInst jmp32m(unsigned int base, rword offset);
+llvm::MCInst jmp32m(RegLLVM base, rword offset);
 
-llvm::MCInst jmp64m(unsigned int base, rword offset);
+llvm::MCInst jmp64m(RegLLVM base, rword offset);
 
 llvm::MCInst jmp(rword offset);
 
-llvm::MCInst fxsave(unsigned int base, rword offset);
+llvm::MCInst fxsave(RegLLVM base, rword offset);
 
-llvm::MCInst fxrstor(unsigned int base, rword offset);
+llvm::MCInst fxrstor(RegLLVM base, rword offset);
 
-llvm::MCInst vextractf128(unsigned int base, rword offset, unsigned int src,
+llvm::MCInst vextractf128(RegLLVM base, rword offset, RegLLVM src,
                           uint8_t regoffset);
 
-llvm::MCInst vinsertf128(unsigned int dst, unsigned int base, rword offset,
+llvm::MCInst vinsertf128(RegLLVM dst, RegLLVM base, rword offset,
                          uint8_t regoffset);
 
-llvm::MCInst push32r(unsigned int reg);
+llvm::MCInst push32r(RegLLVM reg);
 
-llvm::MCInst push64r(unsigned int reg);
+llvm::MCInst push64r(RegLLVM reg);
 
-llvm::MCInst pop32r(unsigned int reg);
+llvm::MCInst pop32r(RegLLVM reg);
 
-llvm::MCInst pop64r(unsigned int reg);
+llvm::MCInst pop64r(RegLLVM reg);
 
-llvm::MCInst addr32i(unsigned int dst, unsigned int src, rword imm);
+llvm::MCInst addr32i(RegLLVM dst, RegLLVM src, rword imm);
 
-llvm::MCInst addr64i(unsigned int dst, unsigned int src, rword imm);
+llvm::MCInst addr64i(RegLLVM dst, RegLLVM src, rword imm);
 
-llvm::MCInst lea32(unsigned int dst, unsigned int base, rword scale,
-                   unsigned int offset, rword displacement, unsigned int seg);
+llvm::MCInst lea32(RegLLVM dst, RegLLVM base, rword scale, RegLLVM offset,
+                   rword displacement, RegLLVM seg);
 
-llvm::MCInst lea64(unsigned int dst, unsigned int base, rword scale,
-                   unsigned int offset, rword displacement, unsigned int seg);
+llvm::MCInst lea64(RegLLVM dst, RegLLVM base, rword scale, RegLLVM offset,
+                   rword displacement, RegLLVM seg);
 
 llvm::MCInst pushf32();
 
@@ -116,61 +116,21 @@ llvm::MCInst popf64();
 
 llvm::MCInst ret();
 
-llvm::MCInst rdfsbase(unsigned int reg);
+llvm::MCInst rdfsbase(RegLLVM reg);
 
-llvm::MCInst rdgsbase(unsigned int reg);
+llvm::MCInst rdgsbase(RegLLVM reg);
 
-llvm::MCInst wrfsbase(unsigned int reg);
+llvm::MCInst wrfsbase(RegLLVM reg);
 
-llvm::MCInst wrgsbase(unsigned int reg);
+llvm::MCInst wrgsbase(RegLLVM reg);
 
 llvm::MCInst nop();
 
-// low level layer 2 architecture abtraction
+llvm::MCInst xor32rr(RegLLVM dst, RegLLVM src);
 
-llvm::MCInst movrr(unsigned int dst, unsigned int src);
-
-llvm::MCInst movri(unsigned int dst, rword imm);
-
-llvm::MCInst movmr(unsigned int base, rword scale, unsigned int offset,
-                   rword disp, unsigned int seg, unsigned int src);
-
-llvm::MCInst movrm(unsigned int dst, unsigned int base, rword scale,
-                   unsigned int offset, rword disp, unsigned int seg);
-
-llvm::MCInst movzxrr8(unsigned int dst, unsigned int src);
-
-llvm::MCInst testri(unsigned int base, uint32_t imm);
-
-llvm::MCInst pushr(unsigned int reg);
-
-llvm::MCInst popr(unsigned int reg);
-
-llvm::MCInst addri(unsigned int dst, unsigned int src, rword imm);
-
-llvm::MCInst lea(unsigned int dst, unsigned int base, rword scale,
-                 unsigned int offset, rword disp, unsigned int seg);
-
-llvm::MCInst popf();
-
-llvm::MCInst pushf();
-
-llvm::MCInst jmpm(unsigned int base, rword offset);
+llvm::MCInst xor64rr(RegLLVM dst, RegLLVM src);
 
 // high level layer 2
-
-std::unique_ptr<RelocatableInst> Mov(Reg dst, Reg src);
-
-std::unique_ptr<RelocatableInst> Mov(Reg reg, Constant cst);
-
-std::unique_ptr<RelocatableInst> Mov(Offset offset, Reg reg);
-
-std::unique_ptr<RelocatableInst> Mov(Shadow shadow, Reg reg,
-                                     bool create = true);
-
-std::unique_ptr<RelocatableInst> Mov(Reg reg, Offset offset);
-
-std::unique_ptr<RelocatableInst> Mov(Reg reg, Shadow shadow);
 
 std::unique_ptr<RelocatableInst> JmpM(Offset offset);
 
@@ -178,17 +138,17 @@ std::unique_ptr<RelocatableInst> Fxsave(Offset offset);
 
 std::unique_ptr<RelocatableInst> Fxrstor(Offset offset);
 
-std::unique_ptr<RelocatableInst> Vextractf128(Offset offset, unsigned int src,
+std::unique_ptr<RelocatableInst> Vextractf128(Offset offset, RegLLVM src,
                                               Constant regoffset);
 
-std::unique_ptr<RelocatableInst> Vinsertf128(unsigned int dst, Offset offset,
+std::unique_ptr<RelocatableInst> Vinsertf128(RegLLVM dst, Offset offset,
                                              Constant regoffset);
 
 std::unique_ptr<RelocatableInst> Pushr(Reg reg);
 
 std::unique_ptr<RelocatableInst> Popr(Reg reg);
 
-std::unique_ptr<RelocatableInst> Add(Reg reg, Constant cst);
+std::unique_ptr<RelocatableInst> Add(Reg dest, Reg src, Constant cst);
 
 std::unique_ptr<RelocatableInst> Pushf();
 
@@ -196,7 +156,7 @@ std::unique_ptr<RelocatableInst> Popf();
 
 std::unique_ptr<RelocatableInst> Ret();
 
-std::unique_ptr<RelocatableInst> Test(Reg reg, unsigned int value);
+std::unique_ptr<RelocatableInst> Test(Reg reg, uint32_t value);
 
 std::unique_ptr<RelocatableInst> Je(int32_t offset);
 
@@ -209,6 +169,25 @@ std::unique_ptr<RelocatableInst> Rdgsbase(Reg reg);
 std::unique_ptr<RelocatableInst> Wrfsbase(Reg reg);
 
 std::unique_ptr<RelocatableInst> Wrgsbase(Reg reg);
+
+std::unique_ptr<RelocatableInst> Xorrr(RegLLVM dst, RegLLVM src);
+
+std::unique_ptr<RelocatableInst> Lea(RegLLVM dst, RegLLVM base, rword scale,
+                                     RegLLVM offset, rword disp, RegLLVM seg);
+
+std::unique_ptr<RelocatableInst> MovzxrAL(Reg dst);
+
+std::unique_ptr<RelocatableInst> Mov64rm(RegLLVM dst, RegLLVM addr,
+                                         RegLLVM seg);
+
+std::unique_ptr<RelocatableInst> Mov32rm(RegLLVM dst, RegLLVM addr,
+                                         RegLLVM seg);
+
+std::unique_ptr<RelocatableInst> Mov32rm16(RegLLVM dst, RegLLVM addr,
+                                           RegLLVM seg);
+
+std::unique_ptr<RelocatableInst> Mov32rm8(RegLLVM dst, RegLLVM addr,
+                                          RegLLVM seg);
 
 } // namespace QBDI
 

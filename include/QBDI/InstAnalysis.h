@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,7 +101,7 @@ typedef struct {
   // Common fields
   OperandType type; /*!< Operand type */
   OperandFlag flag; /*!< Operand flag */
-  rword value;      /*!< Operand value (if immediate), or register Id */
+  sword value;      /*!< Operand value (if immediate), or register Id */
   uint8_t size;     /*!< Operand size (in bytes) */
   // Register specific fields
   uint8_t regOff;      /*!< Sub-register offset in register (in bits) */

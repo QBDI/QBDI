@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,14 @@
  * limitations under the License.
  */
 #include <catch2/catch.hpp>
+#include <fstream>
+#include <iostream>
 
 #include "TestSetup/InMemoryAssembler.h"
 
 #include "QBDI/Platform.h"
+#include "Engine/LLVMCPU.h"
+#include "Utility/LogSys.h"
 #include "Utility/System.h"
 
 #include "llvm/ADT/StringRef.h"
@@ -39,12 +43,35 @@
 #include "llvm/MC/MCSubtargetInfo.h"
 #include "llvm/MC/MCTargetOptions.h"
 #include "llvm/MC/SubtargetFeature.h"
+#include "llvm/MC/TargetRegistry.h"
+#include "llvm/Object/ELFObjectFile.h"
 #include "llvm/Object/ObjectFile.h"
 #include "llvm/Support/Host.h"
 #include "llvm/Support/SourceMgr.h"
-#include "llvm/Support/TargetRegistry.h"
+
+void writeResult(const char *source,
+                 const llvm::SmallVector<char, 1024> &objectVector) {
+
+  if (getenv("DUMP_TEST_ASM") != nullptr) {
+    std::string filename_source(getenv("DUMP_TEST_ASM"));
+    std::string filename_code(getenv("DUMP_TEST_ASM"));
+
+    filename_source += ".txt";
+    filename_code += ".bin";
+
+    std::ofstream source_file(filename_source, std::ios_base::trunc);
+    source_file << source << '\n';
+    source_file.close();
+
+    std::ofstream code_file(filename_code,
+                            std::ios_base::trunc | std::ios_base::binary);
+    code_file.write(objectVector.data(), objectVector.size());
+    code_file.close();
+  }
+}
 
 InMemoryObject::InMemoryObject(const char *source, const char *cpu,
+                               const char *arch,
                                const std::vector<std::string> mattrs) {
   std::unique_ptr<llvm::MCAsmInfo> MAI;
   std::unique_ptr<llvm::MCContext> MCTX;
@@ -72,7 +99,9 @@ InMemoryObject::InMemoryObject(const char *source, const char *cpu,
   processTriple.setObjectFormat(llvm::Triple::ObjectFormatType::ELF);
   processTriple.setOS(llvm::Triple::OSType::Linux);
   tripleName = llvm::Triple::normalize(processTriple.str());
-  processTarget = llvm::TargetRegistry::lookupTarget(tripleName, error);
+  processTarget =
+      llvm::TargetRegistry::lookupTarget(arch, processTriple, error);
+
   llvm::MCTargetOptions options;
   // Allocate all LLVM classes
   MRI = std::unique_ptr<llvm::MCRegisterInfo>(
@@ -90,7 +119,7 @@ InMemoryObject::InMemoryObject(const char *source, const char *cpu,
   auto MAB = std::unique_ptr<llvm::MCAsmBackend>(
       processTarget->createMCAsmBackend(*MSTI, *MRI, options));
   auto MCE = std::unique_ptr<llvm::MCCodeEmitter>(
-      processTarget->createMCCodeEmitter(*MCII, *MRI, *MCTX));
+      processTarget->createMCCodeEmitter(*MCII, *MCTX));
 
   // Wrap output object into raw_ostream
   // raw_pwrite_string_ostream rpsos(objectStr);
@@ -105,64 +134,74 @@ InMemoryObject::InMemoryObject(const char *source, const char *cpu,
   mcStr.reset(processTarget->createMCObjectStreamer(
       MSTI->getTargetTriple(), *MCTX, std::move(MAB), std::move(objectWriter),
       std::move(MCE), *MSTI, true, false, false));
-  // Create the assembly parsers
+  // Create the assembly parsers with --no-deprecated-warn
+  llvm::MCTargetOptions parserOpts;
+  parserOpts.MCNoDeprecatedWarn = true;
+  parserOpts.MCNoWarn = (getenv("TEST_WARN") == nullptr);
   llvm::MCAsmParser *parser =
       llvm::createMCAsmParser(SrcMgr, *MCTX, *mcStr, *MAI);
-  llvm::MCTargetAsmParser *tap = processTarget->createMCAsmParser(
-      *MSTI, *parser, *MCII, llvm::MCTargetOptions());
+  llvm::MCTargetAsmParser *tap =
+      processTarget->createMCAsmParser(*MSTI, *parser, *MCII, parserOpts);
   parser->setTargetParser(*tap);
   // Finally do something we care about
-  mcStr->InitSections(false);
+  mcStr->initSections(false, *MSTI);
   REQUIRE_FALSE(parser->Run(true));
   delete parser;
   delete tap;
   // Copy object into new page and make it executable
   unsigned mFlags = PF::MF_READ | PF::MF_WRITE;
-#if defined(QBDI_PLATFORM_IOS)
-  mFlags |= PF::MF_EXEC;
-#endif
+  if constexpr (QBDI::is_ios)
+    mFlags |= PF::MF_EXEC;
   objectBlock =
       QBDI::allocateMappedMemory(objectVector.size(), nullptr, mFlags, ec);
   memcpy(objectBlock.base(), objectVector.data(), objectVector.size());
-#if !defined(QBDI_PLATFORM_IOS)
-  llvm::sys::Memory::protectMappedMemory(objectBlock,
-                                         PF::MF_READ | PF::MF_EXEC);
-#endif
+
+  // debug export result
+  writeResult(source, objectVector);
 
   // LLVM Insanity Oriented Programming
-  llvm::Expected<std::unique_ptr<llvm::object::ObjectFile>> obj_ptr =
-      llvm::object::ObjectFile::createObjectFile(llvm::MemoryBufferRef(
-          llvm::StringRef((const char *)objectBlock.base(),
-                          objectBlock.allocatedSize()),
-          ""));
-  if ((bool)obj_ptr == false) {
-    llvm::errs() << "Failed to load input file" << '\n';
-    return;
+  auto obj_ptr = llvm::object::ObjectFile::createObjectFile(
+      llvm::MemoryBufferRef(llvm::StringRef((const char *)objectBlock.base(),
+                                            objectBlock.allocatedSize()),
+                            ""));
+  if (not obj_ptr) {
+    QBDI_ABORT("Failed to load input file");
   }
 
   // Finding the .text section of the object
   llvm::object::ObjectFile *object = obj_ptr.get().get();
-  llvm::StringRef text_section;
+  llvm::StringRef text_section_content;
+
   for (auto sit = object->sections().begin(); sit != object->sections().end();
        ++sit) {
+    // llvm::errs() << "sections name : " << sit->getName().get() << '\n';
     if (sit->isText()) {
-      if (llvm::Expected<llvm::StringRef> E = sit->getContents()) {
-        text_section = *E;
-        break;
+      if (auto E = sit->getContents()) {
+        // verify that only one Text section
+        REQUIRE(text_section_content.empty());
+        text_section_content = *E;
+        REQUIRE_FALSE(text_section_content.empty());
       } else {
-        llvm::handleAllErrors(E.takeError(),
-                              [](const llvm::ErrorInfoBase &EIB) {
-                                llvm::errs() << "Failed to load text section: ";
-                                EIB.log(llvm::errs());
-                                llvm::errs() << "\n";
-                              });
+        llvm::handleAllErrors(
+            E.takeError(), [](const llvm::ErrorInfoBase &EIB) {
+              QBDI_ABORT("Failed to load text section: {}", EIB.message());
+            });
         return;
       }
     }
   }
-  REQUIRE((unsigned int)0 < text_section.size());
-  code = llvm::ArrayRef<uint8_t>((const uint8_t *)text_section.data(),
-                                 text_section.size());
+  REQUIRE_FALSE(text_section_content.empty());
+  code = llvm::ArrayRef<uint8_t>((const uint8_t *)text_section_content.data(),
+                                 text_section_content.size());
+
+  // perform relocation if needed
+  QBDI::LLVMCPUs llvmcpus(cpu, mattrs);
+  perform_reloc(object, llvmcpus);
+
+  // Finally, set the page executable
+  if constexpr (not QBDI::is_ios)
+    llvm::sys::Memory::protectMappedMemory(objectBlock,
+                                           PF::MF_READ | PF::MF_EXEC);
 }
 
 InMemoryObject::~InMemoryObject() { QBDI::releaseMappedMemory(objectBlock); }

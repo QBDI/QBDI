@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ struct QBDI_ALIGNED(8) HostState {
 
 /*! X86_64 Execution context.
  */
-struct QBDI_ALIGNED(8) Context {
+struct QBDI_ALIGNED(16) Context {
 
 public:
   // fprState needs to be first for memory alignement reasons

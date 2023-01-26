@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,14 @@
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstrDesc.h"
 
+#include "devVariable.h"
+#include "Engine/LLVMCPU.h"
 #include "Patch/InstInfo.h"
 #include "Patch/X86_64/InstInfo_X86_64.h"
 #include "Utility/LogSys.h"
 
 #include "QBDI/Config.h"
 #include "QBDI/State.h"
-
-#define CHECK_TABLE 0
 
 namespace QBDI {
 /* TODO instruction (no yet supported)
@@ -212,6 +212,9 @@ constexpr unsigned READ_16[] = {
     llvm::X86::LOCK_AND16mi,
     llvm::X86::LOCK_AND16mi8,
     llvm::X86::LOCK_AND16mr,
+    llvm::X86::LOCK_BTC16m,
+    llvm::X86::LOCK_BTR16m,
+    llvm::X86::LOCK_BTS16m,
     llvm::X86::LOCK_DEC16m,
     llvm::X86::LOCK_INC16m,
     llvm::X86::LOCK_OR16mi,
@@ -416,6 +419,9 @@ constexpr unsigned READ_32[] = {
     llvm::X86::LOCK_AND32mi,
     llvm::X86::LOCK_AND32mi8,
     llvm::X86::LOCK_AND32mr,
+    llvm::X86::LOCK_BTC32m,
+    llvm::X86::LOCK_BTR32m,
+    llvm::X86::LOCK_BTS32m,
     llvm::X86::LOCK_DEC32m,
     llvm::X86::LOCK_INC32m,
     llvm::X86::LOCK_OR32mi,
@@ -435,9 +441,9 @@ constexpr unsigned READ_32[] = {
     llvm::X86::MINSSrm,
     llvm::X86::MINSSrm_Int,
     llvm::X86::MMX_MOVD64rm,
-    llvm::X86::MMX_PUNPCKLBWirm,
-    llvm::X86::MMX_PUNPCKLDQirm,
-    llvm::X86::MMX_PUNPCKLWDirm,
+    llvm::X86::MMX_PUNPCKLBWrm,
+    llvm::X86::MMX_PUNPCKLDQrm,
+    llvm::X86::MMX_PUNPCKLWDrm,
     llvm::X86::MOV32ao16,
     llvm::X86::MOV32ao32,
     llvm::X86::MOV32ao64,
@@ -669,7 +675,6 @@ constexpr unsigned READ_64[] = {
     llvm::X86::BLSIC64rm,
     llvm::X86::BLSMSK64rm,
     llvm::X86::BLSR64rm,
-    llvm::X86::BNDMOV32rm,
     llvm::X86::BOUNDS32rm,
     llvm::X86::BSF64rm,
     llvm::X86::BSR64rm,
@@ -740,6 +745,9 @@ constexpr unsigned READ_64[] = {
     llvm::X86::LOCK_AND64mi32,
     llvm::X86::LOCK_AND64mi8,
     llvm::X86::LOCK_AND64mr,
+    llvm::X86::LOCK_BTC64m,
+    llvm::X86::LOCK_BTR64m,
+    llvm::X86::LOCK_BTS64m,
     llvm::X86::LOCK_DEC64m,
     llvm::X86::LOCK_INC64m,
     llvm::X86::LOCK_OR64mi32,
@@ -758,38 +766,38 @@ constexpr unsigned READ_64[] = {
     llvm::X86::MAXSDrm_Int,
     llvm::X86::MINSDrm,
     llvm::X86::MINSDrm_Int,
-    llvm::X86::MMX_CVTPI2PDirm,
-    llvm::X86::MMX_CVTPI2PSirm,
-    llvm::X86::MMX_CVTPS2PIirm,
-    llvm::X86::MMX_CVTTPS2PIirm,
+    llvm::X86::MMX_CVTPI2PDrm,
+    llvm::X86::MMX_CVTPI2PSrm,
+    llvm::X86::MMX_CVTPS2PIrm,
+    llvm::X86::MMX_CVTTPS2PIrm,
     llvm::X86::MMX_MASKMOVQ,
     llvm::X86::MMX_MASKMOVQ64,
     llvm::X86::MMX_MOVQ64rm,
     llvm::X86::MMX_PABSBrm,
     llvm::X86::MMX_PABSDrm,
     llvm::X86::MMX_PABSWrm,
-    llvm::X86::MMX_PACKSSDWirm,
-    llvm::X86::MMX_PACKSSWBirm,
-    llvm::X86::MMX_PACKUSWBirm,
-    llvm::X86::MMX_PADDBirm,
-    llvm::X86::MMX_PADDDirm,
-    llvm::X86::MMX_PADDQirm,
-    llvm::X86::MMX_PADDSBirm,
-    llvm::X86::MMX_PADDSWirm,
-    llvm::X86::MMX_PADDUSBirm,
-    llvm::X86::MMX_PADDUSWirm,
-    llvm::X86::MMX_PADDWirm,
+    llvm::X86::MMX_PACKSSDWrm,
+    llvm::X86::MMX_PACKSSWBrm,
+    llvm::X86::MMX_PACKUSWBrm,
+    llvm::X86::MMX_PADDBrm,
+    llvm::X86::MMX_PADDDrm,
+    llvm::X86::MMX_PADDQrm,
+    llvm::X86::MMX_PADDSBrm,
+    llvm::X86::MMX_PADDSWrm,
+    llvm::X86::MMX_PADDUSBrm,
+    llvm::X86::MMX_PADDUSWrm,
+    llvm::X86::MMX_PADDWrm,
     llvm::X86::MMX_PALIGNRrmi,
-    llvm::X86::MMX_PANDNirm,
-    llvm::X86::MMX_PANDirm,
-    llvm::X86::MMX_PAVGBirm,
-    llvm::X86::MMX_PAVGWirm,
-    llvm::X86::MMX_PCMPEQBirm,
-    llvm::X86::MMX_PCMPEQDirm,
-    llvm::X86::MMX_PCMPEQWirm,
-    llvm::X86::MMX_PCMPGTBirm,
-    llvm::X86::MMX_PCMPGTDirm,
-    llvm::X86::MMX_PCMPGTWirm,
+    llvm::X86::MMX_PANDNrm,
+    llvm::X86::MMX_PANDrm,
+    llvm::X86::MMX_PAVGBrm,
+    llvm::X86::MMX_PAVGWrm,
+    llvm::X86::MMX_PCMPEQBrm,
+    llvm::X86::MMX_PCMPEQDrm,
+    llvm::X86::MMX_PCMPEQWrm,
+    llvm::X86::MMX_PCMPGTBrm,
+    llvm::X86::MMX_PCMPGTDrm,
+    llvm::X86::MMX_PCMPGTWrm,
     llvm::X86::MMX_PHADDDrm,
     llvm::X86::MMX_PHADDSWrm,
     llvm::X86::MMX_PHADDWrm,
@@ -797,18 +805,18 @@ constexpr unsigned READ_64[] = {
     llvm::X86::MMX_PHSUBSWrm,
     llvm::X86::MMX_PHSUBWrm,
     llvm::X86::MMX_PMADDUBSWrm,
-    llvm::X86::MMX_PMADDWDirm,
-    llvm::X86::MMX_PMAXSWirm,
-    llvm::X86::MMX_PMAXUBirm,
-    llvm::X86::MMX_PMINSWirm,
-    llvm::X86::MMX_PMINUBirm,
+    llvm::X86::MMX_PMADDWDrm,
+    llvm::X86::MMX_PMAXSWrm,
+    llvm::X86::MMX_PMAXUBrm,
+    llvm::X86::MMX_PMINSWrm,
+    llvm::X86::MMX_PMINUBrm,
     llvm::X86::MMX_PMULHRSWrm,
-    llvm::X86::MMX_PMULHUWirm,
-    llvm::X86::MMX_PMULHWirm,
-    llvm::X86::MMX_PMULLWirm,
-    llvm::X86::MMX_PMULUDQirm,
-    llvm::X86::MMX_PORirm,
-    llvm::X86::MMX_PSADBWirm,
+    llvm::X86::MMX_PMULHUWrm,
+    llvm::X86::MMX_PMULHWrm,
+    llvm::X86::MMX_PMULLWrm,
+    llvm::X86::MMX_PMULUDQrm,
+    llvm::X86::MMX_PORrm,
+    llvm::X86::MMX_PSADBWrm,
     llvm::X86::MMX_PSHUFBrm,
     llvm::X86::MMX_PSHUFWmi,
     llvm::X86::MMX_PSIGNBrm,
@@ -822,18 +830,18 @@ constexpr unsigned READ_64[] = {
     llvm::X86::MMX_PSRLDrm,
     llvm::X86::MMX_PSRLQrm,
     llvm::X86::MMX_PSRLWrm,
-    llvm::X86::MMX_PSUBBirm,
-    llvm::X86::MMX_PSUBDirm,
-    llvm::X86::MMX_PSUBQirm,
-    llvm::X86::MMX_PSUBSBirm,
-    llvm::X86::MMX_PSUBSWirm,
-    llvm::X86::MMX_PSUBUSBirm,
-    llvm::X86::MMX_PSUBUSWirm,
-    llvm::X86::MMX_PSUBWirm,
-    llvm::X86::MMX_PUNPCKHBWirm,
-    llvm::X86::MMX_PUNPCKHDQirm,
-    llvm::X86::MMX_PUNPCKHWDirm,
-    llvm::X86::MMX_PXORirm,
+    llvm::X86::MMX_PSUBBrm,
+    llvm::X86::MMX_PSUBDrm,
+    llvm::X86::MMX_PSUBQrm,
+    llvm::X86::MMX_PSUBSBrm,
+    llvm::X86::MMX_PSUBSWrm,
+    llvm::X86::MMX_PSUBUSBrm,
+    llvm::X86::MMX_PSUBUSWrm,
+    llvm::X86::MMX_PSUBWrm,
+    llvm::X86::MMX_PUNPCKHBWrm,
+    llvm::X86::MMX_PUNPCKHDQrm,
+    llvm::X86::MMX_PUNPCKHWDrm,
+    llvm::X86::MMX_PXORrm,
     llvm::X86::MOV64ao32,
     llvm::X86::MOV64ao64,
     llvm::X86::MOV64rm,
@@ -1088,7 +1096,6 @@ constexpr unsigned READ_128[] = {
     llvm::X86::BLENDPSrmi,
     llvm::X86::BLENDVPDrm0,
     llvm::X86::BLENDVPSrm0,
-    llvm::X86::BNDMOV64rm,
     llvm::X86::CMPPDrmi,
     llvm::X86::CMPPSrmi,
     llvm::X86::CMPXCHG16B,
@@ -1113,13 +1120,12 @@ constexpr unsigned READ_128[] = {
     llvm::X86::LDDQUrm,
     llvm::X86::MASKMOVDQU,
     llvm::X86::MASKMOVDQU64,
-    llvm::X86::MASKMOVDQUX32,
     llvm::X86::MAXPDrm,
     llvm::X86::MAXPSrm,
     llvm::X86::MINPDrm,
     llvm::X86::MINPSrm,
-    llvm::X86::MMX_CVTPD2PIirm,
-    llvm::X86::MMX_CVTTPD2PIirm,
+    llvm::X86::MMX_CVTPD2PIrm,
+    llvm::X86::MMX_CVTTPD2PIrm,
     llvm::X86::MOVAPDrm,
     llvm::X86::MOVAPSrm,
     llvm::X86::MOVDQArm,
@@ -1360,7 +1366,6 @@ constexpr unsigned READ_128[] = {
     llvm::X86::VLDDQUrm,
     llvm::X86::VMASKMOVDQU,
     llvm::X86::VMASKMOVDQU64,
-    llvm::X86::VMASKMOVDQUX32,
     llvm::X86::VMASKMOVPDmr,
     llvm::X86::VMASKMOVPDrm,
     llvm::X86::VMASKMOVPSmr,
@@ -1980,6 +1985,9 @@ constexpr unsigned WRITE_16[] = {
     llvm::X86::LOCK_AND16mi,
     llvm::X86::LOCK_AND16mi8,
     llvm::X86::LOCK_AND16mr,
+    llvm::X86::LOCK_BTC16m,
+    llvm::X86::LOCK_BTR16m,
+    llvm::X86::LOCK_BTS16m,
     llvm::X86::LOCK_DEC16m,
     llvm::X86::LOCK_INC16m,
     llvm::X86::LOCK_OR16mi,
@@ -2082,6 +2090,9 @@ constexpr unsigned WRITE_32[] = {
     llvm::X86::LOCK_AND32mi,
     llvm::X86::LOCK_AND32mi8,
     llvm::X86::LOCK_AND32mr,
+    llvm::X86::LOCK_BTC32m,
+    llvm::X86::LOCK_BTR32m,
+    llvm::X86::LOCK_BTS32m,
     llvm::X86::LOCK_DEC32m,
     llvm::X86::LOCK_INC32m,
     llvm::X86::LOCK_OR32mi,
@@ -2175,7 +2186,6 @@ constexpr unsigned WRITE_64[] = {
     llvm::X86::AND64mi32,
     llvm::X86::AND64mi8,
     llvm::X86::AND64mr,
-    llvm::X86::BNDMOV32mr,
     llvm::X86::BTC64mi8,
     llvm::X86::BTC64mr,
     llvm::X86::BTR64mi8,
@@ -2196,6 +2206,9 @@ constexpr unsigned WRITE_64[] = {
     llvm::X86::LOCK_AND64mi32,
     llvm::X86::LOCK_AND64mi8,
     llvm::X86::LOCK_AND64mr,
+    llvm::X86::LOCK_BTC64m,
+    llvm::X86::LOCK_BTR64m,
+    llvm::X86::LOCK_BTS64m,
     llvm::X86::LOCK_DEC64m,
     llvm::X86::LOCK_INC64m,
     llvm::X86::LOCK_OR64mi32,
@@ -2296,12 +2309,10 @@ constexpr size_t WRITE_80_SIZE = sizeof(WRITE_80) / sizeof(unsigned);
 
 constexpr unsigned WRITE_128[] = {
     // clang-format off
-    llvm::X86::BNDMOV64mr,
     llvm::X86::CMPXCHG16B,
     llvm::X86::LCMPXCHG16B,
     llvm::X86::MASKMOVDQU,
     llvm::X86::MASKMOVDQU64,
-    llvm::X86::MASKMOVDQUX32,
     llvm::X86::MOVAPDmr,
     llvm::X86::MOVAPSmr,
     llvm::X86::MOVDQAmr,
@@ -2316,7 +2327,6 @@ constexpr unsigned WRITE_128[] = {
     llvm::X86::VEXTRACTI128mr,
     llvm::X86::VMASKMOVDQU,
     llvm::X86::VMASKMOVDQU64,
-    llvm::X86::VMASKMOVDQUX32,
     llvm::X86::VMASKMOVPDmr,
     llvm::X86::VMASKMOVPSmr,
     llvm::X86::VMOVAPDmr,
@@ -2517,24 +2527,24 @@ constexpr unsigned STACK_READ_32[] = {
 // clang-format off
 #ifdef QBDI_ARCH_X86
     llvm::X86::LEAVE,
-    llvm::X86::LRETIL,
-    llvm::X86::LRETIQ,
-    llvm::X86::LRETIW,
-    llvm::X86::LRETL,
-    llvm::X86::LRETQ,
-    llvm::X86::LRETW,
+    llvm::X86::LRETI32,
+    llvm::X86::LRETI64,
+    llvm::X86::LRETI16,
+    llvm::X86::LRET32,
+    llvm::X86::LRET64,
+    llvm::X86::LRET16,
 #endif
     llvm::X86::POP32r,
     llvm::X86::POP32rmm,
     llvm::X86::POP32rmr,
     llvm::X86::POPF32,
 #ifdef QBDI_ARCH_X86
-    llvm::X86::RETIL,
-    llvm::X86::RETIQ,
-    llvm::X86::RETIW,
-    llvm::X86::RETL,
-    llvm::X86::RETQ,
-    llvm::X86::RETW,
+    llvm::X86::RETI32,
+    llvm::X86::RETI64,
+    llvm::X86::RETI16,
+    llvm::X86::RET32,
+    llvm::X86::RET64,
+    llvm::X86::RET16,
 #endif
     // clang-format on
 };
@@ -2548,24 +2558,24 @@ constexpr unsigned STACK_READ_64[] = {
 #endif
     llvm::X86::LEAVE64,
 #ifdef QBDI_ARCH_X86_64
-    llvm::X86::LRETIL,
-    llvm::X86::LRETIQ,
-    llvm::X86::LRETIW,
-    llvm::X86::LRETL,
-    llvm::X86::LRETQ,
-    llvm::X86::LRETW,
+    llvm::X86::LRETI32,
+    llvm::X86::LRETI64,
+    llvm::X86::LRETI16,
+    llvm::X86::LRET32,
+    llvm::X86::LRET64,
+    llvm::X86::LRET16,
 #endif
     llvm::X86::POP64r,
     llvm::X86::POP64rmm,
     llvm::X86::POP64rmr,
     llvm::X86::POPF64,
 #ifdef QBDI_ARCH_X86_64
-    llvm::X86::RETIL,
-    llvm::X86::RETIQ,
-    llvm::X86::RETIW,
-    llvm::X86::RETL,
-    llvm::X86::RETQ,
-    llvm::X86::RETW,
+    llvm::X86::RETI32,
+    llvm::X86::RETI64,
+    llvm::X86::RETI16,
+    llvm::X86::RET32,
+    llvm::X86::RET64,
+    llvm::X86::RET16,
 #endif
     // clang-format on
 };
@@ -2763,7 +2773,7 @@ struct MemAccessArray {
     }
   }
 
-#if CHECK_TABLE
+#if CHECK_INSTINFO_TABLE
   void check_table(const unsigned buff[], size_t buff_size, uint32_t value,
                    uint32_t mask) const {
     for (size_t i = 0; i < buff_size; i++) {
@@ -2848,17 +2858,17 @@ struct MemAccessArray {
 
 static constexpr MemAccessArray memAccessCache;
 
-#if CHECK_TABLE
+#if CHECK_INSTINFO_TABLE
 static int __check_debug = memAccessCache.check();
 #endif
 
 } // anonymous namespace
 
-unsigned getReadSize(const llvm::MCInst &inst) {
+unsigned getReadSize(const llvm::MCInst &inst, const LLVMCPU &llvmcpu) {
   return GET_READ_SIZE(memAccessCache.get(inst.getOpcode()));
 }
 
-unsigned getWriteSize(const llvm::MCInst &inst) {
+unsigned getWriteSize(const llvm::MCInst &inst, const LLVMCPU &llvmcpu) {
   return GET_WRITE_SIZE(memAccessCache.get(inst.getOpcode()));
 }
 
@@ -2878,25 +2888,14 @@ bool isMinSizeWrite(const llvm::MCInst &inst) {
   return IS_MIN_SIZE_WRITE(memAccessCache.get(inst.getOpcode()));
 }
 
-unsigned getImmediateSize(const llvm::MCInst &inst,
-                          const llvm::MCInstrDesc &desc) {
-  return llvm::X86II::getSizeOfImm(desc.TSFlags);
+sword getFixedOperandValue(const llvm::MCInst &inst, const LLVMCPU &llvmcpu,
+                           unsigned index, int64_t value) {
+  return static_cast<rword>(value);
 }
 
-bool useAllRegisters(const llvm::MCInst &inst) {
-  if constexpr (is_x86) {
-    switch (inst.getOpcode()) {
-      case llvm::X86::PUSHA16:
-      case llvm::X86::PUSHA32:
-      case llvm::X86::POPA16:
-      case llvm::X86::POPA32:
-        return true;
-      default:
-        break;
-    }
-  }
-
-  return false;
+unsigned getImmediateSize(const llvm::MCInst &inst, const LLVMCPU &llvmcpu) {
+  const llvm::MCInstrDesc &desc = llvmcpu.getMCII().get(inst.getOpcode());
+  return llvm::X86II::getSizeOfImm(desc.TSFlags);
 }
 
 bool isDoubleRead(const llvm::MCInst &inst) {
@@ -2967,12 +2966,10 @@ bool implicitDSIAccess(const llvm::MCInst &inst,
   switch (inst.getOpcode()) {
     case llvm::X86::MASKMOVDQU:
     case llvm::X86::MASKMOVDQU64:
-    case llvm::X86::MASKMOVDQUX32:
     case llvm::X86::MMX_MASKMOVQ:
     case llvm::X86::MMX_MASKMOVQ64:
     case llvm::X86::VMASKMOVDQU:
     case llvm::X86::VMASKMOVDQU64:
-    case llvm::X86::VMASKMOVDQUX32:
       return true;
     default:
       return false;
@@ -3013,6 +3010,12 @@ bool unsupportedWrite(const llvm::MCInst &inst) {
     default:
       return false;
   }
+}
+
+bool variadicOpsIsWrite(const llvm::MCInst &inst) { return false; }
+
+unsigned getInstSize(const llvm::MCInst &inst, const LLVMCPU &llvmcpu) {
+  return llvmcpu.getMCInstSize(inst);
 }
 
 }; // namespace QBDI

@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 
 #include "ExecBlock/Context.h"
 #include "Patch/InstrRules.h"
+#include "Patch/Patch.h"
 #include "Patch/PatchGenerator.h"
 #include "Patch/RelocatableInst.h"
 #include "Patch/Types.h"
@@ -40,26 +41,26 @@ RelocatableInst::UniquePtrVec getBreakToHost(Reg temp, const Patch &patch,
                                              bool restore) {
   RelocatableInst::UniquePtrVec breakToHost;
 
-  QBDI_REQUIRE_ACTION(restore && "X86 don't have a temporary register",
-                      abort());
+  QBDI_REQUIRE_ABORT(restore, "X86 don't have a temporary register");
 
   // Use the temporary register to compute RIP + offset which is the address
   // which will follow this patch and where the execution needs to be resumed
   if constexpr (is_x86)
-    breakToHost.push_back(HostPCRel::unique(mov32ri(temp, 0), 1, 22));
+    breakToHost.push_back(SetRegtoPCRel::unique(temp, 22));
   else
-    breakToHost.push_back(NoReloc::unique(addr64i(temp, Reg(REG_PC), 19)));
+    breakToHost.push_back(Add(temp, Reg(REG_PC), 19));
   // Set the selector to this address so the execution can be resumed when the
   // exec block will be reexecuted
   append(breakToHost,
-         SaveReg(temp, Offset(offsetof(Context, hostState.selector))));
+         SaveReg(temp, Offset(offsetof(Context, hostState.selector)))
+             .genReloc(*patch.llvmcpu));
   // Restore the temporary register
-  append(breakToHost, LoadReg(temp, Offset(temp)));
+  append(breakToHost, LoadReg(temp, Offset(temp)).genReloc(*patch.llvmcpu));
   // Jump to the epilogue to break to the host
-  append(breakToHost, JmpEpilogue());
+  append(breakToHost, JmpEpilogue().genReloc(*patch.llvmcpu));
 
   // add target when callback return CONTINUE
-  append(breakToHost, TargetPrologue().generate(&patch, nullptr, nullptr));
+  append(breakToHost, TargetPrologue().genReloc(patch));
 
   return breakToHost;
 }

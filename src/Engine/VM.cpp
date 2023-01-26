@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -224,14 +224,16 @@ VM::VM(const VM &vm)
 
   if (memReadGateCBID != VMError::INVALID_EVENTID) {
     InstrRule *rule = engine->getInstrRule(memReadGateCBID);
-    QBDI_REQUIRE_ACTION(rule != nullptr, abort());
-    QBDI_REQUIRE_ACTION(rule->changeDataPtr(memCBInfos.get()), abort());
+    QBDI_REQUIRE_ABORT(rule != nullptr, "VM copy internal error");
+    QBDI_REQUIRE_ABORT(rule->changeDataPtr(memCBInfos.get()),
+                       "VM copy internal error");
   }
 
   if (memWriteGateCBID != VMError::INVALID_EVENTID) {
     InstrRule *rule = engine->getInstrRule(memWriteGateCBID);
-    QBDI_REQUIRE_ACTION(rule != nullptr, abort());
-    QBDI_REQUIRE_ACTION(rule->changeDataPtr(memCBInfos.get()), abort());
+    QBDI_REQUIRE_ABORT(rule != nullptr, "VM copy internal error");
+    QBDI_REQUIRE_ABORT(rule->changeDataPtr(memCBInfos.get()),
+                       "VM copy internal error");
   }
 
   for (auto &p : vmCBData) {
@@ -245,19 +247,21 @@ VM::VM(const VM &vm)
                              [id](const std::pair<uint32_t, MemCBInfo> &el) {
                                return id == el.first;
                              });
-      QBDI_REQUIRE_ACTION(it != memCBInfos->end(), abort());
+      QBDI_REQUIRE_ABORT(it != memCBInfos->end(), "VM copy internal error");
       it->second.data = &p.second;
     } else {
       InstrRule *rule = engine->getInstrRule(p.first);
-      QBDI_REQUIRE_ACTION(rule != nullptr, abort());
-      QBDI_REQUIRE_ACTION(rule->changeDataPtr(&p.second), abort());
+      QBDI_REQUIRE_ABORT(rule != nullptr, "VM copy internal error");
+      QBDI_REQUIRE_ABORT(rule->changeDataPtr(&p.second),
+                         "VM copy internal error");
     }
   }
 
   for (std::pair<uint32_t, InstrRuleCbLambda> &p : instrRuleCBData) {
     InstrRule *rule = engine->getInstrRule(p.first);
-    QBDI_REQUIRE_ACTION(rule != nullptr, abort());
-    QBDI_REQUIRE_ACTION(rule->changeDataPtr(&p.second), abort());
+    QBDI_REQUIRE_ABORT(rule != nullptr, "VM copy internal error");
+    QBDI_REQUIRE_ABORT(rule->changeDataPtr(&p.second),
+                       "VM copy internal error");
   }
 }
 
@@ -282,14 +286,16 @@ VM &VM::operator=(const VM &vm) {
 
   if (memReadGateCBID != VMError::INVALID_EVENTID) {
     InstrRule *rule = engine->getInstrRule(memReadGateCBID);
-    QBDI_REQUIRE_ACTION(rule != nullptr, abort());
-    QBDI_REQUIRE_ACTION(rule->changeDataPtr(memCBInfos.get()), abort());
+    QBDI_REQUIRE_ABORT(rule != nullptr, "VM copy internal error");
+    QBDI_REQUIRE_ABORT(rule->changeDataPtr(memCBInfos.get()),
+                       "VM copy internal error");
   }
 
   if (memWriteGateCBID != VMError::INVALID_EVENTID) {
     InstrRule *rule = engine->getInstrRule(memWriteGateCBID);
-    QBDI_REQUIRE_ACTION(rule != nullptr, abort());
-    QBDI_REQUIRE_ACTION(rule->changeDataPtr(memCBInfos.get()), abort());
+    QBDI_REQUIRE_ABORT(rule != nullptr, "VM copy internal error");
+    QBDI_REQUIRE_ABORT(rule->changeDataPtr(memCBInfos.get()),
+                       "VM copy internal error");
   }
 
   vmCBData = vm.vmCBData;
@@ -305,20 +311,22 @@ VM &VM::operator=(const VM &vm) {
                              [id](const std::pair<uint32_t, MemCBInfo> &el) {
                                return id == el.first;
                              });
-      QBDI_REQUIRE_ACTION(it != memCBInfos->end(), abort());
+      QBDI_REQUIRE_ABORT(it != memCBInfos->end(), "VM copy internal error");
       it->second.data = &p.second;
     } else {
       InstrRule *rule = engine->getInstrRule(p.first);
-      QBDI_REQUIRE_ACTION(rule != nullptr, abort());
-      QBDI_REQUIRE_ACTION(rule->changeDataPtr(&p.second), abort());
+      QBDI_REQUIRE_ABORT(rule != nullptr, "VM copy internal error");
+      QBDI_REQUIRE_ABORT(rule->changeDataPtr(&p.second),
+                         "VM copy internal error");
     }
   }
 
   instrRuleCBData = vm.instrRuleCBData;
   for (std::pair<uint32_t, InstrRuleCbLambda> &p : instrRuleCBData) {
     InstrRule *rule = engine->getInstrRule(p.first);
-    QBDI_REQUIRE_ACTION(rule != nullptr, abort());
-    QBDI_REQUIRE_ACTION(rule->changeDataPtr(&p.second), abort());
+    QBDI_REQUIRE_ABORT(rule != nullptr, "VM copy internal error");
+    QBDI_REQUIRE_ABORT(rule->changeDataPtr(&p.second),
+                       "VM copy internal error");
   }
 
   engine->changeVMInstanceRef(this);
@@ -430,7 +438,7 @@ bool VM::callA(rword *retval, rword function, uint32_t argNum,
   GPRState *state = nullptr;
 
   state = getGPRState();
-  QBDI_REQUIRE_ACTION(state != nullptr, abort());
+  QBDI_REQUIRE_ABORT(state != nullptr, "Fail to get VM GPRState");
 
   // a stack pointer must be set in state
   if (QBDI_GPR_GET(state, REG_SP) == 0) {
@@ -874,9 +882,6 @@ const InstAnalysis *VM::getCachedInstAnalysis(rword address,
 // recordMemoryAccess
 
 bool VM::recordMemoryAccess(MemoryAccessType type) {
-  if constexpr (is_arm)
-    return false;
-
   if (type & MEMORY_READ && !(memoryLoggingLevel & MEMORY_READ)) {
     memoryLoggingLevel |= MEMORY_READ;
     for (auto &r : getInstrRuleMemAccessRead()) {
@@ -895,9 +900,6 @@ bool VM::recordMemoryAccess(MemoryAccessType type) {
 // getInstMemoryAccess
 
 std::vector<MemoryAccess> VM::getInstMemoryAccess() const {
-  if constexpr (is_arm)
-    return {};
-
   const ExecBlock *curExecBlock = engine->getCurExecBlock();
   if (curExecBlock == nullptr) {
     return {};
@@ -911,9 +913,6 @@ std::vector<MemoryAccess> VM::getInstMemoryAccess() const {
 // getBBMemoryAccess
 
 std::vector<MemoryAccess> VM::getBBMemoryAccess() const {
-  if constexpr (is_arm)
-    return {};
-
   const ExecBlock *curExecBlock = engine->getCurExecBlock();
   if (curExecBlock == nullptr) {
     return {};

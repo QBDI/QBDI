@@ -3,6 +3,7 @@ TODO
 build*/*
 
 dist
+outwheel
 
 docs/build
 docs/doxygen_c
@@ -15,6 +16,7 @@ docs/qbdipreload.doxygen
 qbdi-deps.tar.gz
 qbdi.tar.gz
 package/QBDI-*
+package/package-*
 
 third-party
 
@@ -27,4 +29,3 @@ tools/validation_runner/travis_db
 __pycache__
 *.pyc
 *.egg-info
-

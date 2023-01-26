@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 #ifndef TEMPMANAGER_H
 #define TEMPMANAGER_H
 
+#include <memory>
 #include <set>
 #include <stddef.h>
 #include <utility>
@@ -33,33 +34,51 @@ class MCRegisterInfo;
 namespace QBDI {
 class LLVMCPU;
 class Patch;
+class RelocatableInst;
 
 // Helper classes
 
 class TempManager {
 
-  std::vector<std::pair<unsigned int, unsigned int>> temps;
   Patch &patch;
   const llvm::MCRegisterInfo &MRI;
-  bool allowInstRegister;
 
-  // list of registers that doesn't need to be restore
-  static const std::set<Reg> unrestoreGPR;
+  // list of TmpRegister
+  std::vector<std::pair<unsigned int, Reg>> temps;
+  // bitfield of UsedTempReg
+  rword usedRegisterBitField;
+  // allowed to register a new TmpRegister
+  bool lockNewTmpReg;
 
 public:
-  TempManager(Patch &patch, bool allowInstRegister = false);
+  TempManager(Patch &patch);
 
   Reg getRegForTemp(unsigned int id);
 
+  // allocate a new TmpRegiter
+  void associatedReg(unsigned int id, Reg reg);
+
   Reg::Vec getUsedRegisters() const;
 
-  bool shouldRestore(const Reg &r) const { return unrestoreGPR.count(r) == 0; }
+  void lockTempManager() { lockNewTmpReg = false; }
+
+  bool shouldRestore(Reg r) const;
+
+  bool usedRegister(Reg reg) const;
+
+  bool isAllocatedId(unsigned int id) const;
 
   size_t getUsedRegisterNumber() const;
 
-  unsigned getSizedSubReg(unsigned reg, unsigned size) const;
+  RegLLVM getSizedSubReg(RegLLVM reg, unsigned size) const;
 
   const Patch &getPatch() const { return patch; };
+
+  void generateSaveRestoreInstructions(
+      unsigned unrestoredRegNum,
+      std::vector<std::unique_ptr<RelocatableInst>> &saveInst,
+      std::vector<std::unique_ptr<RelocatableInst>> &restoreInst,
+      Reg::Vec &unrestoredReg) const;
 };
 
 } // namespace QBDI

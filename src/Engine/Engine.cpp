@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@
 #include <string.h>
 
 #include "llvm/ADT/ArrayRef.h"
-#include "llvm/MC/MCDisassembler/MCDisassembler.h"
 #include "llvm/MC/MCInst.h"
 
 #include "Engine/Engine.h"
@@ -33,8 +32,7 @@
 #include "Patch/InstMetadata.h"
 #include "Patch/InstrRule.h"
 #include "Patch/Patch.h"
-#include "Patch/PatchRule.h"
-#include "Patch/PatchRules.h"
+#include "Patch/PatchRuleAssembly.h"
 #include "Utility/LogSys.h"
 
 #include "QBDI/Bitmask.h"
@@ -60,8 +58,8 @@ Engine::Engine(const std::string &_cpu, const std::vector<std::string> &_mattrs,
   blockManager = std::make_unique<ExecBlockManager>(*llvmCPUs, vminstance);
   execBroker = blockManager->getExecBroker();
 
-  // Get default Patch rules for this architecture
-  patchRules = getDefaultPatchRules(options);
+  // Get Patch rules Assembly for this architecture
+  patchRuleAssembly = std::make_unique<PatchRuleAssembly>(options);
 
   gprState = std::make_unique<GPRState>();
   fprState = std::make_unique<FPRState>();
@@ -91,8 +89,8 @@ Engine::Engine(const Engine &other)
   // copy instrumentation range
   execBroker->setInstrumentedRange(other.execBroker->getInstrumentedRange());
 
-  // Get default Patch rules for this architecture
-  patchRules = getDefaultPatchRules(options);
+  // Get Patch rules Assembly for this architecture
+  patchRuleAssembly = std::make_unique<PatchRuleAssembly>(options);
 
   // Copy unique_ptr of instrRules
   for (const auto &r : other.instrRules) {
@@ -110,7 +108,7 @@ Engine::Engine(const Engine &other)
 }
 
 Engine &Engine::operator=(const Engine &other) {
-  QBDI_REQUIRE_ACTION(not running && "Cannot assign a running Engine", abort());
+  QBDI_REQUIRE_ABORT(not running, "Cannot assign a running Engine");
   this->clearAllCache();
 
   if (not llvmCPUs->isSameCPU(*other.llvmCPUs)) {
@@ -146,25 +144,17 @@ Engine &Engine::operator=(const Engine &other) {
 }
 
 void Engine::setOptions(Options options) {
-  QBDI_REQUIRE_ACTION(not running && "Cannot setOptions on a running Engine",
-                      abort());
+  QBDI_REQUIRE_ABORT(not running, "Cannot setOptions on a running Engine");
   if (options != this->options) {
     QBDI_DEBUG("Change Options from {:x} to {:x}", this->options, options);
     clearAllCache();
     llvmCPUs->setOptions(options);
 
-    Options needRecreate =
-        Options::OPT_DISABLE_FPR | Options::OPT_DISABLE_OPTIONAL_FPR;
-#if defined(QBDI_ARCH_X86_64)
-    needRecreate |= Options::OPT_ENABLE_FS_GS;
-#endif // QBDI_ARCH_X86_64
-
     // need to recreate all ExecBlock
-    if (((this->options ^ options) & needRecreate) != 0) {
+    if (patchRuleAssembly->changeOptions(options)) {
       const RangeSet<rword> instrumentationRange =
           execBroker->getInstrumentedRange();
 
-      patchRules = getDefaultPatchRules(options);
       blockManager = std::make_unique<ExecBlockManager>(*llvmCPUs, vminstance);
       execBroker = blockManager->getExecBroker();
 
@@ -175,8 +165,8 @@ void Engine::setOptions(Options options) {
 }
 
 void Engine::changeVMInstanceRef(VMInstanceRef vminstance) {
-  QBDI_REQUIRE_ACTION(
-      not running && "Cannot changeVMInstanceRef on a running Engine", abort());
+  QBDI_REQUIRE_ABORT(not running,
+                     "Cannot changeVMInstanceRef on a running Engine");
   this->vminstance = vminstance;
 
   blockManager->changeVMInstanceRef(vminstance);
@@ -260,77 +250,73 @@ void Engine::removeAllInstrumentedRanges() {
 std::vector<Patch> Engine::patch(rword start) {
   std::vector<Patch> basicBlock;
   const LLVMCPU &llvmcpu = llvmCPUs->getCPU(curCPUMode);
-  const llvm::ArrayRef<uint8_t> code((uint8_t *)start, (size_t)-1);
-  bool basicBlockEnd = false;
-  rword i = 0;
+
+  // if the first address is within the execution range,
+  // stop the basic if the dissassembler went out of the range
+  size_t sizeCode = (size_t)-1;
+  const Range<rword> *curRange =
+      execBroker->getInstrumentedRange().getElementRange(start);
+  if (curRange != nullptr) {
+    sizeCode = curRange->end() - start;
+  }
+
+  const llvm::ArrayRef<uint8_t> code((uint8_t *)start, sizeCode);
+  rword address = start;
   QBDI_DEBUG("Patching basic block at address 0x{:x}", start);
 
+  bool endLoop = false;
   // Get Basic block
-  while (not basicBlockEnd) {
+  do {
     llvm::MCInst inst;
-    llvm::MCDisassembler::DecodeStatus dstatus;
-    rword address = start;
-    Patch *patch = nullptr;
-    uint64_t instSize = 0;
+    uint64_t instSize;
+    // Disassemble
+    bool dstatus = llvmcpu.getInstruction(inst, instSize,
+                                          code.slice(address - start), address);
 
-    // Aggregate a complete patch
-    do {
-      // Disassemble
-      rword prev_address = address;
-      address = start + i;
-      dstatus = llvmcpu.getInstruction(inst, instSize, code.slice(i), address);
-      if (llvm::MCDisassembler::Success != dstatus) {
-        QBDI_DEBUG("Bump into invalid instruction at address {:x}", address);
-        // Current instruction is invalid, stop the basic block right here
-        if (prev_address == address) {
-          QBDI_CRITICAL(
-              "Disassembly error : fail to parse address 0x{:x} ({:n})",
-              address,
-              spdlog::to_hex(reinterpret_cast<uint8_t *>(address),
-                             reinterpret_cast<uint8_t *>(address + 16)));
-          abort();
-        } else {
-          address = prev_address;
-          basicBlockEnd = true;
-          break;
+    // handle disassembly error
+    if (not dstatus) {
+      QBDI_DEBUG("Bump into invalid instruction at address {:x}", address);
+
+      // Current instruction is invalid, stop the basic block right here
+      bool rollbackOK = patchRuleAssembly->earlyEnd(llvmcpu, basicBlock);
+
+      // if fail to rollback or no Patch has been generated : fail
+      if ((not rollbackOK) or (basicBlock.size() == 0)) {
+        size_t sizeDump = start + sizeCode - address;
+        if (sizeDump > 16) {
+          sizeDump = 16;
         }
+        QBDI_ABORT(
+            "Disassembly error : fail to parse address 0x{:x} (CPUMode {}) "
+            "({:n})",
+            address, curCPUMode,
+            spdlog::to_hex(reinterpret_cast<uint8_t *>(address),
+                           reinterpret_cast<uint8_t *>(address + sizeDump)));
+      } else {
+        endLoop = true;
+        break;
       }
-      QBDI_REQUIRE_ACTION(llvm::MCDisassembler::Success == dstatus, abort());
-      QBDI_DEBUG_BLOCK({
-        std::string disass = llvmcpu.showInst(inst, address);
-        QBDI_DEBUG("Patching 0x{:x} {}", address, disass.c_str());
-      });
-      // Patch & merge
-      for (uint32_t j = 0; j < patchRules.size(); j++) {
-        if (patchRules[j].canBeApplied(inst, address, instSize, llvmcpu)) {
-          QBDI_DEBUG("Patch rule {} applied", j);
-          if (patch == nullptr) {
-            basicBlock.push_back(
-                patchRules[j].generate(inst, address, instSize, llvmcpu));
-            patch = &basicBlock.back();
-          } else {
-            QBDI_DEBUG("Previous instruction merged");
-            *patch =
-                patchRules[j].generate(inst, address, instSize, llvmcpu, patch);
-          }
-          break;
-        }
-      }
-      QBDI_REQUIRE_ACTION(patch != nullptr, abort());
-      i += instSize;
-    } while (patch->metadata.merge);
-
-    if (patch) {
-      QBDI_DEBUG("Patch of size {:x} generated", patch->metadata.patchSize);
     }
+    QBDI_DEBUG("Disassembly address 0x{:x} ({:n})", address,
+               spdlog::to_hex(reinterpret_cast<uint8_t *>(address),
+                              reinterpret_cast<uint8_t *>(address + instSize)));
 
-    if (basicBlockEnd || patch->metadata.modifyPC) {
-      QBDI_DEBUG(
-          "Basic block starting at address 0x{:x} ended at address 0x{:x}",
-          start, address);
-      basicBlockEnd = true;
-    }
-  }
+    // Generate Patch for this instruction
+    QBDI_REQUIRE_ABORT(dstatus, "Unexpected dissassembly status");
+    QBDI_DEBUG_BLOCK({
+      std::string disass = llvmcpu.showInst(inst, address);
+      QBDI_DEBUG("Patching 0x{:x} {}", address, disass.c_str());
+    });
+    endLoop = not patchRuleAssembly->generate(inst, address, instSize, llvmcpu,
+                                              basicBlock);
+    address += instSize;
+  } while (endLoop);
+
+  QBDI_REQUIRE_ABORT(basicBlock.size() > 0,
+                     "No instruction to dissassemble found");
+
+  QBDI_DEBUG("Basic block starting at address 0x{:x} ended at address 0x{:x}",
+             start, basicBlock.back().metadata.endAddress());
 
   return basicBlock;
 }
@@ -345,12 +331,8 @@ void Engine::instrument(std::vector<Patch> &basicBlock, size_t patchEnd) {
 
   for (size_t i = 0; i < patchEnd; i++) {
     Patch &patch = basicBlock[i];
-    QBDI_DEBUG_BLOCK({
-      std::string disass =
-          llvmcpu.showInst(patch.metadata.inst, patch.metadata.address);
-      QBDI_DEBUG("Instrumenting 0x{:x} {}", patch.metadata.address,
-                 disass.c_str());
-    });
+    QBDI_DUMP_PATCH_DEBUG(patch, "Instrumenting");
+
     // Instrument
     for (const auto &item : instrRules) {
       const InstrRule *rule = item.second.get();
@@ -374,13 +356,17 @@ void Engine::handleNewBasicBlock(rword pc) {
 }
 
 bool Engine::precacheBasicBlock(rword pc) {
-  QBDI_REQUIRE_ACTION(
-      not running && "Cannot precacheBasicBlock on a running Engine", abort());
+  QBDI_REQUIRE_ABORT(not running,
+                     "Cannot precacheBasicBlock on a running Engine");
   if (blockManager->isFlushPending()) {
     // Commit the flush
     blockManager->flushCommit();
   }
-  if (blockManager->getExecBlock(pc) != nullptr) {
+#if defined(QBDI_ARCH_ARM)
+  curCPUMode = pc & 1 ? CPUMode::Thumb : CPUMode::ARM;
+  pc &= (~1);
+#endif
+  if (blockManager->getExecBlock(pc, curCPUMode) != nullptr) {
     // already in cache
     return false;
   }
@@ -391,8 +377,7 @@ bool Engine::precacheBasicBlock(rword pc) {
 }
 
 bool Engine::run(rword start, rword stop) {
-  QBDI_REQUIRE_ACTION(not running && "Cannot run an already running Engine",
-                      abort());
+  QBDI_REQUIRE_ABORT(not running, "Cannot run an already running Engine");
 
   rword currentPC = start;
   bool hasRan = false;
@@ -414,8 +399,23 @@ bool Engine::run(rword start, rword stop) {
     VMAction action = CONTINUE;
 
     // If this PC is not instrumented try to transfer execution
-    if (execBroker->isInstrumented(currentPC) == false &&
+    if (execBroker->isInstrumented(currentPC) == false and
         execBroker->canTransferExecution(curGPRState)) {
+
+#if defined(QBDI_ARCH_ARM)
+      // Handle ARM mode
+      // If we switch to the execbroker without an exchange, keep the current
+      // mode
+      bool changeCPUMode = curExecBlock == nullptr ||
+                           curExecBlock->getContext()->hostState.exchange == 1;
+      if (not changeCPUMode) {
+        if (curCPUMode == CPUMode::Thumb) {
+          currentPC = currentPC | 1;
+        } else {
+          currentPC = currentPC & (~1);
+        }
+      }
+#endif
 
       curExecBlock = nullptr;
       basicBlockBeginAddr = 0;
@@ -434,7 +434,28 @@ bool Engine::run(rword start, rword stop) {
     // Else execute through DBI
     else {
       VMEvent event = VMEvent::SEQUENCE_ENTRY;
-      QBDI_DEBUG("Executing 0x{:x} through DBI", currentPC);
+
+#if defined(QBDI_ARCH_ARM)
+      // Handle ARM mode switching, only at the start of an execution or when
+      // the guest signal an exchange.
+      bool changeCPUMode = curExecBlock == nullptr ||
+                           curExecBlock->getContext()->hostState.exchange == 1;
+      if (changeCPUMode) {
+        curCPUMode = currentPC & 1 ? CPUMode::Thumb : CPUMode::ARM;
+        QBDI_DEBUG("CPUMode set to {}",
+                   curCPUMode == CPUMode::ARM ? "ARM" : "Thumb");
+      } else if (curCPUMode == CPUMode::ARM) {
+        QBDI_REQUIRE_ABORT((currentPC & 1) == 0,
+                           "Unexpected address in ARM mode");
+      } else {
+        QBDI_REQUIRE_ABORT((currentPC & 1) == 1,
+                           "Unexpected address in Thumb mode");
+      }
+      currentPC = currentPC & (~1);
+#endif
+
+      QBDI_DEBUG("Executing 0x{:x} through DBI in mode {}", currentPC,
+                 curCPUMode);
 
       // Is cache flush pending?
       if (blockManager->isFlushPending()) {
@@ -449,8 +470,8 @@ bool Engine::run(rword start, rword stop) {
 
       // Test if we have it in cache
       SeqLoc currentSequence;
-      curExecBlock =
-          blockManager->getProgrammedExecBlock(currentPC, &currentSequence);
+      curExecBlock = blockManager->getProgrammedExecBlock(currentPC, curCPUMode,
+                                                          &currentSequence);
       if (curExecBlock == nullptr) {
         QBDI_DEBUG(
             "Cache miss for 0x{:x}, patching & instrumenting new basic block",
@@ -459,9 +480,10 @@ bool Engine::run(rword start, rword stop) {
         // Signal a new basic block
         event |= BASIC_BLOCK_NEW;
         // Set new basic block as current
-        curExecBlock =
-            blockManager->getProgrammedExecBlock(currentPC, &currentSequence);
-        QBDI_REQUIRE_ACTION(curExecBlock != nullptr, abort());
+        curExecBlock = blockManager->getProgrammedExecBlock(
+            currentPC, curCPUMode, &currentSequence);
+        QBDI_REQUIRE_ABORT(curExecBlock != nullptr,
+                           "Fail to instrument the next basic block");
       }
 
       if (basicBlockEndAddr == 0) {
@@ -507,6 +529,7 @@ bool Engine::run(rword start, rword stop) {
     if (action != CONTINUE) {
       basicBlockBeginAddr = 0;
       basicBlockEndAddr = 0;
+      curExecBlock = nullptr;
     }
     // Get next block PC
     currentPC = QBDI_GPR_GET(curGPRState, REG_PC);
@@ -611,12 +634,19 @@ VMAction Engine::signalEvent(VMEvent event, rword currentPC,
 
 const InstAnalysis *Engine::getInstAnalysis(rword address,
                                             AnalysisType type) const {
-  const ExecBlock *block = blockManager->getExecBlock(address);
+
+#if defined(QBDI_ARCH_ARM)
+  CPUMode cpumode = address & 1 ? CPUMode::Thumb : CPUMode::ARM;
+  address &= (~1);
+#else
+  CPUMode cpumode = CPUMode::DEFAULT;
+#endif
+  const ExecBlock *block = blockManager->getExecBlock(address, cpumode);
   if (block == nullptr) {
     // not in cache
     return nullptr;
   }
-  uint16_t instID = block->getInstID(address);
+  uint16_t instID = block->getInstID(address, cpumode);
   QBDI_REQUIRE_ACTION(instID != NOT_FOUND, return nullptr);
   return block->getInstAnalysis(instID, type);
 }

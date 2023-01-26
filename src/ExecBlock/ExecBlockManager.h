@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,8 @@ struct ExecRegion {
   unsigned translated;
   unsigned available;
   std::vector<std::unique_ptr<ExecBlock>> blocks;
+  // Note for sequenceCache instCache
+  // The key must be generate with getExecRegionKey
   std::map<rword, SeqLoc> sequenceCache;
   std::map<rword, InstLoc> instCache;
   bool toFlush = false;
@@ -107,12 +109,10 @@ public:
 
   void printCacheStatistics() const;
 
-  ExecBlock *getProgrammedExecBlock(rword address,
+  ExecBlock *getProgrammedExecBlock(rword address, CPUMode cpumode,
                                     SeqLoc *programmedSeqLock = nullptr);
 
-  const ExecBlock *getExecBlock(rword address) const;
-
-  const SeqLoc *getSeqLoc(rword address) const;
+  const ExecBlock *getExecBlock(rword address, CPUMode cpumode) const;
 
   size_t preWriteBasicBlock(const std::vector<Patch> &basicBlock);
 

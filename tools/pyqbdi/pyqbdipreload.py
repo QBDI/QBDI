@@ -2,7 +2,7 @@
 
 # This file is part of pyQBDI (python binding for QBDI).
 #
-# Copyright 2017 - 2022 Quarkslab
+# Copyright 2017 - 2023 Quarkslab
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,9 +39,20 @@ def run():
     args = [args.target] + args.args
     environ = os.environ.copy()
 
+    preloadlib = os.path.join(
+            os.path.dirname(pyqbdi.__file__),
+            os.path.basename(pyqbdi.__file__).replace("pyqbdi", "pyqbdipreloadlib"))
+
+    if not os.path.isfile(preloadlib):
+        print("Cannot found pyqbdi preload library : {}".format(preloadlib))
+        exit(1)
+
     # add LD_PRELOAD or DYLD_INSERT_LIBRARIES
     if platform.system() == 'Darwin':
-        environ["DYLD_INSERT_LIBRARIES"] = pyqbdi.__file__
+
+        environ["DYLD_INSERT_LIBRARIES"] = preloadlib
+        environ["DYLD_LIBRARY_PATH"] = os.path.join(sys.base_prefix, 'lib')
+        environ["DYLD_BIND_AT_LAUNCH"] = "1"
     elif platform.system() == 'Linux':
         libpythonname = "python{}.{}".format(sys.version_info.major, sys.version_info.minor)
         libpython = ctypesutil.find_library(libpythonname)
@@ -52,7 +63,7 @@ def run():
                 print("PyQBDI in PRELOAD mode need lib{}.so".format(libpythonname))
                 exit(1)
 
-        environ["LD_PRELOAD"] = os.pathsep.join([libpython, pyqbdi.__file__])
+        environ["LD_PRELOAD"] = os.pathsep.join([libpython, preloadlib])
         environ["LD_BIND_NOW"] = "1"
     else:
         print("PyQBDI in PRELOAD mode is not supported on this platform")

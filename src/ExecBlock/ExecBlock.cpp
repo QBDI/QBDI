@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,18 +23,18 @@
 #include <system_error>
 
 #include "llvm/ADT/Optional.h"
-#include "llvm/MC/MCDisassembler/MCDisassembler.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/Process.h"
 
+#include "devVariable.h"
 #include "Engine/LLVMCPU.h"
 #include "ExecBlock/Context.h"
 #include "ExecBlock/ExecBlock.h"
 #include "Patch/ExecBlockFlags.h"
+#include "Patch/ExecBlockPatch.h"
 #include "Patch/Patch.h"
 #include "Patch/PatchGenerator.h"
-#include "Patch/PatchRules.h"
 #include "Patch/Register.h"
 #include "Patch/RelocatableInst.h"
 #include "Patch/Types.h"
@@ -63,7 +63,7 @@ ExecBlock::ExecBlock(
   uint64_t pageSize =
       is_ios ? 4096
              : llvm::expectedToOptional(llvm::sys::Process::getPageSize())
-                   .getValueOr(4096);
+                   .value_or(4096);
   unsigned mflags = PF::MF_READ | PF::MF_WRITE;
 
   if constexpr (is_ios)
@@ -71,7 +71,7 @@ ExecBlock::ExecBlock(
 
   // Allocate 2 pages block
   codeBlock = QBDI::allocateMappedMemory(2 * pageSize, nullptr, mflags, ec);
-  QBDI_REQUIRE_ACTION(codeBlock.base() != nullptr, abort());
+  QBDI_REQUIRE_ABORT(codeBlock.base() != nullptr, "allocation fail");
   // Split it in two blocks
   dataBlock = llvm::sys::MemoryBlock(
       reinterpret_cast<void *>(reinterpret_cast<uint64_t>(codeBlock.base()) +
@@ -89,7 +89,7 @@ ExecBlock::ExecBlock(
   shadowIdx = 0;
   currentSeq = 0;
   currentInst = 0;
-  codeStream = std::make_unique<memory_ostream>(codeBlock);
+  codeStream.set_stream(codeBlock);
   pageState = RW;
 
   std::vector<std::unique_ptr<RelocatableInst>> execBlockPrologue_;
@@ -98,45 +98,32 @@ ExecBlock::ExecBlock(
   const LLVMCPU &llvmcpu = llvmCPUs.getCPU(CPUMode::DEFAULT);
 
   if (execBlockPrologue == nullptr) {
-    execBlockPrologue_ = getExecBlockPrologue(llvmcpu.getOptions());
+    execBlockPrologue_ = getExecBlockPrologue(llvmcpu);
     execBlockPrologue = &execBlockPrologue_;
   }
   if (execBlockEpilogue == nullptr) {
-    execBlockEpilogue_ = getExecBlockEpilogue(llvmcpu.getOptions());
+    execBlockEpilogue_ = getExecBlockEpilogue(llvmcpu);
     execBlockEpilogue = &execBlockEpilogue_;
   }
 
   if (epilogueSize == 0) {
-    // Only way to know the epilogue size is to JIT is somewhere
     for (const auto &inst : *execBlockEpilogue) {
-      if (inst->getTag() != RelocatableInstTag::RelocInst) {
-        continue;
-      }
-      llvmcpu.writeInstruction(inst->reloc(this), codeStream.get());
+      epilogueSize += inst->getSize(llvmcpu);
     }
-    epilogueSize = codeStream->current_pos();
-    codeStream->seek(0);
     QBDI_DEBUG("Detect Epilogue size: {}", epilogueSize);
   }
   // JIT prologue and epilogue
-  codeStream->seek(codeBlock.allocatedSize() - epilogueSize);
-  for (const auto &inst : *execBlockEpilogue) {
-    if (inst->getTag() != RelocatableInstTag::RelocInst) {
-      continue;
-    }
-    llvmcpu.writeInstruction(inst->reloc(this), codeStream.get());
-  }
-  QBDI_REQUIRE_ACTION(codeStream->current_pos() == codeBlock.allocatedSize() &&
-                          "Wrong Epilogue Size",
-                      abort());
+  codeStream.seek(codeBlock.allocatedSize() - epilogueSize);
+  QBDI_REQUIRE_ABORT(
+      applyRelocatedInst(*execBlockEpilogue, nullptr, llvmcpu, 0),
+      "Fail to write Epilogue");
+  QBDI_REQUIRE_ABORT(codeStream.current_pos() == codeBlock.allocatedSize(),
+                     "Wrong Epilogue Size");
 
-  codeStream->seek(0);
-  for (const auto &inst : *execBlockPrologue) {
-    if (inst->getTag() != RelocatableInstTag::RelocInst) {
-      continue;
-    }
-    llvmcpu.writeInstruction(inst->reloc(this), codeStream.get());
-  }
+  codeStream.seek(0);
+  QBDI_REQUIRE_ABORT(
+      applyRelocatedInst(*execBlockPrologue, nullptr, llvmcpu, epilogueSize),
+      "Fail to write Prologue");
 }
 
 ExecBlock::~ExecBlock() {
@@ -153,10 +140,9 @@ void ExecBlock::changeVMInstanceRef(VMInstanceRef vminstance) {
 void ExecBlock::show() const {
   rword i;
   uint64_t instSize;
-  llvm::MCDisassembler::DecodeStatus dstatus;
+  bool dstatus;
   llvm::ArrayRef<uint8_t> jitCode(
-      static_cast<const uint8_t *>(codeBlock.base()),
-      codeStream->current_pos());
+      static_cast<const uint8_t *>(codeBlock.base()), codeStream.current_pos());
   size_t mode = 0;
   const LLVMCPU *llvmcpu = &llvmCPUs.getCPU((CPUMode)mode);
 
@@ -166,10 +152,17 @@ void ExecBlock::show() const {
     std::string disass;
 
     dstatus = llvmcpu->getInstruction(inst, instSize, jitCode.slice(i), i);
-    QBDI_REQUIRE_ACTION(dstatus != llvm::MCDisassembler::Fail, break);
+    if constexpr (CPUMode::COUNT > 1) {
+      if (CPUMode::COUNT > 1 and not dstatus) { // Try to switch mode
+        mode = (mode + 1) % CPUMode::COUNT;
+        llvmcpu = &llvmCPUs.getCPU((CPUMode)mode);
+        dstatus = llvmcpu->getInstruction(inst, instSize, jitCode.slice(i), i);
+      }
+    }
+    QBDI_REQUIRE_ACTION(dstatus, break);
 
-    disass = llvmcpu->showInst(
-        inst, reinterpret_cast<uint64_t>(codeBlock.base()) + i);
+    disass =
+        llvmcpu->showInst(inst, reinterpret_cast<rword>(codeBlock.base()) + i);
     fprintf(stderr, "%s\n", disass.c_str());
   }
 
@@ -259,6 +252,11 @@ VMAction ExecBlock::execute() {
           } else if (currentInst == seqRegistry[currentSeq].endInstID) {
             rword next_address = instMetadata[currentInst].address +
                                  instMetadata[currentInst].instSize;
+#if defined(QBDI_ARCH_ARM)
+            if (instMetadata[currentInst].cpuMode == CPUMode::Thumb) {
+              next_address |= 1;
+            }
+#endif
             QBDI_GPR_SET(&context->gprState, REG_PC, next_address);
             return BREAK_TO_VM;
           } else {
@@ -284,11 +282,46 @@ VMAction ExecBlock::execute() {
 
   return CONTINUE;
 }
+bool ExecBlock::applyRelocatedInst(
+    const std::vector<std::unique_ptr<RelocatableInst>> &reloc,
+    std::vector<TagInfo> *tags, const LLVMCPU &llvmcpu, unsigned limit) {
+
+  for (const RelocatableInst::UniquePtr &inst : reloc) {
+    if (inst->getTag() != RelocatableInstTag::RelocInst) {
+      QBDI_DEBUG("RelocTag 0x{:x}", inst->getTag());
+      if (tags != nullptr) {
+        tags->push_back(
+            TagInfo{static_cast<uint16_t>(inst->getTag()),
+                    static_cast<uint16_t>(codeStream.current_pos())});
+      }
+      continue;
+    } else if (codeBlock.allocatedSize() - codeStream.current_pos() > limit) {
+#ifdef CHECK_INSTRUCTION_SIZE
+      unsigned pos = codeStream.current_pos();
+#endif
+      llvmcpu.writeInstruction(inst->reloc(this, llvmcpu), codeStream);
+
+#ifdef CHECK_INSTRUCTION_SIZE
+      unsigned instSize = inst->getSize(llvmcpu);
+      if (codeStream.current_pos() - pos != instSize) {
+        QBDI_ABORT(
+            "getSize doesn't return the good size "
+            "(result: {}, expected: {})",
+            instSize, codeStream.current_pos() - pos);
+      }
+#endif
+    } else {
+      QBDI_DEBUG("Not enough space left: rollback");
+      return false;
+    }
+  }
+  return true;
+}
 
 SeqWriteResult
 ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt,
                          std::vector<Patch>::const_iterator seqEnd) {
-  rword startOffset = (rword)codeStream->current_pos();
+  rword startOffset = (rword)codeStream.current_pos();
   uint16_t startInstID = getNextInstID();
   uint16_t seqID = getNextSeqID();
   uint8_t executeFlags = 0;
@@ -308,6 +341,7 @@ ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt,
 
   CPUMode cpuMode = seqIt->metadata.cpuMode;
   const LLVMCPU &llvmcpu = llvmCPUs.getCPU(cpuMode);
+
   QBDI_DEBUG("Attempting to write {} patches to ExecBlock 0x{:x}",
              std::distance(seqIt, seqEnd), reinterpret_cast<uintptr_t>(this));
   // Pages are RWX on iOS
@@ -321,7 +355,7 @@ ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt,
   // A patch correspond to an original instruction and should be written in its
   // entierty
   while (seqIt != seqEnd) {
-    rword rollbackOffset = codeStream->current_pos();
+    rword rollbackOffset = codeStream.current_pos();
     uint32_t rollbackShadowIdx = shadowIdx;
     size_t rollbackShadowRegistry = shadowRegistry.size();
     size_t rollbackTagRegistry = tagRegistry.size();
@@ -338,13 +372,16 @@ ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt,
 
     // Attempt to write a complete patch. If not, rollback to the last complete
     // patch written
-    if (not writePatch(*seqIt, llvmcpu)) {
+    if (not writePatch(seqIt, seqEnd, llvmcpu)) {
 
       QBDI_DEBUG("Rolling back to offset 0x{:x}", rollbackOffset);
 
+      QBDI_REQUIRE_ABORT(codeStream.current_pos() <=
+                             codeBlock.allocatedSize() - epilogueSize,
+                         "Internal Error, Overflow in Epilogue");
       // Seek to the last complete patch written and terminate it with a
       // terminator
-      codeStream->seek(rollbackOffset);
+      codeStream.seek(rollbackOffset);
       // free shadows and tag allocated by the rollbacked code
       shadowIdx = rollbackShadowIdx;
       shadowRegistry.resize(rollbackShadowRegistry);
@@ -364,16 +401,26 @@ ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt,
       instMetadata.back().analysis.reset(seqIt->metadata.analysis.release());
       // Register instruction
       instRegistry.push_back(InstInfo{
-          seqID, static_cast<uint16_t>(rollbackOffset), 0,
-          static_cast<uint16_t>(rollbackShadowRegistry),
+          seqID, 0, 0, static_cast<uint16_t>(rollbackShadowRegistry),
           static_cast<uint16_t>(shadowRegistry.size() - rollbackShadowRegistry),
           static_cast<uint16_t>(rollbackTagRegistry),
           static_cast<uint16_t>(tagRegistry.size() - rollbackTagRegistry)});
+      // compute begin of the new instruction (writePatch can add extra data
+      // to perform the transition from the previous instruction, and we should
+      // skip it)
+      std::vector<TagInfo> beginPatchTag =
+          queryTagByInst(instRegistry.size() - 1, RelocTagPatchBegin);
+      QBDI_REQUIRE_ABORT(beginPatchTag.size() == 1,
+                         "Internal Error: begin tag not found");
+      instRegistry.back().offset = beginPatchTag[0].offset;
       // compute offsetSkip of the new instruction
-      std::vector<TagInfo> endPatchTag =
-          queryTagByInst(instRegistry.size() - 1, RelocTagPatchEnd);
-      QBDI_REQUIRE_ACTION(endPatchTag.size() == 1, abort());
-      instRegistry.back().offsetSkip = endPatchTag[0].offset;
+      std::vector<TagInfo> endInstPatchTag =
+          queryTagByInst(instRegistry.size() - 1, RelocTagPatchInstEnd);
+      QBDI_REQUIRE_ABORT(endInstPatchTag.size() == 1,
+                         "Internal Error: end tag not found");
+      instRegistry.back().offsetSkip = endInstPatchTag[0].offset;
+      // set the scratch Register if needed
+      finalizeScratchRegisterForPatch();
       // Update indexes
       needTerminator = not seqIt->metadata.modifyPC;
       executeFlags |= seqIt->metadata.execblockFlags;
@@ -388,22 +435,16 @@ ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt,
         "Writting terminator to ExecBlock 0x{:x} to finish non-exit sequence",
         reinterpret_cast<uintptr_t>(this));
     RelocatableInst::UniquePtrVec terminator =
-        getTerminator(instMetadata.back().endAddress());
-    for (const RelocatableInst::UniquePtr &inst : terminator) {
-      if (inst->getTag() != RelocatableInstTag::RelocInst) {
-        continue;
-      }
-      llvmcpu.writeInstruction(inst->reloc(this), codeStream.get());
-    }
+        getTerminator(llvmcpu, instMetadata.back().endAddress());
+    QBDI_REQUIRE_ABORT(
+        applyRelocatedInst(terminator, nullptr, llvmcpu, epilogueSize),
+        "Fail to write Terminator");
   }
   // JIT the jump to epilogue
-  RelocatableInst::UniquePtrVec jmpEpilogue = JmpEpilogue();
-  for (const RelocatableInst::UniquePtr &inst : jmpEpilogue) {
-    if (inst->getTag() != RelocatableInstTag::RelocInst) {
-      continue;
-    }
-    llvmcpu.writeInstruction(inst->reloc(this), codeStream.get());
-  }
+  RelocatableInst::UniquePtrVec jmpEpilogue = JmpEpilogue().genReloc(llvmcpu);
+  QBDI_REQUIRE_ABORT(
+      applyRelocatedInst(jmpEpilogue, nullptr, llvmcpu, epilogueSize),
+      "Fail to write jmpEpilogue");
   // change the flag of the basicblock
   if (llvmcpu.getOptions() & Options::OPT_DISABLE_FPR) {
     executeFlags = 0;
@@ -412,11 +453,14 @@ ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt,
   }
   // Register sequence
   uint16_t endInstID = getNextInstID() - 1;
-  seqRegistry.push_back(SeqInfo{startInstID, endInstID, executeFlags, cpuMode});
-  finalizeScratchRegisterForPatch();
+  seqRegistry.push_back(SeqInfo{startInstID, endInstID, executeFlags, cpuMode,
+                                instRegistry[startInstID].sr});
   // Return write results
   unsigned bytesWritten =
-      static_cast<unsigned>(codeStream->current_pos() - startOffset);
+      static_cast<unsigned>(codeStream.current_pos() - startOffset);
+  QBDI_REQUIRE_ABORT(codeStream.current_pos() <=
+                         codeBlock.allocatedSize() - epilogueSize,
+                     "Internal Error, Overflow in Epilogue");
   QBDI_DEBUG("End write sequence in basicblock 0x{:x} with execFlags : {:x}",
              reinterpret_cast<uintptr_t>(this), executeFlags);
   return SeqWriteResult{seqID, bytesWritten, patchWritten};
@@ -427,16 +471,16 @@ uint16_t ExecBlock::splitSequence(uint16_t instID) {
   uint16_t seqID = instRegistry[instID].seqID;
   seqRegistry.push_back(SeqInfo{
       instID, seqRegistry[seqID].endInstID, seqRegistry[seqID].executeFlags,
-      seqRegistry[seqID].cpuMode, seqRegistry[seqID].sr});
+      seqRegistry[seqID].cpuMode, instRegistry[instID].sr});
   return getNextSeqID() - 1;
 }
 
 void ExecBlock::makeRX() {
   if (not isRX()) {
     QBDI_DEBUG("Making ExecBlock 0x{:x} RX", reinterpret_cast<uintptr_t>(this));
-    QBDI_REQUIRE_ACTION(!llvm::sys::Memory::protectMappedMemory(
-                            codeBlock, PF::MF_READ | PF::MF_EXEC),
-                        abort());
+    QBDI_REQUIRE_ABORT(!llvm::sys::Memory::protectMappedMemory(
+                           codeBlock, PF::MF_READ | PF::MF_EXEC),
+                       "Fail to set the page permission to RX");
     pageState = RX;
   }
 }
@@ -444,18 +488,18 @@ void ExecBlock::makeRX() {
 void ExecBlock::makeRW() {
   if (not isRW()) {
     QBDI_DEBUG("Making ExecBlock 0x{:x} RW", reinterpret_cast<uintptr_t>(this));
-    QBDI_REQUIRE_ACTION(!llvm::sys::Memory::protectMappedMemory(
-                            codeBlock, PF::MF_READ | PF::MF_WRITE),
-                        abort());
+    QBDI_REQUIRE_ABORT(!llvm::sys::Memory::protectMappedMemory(
+                           codeBlock, PF::MF_READ | PF::MF_WRITE),
+                       "Fail to set the page permission to RW");
     pageState = RW;
   }
 }
 
 uint16_t ExecBlock::newShadow(uint16_t tag) {
   uint16_t id = shadowIdx++;
-  QBDI_REQUIRE_ACTION(id * sizeof(rword) <
-                          dataBlock.allocatedSize() - sizeof(Context),
-                      abort());
+  QBDI_REQUIRE_ABORT(id * sizeof(rword) <
+                         dataBlock.allocatedSize() - sizeof(Context),
+                     "Shadow allocation fail");
   if (tag != ShadowReservedTag::Untagged) {
     QBDI_DEBUG("Registering new tagged shadow {} for instID {} wih tag {:x}",
                id, getNextInstID(), tag);
@@ -472,34 +516,34 @@ uint16_t ExecBlock::getLastShadow(uint16_t tag) {
       return it->shadowID;
     }
   }
-  QBDI_ERROR("Cannot found shadow tag {:x} for the current instruction", tag);
-  abort();
+  QBDI_ABORT("Cannot found shadow tag {:x} for the current instruction", tag);
 }
 
 void ExecBlock::setShadow(uint16_t id, rword v) {
-  QBDI_REQUIRE_ACTION(id * sizeof(rword) <
-                          dataBlock.allocatedSize() - sizeof(Context),
-                      abort());
+  QBDI_REQUIRE_ABORT(id * sizeof(rword) <
+                         dataBlock.allocatedSize() - sizeof(Context),
+                     "Invalid shadow ID");
   QBDI_DEBUG("Set shadow {} to 0x{:x}", id, v);
   shadows[id] = v;
 }
 
 rword ExecBlock::getShadow(uint16_t id) const {
-  QBDI_REQUIRE_ACTION(id * sizeof(rword) <
-                          dataBlock.allocatedSize() - sizeof(Context),
-                      abort());
+  QBDI_REQUIRE_ABORT(id * sizeof(rword) <
+                         dataBlock.allocatedSize() - sizeof(Context),
+                     "Invalid shadow ID");
   return shadows[id];
 }
 
 rword ExecBlock::getShadowOffset(uint16_t id) const {
   rword offset = sizeof(Context) + id * sizeof(rword);
-  QBDI_REQUIRE_ACTION(offset < dataBlock.allocatedSize(), abort());
+  QBDI_REQUIRE_ABORT(offset < dataBlock.allocatedSize(), "Invalid shadow ID");
   return offset;
 }
 
-uint16_t ExecBlock::getInstID(rword address) const {
+uint16_t ExecBlock::getInstID(rword address, CPUMode cpuMode) const {
   for (size_t i = 0; i < instMetadata.size(); i++) {
-    if (instMetadata[i].address == address) {
+    if (instMetadata[i].address == address and
+        instMetadata[i].cpuMode == cpuMode) {
       return (uint16_t)i;
     }
   }
@@ -534,9 +578,10 @@ const InstAnalysis *ExecBlock::getInstAnalysis(uint16_t instID,
                              llvmCPUs.getCPU(instMetadata[instID].cpuMode));
 }
 
-uint16_t ExecBlock::getSeqID(rword address) const {
+uint16_t ExecBlock::getSeqID(rword address, CPUMode cpuMode) const {
   for (size_t i = 0; i < seqRegistry.size(); i++) {
-    if (instMetadata[seqRegistry[i].startInstID].address == address) {
+    if (instMetadata[seqRegistry[i].startInstID].address == address and
+        instMetadata[seqRegistry[i].startInstID].cpuMode == cpuMode) {
       return (uint16_t)i;
     }
   }
@@ -643,6 +688,11 @@ std::vector<TagInfo> ExecBlock::queryTagByInst(uint16_t instID,
 float ExecBlock::occupationRatio() const {
   return static_cast<float>(codeBlock.allocatedSize() - getEpilogueOffset()) /
          static_cast<float>(codeBlock.allocatedSize());
+}
+
+const LLVMCPU &ExecBlock::getLLVMCPUByInst(uint16_t instID) const {
+  QBDI_REQUIRE(instID < instRegistry.size());
+  return llvmCPUs.getCPU(instMetadata[instID].cpuMode);
 }
 
 } // namespace QBDI

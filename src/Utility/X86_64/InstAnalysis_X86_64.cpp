@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@
 #include "QBDI/InstAnalysis.h"
 #include "QBDI/State.h"
 #include "Patch/Register.h"
+#include "Patch/Types.h"
 #include "Patch/X86_64/InstInfo_X86_64.h"
 #include "Utility/InstAnalysis_prive.h"
 #include "Utility/LogSys.h"
@@ -36,7 +37,7 @@ class MCRegisterInfo;
 namespace QBDI {
 namespace InstructionAnalysis {
 
-static ConditionType ConditionLLVM2QBDI(unsigned cond) {
+ConditionType ConditionLLVM2QBDI(unsigned cond) {
   switch (cond) {
     case llvm::X86::CondCode::COND_E:
       return CONDITION_EQUALS;
@@ -71,13 +72,12 @@ static ConditionType ConditionLLVM2QBDI(unsigned cond) {
     case llvm::X86::CondCode::COND_NS:
       return CONDITION_NOT_SIGN;
     default:
-      QBDI_ERROR("Unsupported LLVM condition {}", cond);
-      abort();
+      QBDI_ABORT("Unsupported LLVM condition {}", cond);
   }
 }
 
 void analyseCondition(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
-                      const llvm::MCInstrDesc &desc) {
+                      const llvm::MCInstrDesc &desc, const LLVMCPU &llvmcpu) {
   const unsigned numOperands = inst.getNumOperands();
   for (unsigned i = 0; i < numOperands; i++) {
     const llvm::MCOperandInfo &opdesc = desc.OpInfo[i];
@@ -100,8 +100,9 @@ void analyseCondition(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
   }
 }
 
-bool isFlagOperand(unsigned opcode, unsigned opNum, unsigned operandType) {
-  switch (operandType) {
+bool isFlagOperand(unsigned opcode, unsigned opNum,
+                   const llvm::MCOperandInfo &opdesc) {
+  switch (opdesc.OperandType) {
     default:
       return false;
     case llvm::X86::OperandType::OPERAND_COND_CODE:
@@ -145,17 +146,26 @@ void getAdditionnalOperand(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
     instAnalysis->numOperands++;
     // try to merge with a previous one
     tryMergeCurrentRegister(instAnalysis);
-  } else if (inst.getOpcode() == llvm::X86::LOOP or
-             inst.getOpcode() == llvm::X86::LOOPE or
-             inst.getOpcode() == llvm::X86::LOOPNE) {
-    // add ECX
-    OperandAnalysis &opa2 = instAnalysis->operands[instAnalysis->numOperands];
-    analyseRegister(opa2, GPR_ID[2], MRI);
-    opa2.regAccess = REGISTER_READ_WRITE;
-    opa2.flag |= OPERANDFLAG_IMPLICIT;
-    instAnalysis->numOperands++;
-    // try to merge with a previous one
-    tryMergeCurrentRegister(instAnalysis);
+  } else {
+    unsigned opcode = inst.getOpcode();
+    switch (opcode) {
+      default:
+        break;
+      case llvm::X86::LOOP:
+      case llvm::X86::LOOPE:
+      case llvm::X86::LOOPNE: {
+        // add ECX
+        OperandAnalysis &opa2 =
+            instAnalysis->operands[instAnalysis->numOperands];
+        analyseRegister(opa2, GPR_ID[2], MRI);
+        opa2.regAccess = REGISTER_READ_WRITE;
+        opa2.flag |= OPERANDFLAG_IMPLICIT;
+        instAnalysis->numOperands++;
+        // try to merge with a previous one
+        tryMergeCurrentRegister(instAnalysis);
+        break;
+      }
+    }
   }
 }
 

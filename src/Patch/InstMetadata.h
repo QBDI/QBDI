@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,14 @@
 
 #include "QBDI/State.h"
 
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+#include "Patch/X86_64/InstMetadata_X86_64.h"
+#elif defined(QBDI_ARCH_ARM)
+#include "Patch/ARM/InstMetadata_ARM.h"
+#elif defined(QBDI_ARCH_AARCH64)
+#include "Patch/AARCH64/InstMetadata_AARCH64.h"
+#endif
+
 namespace QBDI {
 
 class InstMetadata {
@@ -34,24 +42,30 @@ public:
   uint32_t patchSize;
   CPUMode cpuMode;
   bool modifyPC;
-  bool merge;
   uint8_t execblockFlags;
   mutable InstAnalysisPtr analysis;
+  InstMetadataArch archMetadata;
 
-  InstMetadata(const llvm::MCInst &inst, rword address = 0,
-               uint32_t instSize = 0, uint32_t patchSize = 0,
-               CPUMode cpuMode = CPUMode::DEFAULT, bool modifyPC = false,
-               bool merge = false, uint8_t execblockFlags = 0,
-               InstAnalysisPtr analysis = nullptr)
+  InstMetadata(const llvm::MCInst &inst, rword address, uint32_t instSize,
+               uint32_t patchSize, CPUMode cpuMode, bool modifyPC,
+               uint8_t execblockFlags, InstAnalysisPtr analysis)
       : inst(inst), address(address), instSize(instSize), patchSize(patchSize),
-        cpuMode(cpuMode), modifyPC(modifyPC), merge(merge),
-        execblockFlags(execblockFlags), analysis(std::move(analysis)) {}
+        cpuMode(cpuMode), modifyPC(modifyPC), execblockFlags(execblockFlags),
+        analysis(std::move(analysis)) {}
+
+  InstMetadata(const llvm::MCInst &inst, rword address, uint32_t instSize,
+               CPUMode cpuMode, uint8_t execblockFlags)
+      : inst(inst), address(address), instSize(instSize), patchSize(0),
+        cpuMode(cpuMode), modifyPC(false), execblockFlags(execblockFlags),
+        analysis(nullptr) {}
 
   inline rword endAddress() const { return address + instSize; }
 
   inline InstMetadata lightCopy() const {
-    return {inst,     address, instSize,       patchSize, cpuMode,
-            modifyPC, merge,   execblockFlags, nullptr};
+    InstMetadata cpy{inst,    address,  instSize,       patchSize,
+                     cpuMode, modifyPC, execblockFlags, nullptr};
+    cpy.archMetadata = archMetadata;
+    return cpy;
   }
 };
 

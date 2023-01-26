@@ -1,0 +1,14 @@
+target_sources(QBDI_src
+               INTERFACE "${CMAKE_CURRENT_LIST_DIR}/InstAnalysis_AARCH64.cpp")
+
+if(QBDI_PLATFORM_IOS)
+  target_sources(
+    QBDI_src
+    INTERFACE "${CMAKE_CURRENT_LIST_DIR}/System_iOS.cpp"
+              "${CMAKE_CURRENT_LIST_DIR}/System_darwin.cpp"
+              "${CMAKE_CURRENT_LIST_DIR}/server-iOS-jit-user.c")
+elseif(QBDI_PLATFORM_OSX)
+  target_sources(
+    QBDI_src INTERFACE "${CMAKE_CURRENT_LIST_DIR}/System_OSX.cpp"
+                       "${CMAKE_CURRENT_LIST_DIR}/System_darwin.cpp")
+endif()

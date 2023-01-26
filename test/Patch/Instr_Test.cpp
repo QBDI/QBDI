@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,12 @@ QBDI::VMAction increment(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-GPRSave_IC") {
+  INFO("TEST_SEED=" << seed_random());
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
   QBDI::Context inputState;
-  memset(&inputState, 0, sizeof(QBDI::Context));
+  initContext(inputState);
 
   vm.deleteAllInstrumentations();
   vm.addCodeCB(QBDI::PREINST, increment, (void *)&count1);
@@ -44,13 +45,12 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-GPRSave_IC") {
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-GPRShuffle_IC") {
+  INFO("TEST_SEED=" << seed_random());
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
   QBDI::Context inputState;
-  memset(&inputState, 0, sizeof(QBDI::Context));
-  for (uint32_t i = 0; i < QBDI::AVAILABLE_GPR; i++)
-    QBDI_GPR_SET(&inputState.gprState, i, i);
+  initContext(inputState);
 
   vm.deleteAllInstrumentations();
   vm.addCodeCB(QBDI::PREINST, increment, (void *)&count1);
@@ -65,13 +65,12 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-GPRShuffle_IC") {
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-RelativeAddressing_IC") {
+  INFO("TEST_SEED=" << seed_random());
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
   QBDI::Context inputState;
-  memset(&inputState, 0, sizeof(QBDI::Context));
-  QBDI_GPR_SET(&inputState.gprState, 0, get_random());
-  QBDI_GPR_SET(&inputState.gprState, 1, get_random());
+  initContext(inputState);
 
   vm.deleteAllInstrumentations();
   vm.addCodeCB(QBDI::PREINST, increment, (void *)&count1);
@@ -86,15 +85,12 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-RelativeAddressing_IC") {
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-ConditionalBranching_IC") {
+  INFO("TEST_SEED=" << seed_random());
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
   QBDI::Context inputState;
-  memset(&inputState, 0, sizeof(QBDI::Context));
-  QBDI_GPR_SET(&inputState.gprState, 0, get_random());
-  QBDI_GPR_SET(&inputState.gprState, 1, get_random());
-  QBDI_GPR_SET(&inputState.gprState, 2, get_random());
-  QBDI_GPR_SET(&inputState.gprState, 3, get_random());
+  initContext(inputState);
 
   vm.deleteAllInstrumentations();
   vm.addCodeCB(QBDI::PREINST, increment, (void *)&count1);
@@ -109,11 +105,12 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-ConditionalBranching_IC") {
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-FibonacciRecursion_IC") {
+  INFO("TEST_SEED=" << seed_random());
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
   QBDI::Context inputState;
-  memset(&inputState, 0, sizeof(QBDI::Context));
+  initContext(inputState);
   QBDI_GPR_SET(&inputState.gprState, 0, (rand() % 20) + 2);
 
   vm.deleteAllInstrumentations();
@@ -129,12 +126,12 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-FibonacciRecursion_IC") {
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-StackTricks_IC") {
-
+  INFO("TEST_SEED=" << seed_random());
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
   QBDI::Context inputState;
-  memset(&inputState, 0, sizeof(QBDI::Context));
+  initContext(inputState);
   QBDI_GPR_SET(&inputState.gprState, 0, (rand() % 20) + 2);
 
   vm.deleteAllInstrumentations();

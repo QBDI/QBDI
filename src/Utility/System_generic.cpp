@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,12 +151,13 @@ const std::vector<std::string> getHostCPUFeatures() {
     }
   }
 
-  if constexpr (is_arm)
+  if constexpr (is_arm) {
     // set default ARM CPU
     if (features.size() == 0) {
       features.insert({"fp16", true});
       features.insert({"d16", true});
     }
+  }
   // Fixing awfull LLVM API
   if (features.count("fp16") && features["fp16"]) {
     mattrs.emplace_back("vfp2");

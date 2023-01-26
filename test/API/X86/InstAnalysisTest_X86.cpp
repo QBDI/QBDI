@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,25 +43,22 @@ struct ExpectedInstAnalysis {
   QBDI::ConditionType condition;
 };
 
-/*
-static void debugOperand(const QBDI::InstAnalysis* ana) {
-    if ((ana->analysisType & QBDI::ANALYSIS_OPERANDS) ==
-QBDI::ANALYSIS_OPERANDS) { for (int i = 0; i < ana->numOperands; i++) { const
-QBDI::OperandAnalysis& op = ana->operands[i]; WARN("- type: " << op.type
-              << ", flag: " << op.flag
-              << ", value: " << op.value
-              << ", size: " << (int) op.size
-              << ", regOff : " << (int) op.regOff
-              << ", regCtxIdx: " << op.regCtxIdx
-              << ", regName: " << (op.regName == nullptr ? "nullptr":
-op.regName)
-              << ", regAccess: " << (op.regAccess & QBDI::REGISTER_READ ? "r":
-"-")
-                                 << (op.regAccess & QBDI::REGISTER_WRITE ? "w":
-"-"));
-        }
+[[maybe_unused]] static void debugOperand(const QBDI::InstAnalysis *ana) {
+  if ((ana->analysisType & QBDI::ANALYSIS_OPERANDS) ==
+      QBDI::ANALYSIS_OPERANDS) {
+    for (int i = 0; i < ana->numOperands; i++) {
+      const QBDI::OperandAnalysis &op = ana->operands[i];
+      WARN("- type: " << op.type << ", flag: " << op.flag
+                      << ", value: " << op.value << ", size: " << (int)op.size
+                      << ", regOff : " << (int)op.regOff
+                      << ", regCtxIdx: " << op.regCtxIdx << ", regName: "
+                      << (op.regName == nullptr ? "nullptr" : op.regName)
+                      << ", regAccess: "
+                      << (op.regAccess & QBDI::REGISTER_READ ? "r" : "-")
+                      << (op.regAccess & QBDI::REGISTER_WRITE ? "w" : "-"));
     }
-}// */
+  }
+}
 
 static void checkOperand(const QBDI::InstAnalysis *ana,
                          const std::vector<QBDI::OperandAnalysis> expecteds,
@@ -535,7 +532,7 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-ret") {
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
       ExpectedInstAnalysis{
-          "RETL", addr,
+          "RET32", addr,
           /* instSize */ 1, /* affectControlFlow */ true, /* isBranch */ false,
           /* isCall */ false, /* isReturn */ true, /* isCompare */ false,
           /* isPredicable */ false, /* mayLoad */ true, /* mayStore */ false,
@@ -808,7 +805,7 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-paddb") {
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
       ExpectedInstAnalysis{
-          "MMX_PADDBirr", addr,
+          "MMX_PADDBrr", addr,
           /* instSize */ 3, /* affectControlFlow */ false, /* isBranch */ false,
           /* isCall */ false, /* isReturn */ false, /* isCompare */ false,
           /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ false,
@@ -918,9 +915,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-loop") {
           /* condition */ QBDI::CONDITION_NONE});
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
-                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_PCREL,
-                    static_cast<QBDI::rword>(-2), 1, 0, -1, nullptr,
-                    QBDI::REGISTER_UNUSED},
+                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_PCREL, -2, 1, 0, -1,
+                    nullptr, QBDI::REGISTER_UNUSED},
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_IMPLICIT, 0, 4, 0, 2,
                     "ECX", QBDI::REGISTER_READ_WRITE},
                },
@@ -942,9 +938,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-loope") {
           /* condition */ QBDI::CONDITION_EQUALS});
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
-                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_PCREL,
-                    static_cast<QBDI::rword>(-2), 1, 0, -1, nullptr,
-                    QBDI::REGISTER_UNUSED},
+                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_PCREL, -2, 1, 0, -1,
+                    nullptr, QBDI::REGISTER_UNUSED},
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_IMPLICIT, 0, 4, 0, 2,
                     "ECX", QBDI::REGISTER_READ_WRITE},
                },
@@ -966,9 +961,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-loopne") {
           /* condition */ QBDI::CONDITION_NOT_EQUALS});
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
-                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_PCREL,
-                    static_cast<QBDI::rword>(-2), 1, 0, -1, nullptr,
-                    QBDI::REGISTER_UNUSED},
+                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_PCREL, -2, 1, 0, -1,
+                    nullptr, QBDI::REGISTER_UNUSED},
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_IMPLICIT, 0, 4, 0, 2,
                     "ECX", QBDI::REGISTER_READ_WRITE},
                },

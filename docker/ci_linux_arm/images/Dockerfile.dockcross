@@ -1,0 +1,22 @@
+ARG DOCKER_IMG="dockcross/linux-arm64"
+
+FROM $DOCKER_IMG
+
+ENV CLICOLOR_FORCE=1
+
+# need qemu >= 6.0 to run QBDI test
+RUN echo "deb http://deb.debian.org/debian bullseye-backports main" >> /etc/apt/sources.list && \
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive \
+    apt-get install -y --no-install-recommends \
+        bash \
+        ca-certificates \
+        ccache \
+        git \
+        python3 \
+        wget \
+        zip && \
+    apt -t bullseye-backports install qemu-user-static && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+

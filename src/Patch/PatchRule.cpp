@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,52 +38,38 @@ PatchRule::~PatchRule() = default;
 
 PatchRule::PatchRule(PatchRule &&) = default;
 
-bool PatchRule::canBeApplied(const llvm::MCInst &inst, rword address,
-                             rword instSize, const LLVMCPU &llvmcpu) const {
-  return condition->test(inst, address, instSize, llvmcpu);
+bool PatchRule::canBeApplied(const Patch &patch, const LLVMCPU &llvmcpu) const {
+  return condition->test(patch, llvmcpu);
 }
 
-Patch PatchRule::generate(const llvm::MCInst &inst, rword address,
-                          rword instSize, const LLVMCPU &llvmcpu,
-                          Patch *toMerge) const {
-
-  Patch patch(inst, address, instSize, llvmcpu);
-  if (toMerge != nullptr) {
-    patch.metadata.address = toMerge->metadata.address;
-    patch.metadata.instSize += toMerge->metadata.instSize;
-    patch.metadata.execblockFlags |= toMerge->metadata.execblockFlags;
-    for (const auto &e : toMerge->regUsage) {
-      auto e2 = patch.regUsage.find(e.first);
-      if (e2 != patch.regUsage.end()) {
-        patch.regUsage[e.first] = e2->second | e.second;
-      } else {
-        patch.regUsage.insert(e);
-      }
-    }
-  }
+void PatchRule::apply(Patch &patch, const LLVMCPU &llvmcpu) const {
 
   TempManager temp_manager(patch);
   bool modifyPC = false;
-  bool merge = false;
 
+  patch.patchGenFlags.emplace_back(patch.insts.size(),
+                                   PatchGeneratorFlags::PatchRuleBegin);
   for (const auto &g : generators) {
-    patch.append(g->generate(&patch, &temp_manager, toMerge));
+    if (g->getPreFlags() != PatchGeneratorFlags::None) {
+      patch.patchGenFlags.emplace_back(patch.insts.size(), g->getPreFlags());
+    }
+    patch.append(g->generate(patch, temp_manager));
+    if (g->getPostFlags() != PatchGeneratorFlags::None) {
+      patch.patchGenFlags.emplace_back(patch.insts.size(), g->getPostFlags());
+    }
     modifyPC |= g->modifyPC();
-    merge |= g->doNotInstrument();
   }
-  patch.setMerge(merge);
+  patch.patchGenFlags.emplace_back(patch.insts.size(),
+                                   PatchGeneratorFlags::PatchRuleEnd);
   patch.setModifyPC(modifyPC);
 
-  Reg::Vec used_registers = temp_manager.getUsedRegisters();
+  RelocatableInst::UniquePtrVec saveReg, restoreReg;
+  Reg::Vec unrestoredReg;
 
-  for (unsigned int i = 0; i < used_registers.size(); i++) {
-    if (temp_manager.shouldRestore(used_registers[i])) {
-      patch.prepend(SaveReg(used_registers[i], Offset(used_registers[i])));
-      patch.append(LoadReg(used_registers[i], Offset(used_registers[i])));
-    }
-  }
-
-  return patch;
+  temp_manager.generateSaveRestoreInstructions(0, saveReg, restoreReg,
+                                               unrestoredReg);
+  patch.prepend(std::move(saveReg));
+  patch.append(std::move(restoreReg));
 }
 
 } // namespace QBDI

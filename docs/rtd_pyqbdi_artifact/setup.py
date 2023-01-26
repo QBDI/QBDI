@@ -22,10 +22,10 @@ workflow_name = "PyQBDI Linux package"
 default_per_page = 100
 
 if sys.maxsize > 2**32:
-    artifact_name = "PyQBDI linux X86_64"
+    artifact_name = "PyQBDI_linux_X86_64"
     is_64bits = True
 else:
-    artifact_name = "PyQBDI linux X86"
+    artifact_name = "PyQBDI_linux_X86"
     is_64bits = False
 
 
@@ -149,6 +149,10 @@ def install_wheel(wheelname, wheeldata):
 
         subprocess.check_call([sys.executable, "-m", "pip", "install", wheel_path])
 
+def check_installation():
+    print(f'[+] test installation')
+    subprocess.check_call([sys.executable, "-c", "import pyqbdi; print(pyqbdi.__version__)"])
+
 def install_pyqbdi():
     git_repo = Repository('.')
     current_branch = os.environ.get('READTHEDOCS_VERSION', git_repo.head.shorthand)
@@ -179,9 +183,7 @@ def install_pyqbdi():
 
     install_wheel(wheelname, wheeldata)
 
-    # check
-    import pyqbdi
-
+    check_installation()
 
 if __name__ == "__main__":
     install_pyqbdi()

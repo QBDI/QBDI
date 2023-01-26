@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,6 +118,17 @@ std::vector<uint8_t> VMTest_X86_InvalidInstruction = {
   0xff,                           // 13: invalid instruction
 };
 
+std::vector<uint8_t> VMTest_X86_BreakingInstruction = {
+  0xb9, 0x64, 0x00, 0x00, 0x00,   // 00: mov    ecx,0x64
+  0x31, 0xc0,                     // 05: xor    eax,eax
+  0x31, 0xdb,                     // 07: xor    ebx,ebx
+  0x01, 0xc8,                     // 09: add    eax,ecx
+  0x83, 0xe9, 0x01,               // 0b: sub    ecx,0x1
+  0x83, 0xf9, 0x00,               // 0e: cmp    ecx,0x0
+  0x01, 0xc3,                     // 11: add    ebx,eax
+  0xc3,                           // 13: ret
+};
+
 std::vector<uint8_t> VMTest_X86_SelfModifyingCode1 = {
   0xe8, 0x00, 0x00, 0x00, 0x00,           // 00: call   $+5
   0x58,                                   // 05: pop    eax
@@ -142,5 +153,6 @@ std::vector<uint8_t> VMTest_X86_SelfModifyingCode2 = {
 
 std::unordered_map<std::string, SizedTestCode> TestCode = {
     {"VMTest-InvalidInstruction", {VMTest_X86_InvalidInstruction, 0x11}},
+    {"VMTest-BreakingInstruction", {VMTest_X86_BreakingInstruction, 0x0b}},
     {"VMTest-SelfModifyingCode1", {VMTest_X86_SelfModifyingCode1}},
     {"VMTest-SelfModifyingCode2", {VMTest_X86_SelfModifyingCode2}}};

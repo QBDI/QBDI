@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,20 +24,37 @@
 #include "ExecBlock/ExecBlock.h"
 #include "ExecBlock/ExecBlockManager.h"
 #include "ExecBroker/ExecBroker.h"
+#include "Patch/ExecBlockPatch.h"
 #include "Patch/InstMetadata.h"
 #include "Patch/Patch.h"
-#include "Patch/PatchRules.h"
 #include "Patch/RelocatableInst.h"
 #include "Utility/LogSys.h"
 
 namespace QBDI {
 
+namespace {
+
+inline rword getExecRegionKey(rword address, CPUMode cpumode) {
+  if constexpr (is_arm) {
+    if (cpumode != CPUMode::DEFAULT) {
+      address |= 1;
+    } else {
+      address &= (~1);
+    }
+  }
+  return address;
+}
+
+} // namespace
+
 ExecBlockManager::ExecBlockManager(const LLVMCPUs &llvmCPUs,
                                    VMInstanceRef vminstance)
     : total_translated_size(1), total_translation_size(1),
       vminstance(vminstance), llvmCPUs(llvmCPUs),
-      execBlockPrologue(getExecBlockPrologue(llvmCPUs.getOptions())),
-      execBlockEpilogue(getExecBlockEpilogue(llvmCPUs.getOptions())) {
+      execBlockPrologue(
+          getExecBlockPrologue(llvmCPUs.getCPU(CPUMode::DEFAULT))),
+      execBlockEpilogue(
+          getExecBlockEpilogue(llvmCPUs.getCPU(CPUMode::DEFAULT))) {
 
   auto execBrokerBlock = std::make_unique<ExecBlock>(
       llvmCPUs, vminstance, &execBlockPrologue, &execBlockEpilogue, 0);
@@ -95,20 +112,21 @@ void ExecBlockManager::printCacheStatistics() const {
 }
 
 ExecBlock *ExecBlockManager::getProgrammedExecBlock(rword address,
+                                                    CPUMode cpumode,
                                                     SeqLoc *programmedSeqLock) {
-  QBDI_DEBUG("Looking up sequence at address {:x}", address);
+  QBDI_DEBUG("Looking up sequence at address {:x} mode {}", address, cpumode);
 
   size_t r = searchRegion(address);
 
   if (r < regions.size() && regions[r].covered.contains(address)) {
     ExecRegion &region = regions[r];
+    const auto target = getExecRegionKey(address, cpumode);
 
     // Attempting sequenceCache resolution
-    const std::map<rword, SeqLoc>::const_iterator seqLoc =
-        region.sequenceCache.find(address);
+    const auto seqLoc = region.sequenceCache.find(target);
     if (seqLoc != region.sequenceCache.end()) {
-      QBDI_DEBUG("Found sequence 0x{:x} in ExecBlock 0x{:x} as seqID {:x}",
-                 address,
+      QBDI_DEBUG("Found sequence 0x{:x} ({}) in ExecBlock 0x{:x} as seqID {:x}",
+                 address, cpumode,
                  reinterpret_cast<uintptr_t>(
                      region.blocks[seqLoc->second.blockIdx].get()),
                  seqLoc->second.seqID);
@@ -122,21 +140,18 @@ ExecBlock *ExecBlockManager::getProgrammedExecBlock(rword address,
     }
 
     // Attempting instCache resolution
-    const std::map<rword, InstLoc>::const_iterator instLoc =
-        region.instCache.find(address);
+    const auto instLoc = region.instCache.find(target);
     if (instLoc != region.instCache.end()) {
       // Retrieving corresponding block and seqLoc
       ExecBlock *block = region.blocks[instLoc->second.blockIdx].get();
       uint16_t existingSeqId = block->getSeqID(instLoc->second.instID);
-      const SeqLoc &existingSeqLoc =
-          region.sequenceCache[block
-                                   ->getInstMetadata(
-                                       block->getSeqStart(existingSeqId))
-                                   .address];
+      const SeqLoc &existingSeqLoc = region.sequenceCache[getExecRegionKey(
+          block->getInstMetadata(block->getSeqStart(existingSeqId)).address,
+          cpumode)];
       // Creating a new sequence at that instruction and
       // saving it in the sequenceCache
       uint16_t newSeqID = block->splitSequence(instLoc->second.instID);
-      regions[r].sequenceCache[address] = SeqLoc{
+      region.sequenceCache[target] = SeqLoc{
           instLoc->second.blockIdx, newSeqID, existingSeqLoc.bbEnd, address,
           existingSeqLoc.seqEnd,
       };
@@ -147,18 +162,19 @@ ExecBlock *ExecBlockManager::getProgrammedExecBlock(rword address,
           reinterpret_cast<uintptr_t>(block), newSeqID);
       // copy current sequence info
       if (programmedSeqLock != nullptr) {
-        *programmedSeqLock = regions[r].sequenceCache[address];
+        *programmedSeqLock = regions[r].sequenceCache[target];
       }
       block->selectSeq(newSeqID);
       return block;
     }
   }
-  QBDI_DEBUG("Cache miss for sequence 0x{:x}", address);
+  QBDI_DEBUG("Cache miss for sequence 0x{:x} ({})", address, cpumode);
   return nullptr;
 }
 
-const ExecBlock *ExecBlockManager::getExecBlock(rword address) const {
-  QBDI_DEBUG("Looking up address {:x}", address);
+const ExecBlock *ExecBlockManager::getExecBlock(rword address,
+                                                CPUMode cpumode) const {
+  QBDI_DEBUG("Looking up address {:x} ({})", address, cpumode);
 
   size_t r = searchRegion(address);
 
@@ -166,28 +182,17 @@ const ExecBlock *ExecBlockManager::getExecBlock(rword address) const {
     const ExecRegion &region = regions[r];
 
     // Attempting instCache resolution
-    const std::map<rword, InstLoc>::const_iterator instLoc =
-        region.instCache.find(address);
+    const auto instLoc =
+        region.instCache.find(getExecRegionKey(address, cpumode));
     if (instLoc != region.instCache.end()) {
-      QBDI_DEBUG("Found address 0x{:x} in ExecBlock 0x{:x}", address,
+      QBDI_DEBUG("Found address 0x{:x} ({}) in ExecBlock 0x{:x}", address,
+                 cpumode,
                  reinterpret_cast<uintptr_t>(
                      region.blocks[instLoc->second.blockIdx].get()));
       return region.blocks[instLoc->second.blockIdx].get();
     }
   }
-  QBDI_DEBUG("Cache miss for address 0x{:x}", address);
-  return nullptr;
-}
-
-const SeqLoc *ExecBlockManager::getSeqLoc(rword address) const {
-  size_t r = searchRegion(address);
-  if (r < regions.size() && regions[r].covered.contains(address)) {
-    const std::map<rword, SeqLoc>::const_iterator seqLoc =
-        regions[r].sequenceCache.find(address);
-    if (seqLoc != regions[r].sequenceCache.end()) {
-      return &(seqLoc->second);
-    }
-  }
+  QBDI_DEBUG("Cache miss for address 0x{:x} ({})", address, cpumode);
   return nullptr;
 }
 
@@ -205,8 +210,9 @@ ExecBlockManager::preWriteBasicBlock(const std::vector<Patch> &basicBlock) {
   // detect cached instruction
   size_t patchEnd = basicBlock.size();
 
-  while (patchEnd > 0 && region.instCache.count(
-                             basicBlock[patchEnd - 1].metadata.address) != 0) {
+  while (patchEnd > 0 && region.instCache.count(getExecRegionKey(
+                             basicBlock[patchEnd - 1].metadata.address,
+                             basicBlock[patchEnd - 1].metadata.cpuMode)) != 0) {
     patchEnd--;
   }
 
@@ -231,14 +237,16 @@ void ExecBlockManager::writeBasicBlock(std::vector<Patch> &&basicBlock,
   // Basic block truncation to prevent dedoubled instruction
   // patchEnd must be the number of instruction that wasn't in the cache for
   // this basicblock
-  QBDI_REQUIRE_ACTION(patchEnd <= basicBlock.size(), abort());
-  QBDI_REQUIRE_ACTION(
-      patchEnd == basicBlock.size() ||
-          region.instCache.count(basicBlock[patchEnd].metadata.address) == 1,
-      abort());
+  QBDI_REQUIRE_ABORT(patchEnd <= basicBlock.size(), "Internal error");
+  QBDI_REQUIRE_ABORT(patchEnd == basicBlock.size() ||
+                         region.instCache.count(getExecRegionKey(
+                             basicBlock[patchEnd].metadata.address,
+                             basicBlock[patchEnd].metadata.cpuMode)) == 1,
+                     "Internal error, basicBlock end not found in the cache");
 
-  while (patchEnd > 0 && region.instCache.count(
-                             basicBlock[patchEnd - 1].metadata.address) != 0) {
+  while (patchEnd > 0 && region.instCache.count(getExecRegionKey(
+                             basicBlock[patchEnd - 1].metadata.address,
+                             basicBlock[patchEnd - 1].metadata.cpuMode)) != 0) {
     // should never happen if preWriteBasicBlock is used
     patchEnd--;
   }
@@ -259,7 +267,8 @@ void ExecBlockManager::writeBasicBlock(std::vector<Patch> &&basicBlock,
       // Optimally, a region should only have one ExecBlocks but misspredictions
       // or oversized basic blocks can cause overflows.
       if (i >= region.blocks.size()) {
-        QBDI_REQUIRE_ACTION(i < (1 << 16), abort());
+        QBDI_REQUIRE_ABORT(i < (1 << 16),
+                           "Too many ExecBlock in the same region");
         region.blocks.emplace_back(std::make_unique<ExecBlock>(
             llvmCPUs, vminstance, &execBlockPrologue, &execBlockEpilogue,
             epilogueSize));
@@ -270,8 +279,9 @@ void ExecBlockManager::writeBasicBlock(std::vector<Patch> &&basicBlock,
       // Successful write
       if (res.seqID != EXEC_BLOCK_FULL) {
         // Saving sequence in the sequence cache
-        regions[r]
-            .sequenceCache[basicBlock[patchIdx].metadata.address] = SeqLoc{
+        regions[r].sequenceCache[getExecRegionKey(
+            basicBlock[patchIdx].metadata.address,
+            basicBlock[patchIdx].metadata.cpuMode)] = SeqLoc{
             static_cast<uint16_t>(i),
             res.seqID,
             bbEnd,
@@ -281,7 +291,9 @@ void ExecBlockManager::writeBasicBlock(std::vector<Patch> &&basicBlock,
         // Generate instruction mapping cache
         uint16_t startID = region.blocks[i]->getSeqStart(res.seqID);
         for (size_t j = 0; j < res.patchWritten; j++) {
-          region.instCache[basicBlock[patchIdx + j].metadata.address] = InstLoc{
+          region.instCache[getExecRegionKey(
+              basicBlock[patchIdx + j].metadata.address,
+              basicBlock[patchIdx + j].metadata.cpuMode)] = InstLoc{
               static_cast<uint16_t>(i), static_cast<uint16_t>(startID + j)};
           std::move(basicBlock[patchIdx + j].userInstCB.begin(),
                     basicBlock[patchIdx + j].userInstCB.end(),
@@ -337,9 +349,9 @@ size_t ExecBlockManager::searchRegion(rword address) const {
 void ExecBlockManager::mergeRegion(size_t i) {
 
   QBDI_REQUIRE_ACTION(i + 1 < regions.size(), return );
-  QBDI_REQUIRE_ACTION(regions[i].blocks.size() + regions[i + 1].blocks.size() <
-                          (1 << 16),
-                      abort());
+  QBDI_REQUIRE_ABORT(regions[i].blocks.size() + regions[i + 1].blocks.size() <
+                         (1 << 16),
+                     "Too many ExecBlock in the same region");
 
   QBDI_DEBUG("Merge region {} [0x{:x}, 0x{:x}] and region {} [0x{:x}, 0x{:x}]",
              i, regions[i].covered.start(), regions[i].covered.end(), i + 1,
@@ -413,9 +425,9 @@ size_t ExecBlockManager::findRegion(const Range<rword> &codeRange) {
       if (codeRange.start() < regions[i].covered.start()) {
         // the previous region mustn't containt codeRange.start
         // (should never happend as the iteration test the previous block first)
-        QBDI_REQUIRE_ACTION(i == 0 or regions[i - 1].covered.end() <=
-                                          codeRange.start(),
-                            abort());
+        QBDI_REQUIRE_ABORT(i == 0 or regions[i - 1].covered.end() <=
+                                         codeRange.start(),
+                           "Internal Error");
         regions[i].covered.setStart(codeRange.start());
       }
 

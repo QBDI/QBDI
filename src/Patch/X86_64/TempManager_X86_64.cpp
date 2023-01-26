@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,36 @@
  */
 
 #include <set>
+#include "Patch/Patch.h"
+#include "Patch/PatchGenerator.h"
+#include "Patch/RelocatableInst.h"
 #include "Patch/TempManager.h"
 #include "Patch/Types.h"
 
 namespace QBDI {
 
-const std::set<Reg> TempManager::unrestoreGPR = {};
+void TempManager::generateSaveRestoreInstructions(
+    unsigned unrestoredRegNum, RelocatableInst::UniquePtrVec &saveInst,
+    RelocatableInst::UniquePtrVec &restoreInst, Reg::Vec &unrestoredReg) const {
 
+  saveInst.clear();
+  restoreInst.clear();
+  unrestoredReg.clear();
+
+  Reg::Vec usedRegisters = getUsedRegisters();
+
+  for (Reg r : usedRegisters) {
+    if (shouldRestore(r)) {
+      append(saveInst, SaveReg(r, Offset(r)).genReloc(*patch.llvmcpu));
+      if (unrestoredReg.size() < unrestoredRegNum) {
+        unrestoredReg.push_back(r);
+      } else {
+        append(restoreInst, LoadReg(r, Offset(r)).genReloc(*patch.llvmcpu));
+      }
+    } else {
+      unrestoredReg.push_back(r);
+    }
+  }
 }
+
+} // namespace QBDI

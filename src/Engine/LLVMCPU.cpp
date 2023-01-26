@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,13 +39,14 @@
 #include "llvm/MC/MCTargetOptions.h"
 #include "llvm/MC/MCValue.h"
 #include "llvm/MC/SubtargetFeature.h"
+#include "llvm/MC/TargetRegistry.h"
 #include "llvm/Support/Host.h"
-#include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
 
 #include "QBDI/Config.h"
 #include "Engine/LLVMCPU.h"
+#include "Patch/Types.h"
 #include "Utility/LogSys.h"
 #include "Utility/System.h"
 #include "Utility/memory_ostream.h"
@@ -114,6 +115,9 @@ LLVMCPU::LLVMCPU(const std::string &_cpu, const std::string &_arch,
   tripleName = llvm::Triple::normalize(llvm::sys::getDefaultTargetTriple());
   llvm::Triple processTriple(tripleName);
   target = llvm::TargetRegistry::lookupTarget(arch, processTriple, error);
+
+  // get the new triple name once the arch has been set
+  tripleName = processTriple.getTriple();
   QBDI_DEBUG("Initialized LLVM for target {}", tripleName.c_str());
 
   // Allocate all LLVM classes
@@ -126,7 +130,7 @@ LLVMCPU::LLVMCPU(const std::string &_cpu, const std::string &_arch,
   MSTI = std::unique_ptr<llvm::MCSubtargetInfo>(
       target->createMCSubtargetInfo(tripleName, cpu, featuresStr));
   MCTX = std::make_unique<llvm::MCContext>(processTriple, MAI.get(), MRI.get(),
-                                           MSTI.get());
+                                           MSTI.get(), nullptr, &MCOptions);
   MOFI = std::unique_ptr<llvm::MCObjectFileInfo>(
       target->createMCObjectFileInfo(*MCTX, false));
   MCTX->setObjectFileInfo(MOFI.get());
@@ -135,8 +139,6 @@ LLVMCPU::LLVMCPU(const std::string &_cpu, const std::string &_arch,
 
   auto MAB = std::unique_ptr<llvm::MCAsmBackend>(
       target->createMCAsmBackend(*MSTI, *MRI, MCOptions));
-  MCE = std::unique_ptr<llvm::MCCodeEmitter>(
-      target->createMCCodeEmitter(*MCII, *MRI, *MCTX));
 
   // assembler, disassembler and printer
   null_ostream = std::make_unique<llvm::raw_null_ostream>();
@@ -145,7 +147,7 @@ LLVMCPU::LLVMCPU(const std::string &_cpu, const std::string &_arch,
       target->createMCDisassembler(*MSTI, *MCTX));
 
   auto codeEmitter = std::unique_ptr<llvm::MCCodeEmitter>(
-      target->createMCCodeEmitter(*MCII, *MRI, *MCTX));
+      target->createMCCodeEmitter(*MCII, *MCTX));
 
   auto objectWriter = std::unique_ptr<llvm::MCObjectWriter>(
       MAB->createObjectWriter(*null_ostream));
@@ -168,26 +170,33 @@ LLVMCPU::LLVMCPU(const std::string &_cpu, const std::string &_arch,
 
 LLVMCPU::~LLVMCPU() = default;
 
-llvm::MCDisassembler::DecodeStatus
-LLVMCPU::getInstruction(llvm::MCInst &instr, uint64_t &size,
-                        llvm::ArrayRef<uint8_t> bytes, uint64_t address) const {
-  return disassembler->getInstruction(instr, size, bytes, address,
-                                      llvm::nulls());
+bool LLVMCPU::getInstruction(llvm::MCInst &instr, uint64_t &size,
+                             llvm::ArrayRef<uint8_t> bytes,
+                             uint64_t address) const {
+  auto status =
+      disassembler->getInstruction(instr, size, bytes, address, llvm::nulls());
+  if (status == llvm::MCDisassembler::SoftFail) {
+    std::string dissas = showInst(instr, address);
+    QBDI_WARN("Disassembly softfail on 0x{:x} : {} (CPUMode {}) ({:n})",
+              address, dissas, getCPUMode(),
+              spdlog::to_hex(bytes.data(), bytes.data() + size));
+  }
+  return status != llvm::MCDisassembler::Fail;
 }
 
 void LLVMCPU::writeInstruction(const llvm::MCInst inst,
-                               memory_ostream *stream) const {
+                               memory_ostream &stream) const {
   // MCCodeEmitter needs a fixups array
   llvm::SmallVector<llvm::MCFixup, 4> fixups;
 
-  uint64_t pos = stream->current_pos();
+  uint64_t pos = stream.current_pos();
   QBDI_DEBUG_BLOCK({
-    uint64_t address = reinterpret_cast<uint64_t>(stream->get_ptr()) + pos;
+    rword address = reinterpret_cast<rword>(stream.get_ptr()) + pos;
     std::string disass = showInst(inst, address);
     QBDI_DEBUG("Assembling {} at 0x{:x}", disass.c_str(), address);
   });
-  assembler->getEmitter().encodeInstruction(inst, *stream, fixups, *MSTI);
-  uint64_t size = stream->current_pos() - pos;
+  assembler->getEmitter().encodeInstruction(inst, stream, fixups, *MSTI);
+  uint64_t size = stream.current_pos() - pos;
 
   if (fixups.size() > 0) {
     llvm::MCValue target = llvm::MCValue();
@@ -196,23 +205,21 @@ void LLVMCPU::writeInstruction(const llvm::MCInst inst,
     if (fixup.getValue()->evaluateAsAbsolute(value)) {
       assembler->getBackend().applyFixup(
           *assembler, fixup, target,
-          llvm::MutableArrayRef<char>((char *)stream->get_ptr() + pos, size),
+          llvm::MutableArrayRef<char>((char *)stream.get_ptr() + pos, size),
           (uint64_t)value, true, MSTI.get());
     } else {
       QBDI_WARN("Could not evalutate fixup, might crash!");
     }
   }
 
-  QBDI_DEBUG(
-      "Assembly result at 0x{:x} is: {:n}",
-      reinterpret_cast<uint64_t>(stream->get_ptr()) + pos,
-      spdlog::to_hex(reinterpret_cast<uint8_t *>(stream->get_ptr()) + pos,
-                     reinterpret_cast<uint8_t *>(stream->get_ptr()) +
-                         stream->current_pos()));
+  QBDI_DEBUG("Assembly result at 0x{:x} is: {:n}",
+             reinterpret_cast<rword>(stream.get_ptr()) + pos,
+             spdlog::to_hex(reinterpret_cast<uint8_t *>(stream.get_ptr()) + pos,
+                            reinterpret_cast<uint8_t *>(stream.get_ptr()) +
+                                stream.current_pos()));
 }
 
-std::string LLVMCPU::showInst(const llvm::MCInst &inst,
-                              uint64_t address) const {
+std::string LLVMCPU::showInst(const llvm::MCInst &inst, rword address) const {
   std::string out;
   llvm::raw_string_ostream rso(out);
 
@@ -223,8 +230,20 @@ std::string LLVMCPU::showInst(const llvm::MCInst &inst,
   return out;
 }
 
-const char *LLVMCPU::getRegisterName(unsigned int id) const {
-  return MRI->getName(id);
+const char *LLVMCPU::getRegisterName(RegLLVM r) const {
+  return MRI->getName(r.getValue());
+}
+
+const char *LLVMCPU::getInstOpcodeName(const llvm::MCInst &inst) const {
+  return getInstOpcodeName(inst.getOpcode());
+}
+
+const char *LLVMCPU::getInstOpcodeName(unsigned opcode) const {
+  /* llvm::StringRef can return a no null terminate pointer
+   * However, in the case of opcode name, that seems to be always the case
+   * see <ARM|AArch64|X86>InstrNameData
+   */
+  return MCII->getName(opcode).data();
 }
 
 void LLVMCPU::setOptions(Options opts) {
@@ -240,6 +259,16 @@ void LLVMCPU::setOptions(Options opts) {
   }
 #endif
   options = opts;
+}
+
+int LLVMCPU::getMCInstSize(const llvm::MCInst &inst) const {
+  uint8_t buff[32];
+  llvm::sys::MemoryBlock os{&buff, sizeof(buff)};
+  memory_ostream stream{os};
+
+  writeInstruction(inst, stream);
+
+  return stream.current_pos();
 }
 
 } // namespace QBDI

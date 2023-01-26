@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,8 @@ public:
                          llvm::sys::MemoryBlock &stack);
 
   InMemoryObject compileWithContextSwitch(const char *source);
+
+  void initContext(QBDI::Context &ctx);
 };
 
 #endif

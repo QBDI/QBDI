@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix: 
         include:
@@ -17,15 +17,20 @@ jobs:
             ANDROID_ABI: 'x86_64'
           - QBDI_ARCH: 'X86'
             ANDROID_ABI: 'x86'
+          - QBDI_ARCH: 'AARCH64'
+            ANDROID_ABI: 'arm64-v8a'
+          - QBDI_ARCH: 'ARM'
+            ANDROID_ABI: 'armeabi-v7a'
+      fail-fast: false
     env:
       QBDI_PLATFORM: 'android'
       NDK_VERSION: 'r23'
       ANDROID_PLATFORM: 23
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Cache ccache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-ccache
         with:
           path: |
@@ -38,20 +43,22 @@ jobs:
           mkdir -p ~/.ccache
           cp .github/workflows/ccache.conf ~/.ccache/ccache.conf
       - name: Cache android NDK ${{ env.NDK_VERSION }}
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-ndk
         with:
           path: |
             android-ndk-${{ env.NDK_VERSION }}/
           key: ndk-${{ env.NDK_VERSION }}-linux
       - name: Cache third-party
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             third-party
           key: QBDI-third-party-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**/*.cmake') }}
       - name: Install dependencies
-        run: sudo apt-get install build-essential ccache cmake g++ libstdc++-8-dev make ninja-build pkg-config python3 unzip wget zlib1g-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install build-essential ccache cmake g++ libstdc++-10-dev make ninja-build pkg-config python3 unzip wget zlib1g-dev
       - name: Install android NDK ${{ env.NDK_VERSION }}
         if: steps.cache-ndk.outputs.cache-hit != 'true'
         run: |
@@ -74,9 +81,9 @@ jobs:
           ninja
           cpack
       - name: Export package
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
-          name: package android ${{ matrix.QBDI_ARCH }}
+          name: package_android_${{ matrix.QBDI_ARCH }}
           path: build/QBDI-*-android-${{ matrix.QBDI_ARCH }}.tar.gz
 
 

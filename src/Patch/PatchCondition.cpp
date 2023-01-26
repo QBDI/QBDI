@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,36 +26,31 @@
 
 namespace QBDI {
 
-bool MnemonicIs::test(const llvm::MCInst &inst, rword address, rword instSize,
-                      const LLVMCPU &llvmcpu) const {
+bool MnemonicIs::test(const Patch &patch, const LLVMCPU &llvmcpu) const {
   return QBDI::String::startsWith(
-      mnemonic.c_str(), llvmcpu.getMCII().getName(inst.getOpcode()).data());
+      mnemonic.c_str(), llvmcpu.getInstOpcodeName(patch.metadata.inst));
 }
 
-bool OpIs::test(const llvm::MCInst &inst, rword address, rword instSize,
-                const LLVMCPU &llvmcpu) const {
-  return inst.getOpcode() == op;
+bool OpIs::test(const Patch &patch, const LLVMCPU &llvmcpu) const {
+  return patch.metadata.inst.getOpcode() == op;
 }
 
-bool UseReg::test(const llvm::MCInst &inst, rword address, rword instSize,
-                  const LLVMCPU &llvmcpu) const {
-  for (unsigned int i = 0; i < inst.getNumOperands(); i++) {
-    const llvm::MCOperand &op = inst.getOperand(i);
-    if (op.isReg() && op.getReg() == (unsigned int)reg) {
+bool UseReg::test(const Patch &patch, const LLVMCPU &llvmcpu) const {
+  for (unsigned int i = 0; i < patch.metadata.inst.getNumOperands(); i++) {
+    const llvm::MCOperand &op = patch.metadata.inst.getOperand(i);
+    if (op.isReg() && op.getReg() == ((RegLLVM)reg)) {
       return true;
     }
   }
   return false;
 }
 
-bool DoesReadAccess::test(const llvm::MCInst &inst, rword address,
-                          rword instSize, const LLVMCPU &llvmcpu) const {
-  return getReadSize(inst) > 0;
+bool DoesReadAccess::test(const Patch &patch, const LLVMCPU &llvmcpu) const {
+  return getReadSize(patch.metadata.inst, llvmcpu) > 0;
 }
 
-bool DoesWriteAccess::test(const llvm::MCInst &inst, rword address,
-                           rword instSize, const LLVMCPU &llvmcpu) const {
-  return getWriteSize(inst) > 0;
+bool DoesWriteAccess::test(const Patch &patch, const LLVMCPU &llvmcpu) const {
+  return getWriteSize(patch.metadata.inst, llvmcpu) > 0;
 }
 
 } // namespace QBDI

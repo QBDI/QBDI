@@ -26,12 +26,12 @@ endif()
 # note: the version should also be changed in the followed files:
 # - docker/archlinux/PKGBUILD.linux-{X86|X86_64}
 # - docker/common.sh
-# - setup.py
+# - setup.cfg
 # - tools/frida-qbdi.js
 set(QBDI_VERSION_MAJOR 0)
-set(QBDI_VERSION_MINOR 9)
+set(QBDI_VERSION_MINOR 10)
 set(QBDI_VERSION_PATCH 0)
-set(QBDI_VERSION_DEV 0)
+set(QBDI_VERSION_DEV 1)
 
 set(QBDI_VERSION_STRING
     "${QBDI_VERSION_MAJOR}.${QBDI_VERSION_MINOR}.${QBDI_VERSION_PATCH}")
@@ -65,9 +65,7 @@ endif()
 # ========================
 set(QBDI_SUPPORTED_PLATFORMS "android" "linux" "windows" "osx" "ios")
 
-set(QBDI_SUPPORTED_ARCH #    "ARM" # no maintained since 0.7.0
-    #    "AARCH64" # private support
-    "X86" "X86_64")
+set(QBDI_SUPPORTED_ARCH "ARM" "AARCH64" "X86" "X86_64")
 
 set(QBDI_PLATFORM_WINDOWS 0)
 set(QBDI_PLATFORM_LINUX 0)
@@ -160,10 +158,30 @@ if(QBDI_PLATFORM_IOS AND NOT (QBDI_ARCH_ARM OR QBDI_ARCH_AARCH64))
       "IOS platform is only supported for ARM and AARCH64 architecture.")
 endif()
 
+if(QBDI_PLATFORM_OSX)
+  if(QBDI_ARCH_X86_64 AND NOT ("${CMAKE_HOST_SYSTEM_PROCESSOR}" STREQUAL
+                               "x86_64"))
+    set(CMAKE_OSX_ARCHITECTURES
+        "x86_64"
+        CACHE STRING "" FORCE)
+    set(CMAKE_CROSSCOMPILING
+        "TRUE"
+        CACHE STRING "" FORCE)
+  elseif(QBDI_ARCH_AARCH64 AND NOT ("${CMAKE_HOST_SYSTEM_PROCESSOR}" STREQUAL
+                                    "arm64"))
+    set(CMAKE_OSX_ARCHITECTURES
+        "arm64"
+        CACHE STRING "" FORCE)
+    set(CMAKE_CROSSCOMPILING
+        "TRUE"
+        CACHE STRING "" FORCE)
+  endif()
+endif()
+
 message(STATUS "")
 message(STATUS "== QBDI Target ==")
-message(STATUS "QBDI Platform: ${QBDI_PLATFORM}")
-message(STATUS "QBDI ARCH:     ${QBDI_ARCH}")
-message(STATUS "LLVM ARCH:     ${QBDI_LLVM_ARCH}")
-message(STATUS "Version:       ${QBDI_VERSION_FULL_STRING}")
+message(STATUS "QBDI Platform:      ${QBDI_PLATFORM}")
+message(STATUS "QBDI ARCH:          ${QBDI_ARCH}")
+message(STATUS "LLVM ARCH:          ${QBDI_LLVM_ARCH}")
+message(STATUS "Version:            ${QBDI_VERSION_FULL_STRING}")
 message(STATUS "")

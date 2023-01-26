@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,25 +19,26 @@
 #define INSTINFO_H
 
 #include <stdint.h>
+#include "QBDI/State.h"
 
 namespace llvm {
 class MCInst;
-class MCInstrDesc;
 } // namespace llvm
 
 namespace QBDI {
+class LLVMCPU;
 
-unsigned getReadSize(const llvm::MCInst &inst);
-unsigned getWriteSize(const llvm::MCInst &inst);
-unsigned getImmediateSize(const llvm::MCInst &inst,
-                          const llvm::MCInstrDesc &desc);
-
-// The TempManager will allow to reuse some register
-// when the method return True.
-bool useAllRegisters(const llvm::MCInst &inst);
+unsigned getInstSize(const llvm::MCInst &inst, const LLVMCPU &llvmcpu);
+unsigned getReadSize(const llvm::MCInst &inst, const LLVMCPU &llvmcpu);
+unsigned getWriteSize(const llvm::MCInst &inst, const LLVMCPU &llvmcpu);
+unsigned getImmediateSize(const llvm::MCInst &inst, const LLVMCPU &llvmcpu);
+sword getFixedOperandValue(const llvm::MCInst &inst, const LLVMCPU &llvmcpu,
+                           unsigned index, int64_t value);
 
 bool unsupportedRead(const llvm::MCInst &inst);
 bool unsupportedWrite(const llvm::MCInst &inst);
+
+bool variadicOpsIsWrite(const llvm::MCInst &inst);
 
 }; // namespace QBDI
 

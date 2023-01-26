@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 #ifndef PATCH_H
 #define PATCH_H
 
+#include <array>
 #include <map>
 #include <memory>
 #include <set>
@@ -25,6 +26,7 @@
 
 #include "Patch/InstMetadata.h"
 #include "Patch/Register.h"
+#include "Patch/Types.h"
 
 #include "QBDI/Callback.h"
 #include "QBDI/State.h"
@@ -50,17 +52,22 @@ private:
 public:
   InstMetadata metadata;
   std::vector<std::unique_ptr<RelocatableInst>> insts;
+  // flags generate by the PatchRule
+  std::vector<std::pair<unsigned int, int>> patchGenFlags;
+  int patchGenFlagsOffset = 0;
+  // InstCbLambda to register in the ExecBlockManager
   std::vector<std::unique_ptr<InstCbLambda>> userInstCB;
   // Registers Used and Defs by the instruction
-  std::map<unsigned, RegisterUsage> regUsage;
+  std::array<RegisterUsage, NUM_GPR> regUsage;
+  std::map<RegLLVM, RegisterUsage> regUsageExtra;
   // Registers used by the TempRegister for this patch
-  std::set<unsigned> tempReg;
+  std::set<RegLLVM> tempReg;
   const LLVMCPU *llvmcpu;
   bool finalize = false;
 
   using Vec = std::vector<Patch>;
 
-  Patch(const llvm::MCInst &inst, rword address, rword instSize,
+  Patch(const llvm::MCInst &inst, rword address, uint32_t instSize,
         const LLVMCPU &llvmcpu);
 
   Patch(Patch &&);
@@ -68,7 +75,6 @@ public:
 
   ~Patch();
 
-  void setMerge(bool merge);
   void setModifyPC(bool modifyPC);
 
   void append(std::unique_ptr<RelocatableInst> &&r);
@@ -76,6 +82,9 @@ public:
 
   void prepend(std::unique_ptr<RelocatableInst> &&r);
   void prepend(std::vector<std::unique_ptr<RelocatableInst>> v);
+
+  void insertAt(unsigned position,
+                std::vector<std::unique_ptr<RelocatableInst>> v);
 
   void addInstsPatch(InstPosition position, int priority,
                      std::vector<std::unique_ptr<RelocatableInst>> v);

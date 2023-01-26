@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ const std::set<unsigned> unsupportedInst{
     MINCPSrm,
     MINCSDrm,
     MINCSSrm,
-    MMX_MOVD64from64rm,
+    MMX_MOVD64from64mr,
     MMX_MOVD64to64rm,
     MOV64toPQIrm,
     MOVPQIto64mr,
@@ -118,9 +118,6 @@ const std::set<unsigned> unsupportedInst{
     KMOVQmk,
     KMOVWkm,
     KMOVWmk,
-    // MPX feature
-    BNDLDXrm,
-    BNDSTXmr,
     // complex & conditionnal memory access (SIB access)
     TILELOADD,
     TILELOADDT1,
@@ -179,12 +176,12 @@ const std::set<unsigned> fixupRead{
     LODSL,
     LODSQ,
     LODSW,
-    LRETIL,
-    LRETIQ,
-    LRETIW,
-    LRETL,
-    LRETQ,
-    LRETW,
+    LRETI32,
+    LRETI64,
+    LRETI16,
+    LRET32,
+    LRET64,
+    LRET16,
     MOVDIR64B16,
     MOVSB,
     MOVSL,
@@ -215,12 +212,12 @@ const std::set<unsigned> fixupRead{
     RCR8m1,
     RCR8mCL,
     RCR8mi,
-    RETIL,
-    RETIQ,
-    RETIW,
-    RETL,
-    RETQ,
-    RETW,
+    RETI32,
+    RETI64,
+    RETI16,
+    RET32,
+    RET64,
+    RET16,
     SCASB,
     SCASL,
     SCASQ,
@@ -367,7 +364,8 @@ const std::set<unsigned> fixupNoWrite{
 
 TEST_CASE_METHOD(MemoryAccessTable, "MemoryAccessTable-CrossCheck") {
 
-  const llvm::MCInstrInfo &MCII = getCPU(QBDI::CPUMode::DEFAULT).getMCII();
+  const QBDI::LLVMCPU &llvmcpu = getCPU(QBDI::CPUMode::DEFAULT);
+  const llvm::MCInstrInfo &MCII = llvmcpu.getMCII();
 
   for (unsigned opcode = 0; opcode < llvm::X86::INSTRUCTION_LIST_END;
        opcode++) {
@@ -377,9 +375,23 @@ TEST_CASE_METHOD(MemoryAccessTable, "MemoryAccessTable-CrossCheck") {
     const llvm::MCInstrDesc &desc = MCII.get(opcode);
     const char *mnemonic = MCII.getName(opcode).data();
 
+    // InstInfo_X86_64.cpp only use inst->getOpcode(). The MCInst doesn't need
+    // to have his operand
+    llvm::MCInst inst;
+    inst.setOpcode(opcode);
+
+    bool doRead = (QBDI::getReadSize(inst, llvmcpu) != 0);
+    bool doWrite = (QBDI::getWriteSize(inst, llvmcpu) != 0);
+    bool mayRead = desc.mayLoad();
+    bool mayWrite = desc.mayStore();
+
     // the opcode is a pseudo instruction used by LLVM internally
-    if (desc.isPseudo())
+    if (desc.isPseudo()) {
+      if (doRead or doWrite) {
+        WARN("Pseudo instruction " << mnemonic << " in InstInfo");
+      }
       continue;
+    }
 
     // some no pseudo instructions are also pseudo ...
     if ((desc.TSFlags & llvm::X86II::FormMask) == llvm::X86II::Pseudo)
@@ -393,16 +405,6 @@ TEST_CASE_METHOD(MemoryAccessTable, "MemoryAccessTable-CrossCheck") {
     // not support XOP. (AMD eXtended Operations)
     if ((desc.TSFlags & llvm::X86II::EncodingMask) == llvm::X86II::XOP)
       continue;
-
-    // InstInfo_X86_64.cpp only use inst->getOpcode(). The MCInst doesn't need
-    // to have his operand
-    llvm::MCInst inst;
-    inst.setOpcode(opcode);
-
-    bool doRead = (QBDI::getReadSize(inst) != 0);
-    bool doWrite = (QBDI::getWriteSize(inst) != 0);
-    bool mayRead = desc.mayLoad();
-    bool mayWrite = desc.mayStore();
 
     bool bypassRead = false;
     bool bypassWrite = false;

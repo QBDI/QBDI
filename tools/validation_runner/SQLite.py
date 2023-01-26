@@ -1,7 +1,7 @@
 #
 # This file is part of QBDI.
 #
-# Copyright 2017 - 2022 Quarkslab
+# Copyright 2017 - 2023 Quarkslab
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -70,6 +70,9 @@ class SQLiteDBAdapter:
                             memaccess_error INTEGER,
                             memaccess_unique_error INTEGER,
                             memaccess_log TEXT,
+                            output_len_dbg INTEGER,
+                            output_len_dbi INTEGER,
+                            same_output INTEGER,
                             cascades_log TEXT,
                             coverage_log TEXT,
                             memaccess_unique_log TEXT);''')
@@ -84,6 +87,9 @@ class SQLiteDBAdapter:
             ("Tests", "memaccess_unique_error"),
             ("Tests", "memaccess_log"),
             ("Tests", "memaccess_unique_log"),
+            ("Tests", "same_output"),
+            ("Tests", "output_len_dbg"),
+            ("Tests", "output_len_dbi"),
         ]
         for table, column_name in check_exist_column:
             cursor.execute("SELECT COUNT(*) AS CNTREC FROM pragma_table_info(?) WHERE name=?", (table, column_name))
@@ -121,15 +127,17 @@ class SQLiteDBAdapter:
         cursor.execute('''INSERT INTO Tests (run_id, command, arguments, binary_hash, retcode,
                           total_instr, unique_instr, diff_map, errors, no_impact_err, non_critical_err,
                           critical_err, cascades, no_impact_casc, non_critical_casc, critical_casc,
-                          memaccess_error, memaccess_unique_error, memaccess_log, cascades_log,
-                          coverage_log, memaccess_unique_log) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);''',
+                          memaccess_error, memaccess_unique_error, memaccess_log, output_len_dbg, output_len_dbi,
+                          same_output, cascades_log, coverage_log, memaccess_unique_log) VALUES
+                          (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);''',
                           (run_id, test_result.cfg.command, str(test_result.cfg.arguments),
                               test_result.binary_hash, test_result.retcode, test_result.total_instr,
                               test_result.unique_instr, test_result.diff_map, test_result.errors,
                               test_result.no_impact_err, test_result.non_critical_err, test_result.critical_err,
                               test_result.cascades, test_result.no_impact_casc, test_result.non_critical_casc,
                               test_result.critical_casc, test_result.memaccess_error, test_result.memaccess_unique_error,
-                              test_result.memaccess_log, test_result.cascades_log,
+                              test_result.memaccess_log, test_result.output_len_dbg, test_result.output_len_dbi,
+                              test_result.same_output, test_result.cascades_log,
                               test_result.coverage_log, test_result.memaccess_unique_log))
         run_id = cursor.lastrowid
         self.connection.commit()

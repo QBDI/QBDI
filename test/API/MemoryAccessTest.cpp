@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2022 Quarkslab
+ * Copyright 2017 - 2023 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -417,8 +417,6 @@ QBDI::VMAction writeSnooper(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
   }
   return QBDI::VMAction::CONTINUE;
 }
-
-#if not defined(QBDI_ARCH_ARM)
 
 TEST_CASE_METHOD(APITest, "MemoryAccessTest-Read8") {
   char buffer[] = "p0p30fd0p3";
@@ -976,5 +974,3 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest-InstCbLambda-addMemRangeCB") {
 
   SUCCEED();
 }
-
-#endif
