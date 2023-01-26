@@ -81,17 +81,17 @@ perform_action_by_image() {
     perform_action "$ACTION" "ARM" "debian:${DEBIAN_TARGET}" "armv7_debian_${DEBIAN_TARGET}" "armv7_debian" "armv7"
     perform_action "$ACTION" "AARCH64" "debian:${DEBIAN_TARGET}" "arm64_debian_${DEBIAN_TARGET}" "arm64_debian" "arm64"
     perform_action "$ACTION" "X86" "debian:${DEBIAN_TARGET}" "x86_debian_${DEBIAN_TARGET}" "x86_debian" "x86"
-    perform_action "$ACTION" "X64" "debian:${DEBIAN_TARGET}" "x64_debian_${DEBIAN_TARGET}" "x64_debian" "x64" "latest"
+    perform_action "$ACTION" "X86_64" "debian:${DEBIAN_TARGET}" "x64_debian_${DEBIAN_TARGET}" "x64_debian" "x64" "latest"
 
     perform_action "$ACTION" "X86" "ubuntu:18.04" "x86_ubuntu_18.04" "x86_ubuntu"
 
     perform_action "$ACTION" "ARM" "ubuntu:${UBUNTU_LTS_TARGET}" "armv7_ubuntu_${UBUNTU_LTS_TARGET}" "armv7_ubuntu_lts" "armv7_ubuntu"
     perform_action "$ACTION" "AARCH64" "ubuntu:${UBUNTU_LTS_TARGET}" "arm64_ubuntu_${UBUNTU_LTS_TARGET}" "arm64_ubuntu_lts" "arm64_ubuntu"
-    perform_action "$ACTION" "X64" "ubuntu:${UBUNTU_LTS_TARGET}" "x64_ubuntu_${UBUNTU_LTS_TARGET}" "x64_ubuntu_lts" "x64_ubuntu"
+    perform_action "$ACTION" "X86_64" "ubuntu:${UBUNTU_LTS_TARGET}" "x64_ubuntu_${UBUNTU_LTS_TARGET}" "x64_ubuntu_lts" "x64_ubuntu"
 
     perform_action "$ACTION" "ARM" "ubuntu:${UBUNTU_LAST_TARGET}" "armv7_ubuntu_${UBUNTU_LAST_TARGET}"
     perform_action "$ACTION" "AARCH64" "ubuntu:${UBUNTU_LAST_TARGET}" "arm64_ubuntu_${UBUNTU_LAST_TARGET}"
-    perform_action "$ACTION" "X64" "ubuntu:${UBUNTU_LAST_TARGET}" "x64_ubuntu_${UBUNTU_LAST_TARGET}"
+    perform_action "$ACTION" "X86_64" "ubuntu:${UBUNTU_LAST_TARGET}" "x64_ubuntu_${UBUNTU_LAST_TARGET}"
 }
 
 touch "$HASHFILE"
