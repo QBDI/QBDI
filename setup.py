@@ -22,7 +22,11 @@ import sys
 import platform
 import subprocess
 import shutil
-import ninja
+try:
+    import ninja
+    HAS_NINJA = True
+except:
+    HAS_NINJA = False
 
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
@@ -88,14 +92,7 @@ class CMakeBuild(build_ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         detected_platform, detected_arch = detect_QBDI_platform()
 
-        ninja_executable_path = os.path.abspath(os.path.join(ninja.BIN_DIR,
-                "ninja.exe" if detected_platform == 'windows' else "ninja"))
-
-        if not os.path.isfile(ninja_executable_path):
-            raise RuntimeError("Compile Error : Cannot found ninja binary.")
-
         cmake_args = ['-G', 'Ninja',
-                      '-DCMAKE_MAKE_PROGRAM:FILEPATH={}'.format(ninja_executable_path),
                       '-DPYQBDI_OUTPUT_DIRECTORY={}'.format(extdir),
                       '-DPython3_EXECUTABLE={}'.format(sys.executable),
                       '-DCMAKE_BUILD_TYPE=Release',
@@ -111,6 +108,17 @@ class CMakeBuild(build_ext):
                       '-DQBDI_TOOLS_PYQBDI=ON',
                      ]
         build_args = ['--config', 'Release', '--']
+
+        if HAS_NINJA:
+            ninja_executable_path = os.path.abspath(os.path.join(ninja.BIN_DIR,
+                    "ninja.exe" if detected_platform == 'windows' else "ninja"))
+
+            if not os.path.isfile(ninja_executable_path):
+                raise RuntimeError("Compile Error : Cannot found ninja binary.")
+
+            cmake_args.append('-DCMAKE_MAKE_PROGRAM:FILEPATH={}'.format(ninja_executable_path))
+        elif not bool(shutil.which('ninja')):
+            raise RuntimeError("Compile Error : Cannot found ninja binary.")
 
         env = os.environ.copy()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),

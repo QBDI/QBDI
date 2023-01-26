@@ -5,8 +5,7 @@ FROM $DOCKER_IMG
 ENV USER="docker" \
     HOME="/home/docker" \
     PREFIX="/usr" \
-    QBDI_PLATFORM="linux" \
-    CLICOLOR_FORCE=1
+    QBDI_PLATFORM="linux"
 
 # create a user
 RUN adduser --disabled-password --gecos '' --home "$HOME" "$USER"
@@ -41,7 +40,7 @@ USER $USER
 ENV PATH="${PATH}:${HOME}/.local/bin"
 
 RUN mkdir "${HOME}/QBDI" && \
-    pip install --upgrade --user pip build
+    pip install --upgrade --user pip build setuptools
 
 WORKDIR $HOME/QBDI
 
