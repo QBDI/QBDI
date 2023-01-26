@@ -4,7 +4,7 @@ CHANGELOG
 Version 0.10.0
 --------------
 
-2023-01-XX QBDI Team <qbdi@quarkslab.com>
+2023-01-26 QBDI Team <qbdi@quarkslab.com>
 
 * Fix Ubuntu package (`#217 <https://github.com/QBDI/QBDI/pull/217>`__)
 * Support ARMv7 and AArch64 architecture (`#222 <https://github.com/QBDI/QBDI/pull/222>`__)
