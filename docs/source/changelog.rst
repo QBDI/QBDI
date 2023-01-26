@@ -1,8 +1,22 @@
 CHANGELOG
 =========
 
-Next Release
-------------
+Version 0.10.0
+--------------
+
+2023-01-XX QBDI Team <qbdi@quarkslab.com>
+
+* Fix Ubuntu package (`#217 <https://github.com/QBDI/QBDI/pull/217>`__)
+* Support ARMv7 and AArch64 architecture (`#222 <https://github.com/QBDI/QBDI/pull/222>`__)
+* Support python 3.11 (`#222 <https://github.com/QBDI/QBDI/pull/222>`__)
+* Support Frida >= 15.2 (`#222 <https://github.com/QBDI/QBDI/pull/222>`__ and `#223 <https://github.com/QBDI/QBDI/pull/223>`_)
+
+Internal update:
+
+* Move windows CI to Github Actions (`#222 <https://github.com/QBDI/QBDI/pull/222>`__)
+* Support python build with ``pyproject.toml`` (`#222 <https://github.com/QBDI/QBDI/pull/222>`__)
+* Update LLVM to LLVM15 (`#224 <https://github.com/QBDI/QBDI/pull/224>`_)
+* Add CI for ARMv7 and AArch64 (`#222 <https://github.com/QBDI/QBDI/pull/222>`__ and `#225 <https://github.com/QBDI/QBDI/pull/225>`_)
 
 Version 0.9.0
 -------------
