@@ -407,8 +407,7 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/include/QBDI.h"
 
 if(QBDI_INSTALL)
   # Configure install
-  if(UNIX AND NOT (QBDI_ARCH_ARM AND (QBDI_PLATFORM_IOS OR QBDI_PLATFORM_ANDROID
-                                     )))
+  if(UNIX)
     set(FULL_PACKAGE true)
   else()
     set(FULL_PACKAGE false)
