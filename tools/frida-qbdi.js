@@ -794,7 +794,11 @@ export var Options = {
      * Disable context switch optimisation when the target
      * execblock doesn't used FPR.
      */
-    OPT_DISABLE_OPTIONAL_FPR: 1 << 1,
+    OPT_DISABLE_OPTIONAL_FPR : 1 << 1,
+    /**
+     * Don't load the value when perform memory access.
+     */
+    OPT_DISABLE_MEMORYACCESS_VALUE : 1 << 2,
 };
 if (Process.arch === 'x64') {
     /**

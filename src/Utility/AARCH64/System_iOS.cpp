@@ -89,7 +89,7 @@ bool isRWXSupported() {
     task = mach_task_self();
 
     kr = vm_allocate(task, &page, pageSize, VM_FLAGS_ANYWHERE);
-    QBDI_REQUIRE_ACTION(kr == KERN_SUCCESS, return );
+    QBDI_REQUIRE_ACTION(kr == KERN_SUCCESS, return);
 
     llvm::sys::MemoryBlock block((void *)page, pageSize);
 

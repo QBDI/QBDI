@@ -567,6 +567,7 @@ Other globals
     .. js:autoattribute:: NO_OPT
     .. js:autoattribute:: OPT_DISABLE_FPR
     .. js:autoattribute:: OPT_DISABLE_OPTIONAL_FPR
+    .. js:autoattribute:: OPT_DISABLE_MEMORYACCESS_VALUE
     .. js:autoattribute:: OPT_ATT_SYNTAX
     .. js:autoattribute:: OPT_ENABLE_FS_GS
 

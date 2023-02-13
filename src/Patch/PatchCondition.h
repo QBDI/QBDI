@@ -28,6 +28,7 @@
 #include "Patch/PatchUtils.h"
 #include "Patch/Types.h"
 
+#include "QBDI/Options.h"
 #include "QBDI/Range.h"
 #include "QBDI/State.h"
 
@@ -62,7 +63,7 @@ public:
    * @param[in] mnemonic   A null terminated instruction mnemonic (using LLVM
    * style)
    */
-  MnemonicIs(const char *mnemonic) : mnemonic(mnemonic){};
+  MnemonicIs(const char *mnemonic) : mnemonic(mnemonic) {}
 
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
 };
@@ -75,7 +76,7 @@ public:
    *
    * @param[in] op LLVM instruction opcode ID.
    */
-  OpIs(unsigned int op) : op(op){};
+  OpIs(unsigned int op) : op(op) {}
 
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
 };
@@ -88,7 +89,7 @@ public:
    *
    * @param[in] reg The register to compare with.
    */
-  UseReg(Reg reg) : reg(reg){};
+  UseReg(Reg reg) : reg(reg) {}
 
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
 };
@@ -109,7 +110,7 @@ public:
     if constexpr (is_arm) {
       range.setStart(range.start() & (~1));
     }
-  };
+  }
 
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override {
     return range.contains(
@@ -134,7 +135,7 @@ public:
     if constexpr (is_arm) {
       breakpoint &= (~1);
     }
-  };
+  }
 
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override {
     return patch.metadata.address == breakpoint;
@@ -157,7 +158,7 @@ public:
    * @param[in] conditions List of conditions to evaluate.
    */
   And(PatchCondition::UniquePtrVec &&conditions)
-      : conditions(std::forward<PatchCondition::UniquePtrVec>(conditions)){};
+      : conditions(std::forward<PatchCondition::UniquePtrVec>(conditions)) {}
 
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override {
     return std::all_of(conditions.begin(), conditions.end(),
@@ -190,7 +191,7 @@ public:
    * @param[in] conditions List of conditions to evaluate.
    */
   Or(PatchCondition::UniquePtrVec &&conditions)
-      : conditions(std::forward<PatchCondition::UniquePtrVec>(conditions)){};
+      : conditions(std::forward<PatchCondition::UniquePtrVec>(conditions)) {}
 
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override {
     return std::any_of(conditions.begin(), conditions.end(),
@@ -221,7 +222,7 @@ public:
    * @param[in] condition Condition to evaluate.
    */
   Not(PatchCondition::UniquePtr &&condition)
-      : condition(std::forward<PatchCondition::UniquePtr>(condition)){};
+      : condition(std::forward<PatchCondition::UniquePtr>(condition)) {}
 
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override {
     return !condition->test(patch, llvmcpu);
@@ -236,7 +237,7 @@ class True : public AutoClone<PatchCondition, True> {
 public:
   /*! Return true.
    */
-  True(){};
+  True() {}
 
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override {
     return true;
@@ -247,7 +248,7 @@ class DoesReadAccess : public AutoClone<PatchCondition, DoesReadAccess> {
 public:
   /*! Return true if the instruction read data from memory.
    */
-  DoesReadAccess(){};
+  DoesReadAccess() {}
 
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
 };
@@ -256,7 +257,18 @@ class DoesWriteAccess : public AutoClone<PatchCondition, DoesWriteAccess> {
 public:
   /*! Return true if the instruction write data to memory.
    */
-  DoesWriteAccess(){};
+  DoesWriteAccess() {}
+
+  bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
+};
+
+class HasOptions : public AutoClone<PatchCondition, HasOptions> {
+  Options opts;
+
+public:
+  /*! Return true if the options is specified
+   */
+  HasOptions(Options opts_) : opts(opts_) {}
 
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
 };

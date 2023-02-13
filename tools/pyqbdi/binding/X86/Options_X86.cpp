@@ -32,6 +32,9 @@ void init_binding_Options(py::module_ &m) {
       .value("OPT_DISABLE_OPTIONAL_FPR", Options::OPT_DISABLE_OPTIONAL_FPR,
              "Disable context switch optimisation when the target execblock "
              "doesn't used FPR")
+      .value("OPT_DISABLE_MEMORYACCESS_VALUE",
+             Options::OPT_DISABLE_MEMORYACCESS_VALUE,
+             "Don't load memory access value")
       .value("OPT_ATT_SYNTAX", Options::OPT_ATT_SYNTAX,
              "Used the AT&T syntax for instruction disassembly")
       .export_values()

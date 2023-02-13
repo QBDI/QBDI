@@ -462,7 +462,8 @@ PatchRuleAssembly::~PatchRuleAssembly() = default;
 bool PatchRuleAssembly::changeOptions(Options opts) {
   const Options needRecreate =
       Options::OPT_DISABLE_FPR | Options::OPT_DISABLE_OPTIONAL_FPR |
-      Options::OPT_DISABLE_LOCAL_MONITOR | Options::OPT_BYPASS_PAUTH;
+      Options::OPT_DISABLE_LOCAL_MONITOR | Options::OPT_BYPASS_PAUTH |
+      Options::OPT_DISABLE_MEMORYACCESS_VALUE;
   if ((opts & needRecreate) != (options & needRecreate)) {
     patchRules = getDefaultPatchRules(opts);
     options = opts;

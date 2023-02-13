@@ -26,6 +26,7 @@
 #include "llvm/MC/MCInstrInfo.h"
 
 #include "QBDI/Config.h"
+#include "QBDI/Options.h"
 #include "QBDI/Platform.h"
 #include "Engine/LLVMCPU.h"
 #include "Patch/InstInfo.h"
@@ -335,7 +336,9 @@ GetReadValue::generate(const Patch &patch, TempManager &temp_manager) const {
 
   RegLLVM dst = temp_manager.getRegForTemp(temp);
 
-  if (is_bits_64 and size < sizeof(rword)) {
+  if (patch.llvmcpu->hasOptions(Options::OPT_DISABLE_MEMORYACCESS_VALUE)) {
+    return conv_unique<RelocatableInst>(Xorrr(dst, dst));
+  } else if (is_bits_64 and size < sizeof(rword)) {
     dst = temp_manager.getSizedSubReg(dst, 4);
   } else if (size > sizeof(rword)) {
     return conv_unique<RelocatableInst>(Xorrr(dst, dst));
@@ -398,7 +401,9 @@ GetWriteValue::generate(const Patch &patch, TempManager &temp_manager) const {
 
   RegLLVM dst = temp_manager.getRegForTemp(temp);
 
-  if (is_bits_64 and size < sizeof(rword)) {
+  if (patch.llvmcpu->hasOptions(Options::OPT_DISABLE_MEMORYACCESS_VALUE)) {
+    return conv_unique<RelocatableInst>(Xorrr(dst, dst));
+  } else if (is_bits_64 and size < sizeof(rword)) {
     dst = temp_manager.getSizedSubReg(dst, 4);
   } else if (size > sizeof(rword)) {
     return conv_unique<RelocatableInst>(Xorrr(dst, dst));

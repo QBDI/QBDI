@@ -39,6 +39,10 @@ typedef enum {
                                                 * optimisation when the target
                                                 * execblock doesn't used FPR
                                                 */
+  _QBDI_EI(OPT_DISABLE_MEMORYACCESS_VALUE) = 1 << 2, /*!< Don't load the value
+                                                      * when perform memory
+                                                      * access.
+                                                      */
   // architecture specific option between 24 and 31
   _QBDI_EI(OPT_DISABLE_LOCAL_MONITOR) =
       1 << 24, /*!< Disable the local monitor for instruction like stxr */

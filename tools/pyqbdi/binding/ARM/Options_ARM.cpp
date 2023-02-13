@@ -32,6 +32,9 @@ void init_binding_Options(py::module_ &m) {
       .value("OPT_DISABLE_OPTIONAL_FPR", Options::OPT_DISABLE_OPTIONAL_FPR,
              "Disable context switch optimisation when the target execblock "
              "doesn't used FPR")
+      .value("OPT_DISABLE_MEMORYACCESS_VALUE",
+             Options::OPT_DISABLE_MEMORYACCESS_VALUE,
+             "Don't load memory access value")
       .value("OPT_DISABLE_LOCAL_MONITOR", Options::OPT_DISABLE_LOCAL_MONITOR,
              "Disable the local monitor for instruction like stxr")
       .value("OPT_DISABLE_D16_D31", Options::OPT_DISABLE_D16_D31,

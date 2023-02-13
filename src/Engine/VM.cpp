@@ -346,14 +346,14 @@ FPRState *VM::getFPRState() const { return engine->getFPRState(); }
 // setGPRState
 
 void VM::setGPRState(const GPRState *gprState) {
-  QBDI_REQUIRE_ACTION(gprState != nullptr, return );
+  QBDI_REQUIRE_ACTION(gprState != nullptr, return);
   engine->setGPRState(gprState);
 }
 
 // setFPRState
 
 void VM::setFPRState(const FPRState *fprState) {
-  QBDI_REQUIRE_ACTION(fprState != nullptr, return );
+  QBDI_REQUIRE_ACTION(fprState != nullptr, return);
   engine->setFPRState(fprState);
 }
 
@@ -373,7 +373,7 @@ void VM::setOptions(Options options) {
 // addInstrumentedRange
 
 void VM::addInstrumentedRange(rword start, rword end) {
-  QBDI_REQUIRE_ACTION(start < end, return );
+  QBDI_REQUIRE_ACTION(start < end, return);
   engine->addInstrumentedRange(start, end);
 }
 
@@ -398,7 +398,7 @@ bool VM::instrumentAllExecutableMaps() {
 // removeInstrumentedRange
 
 void VM::removeInstrumentedRange(rword start, rword end) {
-  QBDI_REQUIRE_ACTION(start < end, return );
+  QBDI_REQUIRE_ACTION(start < end, return);
   engine->removeInstrumentedRange(start, end);
 }
 

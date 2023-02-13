@@ -32,7 +32,6 @@
 namespace QBDI {
 
 RelocatableInst::UniquePtrVec getExecBlockPrologue(const LLVMCPU &llvmcpu) {
-  Options opts = llvmcpu.getOptions();
   RelocatableInst::UniquePtrVec prologue;
 
   // prologue.push_back(Bkpt(CPUMode::ARM, 0));
@@ -49,7 +48,7 @@ RelocatableInst::UniquePtrVec getExecBlockPrologue(const LLVMCPU &llvmcpu) {
   // set R0 to the address of the dataBlock
   append(prologue, SetDataBlockAddress(Reg(0)).genReloc(llvmcpu));
 
-  if ((opts & Options::OPT_DISABLE_FPR) == 0) {
+  if (not llvmcpu.hasOptions(Options::OPT_DISABLE_FPR)) {
     // set R1 at the begin of FPRState
     prologue.push_back(Add(CPUMode::ARM, Reg(1), Reg(0),
                            Constant(offsetof(Context, fprState))));
@@ -61,7 +60,7 @@ RelocatableInst::UniquePtrVec getExecBlockPrologue(const LLVMCPU &llvmcpu) {
     // ===========
     prologue.push_back(VLdmIA(CPUMode::ARM, Reg(1), 0, 16, true));
 #if QBDI_NUM_FPR == 32
-    if ((opts & Options::OPT_DISABLE_D16_D31) == 0) {
+    if (not llvmcpu.hasOptions(Options::OPT_DISABLE_D16_D31)) {
       prologue.push_back(VLdmIA(CPUMode::ARM, Reg(1), 16, 16));
     }
 #endif
@@ -96,7 +95,6 @@ RelocatableInst::UniquePtrVec getExecBlockPrologue(const LLVMCPU &llvmcpu) {
 }
 
 RelocatableInst::UniquePtrVec getExecBlockEpilogue(const LLVMCPU &llvmcpu) {
-  Options opts = llvmcpu.getOptions();
   RelocatableInst::UniquePtrVec epilogue;
 
   // Save R0
@@ -120,7 +118,7 @@ RelocatableInst::UniquePtrVec getExecBlockEpilogue(const LLVMCPU &llvmcpu) {
   epilogue.push_back(
       StoreDataBlock::unique(Reg(1), Offset(offsetof(Context, gprState.cpsr))));
 
-  if ((opts & Options::OPT_DISABLE_FPR) == 0) {
+  if (not llvmcpu.hasOptions(Options::OPT_DISABLE_FPR)) {
     // set R1 at the begin of FPRState (from the gprState.r1)
     epilogue.push_back(Add(CPUMode::ARM, Reg(1), Reg(0),
                            Constant(offsetof(Context, fprState) -
@@ -135,7 +133,7 @@ RelocatableInst::UniquePtrVec getExecBlockEpilogue(const LLVMCPU &llvmcpu) {
     // ========
     epilogue.push_back(VStmIA(CPUMode::ARM, Reg(1), 0, 16, true));
 #if QBDI_NUM_FPR == 32
-    if ((opts & Options::OPT_DISABLE_D16_D31) == 0) {
+    if (not llvmcpu.hasOptions(Options::OPT_DISABLE_D16_D31)) {
       epilogue.push_back(VStmIA(CPUMode::ARM, Reg(1), 16, 16));
     }
 #endif

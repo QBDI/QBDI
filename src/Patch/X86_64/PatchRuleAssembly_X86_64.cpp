@@ -294,7 +294,8 @@ bool PatchRuleAssembly::changeOptions(Options opts) {
 #if defined(QBDI_ARCH_X86_64)
                                Options::OPT_ENABLE_FS_GS |
 #endif
-                               Options::OPT_DISABLE_OPTIONAL_FPR;
+                               Options::OPT_DISABLE_OPTIONAL_FPR |
+                               Options::OPT_DISABLE_MEMORYACCESS_VALUE;
   if ((opts & needRecreate) != (options & needRecreate)) {
     patchRules = getDefaultPatchRules(opts);
     options = opts;

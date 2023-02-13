@@ -463,9 +463,9 @@ ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt,
   QBDI_REQUIRE_ABORT(applyRelocatedInst(jmpEpilogue, nullptr, llvmcpu),
                      "Fail to write jmpEpilogue");
   // change the flag of the basicblock
-  if (llvmcpu.getOptions() & Options::OPT_DISABLE_FPR) {
+  if (llvmcpu.hasOptions(Options::OPT_DISABLE_FPR)) {
     executeFlags = 0;
-  } else if (llvmcpu.getOptions() & Options::OPT_DISABLE_OPTIONAL_FPR) {
+  } else if (llvmcpu.hasOptions(Options::OPT_DISABLE_OPTIONAL_FPR)) {
     executeFlags = defaultExecuteFlags;
   }
   // Register sequence

@@ -974,3 +974,33 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest-InstCbLambda-addMemRangeCB") {
 
   SUCCEED();
 }
+
+TEST_CASE_METHOD(APITest, "MemoryAccessTest-NoValue") {
+  uint32_t buffer[] = {3531902336, 1974345459, 1037124602, 2572792182,
+                       3451121073, 4105092976, 2050515100, 2786945221,
+                       1496976643, 515521533};
+  size_t buffer_size = sizeof(buffer) / sizeof(uint32_t);
+  bool noValue = true;
+
+  vm.setOptions(vm.getOptions() |
+                QBDI::Options::OPT_DISABLE_MEMORYACCESS_VALUE);
+  vm.addMemRangeCB(
+      (QBDI::rword)buffer, (QBDI::rword)(buffer + buffer_size),
+      QBDI::MEMORY_READ,
+      [&noValue](QBDI::VMInstanceRef vm, QBDI::GPRState *gpr,
+                 QBDI::FPRState *fpr) {
+        for (const auto &m : vm->getInstMemoryAccess()) {
+          if ((m.flags & QBDI::MemoryAccessFlags::MEMORY_UNKNOWN_VALUE) == 0) {
+            noValue = false;
+          }
+        }
+        return QBDI::VMAction::CONTINUE;
+      });
+
+  QBDI::rword retval;
+  vm.call(&retval, (QBDI::rword)arrayRead32,
+          {(QBDI::rword)buffer, (QBDI::rword)buffer_size});
+  ;
+  REQUIRE(retval == (QBDI::rword)arrayRead32(buffer, buffer_size));
+  REQUIRE(noValue);
+}

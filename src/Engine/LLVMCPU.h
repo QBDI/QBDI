@@ -112,6 +112,9 @@ public:
   inline const llvm::MCRegisterInfo &getMRI() const { return *MRI; }
 
   Options getOptions() const { return options; }
+
+  bool hasOptions(Options opts) const { return (getOptions() & opts) == opts; }
+
   void setOptions(Options opts);
 
   int getMCInstSize(const llvm::MCInst &inst) const;
@@ -145,6 +148,9 @@ public:
   }
 
   Options getOptions() const { return llvmcpu[0]->getOptions(); }
+
+  bool hasOptions(Options opts) const { return (getOptions() & opts) == opts; }
+
   void setOptions(Options opts);
 
   const LLVMCPU &getCPU(CPUMode mode) const { return *llvmcpu[mode]; }

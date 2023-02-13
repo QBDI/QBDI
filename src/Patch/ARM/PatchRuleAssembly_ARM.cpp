@@ -1276,7 +1276,8 @@ bool PatchRuleAssembly::changeOptions(Options opts) {
 
   const Options needRecreate =
       Options::OPT_DISABLE_FPR | Options::OPT_DISABLE_OPTIONAL_FPR |
-      Options::OPT_DISABLE_D16_D31 | Options::OPT_ARM_MASK;
+      Options::OPT_DISABLE_D16_D31 | Options::OPT_ARM_MASK |
+      Options::OPT_DISABLE_MEMORYACCESS_VALUE;
   if ((opts & needRecreate) != (options & needRecreate)) {
     reset();
     patchRulesARM = getARMPatchRules(opts);

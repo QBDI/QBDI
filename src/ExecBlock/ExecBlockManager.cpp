@@ -348,7 +348,7 @@ size_t ExecBlockManager::searchRegion(rword address) const {
 
 void ExecBlockManager::mergeRegion(size_t i) {
 
-  QBDI_REQUIRE_ACTION(i + 1 < regions.size(), return );
+  QBDI_REQUIRE_ACTION(i + 1 < regions.size(), return);
   QBDI_REQUIRE_ABORT(regions[i].blocks.size() + regions[i + 1].blocks.size() <
                          (1 << 16),
                      "Too many ExecBlock in the same region");

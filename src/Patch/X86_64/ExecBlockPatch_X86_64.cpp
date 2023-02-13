@@ -39,15 +39,14 @@
 namespace QBDI {
 
 RelocatableInst::UniquePtrVec getExecBlockPrologue(const LLVMCPU &llvmcpu) {
-  Options opts = llvmcpu.getOptions();
   RelocatableInst::UniquePtrVec prologue;
 
   // Save host SP
   append(prologue, SaveReg(Reg(REG_SP), Offset(offsetof(Context, hostState.sp)))
                        .genReloc(llvmcpu));
   // Restore FPR
-  if ((opts & Options::OPT_DISABLE_FPR) == 0) {
-    if ((opts & Options::OPT_DISABLE_OPTIONAL_FPR) == 0) {
+  if (not llvmcpu.hasOptions(Options::OPT_DISABLE_FPR)) {
+    if (not llvmcpu.hasOptions(Options::OPT_DISABLE_OPTIONAL_FPR)) {
       append(prologue,
              LoadReg(Reg(0), Offset(offsetof(Context, hostState.executeFlags)))
                  .genReloc(llvmcpu));
@@ -59,7 +58,7 @@ RelocatableInst::UniquePtrVec getExecBlockPrologue(const LLVMCPU &llvmcpu) {
     if (isHostCPUFeaturePresent("avx")) {
       QBDI_DEBUG("AVX support enabled in guest context switches");
       // don't restore if not needed
-      if ((opts & Options::OPT_DISABLE_OPTIONAL_FPR) == 0) {
+      if (not llvmcpu.hasOptions(Options::OPT_DISABLE_OPTIONAL_FPR)) {
         prologue.push_back(Test(Reg(0), ExecBlockFlags::needAVX));
         if constexpr (is_x86_64)
           prologue.push_back(Je(16 * 10 + 4));
@@ -121,7 +120,7 @@ RelocatableInst::UniquePtrVec getExecBlockPrologue(const LLVMCPU &llvmcpu) {
   }
 #if defined(QBDI_ARCH_X86_64)
   // if enable FS GS
-  if ((opts & Options::OPT_ENABLE_FS_GS) == Options::OPT_ENABLE_FS_GS) {
+  if (llvmcpu.hasOptions(Options::OPT_ENABLE_FS_GS)) {
     QBDI_REQUIRE_ABORT(isHostCPUFeaturePresent("fsgsbase"),
                        "Need CPU feature fsgsbase");
 
@@ -160,7 +159,6 @@ RelocatableInst::UniquePtrVec getExecBlockPrologue(const LLVMCPU &llvmcpu) {
 }
 
 RelocatableInst::UniquePtrVec getExecBlockEpilogue(const LLVMCPU &llvmcpu) {
-  Options opts = llvmcpu.getOptions();
   RelocatableInst::UniquePtrVec epilogue;
 
   // Save GPR
@@ -176,7 +174,7 @@ RelocatableInst::UniquePtrVec getExecBlockEpilogue(const LLVMCPU &llvmcpu) {
                        .genReloc(llvmcpu));
 #if defined(QBDI_ARCH_X86_64)
   // if enable FS GS
-  if ((opts & Options::OPT_ENABLE_FS_GS) == Options::OPT_ENABLE_FS_GS) {
+  if (llvmcpu.hasOptions(Options::OPT_ENABLE_FS_GS)) {
     QBDI_REQUIRE_ABORT(isHostCPUFeaturePresent("fsgsbase"),
                        "Need CPU feature fsgsbase");
 
@@ -201,8 +199,8 @@ RelocatableInst::UniquePtrVec getExecBlockEpilogue(const LLVMCPU &llvmcpu) {
   }
 #endif // QBDI_ARCH_X86_64
   // Save FPR
-  if ((opts & Options::OPT_DISABLE_FPR) == 0) {
-    if ((opts & Options::OPT_DISABLE_OPTIONAL_FPR) == 0) {
+  if (not llvmcpu.hasOptions(Options::OPT_DISABLE_FPR)) {
+    if (not llvmcpu.hasOptions(Options::OPT_DISABLE_OPTIONAL_FPR)) {
       append(epilogue,
              LoadReg(Reg(0), Offset(offsetof(Context, hostState.executeFlags)))
                  .genReloc(llvmcpu));
@@ -214,7 +212,7 @@ RelocatableInst::UniquePtrVec getExecBlockEpilogue(const LLVMCPU &llvmcpu) {
     if (isHostCPUFeaturePresent("avx")) {
       QBDI_DEBUG("AVX support enabled in guest context switches");
       // don't save if not needed
-      if ((opts & Options::OPT_DISABLE_OPTIONAL_FPR) == 0) {
+      if (not llvmcpu.hasOptions(Options::OPT_DISABLE_OPTIONAL_FPR)) {
         epilogue.push_back(Test(Reg(0), ExecBlockFlags::needAVX));
         if constexpr (is_x86_64)
           epilogue.push_back(Je(16 * 10 + 4));

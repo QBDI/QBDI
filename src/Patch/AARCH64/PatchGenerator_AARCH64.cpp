@@ -253,6 +253,15 @@ RelocatableInst::UniquePtrVec
 GetReadValue::generate(const Patch &patch, TempManager &temp_manager) const {
 
   Reg tmpRegister = temp_manager.getRegForTemp(temp);
+
+  if (patch.llvmcpu->hasOptions(Options::OPT_DISABLE_MEMORYACCESS_VALUE)) {
+    if (index == 0) {
+      return conv_unique<RelocatableInst>(Mov(tmpRegister, Constant(0)));
+    } else {
+      return {};
+    }
+  }
+
   Reg addrRegister = temp_manager.getRegForTemp(addr);
   unsigned readSize = getReadSize(patch.metadata.inst, *patch.llvmcpu);
   switch (readSize) {
@@ -300,6 +309,15 @@ RelocatableInst::UniquePtrVec
 GetWrittenValue::generate(const Patch &patch, TempManager &temp_manager) const {
 
   Reg tmpRegister = temp_manager.getRegForTemp(temp);
+
+  if (patch.llvmcpu->hasOptions(Options::OPT_DISABLE_MEMORYACCESS_VALUE)) {
+    if (index == 0) {
+      return conv_unique<RelocatableInst>(Mov(tmpRegister, Constant(0)));
+    } else {
+      return {};
+    }
+  }
+
   Reg addrRegister = temp_manager.getRegForTemp(addr);
   unsigned writtenSize = getWriteSize(patch.metadata.inst, *patch.llvmcpu);
   switch (writtenSize) {
@@ -348,6 +366,16 @@ GetReadValueX2::generate(const Patch &patch, TempManager &temp_manager) const {
 
   Reg tmpRegister = temp_manager.getRegForTemp(temp);
   Reg tmpRegister2 = temp_manager.getRegForTemp(temp2);
+
+  if (patch.llvmcpu->hasOptions(Options::OPT_DISABLE_MEMORYACCESS_VALUE)) {
+    if (index == 0) {
+      return conv_unique<RelocatableInst>(Mov(tmpRegister, Constant(0)),
+                                          Mov(tmpRegister2, Constant(0)));
+    } else {
+      return {};
+    }
+  }
+
   Reg addrRegister = temp_manager.getRegForTemp(addr);
   unsigned readSize = getReadSize(patch.metadata.inst, *patch.llvmcpu);
   switch (readSize) {
@@ -386,6 +414,16 @@ GetWrittenValueX2::generate(const Patch &patch,
 
   Reg tmpRegister = temp_manager.getRegForTemp(temp);
   Reg tmpRegister2 = temp_manager.getRegForTemp(temp2);
+
+  if (patch.llvmcpu->hasOptions(Options::OPT_DISABLE_MEMORYACCESS_VALUE)) {
+    if (index == 0) {
+      return conv_unique<RelocatableInst>(Mov(tmpRegister, Constant(0)),
+                                          Mov(tmpRegister2, Constant(0)));
+    } else {
+      return {};
+    }
+  }
+
   Reg addrRegister = temp_manager.getRegForTemp(addr);
   unsigned writtenSize = getWriteSize(patch.metadata.inst, *patch.llvmcpu);
   switch (writtenSize) {
@@ -627,7 +665,7 @@ GetAddrAuth::generate(const Patch &patch, TempManager &temp_manager) const {
 
 RelocatableInst::UniquePtrVec GenBTI::genReloc(const LLVMCPU &llvmcpu) const {
 
-  if ((llvmcpu.getOptions() & OPT_ENABLE_BTI) != 0) {
+  if (llvmcpu.hasOptions(Options::OPT_ENABLE_BTI)) {
     return conv_unique<RelocatableInst>(BTIj());
   }
   return {};

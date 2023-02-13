@@ -195,12 +195,12 @@ GPRState *Engine::getGPRState() const { return curGPRState; }
 FPRState *Engine::getFPRState() const { return curFPRState; }
 
 void Engine::setGPRState(const GPRState *gprState) {
-  QBDI_REQUIRE_ACTION(gprState, return );
+  QBDI_REQUIRE_ACTION(gprState, return);
   *(this->curGPRState) = *gprState;
 }
 
 void Engine::setFPRState(const FPRState *fprState) {
-  QBDI_REQUIRE_ACTION(fprState, return );
+  QBDI_REQUIRE_ACTION(fprState, return);
   *(this->curFPRState) = *fprState;
 }
 

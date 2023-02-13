@@ -53,4 +53,8 @@ bool DoesWriteAccess::test(const Patch &patch, const LLVMCPU &llvmcpu) const {
   return getWriteSize(patch.metadata.inst, llvmcpu) > 0;
 }
 
+bool HasOptions::test(const Patch &patch, const LLVMCPU &llvmcpu) const {
+  return llvmcpu.hasOptions(opts);
+}
+
 } // namespace QBDI
