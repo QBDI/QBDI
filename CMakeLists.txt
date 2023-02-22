@@ -20,7 +20,7 @@ include(QBDIOptions)
 include(CMakeFindBinUtils)
 
 # Macros
-include(cmake/merge_archives.cmake)
+include(merge_archives)
 
 # CCACHE
 # ======
@@ -223,7 +223,9 @@ endif()
 
 # Dependencies
 # ============
-set(QBDI_THIRD_PARTY_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/third-party/")
+set(QBDI_THIRD_PARTY_DIRECTORY
+    "${CMAKE_CURRENT_SOURCE_DIR}/third-party/"
+    CACHE STRING "Dependency download directory")
 include(QBDI_llvm)
 
 # Setup assembly compile
@@ -384,7 +386,7 @@ if(QBDI_SHARED_LIBRARY)
 
   if(QBDI_PLATFORM_WINDOWS)
     install(
-      FILES ${CMAKE_BINARY_DIR}/QBDI.exp
+      FILES ${CMAKE_CURRENT_BINARY_DIR}/QBDI.exp
       COMPONENT QBDI
       DESTINATION "${CMAKE_INSTALL_LIBDIR}")
   endif()
@@ -495,7 +497,7 @@ if(QBDI_INSTALL)
         DESTINATION "${RESOURCES_PREFIX}"
         COMPONENT QBDIFridaTemplate)
       install(
-        PROGRAMS ${CMAKE_BINARY_DIR}/package/qbdi-frida-template
+        PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/package/qbdi-frida-template
         DESTINATION "${CMAKE_INSTALL_BINDIR}"
         COMPONENT QBDIFridaTemplate
         RENAME "qbdi-frida-template-${QBDI_ARCH}")

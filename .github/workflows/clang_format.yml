@@ -6,7 +6,7 @@ jobs:
   check:
     runs-on: ubuntu-22.04
     env:
-      CLANG_FORMAT_VERSION: 14
+      CLANG_FORMAT_VERSION: 15
     steps:
       - name: checkout
         uses: actions/checkout@v4
