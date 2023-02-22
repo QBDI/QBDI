@@ -1,4 +1,5 @@
 add_library(QBDIPreload STATIC)
+add_library(QBDIPreload::QBDIPreload ALIAS QBDIPreload)
 
 include("${CMAKE_CURRENT_LIST_DIR}/src/CMakeLists.txt")
 
