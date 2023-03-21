@@ -51,14 +51,15 @@ const RegLLVM FLAG_ID[] = {
 };
 
 const RegLLVM SEG_ID[] = {
-    llvm::X86::SS, llvm::X86::CS,      llvm::X86::DS,
-    llvm::X86::ES, llvm::X86::FS,      llvm::X86::FS_BASE,
-    llvm::X86::GS, llvm::X86::GS_BASE, llvm::X86::SSP,
+    llvm::X86::SS,  llvm::X86::CS,      llvm::X86::DS,  llvm::X86::ES,
+    llvm::X86::FS,  llvm::X86::FS_BASE, llvm::X86::GS,  llvm::X86::GS_BASE,
+    llvm::X86::SSP, llvm::X86::EIZ,     llvm::X86::RIZ,
 };
 
 const std::map<RegLLVM, int16_t> FPR_ID = {
     {llvm::X86::FPCW, offsetof(FPRState, rfcw)},
     {llvm::X86::FPSW, offsetof(FPRState, rfsw)},
+    {llvm::X86::MXCSR, offsetof(FPRState, mxcsr)},
     {llvm::X86::ST0, offsetof(FPRState, stmm0)},
     {llvm::X86::ST1, offsetof(FPRState, stmm1)},
     {llvm::X86::ST2, offsetof(FPRState, stmm2)},
@@ -313,10 +314,12 @@ constexpr uint16_t REGISTER_4BYTES[] = {
     // RFLAGS isn't defined in llvm, the upper 32bits is never used
     llvm::X86::EFLAGS,
     llvm::X86::_EFLAGS,
+    llvm::X86::EIZ,
 #if defined(QBDI_ARCH_X86)
     // shadow stack pointer
     llvm::X86::SSP,
 #endif
+    llvm::X86::MXCSR,
 };
 
 constexpr size_t REGISTER_4BYTES_SIZE =
@@ -349,6 +352,7 @@ constexpr uint16_t REGISTER_8BYTES[] = {
     llvm::X86::MM5,
     llvm::X86::MM6,
     llvm::X86::MM7,
+    llvm::X86::RIZ,
 #if defined(QBDI_ARCH_X86_64)
     // shadow stack pointer
     llvm::X86::SSP,

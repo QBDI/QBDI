@@ -84,7 +84,7 @@ float ExecBlockManager::getExpansionRatio() const {
          static_cast<float>(total_translated_size);
 }
 
-void ExecBlockManager::printCacheStatistics() const {
+void ExecBlockManager::printCacheStatistics() const {QBDI_DEBUG_BLOCK({
   float mean_occupation = 0.0;
   size_t region_overflow = 0;
   QBDI_DEBUG("\tCache made of {} regions:", regions.size());
@@ -109,7 +109,7 @@ void ExecBlockManager::printCacheStatistics() const {
   }
   QBDI_DEBUG("\tMean occupation ratio: {}", mean_occupation);
   QBDI_DEBUG("\tRegion overflow count: {}", region_overflow);
-}
+})}
 
 ExecBlock *ExecBlockManager::getProgrammedExecBlock(rword address,
                                                     CPUMode cpumode,
