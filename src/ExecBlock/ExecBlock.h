@@ -172,7 +172,7 @@ public:
    * @param[in] epilogueSize       size in bytes of the epilogue (0 is not know)
    */
   ExecBlock(
-      const LLVMCPUs &llvmCPUs, VMInstanceRef vminstance = nullptr,
+      const LLVMCPUs &llvmCPUs, VMInstanceRef vminstance,
       const std::vector<std::unique_ptr<RelocatableInst>> *execBlockPrologue =
           nullptr,
       const std::vector<std::unique_ptr<RelocatableInst>> *execBlockEpilogue =

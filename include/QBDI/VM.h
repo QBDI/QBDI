@@ -60,6 +60,8 @@ private:
   std::forward_list<std::pair<uint32_t, InstCbLambda>> instCBData;
   std::forward_list<std::pair<uint32_t, InstrRuleCbLambda>> instrRuleCBData;
 
+  uint32_t backupErrno;
+
 public:
   /*! Construct a new VM for a given CPU with specific attributes
    *
@@ -123,6 +125,13 @@ public:
    */
   QBDI_EXPORT FPRState *getFPRState() const;
 
+  /*! Obtain the backuped value of errno, if the option
+   * OPT_DISABLE_ERRNO_BACKUP is not enable.
+   *
+   * @return the backupped value of errno
+   */
+  QBDI_EXPORT uint32_t getErrno() { return backupErrno; }
+
   /*! Set the GPR state
    *
    * @param[in] gprState A structure containing the GPR state.
@@ -134,6 +143,15 @@ public:
    * @param[in] fprState A structure containing the FPR state.
    */
   QBDI_EXPORT void setFPRState(const FPRState *fprState);
+
+  /*! Set the backuped value of errno, if the option
+   * OPT_DISABLE_ERRNO_BACKUP is not enable.
+   *
+   * @param[in] backupErrno_ the value to set
+   */
+  QBDI_EXPORT void setErrno(uint32_t backupErrno_) {
+    backupErrno = backupErrno_;
+  }
 
   /*! Get the current Options of the VM
    */

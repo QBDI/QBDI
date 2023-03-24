@@ -39,7 +39,7 @@ QBDI::Patch::Vec getEmptyBB(QBDI::rword address,
 
 TEST_CASE_METHOD(ExecBlockManagerTest,
                  "ExecBlockManagerTest-BasicBlockLookup") {
-  QBDI::ExecBlockManager execBlockManager(*this);
+  QBDI::ExecBlockManager execBlockManager(*this, &this->vm);
 
   execBlockManager.writeBasicBlock(getEmptyBB(0x42424240, *this), 1);
   REQUIRE(nullptr == execBlockManager.getProgrammedExecBlock(
@@ -49,7 +49,7 @@ TEST_CASE_METHOD(ExecBlockManagerTest,
 }
 
 TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-ClearCache") {
-  QBDI::ExecBlockManager execBlockManager(*this);
+  QBDI::ExecBlockManager execBlockManager(*this, &this->vm);
 
   execBlockManager.writeBasicBlock(getEmptyBB(0x42424240, *this), 1);
   REQUIRE(nullptr != execBlockManager.getProgrammedExecBlock(
@@ -60,7 +60,7 @@ TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-ClearCache") {
 }
 
 TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-ExecBlockReuse") {
-  QBDI::ExecBlockManager execBlockManager(*this);
+  QBDI::ExecBlockManager execBlockManager(*this, &this->vm);
 
   execBlockManager.writeBasicBlock(getEmptyBB(0x42424240, *this), 1);
   execBlockManager.writeBasicBlock(getEmptyBB(0x42424244, *this), 1);
@@ -72,7 +72,7 @@ TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-ExecBlockReuse") {
 
 TEST_CASE_METHOD(ExecBlockManagerTest,
                  "ExecBlockManagerTest-ExecBlockRegions") {
-  QBDI::ExecBlockManager execBlockManager(*this);
+  QBDI::ExecBlockManager execBlockManager(*this, &this->vm);
 
   execBlockManager.writeBasicBlock(getEmptyBB(0x42424240, *this), 1);
   execBlockManager.writeBasicBlock(getEmptyBB(0x24242424, *this), 1);
@@ -83,7 +83,7 @@ TEST_CASE_METHOD(ExecBlockManagerTest,
 }
 
 TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-ExecBlockAlloc") {
-  QBDI::ExecBlockManager execBlockManager(*this);
+  QBDI::ExecBlockManager execBlockManager(*this, &this->vm);
   QBDI::rword address = 0;
 
   for (address = 0; address < 0x1000; address++) {
@@ -96,7 +96,7 @@ TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-ExecBlockAlloc") {
 }
 
 TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-CacheRewrite") {
-  QBDI::ExecBlockManager execBlockManager(*this);
+  QBDI::ExecBlockManager execBlockManager(*this, &this->vm);
   unsigned int i = 0;
 
   execBlockManager.writeBasicBlock(getEmptyBB(0x42424240, *this), 1);
@@ -114,7 +114,7 @@ TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-CacheRewrite") {
 TEST_CASE_METHOD(ExecBlockManagerTest,
                  "ExecBlockManagerTest-MultipleBasicBlockExecution") {
   const QBDI::LLVMCPU &llvmcpu = this->getCPU(QBDI::CPUMode::DEFAULT);
-  QBDI::ExecBlockManager execBlockManager(*this);
+  QBDI::ExecBlockManager execBlockManager(*this, &this->vm);
   QBDI::ExecBlock *block = nullptr;
   // Jit two different terminators
   QBDI::Patch::Vec terminator1 = getEmptyBB(0x42424240, *this);
@@ -144,7 +144,7 @@ TEST_CASE_METHOD(ExecBlockManagerTest,
 TEST_CASE_METHOD(ExecBlockManagerTest, "ExecBlockManagerTest-Stresstest") {
   const unsigned align = 4;
   const QBDI::LLVMCPU &llvmcpu = this->getCPU(QBDI::CPUMode::DEFAULT);
-  QBDI::ExecBlockManager execBlockManager(*this);
+  QBDI::ExecBlockManager execBlockManager(*this, &this->vm);
   QBDI::rword address = 0;
 
   for (address = 0; address < 1000 * align; address += align) {

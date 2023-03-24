@@ -23,7 +23,7 @@ VM class
 .. autoclass:: pyqbdi.VM
     :special-members: __init__
     :members:
-    :exclude-members: getGPRState, getFPRState, setGPRState, setFPRState,
+    :exclude-members: getGPRState, getFPRState, getErrno, setGPRState, setFPRState, setErrno,
                       addInstrumentedRange, addInstrumentedModule, addInstrumentedModuleFromAddr, instrumentAllExecutableMaps,
                       removeInstrumentedRange, removeInstrumentedModule, removeInstrumentedModuleFromAddr, removeAllInstrumentedRanges,
                       addCodeCB, addCodeAddrCB, addCodeRangeCB, addMnemonicCB, addVMEventCB, addMemAccessCB, addMemAddrCB, addMemRangeCB,
@@ -39,9 +39,13 @@ State management
 
 .. autofunction:: pyqbdi.VM.getFPRState
 
+.. autofunction:: pyqbdi.VM.getErrno
+
 .. autofunction:: pyqbdi.VM.setGPRState
 
 .. autofunction:: pyqbdi.VM.setFPRState
+
+.. autofunction:: pyqbdi.VM.setErrno
 
 .. _instrumentation-range-pyqbdi:
 

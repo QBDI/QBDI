@@ -16,6 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <errno.h>
 #include <memory>
 #include <stdint.h>
 #include <vector>
@@ -24,6 +25,7 @@
 
 #include "QBDI/Config.h"
 #include "QBDI/State.h"
+#include "QBDI/VM.h"
 #include "Engine/LLVMCPU.h"
 #include "ExecBlock/ExecBlock.h"
 #include "ExecBlock/X86_64/Context_X86_64.h"
@@ -62,7 +64,13 @@ void ExecBlock::run() {
       makeRX();
     }
   }
-  qbdi_runCodeBlock(codeBlock.base(), context->hostState.executeFlags);
+  if (not llvmCPUs.hasOptions(Options::OPT_DISABLE_ERRNO_BACKUP)) {
+    errno = vminstance->getErrno();
+    qbdi_runCodeBlock(codeBlock.base(), context->hostState.executeFlags);
+    vminstance->setErrno(errno);
+  } else {
+    qbdi_runCodeBlock(codeBlock.base(), context->hostState.executeFlags);
+  }
 }
 
 bool ExecBlock::writePatch(std::vector<Patch>::const_iterator seqCurrent,

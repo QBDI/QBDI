@@ -29,7 +29,7 @@
 
 TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest-EmptyBasicBlock") {
   // Allocate ExecBlock
-  QBDI::ExecBlock execBlock(*this);
+  QBDI::ExecBlock execBlock(*this, &this->vm);
   // Write an empty basic block
   QBDI::Patch::Vec empty;
   QBDI::SeqWriteResult res =
@@ -40,7 +40,7 @@ TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest-EmptyBasicBlock") {
 TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest-MultipleBasicBlock") {
   const QBDI::LLVMCPU &llvmcpu = this->getCPU(QBDI::CPUMode::DEFAULT);
   // Allocate ExecBlock
-  QBDI::ExecBlock execBlock(*this);
+  QBDI::ExecBlock execBlock(*this, &this->vm);
   // Jit two different terminators
   QBDI::Patch::Vec terminator1;
   QBDI::Patch::Vec terminator2;
@@ -76,7 +76,7 @@ TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest-MultipleBasicBlock") {
 
 TEST_CASE_METHOD(ExecBlockTest, "ExecBlockTest-BasicBlockOverload") {
   // Allocate ExecBlock
-  QBDI::ExecBlock execBlock(*this);
+  QBDI::ExecBlock execBlock(*this, &this->vm);
   QBDI::Patch::Vec empty;
   QBDI::SeqWriteResult res;
   uint32_t i = 0;

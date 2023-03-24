@@ -35,6 +35,8 @@ void init_binding_Options(py::module_ &m) {
       .value("OPT_DISABLE_MEMORYACCESS_VALUE",
              Options::OPT_DISABLE_MEMORYACCESS_VALUE,
              "Don't load memory access value")
+      .value("OPT_DISABLE_ERRNO_BACKUP", Options::OPT_DISABLE_ERRNO_BACKUP,
+             "Don't save and restore errno")
       .value("OPT_ATT_SYNTAX", Options::OPT_ATT_SYNTAX,
              "Used the AT&T syntax for instruction disassembly")
       .value("OPT_ENABLE_FS_GS", Options::OPT_ENABLE_FS_GS,

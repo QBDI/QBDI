@@ -43,6 +43,8 @@ typedef enum {
                                                       * when perform memory
                                                       * access.
                                                       */
+  _QBDI_EI(OPT_DISABLE_ERRNO_BACKUP) = 1 << 3, /*!< Don't save and restore errno
+                                                */
   // architecture specific option between 24 and 31
   _QBDI_EI(OPT_ATT_SYNTAX) = 1 << 24, /*!< Used the AT&T syntax for
                                        * instruction disassembly

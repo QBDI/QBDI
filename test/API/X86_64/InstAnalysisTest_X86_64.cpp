@@ -943,3 +943,10 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-loopne") {
                },
                QBDI::REGISTER_UNUSED);
 }
+
+// TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64_tmp") {
+//
+//   QBDI::rword addr = genASM(getenv("TMP_INST"));
+//
+//   debugOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS));
+// }

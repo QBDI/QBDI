@@ -50,10 +50,16 @@ State management
 .. doxygenfunction:: qbdi_getFPRState
     :project: QBDI_C
 
+.. doxygenfunction:: qbdi_getErrno
+    :project: QBDI_C
+
 .. doxygenfunction:: qbdi_setGPRState
     :project: QBDI_C
 
 .. doxygenfunction:: qbdi_setFPRState
+    :project: QBDI_C
+
+.. doxygenfunction:: qbdi_setErrno
     :project: QBDI_C
 
 .. _instrumentation-range-c:
@@ -470,6 +476,10 @@ Other globals
   .. cpp:enumerator:: OPT_DISABLE_MEMORYACCESS_VALUE
 
       Don't load memory access value
+
+  .. cpp:enumerator:: OPT_DISABLE_ERRNO_BACKUP
+
+      Don't save and restore errno
 
   Values for AARCH64 and ARM only :
 

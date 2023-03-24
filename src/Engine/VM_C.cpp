@@ -165,6 +165,11 @@ FPRState *qbdi_getFPRState(VMInstanceRef instance) {
   return static_cast<VM *>(instance)->getFPRState();
 }
 
+uint32_t qbdi_getErrno(VMInstanceRef instance) {
+  QBDI_REQUIRE_ACTION(instance, return 0);
+  return static_cast<VM *>(instance)->getErrno();
+}
+
 void qbdi_setGPRState(VMInstanceRef instance, GPRState *gprState) {
   QBDI_REQUIRE_ACTION(instance, return);
   static_cast<VM *>(instance)->setGPRState(gprState);
@@ -173,6 +178,11 @@ void qbdi_setGPRState(VMInstanceRef instance, GPRState *gprState) {
 void qbdi_setFPRState(VMInstanceRef instance, FPRState *fprState) {
   QBDI_REQUIRE_ACTION(instance, return);
   static_cast<VM *>(instance)->setFPRState(fprState);
+}
+
+void qbdi_setErrno(VMInstanceRef instance, uint32_t backupErrno) {
+  QBDI_REQUIRE_ACTION(instance, return);
+  static_cast<VM *>(instance)->setErrno(backupErrno);
 }
 
 Options qbdi_getOptions(VMInstanceRef instance) {

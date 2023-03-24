@@ -31,9 +31,13 @@ State management
 
 .. doxygenfunction:: QBDI::VM::getFPRState
 
+.. doxygenfunction:: QBDI::VM::getErrno
+
 .. doxygenfunction:: QBDI::VM::setGPRState
 
 .. doxygenfunction:: QBDI::VM::setFPRState
+
+.. doxygenfunction:: QBDI::VM::setErrno
 
 .. _instrumentation-range-cpp:
 
@@ -412,6 +416,10 @@ Other globals
   .. cpp:enumerator:: OPT_DISABLE_MEMORYACCESS_VALUE
 
       Don't load memory access value
+
+  .. cpp:enumerator:: OPT_DISABLE_ERRNO_BACKUP
+
+      Don't save and restore errno
 
   Values for AARCH64 and ARM only :
 
