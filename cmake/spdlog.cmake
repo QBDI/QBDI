@@ -10,16 +10,16 @@ include(FetchContent)
 set(SPDLOG_VERSION 1.10.0)
 
 FetchContent_Declare(
-  spdlog-project
+  spdlog
   URL "https://github.com/gabime/spdlog/archive/refs/tags/v${SPDLOG_VERSION}.zip"
   URL_HASH
     "SHA256=7be28ff05d32a8a11cfba94381e820dd2842835f7f319f843993101bcab44b66"
-  DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/spdlog-project-download")
+  DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/spdlog-download")
 
-FetchContent_GetProperties(spdlog-project)
-if(NOT spdlog-project_POPULATED)
+FetchContent_GetProperties(spdlog)
+if(NOT spdlog_POPULATED)
   # Fetch the content using previously declared details
-  FetchContent_Populate(spdlog-project)
+  FetchContent_Populate(spdlog)
 
   set(SPDLOG_NO_EXCEPTIONS
       ON
@@ -36,8 +36,7 @@ if(NOT spdlog-project_POPULATED)
         CACHE BOOL "Enable SPDLOG_LEVEL_DEBUG level")
   endif()
 
-  add_subdirectory(${spdlog-project_SOURCE_DIR} ${spdlog-project_BINARY_DIR}
-                   EXCLUDE_FROM_ALL)
+  add_subdirectory(${spdlog_SOURCE_DIR} ${spdlog_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
 target_compile_definitions(spdlog INTERFACE SPDLOG_NO_TLS=1
