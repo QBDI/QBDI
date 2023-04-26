@@ -43,6 +43,11 @@ struct ExpectedInstAnalysis {
   QBDI::ConditionType condition;
 };
 
+static void checkDisassembly(const QBDI::InstAnalysis *ana,
+                             const std::string &expect) {
+  CHECK(ana->disassembly == expect);
+}
+
 [[maybe_unused]] static void debugOperand(const QBDI::InstAnalysis *ana) {
   if ((ana->analysisType & QBDI::ANALYSIS_OPERANDS) ==
       QBDI::ANALYSIS_OPERANDS) {
@@ -146,6 +151,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-lea") {
           /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ false,
           /* loadSize */ 0, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tlea\trbx, [rax]");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 1,
@@ -177,6 +184,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-lea-same-reg") {
           /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ false,
           /* loadSize */ 0, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tlea\trax, [rax + rax]");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 0,
@@ -208,6 +217,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-movrm") {
           /* isPredicable */ false, /* mayLoad */ true, /* mayStore */ false,
           /* loadSize */ 8, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tmov\trbx, qword ptr [rax + 4*rdx + 69]");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 1,
@@ -239,6 +250,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-movrm-seg") {
           /* isPredicable */ false, /* mayLoad */ true, /* mayStore */ false,
           /* loadSize */ 8, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tmov\trbx, qword ptr gs:[rax + 4*rdx + 69]");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 1,
@@ -270,6 +283,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-addmi") {
           /* isPredicable */ false, /* mayLoad */ true, /* mayStore */ true,
           /* loadSize */ 8, /* storeSize */ 8,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tadd\tqword ptr [rcx], 16727");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, 8, 0, 2,
@@ -301,6 +316,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-movrr") {
           /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ false,
           /* loadSize */ 0, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tmov\trbx, rcx");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 1,
@@ -324,6 +341,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-movrr8") {
           /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ false,
           /* loadSize */ 0, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tmov\tbl, ch");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 1, 0, 1, "BL",
@@ -347,6 +366,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-xchgrr") {
           /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ false,
           /* loadSize */ 0, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\txchg\trbx, rcx");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 1,
@@ -370,6 +391,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-addrr") {
           /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ false,
           /* loadSize */ 0, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tadd\trbx, rcx");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 1,
@@ -393,6 +416,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-movsb") {
           /* isPredicable */ false, /* mayLoad */ true, /* mayStore */ true,
           /* loadSize */ 1, /* storeSize */ 1,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tmovsb\tbyte ptr es:[rdi], byte ptr [rsi]");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, 8, 0, 5,
@@ -422,6 +447,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-cmpsb") {
           /* isPredicable */ false, /* mayLoad */ true, /* mayStore */ false,
           /* loadSize */ 1, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tcmpsb\tbyte ptr [rsi], byte ptr es:[rdi]");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, 8, 0, 5,
@@ -451,6 +478,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-cmpmr") {
           /* isPredicable */ false, /* mayLoad */ true, /* mayStore */ false,
           /* loadSize */ 8, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tcmp\tqword ptr [rax + rdx], rcx");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, 8, 0, 0,
@@ -482,6 +511,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-cmprm") {
           /* isPredicable */ false, /* mayLoad */ true, /* mayStore */ false,
           /* loadSize */ 8, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tcmp\trcx, qword ptr [rax + rdx]");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 2,
@@ -513,6 +544,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-ret") {
           /* isPredicable */ false, /* mayLoad */ true, /* mayStore */ false,
           /* loadSize */ 8, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tret");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_IMPLICIT, 0, 8, 0, 15,
@@ -534,6 +567,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-call") {
           /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ true,
           /* loadSize */ 0, /* storeSize */ 8,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tcall\t0");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_PCREL, 0, 4, 0, -1,
@@ -559,6 +594,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-callr") {
           /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ true,
           /* loadSize */ 0, /* storeSize */ 8,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tcall\trax");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 0,
@@ -584,6 +621,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-callm") {
           /* isPredicable */ false, /* mayLoad */ true, /* mayStore */ true,
           /* loadSize */ 8, /* storeSize */ 8,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tcall\tqword ptr [rax + 10]");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, 8, 0, 0,
@@ -617,6 +656,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-jmpi") {
           /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ false,
           /* loadSize */ 0, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tjmp\t0");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_PCREL, 0, 4, 0, -1,
@@ -638,6 +679,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-je") {
           /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ false,
           /* loadSize */ 0, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_EQUALS});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tje\t0");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_PCREL, 0, 4, 0, -1,
@@ -659,6 +702,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-jmpm") {
           /* isPredicable */ false, /* mayLoad */ true, /* mayStore */ false,
           /* loadSize */ 8, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tjmp\tqword ptr [rax + 10]");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, 8, 0, 0,
@@ -688,6 +733,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-fldl") {
           /* isPredicable */ false, /* mayLoad */ true, /* mayStore */ false,
           /* loadSize */ 8, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tfld\tqword ptr [rax]");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, 8, 0, 0,
@@ -721,6 +768,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-fstps") {
           /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ true,
           /* loadSize */ 0, /* storeSize */ 4,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tfstp\tdword ptr [rax]");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, 8, 0, 0,
@@ -754,6 +803,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-movapd") {
           /* isPredicable */ false, /* mayLoad */ true, /* mayStore */ false,
           /* loadSize */ 16, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tmovapd\txmm1, xmmword ptr [rax]");
   checkOperand(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
       {
@@ -786,6 +837,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-paddb") {
           /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ false,
           /* loadSize */ 0, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tpaddb\tmm0, mm1");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_FPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 32,
@@ -809,6 +862,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-vpaddb") {
           /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ false,
           /* loadSize */ 0, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tvpaddb\txmm0, xmm1, xmm2");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_FPR, QBDI::OPERANDFLAG_NONE, 0, 16, 0, 160,
@@ -834,6 +889,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-xlatb") {
           /* isPredicable */ false, /* mayLoad */ true, /* mayStore */ false,
           /* loadSize */ 1, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\txlatb");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_IMPLICIT, 0, 1, 0, 0,
@@ -857,6 +914,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-movdir64b") {
           /* isPredicable */ false, /* mayLoad */ true, /* mayStore */ true,
           /* loadSize */ 512, /* storeSize */ 512,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tmovdir64b\trcx, zmmword ptr [rax + 12]");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 2,
@@ -888,6 +947,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-loop") {
           /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ false,
           /* loadSize */ 0, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tloop\t-2");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_PCREL, -2, 1, 0, -1,
@@ -911,6 +972,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-loope") {
           /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ false,
           /* loadSize */ 0, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_EQUALS});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tloope\t-2");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_PCREL, -2, 1, 0, -1,
@@ -934,6 +997,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-loopne") {
           /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ false,
           /* loadSize */ 0, /* storeSize */ 0,
           /* condition */ QBDI::CONDITION_NOT_EQUALS});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tloopne\t-2");
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
                    {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_PCREL, -2, 1, 0, -1,
@@ -942,6 +1007,76 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-loopne") {
                     "RCX", QBDI::REGISTER_READ_WRITE},
                },
                QBDI::REGISTER_UNUSED);
+}
+
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-repne-cmpsb") {
+
+  QBDI::rword addr = genASM("repne cmpsb\n");
+
+  checkInst(
+      vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
+      ExpectedInstAnalysis{
+          "CMPSB", addr,
+          /* instSize */ 2, /* affectControlFlow */ false, /* isBranch */ false,
+          /* isCall */ false, /* isReturn */ false, /* isCompare */ false,
+          /* isPredicable */ false, /* mayLoad */ true, /* mayStore */ false,
+          /* loadSize */ 1, /* storeSize */ 0,
+          /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\trepne\t\tcmpsb\tbyte ptr [rsi], byte ptr es:[rdi]");
+  checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
+               {
+                   {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, 8, 0, 5,
+                    "RDI", QBDI::REGISTER_READ},
+                   {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, 8, 0, 4,
+                    "RSI", QBDI::REGISTER_READ},
+                   {QBDI::OPERAND_INVALID, QBDI::OPERANDFLAG_ADDR, 0, 0, 0, -1,
+                    nullptr, QBDI::REGISTER_UNUSED},
+                   {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_IMPLICIT, 0, 4, 0, 5,
+                    "EDI", QBDI::REGISTER_READ_WRITE},
+                   {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_IMPLICIT, 0, 4, 0, 4,
+                    "ESI", QBDI::REGISTER_READ_WRITE},
+               },
+               QBDI::REGISTER_READ_WRITE);
+}
+
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64-lock_cmpxchg8b") {
+
+  QBDI::rword addr = genASM("lock cmpxchg8b (%rsi)\n");
+
+  checkInst(
+      vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
+      ExpectedInstAnalysis{
+          "CMPXCHG8B", addr,
+          /* instSize */ 4, /* affectControlFlow */ false, /* isBranch */ false,
+          /* isCall */ false, /* isReturn */ false, /* isCompare */ false,
+          /* isPredicable */ false, /* mayLoad */ true, /* mayStore */ true,
+          /* loadSize */ 8, /* storeSize */ 8,
+          /* condition */ QBDI::CONDITION_NONE});
+  checkDisassembly(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_DISASSEMBLY),
+                   "\tlock\t\tcmpxchg8b\tqword ptr [rsi]");
+  checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
+               {
+                   {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_ADDR, 0, 8, 0, 4,
+                    "RSI", QBDI::REGISTER_READ},
+                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_ADDR, 1, 8, 0, -1,
+                    nullptr, QBDI::REGISTER_UNUSED},
+                   {QBDI::OPERAND_INVALID, QBDI::OPERANDFLAG_ADDR, 0, 0, 0, -1,
+                    nullptr, QBDI::REGISTER_UNUSED},
+                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_ADDR, 0x0, 8, 0, -1,
+                    nullptr, QBDI::REGISTER_UNUSED},
+                   {QBDI::OPERAND_INVALID, QBDI::OPERANDFLAG_ADDR, 0, 0, 0, -1,
+                    nullptr, QBDI::REGISTER_UNUSED},
+                   {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_IMPLICIT, 0, 4, 0, 0,
+                    "EAX", QBDI::REGISTER_READ_WRITE},
+                   {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_IMPLICIT, 0, 4, 0, 1,
+                    "EBX", QBDI::REGISTER_READ},
+                   {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_IMPLICIT, 0, 4, 0, 2,
+                    "ECX", QBDI::REGISTER_READ},
+                   {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_IMPLICIT, 0, 4, 0, 3,
+                    "EDX", QBDI::REGISTER_READ_WRITE},
+               },
+               QBDI::REGISTER_WRITE);
 }
 
 // TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86_64_tmp") {

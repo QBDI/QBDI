@@ -363,6 +363,8 @@ bool PatchRuleAssembly::generate(const llvm::MCInst &inst, rword address,
         instPatch.metadata.address = mergePatch.metadata.address;
         instPatch.metadata.instSize += mergePatch.metadata.instSize;
         instPatch.metadata.execblockFlags |= mergePatch.metadata.execblockFlags;
+        instPatch.metadata.prefix = mergePatch.metadata.prefix;
+        instPatch.metadata.prefix.push_back(mergePatch.metadata.inst);
 
         // 5. replace the patch
         mergePatch = std::move(instPatch);

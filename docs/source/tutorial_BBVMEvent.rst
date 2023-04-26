@@ -245,7 +245,7 @@ QBDI has a tiny range set class (:cpp:class:`QBDI::RangeSet`), usable only with 
     // ....
 
     // print the coverage
-    for (const auto r: rset.getRanges()) {
+    for (const auto &r: rset.getRanges()) {
         std::cout << std::setbase(16) << "0x" << r.start() << " to 0x" << r.end() << std::endl;
     }
 

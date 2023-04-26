@@ -45,6 +45,10 @@ public:
   uint8_t execblockFlags;
   mutable InstAnalysisPtr analysis;
   InstMetadataArch archMetadata;
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+  // prefix for X86_64 instruction like ``lock``
+  std::vector<llvm::MCInst> prefix;
+#endif
 
   InstMetadata(const llvm::MCInst &inst, rword address, uint32_t instSize,
                uint32_t patchSize, CPUMode cpuMode, bool modifyPC,
@@ -64,6 +68,9 @@ public:
   inline InstMetadata lightCopy() const {
     InstMetadata cpy{inst,    address,  instSize,       patchSize,
                      cpuMode, modifyPC, execblockFlags, nullptr};
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+    cpy.prefix = prefix;
+#endif
     cpy.archMetadata = archMetadata;
     return cpy;
   }
