@@ -344,7 +344,7 @@ if (Process.arch === 'x64') {
     var REG_PC_ = "PC";
     var REG_SP_ = "SP";
 } else if (Process.arch === 'arm') {
-    var GPR_NAMES_ = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R12","FP","SP","LR","PC","CPSR"];
+    var GPR_NAMES_ = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","SP","LR","PC","CPSR"];
     var REG_RETURN_ = "R0";
     var REG_PC_ = "PC";
     var REG_SP_ = "SP";
