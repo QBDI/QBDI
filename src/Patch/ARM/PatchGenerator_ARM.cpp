@@ -185,6 +185,7 @@ WritePC::generate(const Patch &patch, TempManager &temp_manager) const {
     case llvm::ARM::MOVi16:
     case llvm::ARM::MOVi:
     case llvm::ARM::MOVr:
+    case llvm::ARM::MOVPCLR:
     case llvm::ARM::MOVsi:
     case llvm::ARM::MVNi:
     case llvm::ARM::MVNr:
@@ -351,6 +352,7 @@ SetExchange::generate(const Patch &patch, TempManager &temp_manager) const {
     case llvm::ARM::MOVi16:
     case llvm::ARM::MOVi:
     case llvm::ARM::MOVr:
+    case llvm::ARM::MOVPCLR:
     case llvm::ARM::MOVsi:
     case llvm::ARM::MVNi:
     case llvm::ARM::MVNr:
