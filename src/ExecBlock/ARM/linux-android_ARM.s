@@ -26,9 +26,10 @@
 .code 32
 .section .text
 .align 4
-.globl __qbdi_runCodeBlock
-
+.hidden __qbdi_runCodeBlock
+.globl  __qbdi_runCodeBlock
 .type __qbdi_runCodeBlock, %function
+
 __qbdi_runCodeBlock:
     // save GPRs
     push {r0-r12,lr};

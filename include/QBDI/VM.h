@@ -239,6 +239,7 @@ public:
    *     vm->addInstrumentedModuleFromAddr(funcPtr);
    *     rword retVal;
    *     vm->call(&retVal, funcPtr, {42});
+   *     QBDI::alignedFree(fakestack);
    *
    */
   QBDI_EXPORT bool call(rword *retval, rword function,
@@ -269,6 +270,72 @@ public:
    */
   QBDI_EXPORT bool callV(rword *retval, rword function, uint32_t argNum,
                          va_list ap);
+
+  /*! Switch the stack and call a function using the DBI (and its current
+   *  state).
+   *  This method will allocate a new stack and switch to this stack. The
+   *  remaining space on the current stack will be use by the called method.
+   *  This method mustn't be called if the VM already runs.
+   *  The stack pointer in the state must'nt be used after the end of this
+   *  method.
+   *
+   * @param[in] [retval]   Pointer to the returned value (optional).
+   * @param[in] function   Address of the function start instruction.
+   * @param[in] args       A list of arguments.
+   * @param[in] stackSize  The size of the stack for the engine.
+   *
+   * @return  True if at least one block has been executed.
+   *
+   * @details Example:
+   *
+   *     // perform (with QBDI) a call similar to (*funcPtr)(42);
+   *     QBDI::VM *vm = new QBDI::VM();
+   *     QBDI::GPRState *state = vm->getGPRState();
+   *     vm->addInstrumentedModuleFromAddr(funcPtr);
+   *     rword retVal;
+   *     vm->switchStackAndCall(&retVal, funcPtr, {42});
+   *
+   */
+
+  QBDI_EXPORT bool switchStackAndCall(rword *retval, rword function,
+                                      const std::vector<rword> &args = {},
+                                      uint32_t stackSize = 0x20000);
+
+  /*! Switch the stack and call a function using the DBI (and its current
+   *  state).
+   *  This method mustn't be called if the VM already runs.
+   *  The stack pointer in the state must'nt be used after the end of this
+   *  method.
+   *
+   * @param[in] [retval]   Pointer to the returned value (optional).
+   * @param[in] function   Address of the function start instruction.
+   * @param[in] argNum     The number of arguments in the array of arguments.
+   * @param[in] args       An array of arguments.
+   * @param[in] stackSize  The size of the stack for the engine.
+   *
+   * @return  True if at least one block has been executed.
+   */
+  QBDI_EXPORT bool switchStackAndCallA(rword *retval, rword function,
+                                       uint32_t argNum, const rword *args,
+                                       uint32_t stackSize = 0x20000);
+
+  /*! Switch the stack and call a function using the DBI (and its current
+   *  state).
+   *  This method mustn't be called if the VM already runs.
+   *  The stack pointer in the state must'nt be used after the end of this
+   *  method.
+   *
+   * @param[in] [retval]   Pointer to the returned value (optional).
+   * @param[in] function   Address of the function start instruction.
+   * @param[in] argNum     The number of arguments in the variadic list.
+   * @param[in] ap         An stdarg va_list object.
+   * @param[in] stackSize  The size of the stack for the engine.
+   *
+   * @return  True if at least one block has been executed.
+   */
+  QBDI_EXPORT bool switchStackAndCallV(rword *retval, rword function,
+                                       uint32_t argNum, va_list ap,
+                                       uint32_t stackSize = 0x20000);
 
   /*! Add a custom instrumentation rule to the VM.
    *
