@@ -155,6 +155,17 @@ TEST_CASE_METHOD(APITest, "VMTest-ExternalCall") {
   SUCCEED();
 }
 
+TEST_CASE_METHOD(APITest, "VMTest-SwitchStackAndCall8") {
+  QBDI_GPR_SET(state, QBDI::REG_SP, 0);
+
+  QBDI::rword ret;
+  vm.switchStackAndCall(&ret, (QBDI::rword)dummyFun8,
+                        {1, 2, 3, 5, 8, 13, 21, 34});
+  REQUIRE(ret == (QBDI::rword)dummyFun8(1, 2, 3, 5, 8, 13, 21, 34));
+
+  SUCCEED();
+}
+
 QBDI::VMAction countInstruction(QBDI::VMInstanceRef vm,
                                 QBDI::GPRState *gprState,
                                 QBDI::FPRState *fprState, void *data) {

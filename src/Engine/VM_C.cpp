@@ -127,6 +127,34 @@ bool qbdi_callA(VMInstanceRef instance, rword *retval, rword function,
   return static_cast<VM *>(instance)->callA(retval, function, argNum, args);
 }
 
+bool qbdi_switchStackAndCall(VMInstanceRef instance, rword *retval,
+                             rword function, uint32_t stackSize,
+                             uint32_t argNum, ...) {
+  QBDI_REQUIRE_ACTION(instance, return false);
+  va_list ap;
+  va_start(ap, argNum);
+  bool res = static_cast<VM *>(instance)->switchStackAndCallV(
+      retval, function, argNum, ap, stackSize);
+  va_end(ap);
+  return res;
+}
+
+bool qbdi_switchStackAndCallV(VMInstanceRef instance, rword *retval,
+                              rword function, uint32_t stackSize,
+                              uint32_t argNum, va_list ap) {
+  QBDI_REQUIRE_ACTION(instance, return false);
+  return static_cast<VM *>(instance)->switchStackAndCallV(
+      retval, function, argNum, ap, stackSize);
+}
+
+bool qbdi_switchStackAndCallA(VMInstanceRef instance, rword *retval,
+                              rword function, uint32_t stackSize,
+                              uint32_t argNum, const rword *args) {
+  QBDI_REQUIRE_ACTION(instance, return false);
+  return static_cast<VM *>(instance)->switchStackAndCallA(
+      retval, function, argNum, args, stackSize);
+}
+
 GPRState *qbdi_getGPRState(VMInstanceRef instance) {
   QBDI_REQUIRE_ACTION(instance, return nullptr);
   return static_cast<VM *>(instance)->getGPRState();

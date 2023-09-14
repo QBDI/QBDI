@@ -44,6 +44,7 @@
 #include "Patch/PatchGenerator.h"
 #include "Patch/PatchUtils.h"
 #include "Utility/LogSys.h"
+#include "Utility/StackSwitch.h"
 
 // Mask to identify Virtual Callback events
 #define EVENTID_VIRTCB_MASK (1UL << 31)
@@ -435,9 +436,7 @@ bool VM::run(rword start, rword stop) {
 
 bool VM::callA(rword *retval, rword function, uint32_t argNum,
                const rword *args) {
-  GPRState *state = nullptr;
-
-  state = getGPRState();
+  GPRState *state = getGPRState();
   QBDI_REQUIRE_ABORT(state != nullptr, "Fail to get VM GPRState");
 
   // a stack pointer must be set in state
@@ -470,6 +469,56 @@ bool VM::callV(rword *retval, rword function, uint32_t argNum, va_list ap) {
   }
 
   bool res = this->callA(retval, function, argNum, args.data());
+
+  return res;
+}
+
+// switchStackAndCallA
+
+bool VM::switchStackAndCallA(rword *retval, rword function, uint32_t argNum,
+                             const rword *args, uint32_t stackSize) {
+
+  QBDI_REQUIRE_ACTION(stackSize > 0x10000, return false);
+
+  uint8_t *fakestack = static_cast<uint8_t *>(alignedAlloc(stackSize, 16));
+  if (fakestack == nullptr) {
+    return false;
+  }
+
+  bool res =
+      switchStack(fakestack + stackSize - sizeof(rword), [&](rword stackPtr) {
+        // add a space of one integer
+        rword sp = stackPtr - sizeof(rword);
+        // align SP to 16
+        sp &= ~0xf;
+        QBDI_GPR_SET(this->getGPRState(), REG_SP, sp);
+        return this->callA(retval, function, argNum, args);
+      });
+
+  QBDI::alignedFree(fakestack);
+  return res;
+}
+
+// switchStackAndCall
+
+bool VM::switchStackAndCall(rword *retval, rword function,
+                            const std::vector<rword> &args,
+                            uint32_t stackSize) {
+  return this->switchStackAndCallA(retval, function, args.size(), args.data(),
+                                   stackSize);
+}
+
+// switchStackAndCallV
+
+bool VM::switchStackAndCallV(rword *retval, rword function, uint32_t argNum,
+                             va_list ap, uint32_t stackSize) {
+  std::vector<rword> args(argNum);
+  for (uint32_t i = 0; i < argNum; i++) {
+    args[i] = va_arg(ap, rword);
+  }
+
+  bool res = this->switchStackAndCallA(retval, function, argNum, args.data(),
+                                       stackSize);
 
   return res;
 }

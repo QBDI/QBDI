@@ -79,5 +79,4 @@ _skip_restore_fpu:
     ret;
 qbdi_runCodeBlock ENDP
 
-
 END
