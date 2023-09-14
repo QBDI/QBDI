@@ -303,9 +303,9 @@ void init_binding_InstAnalysis(py::module_ &m) {
           "VM (if ANALYSIS_OPERANDS)")
       // ANALYSIS_SYMBOL
       .def_property_readonly(
-          "symbol",
+          "symbolName",
           [](const InstAnalysis &obj) {
-            return get_InstAnalysis_member(obj, &InstAnalysis::symbol,
+            return get_InstAnalysis_member(obj, &InstAnalysis::symbolName,
                                            ANALYSIS_SYMBOL);
           },
           "Instruction symbol (if ANALYSIS_SYMBOL and found)")
@@ -317,12 +317,28 @@ void init_binding_InstAnalysis(py::module_ &m) {
           },
           "Instruction symbol offset (if ANALYSIS_SYMBOL)")
       .def_property_readonly(
-          "module",
+          "moduleName",
           [](const InstAnalysis &obj) {
-            return get_InstAnalysis_member(obj, &InstAnalysis::module,
+            return get_InstAnalysis_member(obj, &InstAnalysis::moduleName,
                                            ANALYSIS_SYMBOL);
           },
-          "Instruction module name (if ANALYSIS_SYMBOL and found)");
+          "Instruction module name (if ANALYSIS_SYMBOL and found)")
+      // deprecated Name
+      .def_property_readonly(
+          "symbol",
+          [](const InstAnalysis &obj) {
+            return get_InstAnalysis_member(obj, &InstAnalysis::symbolName,
+                                           ANALYSIS_SYMBOL);
+          },
+          "Instruction symbol (if ANALYSIS_SYMBOL and found) (deprecated)")
+      .def_property_readonly(
+          "module",
+          [](const InstAnalysis &obj) {
+            return get_InstAnalysis_member(obj, &InstAnalysis::moduleName,
+                                           ANALYSIS_SYMBOL);
+          },
+          "Instruction module name (if ANALYSIS_SYMBOL and found) "
+          "(deprecated)");
 }
 
 } // namespace pyQBDI

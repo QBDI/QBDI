@@ -372,13 +372,17 @@ InstAnalysis
 
     Structure containing analysis results of an operand provided by the VM (if ANALYSIS_OPERANDS)
 
-  .. js:attribute:: module
+  .. js:attribute:: moduleName
 
     Instruction module name (if ANALYSIS_SYMBOL and found)
 
-  .. js:attribute:: symbol
+  .. js:attribute:: symbolName
 
     Instruction symbol (if ANALYSIS_SYMBOL and found)
+
+  .. js:attribute:: symbolOffset
+
+    Instruction symbol offset (if ANALYSIS_SYMBOL and found)
 
 .. js:autoclass:: ConditionType
 

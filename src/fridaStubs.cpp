@@ -108,9 +108,9 @@ QBDI_EXPORT const StructDesc *qbdi_getInstAnalysisStructDesc() {
           offsetof(InstAnalysis, flagsAccess),
           offsetof(InstAnalysis, numOperands),
           offsetof(InstAnalysis, operands),
-          offsetof(InstAnalysis, symbol),
+          offsetof(InstAnalysis, symbolName),
           offsetof(InstAnalysis, symbolOffset),
-          offsetof(InstAnalysis, module),
+          offsetof(InstAnalysis, moduleName),
           offsetof(InstAnalysis, cpuMode),
       }};
   return &InstAnalysisDesc;

@@ -6,6 +6,10 @@ Next Release (0.10.1)
 
 * Fix ARM instrumentation for 'mov pc, lr' (`#241 <https://github.com/QBDI/QBDI/pull/241>`__)
 * Add switchStackAndCall API (`#245 <https://github.com/QBDI/QBDI/pull/245>`__)
+* Rename ``QBDI::InstAnalysis::module`` and ``QBDI::InstAnalysis::symbol`` to
+  ``QBDI::InstAnalysis::moduleName`` and ``QBDI::InstAnalysis::symbolName``. The
+  same changed applied in C, C++, Python and JS API, but Python and JS API
+  deprecated but still support the previous name.
 
 Version 0.10.0
 --------------

@@ -2040,19 +2040,21 @@ export class VM {
         p = ptr.add(this.#instAnalysisStructDesc.offsets[19]);
         var symbolPtr = Memory.readPointer(p);
         if (!symbolPtr.isNull()) {
-            analysis.symbol = Memory.readCString(symbolPtr);
+            analysis.symbolName = Memory.readCString(symbolPtr);
         } else {
-            analysis.symbol = "";
+            analysis.symbolName = "";
         }
+        analysis.symbol = analysis.symbolName; // deprecated Name
         p = ptr.add(this.#instAnalysisStructDesc.offsets[20]);
         analysis.symbolOffset = Memory.readU32(p);
         p = ptr.add(this.#instAnalysisStructDesc.offsets[21]);
         var modulePtr = Memory.readPointer(p);
         if (!modulePtr.isNull()) {
-            analysis.module = Memory.readCString(modulePtr);
+            analysis.moduleName = Memory.readCString(modulePtr);
         } else {
-            analysis.module = "";
+            analysis.moduleName = "";
         }
+        analysis.module = analysis.moduleName; // deprecated Name
         p = ptr.add(this.#instAnalysisStructDesc.offsets[22]);
         analysis.cpuMode = Memory.readU8(p);
         Object.freeze(analysis);
