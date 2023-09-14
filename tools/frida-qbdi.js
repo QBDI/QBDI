@@ -1744,6 +1744,8 @@ export class VM {
 
     /**
      * Call a function by its address (or through a Frida ``NativePointer``).
+     * QBDI will allocate his one stack to run, while the instrumented code will
+     * use the top of the current stack.
      *
      * Arguments can be provided, but their types need to be compatible
      * with the ``.toRword()`` interface (like ``NativePointer`` or ``UInt64``).

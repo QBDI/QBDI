@@ -162,6 +162,8 @@ Run
 
 .. js:autofunction:: VM#call
 
+.. js:autofunction:: VM#switchStackAndCall
+
 .. js:autofunction:: VM#simulateCall
 
 .. _instanalysis-getter-js:

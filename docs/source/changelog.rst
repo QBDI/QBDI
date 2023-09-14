@@ -4,6 +4,9 @@ CHANGELOG
 Next Release (0.10.1)
 ---------------------
 
+* Fix ARM instrumentation for 'mov pc, lr' (`#241 <https://github.com/QBDI/QBDI/pull/241>`__)
+* Add switchStackAndCall API (`#245 <https://github.com/QBDI/QBDI/pull/245>`__)
+
 Version 0.10.0
 --------------
 

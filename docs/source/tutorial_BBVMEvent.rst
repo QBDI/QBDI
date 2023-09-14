@@ -36,33 +36,33 @@ For QBDI, is the beginning for a basic block:
 Due to the dynamic detection of the basic block, basic blocks may overlap each other.
 This behavior can be observed in the following code:
 
-.. code:: asm
+.. code:: nasm
 
-    // BB
-    0x0000000000001000:   push rbp
-    0x0000000000001001:   mov  rbp, rsp
-    0x0000000000001004:   mov  dword ptr [rbp - 0x14], edi
-    0x0000000000001007:   mov  edx, dword ptr [rbp - 0x14]
-    0x000000000000100a:   mov  eax, edx
-    0x000000000000100c:   shl  eax, 2
-    0x000000000000100f:   add  eax, edx
-    0x0000000000001011:   mov  dword ptr [rbp - 4], eax
-    0x0000000000001014:   cmp  dword ptr [rbp - 0x14], 0xa
-    0x0000000000001018:   jle  0x1027
-    // BB
-    0x000000000000101e:   add  dword ptr [rbp - 4], 0x33
-    0x0000000000001022:   jmp  0x1033
-    // BB
-    0x0000000000001027:   mov  eax, dword ptr [rbp - 4]
-    0x000000000000102a:   imul eax, eax
-    0x000000000000102d:   add  eax, 0x57
-    0x0000000000001030:   mov  dword ptr [rbp - 4], eax
-    // BB
-    0x0000000000001033:   mov  edx, dword ptr [rbp - 4]
-    0x0000000000001036:   mov  eax, dword ptr [rbp - 0x14]
-    0x0000000000001039:   add  eax, edx
-    0x000000000000103b:   pop  rbp
-    0x000000000000103c:   ret
+    # BB
+       push rbp                          # 0x1000
+       mov  rbp, rsp                     # 0x1001
+       mov  dword ptr [rbp - 0x14], edi  # 0x1004
+       mov  edx, dword ptr [rbp - 0x14]  # 0x1007
+       mov  eax, edx                     # 0x100a
+       shl  eax, 2                       # 0x100c
+       add  eax, edx                     # 0x100f
+       mov  dword ptr [rbp - 4], eax     # 0x1011
+       cmp  dword ptr [rbp - 0x14], 0xa  # 0x1014
+       jle  0x1027                       # 0x1018
+    # BB
+       add  dword ptr [rbp - 4], 0x33    # 0x101e
+       jmp  0x1033                       # 0x1022
+    # BB
+       mov  eax, dword ptr [rbp - 4]     # 0x1027
+       imul eax, eax                     # 0x102a
+       add  eax, 0x57                    # 0x102d
+       mov  dword ptr [rbp - 4], eax     # 0x1030
+    # BB
+       mov  edx, dword ptr [rbp - 4]     # 0x1033
+       mov  eax, dword ptr [rbp - 0x14]  # 0x1036
+       add  eax, edx                     # 0x1039
+       pop  rbp                          # 0x103b
+       ret                               # 0x103c
 
 In this snippet, QBDI can detect 4 different basic blocks. If the first jump isn't taken:
 
