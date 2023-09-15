@@ -1,7 +1,13 @@
 version: 2
 
 build:
-  image: latest
+  os: ubuntu-22.04
+  tools:
+    python: "miniconda3-4.7"
+    nodejs: "20"
+  jobs:
+    post_create_environment:
+      - npm install -g jsdoc
 
 # install doxygen >= 1.9.2
 conda:
@@ -16,7 +22,6 @@ formats:
   - pdf
 
 python:
-  version: 3.8
   install:
     - method: setuptools
       path: docs/rtd_pyqbdi_artifact

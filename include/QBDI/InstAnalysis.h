@@ -172,13 +172,13 @@ typedef struct {
                                    * of an operand provided by the VM.
                                    * (warning: NULL if !ANALYSIS_OPERANDS) */
   // ANALYSIS_SYMBOL
-  const char *symbol;    /*!< Instruction symbol
-                          * (warning: NULL if !ANALYSIS_SYMBOL or not found)
-                          */
-  uint32_t symbolOffset; /*!< Instruction symbol offset */
-  const char *module;    /*!< Instruction module name
-                          * (warning: NULL if !ANALYSIS_SYMBOL or not found)
-                          */
+  const char *symbolName; /*!< Instruction symbol
+                           * (warning: NULL if !ANALYSIS_SYMBOL or not found)
+                           */
+  uint32_t symbolOffset;  /*!< Instruction symbol offset */
+  const char *moduleName; /*!< Instruction module name
+                           * (warning: NULL if !ANALYSIS_SYMBOL or not found)
+                           */
   // INTERNAL
   uint32_t analysisType; /*!< INTERNAL: Instruction analysis type
                           * (this should NOT be used)

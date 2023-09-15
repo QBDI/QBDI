@@ -552,14 +552,14 @@ const InstAnalysis *analyzeInstMetadata(const InstMetadata &instMetadata,
     int ret = dladdr((void *)instAnalysis->address, &info);
     if (ret != 0) {
       if (info.dli_sname) {
-        instAnalysis->symbol = info.dli_sname;
+        instAnalysis->symbolName = info.dli_sname;
         instAnalysis->symbolOffset =
             instAnalysis->address - (rword)info.dli_saddr;
       }
       if (info.dli_fname) {
         // dirty basename, but thead safe
         if ((ptr = strrchr(info.dli_fname, '/')) != nullptr) {
-          instAnalysis->module = ptr + 1;
+          instAnalysis->moduleName = ptr + 1;
         }
       }
     }

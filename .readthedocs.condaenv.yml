@@ -3,15 +3,16 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.8
-  - doxygen=1.9.2
+  - python=3.11
+  - doxygen=1.9.8
+  - pip
   - pip:
     - python-dateutil
-    - requests
     - pygit2
-    - Sphinx==4.4.0
-    - docutils==0.17.1
-    - breathe==4.33.1
-    - sphinx-js==3.1.2
+    - requests
+    - Sphinx==5.3.0
+    - docutils==0.18.1
+    - breathe==4.35.0
+    - sphinx-js==3.2.1
     - markupsafe==2.0.1
-    - sphinx_rtd_theme==1.0.0
+    - sphinx_rtd_theme==1.3.0

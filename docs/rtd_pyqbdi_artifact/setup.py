@@ -124,7 +124,7 @@ def get_artifact(run_id, artifact_name):
 
 def download_wheel(artifact):
 
-    assert not artifact['expired'], "artifact {artifact['id']} as expired"
+    assert not artifact['expired'], f"artifact {artifact['id']} as expired"
 
     art = do_get_request(f"/actions/artifacts/{artifact['id']}/zip", binary=True)
 

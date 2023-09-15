@@ -168,6 +168,15 @@ Run
 .. doxygenfunction:: qbdi_callV
     :project: QBDI_C
 
+.. doxygenfunction:: qbdi_switchStackAndCall
+    :project: QBDI_C
+
+.. doxygenfunction:: qbdi_switchStackAndCallA
+    :project: QBDI_C
+
+.. doxygenfunction:: qbdi_switchStackAndCallV
+    :project: QBDI_C
+
 .. _instanalysis-getter-c:
 
 InstAnalysis

@@ -152,6 +152,12 @@ Run
 
 .. doxygenfunction:: QBDI::VM::callV
 
+.. doxygenfunction:: QBDI::VM::switchStackAndCall
+
+.. doxygenfunction:: QBDI::VM::switchStackAndCallA
+
+.. doxygenfunction:: QBDI::VM::switchStackAndCallV
+
 .. _instanalysis-getter-cpp:
 
 InstAnalysis
