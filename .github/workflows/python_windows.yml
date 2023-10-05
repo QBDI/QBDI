@@ -109,6 +109,19 @@ jobs:
           python -m pip install setuptools wheel build
           python -m build -w
 
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+          architecture: ${{ matrix.WINDOWS_ARCH }}
+      - name: build PyQBDI 3.12
+        run: |
+          python --version
+          python -m pip --version
+          python -m pip install --upgrade pip
+          python -m pip install setuptools wheel build
+          python -m build -w
+
       - name: Export package
         uses: actions/upload-artifact@v3
         with:
