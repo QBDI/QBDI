@@ -750,81 +750,115 @@ void init_binding_State(py::module_ &m) {
           },
           "q15")
 #endif
-      .def("__str__", [](const FPRState &obj) {
-        std::ostringstream oss;
-        oss << std::hex << std::setfill('0')
-            << "=== FPRState begin ===" << std::endl
-            << "fpscr  : 0x" << std::setw(sizeof(rword) * 2) << obj.fpscr
-            << std::endl
-            << "d0  : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[0] << std::endl
-            << "d1  : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[1] << std::endl
-            << "d2  : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[2] << std::endl
-            << "d3  : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[3] << std::endl
-            << "d4  : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[4] << std::endl
-            << "d5  : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[5] << std::endl
-            << "d6  : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[6] << std::endl
-            << "d7  : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[7] << std::endl
-            << "d8  : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[8] << std::endl
-            << "d9  : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[9] << std::endl
-            << "d10 : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[10] << std::endl
-            << "d11 : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[11] << std::endl
-            << "d12 : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[12] << std::endl
-            << "d13 : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[13] << std::endl
-            << "d14 : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[14] << std::endl
-            << "d15 : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[15] << std::endl
+      .def("__str__",
+           [](const FPRState &obj) {
+             std::ostringstream oss;
+             oss << std::hex << std::setfill('0')
+                 << "=== FPRState begin ===" << std::endl
+                 << "fpscr  : 0x" << std::setw(sizeof(rword) * 2) << obj.fpscr
+                 << std::endl
+                 << "d0  : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[0] << std::endl
+                 << "d1  : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[1] << std::endl
+                 << "d2  : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[2] << std::endl
+                 << "d3  : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[3] << std::endl
+                 << "d4  : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[4] << std::endl
+                 << "d5  : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[5] << std::endl
+                 << "d6  : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[6] << std::endl
+                 << "d7  : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[7] << std::endl
+                 << "d8  : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[8] << std::endl
+                 << "d9  : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[9] << std::endl
+                 << "d10 : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[10] << std::endl
+                 << "d11 : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[11] << std::endl
+                 << "d12 : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[12] << std::endl
+                 << "d13 : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[13] << std::endl
+                 << "d14 : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[14] << std::endl
+                 << "d15 : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[15] << std::endl
 #if QBDI_NUM_FPR == 32
-            << "d16 : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[16] << std::endl
-            << "d17 : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[17] << std::endl
-            << "d18 : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[18] << std::endl
-            << "d19 : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[19] << std::endl
-            << "d20 : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[20] << std::endl
-            << "d21 : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[21] << std::endl
-            << "d22 : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[22] << std::endl
-            << "d23 : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[23] << std::endl
-            << "d24 : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[24] << std::endl
-            << "d25 : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[25] << std::endl
-            << "d26 : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[26] << std::endl
-            << "d27 : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[27] << std::endl
-            << "d28 : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[28] << std::endl
-            << "d29 : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[29] << std::endl
-            << "d30 : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[30] << std::endl
-            << "d31 : 0x" << std::setw(sizeof(uint64_t) * 2)
-            << (uint64_t)obj.vreg.d[31] << std::endl
+                 << "d16 : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[16] << std::endl
+                 << "d17 : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[17] << std::endl
+                 << "d18 : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[18] << std::endl
+                 << "d19 : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[19] << std::endl
+                 << "d20 : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[20] << std::endl
+                 << "d21 : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[21] << std::endl
+                 << "d22 : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[22] << std::endl
+                 << "d23 : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[23] << std::endl
+                 << "d24 : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[24] << std::endl
+                 << "d25 : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[25] << std::endl
+                 << "d26 : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[26] << std::endl
+                 << "d27 : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[27] << std::endl
+                 << "d28 : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[28] << std::endl
+                 << "d29 : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[29] << std::endl
+                 << "d30 : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[30] << std::endl
+                 << "d31 : 0x" << std::setw(sizeof(uint64_t) * 2)
+                 << (uint64_t)obj.vreg.d[31] << std::endl
 #endif
-            << "=== FPRState end ===" << std::endl;
-        return oss.str();
-      });
+                 << "=== FPRState end ===" << std::endl;
+             return oss.str();
+           })
+      .def("__copy__", [](const FPRState &state) -> FPRState { return state; })
+      .def(py::pickle(
+          [](const FPRState &state) { // __getstate__
+            return py::make_tuple(
+                "ARM", py::bytes(reinterpret_cast<const char *>(&state),
+                                 sizeof(FPRState)));
+          },
+          [](py::tuple t) -> FPRState { // __setstate__
+            if (t.size() != 2) {
+              throw std::runtime_error("Invalid state!");
+            }
+            if (t[0].cast<std::string>() != "ARM") {
+              std::ostringstream oss;
+              oss << "Invalid state. (expected \"ARM\", found \""
+                  << t[0].cast<std::string>() << "\")";
+              throw std::runtime_error(oss.str());
+            }
+
+            std::string buffer = t[1].cast<std::string>();
+
+            if (buffer.size() != sizeof(FPRState)) {
+              std::ostringstream oss;
+              oss << "Invalid state. (expected size of " << sizeof(FPRState)
+                  << ", found size of " << buffer.size() << ")";
+              throw std::runtime_error(oss.str());
+            }
+
+            FPRState newState;
+            memcpy(reinterpret_cast<void *>(&newState), buffer.data(),
+                   sizeof(FPRState));
+            return newState;
+
+          }));
 
   m.attr("REG_RETURN") = REG_RETURN;
   m.attr("AVAILABLE_GPR") = AVAILABLE_GPR;
@@ -917,7 +951,40 @@ void init_binding_State(py::module_ &m) {
             }
             return QBDI_GPR_SET(&obj, index, value);
           },
-          "Set a register like QBDI_GPR_SET", "index"_a, "value"_a);
+          "Set a register like QBDI_GPR_SET", "index"_a, "value"_a)
+      .def("__copy__", [](const GPRState &state) -> GPRState { return state; })
+      .def(py::pickle(
+          [](const GPRState &state) { // __getstate__
+            return py::make_tuple(
+                "ARM", py::bytes(reinterpret_cast<const char *>(&state),
+                                 sizeof(GPRState)));
+          },
+          [](py::tuple t) -> GPRState { // __setstate__
+            if (t.size() != 2) {
+              throw std::runtime_error("Invalid state!");
+            }
+            if (t[0].cast<std::string>() != "ARM") {
+              std::ostringstream oss;
+              oss << "Invalid state. (expected \"ARM\", found \""
+                  << t[0].cast<std::string>() << "\")";
+              throw std::runtime_error(oss.str());
+            }
+
+            std::string buffer = t[1].cast<std::string>();
+
+            if (buffer.size() != sizeof(GPRState)) {
+              std::ostringstream oss;
+              oss << "Invalid state. (expected size of " << sizeof(GPRState)
+                  << ", found size of " << buffer.size() << ")";
+              throw std::runtime_error(oss.str());
+            }
+
+            GPRState newState;
+            memcpy(reinterpret_cast<void *>(&newState), buffer.data(),
+                   sizeof(GPRState));
+            return newState;
+
+          }));
 }
 
 } // namespace pyQBDI

@@ -45,7 +45,30 @@ void init_binding_Memory(py::module_ &m) {
           },
           "Region access rights (PF_READ, PF_WRITE, PF_EXEC).")
       .def_readwrite("name", &MemoryMap::name,
-                     "Region name (useful when a region is mapping a module).");
+                     "Region name (useful when a region is mapping a module).")
+      .def("__repr__",
+           [](const MemoryMap &map) {
+             std::ostringstream oss;
+
+             oss << std::hex << std::setfill('0') << "<MemoryMap ["
+                 << map.range.start() << ", " << map.range.end() << "), "
+                 << py::str(py::cast(map.permission)) << ", \"" << map.name
+                 << "\">";
+             return oss.str();
+           })
+      .def("__copy__", [](const MemoryMap &map) -> MemoryMap { return map; })
+      .def(py::pickle(
+          [](const MemoryMap &map) { // __getstate__
+            return py::make_tuple(map.range.start(), map.range.end(),
+                                  map.permission, map.name);
+          },
+          [](py::tuple t) -> MemoryMap { // __setstate__
+            if (t.size() != 4)
+              throw std::runtime_error("Invalid state!");
+
+            return {t[0].cast<rword>(), t[1].cast<rword>(),
+                    t[2].cast<Permission>(), t[3].cast<std::string>()};
+          }));
 
   m.def("getRemoteProcessMaps", &getRemoteProcessMaps,
         "Get a list of all the memory maps (regions) of a process.", "pid"_a,

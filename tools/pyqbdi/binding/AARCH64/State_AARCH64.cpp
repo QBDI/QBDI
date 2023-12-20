@@ -321,82 +321,116 @@ void init_binding_State(py::module_ &m) {
             std::string(v).copy((char *)&t.v31, sizeof(t.v31), 0);
           },
           "v31")
-      .def("__str__", [](const FPRState &obj) {
-        std::ostringstream oss;
-        oss << std::hex << std::setfill('0')
-            << "=== FPRState begin ===" << std::endl
-            << "fpcr  : 0x" << std::setw(sizeof(rword) * 2) << obj.fpcr
-            << std::endl
-            << "fpsr  : 0x" << std::setw(sizeof(rword) * 2) << obj.fpsr
-            << std::endl
-            << "v0  : 0x";
-        hexify_register(oss, obj.v0);
-        oss << std::endl << "v1  : 0x";
-        hexify_register(oss, obj.v1);
-        oss << std::endl << "v2  : 0x";
-        hexify_register(oss, obj.v2);
-        oss << std::endl << "v3  : 0x";
-        hexify_register(oss, obj.v3);
-        oss << std::endl << "v4  : 0x";
-        hexify_register(oss, obj.v4);
-        oss << std::endl << "v5  : 0x";
-        hexify_register(oss, obj.v5);
-        oss << std::endl << "v6  : 0x";
-        hexify_register(oss, obj.v6);
-        oss << std::endl << "v7  : 0x";
-        hexify_register(oss, obj.v7);
-        oss << std::endl << "v8  : 0x";
-        hexify_register(oss, obj.v8);
-        oss << std::endl << "v9  : 0x";
-        hexify_register(oss, obj.v9);
-        oss << std::endl << "v10 : 0x";
-        hexify_register(oss, obj.v10);
-        oss << std::endl << "v11 : 0x";
-        hexify_register(oss, obj.v11);
-        oss << std::endl << "v12 : 0x";
-        hexify_register(oss, obj.v12);
-        oss << std::endl << "v13 : 0x";
-        hexify_register(oss, obj.v13);
-        oss << std::endl << "v14 : 0x";
-        hexify_register(oss, obj.v14);
-        oss << std::endl << "v15 : 0x";
-        hexify_register(oss, obj.v15);
-        oss << std::endl << "v16 : 0x";
-        hexify_register(oss, obj.v16);
-        oss << std::endl << "v17 : 0x";
-        hexify_register(oss, obj.v17);
-        oss << std::endl << "v18 : 0x";
-        hexify_register(oss, obj.v18);
-        oss << std::endl << "v19 : 0x";
-        hexify_register(oss, obj.v19);
-        oss << std::endl << "v20 : 0x";
-        hexify_register(oss, obj.v20);
-        oss << std::endl << "v21 : 0x";
-        hexify_register(oss, obj.v21);
-        oss << std::endl << "v22 : 0x";
-        hexify_register(oss, obj.v22);
-        oss << std::endl << "v23 : 0x";
-        hexify_register(oss, obj.v23);
-        oss << std::endl << "v24 : 0x";
-        hexify_register(oss, obj.v24);
-        oss << std::endl << "v25 : 0x";
-        hexify_register(oss, obj.v25);
-        oss << std::endl << "v26 : 0x";
-        hexify_register(oss, obj.v26);
-        oss << std::endl << "v27 : 0x";
-        hexify_register(oss, obj.v27);
-        oss << std::endl << "v28 : 0x";
-        hexify_register(oss, obj.v28);
-        oss << std::endl << "v29 : 0x";
-        hexify_register(oss, obj.v29);
-        oss << std::endl << "v30 : 0x";
-        hexify_register(oss, obj.v30);
-        oss << std::endl << "v31 : 0x";
-        hexify_register(oss, obj.v31);
+      .def("__str__",
+           [](const FPRState &obj) {
+             std::ostringstream oss;
+             oss << std::hex << std::setfill('0')
+                 << "=== FPRState begin ===" << std::endl
+                 << "fpcr  : 0x" << std::setw(sizeof(rword) * 2) << obj.fpcr
+                 << std::endl
+                 << "fpsr  : 0x" << std::setw(sizeof(rword) * 2) << obj.fpsr
+                 << std::endl
+                 << "v0  : 0x";
+             hexify_register(oss, obj.v0);
+             oss << std::endl << "v1  : 0x";
+             hexify_register(oss, obj.v1);
+             oss << std::endl << "v2  : 0x";
+             hexify_register(oss, obj.v2);
+             oss << std::endl << "v3  : 0x";
+             hexify_register(oss, obj.v3);
+             oss << std::endl << "v4  : 0x";
+             hexify_register(oss, obj.v4);
+             oss << std::endl << "v5  : 0x";
+             hexify_register(oss, obj.v5);
+             oss << std::endl << "v6  : 0x";
+             hexify_register(oss, obj.v6);
+             oss << std::endl << "v7  : 0x";
+             hexify_register(oss, obj.v7);
+             oss << std::endl << "v8  : 0x";
+             hexify_register(oss, obj.v8);
+             oss << std::endl << "v9  : 0x";
+             hexify_register(oss, obj.v9);
+             oss << std::endl << "v10 : 0x";
+             hexify_register(oss, obj.v10);
+             oss << std::endl << "v11 : 0x";
+             hexify_register(oss, obj.v11);
+             oss << std::endl << "v12 : 0x";
+             hexify_register(oss, obj.v12);
+             oss << std::endl << "v13 : 0x";
+             hexify_register(oss, obj.v13);
+             oss << std::endl << "v14 : 0x";
+             hexify_register(oss, obj.v14);
+             oss << std::endl << "v15 : 0x";
+             hexify_register(oss, obj.v15);
+             oss << std::endl << "v16 : 0x";
+             hexify_register(oss, obj.v16);
+             oss << std::endl << "v17 : 0x";
+             hexify_register(oss, obj.v17);
+             oss << std::endl << "v18 : 0x";
+             hexify_register(oss, obj.v18);
+             oss << std::endl << "v19 : 0x";
+             hexify_register(oss, obj.v19);
+             oss << std::endl << "v20 : 0x";
+             hexify_register(oss, obj.v20);
+             oss << std::endl << "v21 : 0x";
+             hexify_register(oss, obj.v21);
+             oss << std::endl << "v22 : 0x";
+             hexify_register(oss, obj.v22);
+             oss << std::endl << "v23 : 0x";
+             hexify_register(oss, obj.v23);
+             oss << std::endl << "v24 : 0x";
+             hexify_register(oss, obj.v24);
+             oss << std::endl << "v25 : 0x";
+             hexify_register(oss, obj.v25);
+             oss << std::endl << "v26 : 0x";
+             hexify_register(oss, obj.v26);
+             oss << std::endl << "v27 : 0x";
+             hexify_register(oss, obj.v27);
+             oss << std::endl << "v28 : 0x";
+             hexify_register(oss, obj.v28);
+             oss << std::endl << "v29 : 0x";
+             hexify_register(oss, obj.v29);
+             oss << std::endl << "v30 : 0x";
+             hexify_register(oss, obj.v30);
+             oss << std::endl << "v31 : 0x";
+             hexify_register(oss, obj.v31);
 
-        oss << std::endl << "=== FPRState end ===" << std::endl;
-        return oss.str();
-      });
+             oss << std::endl << "=== FPRState end ===" << std::endl;
+             return oss.str();
+           })
+      .def("__copy__", [](const FPRState &state) -> FPRState { return state; })
+      .def(py::pickle(
+          [](const FPRState &state) { // __getstate__
+            return py::make_tuple(
+                "AARCH64", py::bytes(reinterpret_cast<const char *>(&state),
+                                     sizeof(FPRState)));
+          },
+          [](py::tuple t) -> FPRState { // __setstate__
+            if (t.size() != 2) {
+              throw std::runtime_error("Invalid state!");
+            }
+            if (t[0].cast<std::string>() != "AARCH64") {
+              std::ostringstream oss;
+              oss << "Invalid state. (expected \"AARCH64\", found \""
+                  << t[0].cast<std::string>() << "\")";
+              throw std::runtime_error(oss.str());
+            }
+
+            std::string buffer = t[1].cast<std::string>();
+
+            if (buffer.size() != sizeof(FPRState)) {
+              std::ostringstream oss;
+              oss << "Invalid state. (expected size of " << sizeof(FPRState)
+                  << ", found size of " << buffer.size() << ")";
+              throw std::runtime_error(oss.str());
+            }
+
+            FPRState newState;
+            memcpy(reinterpret_cast<void *>(&newState), buffer.data(),
+                   sizeof(FPRState));
+            return newState;
+
+          }));
 
   m.attr("REG_RETURN") = REG_RETURN;
   m.attr("AVAILABLE_GPR") = AVAILABLE_GPR;
@@ -525,7 +559,40 @@ void init_binding_State(py::module_ &m) {
             }
             return QBDI_GPR_SET(&obj, index, value);
           },
-          "Set a register like QBDI_GPR_SET", "index"_a, "value"_a);
+          "Set a register like QBDI_GPR_SET", "index"_a, "value"_a)
+      .def("__copy__", [](const GPRState &state) -> GPRState { return state; })
+      .def(py::pickle(
+          [](const GPRState &state) { // __getstate__
+            return py::make_tuple(
+                "AARCH64", py::bytes(reinterpret_cast<const char *>(&state),
+                                     sizeof(GPRState)));
+          },
+          [](py::tuple t) -> GPRState { // __setstate__
+            if (t.size() != 2) {
+              throw std::runtime_error("Invalid state!");
+            }
+            if (t[0].cast<std::string>() != "AARCH64") {
+              std::ostringstream oss;
+              oss << "Invalid state. (expected \"AARCH64\", found \""
+                  << t[0].cast<std::string>() << "\")";
+              throw std::runtime_error(oss.str());
+            }
+
+            std::string buffer = t[1].cast<std::string>();
+
+            if (buffer.size() != sizeof(GPRState)) {
+              std::ostringstream oss;
+              oss << "Invalid state. (expected size of " << sizeof(GPRState)
+                  << ", found size of " << buffer.size() << ")";
+              throw std::runtime_error(oss.str());
+            }
+
+            GPRState newState;
+            memcpy(reinterpret_cast<void *>(&newState), buffer.data(),
+                   sizeof(GPRState));
+            return newState;
+
+          }));
 }
 
 } // namespace pyQBDI
