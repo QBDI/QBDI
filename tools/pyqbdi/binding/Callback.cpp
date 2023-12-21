@@ -116,7 +116,31 @@ void init_binding_Callback(py::module_ &m) {
                     "execution transfer destination.")
       .def_readonly("sequenceEnd", &VMState::sequenceEnd,
                     "The current sequence end address which can also be the "
-                    "execution transfer destination.");
+                    "execution transfer destination.")
+      .def("__repr__",
+           [](const VMState &state) {
+             std::ostringstream oss;
+
+             oss << std::hex << std::setfill('0') << "<VMState "
+                 << py::str(py::cast(state.event)) << ", "
+                 << state.basicBlockStart << ", " << state.basicBlockEnd << ", "
+                 << state.sequenceStart << ", " << state.sequenceEnd << ">";
+             return oss.str();
+           })
+      .def("__copy__", [](const VMState &state) -> VMState { return state; })
+      .def(py::pickle(
+          [](const VMState &state) { // __getstate__
+            return py::make_tuple(state.event, state.basicBlockStart,
+                                  state.basicBlockEnd, state.sequenceStart,
+                                  state.sequenceEnd);
+          },
+          [](py::tuple t) -> VMState { // __setstate__
+            if (t.size() != 5)
+              throw std::runtime_error("Invalid state!");
+
+            return {t[0].cast<VMEvent>(), t[1].cast<rword>(),
+                    t[2].cast<rword>(), t[3].cast<rword>(), t[4].cast<rword>()};
+          }));
 
   enum_int_flag_<MemoryAccessFlags>(m, "MemoryAccessFlags",
                                     "Memory access flags", py::arithmetic())
@@ -143,7 +167,36 @@ void init_binding_Callback(py::module_ &m) {
                      "Size of memory access (in bytes)")
       .def_readwrite("type", &MemoryAccess::type,
                      "Memory access type (READ / WRITE)")
-      .def_readwrite("flags", &MemoryAccess::flags, "Memory access flags");
+      .def_readwrite("flags", &MemoryAccess::flags, "Memory access flags")
+      .def("__repr__",
+           [](const MemoryAccess &acc) {
+             std::ostringstream oss;
+
+             oss << std::hex << std::setfill('0') << "<MemoryAccess "
+                 << acc.instAddress << ", " << acc.accessAddress << ", "
+                 << acc.value << ", " << acc.size << ", "
+                 << py::str(py::cast(acc.type)) << ", "
+                 << py::str(py::cast(acc.flags)) << ">";
+             return oss.str();
+           })
+      .def("__copy__",
+           [](const MemoryAccess &acc) -> MemoryAccess { return acc; })
+      .def(py::pickle(
+          [](const MemoryAccess &acc) { // __getstate__
+            return py::make_tuple(acc.instAddress, acc.accessAddress, acc.value,
+                                  acc.size, acc.type, acc.flags);
+          },
+          [](py::tuple t) -> MemoryAccess { // __setstate__
+            if (t.size() != 6)
+              throw std::runtime_error("Invalid state!");
+
+            return {t[0].cast<rword>(),
+                    t[1].cast<rword>(),
+                    t[2].cast<rword>(),
+                    t[3].cast<uint16_t>(),
+                    t[4].cast<MemoryAccessType>(),
+                    t[5].cast<MemoryAccessFlags>()};
+          }));
 
   py::class_<InstrRuleDataCBKPython>(m, "InstrRuleDataCBK")
       .def(py::init<PyInstCallback &, py::object &, InstPosition, int>(),

@@ -53,9 +53,9 @@ if(QBDI_ARCH_X86
 
   FetchContent_Declare(
     pybind11
-    URL "https://github.com/pybind/pybind11/archive/v2.10.1.zip"
+    URL "https://github.com/pybind/pybind11/archive/v2.11.1.zip"
     URL_HASH
-      "SHA256=fcf94065efcfd0a7a828bacf118fa11c43f6390d0c805e3e6342ac119f2e9976"
+      "SHA256=b011a730c8845bfc265f0f81ee4e5e9e1d354df390836d2a25880e123d021f89"
     DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/pybind11-download")
   FetchContent_GetProperties(pybind11)
   if(NOT pybind11_POPULATED)
