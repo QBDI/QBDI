@@ -42,6 +42,7 @@ namespace {
 // =================
 
 constexpr unsigned READ_8[] = {
+    // clang-format off
     llvm::ARM::LDAB,
     llvm::ARM::LDAEXB,
     llvm::ARM::LDRBT_POST_IMM,
@@ -87,11 +88,13 @@ constexpr unsigned READ_8[] = {
     llvm::ARM::tLDRBi,
     llvm::ARM::tLDRBr,
     llvm::ARM::tLDRSB,
+    // clang-format on
 };
 
 constexpr size_t READ_8_SIZE = sizeof(READ_8) / sizeof(unsigned);
 
 constexpr unsigned READ_16[] = {
+    // clang-format off
     llvm::ARM::LDAEXH,
     llvm::ARM::LDAH,
     llvm::ARM::LDREXH,
@@ -141,18 +144,26 @@ constexpr unsigned READ_16[] = {
     llvm::ARM::tLDRHi,
     llvm::ARM::tLDRHr,
     llvm::ARM::tLDRSH,
+    // clang-format on
 };
 
 constexpr size_t READ_16_SIZE = sizeof(READ_16) / sizeof(unsigned);
 
 constexpr unsigned READ_24[] = {
-    llvm::ARM::VLD3DUPd8,     llvm::ARM::VLD3DUPd8_UPD, llvm::ARM::VLD3DUPq8,
-    llvm::ARM::VLD3DUPq8_UPD, llvm::ARM::VLD3LNd8,      llvm::ARM::VLD3LNd8_UPD,
+    // clang-format off
+    llvm::ARM::VLD3DUPd8,
+    llvm::ARM::VLD3DUPd8_UPD,
+    llvm::ARM::VLD3DUPq8,
+    llvm::ARM::VLD3DUPq8_UPD,
+    llvm::ARM::VLD3LNd8,
+    llvm::ARM::VLD3LNd8_UPD,
+    // clang-format on
 };
 
 constexpr size_t READ_24_SIZE = sizeof(READ_24) / sizeof(unsigned);
 
 constexpr unsigned READ_32[] = {
+    // clang-format off
     llvm::ARM::LDA,
     llvm::ARM::LDAEX,
     llvm::ARM::LDREX,
@@ -222,20 +233,28 @@ constexpr unsigned READ_32[] = {
     llvm::ARM::tLDRpci,
     llvm::ARM::tLDRr,
     llvm::ARM::tLDRspi,
+    // clang-format on
 };
 
 constexpr size_t READ_32_SIZE = sizeof(READ_32) / sizeof(unsigned);
 
 constexpr unsigned READ_48[] = {
-    llvm::ARM::VLD3DUPd16, llvm::ARM::VLD3DUPd16_UPD,
-    llvm::ARM::VLD3DUPq16, llvm::ARM::VLD3DUPq16_UPD,
-    llvm::ARM::VLD3LNd16,  llvm::ARM::VLD3LNd16_UPD,
-    llvm::ARM::VLD3LNq16,  llvm::ARM::VLD3LNq16_UPD,
+    // clang-format off
+    llvm::ARM::VLD3DUPd16,
+    llvm::ARM::VLD3DUPd16_UPD,
+    llvm::ARM::VLD3DUPq16,
+    llvm::ARM::VLD3DUPq16_UPD,
+    llvm::ARM::VLD3LNd16,
+    llvm::ARM::VLD3LNd16_UPD,
+    llvm::ARM::VLD3LNq16,
+    llvm::ARM::VLD3LNq16_UPD,
+    // clang-format on
 };
 
 constexpr size_t READ_48_SIZE = sizeof(READ_48) / sizeof(unsigned);
 
 constexpr unsigned READ_64[] = {
+    // clang-format off
     llvm::ARM::LDAEXD,
     llvm::ARM::LDRD,
     llvm::ARM::LDRD_POST,
@@ -273,24 +292,32 @@ constexpr unsigned READ_64[] = {
     llvm::ARM::VLD4LNq16_UPD,
     llvm::ARM::VLDRD,
     llvm::ARM::t2LDAEXD,
-    llvm::ARM::t2LDRDi8,
     llvm::ARM::t2LDRD_POST,
     llvm::ARM::t2LDRD_PRE,
+    llvm::ARM::t2LDRDi8,
     llvm::ARM::t2LDREXD,
+    // clang-format on
 };
 
 constexpr size_t READ_64_SIZE = sizeof(READ_64) / sizeof(unsigned);
 
 constexpr unsigned READ_96[] = {
-    llvm::ARM::VLD3DUPd32, llvm::ARM::VLD3DUPd32_UPD,
-    llvm::ARM::VLD3DUPq32, llvm::ARM::VLD3DUPq32_UPD,
-    llvm::ARM::VLD3LNd32,  llvm::ARM::VLD3LNd32_UPD,
-    llvm::ARM::VLD3LNq32,  llvm::ARM::VLD3LNq32_UPD,
+    // clang-format off
+    llvm::ARM::VLD3DUPd32,
+    llvm::ARM::VLD3DUPd32_UPD,
+    llvm::ARM::VLD3DUPq32,
+    llvm::ARM::VLD3DUPq32_UPD,
+    llvm::ARM::VLD3LNd32,
+    llvm::ARM::VLD3LNd32_UPD,
+    llvm::ARM::VLD3LNq32,
+    llvm::ARM::VLD3LNq32_UPD,
+    // clang-format on
 };
 
 constexpr size_t READ_96_SIZE = sizeof(READ_96) / sizeof(unsigned);
 
 constexpr unsigned READ_128[] = {
+    // clang-format off
     llvm::ARM::VLD1q16,
     llvm::ARM::VLD1q16wb_fixed,
     llvm::ARM::VLD1q16wb_register,
@@ -329,11 +356,13 @@ constexpr unsigned READ_128[] = {
     llvm::ARM::VLD4LNd32_UPD,
     llvm::ARM::VLD4LNq32,
     llvm::ARM::VLD4LNq32_UPD,
+    // clang-format on
 };
 
 constexpr size_t READ_128_SIZE = sizeof(READ_128) / sizeof(unsigned);
 
 constexpr unsigned READ_192[] = {
+    // clang-format off
     llvm::ARM::VLD1d16T,
     llvm::ARM::VLD1d16Twb_fixed,
     llvm::ARM::VLD1d16Twb_register,
@@ -358,11 +387,13 @@ constexpr unsigned READ_192[] = {
     llvm::ARM::VLD3q32_UPD,
     llvm::ARM::VLD3q8,
     llvm::ARM::VLD3q8_UPD,
+    // clang-format on
 };
 
 constexpr size_t READ_192_SIZE = sizeof(READ_192) / sizeof(unsigned);
 
 constexpr unsigned READ_256[] = {
+    // clang-format off
     llvm::ARM::VLD1d16Q,
     llvm::ARM::VLD1d16Qwb_fixed,
     llvm::ARM::VLD1d16Qwb_register,
@@ -396,76 +427,139 @@ constexpr unsigned READ_256[] = {
     llvm::ARM::VLD4q32_UPD,
     llvm::ARM::VLD4q8,
     llvm::ARM::VLD4q8_UPD,
+    // clang-format on
 };
 
 constexpr size_t READ_256_SIZE = sizeof(READ_256) / sizeof(unsigned);
 
 // instruction with read of a multiple of 4 bytes
 constexpr unsigned READ_32_DYN[] = {
-    llvm::ARM::LDMDA,       llvm::ARM::LDMDA_UPD,   llvm::ARM::LDMDB,
-    llvm::ARM::LDMDB_UPD,   llvm::ARM::LDMIA,       llvm::ARM::LDMIA_UPD,
-    llvm::ARM::LDMIB,       llvm::ARM::LDMIB_UPD,   llvm::ARM::VLDMSDB_UPD,
-    llvm::ARM::VLDMSIA,     llvm::ARM::VLDMSIA_UPD, llvm::ARM::t2LDMDB,
-    llvm::ARM::t2LDMDB_UPD, llvm::ARM::t2LDMIA,     llvm::ARM::t2LDMIA_UPD,
-    llvm::ARM::tLDMIA,      llvm::ARM::tPOP,
+    // clang-format off
+    llvm::ARM::LDMDA,
+    llvm::ARM::LDMDA_UPD,
+    llvm::ARM::LDMDB,
+    llvm::ARM::LDMDB_UPD,
+    llvm::ARM::LDMIA,
+    llvm::ARM::LDMIA_UPD,
+    llvm::ARM::LDMIB,
+    llvm::ARM::LDMIB_UPD,
+    llvm::ARM::VLDMSDB_UPD,
+    llvm::ARM::VLDMSIA,
+    llvm::ARM::VLDMSIA_UPD,
+    llvm::ARM::t2LDMDB,
+    llvm::ARM::t2LDMDB_UPD,
+    llvm::ARM::t2LDMIA,
+    llvm::ARM::t2LDMIA_UPD,
+    llvm::ARM::tLDMIA,
+    llvm::ARM::tPOP,
+    // clang-format on
 };
 
 constexpr size_t READ_32_DYN_SIZE = sizeof(READ_32_DYN) / sizeof(unsigned);
 
 constexpr unsigned READ_64_DYN[] = {
+    // clang-format off
     llvm::ARM::VLDMDDB_UPD,
     llvm::ARM::VLDMDIA,
     llvm::ARM::VLDMDIA_UPD,
+    // clang-format on
 };
 
 constexpr size_t READ_64_DYN_SIZE = sizeof(READ_64_DYN) / sizeof(unsigned);
 
 constexpr unsigned UNSUPPORTED_READ[] = {
-    llvm::ARM::LDC2L_OFFSET,      llvm::ARM::LDC2_OFFSET,
-    llvm::ARM::LDCL_OFFSET,       llvm::ARM::LDC_OFFSET,
-    llvm::ARM::MVE_VLD20_16,      llvm::ARM::MVE_VLD20_16_wb,
-    llvm::ARM::MVE_VLD20_32,      llvm::ARM::MVE_VLD20_32_wb,
-    llvm::ARM::MVE_VLD20_8,       llvm::ARM::MVE_VLD20_8_wb,
-    llvm::ARM::MVE_VLD21_16,      llvm::ARM::MVE_VLD21_16_wb,
-    llvm::ARM::MVE_VLD21_32,      llvm::ARM::MVE_VLD21_32_wb,
-    llvm::ARM::MVE_VLD21_8,       llvm::ARM::MVE_VLD21_8_wb,
-    llvm::ARM::MVE_VLD40_16,      llvm::ARM::MVE_VLD40_16_wb,
-    llvm::ARM::MVE_VLD40_32,      llvm::ARM::MVE_VLD40_32_wb,
-    llvm::ARM::MVE_VLD40_8,       llvm::ARM::MVE_VLD40_8_wb,
-    llvm::ARM::MVE_VLD41_16,      llvm::ARM::MVE_VLD41_16_wb,
-    llvm::ARM::MVE_VLD41_32,      llvm::ARM::MVE_VLD41_32_wb,
-    llvm::ARM::MVE_VLD41_8,       llvm::ARM::MVE_VLD41_8_wb,
-    llvm::ARM::MVE_VLD42_16,      llvm::ARM::MVE_VLD42_16_wb,
-    llvm::ARM::MVE_VLD42_32,      llvm::ARM::MVE_VLD42_32_wb,
-    llvm::ARM::MVE_VLD42_8,       llvm::ARM::MVE_VLD42_8_wb,
-    llvm::ARM::MVE_VLD43_16,      llvm::ARM::MVE_VLD43_16_wb,
-    llvm::ARM::MVE_VLD43_32,      llvm::ARM::MVE_VLD43_32_wb,
-    llvm::ARM::MVE_VLD43_8,       llvm::ARM::MVE_VLD43_8_wb,
-    llvm::ARM::MVE_VLDRBS16,      llvm::ARM::MVE_VLDRBS16_post,
-    llvm::ARM::MVE_VLDRBS16_pre,  llvm::ARM::MVE_VLDRBS16_rq,
-    llvm::ARM::MVE_VLDRBS32,      llvm::ARM::MVE_VLDRBS32_post,
-    llvm::ARM::MVE_VLDRBS32_pre,  llvm::ARM::MVE_VLDRBS32_rq,
-    llvm::ARM::MVE_VLDRBU16,      llvm::ARM::MVE_VLDRBU16_post,
-    llvm::ARM::MVE_VLDRBU16_pre,  llvm::ARM::MVE_VLDRBU16_rq,
-    llvm::ARM::MVE_VLDRBU32,      llvm::ARM::MVE_VLDRBU32_post,
-    llvm::ARM::MVE_VLDRBU32_pre,  llvm::ARM::MVE_VLDRBU32_rq,
-    llvm::ARM::MVE_VLDRBU8,       llvm::ARM::MVE_VLDRBU8_post,
-    llvm::ARM::MVE_VLDRBU8_pre,   llvm::ARM::MVE_VLDRBU8_rq,
-    llvm::ARM::MVE_VLDRDU64_qi,   llvm::ARM::MVE_VLDRDU64_qi_pre,
-    llvm::ARM::MVE_VLDRDU64_rq,   llvm::ARM::MVE_VLDRDU64_rq_u,
-    llvm::ARM::MVE_VLDRHS32,      llvm::ARM::MVE_VLDRHS32_post,
-    llvm::ARM::MVE_VLDRHS32_pre,  llvm::ARM::MVE_VLDRHS32_rq,
-    llvm::ARM::MVE_VLDRHS32_rq_u, llvm::ARM::MVE_VLDRHU16,
-    llvm::ARM::MVE_VLDRHU16_post, llvm::ARM::MVE_VLDRHU16_pre,
-    llvm::ARM::MVE_VLDRHU16_rq,   llvm::ARM::MVE_VLDRHU16_rq_u,
-    llvm::ARM::MVE_VLDRHU32,      llvm::ARM::MVE_VLDRHU32_post,
-    llvm::ARM::MVE_VLDRHU32_pre,  llvm::ARM::MVE_VLDRHU32_rq,
-    llvm::ARM::MVE_VLDRHU32_rq_u, llvm::ARM::MVE_VLDRWU32,
-    llvm::ARM::MVE_VLDRWU32_post, llvm::ARM::MVE_VLDRWU32_pre,
-    llvm::ARM::MVE_VLDRWU32_qi,   llvm::ARM::MVE_VLDRWU32_qi_pre,
-    llvm::ARM::MVE_VLDRWU32_rq,   llvm::ARM::MVE_VLDRWU32_rq_u,
-    llvm::ARM::t2LDC2L_OFFSET,    llvm::ARM::t2LDC2_OFFSET,
-    llvm::ARM::t2LDCL_OFFSET,     llvm::ARM::t2LDC_OFFSET,
+    // clang-format off
+    llvm::ARM::LDC2L_OFFSET,
+    llvm::ARM::LDC2_OFFSET,
+    llvm::ARM::LDCL_OFFSET,
+    llvm::ARM::LDC_OFFSET,
+    llvm::ARM::MVE_VLD20_16,
+    llvm::ARM::MVE_VLD20_16_wb,
+    llvm::ARM::MVE_VLD20_32,
+    llvm::ARM::MVE_VLD20_32_wb,
+    llvm::ARM::MVE_VLD20_8,
+    llvm::ARM::MVE_VLD20_8_wb,
+    llvm::ARM::MVE_VLD21_16,
+    llvm::ARM::MVE_VLD21_16_wb,
+    llvm::ARM::MVE_VLD21_32,
+    llvm::ARM::MVE_VLD21_32_wb,
+    llvm::ARM::MVE_VLD21_8,
+    llvm::ARM::MVE_VLD21_8_wb,
+    llvm::ARM::MVE_VLD40_16,
+    llvm::ARM::MVE_VLD40_16_wb,
+    llvm::ARM::MVE_VLD40_32,
+    llvm::ARM::MVE_VLD40_32_wb,
+    llvm::ARM::MVE_VLD40_8,
+    llvm::ARM::MVE_VLD40_8_wb,
+    llvm::ARM::MVE_VLD41_16,
+    llvm::ARM::MVE_VLD41_16_wb,
+    llvm::ARM::MVE_VLD41_32,
+    llvm::ARM::MVE_VLD41_32_wb,
+    llvm::ARM::MVE_VLD41_8,
+    llvm::ARM::MVE_VLD41_8_wb,
+    llvm::ARM::MVE_VLD42_16,
+    llvm::ARM::MVE_VLD42_16_wb,
+    llvm::ARM::MVE_VLD42_32,
+    llvm::ARM::MVE_VLD42_32_wb,
+    llvm::ARM::MVE_VLD42_8,
+    llvm::ARM::MVE_VLD42_8_wb,
+    llvm::ARM::MVE_VLD43_16,
+    llvm::ARM::MVE_VLD43_16_wb,
+    llvm::ARM::MVE_VLD43_32,
+    llvm::ARM::MVE_VLD43_32_wb,
+    llvm::ARM::MVE_VLD43_8,
+    llvm::ARM::MVE_VLD43_8_wb,
+    llvm::ARM::MVE_VLDRBS16,
+    llvm::ARM::MVE_VLDRBS16_post,
+    llvm::ARM::MVE_VLDRBS16_pre,
+    llvm::ARM::MVE_VLDRBS16_rq,
+    llvm::ARM::MVE_VLDRBS32,
+    llvm::ARM::MVE_VLDRBS32_post,
+    llvm::ARM::MVE_VLDRBS32_pre,
+    llvm::ARM::MVE_VLDRBS32_rq,
+    llvm::ARM::MVE_VLDRBU16,
+    llvm::ARM::MVE_VLDRBU16_post,
+    llvm::ARM::MVE_VLDRBU16_pre,
+    llvm::ARM::MVE_VLDRBU16_rq,
+    llvm::ARM::MVE_VLDRBU32,
+    llvm::ARM::MVE_VLDRBU32_post,
+    llvm::ARM::MVE_VLDRBU32_pre,
+    llvm::ARM::MVE_VLDRBU32_rq,
+    llvm::ARM::MVE_VLDRBU8,
+    llvm::ARM::MVE_VLDRBU8_post,
+    llvm::ARM::MVE_VLDRBU8_pre,
+    llvm::ARM::MVE_VLDRBU8_rq,
+    llvm::ARM::MVE_VLDRDU64_qi,
+    llvm::ARM::MVE_VLDRDU64_qi_pre,
+    llvm::ARM::MVE_VLDRDU64_rq,
+    llvm::ARM::MVE_VLDRDU64_rq_u,
+    llvm::ARM::MVE_VLDRHS32,
+    llvm::ARM::MVE_VLDRHS32_post,
+    llvm::ARM::MVE_VLDRHS32_pre,
+    llvm::ARM::MVE_VLDRHS32_rq,
+    llvm::ARM::MVE_VLDRHS32_rq_u,
+    llvm::ARM::MVE_VLDRHU16,
+    llvm::ARM::MVE_VLDRHU16_post,
+    llvm::ARM::MVE_VLDRHU16_pre,
+    llvm::ARM::MVE_VLDRHU16_rq,
+    llvm::ARM::MVE_VLDRHU16_rq_u,
+    llvm::ARM::MVE_VLDRHU32,
+    llvm::ARM::MVE_VLDRHU32_post,
+    llvm::ARM::MVE_VLDRHU32_pre,
+    llvm::ARM::MVE_VLDRHU32_rq,
+    llvm::ARM::MVE_VLDRHU32_rq_u,
+    llvm::ARM::MVE_VLDRWU32,
+    llvm::ARM::MVE_VLDRWU32_post,
+    llvm::ARM::MVE_VLDRWU32_pre,
+    llvm::ARM::MVE_VLDRWU32_qi,
+    llvm::ARM::MVE_VLDRWU32_qi_pre,
+    llvm::ARM::MVE_VLDRWU32_rq,
+    llvm::ARM::MVE_VLDRWU32_rq_u,
+    llvm::ARM::t2LDC2L_OFFSET,
+    llvm::ARM::t2LDC2_OFFSET,
+    llvm::ARM::t2LDCL_OFFSET,
+    llvm::ARM::t2LDC_OFFSET,
+    // clang-format on
 };
 
 constexpr size_t UNSUPPORTED_READ_SIZE =
@@ -475,44 +569,78 @@ constexpr size_t UNSUPPORTED_READ_SIZE =
 // ==================
 
 constexpr unsigned WRITE_8[] = {
-    llvm::ARM::STLB,           llvm::ARM::STLEXB,
-    llvm::ARM::STRBT_POST_IMM, llvm::ARM::STRBT_POST_REG,
-    llvm::ARM::STRB_POST_IMM,  llvm::ARM::STRB_POST_REG,
-    llvm::ARM::STRB_PRE_IMM,   llvm::ARM::STRB_PRE_REG,
-    llvm::ARM::STRBi12,        llvm::ARM::STRBrs,
-    llvm::ARM::STREXB,         llvm::ARM::SWPB,
-    llvm::ARM::VST1LNd8,       llvm::ARM::VST1LNd8_UPD,
-    llvm::ARM::t2STLB,         llvm::ARM::t2STLEXB,
-    llvm::ARM::t2STRBT,        llvm::ARM::t2STRB_POST,
-    llvm::ARM::t2STRB_PRE,     llvm::ARM::t2STRBi12,
-    llvm::ARM::t2STRBi8,       llvm::ARM::t2STRBs,
-    llvm::ARM::t2STREXB,       llvm::ARM::tSTRBi,
+    // clang-format off
+    llvm::ARM::STLB,
+    llvm::ARM::STLEXB,
+    llvm::ARM::STRBT_POST_IMM,
+    llvm::ARM::STRBT_POST_REG,
+    llvm::ARM::STRB_POST_IMM,
+    llvm::ARM::STRB_POST_REG,
+    llvm::ARM::STRB_PRE_IMM,
+    llvm::ARM::STRB_PRE_REG,
+    llvm::ARM::STRBi12,
+    llvm::ARM::STRBrs,
+    llvm::ARM::STREXB,
+    llvm::ARM::SWPB,
+    llvm::ARM::VST1LNd8,
+    llvm::ARM::VST1LNd8_UPD,
+    llvm::ARM::t2STLB,
+    llvm::ARM::t2STLEXB,
+    llvm::ARM::t2STRBT,
+    llvm::ARM::t2STRB_POST,
+    llvm::ARM::t2STRB_PRE,
+    llvm::ARM::t2STRBi12,
+    llvm::ARM::t2STRBi8,
+    llvm::ARM::t2STRBs,
+    llvm::ARM::t2STREXB,
+    llvm::ARM::tSTRBi,
     llvm::ARM::tSTRBr,
+    // clang-format on
 };
 
 constexpr size_t WRITE_8_SIZE = sizeof(WRITE_8) / sizeof(unsigned);
 
 constexpr unsigned WRITE_16[] = {
-    llvm::ARM::STLEXH,       llvm::ARM::STLH,          llvm::ARM::STREXH,
-    llvm::ARM::STRH,         llvm::ARM::STRH_POST,     llvm::ARM::STRH_PRE,
-    llvm::ARM::VST1LNd16,    llvm::ARM::VST1LNd16_UPD, llvm::ARM::VST2LNd8,
-    llvm::ARM::VST2LNd8_UPD, llvm::ARM::VSTRH,         llvm::ARM::t2STLEXH,
-    llvm::ARM::t2STLH,       llvm::ARM::t2STREXH,      llvm::ARM::t2STLEXH,
-    llvm::ARM::t2STLH,       llvm::ARM::t2STRH_POST,   llvm::ARM::t2STRH_PRE,
-    llvm::ARM::t2STRHi12,    llvm::ARM::t2STRHi8,      llvm::ARM::t2STRHs,
-    llvm::ARM::tSTRHi,       llvm::ARM::tSTRHr,
+    // clang-format off
+    llvm::ARM::STLEXH,
+    llvm::ARM::STLH,
+    llvm::ARM::STREXH,
+    llvm::ARM::STRH,
+    llvm::ARM::STRH_POST,
+    llvm::ARM::STRH_PRE,
+    llvm::ARM::VST1LNd16,
+    llvm::ARM::VST1LNd16_UPD,
+    llvm::ARM::VST2LNd8,
+    llvm::ARM::VST2LNd8_UPD,
+    llvm::ARM::VSTRH,
+    llvm::ARM::t2STLEXH,
+    llvm::ARM::t2STLEXH,
+    llvm::ARM::t2STLH,
+    llvm::ARM::t2STLH,
+    llvm::ARM::t2STREXH,
+    llvm::ARM::t2STRH_POST,
+    llvm::ARM::t2STRH_PRE,
+    llvm::ARM::t2STRHi12,
+    llvm::ARM::t2STRHi8,
+    llvm::ARM::t2STRHs,
+    llvm::ARM::tSTRHi,
+    llvm::ARM::tSTRHr,
+    // clang-format on
 };
 
 constexpr size_t WRITE_16_SIZE = sizeof(WRITE_16) / sizeof(unsigned);
 
 constexpr unsigned WRITE_24[] = {
+    // clang-format off
     llvm::ARM::VST3LNd8,
     llvm::ARM::VST3LNd8_UPD,
+    // clang-format on
 };
 
 constexpr size_t WRITE_24_SIZE = sizeof(WRITE_24) / sizeof(unsigned);
 
 constexpr unsigned WRITE_32[] = {
+    // clang-format off
     llvm::ARM::STL,
     llvm::ARM::STLEX,
     llvm::ARM::STREX,
@@ -564,20 +692,24 @@ constexpr unsigned WRITE_32[] = {
     llvm::ARM::tSTRi,
     llvm::ARM::tSTRr,
     llvm::ARM::tSTRspi,
+    // clang-format on
 };
 
 constexpr size_t WRITE_32_SIZE = sizeof(WRITE_32) / sizeof(unsigned);
 
 constexpr unsigned WRITE_48[] = {
+    // clang-format off
     llvm::ARM::VST3LNd16,
     llvm::ARM::VST3LNd16_UPD,
     llvm::ARM::VST3LNq16,
     llvm::ARM::VST3LNq16_UPD,
+    // clang-format on
 };
 
 constexpr size_t WRITE_48_SIZE = sizeof(WRITE_48) / sizeof(unsigned);
 
 constexpr unsigned WRITE_64[] = {
+    // clang-format off
     llvm::ARM::STLEXD,
     llvm::ARM::STRD,
     llvm::ARM::STRD_POST,
@@ -609,20 +741,24 @@ constexpr unsigned WRITE_64[] = {
     llvm::ARM::t2STRD_PRE,
     llvm::ARM::t2STRDi8,
     llvm::ARM::t2STREXD,
+    // clang-format on
 };
 
 constexpr size_t WRITE_64_SIZE = sizeof(WRITE_64) / sizeof(unsigned);
 
 constexpr unsigned WRITE_96[] = {
+    // clang-format off
     llvm::ARM::VST3LNd32,
     llvm::ARM::VST3LNd32_UPD,
     llvm::ARM::VST3LNq32,
     llvm::ARM::VST3LNq32_UPD,
+    // clang-format on
 };
 
 constexpr size_t WRITE_96_SIZE = sizeof(WRITE_96) / sizeof(unsigned);
 
 constexpr unsigned WRITE_128[] = {
+    // clang-format off
     llvm::ARM::VST1q16,
     llvm::ARM::VST1q16wb_fixed,
     llvm::ARM::VST1q16wb_register,
@@ -657,11 +793,13 @@ constexpr unsigned WRITE_128[] = {
     llvm::ARM::VST4LNd32_UPD,
     llvm::ARM::VST4LNq32,
     llvm::ARM::VST4LNq32_UPD,
+    // clang-format on
 };
 
 constexpr size_t WRITE_128_SIZE = sizeof(WRITE_128) / sizeof(unsigned);
 
 constexpr unsigned WRITE_192[] = {
+    // clang-format off
     llvm::ARM::VST1d16T,
     llvm::ARM::VST1d16Twb_fixed,
     llvm::ARM::VST1d16Twb_register,
@@ -686,11 +824,13 @@ constexpr unsigned WRITE_192[] = {
     llvm::ARM::VST3q32_UPD,
     llvm::ARM::VST3q8,
     llvm::ARM::VST3q8_UPD,
+    // clang-format on
 };
 
 constexpr size_t WRITE_192_SIZE = sizeof(WRITE_192) / sizeof(unsigned);
 
 constexpr unsigned WRITE_256[] = {
+    // clang-format off
     llvm::ARM::VST1d16Q,
     llvm::ARM::VST1d16Qwb_fixed,
     llvm::ARM::VST1d16Qwb_register,
@@ -724,105 +864,219 @@ constexpr unsigned WRITE_256[] = {
     llvm::ARM::VST4q32_UPD,
     llvm::ARM::VST4q8,
     llvm::ARM::VST4q8_UPD,
+    // clang-format on
 };
 
 constexpr size_t WRITE_256_SIZE = sizeof(WRITE_256) / sizeof(unsigned);
 
 // instruction with write of a multiple of 4 bytes
 constexpr unsigned WRITE_32_DYN[] = {
-    llvm::ARM::STMDA,       llvm::ARM::STMDA_UPD,   llvm::ARM::STMDB,
-    llvm::ARM::STMDB_UPD,   llvm::ARM::STMIA,       llvm::ARM::STMIA_UPD,
-    llvm::ARM::STMIB,       llvm::ARM::STMIB_UPD,   llvm::ARM::VSTMSDB_UPD,
-    llvm::ARM::VSTMSIA,     llvm::ARM::VSTMSIA_UPD, llvm::ARM::t2STMDB,
-    llvm::ARM::t2STMDB_UPD, llvm::ARM::t2STMIA,     llvm::ARM::t2STMIA_UPD,
-    llvm::ARM::tSTMIA_UPD,  llvm::ARM::tPUSH,
+    // clang-format off
+    llvm::ARM::STMDA,
+    llvm::ARM::STMDA_UPD,
+    llvm::ARM::STMDB,
+    llvm::ARM::STMDB_UPD,
+    llvm::ARM::STMIA,
+    llvm::ARM::STMIA_UPD,
+    llvm::ARM::STMIB,
+    llvm::ARM::STMIB_UPD,
+    llvm::ARM::VSTMSDB_UPD,
+    llvm::ARM::VSTMSIA,
+    llvm::ARM::VSTMSIA_UPD,
+    llvm::ARM::t2STMDB,
+    llvm::ARM::t2STMDB_UPD,
+    llvm::ARM::t2STMIA,
+    llvm::ARM::t2STMIA_UPD,
+    llvm::ARM::tPUSH,
+    llvm::ARM::tSTMIA_UPD,
+    // clang-format on
 };
 
 constexpr size_t WRITE_32_DYN_SIZE = sizeof(WRITE_32_DYN) / sizeof(unsigned);
 
 constexpr unsigned WRITE_64_DYN[] = {
+    // clang-format off
     llvm::ARM::VSTMDDB_UPD,
     llvm::ARM::VSTMDIA,
     llvm::ARM::VSTMDIA_UPD,
+    // clang-format on
 };
 
 constexpr size_t WRITE_64_DYN_SIZE = sizeof(WRITE_64_DYN) / sizeof(unsigned);
 
 constexpr unsigned UNSUPPORTED_WRITE[] = {
-    llvm::ARM::MVE_VST20_16,      llvm::ARM::MVE_VST20_16_wb,
-    llvm::ARM::MVE_VST20_32,      llvm::ARM::MVE_VST20_32_wb,
-    llvm::ARM::MVE_VST20_8,       llvm::ARM::MVE_VST20_8_wb,
-    llvm::ARM::MVE_VST21_16,      llvm::ARM::MVE_VST21_16_wb,
-    llvm::ARM::MVE_VST21_32,      llvm::ARM::MVE_VST21_32_wb,
-    llvm::ARM::MVE_VST21_8,       llvm::ARM::MVE_VST21_8_wb,
-    llvm::ARM::MVE_VST40_16,      llvm::ARM::MVE_VST40_16_wb,
-    llvm::ARM::MVE_VST40_32,      llvm::ARM::MVE_VST40_32_wb,
-    llvm::ARM::MVE_VST40_8,       llvm::ARM::MVE_VST40_8_wb,
-    llvm::ARM::MVE_VST41_16,      llvm::ARM::MVE_VST41_16_wb,
-    llvm::ARM::MVE_VST41_32,      llvm::ARM::MVE_VST41_32_wb,
-    llvm::ARM::MVE_VST41_8,       llvm::ARM::MVE_VST41_8_wb,
-    llvm::ARM::MVE_VST42_16,      llvm::ARM::MVE_VST42_16_wb,
-    llvm::ARM::MVE_VST42_32,      llvm::ARM::MVE_VST42_32_wb,
-    llvm::ARM::MVE_VST42_8,       llvm::ARM::MVE_VST42_8_wb,
-    llvm::ARM::MVE_VST43_16,      llvm::ARM::MVE_VST43_16_wb,
-    llvm::ARM::MVE_VST43_32,      llvm::ARM::MVE_VST43_32_wb,
-    llvm::ARM::MVE_VST43_8,       llvm::ARM::MVE_VST43_8_wb,
-    llvm::ARM::MVE_VSTRB16,       llvm::ARM::MVE_VSTRB16_post,
-    llvm::ARM::MVE_VSTRB16_pre,   llvm::ARM::MVE_VSTRB16_rq,
-    llvm::ARM::MVE_VSTRB32,       llvm::ARM::MVE_VSTRB32_post,
-    llvm::ARM::MVE_VSTRB32_pre,   llvm::ARM::MVE_VSTRB32_rq,
-    llvm::ARM::MVE_VSTRB8_rq,     llvm::ARM::MVE_VSTRBU8,
-    llvm::ARM::MVE_VSTRBU8_post,  llvm::ARM::MVE_VSTRBU8_pre,
-    llvm::ARM::MVE_VSTRD64_qi,    llvm::ARM::MVE_VSTRD64_qi_pre,
-    llvm::ARM::MVE_VSTRD64_rq,    llvm::ARM::MVE_VSTRD64_rq_u,
-    llvm::ARM::MVE_VSTRH16_rq,    llvm::ARM::MVE_VSTRH16_rq_u,
-    llvm::ARM::MVE_VSTRH32,       llvm::ARM::MVE_VSTRH32_post,
-    llvm::ARM::MVE_VSTRH32_pre,   llvm::ARM::MVE_VSTRH32_rq,
-    llvm::ARM::MVE_VSTRH32_rq_u,  llvm::ARM::MVE_VSTRHU16,
-    llvm::ARM::MVE_VSTRHU16_post, llvm::ARM::MVE_VSTRHU16_pre,
-    llvm::ARM::MVE_VSTRW32_qi,    llvm::ARM::MVE_VSTRW32_qi_pre,
-    llvm::ARM::MVE_VSTRW32_rq,    llvm::ARM::MVE_VSTRW32_rq_u,
-    llvm::ARM::MVE_VSTRWU32,      llvm::ARM::MVE_VSTRWU32_post,
-    llvm::ARM::MVE_VSTRWU32_pre,  llvm::ARM::STC2L_OFFSET,
-    llvm::ARM::STC2_OFFSET,       llvm::ARM::STCL_OFFSET,
-    llvm::ARM::STC_OFFSET,        llvm::ARM::t2STC2L_OFFSET,
-    llvm::ARM::t2STC2_OFFSET,     llvm::ARM::t2STCL_OFFSET,
+    // clang-format off
+    llvm::ARM::MVE_VST20_16,
+    llvm::ARM::MVE_VST20_16_wb,
+    llvm::ARM::MVE_VST20_32,
+    llvm::ARM::MVE_VST20_32_wb,
+    llvm::ARM::MVE_VST20_8,
+    llvm::ARM::MVE_VST20_8_wb,
+    llvm::ARM::MVE_VST21_16,
+    llvm::ARM::MVE_VST21_16_wb,
+    llvm::ARM::MVE_VST21_32,
+    llvm::ARM::MVE_VST21_32_wb,
+    llvm::ARM::MVE_VST21_8,
+    llvm::ARM::MVE_VST21_8_wb,
+    llvm::ARM::MVE_VST40_16,
+    llvm::ARM::MVE_VST40_16_wb,
+    llvm::ARM::MVE_VST40_32,
+    llvm::ARM::MVE_VST40_32_wb,
+    llvm::ARM::MVE_VST40_8,
+    llvm::ARM::MVE_VST40_8_wb,
+    llvm::ARM::MVE_VST41_16,
+    llvm::ARM::MVE_VST41_16_wb,
+    llvm::ARM::MVE_VST41_32,
+    llvm::ARM::MVE_VST41_32_wb,
+    llvm::ARM::MVE_VST41_8,
+    llvm::ARM::MVE_VST41_8_wb,
+    llvm::ARM::MVE_VST42_16,
+    llvm::ARM::MVE_VST42_16_wb,
+    llvm::ARM::MVE_VST42_32,
+    llvm::ARM::MVE_VST42_32_wb,
+    llvm::ARM::MVE_VST42_8,
+    llvm::ARM::MVE_VST42_8_wb,
+    llvm::ARM::MVE_VST43_16,
+    llvm::ARM::MVE_VST43_16_wb,
+    llvm::ARM::MVE_VST43_32,
+    llvm::ARM::MVE_VST43_32_wb,
+    llvm::ARM::MVE_VST43_8,
+    llvm::ARM::MVE_VST43_8_wb,
+    llvm::ARM::MVE_VSTRB16,
+    llvm::ARM::MVE_VSTRB16_post,
+    llvm::ARM::MVE_VSTRB16_pre,
+    llvm::ARM::MVE_VSTRB16_rq,
+    llvm::ARM::MVE_VSTRB32,
+    llvm::ARM::MVE_VSTRB32_post,
+    llvm::ARM::MVE_VSTRB32_pre,
+    llvm::ARM::MVE_VSTRB32_rq,
+    llvm::ARM::MVE_VSTRB8_rq,
+    llvm::ARM::MVE_VSTRBU8,
+    llvm::ARM::MVE_VSTRBU8_post,
+    llvm::ARM::MVE_VSTRBU8_pre,
+    llvm::ARM::MVE_VSTRD64_qi,
+    llvm::ARM::MVE_VSTRD64_qi_pre,
+    llvm::ARM::MVE_VSTRD64_rq,
+    llvm::ARM::MVE_VSTRD64_rq_u,
+    llvm::ARM::MVE_VSTRH16_rq,
+    llvm::ARM::MVE_VSTRH16_rq_u,
+    llvm::ARM::MVE_VSTRH32,
+    llvm::ARM::MVE_VSTRH32_post,
+    llvm::ARM::MVE_VSTRH32_pre,
+    llvm::ARM::MVE_VSTRH32_rq,
+    llvm::ARM::MVE_VSTRH32_rq_u,
+    llvm::ARM::MVE_VSTRHU16,
+    llvm::ARM::MVE_VSTRHU16_post,
+    llvm::ARM::MVE_VSTRHU16_pre,
+    llvm::ARM::MVE_VSTRW32_qi,
+    llvm::ARM::MVE_VSTRW32_qi_pre,
+    llvm::ARM::MVE_VSTRW32_rq,
+    llvm::ARM::MVE_VSTRW32_rq_u,
+    llvm::ARM::MVE_VSTRWU32,
+    llvm::ARM::MVE_VSTRWU32_post,
+    llvm::ARM::MVE_VSTRWU32_pre,
+    llvm::ARM::STC2L_OFFSET,
+    llvm::ARM::STC2_OFFSET,
+    llvm::ARM::STCL_OFFSET,
+    llvm::ARM::STC_OFFSET,
+    llvm::ARM::t2STC2L_OFFSET,
+    llvm::ARM::t2STC2_OFFSET,
+    llvm::ARM::t2STCL_OFFSET,
     llvm::ARM::t2STC_OFFSET,
+    // clang-format on
 };
 
 constexpr size_t UNSUPPORTED_WRITE_SIZE =
     sizeof(UNSUPPORTED_WRITE) / sizeof(unsigned);
 
 constexpr unsigned TWO_BYTES_ENCODE[] = {
-    llvm::ARM::t2SETPAN,   llvm::ARM::tADC,    llvm::ARM::tADDhirr,
-    llvm::ARM::tADDi3,     llvm::ARM::tADDi8,  llvm::ARM::tADDrSP,
-    llvm::ARM::tADDrSPi,   llvm::ARM::tADDrr,  llvm::ARM::tADDspi,
-    llvm::ARM::tADDspr,    llvm::ARM::tADR,    llvm::ARM::tAND,
-    llvm::ARM::tASRri,     llvm::ARM::tASRrr,  llvm::ARM::tB,
-    llvm::ARM::tBIC,       llvm::ARM::tBKPT,   llvm::ARM::tBLXNSr,
-    llvm::ARM::tBLXr,      llvm::ARM::tBX,     llvm::ARM::tBXNS,
-    llvm::ARM::tBcc,       llvm::ARM::tCBNZ,   llvm::ARM::tCBZ,
-    llvm::ARM::tCMNz,      llvm::ARM::tCMPhir, llvm::ARM::tCMPi8,
-    llvm::ARM::tCMPr,      llvm::ARM::tCPS,    llvm::ARM::tEOR,
-    llvm::ARM::tHINT,      llvm::ARM::tHLT,    llvm::ARM::tLDMIA,
-    llvm::ARM::tLDRBi,     llvm::ARM::tLDRBr,  llvm::ARM::tLDRHi,
-    llvm::ARM::tLDRHr,     llvm::ARM::tLDRSB,  llvm::ARM::tLDRSH,
-    llvm::ARM::tLDRi,      llvm::ARM::tLDRpci, llvm::ARM::tLDRr,
-    llvm::ARM::tLDRspi,    llvm::ARM::tLSLri,  llvm::ARM::tLSLrr,
-    llvm::ARM::tLSRri,     llvm::ARM::tLSRrr,  llvm::ARM::tMOVSr,
-    llvm::ARM::tMOVi8,     llvm::ARM::tMOVr,   llvm::ARM::tMUL,
-    llvm::ARM::tMVN,       llvm::ARM::tORR,    llvm::ARM::tPICADD,
-    llvm::ARM::tPOP,       llvm::ARM::tPUSH,   llvm::ARM::tREV,
-    llvm::ARM::tREV16,     llvm::ARM::tREVSH,  llvm::ARM::tROR,
-    llvm::ARM::tRSB,       llvm::ARM::tSBC,    llvm::ARM::tSETEND,
-    llvm::ARM::tSTMIA_UPD, llvm::ARM::tSTRBi,  llvm::ARM::tSTRBr,
-    llvm::ARM::tSTRHi,     llvm::ARM::tSTRHr,  llvm::ARM::tSTRi,
-    llvm::ARM::tSTRr,      llvm::ARM::tSTRspi, llvm::ARM::tSUBi3,
-    llvm::ARM::tSUBi8,     llvm::ARM::tSUBrr,  llvm::ARM::tSUBspi,
-    llvm::ARM::tSVC,       llvm::ARM::tSXTB,   llvm::ARM::tSXTH,
-    llvm::ARM::tTRAP,      llvm::ARM::tTST,    llvm::ARM::tUDF,
-    llvm::ARM::tUXTB,      llvm::ARM::tUXTH,   llvm::ARM::t__brkdiv0,
+    // clang-format off
     llvm::ARM::t2IT,
+    llvm::ARM::t2SETPAN,
+    llvm::ARM::tADC,
+    llvm::ARM::tADDhirr,
+    llvm::ARM::tADDi3,
+    llvm::ARM::tADDi8,
+    llvm::ARM::tADDrSP,
+    llvm::ARM::tADDrSPi,
+    llvm::ARM::tADDrr,
+    llvm::ARM::tADDspi,
+    llvm::ARM::tADDspr,
+    llvm::ARM::tADR,
+    llvm::ARM::tAND,
+    llvm::ARM::tASRri,
+    llvm::ARM::tASRrr,
+    llvm::ARM::tB,
+    llvm::ARM::tBIC,
+    llvm::ARM::tBKPT,
+    llvm::ARM::tBLXNSr,
+    llvm::ARM::tBLXr,
+    llvm::ARM::tBX,
+    llvm::ARM::tBXNS,
+    llvm::ARM::tBcc,
+    llvm::ARM::tCBNZ,
+    llvm::ARM::tCBZ,
+    llvm::ARM::tCMNz,
+    llvm::ARM::tCMPhir,
+    llvm::ARM::tCMPi8,
+    llvm::ARM::tCMPr,
+    llvm::ARM::tCPS,
+    llvm::ARM::tEOR,
+    llvm::ARM::tHINT,
+    llvm::ARM::tHLT,
+    llvm::ARM::tLDMIA,
+    llvm::ARM::tLDRBi,
+    llvm::ARM::tLDRBr,
+    llvm::ARM::tLDRHi,
+    llvm::ARM::tLDRHr,
+    llvm::ARM::tLDRSB,
+    llvm::ARM::tLDRSH,
+    llvm::ARM::tLDRi,
+    llvm::ARM::tLDRpci,
+    llvm::ARM::tLDRr,
+    llvm::ARM::tLDRspi,
+    llvm::ARM::tLSLri,
+    llvm::ARM::tLSLrr,
+    llvm::ARM::tLSRri,
+    llvm::ARM::tLSRrr,
+    llvm::ARM::tMOVSr,
+    llvm::ARM::tMOVi8,
+    llvm::ARM::tMOVr,
+    llvm::ARM::tMUL,
+    llvm::ARM::tMVN,
+    llvm::ARM::tORR,
+    llvm::ARM::tPICADD,
+    llvm::ARM::tPOP,
+    llvm::ARM::tPUSH,
+    llvm::ARM::tREV,
+    llvm::ARM::tREV16,
+    llvm::ARM::tREVSH,
+    llvm::ARM::tROR,
+    llvm::ARM::tRSB,
+    llvm::ARM::tSBC,
+    llvm::ARM::tSETEND,
+    llvm::ARM::tSTMIA_UPD,
+    llvm::ARM::tSTRBi,
+    llvm::ARM::tSTRBr,
+    llvm::ARM::tSTRHi,
+    llvm::ARM::tSTRHr,
+    llvm::ARM::tSTRi,
+    llvm::ARM::tSTRr,
+    llvm::ARM::tSTRspi,
+    llvm::ARM::tSUBi3,
+    llvm::ARM::tSUBi8,
+    llvm::ARM::tSUBrr,
+    llvm::ARM::tSUBspi,
+    llvm::ARM::tSVC,
+    llvm::ARM::tSXTB,
+    llvm::ARM::tSXTH,
+    llvm::ARM::tTRAP,
+    llvm::ARM::tTST,
+    llvm::ARM::tUDF,
+    llvm::ARM::tUXTB,
+    llvm::ARM::tUXTH,
+    llvm::ARM::t__brkdiv0,
+    // clang-format on
 };
 
 constexpr size_t TWO_BYTES_ENCODE_SIZE =
@@ -1135,8 +1389,8 @@ unsigned getCondition(const llvm::MCInst &inst, const LLVMCPU &llvmcpu) {
   unsigned int predicateFirstOffset = 0;
   bool found = false;
   for (unsigned int opn = 0; opn < desc.getNumOperands(); opn++) {
-    const llvm::MCOperandInfo *opInfo = desc.opInfo_begin() + opn;
-    if (opInfo->isPredicate()) {
+    const llvm::MCOperandInfo &opInfo = desc.operands()[opn];
+    if (opInfo.isPredicate()) {
       found = true;
       predicateFirstOffset = opn;
       break;
@@ -1151,10 +1405,10 @@ unsigned getCondition(const llvm::MCInst &inst, const LLVMCPU &llvmcpu) {
                      "Invalid operand id {} ({})", predicateFirstOffset + 1,
                      llvmcpu.getInstOpcodeName(inst));
 
-  const llvm::MCOperandInfo *opInfoReg =
-      desc.opInfo_begin() + predicateFirstOffset + 1;
+  const llvm::MCOperandInfo &opInfoReg =
+      desc.operands()[predicateFirstOffset + 1];
 
-  QBDI_REQUIRE_ABORT(opInfoReg->isPredicate(),
+  QBDI_REQUIRE_ABORT(opInfoReg.isPredicate(),
                      "Unexpected operandInfo type {} ({})",
                      predicateFirstOffset + 1, llvmcpu.getInstOpcodeName(inst));
   QBDI_REQUIRE_ABORT(predicateFirstOffset + 1 < inst.getNumOperands(),

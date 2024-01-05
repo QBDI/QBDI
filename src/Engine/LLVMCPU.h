@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/SmallVector.h"
 
 #include "QBDI/Options.h"
 #include "QBDI/State.h"
@@ -46,7 +47,6 @@ class raw_pwrite_stream;
 } // namespace llvm
 
 namespace QBDI {
-class memory_ostream;
 struct RegLLVM;
 
 class LLVMCPU {
@@ -85,7 +85,8 @@ public:
   LLVMCPU(const LLVMCPU &) = delete;
   LLVMCPU &operator=(const LLVMCPU &) = delete;
 
-  void writeInstruction(llvm::MCInst inst, memory_ostream &stream) const;
+  void writeInstruction(llvm::MCInst inst, llvm::SmallVectorImpl<char> &CB,
+                        rword address = 0) const;
 
   bool getInstruction(llvm::MCInst &inst, uint64_t &size,
                       llvm::ArrayRef<uint8_t> bytes, uint64_t address) const;

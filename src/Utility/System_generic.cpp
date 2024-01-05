@@ -24,9 +24,9 @@
 #include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/iterator.h"
-#include "llvm/MC/SubtargetFeature.h"
-#include "llvm/Support/Host.h"
 #include "llvm/Support/Memory.h"
+#include "llvm/TargetParser/Host.h"
+#include "llvm/TargetParser/SubtargetFeature.h"
 
 #include "QBDI/Config.h"
 #include "Utility/LogSys.h"

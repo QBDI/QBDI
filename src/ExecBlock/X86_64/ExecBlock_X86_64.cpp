@@ -78,7 +78,7 @@ bool ExecBlock::writePatch(std::vector<Patch>::const_iterator seqCurrent,
   }
 
   if (not applyRelocatedInst(p.insts, &tagRegistry, llvmcpu,
-                             MINIMAL_BLOCK_SIZE + epilogueSize)) {
+                             MINIMAL_BLOCK_SIZE)) {
     QBDI_DEBUG("Not enough space left: rollback");
     return false;
   }

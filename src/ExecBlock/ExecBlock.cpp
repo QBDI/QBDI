@@ -22,7 +22,6 @@
 #include <string>
 #include <system_error>
 
-#include "llvm/ADT/Optional.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/Process.h"
@@ -41,7 +40,6 @@
 #include "Utility/InstAnalysis_prive.h"
 #include "Utility/LogSys.h"
 #include "Utility/System.h"
-#include "Utility/memory_ostream.h"
 
 #include "QBDI/Options.h"
 #include "QBDI/State.h"
@@ -89,7 +87,8 @@ ExecBlock::ExecBlock(
   shadowIdx = 0;
   currentSeq = 0;
   currentInst = 0;
-  codeStream.set_stream(codeBlock);
+  codeBlockPosition = 0;
+  codeBlockMaxSize = codeBlock.allocatedSize();
   pageState = RW;
 
   std::vector<std::unique_ptr<RelocatableInst>> execBlockPrologue_;
@@ -113,17 +112,18 @@ ExecBlock::ExecBlock(
     QBDI_DEBUG("Detect Epilogue size: {}", epilogueSize);
   }
   // JIT prologue and epilogue
-  codeStream.seek(codeBlock.allocatedSize() - epilogueSize);
-  QBDI_REQUIRE_ABORT(
-      applyRelocatedInst(*execBlockEpilogue, nullptr, llvmcpu, 0),
-      "Fail to write Epilogue");
-  QBDI_REQUIRE_ABORT(codeStream.current_pos() == codeBlock.allocatedSize(),
+  codeBlockPosition = codeBlock.allocatedSize() - epilogueSize;
+  QBDI_REQUIRE_ABORT(applyRelocatedInst(*execBlockEpilogue, nullptr, llvmcpu),
+                     "Fail to write Epilogue");
+  QBDI_REQUIRE_ABORT(codeBlockPosition == codeBlock.allocatedSize(),
                      "Wrong Epilogue Size");
 
-  codeStream.seek(0);
-  QBDI_REQUIRE_ABORT(
-      applyRelocatedInst(*execBlockPrologue, nullptr, llvmcpu, epilogueSize),
-      "Fail to write Prologue");
+  codeBlockPosition = 0;
+  // forbid overwrite of the epilogue
+  codeBlockMaxSize = codeBlock.allocatedSize() - epilogueSize;
+
+  QBDI_REQUIRE_ABORT(applyRelocatedInst(*execBlockPrologue, nullptr, llvmcpu),
+                     "Fail to write Prologue");
 }
 
 ExecBlock::~ExecBlock() {
@@ -142,7 +142,7 @@ void ExecBlock::show() const {
   uint64_t instSize;
   bool dstatus;
   llvm::ArrayRef<uint8_t> jitCode(
-      static_cast<const uint8_t *>(codeBlock.base()), codeStream.current_pos());
+      static_cast<const uint8_t *>(codeBlock.base()), codeBlockPosition);
   size_t mode = 0;
   const LLVMCPU *llvmcpu = &llvmCPUs.getCPU((CPUMode)mode);
 
@@ -282,6 +282,24 @@ VMAction ExecBlock::execute() {
 
   return CONTINUE;
 }
+
+bool ExecBlock::writeCodeByte(const llvm::ArrayRef<char> &array) {
+  QBDI_REQUIRE_ABORT(codeBlockPosition <= codeBlockMaxSize,
+                     "Invalid position in codeBlock");
+  if (array.size() > codeBlockMaxSize - codeBlockPosition) {
+    QBDI_DEBUG(
+        "Fail to write buffer in codeBlock : "
+        "(array size: {}, remaining size: {})",
+        array.size(), codeBlockMaxSize - codeBlockPosition);
+    return false;
+  }
+
+  memcpy(static_cast<char *>(codeBlock.base()) + codeBlockPosition,
+         array.data(), array.size());
+  codeBlockPosition += array.size();
+  return true;
+}
+
 bool ExecBlock::applyRelocatedInst(
     const std::vector<std::unique_ptr<RelocatableInst>> &reloc,
     std::vector<TagInfo> *tags, const LLVMCPU &llvmcpu, unsigned limit) {
@@ -290,29 +308,30 @@ bool ExecBlock::applyRelocatedInst(
     if (inst->getTag() != RelocatableInstTag::RelocInst) {
       QBDI_DEBUG("RelocTag 0x{:x}", inst->getTag());
       if (tags != nullptr) {
-        tags->push_back(
-            TagInfo{static_cast<uint16_t>(inst->getTag()),
-                    static_cast<uint16_t>(codeStream.current_pos())});
+        tags->push_back(TagInfo{static_cast<uint16_t>(inst->getTag()),
+                                static_cast<uint16_t>(codeBlockPosition)});
       }
       continue;
-    } else if (codeBlock.allocatedSize() - codeStream.current_pos() > limit) {
-#ifdef CHECK_INSTRUCTION_SIZE
-      unsigned pos = codeStream.current_pos();
-#endif
-      llvmcpu.writeInstruction(inst->reloc(this, llvmcpu), codeStream);
+    } else {
+      llvm::SmallVector<char, 16> stream;
+      llvmcpu.writeInstruction(inst->reloc(this, llvmcpu), stream,
+                               getCurrentPC());
 
 #ifdef CHECK_INSTRUCTION_SIZE
       unsigned instSize = inst->getSize(llvmcpu);
-      if (codeStream.current_pos() - pos != instSize) {
+      if (stream.size() != instSize) {
         QBDI_ABORT(
             "getSize doesn't return the good size "
             "(result: {}, expected: {})",
-            instSize, codeStream.current_pos() - pos);
+            instSize, stream.size());
       }
 #endif
-    } else {
-      QBDI_DEBUG("Not enough space left: rollback");
-      return false;
+
+      if ((codeBlockMaxSize - codeBlockPosition < stream.size() + limit) or
+          (not writeCodeByte(stream))) {
+        QBDI_DEBUG("Not enough space left: rollback");
+        return false;
+      }
     }
   }
   return true;
@@ -321,7 +340,7 @@ bool ExecBlock::applyRelocatedInst(
 SeqWriteResult
 ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt,
                          std::vector<Patch>::const_iterator seqEnd) {
-  rword startOffset = (rword)codeStream.current_pos();
+  unsigned startOffset = codeBlockPosition;
   uint16_t startInstID = getNextInstID();
   uint16_t seqID = getNextSeqID();
   uint8_t executeFlags = 0;
@@ -355,7 +374,7 @@ ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt,
   // A patch correspond to an original instruction and should be written in its
   // entierty
   while (seqIt != seqEnd) {
-    rword rollbackOffset = codeStream.current_pos();
+    unsigned rollbackOffset = codeBlockPosition;
     uint32_t rollbackShadowIdx = shadowIdx;
     size_t rollbackShadowRegistry = shadowRegistry.size();
     size_t rollbackTagRegistry = tagRegistry.size();
@@ -376,12 +395,12 @@ ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt,
 
       QBDI_DEBUG("Rolling back to offset 0x{:x}", rollbackOffset);
 
-      QBDI_REQUIRE_ABORT(codeStream.current_pos() <=
+      QBDI_REQUIRE_ABORT(codeBlockPosition <=
                              codeBlock.allocatedSize() - epilogueSize,
                          "Internal Error, Overflow in Epilogue");
       // Seek to the last complete patch written and terminate it with a
       // terminator
-      codeStream.seek(rollbackOffset);
+      codeBlockPosition = rollbackOffset;
       // free shadows and tag allocated by the rollbacked code
       shadowIdx = rollbackShadowIdx;
       shadowRegistry.resize(rollbackShadowRegistry);
@@ -436,15 +455,13 @@ ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt,
         reinterpret_cast<uintptr_t>(this));
     RelocatableInst::UniquePtrVec terminator =
         getTerminator(llvmcpu, instMetadata.back().endAddress());
-    QBDI_REQUIRE_ABORT(
-        applyRelocatedInst(terminator, nullptr, llvmcpu, epilogueSize),
-        "Fail to write Terminator");
+    QBDI_REQUIRE_ABORT(applyRelocatedInst(terminator, nullptr, llvmcpu),
+                       "Fail to write Terminator");
   }
   // JIT the jump to epilogue
   RelocatableInst::UniquePtrVec jmpEpilogue = JmpEpilogue().genReloc(llvmcpu);
-  QBDI_REQUIRE_ABORT(
-      applyRelocatedInst(jmpEpilogue, nullptr, llvmcpu, epilogueSize),
-      "Fail to write jmpEpilogue");
+  QBDI_REQUIRE_ABORT(applyRelocatedInst(jmpEpilogue, nullptr, llvmcpu),
+                     "Fail to write jmpEpilogue");
   // change the flag of the basicblock
   if (llvmcpu.getOptions() & Options::OPT_DISABLE_FPR) {
     executeFlags = 0;
@@ -456,9 +473,8 @@ ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt,
   seqRegistry.push_back(SeqInfo{startInstID, endInstID, executeFlags, cpuMode,
                                 instRegistry[startInstID].sr});
   // Return write results
-  unsigned bytesWritten =
-      static_cast<unsigned>(codeStream.current_pos() - startOffset);
-  QBDI_REQUIRE_ABORT(codeStream.current_pos() <=
+  unsigned bytesWritten = codeBlockPosition - startOffset;
+  QBDI_REQUIRE_ABORT(codeBlockPosition <=
                          codeBlock.allocatedSize() - epilogueSize,
                      "Internal Error, Overflow in Epilogue");
   QBDI_DEBUG("End write sequence in basicblock 0x{:x} with execFlags : {:x}",

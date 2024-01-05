@@ -59,3 +59,6 @@ __qbdi_runCodeBlock:
 ;#endif
     // restore GPR and ret
     pop {r0-r12,pc};
+
+# mark stack as no-exec
+.section	.note.GNU-stack

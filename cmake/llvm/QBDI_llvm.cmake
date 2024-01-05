@@ -6,8 +6,8 @@ set(__add_qbdi_llvm ON)
 include(FetchContent)
 
 # configure FetchContent
-set(QBDI_LLVM_MAJOR_VERSION 15)
-set(QBDI_LLVM_VERSION 15.0.7)
+set(QBDI_LLVM_MAJOR_VERSION 17)
+set(QBDI_LLVM_VERSION 17.0.6)
 
 # download and include llvm cmake module
 option(QBDI_INCLUDE_LLVM_CMAKE_MODUKE "Include llvm cmake module" ON)
@@ -16,47 +16,25 @@ if(QBDI_INCLUDE_LLVM_CMAKE_MODUKE)
     llvm_cmake
     URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${QBDI_LLVM_VERSION}/cmake-${QBDI_LLVM_VERSION}.src.tar.xz"
     URL_HASH
-      "SHA256=8986f29b634fdaa9862eedda78513969fe9788301c9f2d938f4c10a3e7a3e7ea"
+      "SHA256=807f069c54dc20cb47b21c1f6acafdd9c649f3ae015609040d6182cab01140f4"
+      SOURCE_DIR "${FETCHCONTENT_BASE_DIR}/cmake"
     DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/llvm-cmake-download")
 
   if(NOT llvm_cmake_POPULATED)
     FetchContent_Populate(llvm_cmake)
   endif()
-  list(APPEND CMAKE_MODULE_PATH "${llvm_cmake_SOURCE_DIR}/Modules")
 endif()
 
 FetchContent_Declare(
   llvm
   URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${QBDI_LLVM_VERSION}/llvm-${QBDI_LLVM_VERSION}.src.tar.xz"
   URL_HASH
-    "SHA256=4ad8b2cc8003c86d0078d15d987d84e3a739f24aae9033865c027abae93ee7a4"
+    "SHA256=b638167da139126ca11917b6880207cc6e8f9d1cbb1a48d87d017f697ef78188"
   DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/llvm-download")
 
 FetchContent_GetProperties(llvm)
 if(NOT llvm_POPULATED)
   FetchContent_Populate(llvm)
-
-  # hack of llvm compilation : when crosscompile,
-  #   the nested cmake need to access to module.
-  if(QBDI_INCLUDE_LLVM_CMAKE_MODUKE)
-    # copy the module files in cmake/modules
-    file(
-      COPY "${llvm_cmake_SOURCE_DIR}/Modules/"
-      DESTINATION "${llvm_SOURCE_DIR}/cmake/modules/"
-      FILES_MATCHING
-      PATTERN "*.cmake")
-  endif()
-
-  # hack of llvm compilation : when crosscompile,
-  #   the nested compilation ignore
-  #   LLVM_INCLUDE_BENCHMARKS, and force the inclusion of
-  #   ${llvm_cmake_SOURCE_DIR}/../third-party/benchmark
-  #   Just creates an empty file there and emtpies
-  #   ${llvm_cmake_SOURCE_DIR}/benchmarks/CMakeLists.txt
-  file(MAKE_DIRECTORY "${llvm_SOURCE_DIR}/../third-party/benchmark")
-  file(REMOVE "${llvm_SOURCE_DIR}/benchmarks/CMakeLists.txt")
-  file(TOUCH "${llvm_SOURCE_DIR}/../third-party/benchmark/CMakeLists.txt"
-       "${llvm_SOURCE_DIR}/benchmarks/CMakeLists.txt")
 
   set(CMAKE_CXX_STANDARD
       17

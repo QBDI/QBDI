@@ -41,7 +41,7 @@ extern void qbdi_runCodeBlock(void *codeBlock,
 
 namespace QBDI {
 
-static const uint32_t MINIMAL_BLOCK_SIZE = 0x10;
+static const uint32_t MINIMAL_BLOCK_SIZE = 0xc;
 
 void ExecBlock::selectSeq(uint16_t seqID) {
   QBDI_REQUIRE(seqID < seqRegistry.size());
@@ -106,7 +106,7 @@ bool ExecBlock::writePatch(std::vector<Patch>::const_iterator seqCurrent,
     if (not applyRelocatedInst(
             changeScratchRegister(llvmcpu, backupSR.writeScratchRegister,
                                   srInfo.writeScratchRegister),
-            &tagRegistry, llvmcpu, MINIMAL_BLOCK_SIZE + epilogueSize)) {
+            &tagRegistry, llvmcpu, MINIMAL_BLOCK_SIZE)) {
       QBDI_DEBUG("Not enough space left: rollback");
       srInfo = backupSR;
       return false;
@@ -114,7 +114,7 @@ bool ExecBlock::writePatch(std::vector<Patch>::const_iterator seqCurrent,
   }
 
   if (not applyRelocatedInst(p.insts, &tagRegistry, llvmcpu,
-                             MINIMAL_BLOCK_SIZE + epilogueSize)) {
+                             MINIMAL_BLOCK_SIZE)) {
     QBDI_DEBUG("Not enough space left: rollback");
     srInfo = backupSR;
     return false;

@@ -371,8 +371,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_AARCH64-adr") {
                {
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 28,
                     "X28", QBDI::REGISTER_WRITE},
-                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_UNDEFINED_EFFECT, 127,
-                    8, 0, -1, nullptr, QBDI::REGISTER_UNUSED},
+                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_PCREL, 127, 2, 0, -1,
+                    nullptr, QBDI::REGISTER_UNUSED},
                },
                QBDI::REGISTER_UNUSED);
 }
@@ -525,7 +525,7 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_AARCH64-st1Three") {
                     "D2", QBDI::REGISTER_READ},
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 0, "X0",
                     QBDI::REGISTER_READ_WRITE},
-                   {QBDI::OPERAND_SEG, QBDI::OPERANDFLAG_NONE, 9, 8, 0, -1,
+                   {QBDI::OPERAND_SEG, QBDI::OPERANDFLAG_NONE, 0, 8, 0, -1,
                     "XZR", QBDI::REGISTER_READ},
                },
                QBDI::REGISTER_UNUSED);
@@ -558,7 +558,7 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_AARCH64-ld4") {
                     0, -1, nullptr, QBDI::REGISTER_UNUSED},
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 0, "X0",
                     QBDI::REGISTER_READ_WRITE},
-                   {QBDI::OPERAND_SEG, QBDI::OPERANDFLAG_NONE, 9, 8, 0, -1,
+                   {QBDI::OPERAND_SEG, QBDI::OPERANDFLAG_NONE, 0, 8, 0, -1,
                     "XZR", QBDI::REGISTER_READ},
                },
                QBDI::REGISTER_UNUSED);

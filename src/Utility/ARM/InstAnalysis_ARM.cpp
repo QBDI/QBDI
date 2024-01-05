@@ -81,8 +81,8 @@ void analyseCondition(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
   }
 
   for (unsigned int opn = 0; opn < desc.getNumOperands(); opn++) {
-    const llvm::MCOperandInfo *opInfo = desc.opInfo_begin() + opn;
-    if (opInfo->RegClass == llvm::ARM::CCRRegClassID) {
+    const llvm::MCOperandInfo &opInfo = desc.operands()[opn];
+    if (opInfo.RegClass == llvm::ARM::CCRRegClassID) {
       const llvm::MCOperand &op = inst.getOperand(opn);
       if (op.isReg() and op.getReg() == llvm::ARM::CPSR) {
         instAnalysis->flagsAccess |= REGISTER_WRITE;

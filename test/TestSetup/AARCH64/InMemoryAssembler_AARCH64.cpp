@@ -26,10 +26,10 @@
 #include "Utility/System.h"
 
 #include "llvm/ADT/StringRef.h"
-#include "llvm/ADT/Triple.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Object/ELFObjectFile.h"
 #include "llvm/Object/ObjectFile.h"
+#include "llvm/TargetParser/Triple.h"
 
 void InMemoryObject::perform_reloc(llvm::object::ObjectFile *object,
                                    const QBDI::LLVMCPUs &llvmcpus) {

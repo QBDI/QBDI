@@ -23,33 +23,26 @@
 .globl  __qbdi_runCodeBlock
 
 __qbdi_runCodeBlock:
-    test rsi, 2;
+    mov eax, [esp+4]
+    mov ecx, [esp+8]
+    test ecx, 2;
     jz _skip_save_fpu;
-    sub rsp, 8;
-    stmxcsr [rsp];
-    fnstcw [rsp+4];
+    sub esp, 8;
+    stmxcsr [esp];
+    fnstcw [esp+4];
 _skip_save_fpu:
-    push r15;
-    push r14;
-    push r13;
-    push r12;
-    push rbp;
-    push rsi;
-    push rbx;
-    call rdi;
-    pop rbx;
-    pop rsi;
-    pop rbp;
-    pop r12;
-    pop r13;
-    pop r14;
-    pop r15;
-    test rsi, 2;
+    pushad;
+    call eax;
+    popad;
+    test ecx, 2;
     jz _skip_restore_fpu;
     fninit;
-    fldcw [rsp+4];
-    ldmxcsr [rsp];
-    add rsp, 8;
+    fldcw [esp+4];
+    ldmxcsr [esp];
+    add esp, 8;
 _skip_restore_fpu:
     cld;
     ret;
+
+# mark stack as no-exec
+.section	.note.GNU-stack,"",@progbits

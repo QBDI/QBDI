@@ -25,15 +25,14 @@
 #include "Engine/LLVMCPU.h"
 #include "Utility/LogSys.h"
 #include "Utility/System.h"
-#include "Utility/memory_ostream.h"
 
 #include "Target/ARM/ARMSubtarget.h"
 #include "llvm/ADT/StringRef.h"
-#include "llvm/ADT/Triple.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/Object/ELFObjectFile.h"
 #include "llvm/Object/ObjectFile.h"
+#include "llvm/TargetParser/Triple.h"
 
 void InMemoryObject::perform_reloc(llvm::object::ObjectFile *object,
                                    const QBDI::LLVMCPUs &llvmcpus) {
@@ -120,9 +119,12 @@ void InMemoryObject::perform_reloc(llvm::object::ObjectFile *object,
           inst.getOperand(0).setImm(inst.getOperand(0).getImm() + address -
                                     relocIt->getOffset());
 
-          llvm::sys::MemoryBlock mblock(instAddr, 4);
-          QBDI::memory_ostream codeStream(mblock);
-          llvmcpu.writeInstruction(inst, codeStream);
+          llvm::SmallVector<char, 4> stream;
+          llvmcpu.writeInstruction(inst, stream,
+                                   reinterpret_cast<uint64_t>(instAddr));
+          QBDI_REQUIRE_ABORT(stream.size() == 4,
+                             "Unexpected instruction length");
+          memcpy(instAddr, stream.data(), 4);
 
           QBDI_DEBUG("Relocated instruction 0x{:x} : 0x{:x}", offset,
                      *reinterpret_cast<uint32_t *>(instAddr));
@@ -165,9 +167,12 @@ void InMemoryObject::perform_reloc(llvm::object::ObjectFile *object,
           QBDI_REQUIRE_ABORT((value & 1) == 0, "Invalid Address 0x{:x}", value);
           inst.getOperand(2).setImm(value);
 
-          llvm::sys::MemoryBlock mblock(instAddr, 4);
-          QBDI::memory_ostream codeStream(mblock);
-          llvmcpu.writeInstruction(inst, codeStream);
+          llvm::SmallVector<char, 4> stream;
+          llvmcpu.writeInstruction(inst, stream,
+                                   reinterpret_cast<uint64_t>(instAddr));
+          QBDI_REQUIRE_ABORT(stream.size() == 4,
+                             "Unexpected instruction length");
+          memcpy(instAddr, stream.data(), 4);
 
           QBDI_DEBUG("Relocated instruction 0x{:x} : 0x{:x}", offset,
                      *reinterpret_cast<uint32_t *>(instAddr));

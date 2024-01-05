@@ -34,3 +34,6 @@ __qbdi_asmStackSwitch:
     mov rsp, rbp;
     pop rbp;
     ret;
+
+# mark stack as no-exec
+.section	.note.GNU-stack,"",@progbits

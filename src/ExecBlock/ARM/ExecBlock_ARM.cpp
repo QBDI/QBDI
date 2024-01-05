@@ -33,7 +33,7 @@ extern void qbdi_runCodeBlock(void *codeBlock,
 
 namespace QBDI {
 
-static const uint32_t MINIMAL_BLOCK_SIZE = 0x1c;
+static const uint32_t MINIMAL_BLOCK_SIZE = 0x18;
 
 void ExecBlock::selectSeq(uint16_t seqID) {
   QBDI_REQUIRE(seqID < seqRegistry.size());
@@ -95,15 +95,23 @@ bool ExecBlock::writePatch(std::vector<Patch>::const_iterator seqCurrent,
     return false;
   }
   if (llvmcpu == CPUMode::ARM) {
-    codeStream.align(4);
     // the code should be able to allocate and access to at least one shadow
     // In ARM mode, LDR can have a range of -4095 to 4095. As PC is always read
     // as PC+8, we should be able to access the first available shadow with
     // PC+8+4092.
-    while (codeStream.current_pos() <
-           (sizeof(Context) - 4 + sizeof(rword) * shadowIdx)) {
+    const unsigned minPosition =
+        sizeof(Context) - 4 + sizeof(rword) * shadowIdx;
+    unsigned targetAddress = std::max(codeBlockPosition, minPosition);
+    // align to 4
+    targetAddress = (targetAddress + 3) & (~3);
+    if (codeBlockPosition < targetAddress) {
       // In ARM, [0, 0, 0, 0] is a NOP instruction : andeq r0, r0, r0
-      codeStream.write_zeros(4);
+      // Write as much NOP instructions as needed.
+      if (not writeCodeByte(llvm::SmallVector<char, 16>(
+              targetAddress - codeBlockPosition, 0))) {
+        QBDI_DEBUG("Not enough space left: rollback");
+        return false;
+      }
     }
   }
 
@@ -121,7 +129,7 @@ bool ExecBlock::writePatch(std::vector<Patch>::const_iterator seqCurrent,
     if (not applyRelocatedInst(
             changeScratchRegister(llvmcpu, backupSR.thumbScratchRegister,
                                   srInfo.thumbScratchRegister),
-            &tagRegistry, llvmcpu, MINIMAL_BLOCK_SIZE + epilogueSize)) {
+            &tagRegistry, llvmcpu, MINIMAL_BLOCK_SIZE)) {
       QBDI_DEBUG("Not enough space left: rollback");
       srInfo = backupSR;
       return false;
@@ -129,7 +137,7 @@ bool ExecBlock::writePatch(std::vector<Patch>::const_iterator seqCurrent,
   }
 
   if (not applyRelocatedInst(p.insts, &tagRegistry, llvmcpu,
-                             MINIMAL_BLOCK_SIZE + epilogueSize)) {
+                             MINIMAL_BLOCK_SIZE)) {
     QBDI_DEBUG("Not enough space left: rollback");
     srInfo = backupSR;
     return false;

@@ -36,4 +36,3 @@ __qbdi_asmStackSwitch:
 
 # mark stack as no-exec
 .section	.note.GNU-stack,"",@progbits
-
