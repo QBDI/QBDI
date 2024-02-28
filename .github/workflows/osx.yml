@@ -10,7 +10,7 @@ on:
 
 jobs:
   build-x86:
-    runs-on: macos-latest
+    runs-on: macos-13
     env:
       QBDI_ARCH: 'X86_64'
       QBDI_PLATFORM: 'osx'
@@ -65,7 +65,7 @@ jobs:
           path: build/QBDI-*.pkg
 
   build-aarch64:
-    runs-on: [self-hosted, macOS, ARM64]
+    runs-on: macos-14
     env:
       QBDI_ARCH: 'AARCH64'
       QBDI_PLATFORM: 'osx'
@@ -73,6 +73,7 @@ jobs:
     steps:
       - name: Install system dependencies
         run: |
+          brew install cmake ninja ccache
           python3 -m pip install --upgrade pip setuptools wheel
       - name: checkout
         uses: actions/checkout@v3

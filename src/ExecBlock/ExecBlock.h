@@ -27,7 +27,6 @@
 
 #include "Patch/InstMetadata.h"
 #include "Patch/Types.h"
-#include "Utility/memory_ostream.h"
 
 #include "QBDI/Callback.h"
 #include "QBDI/Config.h"
@@ -108,7 +107,8 @@ private:
   VMInstanceRef vminstance;
   llvm::sys::MemoryBlock codeBlock;
   llvm::sys::MemoryBlock dataBlock;
-  memory_ostream codeStream;
+  unsigned codeBlockPosition;
+  unsigned codeBlockMaxSize;
   const LLVMCPUs &llvmCPUs;
   Context *context;
   rword *shadows;
@@ -151,6 +151,8 @@ private:
   bool writePatch(std::vector<Patch>::const_iterator seqCurrent,
                   std::vector<Patch>::const_iterator seqEnd,
                   const LLVMCPU &llvmcpu);
+
+  bool writeCodeByte(const llvm::ArrayRef<char> &);
 
   bool
   applyRelocatedInst(const std::vector<std::unique_ptr<RelocatableInst>> &reloc,
@@ -234,7 +236,7 @@ public:
    * @return The computed offset.
    */
   rword getDataBlockOffset() const {
-    return codeBlock.allocatedSize() - codeStream.current_pos();
+    return codeBlock.allocatedSize() - codeBlockPosition;
   }
 
   /*! Compute the offset between the current code stream position and the start
@@ -244,7 +246,7 @@ public:
    * @return The computed offset.
    */
   rword getEpilogueOffset() const {
-    return codeBlock.allocatedSize() - epilogueSize - codeStream.current_pos();
+    return codeBlock.allocatedSize() - epilogueSize - codeBlockPosition;
   }
 
   /*! Get the size of the epilogue
@@ -259,7 +261,7 @@ public:
    * @return The PC value.
    */
   rword getCurrentPC() const {
-    return reinterpret_cast<rword>(codeBlock.base()) + codeStream.current_pos();
+    return reinterpret_cast<rword>(codeBlock.base()) + codeBlockPosition;
   }
 
   /*! Obtain the current instruction ID.

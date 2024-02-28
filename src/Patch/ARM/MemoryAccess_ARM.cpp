@@ -83,31 +83,81 @@ RelocatableInst::UniquePtrVec ADDR_REG_FN(const Patch &patch, Reg dest,
 
 // address base in 1st operand
 constexpr unsigned ADDR_REG_1_TABLE[] = {
-    llvm::ARM::LDMIA,       llvm::ARM::LDMIA_UPD,   llvm::ARM::STMIA,
-    llvm::ARM::STMIA_UPD,   llvm::ARM::VLDMDIA,     llvm::ARM::VLDMDIA_UPD,
-    llvm::ARM::VLDMSIA,     llvm::ARM::VLDMSIA_UPD, llvm::ARM::VSTMDIA,
-    llvm::ARM::VSTMDIA_UPD, llvm::ARM::VSTMSIA,     llvm::ARM::VSTMSIA_UPD,
-    llvm::ARM::VST1LNd16,   llvm::ARM::VST1LNd32,   llvm::ARM::VST1LNd8,
-    llvm::ARM::VST1d16,     llvm::ARM::VST1d16Q,    llvm::ARM::VST1d16T,
-    llvm::ARM::VST1d32,     llvm::ARM::VST1d32Q,    llvm::ARM::VST1d32T,
-    llvm::ARM::VST1d64,     llvm::ARM::VST1d64Q,    llvm::ARM::VST1d64T,
-    llvm::ARM::VST1d8,      llvm::ARM::VST1d8Q,     llvm::ARM::VST1d8T,
-    llvm::ARM::VST1q16,     llvm::ARM::VST1q32,     llvm::ARM::VST1q64,
-    llvm::ARM::VST1q8,      llvm::ARM::VST2LNd16,   llvm::ARM::VST2LNd32,
-    llvm::ARM::VST2LNd8,    llvm::ARM::VST2LNq16,   llvm::ARM::VST2LNq32,
-    llvm::ARM::VST2b16,     llvm::ARM::VST2b32,     llvm::ARM::VST2b8,
-    llvm::ARM::VST2d16,     llvm::ARM::VST2d32,     llvm::ARM::VST2d8,
-    llvm::ARM::VST2q16,     llvm::ARM::VST2q32,     llvm::ARM::VST2q8,
-    llvm::ARM::VST3LNd16,   llvm::ARM::VST3LNd32,   llvm::ARM::VST3LNd8,
-    llvm::ARM::VST3LNq16,   llvm::ARM::VST3LNq32,   llvm::ARM::VST3d16,
-    llvm::ARM::VST3d32,     llvm::ARM::VST3d8,      llvm::ARM::VST3q16,
-    llvm::ARM::VST3q32,     llvm::ARM::VST3q8,      llvm::ARM::VST4LNd16,
-    llvm::ARM::VST4LNd32,   llvm::ARM::VST4LNd8,    llvm::ARM::VST4LNq16,
-    llvm::ARM::VST4LNq32,   llvm::ARM::VST4d16,     llvm::ARM::VST4d32,
-    llvm::ARM::VST4d8,      llvm::ARM::VST4q16,     llvm::ARM::VST4q32,
-    llvm::ARM::VST4q8,      llvm::ARM::t2LDMIA,     llvm::ARM::t2LDMIA_UPD,
-    llvm::ARM::t2STMIA,     llvm::ARM::t2STMIA_UPD, llvm::ARM::tLDMIA,
+    // clang-format off
+    llvm::ARM::LDMIA,
+    llvm::ARM::LDMIA_UPD,
+    llvm::ARM::STMIA,
+    llvm::ARM::STMIA_UPD,
+    llvm::ARM::VLDMDIA,
+    llvm::ARM::VLDMDIA_UPD,
+    llvm::ARM::VLDMSIA,
+    llvm::ARM::VLDMSIA_UPD,
+    llvm::ARM::VST1LNd16,
+    llvm::ARM::VST1LNd32,
+    llvm::ARM::VST1LNd8,
+    llvm::ARM::VST1d16,
+    llvm::ARM::VST1d16Q,
+    llvm::ARM::VST1d16T,
+    llvm::ARM::VST1d32,
+    llvm::ARM::VST1d32Q,
+    llvm::ARM::VST1d32T,
+    llvm::ARM::VST1d64,
+    llvm::ARM::VST1d64Q,
+    llvm::ARM::VST1d64T,
+    llvm::ARM::VST1d8,
+    llvm::ARM::VST1d8Q,
+    llvm::ARM::VST1d8T,
+    llvm::ARM::VST1q16,
+    llvm::ARM::VST1q32,
+    llvm::ARM::VST1q64,
+    llvm::ARM::VST1q8,
+    llvm::ARM::VST2LNd16,
+    llvm::ARM::VST2LNd32,
+    llvm::ARM::VST2LNd8,
+    llvm::ARM::VST2LNq16,
+    llvm::ARM::VST2LNq32,
+    llvm::ARM::VST2b16,
+    llvm::ARM::VST2b32,
+    llvm::ARM::VST2b8,
+    llvm::ARM::VST2d16,
+    llvm::ARM::VST2d32,
+    llvm::ARM::VST2d8,
+    llvm::ARM::VST2q16,
+    llvm::ARM::VST2q32,
+    llvm::ARM::VST2q8,
+    llvm::ARM::VST3LNd16,
+    llvm::ARM::VST3LNd32,
+    llvm::ARM::VST3LNd8,
+    llvm::ARM::VST3LNq16,
+    llvm::ARM::VST3LNq32,
+    llvm::ARM::VST3d16,
+    llvm::ARM::VST3d32,
+    llvm::ARM::VST3d8,
+    llvm::ARM::VST3q16,
+    llvm::ARM::VST3q32,
+    llvm::ARM::VST3q8,
+    llvm::ARM::VST4LNd16,
+    llvm::ARM::VST4LNd32,
+    llvm::ARM::VST4LNd8,
+    llvm::ARM::VST4LNq16,
+    llvm::ARM::VST4LNq32,
+    llvm::ARM::VST4d16,
+    llvm::ARM::VST4d32,
+    llvm::ARM::VST4d8,
+    llvm::ARM::VST4q16,
+    llvm::ARM::VST4q32,
+    llvm::ARM::VST4q8,
+    llvm::ARM::VSTMDIA,
+    llvm::ARM::VSTMDIA_UPD,
+    llvm::ARM::VSTMSIA,
+    llvm::ARM::VSTMSIA_UPD,
+    llvm::ARM::t2LDMIA,
+    llvm::ARM::t2LDMIA_UPD,
+    llvm::ARM::t2STMIA,
+    llvm::ARM::t2STMIA_UPD,
+    llvm::ARM::tLDMIA,
     llvm::ARM::tSTMIA_UPD,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_1_SIZE = sizeof(ADDR_REG_1_TABLE) / sizeof(unsigned);
@@ -119,6 +169,7 @@ RelocatableInst::UniquePtrVec ADDR_REG_1_FN(const Patch &patch, Reg dest,
 
 // address base in 2nd operand
 constexpr unsigned ADDR_REG_2_TABLE[] = {
+    // clang-format off
     llvm::ARM::LDA,
     llvm::ARM::LDAB,
     llvm::ARM::LDAEX,
@@ -279,6 +330,7 @@ constexpr unsigned ADDR_REG_2_TABLE[] = {
     llvm::ARM::t2STL,
     llvm::ARM::t2STLB,
     llvm::ARM::t2STLH,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_2_SIZE = sizeof(ADDR_REG_2_TABLE) / sizeof(unsigned);
@@ -290,6 +342,7 @@ RelocatableInst::UniquePtrVec ADDR_REG_2_FN(const Patch &patch, Reg dest,
 
 // address base in 3rd operand
 constexpr unsigned ADDR_REG_3_TABLE[] = {
+    // clang-format off
     llvm::ARM::LDRBT_POST_IMM,
     llvm::ARM::LDRBT_POST_REG,
     llvm::ARM::LDRB_POST_IMM,
@@ -420,6 +473,7 @@ constexpr unsigned ADDR_REG_3_TABLE[] = {
     llvm::ARM::t2STREXH,
     llvm::ARM::t2STRH_POST,
     llvm::ARM::t2STR_POST,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_3_SIZE = sizeof(ADDR_REG_3_TABLE) / sizeof(unsigned);
@@ -431,16 +485,36 @@ RelocatableInst::UniquePtrVec ADDR_REG_3_FN(const Patch &patch, Reg dest,
 
 // address base in 4th operand
 constexpr unsigned ADDR_REG_4_TABLE[] = {
-    llvm::ARM::LDRD_POST,     llvm::ARM::STRD_POST,    llvm::ARM::VLD2LNd16_UPD,
-    llvm::ARM::VLD2LNd32_UPD, llvm::ARM::VLD2LNd8_UPD, llvm::ARM::VLD2LNq16_UPD,
-    llvm::ARM::VLD2LNq32_UPD, llvm::ARM::VLD3DUPd16,   llvm::ARM::VLD3DUPd32,
-    llvm::ARM::VLD3DUPd8,     llvm::ARM::VLD3DUPq16,   llvm::ARM::VLD3DUPq32,
-    llvm::ARM::VLD3DUPq8,     llvm::ARM::VLD3LNd16,    llvm::ARM::VLD3LNd32,
-    llvm::ARM::VLD3LNd8,      llvm::ARM::VLD3LNq16,    llvm::ARM::VLD3LNq32,
-    llvm::ARM::VLD3d16,       llvm::ARM::VLD3d32,      llvm::ARM::VLD3d8,
-    llvm::ARM::VLD3q16,       llvm::ARM::VLD3q32,      llvm::ARM::VLD3q8,
-    llvm::ARM::t2LDRD_POST,   llvm::ARM::t2STLEXD,     llvm::ARM::t2STRD_POST,
+    // clang-format off
+    llvm::ARM::LDRD_POST,
+    llvm::ARM::STRD_POST,
+    llvm::ARM::VLD2LNd16_UPD,
+    llvm::ARM::VLD2LNd32_UPD,
+    llvm::ARM::VLD2LNd8_UPD,
+    llvm::ARM::VLD2LNq16_UPD,
+    llvm::ARM::VLD2LNq32_UPD,
+    llvm::ARM::VLD3DUPd16,
+    llvm::ARM::VLD3DUPd32,
+    llvm::ARM::VLD3DUPd8,
+    llvm::ARM::VLD3DUPq16,
+    llvm::ARM::VLD3DUPq32,
+    llvm::ARM::VLD3DUPq8,
+    llvm::ARM::VLD3LNd16,
+    llvm::ARM::VLD3LNd32,
+    llvm::ARM::VLD3LNd8,
+    llvm::ARM::VLD3LNq16,
+    llvm::ARM::VLD3LNq32,
+    llvm::ARM::VLD3d16,
+    llvm::ARM::VLD3d32,
+    llvm::ARM::VLD3d8,
+    llvm::ARM::VLD3q16,
+    llvm::ARM::VLD3q32,
+    llvm::ARM::VLD3q8,
+    llvm::ARM::t2LDRD_POST,
+    llvm::ARM::t2STLEXD,
+    llvm::ARM::t2STRD_POST,
     llvm::ARM::t2STREXD,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_4_SIZE = sizeof(ADDR_REG_4_TABLE) / sizeof(unsigned);
@@ -452,23 +526,42 @@ RelocatableInst::UniquePtrVec ADDR_REG_4_FN(const Patch &patch, Reg dest,
 
 // address base in 5th operand
 constexpr unsigned ADDR_REG_5_TABLE[] = {
-    llvm::ARM::VLD3DUPd16_UPD, llvm::ARM::VLD3DUPd32_UPD,
-    llvm::ARM::VLD3DUPd8_UPD,  llvm::ARM::VLD3DUPq16_UPD,
-    llvm::ARM::VLD3DUPq32_UPD, llvm::ARM::VLD3DUPq8_UPD,
-    llvm::ARM::VLD3LNd16_UPD,  llvm::ARM::VLD3LNd32_UPD,
-    llvm::ARM::VLD3LNd8_UPD,   llvm::ARM::VLD3LNq16_UPD,
-    llvm::ARM::VLD3LNq32_UPD,  llvm::ARM::VLD3d16_UPD,
-    llvm::ARM::VLD3d32_UPD,    llvm::ARM::VLD3d8_UPD,
-    llvm::ARM::VLD3q16_UPD,    llvm::ARM::VLD3q32_UPD,
-    llvm::ARM::VLD3q8_UPD,     llvm::ARM::VLD4DUPd16,
-    llvm::ARM::VLD4DUPd32,     llvm::ARM::VLD4DUPd8,
-    llvm::ARM::VLD4DUPq16,     llvm::ARM::VLD4DUPq32,
-    llvm::ARM::VLD4DUPq8,      llvm::ARM::VLD4LNd16,
-    llvm::ARM::VLD4LNd32,      llvm::ARM::VLD4LNd8,
-    llvm::ARM::VLD4LNq16,      llvm::ARM::VLD4LNq32,
-    llvm::ARM::VLD4d16,        llvm::ARM::VLD4d32,
-    llvm::ARM::VLD4d8,         llvm::ARM::VLD4q16,
-    llvm::ARM::VLD4q32,        llvm::ARM::VLD4q8,
+    // clang-format off
+    llvm::ARM::VLD3DUPd16_UPD,
+    llvm::ARM::VLD3DUPd32_UPD,
+    llvm::ARM::VLD3DUPd8_UPD,
+    llvm::ARM::VLD3DUPq16_UPD,
+    llvm::ARM::VLD3DUPq32_UPD,
+    llvm::ARM::VLD3DUPq8_UPD,
+    llvm::ARM::VLD3LNd16_UPD,
+    llvm::ARM::VLD3LNd32_UPD,
+    llvm::ARM::VLD3LNd8_UPD,
+    llvm::ARM::VLD3LNq16_UPD,
+    llvm::ARM::VLD3LNq32_UPD,
+    llvm::ARM::VLD3d16_UPD,
+    llvm::ARM::VLD3d32_UPD,
+    llvm::ARM::VLD3d8_UPD,
+    llvm::ARM::VLD3q16_UPD,
+    llvm::ARM::VLD3q32_UPD,
+    llvm::ARM::VLD3q8_UPD,
+    llvm::ARM::VLD4DUPd16,
+    llvm::ARM::VLD4DUPd32,
+    llvm::ARM::VLD4DUPd8,
+    llvm::ARM::VLD4DUPq16,
+    llvm::ARM::VLD4DUPq32,
+    llvm::ARM::VLD4DUPq8,
+    llvm::ARM::VLD4LNd16,
+    llvm::ARM::VLD4LNd32,
+    llvm::ARM::VLD4LNd8,
+    llvm::ARM::VLD4LNq16,
+    llvm::ARM::VLD4LNq32,
+    llvm::ARM::VLD4d16,
+    llvm::ARM::VLD4d32,
+    llvm::ARM::VLD4d8,
+    llvm::ARM::VLD4q16,
+    llvm::ARM::VLD4q32,
+    llvm::ARM::VLD4q8,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_5_SIZE = sizeof(ADDR_REG_5_TABLE) / sizeof(unsigned);
@@ -480,15 +573,25 @@ RelocatableInst::UniquePtrVec ADDR_REG_5_FN(const Patch &patch, Reg dest,
 
 // address base in 6th operand
 constexpr unsigned ADDR_REG_6_TABLE[] = {
-    llvm::ARM::VLD4DUPd16_UPD, llvm::ARM::VLD4DUPd32_UPD,
-    llvm::ARM::VLD4DUPd8_UPD,  llvm::ARM::VLD4DUPq16_UPD,
-    llvm::ARM::VLD4DUPq32_UPD, llvm::ARM::VLD4DUPq8_UPD,
-    llvm::ARM::VLD4LNd16_UPD,  llvm::ARM::VLD4LNd32_UPD,
-    llvm::ARM::VLD4LNd8_UPD,   llvm::ARM::VLD4LNq16_UPD,
-    llvm::ARM::VLD4LNq32_UPD,  llvm::ARM::VLD4d16_UPD,
-    llvm::ARM::VLD4d32_UPD,    llvm::ARM::VLD4d8_UPD,
-    llvm::ARM::VLD4q16_UPD,    llvm::ARM::VLD4q32_UPD,
+    // clang-format off
+    llvm::ARM::VLD4DUPd16_UPD,
+    llvm::ARM::VLD4DUPd32_UPD,
+    llvm::ARM::VLD4DUPd8_UPD,
+    llvm::ARM::VLD4DUPq16_UPD,
+    llvm::ARM::VLD4DUPq32_UPD,
+    llvm::ARM::VLD4DUPq8_UPD,
+    llvm::ARM::VLD4LNd16_UPD,
+    llvm::ARM::VLD4LNd32_UPD,
+    llvm::ARM::VLD4LNd8_UPD,
+    llvm::ARM::VLD4LNq16_UPD,
+    llvm::ARM::VLD4LNq32_UPD,
+    llvm::ARM::VLD4d16_UPD,
+    llvm::ARM::VLD4d32_UPD,
+    llvm::ARM::VLD4d8_UPD,
+    llvm::ARM::VLD4q16_UPD,
+    llvm::ARM::VLD4q32_UPD,
     llvm::ARM::VLD4q8_UPD,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_6_SIZE = sizeof(ADDR_REG_6_TABLE) / sizeof(unsigned);
@@ -520,10 +623,12 @@ RelocatableInst::UniquePtrVec ADDR_REG_PLUS_FN(const Patch &patch, Reg dest,
 
 // address base in 1st operand + 4 (no PC)
 constexpr unsigned ADDR_REG_1_PLUS4_TABLE[] = {
+    // clang-format off
     llvm::ARM::LDMIB,
     llvm::ARM::LDMIB_UPD,
     llvm::ARM::STMIB,
     llvm::ARM::STMIB_UPD,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_1_PLUS4_SIZE =
@@ -536,10 +641,20 @@ RelocatableInst::UniquePtrVec ADDR_REG_1_PLUS4_FN(const Patch &patch, Reg dest,
 
 // address base in 1st operand - dynamique argument size (no PC)
 constexpr unsigned ADDR_REG_1_DYN_TABLE[] = {
-    llvm::ARM::LDMDB,       llvm::ARM::LDMDB_UPD,   llvm::ARM::STMDB,
-    llvm::ARM::STMDB_UPD,   llvm::ARM::VLDMDDB_UPD, llvm::ARM::VSTMDDB_UPD,
-    llvm::ARM::VLDMSDB_UPD, llvm::ARM::VSTMSDB_UPD, llvm::ARM::t2LDMDB,
-    llvm::ARM::t2LDMDB_UPD, llvm::ARM::t2STMDB,     llvm::ARM::t2STMDB_UPD,
+    // clang-format off
+    llvm::ARM::LDMDB,
+    llvm::ARM::LDMDB_UPD,
+    llvm::ARM::STMDB,
+    llvm::ARM::STMDB_UPD,
+    llvm::ARM::VLDMDDB_UPD,
+    llvm::ARM::VLDMSDB_UPD,
+    llvm::ARM::VSTMDDB_UPD,
+    llvm::ARM::VSTMSDB_UPD,
+    llvm::ARM::t2LDMDB,
+    llvm::ARM::t2LDMDB_UPD,
+    llvm::ARM::t2STMDB,
+    llvm::ARM::t2STMDB_UPD,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_1_DYN_SIZE =
@@ -559,10 +674,12 @@ RelocatableInst::UniquePtrVec ADDR_REG_1_DYN_FN(const Patch &patch, Reg dest,
 
 // address base in 1st operand - dynamique argument size + 4 (no PC)
 constexpr unsigned ADDR_REG_1_DYN_PLUS4_TABLE[] = {
+    // clang-format off
     llvm::ARM::LDMDA,
     llvm::ARM::LDMDA_UPD,
     llvm::ARM::STMDA,
     llvm::ARM::STMDA_UPD,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_1_DYN_PLUS4_SIZE =
@@ -623,12 +740,20 @@ RelocatableInst::UniquePtrVec ADDR_REG_SIMM_FN(const Patch &patch, Reg dest,
 
 // address base in 1st operand + signed imm13 offset in the 2nd
 constexpr unsigned ADDR_REG_1_SIMM_2_TABLE[] = {
-    llvm::ARM::VLDR_FPCXTNS_off,      llvm::ARM::VLDR_FPCXTS_off,
-    llvm::ARM::VLDR_FPSCR_NZCVQC_off, llvm::ARM::VLDR_FPSCR_off,
-    llvm::ARM::VLDR_P0_off,           llvm::ARM::VLDR_VPR_off,
-    llvm::ARM::VSTR_FPCXTNS_off,      llvm::ARM::VSTR_FPCXTS_off,
-    llvm::ARM::VSTR_FPSCR_NZCVQC_off, llvm::ARM::VSTR_FPSCR_off,
-    llvm::ARM::VSTR_P0_off,           llvm::ARM::VSTR_VPR_off,
+    // clang-format off
+    llvm::ARM::VLDR_FPCXTNS_off,
+    llvm::ARM::VLDR_FPCXTS_off,
+    llvm::ARM::VLDR_FPSCR_NZCVQC_off,
+    llvm::ARM::VLDR_FPSCR_off,
+    llvm::ARM::VLDR_P0_off,
+    llvm::ARM::VLDR_VPR_off,
+    llvm::ARM::VSTR_FPCXTNS_off,
+    llvm::ARM::VSTR_FPCXTS_off,
+    llvm::ARM::VSTR_FPSCR_NZCVQC_off,
+    llvm::ARM::VSTR_FPSCR_off,
+    llvm::ARM::VSTR_P0_off,
+    llvm::ARM::VSTR_VPR_off,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_1_SIMM_2_SIZE =
@@ -641,6 +766,7 @@ RelocatableInst::UniquePtrVec ADDR_REG_1_SIMM_2_FN(const Patch &patch, Reg dest,
 
 // address base in 2nd operand + signed imm13 offset in the 3rd
 constexpr unsigned ADDR_REG_2_SIMM_3_TABLE[] = {
+    // clang-format off
     llvm::ARM::LDRBi12,
     llvm::ARM::LDRi12,
     llvm::ARM::STRBi12,
@@ -683,6 +809,7 @@ constexpr unsigned ADDR_REG_2_SIMM_3_TABLE[] = {
     // unsigned imm5
     llvm::ARM::tLDRBi,
     llvm::ARM::tSTRBi,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_2_SIMM_3_SIZE =
@@ -695,6 +822,7 @@ RelocatableInst::UniquePtrVec ADDR_REG_2_SIMM_3_FN(const Patch &patch, Reg dest,
 
 // address base in 3rd operand + signed imm13 offset in the 4th
 constexpr unsigned ADDR_REG_3_SIMM_4_TABLE[] = {
+    // clang-format off
     llvm::ARM::LDRB_PRE_IMM,
     llvm::ARM::LDR_PRE_IMM,
     llvm::ARM::STRB_PRE_IMM,
@@ -710,6 +838,7 @@ constexpr unsigned ADDR_REG_3_SIMM_4_TABLE[] = {
     llvm::ARM::t2STRDi8,
     llvm::ARM::t2STRH_PRE,
     llvm::ARM::t2STR_PRE,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_3_SIMM_4_SIZE =
@@ -722,9 +851,11 @@ RelocatableInst::UniquePtrVec ADDR_REG_3_SIMM_4_FN(const Patch &patch, Reg dest,
 
 // address base in 4th operand + signed imm8 offset in the 5th
 constexpr unsigned ADDR_REG_4_SIMM_5_TABLE[] = {
+    // clang-format off
     // signed imm8
     llvm::ARM::t2LDRD_PRE,
     llvm::ARM::t2STRD_PRE,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_4_SIMM_5_SIZE =
@@ -783,7 +914,9 @@ RelocatableInst::UniquePtrVec ADDR_REG_REG_FN(const Patch &patch, Reg dest,
 
 // address base in 1st operand + register in the 2nd
 constexpr unsigned ADDR_REG_1_REG_2_TABLE[] = {
+    // clang-format off
     llvm::ARM::t2TBB,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_1_REG_2_SIZE =
@@ -796,8 +929,16 @@ RelocatableInst::UniquePtrVec ADDR_REG_1_REG_2_FN(const Patch &patch, Reg dest,
 
 // address base in 2nd operand + register in the 3rd
 constexpr unsigned ADDR_REG_2_REG_3_TABLE[] = {
-    llvm::ARM::tLDRBr, llvm::ARM::tLDRHr, llvm::ARM::tLDRSB, llvm::ARM::tLDRSH,
-    llvm::ARM::tLDRr,  llvm::ARM::tSTRBr, llvm::ARM::tSTRHr, llvm::ARM::tSTRr,
+    // clang-format off
+    llvm::ARM::tLDRBr,
+    llvm::ARM::tLDRHr,
+    llvm::ARM::tLDRSB,
+    llvm::ARM::tLDRSH,
+    llvm::ARM::tLDRr,
+    llvm::ARM::tSTRBr,
+    llvm::ARM::tSTRHr,
+    llvm::ARM::tSTRr,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_2_REG_3_SIZE =
@@ -813,7 +954,9 @@ RelocatableInst::UniquePtrVec ADDR_REG_2_REG_3_FN(const Patch &patch, Reg dest,
  */
 
 constexpr unsigned ADDR_REG_1_REGSHIFT1_2_TABLE[] = {
+    // clang-format off
     llvm::ARM::t2TBH,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_1_REGSHIFT1_2_SIZE =
@@ -918,9 +1061,16 @@ RelocatableInst::UniquePtrVec ADDR_REG_REGLSL_FN(const Patch &patch, Reg dest,
 
 // address base in 2nd operand + shifted register in the 3rd + shift imm in 4th
 constexpr unsigned ADDR_REG_2_REGLSL_3_TABLE[] = {
-    llvm::ARM::t2LDRBs,  llvm::ARM::t2LDRHs, llvm::ARM::t2LDRSBs,
-    llvm::ARM::t2LDRSHs, llvm::ARM::t2LDRs,  llvm::ARM::t2STRBs,
-    llvm::ARM::t2STRHs,  llvm::ARM::t2STRs,
+    // clang-format off
+    llvm::ARM::t2LDRBs,
+    llvm::ARM::t2LDRHs,
+    llvm::ARM::t2LDRSBs,
+    llvm::ARM::t2LDRSHs,
+    llvm::ARM::t2LDRs,
+    llvm::ARM::t2STRBs,
+    llvm::ARM::t2STRHs,
+    llvm::ARM::t2STRs,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_2_REGLSL_3_SIZE =
@@ -1003,10 +1153,12 @@ RelocatableInst::UniquePtrVec ADDR_REG_REGSHIFT_FN(const Patch &patch, Reg dest,
 
 // address base in 2nd operand + shifted register in the 3rd + shift imm in 4th
 constexpr unsigned ADDR_REG_2_REGSHIFT_3_TABLE[] = {
+    // clang-format off
     llvm::ARM::LDRBrs,
     llvm::ARM::LDRrs,
     llvm::ARM::STRBrs,
     llvm::ARM::STRrs,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_2_REGSHIFT_3_SIZE =
@@ -1019,10 +1171,12 @@ ADDR_REG_2_REGSHIFT_3_FN(const Patch &patch, Reg dest, bool writeAccess) {
 
 // address base in 3rd operand + shifted register in the 4th + shift imm in 5th
 constexpr unsigned ADDR_REG_3_REGSHIFT_4_TABLE[] = {
+    // clang-format off
     llvm::ARM::LDRB_PRE_REG,
     llvm::ARM::LDR_PRE_REG,
     llvm::ARM::STRB_PRE_REG,
     llvm::ARM::STR_PRE_REG,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_3_REGSHIFT_4_SIZE =
@@ -1099,10 +1253,12 @@ RelocatableInst::UniquePtrVec ADDR_REG_IMMORREG_FN(const Patch &patch, Reg dest,
 
 // address base in 2nd operand + register in the 3rd + imm in 4th
 constexpr unsigned ADDR_REG_IMMORREG_2_TABLE[] = {
+    // clang-format off
     llvm::ARM::LDRH,
     llvm::ARM::LDRSB,
     llvm::ARM::LDRSH,
     llvm::ARM::STRH,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_IMMORREG_2_SIZE =
@@ -1115,8 +1271,14 @@ ADDR_REG_IMMORREG_2_FN(const Patch &patch, Reg dest, bool writeAccess) {
 
 // address base in 3rd operand + register in the 4th + imm in 5th
 constexpr unsigned ADDR_REG_IMMORREG_3_TABLE[] = {
-    llvm::ARM::LDRD,      llvm::ARM::LDRH_PRE, llvm::ARM::LDRSB_PRE,
-    llvm::ARM::LDRSH_PRE, llvm::ARM::STRD,     llvm::ARM::STRH_PRE,
+    // clang-format off
+    llvm::ARM::LDRD,
+    llvm::ARM::LDRH_PRE,
+    llvm::ARM::LDRSB_PRE,
+    llvm::ARM::LDRSH_PRE,
+    llvm::ARM::STRD,
+    llvm::ARM::STRH_PRE,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_IMMORREG_3_SIZE =
@@ -1129,8 +1291,10 @@ ADDR_REG_IMMORREG_3_FN(const Patch &patch, Reg dest, bool writeAccess) {
 
 // address base in 4th operand + register in the 5th + imm in 6th
 constexpr unsigned ADDR_REG_IMMORREG_4_TABLE[] = {
+    // clang-format off
     llvm::ARM::LDRD_PRE,
     llvm::ARM::STRD_PRE,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_IMMORREG_4_SIZE =
@@ -1189,11 +1353,13 @@ RelocatableInst::UniquePtrVec ADDR_REG_IMMSHIFT_FN(const Patch &patch, Reg dest,
 
 // address base in 2nd operand + imm in 3rd (shift 1)
 constexpr unsigned ADDR_REG_IMMSHIFT_2_SHIFT1_TABLE[] = {
+    // clang-format off
     llvm::ARM::VLDRH,
     llvm::ARM::VSTRH,
     // unsigned imm5
     llvm::ARM::tLDRHi,
     llvm::ARM::tSTRHi,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_IMMSHIFT_2_SHIFT1_SIZE =
@@ -1206,17 +1372,19 @@ ADDR_REG_IMMSHIFT_2_SHIFT1_FN(const Patch &patch, Reg dest, bool writeAccess) {
 
 // address base in 2nd operand + imm in 3rd (shift 2)
 constexpr unsigned ADDR_REG_IMMSHIFT_2_SHIFT2_TABLE[] = {
+    // clang-format off
     llvm::ARM::VLDRD,
     llvm::ARM::VLDRS,
     llvm::ARM::VSTRD,
     llvm::ARM::VSTRS,
-    // unsigned imm5
-    llvm::ARM::tLDRi,
-    llvm::ARM::tSTRi,
-    llvm::ARM::tLDRspi,
-    llvm::ARM::tSTRspi,
     // unsigned imm8
     llvm::ARM::t2LDREX,
+    // unsigned imm5
+    llvm::ARM::tLDRi,
+    llvm::ARM::tLDRspi,
+    llvm::ARM::tSTRi,
+    llvm::ARM::tSTRspi,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_IMMSHIFT_2_SHIFT2_SIZE =
@@ -1229,8 +1397,10 @@ ADDR_REG_IMMSHIFT_2_SHIFT2_FN(const Patch &patch, Reg dest, bool writeAccess) {
 
 // address base in 3rd operand + imm in 4th (shift 2)
 constexpr unsigned ADDR_REG_IMMSHIFT_3_SHIFT2_TABLE[] = {
+    // clang-format off
     // unsigned imm8
     llvm::ARM::t2STREX,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_IMMSHIFT_3_SHIFT2_SIZE =
@@ -1258,7 +1428,9 @@ ADDR_REG_IMPLICIT_OFF_FN(const Patch &patch, Reg dest, Reg base, sword offset) {
 
 // address in SP
 constexpr unsigned ADDR_REG_SP_TABLE[] = {
+    // clang-format off
     llvm::ARM::tPOP,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_SP_SIZE =
@@ -1271,7 +1443,9 @@ RelocatableInst::UniquePtrVec ADDR_REG_SP_FN(const Patch &patch, Reg dest,
 
 // address in SP - dynamic
 constexpr unsigned ADDR_REG_SP_DYN_TABLE[] = {
+    // clang-format off
     llvm::ARM::tPUSH,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_SP_DYN_SIZE =
@@ -1325,8 +1499,14 @@ RelocatableInst::UniquePtrVec ADDR_REG_IMPLICIT_PC_OFF_FN(const Patch &patch,
 
 // address in Align(PC, 4) + 2nd operand (imm)
 constexpr unsigned ADDR_REG_ALIGNPC_OFF_2_TABLE[] = {
-    llvm::ARM::t2LDRBpci,  llvm::ARM::t2LDRHpci, llvm::ARM::t2LDRSBpci,
-    llvm::ARM::t2LDRSHpci, llvm::ARM::t2LDRpci,  llvm::ARM::tLDRpci,
+    // clang-format off
+    llvm::ARM::t2LDRBpci,
+    llvm::ARM::t2LDRHpci,
+    llvm::ARM::t2LDRSBpci,
+    llvm::ARM::t2LDRSHpci,
+    llvm::ARM::t2LDRpci,
+    llvm::ARM::tLDRpci,
+    // clang-format on
 };
 
 constexpr size_t ADDR_REG_ALIGNPC_OFF_2_SIZE =

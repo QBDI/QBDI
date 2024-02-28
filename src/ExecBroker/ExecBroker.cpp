@@ -17,7 +17,6 @@
  */
 #include <utility>
 
-#include "llvm/ADT/Optional.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/Process.h"
 

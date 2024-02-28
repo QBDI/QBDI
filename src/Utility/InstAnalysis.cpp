@@ -237,21 +237,17 @@ void tryMergeCurrentRegister(InstAnalysis *instAnalysis) {
 }
 
 void analyseImplicitRegisters(InstAnalysis *instAnalysis,
-                              const uint16_t *implicitRegs,
+                              llvm::ArrayRef<llvm::MCPhysReg> implicitRegs,
                               RegisterAccessType type,
                               const llvm::MCRegisterInfo &MRI) {
-  if (!implicitRegs) {
-    return;
-  }
   // Iteration style copied from LLVM code
-  for (; *implicitRegs; ++implicitRegs) {
-    llvm::MCPhysReg regNo = *implicitRegs;
+  for (const llvm::MCPhysReg &regNo : implicitRegs) {
     if (isFlagRegister(regNo)) {
       instAnalysis->flagsAccess |= type;
       continue;
     }
     OperandAnalysis topa;
-    analyseRegister(topa, *implicitRegs, MRI);
+    analyseRegister(topa, regNo, MRI);
     // we found a GPR (as size is only known for GPR)
     // TODO: add support for more registers
     if (topa.size != 0 && topa.type != OPERAND_INVALID) {
@@ -281,9 +277,9 @@ void analyseOperands(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
   // number of first def operand that are tied to a later used operand
   unsigned operandBias = getBias(desc);
   // Analysis of instruction operands
-  uint8_t numOperands = inst.getNumOperands();
-  uint8_t numOperandsMax = numOperands + desc.getNumImplicitDefs() +
-                           desc.getNumImplicitUses() - operandBias;
+  unsigned numOperands = inst.getNumOperands();
+  unsigned numOperandsMax =
+      numOperands + desc.NumImplicitDefs + desc.NumImplicitUses - operandBias;
   // (R|E)SP are missing for RET and CALL in x86
   numOperandsMax += getAdditionnalOperandNumber(inst, desc);
   // packedRegister
@@ -323,12 +319,12 @@ void analyseOperands(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
     }
   }
   // for each instruction operands
-  for (uint8_t i = operandBias; i < numOperands; i++) {
+  for (unsigned i = operandBias; i < numOperands; i++) {
     const llvm::MCOperand &op = inst.getOperand(i);
     // if the instruction is variadic, the opdesc for the variadic operand is
     // the last opdesc
     const llvm::MCOperandInfo &opdesc =
-        (i < maxOperandDesc) ? desc.OpInfo[i] : desc.OpInfo[maxOperandDesc];
+        desc.operands()[std::min(i, maxOperandDesc)];
     // fill a new operand analysis
     QBDI_REQUIRE(instAnalysis->numOperands < numOperandsMax);
     OperandAnalysis &opa = instAnalysis->operands[instAnalysis->numOperands];
@@ -436,9 +432,9 @@ void analyseOperands(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
   }
 
   // analyse implicit registers (R/W)
-  analyseImplicitRegisters(instAnalysis, desc.getImplicitUses(), REGISTER_READ,
+  analyseImplicitRegisters(instAnalysis, desc.implicit_uses(), REGISTER_READ,
                            MRI);
-  analyseImplicitRegisters(instAnalysis, desc.getImplicitDefs(), REGISTER_WRITE,
+  analyseImplicitRegisters(instAnalysis, desc.implicit_defs(), REGISTER_WRITE,
                            MRI);
 
   // (R|E)SP are missing for RET and CALL in x86

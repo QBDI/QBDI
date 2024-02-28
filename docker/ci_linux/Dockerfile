@@ -1,4 +1,4 @@
-ARG DOCKER_IMG="debian:10"
+ARG DOCKER_IMG="debian:12"
 
 FROM $DOCKER_IMG
 
@@ -24,7 +24,7 @@ RUN apt-get update && \
         ccache \
         g++ \
         g++-multilib \
-        libstdc++-10-dev \
+        libstdc++-11-dev \
         make \
         ninja-build \
         pkg-config \

@@ -101,18 +101,20 @@ void getUsedGPR(const llvm::MCInst &inst, const LLVMCPU &llvmcpu,
     }
   }
 
-  for (const uint16_t *implicitRegs = desc.getImplicitUses();
-       implicitRegs && *implicitRegs; ++implicitRegs) {
-    DEBUG_REGISTER("Reg ImplicitUses {}",
-                   llvmcpu.getRegisterName(*implicitRegs));
-    addRegisterInfo(regUsage, regUsageExtra, *implicitRegs, RegisterUsed);
+  for (const unsigned implicitRegs : desc.implicit_uses()) {
+    if (implicitRegs) {
+      DEBUG_REGISTER("Reg ImplicitUses {}",
+                     llvmcpu.getRegisterName(implicitRegs));
+      addRegisterInfo(regUsage, regUsageExtra, implicitRegs, RegisterUsed);
+    }
   }
 
-  for (const uint16_t *implicitRegs = desc.getImplicitDefs();
-       implicitRegs && *implicitRegs; ++implicitRegs) {
-    DEBUG_REGISTER("Reg ImplicitDefs {}",
-                   llvmcpu.getRegisterName(*implicitRegs));
-    addRegisterInfo(regUsage, regUsageExtra, *implicitRegs, RegisterSet);
+  for (const unsigned implicitRegs : desc.implicit_defs()) {
+    if (implicitRegs) {
+      DEBUG_REGISTER("Reg ImplicitDefs {}",
+                     llvmcpu.getRegisterName(implicitRegs));
+      addRegisterInfo(regUsage, regUsageExtra, implicitRegs, RegisterSet);
+    }
   }
 
   fixLLVMUsedGPR(inst, llvmcpu, regUsage, regUsageExtra);

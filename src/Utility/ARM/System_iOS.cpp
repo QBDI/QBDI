@@ -24,8 +24,8 @@
 #include <mach/vm_map.h>
 #include <mutex>
 
-#include "llvm/Support/Host.h"
 #include "llvm/Support/Process.h"
+#include "llvm/TargetParser/Host.h"
 
 #include "Utility/AARCH64/server-iOS-jit-user.h"
 #include "Utility/LogSys.h"

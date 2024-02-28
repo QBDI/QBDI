@@ -186,6 +186,7 @@ const std::map<RegLLVM, int16_t> FPR_ID = {
     {llvm::AArch64::D29, offsetof(FPRState, v29)},
     {llvm::AArch64::D30, offsetof(FPRState, v30)},
     {llvm::AArch64::D31, offsetof(FPRState, v31)},
+    {llvm::AArch64::FPCR, offsetof(FPRState, fpcr)},
 
     // size 16b
     {llvm::AArch64::Q0, offsetof(FPRState, v0)},
@@ -326,7 +327,7 @@ constexpr uint16_t REGISTER_8BYTES[] = {
     llvm::AArch64::D21, llvm::AArch64::D22, llvm::AArch64::D23,
     llvm::AArch64::D24, llvm::AArch64::D25, llvm::AArch64::D26,
     llvm::AArch64::D27, llvm::AArch64::D28, llvm::AArch64::D29,
-    llvm::AArch64::D30, llvm::AArch64::D31,
+    llvm::AArch64::D30, llvm::AArch64::D31, llvm::AArch64::FPCR,
 };
 
 constexpr size_t REGISTER_8BYTES_SIZE =
@@ -498,8 +499,8 @@ constexpr size_t REGISTER_16BYTES_P4_SIZE =
 
 /* Encode base register on one byte
  * -1: invalid
- *  0 : X0 ... 31 : X31/SP  (spécial 32 : XZR)
- * 33 : Q0 ... 64 : Q31
+ *  0 : X0 ... 31 : X31/SP  (special 32 : XZR)
+ * 33 : Q0 ... 64 : Q31     (special 65 : FPCR)
  */
 constexpr int8_t getEncodedBaseReg(unsigned reg) {
   // verify llvm register enum
@@ -578,6 +579,8 @@ constexpr int8_t getEncodedBaseReg(unsigned reg) {
       case llvm::AArch64::WZR:
       case llvm::AArch64::XZR:
         return 32;
+      case llvm::AArch64::FPCR:
+        return 65;
       default:
         return -1;
     }
@@ -589,8 +592,8 @@ struct RegisterInfoArray {
 
   // Use to find the Higher register
   // -1: invalid
-  //  0 : X0 ... 31 : X31/SP  (spécial 32 : XZR)
-  // 33 : Q0 ... 64 : Q31
+  //  0 : X0 ... 31 : X31/SP  (special 32 : XZR)
+  // 33 : Q0 ... 64 : Q31     (special 65 : FPCR)
   int8_t baseReg[llvm::AArch64::NUM_TARGET_REGS] = {0};
 
   constexpr uint16_t setValue(uint8_t size, uint8_t packed) {
@@ -686,6 +689,8 @@ struct RegisterInfoArray {
     } else if (v < 65) {
       static_assert((llvm::AArch64::Q31 - llvm::AArch64::Q0) == 31);
       return llvm::AArch64::Q0 + (v - 33);
+    } else if (v == 65) {
+      return llvm::AArch64::FPCR;
     }
     // invalid positive value
     QBDI_ERROR("Wrong value {}", v);

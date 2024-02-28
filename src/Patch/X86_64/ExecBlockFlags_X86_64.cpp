@@ -84,13 +84,11 @@ uint8_t getExecBlockFlags(const llvm::MCInst &inst,
     }
   }
 
-  const uint16_t *implicitRegs = desc.getImplicitDefs();
-  for (; implicitRegs && *implicitRegs; implicitRegs++) {
-    flags |= cache.get(*implicitRegs);
+  for (const unsigned implicitRegs : desc.implicit_uses()) {
+    flags |= cache.get(implicitRegs);
   }
-  implicitRegs = desc.getImplicitUses();
-  for (; implicitRegs && *implicitRegs; implicitRegs++) {
-    flags |= cache.get(*implicitRegs);
+  for (const unsigned implicitRegs : desc.implicit_defs()) {
+    flags |= cache.get(implicitRegs);
   }
 
   // detect implicit FPU instruction

@@ -44,3 +44,6 @@ __qbdi_asmStackSwitch:
 
     mov sp, fp;
     pop {fp, pc};
+
+# mark stack as no-exec
+.section	.note.GNU-stack

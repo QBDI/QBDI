@@ -66,9 +66,9 @@ void LLVMOperandInfoCheck::checkPredicate(QBDI::CPUMode cpuMode) {
     bool consecutivePredicate = true;
 
     for (unsigned int opn = 0; opn < desc.getNumOperands(); opn++) {
-      const llvm::MCOperandInfo *opInfo = desc.opInfo_begin() + opn;
-      if (opInfo->isPredicate()) {
-        CHECK(opInfo->OperandType == llvm::MCOI::OPERAND_UNKNOWN);
+      const llvm::MCOperandInfo &opInfo = desc.operands()[opn];
+      if (opInfo.isPredicate()) {
+        CHECK(opInfo.OperandType == llvm::MCOI::OPERAND_UNKNOWN);
         if (predicateNumber == 0) {
           predicateFirstOffset = opn;
           predicateNumber++;
@@ -78,8 +78,8 @@ void LLVMOperandInfoCheck::checkPredicate(QBDI::CPUMode cpuMode) {
           predicateNumber++;
         }
       }
-      if (opInfo->RegClass == llvm::ARM::CCRRegClassID) {
-        CHECK(opInfo->isOptionalDef());
+      if (opInfo.RegClass == llvm::ARM::CCRRegClassID) {
+        CHECK(opInfo.isOptionalDef());
         numCCRRegClassID++;
       }
     }

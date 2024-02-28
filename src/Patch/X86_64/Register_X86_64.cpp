@@ -51,8 +51,9 @@ const RegLLVM FLAG_ID[] = {
 };
 
 const RegLLVM SEG_ID[] = {
-    llvm::X86::SS, llvm::X86::CS, llvm::X86::DS,  llvm::X86::ES,
-    llvm::X86::FS, llvm::X86::GS, llvm::X86::SSP,
+    llvm::X86::SS, llvm::X86::CS,      llvm::X86::DS,
+    llvm::X86::ES, llvm::X86::FS,      llvm::X86::FS_BASE,
+    llvm::X86::GS, llvm::X86::GS_BASE, llvm::X86::SSP,
 };
 
 const std::map<RegLLVM, int16_t> FPR_ID = {
@@ -282,7 +283,9 @@ constexpr uint16_t REGISTER_2BYTES[] = {
     llvm::X86::DS,
     llvm::X86::ES,
     llvm::X86::FS,
+    llvm::X86::FS_BASE,
     llvm::X86::GS,
+    llvm::X86::GS_BASE,
     llvm::X86::SS,
 };
 
@@ -309,6 +312,7 @@ constexpr uint16_t REGISTER_4BYTES[] = {
     llvm::X86::R15D,
     // RFLAGS isn't defined in llvm, the upper 32bits is never used
     llvm::X86::EFLAGS,
+    llvm::X86::_EFLAGS,
 #if defined(QBDI_ARCH_X86)
     // shadow stack pointer
     llvm::X86::SSP,
@@ -336,6 +340,7 @@ constexpr uint16_t REGISTER_8BYTES[] = {
     llvm::X86::R13,
     llvm::X86::R14,
     llvm::X86::R15,
+    llvm::X86::RFLAGS,
     llvm::X86::MM0,
     llvm::X86::MM1,
     llvm::X86::MM2,
