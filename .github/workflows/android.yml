@@ -24,7 +24,7 @@ jobs:
       fail-fast: false
     env:
       QBDI_PLATFORM: 'android'
-      NDK_VERSION: 'r23'
+      NDK_VERSION: 'r26c'
       ANDROID_PLATFORM: 23
     steps:
       - name: checkout
