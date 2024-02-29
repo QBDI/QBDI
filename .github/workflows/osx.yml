@@ -21,9 +21,9 @@ jobs:
           brew install cmake ninja ccache
           python3 -m pip install --upgrade pip setuptools wheel
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Cache ccache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: cache-ccache
         with:
           path: |
@@ -36,7 +36,7 @@ jobs:
           mkdir -p ~/.ccache
           cp .github/workflows/ccache.conf ~/.ccache/ccache.conf
       - name: Cache third-party
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             third-party
@@ -59,7 +59,7 @@ jobs:
         run: |
           ./QBDITest
       - name: Export package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: package_OSX_${{ env.QBDI_ARCH }}
           path: build/QBDI-*.pkg
@@ -76,9 +76,9 @@ jobs:
           brew install cmake ninja ccache
           python3 -m pip install --upgrade pip setuptools wheel
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Cache ccache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: cache-ccache
         with:
           path: |
@@ -91,7 +91,7 @@ jobs:
           mkdir -p ~/.ccache
           cp .github/workflows/ccache.conf ~/.ccache/ccache.conf
       - name: Cache third-party
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             third-party
@@ -114,7 +114,7 @@ jobs:
         run: |
           ./QBDITest
       - name: Export package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: package_OSX_${{ env.QBDI_ARCH }}
           path: build/QBDI-*.pkg

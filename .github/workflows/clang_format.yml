@@ -9,7 +9,7 @@ jobs:
       CLANG_FORMAT_VERSION: 14
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install system dependencies
         run: |
           sudo apt install -y --no-install-recommends clang-format-${{ env.CLANG_FORMAT_VERSION }}

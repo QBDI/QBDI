@@ -28,9 +28,9 @@ jobs:
       ANDROID_PLATFORM: 23
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Cache ccache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: cache-ccache
         with:
           path: |
@@ -43,14 +43,14 @@ jobs:
           mkdir -p ~/.ccache
           cp .github/workflows/ccache.conf ~/.ccache/ccache.conf
       - name: Cache android NDK ${{ env.NDK_VERSION }}
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: cache-ndk
         with:
           path: |
             android-ndk-${{ env.NDK_VERSION }}/
           key: ndk-${{ env.NDK_VERSION }}-linux
       - name: Cache third-party
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             third-party
@@ -81,7 +81,7 @@ jobs:
           ninja
           cpack
       - name: Export package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: package_android_${{ matrix.QBDI_ARCH }}
           path: build/QBDI-*-android-${{ matrix.QBDI_ARCH }}.tar.gz

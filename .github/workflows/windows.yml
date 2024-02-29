@@ -28,9 +28,9 @@ jobs:
         run: |
           choco install sccache
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Cache sccache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: cache-sccache
         with:
           path: |
@@ -52,7 +52,7 @@ jobs:
       - name: Start sccache server
         run: sccache --start-server
       - name: Cache third-party
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             third-party
@@ -72,7 +72,7 @@ jobs:
         run: |
           .\QBDITest
       - name: Export package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: package_Windows_${{ matrix.WINDOWS_ARCH }}
           path: build/QBDI-*.exe

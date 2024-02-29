@@ -19,14 +19,14 @@ jobs:
       QBDI_PLATFORM: 'linux'
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Cache ccache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: cache-ccache
         with:
           path: |
@@ -39,13 +39,13 @@ jobs:
           mkdir -p ~/.ccache
           cp .github/workflows/ccache.conf ~/.ccache/ccache.conf
       - name: Cache third-party
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             third-party
           key: QBDI-third-party-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**/*.cmake') }}
       - name: Cache test result
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             tools/validation_runner/travis_db
@@ -59,7 +59,7 @@ jobs:
           QBDI_ARCH: ${{ matrix.QBDI_ARCH }}
         run: bash ./docker/ci_linux/qbdi.sh
       - name: Export package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: package_linux_${{ matrix.QBDI_ARCH }}
           path: build/QBDI-*-linux-${{ matrix.QBDI_ARCH }}.tar.gz
@@ -74,14 +74,14 @@ jobs:
       QBDI_PLATFORM: 'linux'
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Cache ccache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: cache-ccache
         with:
           path: |
@@ -94,13 +94,13 @@ jobs:
           mkdir -p ~/.ccache
           cp .github/workflows/ccache.conf ~/.ccache/ccache.conf
       - name: Cache third-party
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             third-party
           key: QBDI-third-party-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**/*.cmake') }}
       - name: Cache test result
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             tools/validation_runner/travis_db
@@ -113,7 +113,7 @@ jobs:
         run: bash ./docker/ci_linux_arm/build_qbdi_linux.sh ${{ matrix.QBDI_ARCH }}
 
       - name: Export package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: package_linux_${{ matrix.QBDI_ARCH }}
           path: build-docker-*/QBDI-*-linux-*.tar.gz
