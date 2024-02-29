@@ -9,15 +9,14 @@ PyQBDIPreload is an implementation of QBDIPreload for PyQBDI.
 It allows users to inject the Python runtime into a target process and execute their own script in it.
 The limitations are pretty much the same as those we face on QBDIPreload and PyQBDI:
 
-- Only Linux and macOS are currently supported
-- The executable should be injectable with ``LD_PRELOAD`` or ``DYLD_INSERT_LIBRARIES``
+- For Linux and macOS the executable should be injectable with ``LD_PRELOAD`` or ``DYLD_INSERT_LIBRARIES``
 - PyQBDIPreload cannot be injected in a Python process
 - The Python runtime and the target must share the same architecture
 - An extra :class:`VM` must not be created. An already prepared :class:`VM` is provided to :func:`pyqbdipreload_on_run`.
 
 .. note::
 
-    The Python library ``libpython3.x.so`` must be installed.
+    For Linux and macOS the Python library ``libpython3.x.so`` must be installed.
 
 Main hook process
 -----------------

@@ -2,19 +2,9 @@ add_library(QBDIPreload STATIC)
 add_library(QBDIPreload::QBDIPreload ALIAS QBDIPreload)
 
 include("${CMAKE_CURRENT_LIST_DIR}/src/CMakeLists.txt")
-
-target_compile_options(
-  QBDIPreload
-  PRIVATE $<$<COMPILE_LANGUAGE:C>:-Wall
-          -ffunction-sections
-          -fdata-sections
-          -fvisibility-inlines-hidden
-          -fvisibility=hidden
-          -fPIC
-          -D_GNU_SOURCE
-          -D__STDC_CONSTANT_MACROS
-          -D__STDC_FORMAT_MACROS
-          -D__STDC_LIMIT_MACROS>)
+target_compile_options(QBDIPreload PRIVATE $<$<COMPILE_LANGUAGE:C>:
+                                           ${QBDI_COMMON_C_FLAGS}>)
+target_compile_definitions(QBDIPreload PRIVATE ${QBDI_COMMON_DEFINITION})
 
 # Also add build directory as include path for the mach_exc.h header
 target_include_directories(
