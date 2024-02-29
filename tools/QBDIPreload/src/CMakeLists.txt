@@ -10,6 +10,8 @@ elseif(QBDI_PLATFORM_OSX)
     QBDIPreload
     PRIVATE "${CMAKE_CURRENT_LIST_DIR}/darwin_preload.c"
             "${CMAKE_CURRENT_LIST_DIR}/darwin_exceptd.c" "mach_excServer.c")
+elseif(QBDI_PLATFORM_WINDOWS)
+  target_sources(QBDIPreload PRIVATE "${CMAKE_CURRENT_LIST_DIR}/win_preload.c")
 else()
   message(FATAL_ERROR "No QBDIPreload for platform ${QBDI_PLATFORM}")
 endif()

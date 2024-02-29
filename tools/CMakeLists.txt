@@ -7,6 +7,10 @@ if(QBDI_TOOLS_QBDIPRELOAD)
     add_subdirectory(validator)
   endif()
 
+  if(QBDI_PLATFORM_WINDOWS)
+    add_subdirectory(QBDIWinPreloader)
+  endif()
+
 endif()
 
 if(QBDI_TOOLS_PYQBDI)

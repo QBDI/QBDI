@@ -80,7 +80,7 @@ VMAction onwrite(VMInstanceRef vm, GPRState *gprState, FPRState *fprState,
   return QBDI_CONTINUE;
 }
 
-static const size_t STACK_SIZE = 0x100000; // 1MB
+static const uint32_t STACK_SIZE = 0x100000; // 1MB
 static const rword FAKE_RET_ADDR = 0x40000;
 
 int main(int argc, char **argv) {

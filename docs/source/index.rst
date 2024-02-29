@@ -19,7 +19,7 @@ Contents
     Introduction <intro>
     Installation and Integration <installation_and_integration>
     Getting Started <get_started>
-    Turorial <tutorial>
+    Tutorial <tutorial>
     API Reference <api>
     Architecture Support <architecture_support>
     Developer Documentation <dev>

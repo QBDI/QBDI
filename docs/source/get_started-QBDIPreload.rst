@@ -4,7 +4,8 @@ QBDIPreload
 ===========
 
 QBDIPreload is a small utility library that provides code injection capabilities using dynamic library injection.
-It works on Linux and macOS respectively with the ``LD_PRELOAD`` and ``DYLD_INSERT_LIBRARIES`` mechanisms.
+It works on Linux and macOS respectively with the ``LD_PRELOAD`` and ``DYLD_INSERT_LIBRARIES`` mechanisms, and on
+Windows using our ``QBDIWinPreloader.exe`` tool or a dll injection mechanism of your own choice.
 
 Thanks to QBDIPreload, you can instrument the main function of an executable that has been dynamically linked.
 You can also define various callbacks that are called at specific times throughout the execution.
@@ -97,6 +98,13 @@ Then, in order to test it against a target, simply running the following command
 
     # on macOS
     sudo DYLD_BIND_AT_LAUNCH=1 DYLD_INSERT_LIBRARIES=./libqbdi_mytracer.so <executable> [<parameters> ...]
+
+    # on Windows
+    QBDIWinPreloader.exe libqbdi_mytracer.dll <executable> [<parameters> ...]
+
+.. note::
+   QBDIWinPreloader.exe can be found in the installation bin folder of QBDI.
+   its recommended to pass the full path of your injection dll when using this tool.
 
 As the loader is not in the instrumentation range, we recommend setting ``LD_BIND_NOW`` or ``DYLD_BIND_AT_LAUNCH``
 in order to resolve and bind all symbols before the instrumentation.

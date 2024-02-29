@@ -31,7 +31,7 @@ VMAction countIteration(VMInstanceRef vm, GPRState *gprState,
   return QBDI_CONTINUE;
 }
 
-static const size_t STACK_SIZE = 0x100000; // 1MB
+static const uint32_t STACK_SIZE = 0x100000; // 1MB
 
 int main(int argc, char **argv) {
   int n = 0;
@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
   res = qbdi_call(vm, &retvalue, (rword)fibonacci, 1, n);
   assert(res == true);
 
-  printf("fibonnaci(%d) returns %ld after %d recursions\n", n, retvalue,
+  printf("fibonnaci(%d) returns %zd after %d recursions\n", n, retvalue,
          iterationCount);
 
   // cleanup

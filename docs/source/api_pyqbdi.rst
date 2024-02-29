@@ -8,7 +8,7 @@ Introduction
 
 We offer bindings for Python, the whole C/C++ API is available through them, but they are also backed up by plenty of helpers that fluidify the script writing.
 
-On Linux and macOS, PyQBDI supports QBDIPreload as :ref:`PyQBDIPreload <pyqbdipreload_api>`.
+On Linux, macOS and Windows, PyQBDI supports QBDIPreload as :ref:`PyQBDIPreload <pyqbdipreload_api>`.
 
 However, you must be aware that PyQBDI has some limitations:
 

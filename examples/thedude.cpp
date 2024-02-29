@@ -21,8 +21,8 @@ QBDI_NOINLINE uint64_t magicPow(uint64_t n, uint64_t e) {
 QBDI_NOINLINE uint64_t magicHash(const char *secret) {
   uint64_t hash = 0;
   uint64_t acc = 1;
-  int len = strlen(secret);
-  int i = 0;
+  size_t len = strlen(secret);
+  size_t i = 0;
 
   for (i = 0; i < len; i++) {
     uint64_t magic = magicPow(secret[i], acc);
