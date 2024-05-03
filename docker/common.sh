@@ -1,7 +1,11 @@
 
-QBDI_VERSION="0.10.1-devel"
+QBDI_VERSION="0.11.0-devel"
 DOCKERHUB_REPO="qbdi/qbdi"
 DOCKER_BUILD_DIR="/home/docker/qbdi/build"
+
+DEBIAN_TARGET="bookworm"
+UBUNTU_LTS_TARGET="24.04"
+UBUNTU_LAST_TARGET="23.10"
 
 prepare_archive (){
     pushd "$(git rev-parse --show-toplevel)" >/dev/null

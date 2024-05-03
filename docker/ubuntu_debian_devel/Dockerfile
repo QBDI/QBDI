@@ -24,7 +24,7 @@ RUN apt-get update && \
         g++ \
         g++-multilib \
         git \
-        libstdc++-10-dev \
+        libstdc++-11-dev \
         ninja-build \
         pkg-config \
         wget \

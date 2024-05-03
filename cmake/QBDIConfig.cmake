@@ -24,13 +24,13 @@ endif()
 # QBDI Version
 # ========================
 # note: the version should also be changed in the followed files:
-# - docker/archlinux/PKGBUILD.linux-{X86|X86_64}
+# - docker/archlinux/PKGBUILD.{X86|X86_64}
 # - docker/common.sh
 # - setup.cfg
 # - tools/frida-qbdi.js
 set(QBDI_VERSION_MAJOR 0)
-set(QBDI_VERSION_MINOR 10)
-set(QBDI_VERSION_PATCH 1)
+set(QBDI_VERSION_MINOR 11)
+set(QBDI_VERSION_PATCH 0)
 set(QBDI_VERSION_DEV 1)
 
 set(QBDI_VERSION_STRING

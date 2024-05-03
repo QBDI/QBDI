@@ -9,20 +9,18 @@ ENV USER="docker" \
     PREFIX="/usr" \
     QBDI_PLATFORM="linux"
 
-# create a user
-RUN adduser --disabled-password --gecos '' --home "$HOME" "$USER"
-
 # Get latest package list, upgrade packages, install required packages
 # and cleanup to keep container as small as possible
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
+        adduser \
         bash \
         build-essential \
         cmake \
         g++ \
         git \
-        libstdc++-10-dev \
+        libstdc++-11-dev \
         ninja-build \
         pkg-config \
         wget \
@@ -31,6 +29,9 @@ RUN apt-get update && \
         python3-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# create a user
+RUN adduser --disabled-password --gecos '' --home "$HOME" "$USER"
 
 # build / test / install QBDI
 ARG CMAKE_ARGUMENT=""
