@@ -16,6 +16,10 @@ jobs:
       QBDI_PLATFORM: 'osx'
       MACOSX_DEPLOYMENT_TARGET: '10.14'
     steps:
+      - name: Set up Python env
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: Install system dependencies
         run: |
           brew install cmake ninja ccache
@@ -71,6 +75,10 @@ jobs:
       QBDI_PLATFORM: 'osx'
       MACOSX_DEPLOYMENT_TARGET: '10.14'
     steps:
+      - name: Set up Python env
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: Install system dependencies
         run: |
           brew install cmake ninja ccache

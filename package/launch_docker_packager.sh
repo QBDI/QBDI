@@ -32,11 +32,7 @@ build_ubuntu_debian() {
         DOCKER_IMG="${OS}:${TAG}"
     fi
 
-    if [[ "${OS}" = "ubuntu" && "${TAG}" = "18.04" ]]; then
-      DOCKERFILE="${GITDIR}/docker/ubuntu_debian/Dockerfile.ubuntu18_04"
-    else
-      DOCKERFILE="${GITDIR}/docker/ubuntu_debian/Dockerfile"
-    fi
+    DOCKERFILE="${GITDIR}/docker/ubuntu_debian/Dockerfile"
 
     docker build "${BASEDIR}" -t ${IMG_TAG} -f "${DOCKERFILE}" \
                               --build-arg DOCKER_IMG="${DOCKER_IMG}" \
@@ -72,38 +68,35 @@ build_archlinux () {
 
 prepare_archive
 
-# debian11 ARM
-build_ubuntu_debian debian 11 ARM
+# debian12 ARM
+build_ubuntu_debian debian "${DEBIAN_TARGET}" ARM
 
-# debian11 AARCH64
-build_ubuntu_debian debian 11 AARCH64
+# debian12 AARCH64
+build_ubuntu_debian debian "${DEBIAN_TARGET}" AARCH64
 
-# debian11 x86
-build_ubuntu_debian debian 11 X86
+# debian12 x86
+build_ubuntu_debian debian "${DEBIAN_TARGET}" X86
 
-# debian11 x64
-build_ubuntu_debian debian 11 X86_64
-
-# ubuntu 18.04 x86
-build_ubuntu_debian ubuntu 18.04 X86
+# debian12 x64
+build_ubuntu_debian debian "${DEBIAN_TARGET}" X86_64
 
 # ubuntu lts x64
-build_ubuntu_debian ubuntu 22.04 X86_64
+build_ubuntu_debian ubuntu "${UBUNTU_LTS_TARGET}" X86_64
 
 # ubuntu lts ARM
-build_ubuntu_debian ubuntu 22.04 ARM
+build_ubuntu_debian ubuntu "${UBUNTU_LTS_TARGET}" ARM
 
 # ubuntu lts AARCH64
-build_ubuntu_debian ubuntu 22.04 AARCH64
+build_ubuntu_debian ubuntu "${UBUNTU_LTS_TARGET}" AARCH64
 
-# ubuntu 22.10 x64
-build_ubuntu_debian ubuntu 22.10 X86_64
+# ubuntu 23.10 x64
+build_ubuntu_debian ubuntu "${UBUNTU_LAST_TARGET}" X86_64
 
-# ubuntu 22.10 ARM
-build_ubuntu_debian ubuntu 22.10 ARM
+# ubuntu 23.10 ARM
+build_ubuntu_debian ubuntu "${UBUNTU_LAST_TARGET}" ARM
 
-# ubuntu 22.10 AARCH64
-build_ubuntu_debian ubuntu 22.10 AARCH64
+# ubuntu 23.10 AARCH64
+build_ubuntu_debian ubuntu "${UBUNTU_LAST_TARGET}" AARCH64
 
 # archlinux x64
 build_archlinux X86_64

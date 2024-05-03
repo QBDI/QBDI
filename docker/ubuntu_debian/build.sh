@@ -34,11 +34,7 @@ DISTRIB="${DOCKER_IMG##*/}"
 
 DOCKER_TAG="qbdi:${ARCH}_${DOCKER_IMG##*/}_${TAG}"
 
-if [[ "${DISTRIB}" = "ubuntu" && "${TAG}" = "18.04" ]]; then
-  DOCKERFILE="${BASEDIR}/Dockerfile.ubuntu18_04"
-else
-  DOCKERFILE="${BASEDIR}/Dockerfile"
-fi
+DOCKERFILE="${BASEDIR}/Dockerfile"
 
 prepare_archive
 
