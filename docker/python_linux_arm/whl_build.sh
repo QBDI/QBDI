@@ -6,7 +6,7 @@ cd $(dirname "$0")
 BASEDIR=$(pwd -P)
 GITDIR=$(git rev-parse --show-toplevel)
 TAG_PREFIX="pyqbdi/wheel_arm_building"
-BASE_DEBIAN="buster"
+BASE_DEBIAN="bookworm"
 PYTHON_VERSION="$1"
 
 ./images/build_docker_img.sh "${PYTHON_VERSION}"

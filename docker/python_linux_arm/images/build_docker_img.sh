@@ -5,7 +5,7 @@ set -ex
 cd "$(dirname "$0")"
 BASEDIR="$(pwd -P)"
 TAG_PREFIX="pyqbdi/wheel_arm_building"
-BASE_DEBIAN="buster"
+BASE_DEBIAN="bookworm"
 PYTHON_VERSION="$1"
 
 build_python_image() {
