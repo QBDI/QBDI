@@ -26,7 +26,7 @@ push_image() {
 
 docker_logout() {
     if [[ "${PUSH_IMAGE}" -ne 0 ]]; then
-        docker login
+        docker logout
     fi
 }
 
