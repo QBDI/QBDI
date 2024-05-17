@@ -1,8 +1,10 @@
 CHANGELOG
 =========
 
-Next Release (0.10.1)
----------------------
+Version (0.11.0)
+----------------
+
+2024-05-17 QBDI Team <qbdi@quarkslab.com>
 
 * Fix ARM instrumentation for 'mov pc, lr' (`#241 <https://github.com/QBDI/QBDI/pull/241>`__)
 * Add switchStackAndCall API (`#245 <https://github.com/QBDI/QBDI/pull/245>`__)
@@ -10,6 +12,9 @@ Next Release (0.10.1)
   ``QBDI::InstAnalysis::moduleName`` and ``QBDI::InstAnalysis::symbolName``. The
   same changed applied in C, C++, Python and JS API, but Python and JS API
   deprecated but still support the previous name.
+* Update LLVM to LLVM17 (`#253 <https://github.com/QBDI/QBDI/pull/253>`_)
+* Support copy and pickle for GPRState and FPRState in PyQBDI (`#247 <https://github.com/QBDI/QBDI/pull/247>`_, `#248 <https://github.com/QBDI/QBDI/pull/248>`_)
+* Support python 3.12 (`#247 <https://github.com/QBDI/QBDI/pull/247>`_)
 
 Version 0.10.0
 --------------
