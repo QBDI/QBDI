@@ -76,7 +76,7 @@ void removeConflictModule(VMInstanceRef vm, qbdi_MemoryMap *modules,
         (strstr(modules[i].name, "libc-2.") ||
          strstr(modules[i].name, "libc.so.") ||
          strstr(modules[i].name, "ld-2.") ||
-         strstr(modules[i].name, "ld-linux") ||
+         strstr(modules[i].name, "ld-linux-") ||
          strstr(modules[i].name, "libpthread-") ||
          strstr(modules[i].name, "libcofi") || modules[i].name[0] == 0)) {
       qbdi_removeInstrumentedRange(vm, modules[i].start, modules[i].end);
