@@ -8,8 +8,8 @@ static VMAction onInstruction(VMInstanceRef vm, GPRState *gprState,
   const InstAnalysis *instAnalysis = qbdi_getInstAnalysis(
       vm, QBDI_ANALYSIS_INSTRUCTION | QBDI_ANALYSIS_DISASSEMBLY |
               QBDI_ANALYSIS_SYMBOL);
-  if (instAnalysis->symbol != NULL) {
-    printf("%20s+%05u\t", instAnalysis->symbol, instAnalysis->symbolOffset);
+  if (instAnalysis->symbolName != NULL) {
+    printf("%20s+%05u\t", instAnalysis->symbolName, instAnalysis->symbolOffset);
   } else {
     printf("%26s\t", "");
   }
