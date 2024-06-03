@@ -158,7 +158,7 @@ def install_pyqbdi():
     current_branch = os.environ.get('READTHEDOCS_VERSION', git_repo.head.shorthand)
     if current_branch in ['latest', 'stable']:
         current_branch = 'master'
-    current_hash = git_repo.head.target.hex
+    current_hash = str(git_repo.head.target)
 
     workflow_ID = get_workflow_id(workflow_name)
 
