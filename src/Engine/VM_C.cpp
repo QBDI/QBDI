@@ -34,7 +34,7 @@ namespace QBDI {
 
 void qbdi_initVM(VMInstanceRef *instance, const char *cpu, const char **mattrs,
                  Options opts) {
-  QBDI_REQUIRE_ACTION(instance, return );
+  QBDI_REQUIRE_ACTION(instance, return);
 
   *instance = nullptr;
   std::string cpuStr = "";
@@ -54,12 +54,12 @@ void qbdi_initVM(VMInstanceRef *instance, const char *cpu, const char **mattrs,
 }
 
 void qbdi_terminateVM(VMInstanceRef instance) {
-  QBDI_REQUIRE_ACTION(instance, return );
+  QBDI_REQUIRE_ACTION(instance, return);
   delete static_cast<VM *>(instance);
 }
 
 void qbdi_addInstrumentedRange(VMInstanceRef instance, rword start, rword end) {
-  QBDI_REQUIRE_ACTION(instance, return );
+  QBDI_REQUIRE_ACTION(instance, return);
   static_cast<VM *>(instance)->addInstrumentedRange(start, end);
 }
 
@@ -80,12 +80,12 @@ bool qbdi_instrumentAllExecutableMaps(VMInstanceRef instance) {
 
 void qbdi_removeInstrumentedRange(VMInstanceRef instance, rword start,
                                   rword end) {
-  QBDI_REQUIRE_ACTION(instance, return );
+  QBDI_REQUIRE_ACTION(instance, return);
   static_cast<VM *>(instance)->removeInstrumentedRange(start, end);
 }
 
 void qbdi_removeAllInstrumentedRanges(VMInstanceRef instance) {
-  QBDI_REQUIRE_ACTION(instance, return );
+  QBDI_REQUIRE_ACTION(instance, return);
   static_cast<VM *>(instance)->removeAllInstrumentedRanges();
 }
 
@@ -165,14 +165,24 @@ FPRState *qbdi_getFPRState(VMInstanceRef instance) {
   return static_cast<VM *>(instance)->getFPRState();
 }
 
+uint32_t qbdi_getErrno(VMInstanceRef instance) {
+  QBDI_REQUIRE_ACTION(instance, return 0);
+  return static_cast<VM *>(instance)->getErrno();
+}
+
 void qbdi_setGPRState(VMInstanceRef instance, GPRState *gprState) {
-  QBDI_REQUIRE_ACTION(instance, return );
+  QBDI_REQUIRE_ACTION(instance, return);
   static_cast<VM *>(instance)->setGPRState(gprState);
 }
 
 void qbdi_setFPRState(VMInstanceRef instance, FPRState *fprState) {
-  QBDI_REQUIRE_ACTION(instance, return );
+  QBDI_REQUIRE_ACTION(instance, return);
   static_cast<VM *>(instance)->setFPRState(fprState);
+}
+
+void qbdi_setErrno(VMInstanceRef instance, uint32_t backupErrno) {
+  QBDI_REQUIRE_ACTION(instance, return);
+  static_cast<VM *>(instance)->setErrno(backupErrno);
 }
 
 Options qbdi_getOptions(VMInstanceRef instance) {
@@ -181,7 +191,7 @@ Options qbdi_getOptions(VMInstanceRef instance) {
 }
 
 void qbdi_setOptions(VMInstanceRef instance, Options options) {
-  QBDI_REQUIRE_ACTION(instance, return );
+  QBDI_REQUIRE_ACTION(instance, return);
   static_cast<VM *>(instance)->setOptions(options);
 }
 
@@ -248,7 +258,7 @@ bool qbdi_deleteInstrumentation(VMInstanceRef instance, uint32_t id) {
 }
 
 void qbdi_deleteAllInstrumentations(VMInstanceRef instance) {
-  QBDI_REQUIRE_ACTION(instance, return );
+  QBDI_REQUIRE_ACTION(instance, return);
   static_cast<VM *>(instance)->deleteAllInstrumentations();
 }
 
@@ -340,7 +350,7 @@ uint32_t qbdi_addInstrRuleRange(VMInstanceRef instance, rword start, rword end,
 
 void qbdi_addInstrRuleData(InstrRuleDataVec cbks, InstPosition position,
                            InstCallback cbk, void *data, int priority) {
-  QBDI_REQUIRE_ACTION(cbks, return );
+  QBDI_REQUIRE_ACTION(cbks, return);
   cbks->emplace_back(position, cbk, data, priority);
 }
 

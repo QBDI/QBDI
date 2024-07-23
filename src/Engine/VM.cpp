@@ -346,14 +346,14 @@ FPRState *VM::getFPRState() const { return engine->getFPRState(); }
 // setGPRState
 
 void VM::setGPRState(const GPRState *gprState) {
-  QBDI_REQUIRE_ACTION(gprState != nullptr, return );
+  QBDI_REQUIRE_ACTION(gprState != nullptr, return);
   engine->setGPRState(gprState);
 }
 
 // setFPRState
 
 void VM::setFPRState(const FPRState *fprState) {
-  QBDI_REQUIRE_ACTION(fprState != nullptr, return );
+  QBDI_REQUIRE_ACTION(fprState != nullptr, return);
   engine->setFPRState(fprState);
 }
 
@@ -373,7 +373,7 @@ void VM::setOptions(Options options) {
 // addInstrumentedRange
 
 void VM::addInstrumentedRange(rword start, rword end) {
-  QBDI_REQUIRE_ACTION(start < end, return );
+  QBDI_REQUIRE_ACTION(start < end, return);
   engine->addInstrumentedRange(start, end);
 }
 
@@ -398,7 +398,7 @@ bool VM::instrumentAllExecutableMaps() {
 // removeInstrumentedRange
 
 void VM::removeInstrumentedRange(rword start, rword end) {
-  QBDI_REQUIRE_ACTION(start < end, return );
+  QBDI_REQUIRE_ACTION(start < end, return);
   engine->removeInstrumentedRange(start, end);
 }
 
@@ -805,13 +805,19 @@ uint32_t VM::addMemRangeCB(rword start, rword end, MemoryAccessType type,
   QBDI_REQUIRE_ACTION(type & MEMORY_READ_WRITE,
                       return VMError::INVALID_EVENTID);
   QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
+  recordMemoryAccess(type);
   if ((type == MEMORY_READ) && memReadGateCBID == VMError::INVALID_EVENTID) {
-    memReadGateCBID =
-        addMemAccessCB(MEMORY_READ, memReadGate, memCBInfos.get());
+    memReadGateCBID = engine->addInstrRule(InstrRuleBasicCBK::unique(
+        DoesReadAccess::unique(), memReadGate, memCBInfos.get(),
+        InstPosition::PREINST, true, 0, RelocTagPreInstStdCBK));
   }
   if ((type & MEMORY_WRITE) && memWriteGateCBID == VMError::INVALID_EVENTID) {
-    memWriteGateCBID =
-        addMemAccessCB(MEMORY_READ_WRITE, memWriteGate, memCBInfos.get());
+    // memWriteGate manage MEMORY_WRITE and MEMORY_READ_WRITE callback
+    memWriteGateCBID = engine->addInstrRule(InstrRuleBasicCBK::unique(
+        Or::unique(conv_unique<PatchCondition>(DoesReadAccess::unique(),
+                                               DoesWriteAccess::unique())),
+        memWriteGate, memCBInfos.get(), InstPosition::POSTINST, true, 0,
+        RelocTagPostInstStdCBK));
   }
   uint32_t id = memCBID++;
   QBDI_REQUIRE_ACTION(id < EVENTID_VIRTCB_MASK,

@@ -156,7 +156,7 @@ WritePC::generate(const Patch &patch, TempManager &temp_manager) const {
     case llvm::ARM::t2LDRpci:
     case llvm::ARM::t2LDRs:
     case llvm::ARM::tPOP:
-      if ((patch.llvmcpu->getOptions() & Options::OPT_ARMv4_bit) != 0) {
+      if (patch.llvmcpu->hasOptions(Options::OPT_ARMv4_bit)) {
         if (cpumode == CPUMode::Thumb) {
           forceThumb = true;
         } else {
@@ -209,7 +209,7 @@ WritePC::generate(const Patch &patch, TempManager &temp_manager) const {
     case llvm::ARM::tMOVr:
       if (cpumode == CPUMode::Thumb) {
         forceThumb = true;
-      } else if ((patch.llvmcpu->getOptions() & Options::OPT_ARMv5T_6) != 0) {
+      } else if (patch.llvmcpu->hasOptions(Options::OPT_ARMv5T_6)) {
         forceARM = true;
       }
       break;
@@ -327,7 +327,7 @@ SetExchange::generate(const Patch &patch, TempManager &temp_manager) const {
     case llvm::ARM::t2LDRpci:
     case llvm::ARM::t2LDRs:
     case llvm::ARM::tPOP:
-      if ((patch.llvmcpu->getOptions() & Options::OPT_ARMv4_bit) != 0) {
+      if (patch.llvmcpu->hasOptions(Options::OPT_ARMv4_bit)) {
         return {};
       }
       break;
@@ -371,7 +371,7 @@ SetExchange::generate(const Patch &patch, TempManager &temp_manager) const {
     case llvm::ARM::SUBri:
     case llvm::ARM::SUBrr:
     case llvm::ARM::SUBrsi:
-      if ((patch.llvmcpu->getOptions() & Options::OPT_ARMv5T_6) != 0 ||
+      if (patch.llvmcpu->hasOptions(Options::OPT_ARMv5T_6) or
           cpumode != CPUMode::ARM) {
         return {};
       }
@@ -1173,6 +1173,15 @@ GetWrittenAddress::generate(const Patch &patch,
 RelocatableInst::UniquePtrVec
 GetReadValue::generate(const Patch &patch, TempManager &temp_manager) const {
   Reg tmpRegister = temp_manager.getRegForTemp(temp);
+
+  if (patch.llvmcpu->hasOptions(Options::OPT_DISABLE_MEMORYACCESS_VALUE)) {
+    if (index == 0) {
+      return conv_unique<RelocatableInst>(LoadImm::unique(tmpRegister, 0));
+    } else {
+      return {};
+    }
+  }
+
   Reg addrRegister = temp_manager.getRegForTemp(addr);
 
   bool isARM = (patch.llvmcpu->getCPUMode() == CPUMode::ARM);
@@ -1283,6 +1292,15 @@ GetReadValue::generate(const Patch &patch, TempManager &temp_manager) const {
 RelocatableInst::UniquePtrVec
 GetWrittenValue::generate(const Patch &patch, TempManager &temp_manager) const {
   Reg tmpRegister = temp_manager.getRegForTemp(temp);
+
+  if (patch.llvmcpu->hasOptions(Options::OPT_DISABLE_MEMORYACCESS_VALUE)) {
+    if (index == 0) {
+      return conv_unique<RelocatableInst>(LoadImm::unique(tmpRegister, 0));
+    } else {
+      return {};
+    }
+  }
+
   Reg addrRegister = temp_manager.getRegForTemp(addr);
 
   bool isARM = (patch.llvmcpu->getCPUMode() == CPUMode::ARM);
@@ -1395,6 +1413,17 @@ BackupValueX2::generate(const Patch &patch, TempManager &temp_manager) const {
 
   Reg tmpRegister = temp_manager.getRegForTemp(temp);
   Reg tmp2Register = temp_manager.getRegForTemp(temp2);
+
+  if (patch.llvmcpu->hasOptions(Options::OPT_DISABLE_MEMORYACCESS_VALUE)) {
+    // only set to zero for the first BackupValueX2
+    if (shadow.getTag() != shadow2.getTag()) {
+      return conv_unique<RelocatableInst>(LoadImm::unique(tmpRegister, 0),
+                                          LoadImm::unique(tmp2Register, 0));
+    } else {
+      return {};
+    }
+  }
+
   Reg addrRegister = temp_manager.getRegForTemp(addr);
 
   QBDI_REQUIRE_ABORT_PATCH(tmpRegister != tmp2Register, patch,

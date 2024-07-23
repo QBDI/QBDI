@@ -1,4 +1,5 @@
 add_library(QBDIPreload STATIC)
+add_library(QBDIPreload::QBDIPreload ALIAS QBDIPreload)
 
 include("${CMAKE_CURRENT_LIST_DIR}/src/CMakeLists.txt")
 
@@ -18,9 +19,9 @@ target_compile_options(
 # Also add build directory as include path for the mach_exc.h header
 target_include_directories(
   QBDIPreload
-  PRIVATE $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
-          $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include-static>
-          $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+  PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../../include>
+          $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../../include-static>
+          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include>
           $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
           $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
           $<INSTALL_INTERFACE:include>)

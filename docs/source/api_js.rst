@@ -28,7 +28,7 @@ With Frida API, the QBDI object is the equivalent of the VM object in C++ API.
                      addInstrumentedModule, addInstrumentedModuleFromAddr, addInstrumentedRange, instrumentAllExecutableMaps,
                      removeInstrumentedRange, removeInstrumentedModule, removeInstrumentedModuleFromAddr, removeAllInstrumentedRanges,
                      getInstAnalysis, getCachedInstAnalysis, getInstMemoryAccess, getBBMemoryAccess, precacheBasicBlock,
-                     clearCache, clearAllCache, getGPRState, getFPRState, setGPRState, setFPRState, run, call, simulateCall,
+                     clearCache, clearAllCache, getGPRState, getFPRState, getErrno, setGPRState, setFPRState, setErrno, run, call, simulateCall,
                      allocateVirtualStack, alignedAlloc, alignedFree, getModuleNames, getOptions, setOptions
 
 Options
@@ -47,9 +47,13 @@ State management
 
 .. js:autofunction:: VM#getFPRState
 
+.. js:autofunction:: VM#getErrno
+
 .. js:autofunction:: VM#setGPRState
 
 .. js:autofunction:: VM#setFPRState
+
+.. js:autofunction:: VM#setErrno
 
 .. _instrumentation-range-js:
 
@@ -567,6 +571,8 @@ Other globals
     .. js:autoattribute:: NO_OPT
     .. js:autoattribute:: OPT_DISABLE_FPR
     .. js:autoattribute:: OPT_DISABLE_OPTIONAL_FPR
+    .. js:autoattribute:: OPT_DISABLE_MEMORYACCESS_VALUE
+    .. js:autoattribute:: OPT_DISABLE_ERRNO_BACKUP
     .. js:autoattribute:: OPT_ATT_SYNTAX
     .. js:autoattribute:: OPT_ENABLE_FS_GS
 

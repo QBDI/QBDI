@@ -1735,6 +1735,14 @@ enum MemoryTag : uint16_t {
 
 const PatchGenerator::UniquePtrVec &
 generateReadInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
+  if (llvmcpu.hasOptions(Options::OPT_DISABLE_MEMORYACCESS_VALUE)) {
+    static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
+        GetReadAddress::unique(Temp(0)),
+        WriteTemp::unique(Temp(0), Shadow(MEM_READ_ADDRESS_TAG)),
+        SetCondReachAndJump::unique(Temp(0), Shadow(MEN_COND_REACH_TAG),
+                                    PatchGenerator::UniquePtrVec()));
+    return r;
+  }
   switch (getReadSize(patch.metadata.inst, llvmcpu)) {
     case 1:
     case 2:
@@ -2144,6 +2152,12 @@ generatePreWriteInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
 
 const PatchGenerator::UniquePtrVec &
 generatePostWriteInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
+  if (llvmcpu.hasOptions(Options::OPT_DISABLE_MEMORYACCESS_VALUE)) {
+    static const PatchGenerator::UniquePtrVec r = conv_unique<PatchGenerator>(
+        SetCondReachAndJump::unique(Temp(0), Shadow(MEN_COND_REACH_TAG),
+                                    PatchGenerator::UniquePtrVec()));
+    return r;
+  }
   switch (getWriteSize(patch.metadata.inst, llvmcpu)) {
     case 1:
     case 2:
@@ -2578,7 +2592,8 @@ void analyseMemoryAccessAddrValue(const ExecBlock &curExecBlock,
   access.accessAddress = curExecBlock.getShadow(shadows[0].shadowID);
   access.instAddress = curExecBlock.getInstAddress(shadows[0].instID);
 
-  if (access.size > 64) {
+  if (access.size > 64 or
+      llvmcpu.hasOptions(Options::OPT_DISABLE_MEMORYACCESS_VALUE)) {
     access.value = 0;
     access.flags |= MEMORY_UNKNOWN_VALUE;
     // search if the shadow MEN_COND_REACH_TAG is present
@@ -2608,7 +2623,7 @@ void analyseMemoryAccessAddrValue(const ExecBlock &curExecBlock,
                  expectValueTag, access.instAddress);
       return;
     }
-    QBDI_REQUIRE_ACTION(shadows[0].instID == shadows[index].instID, return );
+    QBDI_REQUIRE_ACTION(shadows[0].instID == shadows[index].instID, return);
 
     // if the instruction is conditionnal and the condition hasn't be reach,
     //  drop the shadows.
@@ -2639,9 +2654,9 @@ void analyseMemoryAccessAddrValue(const ExecBlock &curExecBlock,
   dest.push_back(access);
 
   for (; extendShadow > 0; --extendShadow, ++index) {
-    QBDI_REQUIRE_ACTION(index < shadows.size(), return );
-    QBDI_REQUIRE_ACTION(shadows[0].instID == shadows[index].instID, return );
-    QBDI_REQUIRE_ACTION(shadows[index].tag == MEM_VALUE_EXTENDED_TAG, return );
+    QBDI_REQUIRE_ACTION(index < shadows.size(), return);
+    QBDI_REQUIRE_ACTION(shadows[0].instID == shadows[index].instID, return);
+    QBDI_REQUIRE_ACTION(shadows[index].tag == MEM_VALUE_EXTENDED_TAG, return);
 
     access.accessAddress += sizeof(rword);
     access.value = curExecBlock.getShadow(shadows[index].shadowID);
@@ -2665,7 +2680,7 @@ void analyseMemoryAccess(const ExecBlock &curExecBlock, uint16_t instID,
   QBDI_DEBUG("Got {} shadows for Instruction {:x}", shadows.size(), instID);
 
   while (!shadows.empty()) {
-    QBDI_REQUIRE_ACTION(shadows[0].instID == instID, return );
+    QBDI_REQUIRE_ACTION(shadows[0].instID == instID, return);
 
     switch (shadows[0].tag) {
       default:

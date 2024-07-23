@@ -50,10 +50,16 @@ State management
 .. doxygenfunction:: qbdi_getFPRState
     :project: QBDI_C
 
+.. doxygenfunction:: qbdi_getErrno
+    :project: QBDI_C
+
 .. doxygenfunction:: qbdi_setGPRState
     :project: QBDI_C
 
 .. doxygenfunction:: qbdi_setFPRState
+    :project: QBDI_C
+
+.. doxygenfunction:: qbdi_setErrno
     :project: QBDI_C
 
 .. _instrumentation-range-c:
@@ -223,8 +229,8 @@ Register state
 
     An integer of the size of a register
 
-    - uint32_t for X86
-    - uint64_t for X86_64
+    - uint32_t for X86 and ARM
+    - uint64_t for X86_64 and AARCH64
 
 .. cpp:struct:: GPRState
 
@@ -466,6 +472,14 @@ Other globals
   .. cpp:enumerator:: OPT_DISABLE_OPTIONAL_FPR
 
       Disable context switch optimisation when the target execblock doesn't used FPR
+
+  .. cpp:enumerator:: OPT_DISABLE_MEMORYACCESS_VALUE
+
+      Don't load memory access value
+
+  .. cpp:enumerator:: OPT_DISABLE_ERRNO_BACKUP
+
+      Don't save and restore errno
 
   Values for AARCH64 and ARM only :
 

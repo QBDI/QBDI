@@ -81,7 +81,8 @@ void dump_inst(spdlog::level::level_enum level,
   dump_inst(spdlog::level::debug, logger_early_format_(__VA_ARGS__), \
             QBDI_CURRENT_POS, (patch))
 #else
-#define QBDI_DEBUG_BLOCK(block) (void)0
+#define QBDI_DEBUG_BLOCK(block) \
+  { (void)0; }
 #define QBDI_DEBUG(...) (void)0
 #define QBDI_DUMP_PATCH_DEBUG(...) (void)0
 #endif

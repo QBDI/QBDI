@@ -24,6 +24,7 @@
 
 #include "QBDI/Config.h"
 #include "QBDI/State.h"
+#include "QBDI/VM.h"
 #include "Engine/LLVMCPU.h"
 #include "ExecBlock/AARCH64/Context_AARCH64.h"
 #include "ExecBlock/ExecBlock.h"
@@ -72,8 +73,14 @@ void ExecBlock::run() {
   QBDI_GPR_SET(&context->gprState, context->hostState.currentSROffset,
                getDataBlockBase());
 
-  // Execute
-  qbdi_runCodeBlock(codeBlock.base(), context->hostState.executeFlags);
+  // Restore errno and Execute
+  if (not llvmCPUs.hasOptions(Options::OPT_DISABLE_ERRNO_BACKUP)) {
+    errno = vminstance->getErrno();
+    qbdi_runCodeBlock(codeBlock.base(), context->hostState.executeFlags);
+    vminstance->setErrno(errno);
+  } else {
+    qbdi_runCodeBlock(codeBlock.base(), context->hostState.executeFlags);
+  }
 
   // Restore
   QBDI_GPR_SET(&context->gprState, context->hostState.currentSROffset,

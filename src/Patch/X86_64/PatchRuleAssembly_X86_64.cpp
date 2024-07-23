@@ -294,7 +294,8 @@ bool PatchRuleAssembly::changeOptions(Options opts) {
 #if defined(QBDI_ARCH_X86_64)
                                Options::OPT_ENABLE_FS_GS |
 #endif
-                               Options::OPT_DISABLE_OPTIONAL_FPR;
+                               Options::OPT_DISABLE_OPTIONAL_FPR |
+                               Options::OPT_DISABLE_MEMORYACCESS_VALUE;
   if ((opts & needRecreate) != (options & needRecreate)) {
     patchRules = getDefaultPatchRules(opts);
     options = opts;
@@ -362,6 +363,8 @@ bool PatchRuleAssembly::generate(const llvm::MCInst &inst, rword address,
         instPatch.metadata.address = mergePatch.metadata.address;
         instPatch.metadata.instSize += mergePatch.metadata.instSize;
         instPatch.metadata.execblockFlags |= mergePatch.metadata.execblockFlags;
+        instPatch.metadata.prefix = mergePatch.metadata.prefix;
+        instPatch.metadata.prefix.push_back(mergePatch.metadata.inst);
 
         // 5. replace the patch
         mergePatch = std::move(instPatch);

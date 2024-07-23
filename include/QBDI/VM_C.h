@@ -284,6 +284,15 @@ QBDI_EXPORT GPRState *qbdi_getGPRState(VMInstanceRef instance);
  */
 QBDI_EXPORT FPRState *qbdi_getFPRState(VMInstanceRef instance);
 
+/*! Obtain the backuped value of errno, if the option
+ * OPT_DISABLE_ERRNO_BACKUP is not enable.
+ *
+ * @param[in] instance  VM instance.
+ *
+ * @return the backupped value of errno
+ */
+QBDI_EXPORT uint32_t qbdi_getErrno(VMInstanceRef instance);
+
 /*! Set the GPR state
  *
  * @param[in] instance  VM instance.
@@ -299,6 +308,13 @@ QBDI_EXPORT void qbdi_setGPRState(VMInstanceRef instance, GPRState *gprState);
  *                      state.
  */
 QBDI_EXPORT void qbdi_setFPRState(VMInstanceRef instance, FPRState *fprState);
+
+/*! Set the backuped value of errno, if the option
+ * OPT_DISABLE_ERRNO_BACKUP is not enable.
+ *
+ * @param[in] backupErrno the value to set
+ */
+QBDI_EXPORT void qbdi_setErrno(VMInstanceRef instance, uint32_t backupErrno);
 
 /*! Get the current Options
  *

@@ -115,8 +115,8 @@ void analyseCondition(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
   if (n == ((unsigned)-1)) {
     return;
   }
-  QBDI_REQUIRE_ACTION(n < inst.getNumOperands(), return );
-  QBDI_REQUIRE_ACTION(inst.getOperand(n).isImm(), return );
+  QBDI_REQUIRE_ACTION(n < inst.getNumOperands(), return);
+  QBDI_REQUIRE_ACTION(inst.getOperand(n).isImm(), return);
 
   instAnalysis->condition =
       ConditionLLVM2QBDI(static_cast<unsigned>(inst.getOperand(n).getImm()));

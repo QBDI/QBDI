@@ -154,8 +154,10 @@ void init_binding_VM(py::module_ &m) {
       .def("getFPRState", &VM::getFPRState,
            py::return_value_policy::reference_internal,
            "Obtain the current floating point register state.")
+      .def("getErrno", &VM::getErrno, "Get the backuped errno.")
       .def("setGPRState", &VM::setGPRState, "Set the GPR state.", "gprState"_a)
       .def("setFPRState", &VM::setFPRState, "Set the FPR state.", "fprState"_a)
+      .def("setErrno", &VM::setErrno, "Set the backuped errno.", "errno"_a)
       .def("addInstrumentedRange", &VM::addInstrumentedRange,
            "Add an address range to the set of instrumented address ranges.",
            "start"_a, "end"_a)

@@ -20,7 +20,11 @@
 #define QBDITEST_EXECBLOCKTEST_H
 
 #include "TestSetup/LLVMTestEnv.h"
+#include "QBDI/VM.h"
 
-class ExecBlockTest : public LLVMTestEnv {};
+class ExecBlockTest : public LLVMTestEnv {
+public:
+  QBDI::VM vm;
+};
 
 #endif /* QBDITEST_EXECBLOCKTEST_H */

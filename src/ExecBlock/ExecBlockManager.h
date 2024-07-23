@@ -96,8 +96,7 @@ private:
   float getExpansionRatio() const;
 
 public:
-  ExecBlockManager(const LLVMCPUs &llvmCPUs,
-                   VMInstanceRef vminstance = nullptr);
+  ExecBlockManager(const LLVMCPUs &llvmCPUs, VMInstanceRef vminstance);
 
   ~ExecBlockManager();
 

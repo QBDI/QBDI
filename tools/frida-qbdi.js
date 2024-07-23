@@ -291,8 +291,10 @@ var QBDI_C = Object.freeze({
         rword, rword, rword, rword, rword, rword, rword, rword, rword, rword]),
     getGPRState: _qbdibinder.bind('qbdi_getGPRState', 'pointer', ['pointer']),
     getFPRState: _qbdibinder.bind('qbdi_getFPRState', 'pointer', ['pointer']),
+    getErrno: _qbdibinder.bind('qbdi_getErrno', 'uint32', ['pointer']),
     setGPRState: _qbdibinder.bind('qbdi_setGPRState', 'void', ['pointer', 'pointer']),
     setFPRState: _qbdibinder.bind('qbdi_setFPRState', 'void', ['pointer', 'pointer']),
+    setErrno: _qbdibinder.bind('qbdi_setErrno', 'void', ['pointer', 'uint32']),
     addMnemonicCB: _qbdibinder.bind('qbdi_addMnemonicCB', 'uint32', ['pointer', 'pointer', 'uint32', 'pointer', 'pointer', 'int32']),
     addMemAccessCB: _qbdibinder.bind('qbdi_addMemAccessCB', 'uint32', ['pointer', 'uint32', 'pointer', 'pointer', 'int32']),
     addInstrRule: _qbdibinder.bind('qbdi_addInstrRule', 'uint32', ['pointer', 'pointer', 'uint32', 'pointer']),
@@ -794,7 +796,15 @@ export var Options = {
      * Disable context switch optimisation when the target
      * execblock doesn't used FPR.
      */
-    OPT_DISABLE_OPTIONAL_FPR: 1 << 1,
+    OPT_DISABLE_OPTIONAL_FPR : 1 << 1,
+    /**
+     * Don't load the value when perform memory access.
+     */
+    OPT_DISABLE_MEMORYACCESS_VALUE : 1 << 2,
+    /**
+     * Don't save and restore errno.
+     */
+    OPT_DISABLE_ERRNO_BACKUP : 1 << 3,
 };
 if (Process.arch === 'x64') {
     /**
@@ -1250,6 +1260,15 @@ export class VM {
     }
 
     /**
+     * Get the backuped value of errno.
+     *
+     * @return {Integer} errno
+     */
+    getErrno() {
+        return QBDI_C.getErrno(this.#vm);
+    }
+
+    /**
      * Set the GPR state
      *
      * @param {GPRState} state  Array of register values
@@ -1267,6 +1286,15 @@ export class VM {
     setFPRState(state) {
         FPRState.validOrThrow(state);
         QBDI_C.setFPRState(this.#vm, state.ptr);
+    }
+
+    /**
+     * Set the backuped value of errno
+     *
+     * @param {Integer} errno  the value to set
+     */
+    setErrno(errno) {
+        QBDI_C.setErrno(this.#vm, errno);
     }
 
     /**

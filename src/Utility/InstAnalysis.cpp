@@ -497,6 +497,17 @@ const InstAnalysis *analyzeInstMetadata(const InstMetadata &instMetadata,
 
   if (missingType & ANALYSIS_DISASSEMBLY) {
     std::string buffer = llvmcpu.showInst(inst, instMetadata.address);
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+    // support for prefix that isn't include in instruction (like LOCK_PREFIX)
+    if (instMetadata.prefix.size() > 0) {
+      std::string prefix;
+      for (const auto &prefixInst : instMetadata.prefix) {
+        prefix += llvmcpu.showInst(prefixInst, instMetadata.address) + "\t";
+      }
+      buffer = prefix + buffer;
+    }
+#endif
+
     int len = buffer.size() + 1;
     instAnalysis->disassembly = new char[len];
     strncpy(instAnalysis->disassembly, buffer.c_str(), len);
