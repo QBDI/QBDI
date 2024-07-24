@@ -226,7 +226,7 @@ endif()
 set(QBDI_THIRD_PARTY_DIRECTORY
     "${CMAKE_CURRENT_SOURCE_DIR}/third-party/"
     CACHE STRING "Dependency download directory")
-include(QBDI_llvm)
+include(QBDIDependencies)
 
 # Setup assembly compile
 if(QBDI_PLATFORM_WINDOWS)
@@ -271,8 +271,6 @@ if(QBDI_ARCH_ARM)
         "${CMAKE_MODULE_LINKER_FLAGS} -mthumb-interwork")
   endif()
 endif()
-
-include(spdlog)
 
 # Add QBDI source file in QBDI_obj
 add_library(QBDI_src INTERFACE)
