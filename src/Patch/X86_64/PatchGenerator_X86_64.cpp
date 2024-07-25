@@ -73,12 +73,12 @@ GetPCOffset::generate(const Patch &patch, TempManager &temp_manager) const {
         LoadImm::unique(temp_manager.getRegForTemp(temp),
                         Constant(patch.metadata.endAddress() + cst)));
   } else if (type == OperandType) {
-    QBDI_REQUIRE_ABORT_PATCH(op < patch.metadata.inst.getNumOperands(), patch,
-                             "Invalid operand {}", op);
+    QBDI_REQUIRE_ABORT(op < patch.metadata.inst.getNumOperands(),
+                       "Invalid operand {} {}", op, patch);
 
     // FIXME: Implement for register operand
-    QBDI_REQUIRE_ABORT_PATCH(patch.metadata.inst.getOperand(op).isImm(), patch,
-                             "Unexpected operand type");
+    QBDI_REQUIRE_ABORT(patch.metadata.inst.getOperand(op).isImm(),
+                       "Unexpected operand type {}", patch);
     return conv_unique<RelocatableInst>(
         LoadImm::unique(temp_manager.getRegForTemp(temp),
                         Constant(patch.metadata.endAddress() +
@@ -146,7 +146,7 @@ GetReadAddress::generate(const Patch &patch, TempManager &temp_manager) const {
     }
     // Implicit RSI or RDI
     else if (implicitDSIAccess(inst, desc)) {
-      QBDI_REQUIRE_ABORT_PATCH(index < 2, patch, "Wrong index {}", index);
+      QBDI_REQUIRE_ABORT(index < 2, "Wrong index {} {}", index, patch);
       RegLLVM reg(0);
       if (FormDesc == llvm::X86II::RawFrmSrc ||
           (FormDesc == llvm::X86II::RawFrmDstSrc and index == 0)) {
@@ -162,12 +162,12 @@ GetReadAddress::generate(const Patch &patch, TempManager &temp_manager) const {
     }
     // Moffs access
     else if (FormDesc == llvm::X86II::RawFrmMemOffs) {
-      QBDI_REQUIRE_ABORT_PATCH(1 < inst.getNumOperands(), patch,
-                               "Unexpected number of operand");
-      QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(0).isImm(), patch,
-                               "Unexpected operand type");
-      QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(1).isReg(), patch,
-                               "Unexpected operand type");
+      QBDI_REQUIRE_ABORT(1 < inst.getNumOperands(),
+                         "Unexpected number of operand {}", patch);
+      QBDI_REQUIRE_ABORT(inst.getOperand(0).isImm(),
+                         "Unexpected operand type {}", patch);
+      QBDI_REQUIRE_ABORT(inst.getOperand(1).isReg(),
+                         "Unexpected operand type {}", patch);
       return conv_unique<RelocatableInst>(Lea(dest, 0, 1, 0,
                                               inst.getOperand(0).getImm(),
                                               inst.getOperand(1).getReg()));
@@ -184,19 +184,19 @@ GetReadAddress::generate(const Patch &patch, TempManager &temp_manager) const {
     else if (memIndex >= 0) {
       unsigned realMemIndex = memIndex + llvm::X86II::getOperandBias(desc);
 
-      QBDI_REQUIRE_ABORT_PATCH(realMemIndex + 4 < inst.getNumOperands(), patch,
-                               "Unexpected number of operand {}",
-                               realMemIndex + 4);
-      QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(realMemIndex + 0).isReg(), patch,
-                               "Unexpected operand type");
-      QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(realMemIndex + 1).isImm(), patch,
-                               "Unexpected operand type");
-      QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(realMemIndex + 2).isReg(), patch,
-                               "Unexpected operand type");
-      QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(realMemIndex + 3).isImm(), patch,
-                               "Unexpected operand type");
-      QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(realMemIndex + 4).isReg(), patch,
-                               "Unexpected operand type");
+      QBDI_REQUIRE_ABORT(realMemIndex + 4 < inst.getNumOperands(),
+                         "Unexpected number of operand {} {}", realMemIndex + 4,
+                         patch);
+      QBDI_REQUIRE_ABORT(inst.getOperand(realMemIndex + 0).isReg(),
+                         "Unexpected operand type {}", patch);
+      QBDI_REQUIRE_ABORT(inst.getOperand(realMemIndex + 1).isImm(),
+                         "Unexpected operand type {}", patch);
+      QBDI_REQUIRE_ABORT(inst.getOperand(realMemIndex + 2).isReg(),
+                         "Unexpected operand type {}", patch);
+      QBDI_REQUIRE_ABORT(inst.getOperand(realMemIndex + 3).isImm(),
+                         "Unexpected operand type {}", patch);
+      QBDI_REQUIRE_ABORT(inst.getOperand(realMemIndex + 4).isReg(),
+                         "Unexpected operand type {}", patch);
 
       // If it uses PC as a base register, substitute PC
       if (inst.getOperand(realMemIndex + 0).getReg() == GPR_ID[REG_PC]) {
@@ -218,8 +218,8 @@ GetReadAddress::generate(const Patch &patch, TempManager &temp_manager) const {
       }
     }
   }
-  QBDI_ABORT_PATCH(patch,
-                   "Called on an instruction which does not make read access");
+  QBDI_ABORT("Called on an instruction which does not make read access {}",
+             patch);
 }
 
 // GetWriteAddress
@@ -263,12 +263,12 @@ GetWriteAddress::generate(const Patch &patch, TempManager &temp_manager) const {
     }
     // Moffs access
     else if (FormDesc == llvm::X86II::RawFrmMemOffs) {
-      QBDI_REQUIRE_ABORT_PATCH(2 <= inst.getNumOperands(), patch,
-                               "Unexpected number of operand");
-      QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(0).isImm(), patch,
-                               "Unexpected operand type");
-      QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(1).isReg(), patch,
-                               "Unexpected operand type");
+      QBDI_REQUIRE_ABORT(2 <= inst.getNumOperands(),
+                         "Unexpected number of operand {}", patch);
+      QBDI_REQUIRE_ABORT(inst.getOperand(0).isImm(),
+                         "Unexpected operand type {}", patch);
+      QBDI_REQUIRE_ABORT(inst.getOperand(1).isReg(),
+                         "Unexpected operand type {}", patch);
       return conv_unique<RelocatableInst>(Lea(dest, 0, 1, 0,
                                               inst.getOperand(0).getImm(),
                                               inst.getOperand(1).getReg()));
@@ -277,27 +277,27 @@ GetWriteAddress::generate(const Patch &patch, TempManager &temp_manager) const {
     else if (opcode == llvm::X86::MOVDIR64B16 ||
              opcode == llvm::X86::MOVDIR64B32 ||
              opcode == llvm::X86::MOVDIR64B64) {
-      QBDI_REQUIRE_ABORT_PATCH(0 < inst.getNumOperands(), patch,
-                               "Unexpected number of operand");
+      QBDI_REQUIRE_ABORT(0 < inst.getNumOperands(),
+                         "Unexpected number of operand {}", patch);
       return conv_unique<RelocatableInst>(
           MovReg::unique(dest, inst.getOperand(0).getReg()));
     }
     // Else replace the instruction with a LEA on the same address
     else if (memIndex >= 0) {
       unsigned realMemIndex = memIndex + llvm::X86II::getOperandBias(desc);
-      QBDI_REQUIRE_ABORT_PATCH(realMemIndex + 4 < inst.getNumOperands(), patch,
-                               "Unexpected number of operand {}",
-                               realMemIndex + 4);
-      QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(realMemIndex + 0).isReg(), patch,
-                               "Unexpected operand type");
-      QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(realMemIndex + 1).isImm(), patch,
-                               "Unexpected operand type");
-      QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(realMemIndex + 2).isReg(), patch,
-                               "Unexpected operand type");
-      QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(realMemIndex + 3).isImm(), patch,
-                               "Unexpected operand type");
-      QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(realMemIndex + 4).isReg(), patch,
-                               "Unexpected operand type");
+      QBDI_REQUIRE_ABORT(realMemIndex + 4 < inst.getNumOperands(),
+                         "Unexpected number of operand {} {}", realMemIndex + 4,
+                         patch);
+      QBDI_REQUIRE_ABORT(inst.getOperand(realMemIndex + 0).isReg(),
+                         "Unexpected operand type {}", patch);
+      QBDI_REQUIRE_ABORT(inst.getOperand(realMemIndex + 1).isImm(),
+                         "Unexpected operand type {}", patch);
+      QBDI_REQUIRE_ABORT(inst.getOperand(realMemIndex + 2).isReg(),
+                         "Unexpected operand type {}", patch);
+      QBDI_REQUIRE_ABORT(inst.getOperand(realMemIndex + 3).isImm(),
+                         "Unexpected operand type {}", patch);
+      QBDI_REQUIRE_ABORT(inst.getOperand(realMemIndex + 4).isReg(),
+                         "Unexpected operand type {}", patch);
 
       // If it uses PC as a base register, substitute PC
       if (inst.getOperand(realMemIndex + 0).getReg() == GPR_ID[REG_PC]) {
@@ -319,8 +319,8 @@ GetWriteAddress::generate(const Patch &patch, TempManager &temp_manager) const {
       }
     }
   }
-  QBDI_ABORT_PATCH(patch,
-                   "Called on an instruction which does not make write access");
+  QBDI_ABORT("Called on an instruction which does not make write access {}",
+             patch);
 }
 
 // GetReadValue
@@ -330,9 +330,9 @@ RelocatableInst::UniquePtrVec
 GetReadValue::generate(const Patch &patch, TempManager &temp_manager) const {
   const llvm::MCInst &inst = patch.metadata.inst;
   const unsigned size = getReadSize(inst, *patch.llvmcpu);
-  QBDI_REQUIRE_ABORT_PATCH(
-      size > 0, patch,
-      "Called on an instruction which does not make read access");
+  QBDI_REQUIRE_ABORT(
+      size > 0, "Called on an instruction which does not make read access {}",
+      patch);
 
   RegLLVM dst = temp_manager.getRegForTemp(temp);
 
@@ -355,22 +355,22 @@ GetReadValue::generate(const Patch &patch, TempManager &temp_manager) const {
       inst.getOpcode() == llvm::X86::XLAT) {
     seg = 0;
   } else if (FormDesc == llvm::X86II::RawFrmMemOffs) {
-    QBDI_REQUIRE_ABORT_PATCH(1 < inst.getNumOperands(), patch,
-                             "Unexpected number of operand");
-    QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(1).isReg(), patch,
-                             "Unexpected operand Type");
+    QBDI_REQUIRE_ABORT(1 < inst.getNumOperands(),
+                       "Unexpected number of operand {}", patch);
+    QBDI_REQUIRE_ABORT(inst.getOperand(1).isReg(), "Unexpected operand Type {}",
+                       patch);
     seg = inst.getOperand(1).getReg();
   } else {
     int memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
-    QBDI_REQUIRE_ABORT_PATCH(memIndex >= 0, patch,
-                             "Fail to get memory access index");
+    QBDI_REQUIRE_ABORT(memIndex >= 0, "Fail to get memory access index {}",
+                       patch);
 
     unsigned realMemIndex = memIndex + llvm::X86II::getOperandBias(desc);
-    QBDI_REQUIRE_ABORT_PATCH(inst.getNumOperands() > realMemIndex + 4, patch,
-                             "Invalid memory access index {}",
-                             realMemIndex + 4);
-    QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(realMemIndex + 4).isReg(), patch,
-                             "Unexpected operand Type");
+    QBDI_REQUIRE_ABORT(inst.getNumOperands() > realMemIndex + 4,
+                       "Invalid memory access index {} {}", realMemIndex + 4,
+                       patch);
+    QBDI_REQUIRE_ABORT(inst.getOperand(realMemIndex + 4).isReg(),
+                       "Unexpected operand Type {}", patch);
     seg = inst.getOperand(realMemIndex + 4).getReg();
   }
 
@@ -383,7 +383,7 @@ GetReadValue::generate(const Patch &patch, TempManager &temp_manager) const {
   } else if (size == 1) {
     return conv_unique<RelocatableInst>(Mov32rm8(dst, addr, seg));
   } else {
-    QBDI_ABORT_PATCH(patch, "Unsupported read size {}", size);
+    QBDI_ABORT("Unsupported read size {} {}", size, patch);
   }
 }
 
@@ -395,9 +395,9 @@ GetWriteValue::generate(const Patch &patch, TempManager &temp_manager) const {
 
   const llvm::MCInst &inst = patch.metadata.inst;
   const unsigned size = getWriteSize(inst, *patch.llvmcpu);
-  QBDI_REQUIRE_ABORT_PATCH(
-      size > 0, patch,
-      "Called on an instruction which does not make write access");
+  QBDI_REQUIRE_ABORT(
+      size > 0, "Called on an instruction which does not make write access {}",
+      patch);
 
   RegLLVM dst = temp_manager.getRegForTemp(temp);
 
@@ -419,22 +419,22 @@ GetWriteValue::generate(const Patch &patch, TempManager &temp_manager) const {
   if (isStackWrite(inst) or implicitDSIAccess(inst, desc)) {
     seg = 0;
   } else if (FormDesc == llvm::X86II::RawFrmMemOffs) {
-    QBDI_REQUIRE_ABORT_PATCH(1 < inst.getNumOperands(), patch,
-                             "Unexpected number of operand");
-    QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(1).isReg(), patch,
-                             "Unexpected operand Type");
+    QBDI_REQUIRE_ABORT(1 < inst.getNumOperands(),
+                       "Unexpected number of operand {}", patch);
+    QBDI_REQUIRE_ABORT(inst.getOperand(1).isReg(), "Unexpected operand Type {}",
+                       patch);
     seg = inst.getOperand(1).getReg();
   } else {
     int memIndex = llvm::X86II::getMemoryOperandNo(TSFlags);
-    QBDI_REQUIRE_ABORT_PATCH(memIndex >= 0, patch,
-                             "Fail to get memory access index");
+    QBDI_REQUIRE_ABORT(memIndex >= 0, "Fail to get memory access index {}",
+                       patch);
 
     unsigned realMemIndex = memIndex + llvm::X86II::getOperandBias(desc);
-    QBDI_REQUIRE_ABORT_PATCH(inst.getNumOperands() > realMemIndex + 4, patch,
-                             "Invalid memory access index {}",
-                             realMemIndex + 4);
-    QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(realMemIndex + 4).isReg(), patch,
-                             "Unexpected operand Type");
+    QBDI_REQUIRE_ABORT(inst.getNumOperands() > realMemIndex + 4,
+                       "Invalid memory access index {} {}", realMemIndex + 4,
+                       patch);
+    QBDI_REQUIRE_ABORT(inst.getOperand(realMemIndex + 4).isReg(),
+                       "Unexpected operand Type {}", patch);
     seg = inst.getOperand(realMemIndex + 4).getReg();
   }
 
@@ -447,7 +447,7 @@ GetWriteValue::generate(const Patch &patch, TempManager &temp_manager) const {
   } else if (size == 1) {
     return conv_unique<RelocatableInst>(Mov32rm8(dst, addr, seg));
   } else {
-    QBDI_ABORT_PATCH(patch, "Unsupported written size {}", size);
+    QBDI_ABORT("Unsupported written size {} {}", size, patch);
   }
 }
 

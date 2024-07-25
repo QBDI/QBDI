@@ -55,13 +55,13 @@ endif()
 
 # spdlog
 # ======
-set(SPDLOG_VERSION 1.10.0)
+set(SPDLOG_VERSION 1.14.1)
 
 FetchContent_Declare(
   spdlog
   URL "https://github.com/gabime/spdlog/archive/refs/tags/v${SPDLOG_VERSION}.zip"
   URL_HASH
-    "SHA256=7be28ff05d32a8a11cfba94381e820dd2842835f7f319f843993101bcab44b66"
+    "SHA256=429dfdf3afc1984feb59e414353c21c110bc79609f6d7899d52f6aa388646f6d"
   DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/spdlog-download"
                ${FETCHCONTENT_EXCLUDE_FROM_ALL})
 

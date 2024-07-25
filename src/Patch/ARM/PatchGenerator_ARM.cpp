@@ -233,14 +233,14 @@ WritePC::generate(const Patch &patch, TempManager &temp_manager) const {
       // else, depend on the value of the register
       break;
     default:
-      QBDI_ABORT_PATCH(patch, "SetExchange doesn't support this instruction:");
+      QBDI_ABORT("SetExchange doesn't support this instruction: {}", patch);
   }
 
   RelocatableInst::UniquePtrVec relocInstList;
 
-  QBDI_REQUIRE_ABORT_PATCH(
-      (not forceThumb) or (not forceARM), patch,
-      "Cannot force both ARM and Thumb mode at the same time");
+  QBDI_REQUIRE_ABORT((not forceThumb) or (not forceARM),
+                     "Cannot force both ARM and Thumb mode at the same time {}",
+                     patch);
 
   if (forceThumb or forceARM) {
     unsigned cond =
@@ -395,7 +395,7 @@ SetExchange::generate(const Patch &patch, TempManager &temp_manager) const {
     case llvm::ARM::tBX:
       break;
     default:
-      QBDI_ABORT_PATCH(patch, "SetExchange doesn't support this instruction:");
+      QBDI_ABORT("SetExchange doesn't support this instruction: {}", patch);
   }
 
   Reg destReg = temp_manager.getRegForTemp(temp);
@@ -431,10 +431,10 @@ GetPCOffset::generate(const Patch &patch, TempManager &temp_manager) const {
   rword imm;
 
   if (type == OpOperandType) {
-    QBDI_REQUIRE_ABORT_PATCH(opDest < patch.metadata.inst.getNumOperands(),
-                             patch, "Invalid operand");
-    QBDI_REQUIRE_ABORT_PATCH(patch.metadata.inst.getOperand(opDest).isReg(),
-                             patch, "Unexpected operand type");
+    QBDI_REQUIRE_ABORT(opDest < patch.metadata.inst.getNumOperands(),
+                       "Invalid operand {}", patch);
+    QBDI_REQUIRE_ABORT(patch.metadata.inst.getOperand(opDest).isReg(),
+                       "Unexpected operand type {}", patch);
     destReg = patch.metadata.inst.getOperand(opDest).getReg();
   } else {
     destReg = temp_manager.getRegForTemp(temp);
@@ -443,12 +443,12 @@ GetPCOffset::generate(const Patch &patch, TempManager &temp_manager) const {
   if (type == TmpConstantType) {
     imm = cst;
   } else {
-    QBDI_REQUIRE_ABORT_PATCH(type == TmpOperandType or type == OpOperandType,
-                             patch, "Unexepcted type");
-    QBDI_REQUIRE_ABORT_PATCH(op < patch.metadata.inst.getNumOperands(), patch,
-                             "Invalid operand");
-    QBDI_REQUIRE_ABORT_PATCH(patch.metadata.inst.getOperand(op).isImm(), patch,
-                             "Unexpected operand type");
+    QBDI_REQUIRE_ABORT(type == TmpOperandType or type == OpOperandType,
+                       "Unexepcted type {}", patch);
+    QBDI_REQUIRE_ABORT(op < patch.metadata.inst.getNumOperands(),
+                       "Invalid operand {}", patch);
+    QBDI_REQUIRE_ABORT(patch.metadata.inst.getOperand(op).isImm(),
+                       "Unexpected operand type {}", patch);
     imm = patch.metadata.inst.getOperand(op).getImm();
     switch (patch.metadata.inst.getOpcode()) {
       case llvm::ARM::BLXi:
@@ -478,8 +478,8 @@ GetPCOffset::generate(const Patch &patch, TempManager &temp_manager) const {
     // instruction isn't align, need to detect instruction that used PC or
     // Align(PC, 4)
     if (patch.metadata.address % 4 != 0) {
-      QBDI_REQUIRE_ABORT_PATCH(patch.metadata.address % 4 == 2, patch,
-                               "Not aligned instruction");
+      QBDI_REQUIRE_ABORT(patch.metadata.address % 4 == 2,
+                         "Not aligned instruction {}", patch);
       switch (patch.metadata.inst.getOpcode()) {
         case llvm::ARM::VLDRD:
         case llvm::ARM::VLDRH:
@@ -516,9 +516,9 @@ GetPCOffset::generate(const Patch &patch, TempManager &temp_manager) const {
         case llvm::ARM::tMOVr:
           break;
         case llvm::ARM::tBX:
-          QBDI_ABORT_PATCH(patch, "BX pc with PC not aligned:");
+          QBDI_ABORT("BX pc with PC not aligned: {}", patch);
         default:
-          QBDI_ABORT_PATCH(patch, "Missing PC align behavior for:");
+          QBDI_ABORT("Missing PC align behavior for: {}", patch);
       }
     }
   } else {
@@ -600,8 +600,7 @@ GetOperandCC::generate(const Patch &patch, TempManager &temp_manager) const {
   if (type == TmpType) {
     destReg = temp_manager.getRegForTemp(temp);
   }
-  QBDI_REQUIRE_ABORT_PATCH(op < inst.getNumOperands(), patch,
-                           "Invalid operand");
+  QBDI_REQUIRE_ABORT(op < inst.getNumOperands(), "Invalid operand {}", patch);
   if (inst.getOperand(op).isReg()) {
     if (patch.metadata.archMetadata.cond != llvm::ARMCC::AL and
         cpumode == CPUMode::Thumb) {
@@ -688,8 +687,8 @@ WriteOperandCC::generate(const Patch &patch, TempManager &temp_manager) const {
   const llvm::MCInst &inst = patch.metadata.inst;
   CPUMode cpumode = patch.llvmcpu->getCPUMode();
 
-  QBDI_REQUIRE_ABORT_PATCH(op < inst.getNumOperands(), patch,
-                           "Invalid operand {}", op);
+  QBDI_REQUIRE_ABORT(op < inst.getNumOperands(), "Invalid operand {} {}", op,
+                     patch);
   if (inst.getOperand(op).isReg()) {
     if (patch.metadata.archMetadata.cond != llvm::ARMCC::AL and
         cpumode == CPUMode::Thumb) {
@@ -742,20 +741,18 @@ RelocatableInst::UniquePtrVec
 AddOperandToTemp::generate(const Patch &patch,
                            TempManager &temp_manager) const {
 
-  QBDI_REQUIRE_ABORT_PATCH(*patch.llvmcpu == CPUMode::Thumb, patch,
-                           "Unimplemented in ARM mode");
+  QBDI_REQUIRE_ABORT(*patch.llvmcpu == CPUMode::Thumb,
+                     "Unimplemented in ARM mode {}", patch);
 
   const llvm::MCInst &inst = patch.metadata.inst;
   Reg dest = temp_manager.getRegForTemp(temp);
 
-  QBDI_REQUIRE_ABORT_PATCH(op < inst.getNumOperands(), patch,
-                           "Invalid operand");
-  QBDI_REQUIRE_ABORT_PATCH(op2 < inst.getNumOperands(), patch,
-                           "Invalid operand");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(op).isReg(), patch,
-                           "Unexpected operand type");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(op2).isImm(), patch,
-                           "Unexpected operand type");
+  QBDI_REQUIRE_ABORT(op < inst.getNumOperands(), "Invalid operand {}", patch);
+  QBDI_REQUIRE_ABORT(op2 < inst.getNumOperands(), "Invalid operand {}", patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(op).isReg(), "Unexpected operand type {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(op2).isImm(), "Unexpected operand type {}",
+                     patch);
 
   RegLLVM addrReg = inst.getOperand(op).getReg();
   rword imm = inst.getOperand(op2).getImm();
@@ -784,29 +781,29 @@ LDMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
 
   const llvm::MCInst &inst = patch.metadata.inst;
   CPUMode cpumode = patch.llvmcpu->getCPUMode();
-  QBDI_REQUIRE_ABORT_PATCH(cpumode == CPUMode::ARM, patch,
-                           "Only available in ARM mode");
+  QBDI_REQUIRE_ABORT(cpumode == CPUMode::ARM, "Only available in ARM mode {}",
+                     patch);
 
   // lock tempRegister. Only 1 register may be a temp register
   Reg tempReg = temp_manager.getRegForTemp(temp);
   temp_manager.lockTempManager();
-  QBDI_REQUIRE_ABORT_PATCH(temp_manager.getUsedRegisters().size() == 1, patch,
-                           "Unexpected TempManager state");
+  QBDI_REQUIRE_ABORT(temp_manager.getUsedRegisters().size() == 1,
+                     "Unexpected TempManager state {}", patch);
 
   // verify the tempReg isn't the address register (should never happend)
-  QBDI_REQUIRE_ABORT_PATCH(0 < inst.getNumOperands(), patch,
-                           "Invalid instruction");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(0).isReg(), patch,
-                           "Unexpected operand type");
+  QBDI_REQUIRE_ABORT(0 < inst.getNumOperands(), "Invalid instruction {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(0).isReg(), "Unexpected operand type {}",
+                     patch);
   RegLLVM addrReg = inst.getOperand(0).getReg();
-  QBDI_REQUIRE_ABORT_PATCH(tempReg != addrReg, patch,
-                           "tempRegister allocation error");
+  QBDI_REQUIRE_ABORT(tempReg != addrReg, "tempRegister allocation error {}",
+                     patch);
 
   // verify PC is on the register list (always the last register of the list)
-  QBDI_REQUIRE_ABORT_PATCH(
-      inst.getOperand(inst.getNumOperands() - 1).isReg() and
-          inst.getOperand(inst.getNumOperands() - 1).getReg() == GPR_ID[REG_PC],
-      patch, "LDM without PC doesn't need this patch");
+  QBDI_REQUIRE_ABORT(inst.getOperand(inst.getNumOperands() - 1).isReg() and
+                         inst.getOperand(inst.getNumOperands() - 1).getReg() ==
+                             GPR_ID[REG_PC],
+                     "LDM without PC doesn't need this patch {}", patch);
 
   // verify if the tempReg is a register on the register list
   // (may happend if all register are present in the register list)
@@ -966,9 +963,9 @@ LDMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
     }
     case llvm::ARM::LDMIA_UPD:
     case llvm::ARM::LDMIB_UPD: {
-      QBDI_REQUIRE_ABORT_PATCH(
-          not addrIsSet, patch,
-          "invalid instruction (wback && registers<n> == '1')");
+      QBDI_REQUIRE_ABORT(
+          not addrIsSet,
+          "invalid instruction (wback && registers<n> == '1') {}", patch);
 
       unsigned nbReg =
           inst.getNumOperands() - /* source + wback + 2 * cond + PC*/ 5;
@@ -992,8 +989,8 @@ LDMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
 
       // load PC (with instNoReg + tempReg) with the same instruction to wback
       // the address
-      QBDI_REQUIRE_ABORT_PATCH(instNoReg.getNumOperands() == 4, patch,
-                               "Unexpected state");
+      QBDI_REQUIRE_ABORT(instNoReg.getNumOperands() == 4, "Unexpected state {}",
+                         patch);
       instNoReg.insert(instNoReg.end(),
                        llvm::MCOperand::createReg(tempReg.getValue()));
       res.push_back(NoReloc::unique(std::move(instNoReg)));
@@ -1005,9 +1002,9 @@ LDMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
     }
     case llvm::ARM::LDMDA_UPD:
     case llvm::ARM::LDMDB_UPD: {
-      QBDI_REQUIRE_ABORT_PATCH(
-          not addrIsSet, patch,
-          "invalid instruction (wback && registers<n> == '1')");
+      QBDI_REQUIRE_ABORT(
+          not addrIsSet,
+          "invalid instruction (wback && registers<n> == '1') {}", patch);
       unsigned nbReg = inst.getNumOperands() - /* source + 2 * cond + PC*/ 5;
 
       // if the instruction is conditionnal, load PC+4
@@ -1018,8 +1015,8 @@ LDMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
 
       // load PC (with instNoReg + tempReg) with the same instruction to wback
       // the address
-      QBDI_REQUIRE_ABORT_PATCH(instNoReg.getNumOperands() == 4, patch,
-                               "Unexpected state");
+      QBDI_REQUIRE_ABORT(instNoReg.getNumOperands() == 4, "Unexpected state {}",
+                         patch);
       instNoReg.insert(instNoReg.end(),
                        llvm::MCOperand::createReg(tempReg.getValue()));
       res.push_back(NoReloc::unique(std::move(instNoReg)));
@@ -1040,8 +1037,8 @@ LDMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
       return res;
     }
     default:
-      QBDI_ABORT_PATCH(patch,
-                       "LDMPatchGen should not be used for this instruction:");
+      QBDI_ABORT("LDMPatchGen should not be used for this instruction: {}",
+                 patch);
   }
 }
 
@@ -1053,29 +1050,29 @@ STMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
 
   const llvm::MCInst &inst = patch.metadata.inst;
   CPUMode cpumode = patch.llvmcpu->getCPUMode();
-  QBDI_REQUIRE_ABORT_PATCH(cpumode == CPUMode::ARM, patch,
-                           "Only available in ARM mode");
+  QBDI_REQUIRE_ABORT(cpumode == CPUMode::ARM, "Only available in ARM mode {}",
+                     patch);
 
   // lock tempRegister. Only 1 register may be a temp register
   Reg tempReg = temp_manager.getRegForTemp(temp);
   temp_manager.lockTempManager();
-  QBDI_REQUIRE_ABORT_PATCH(temp_manager.getUsedRegisters().size() == 1, patch,
-                           "Unexpected TempManager state");
+  QBDI_REQUIRE_ABORT(temp_manager.getUsedRegisters().size() == 1,
+                     "Unexpected TempManager state {}", patch);
 
   // verify the tempReg isn't the address register (should never happend)
-  QBDI_REQUIRE_ABORT_PATCH(0 < inst.getNumOperands(), patch,
-                           "Invalid instruction");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(0).isReg(), patch,
-                           "Unexpected operand type");
+  QBDI_REQUIRE_ABORT(0 < inst.getNumOperands(), "Invalid instruction {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(0).isReg(), "Unexpected operand type {}",
+                     patch);
   RegLLVM addrReg = inst.getOperand(0).getReg();
-  QBDI_REQUIRE_ABORT_PATCH(tempReg != addrReg, patch,
-                           "tempRegister allocation error");
+  QBDI_REQUIRE_ABORT(tempReg != addrReg, "tempRegister allocation error {}",
+                     patch);
 
   // verify PC is on the register list (always the last register of the list)
-  QBDI_REQUIRE_ABORT_PATCH(
-      inst.getOperand(inst.getNumOperands() - 1).isReg() and
-          inst.getOperand(inst.getNumOperands() - 1).getReg() == GPR_ID[REG_PC],
-      patch, "STM without PC doesn't need this patch");
+  QBDI_REQUIRE_ABORT(inst.getOperand(inst.getNumOperands() - 1).isReg() and
+                         inst.getOperand(inst.getNumOperands() - 1).getReg() ==
+                             GPR_ID[REG_PC],
+                     "STM without PC doesn't need this patch {}", patch);
 
   // verify if the tempReg is a register on the register list
   // (may happend if all register are present in the register list)
@@ -1119,8 +1116,8 @@ STMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
       fixPCOffset = 4 * nbReg;
       break;
     default:
-      QBDI_ABORT_PATCH(patch,
-                       "STMPatchGen should not be used for this instruction:");
+      QBDI_ABORT("STMPatchGen should not be used for this instruction: {}",
+                 patch);
   }
 
   RelocatableInst::UniquePtrVec res;
@@ -1238,8 +1235,8 @@ GetReadValue::generate(const Patch &patch, TempManager &temp_manager) const {
       }
     }
     case 3: {
-      QBDI_REQUIRE_ABORT_PATCH(wback, patch,
-                               "Two tempReg are needed with readSize==3");
+      QBDI_REQUIRE_ABORT(wback, "Two tempReg are needed with readSize==3 {}",
+                         patch);
       if (isARM) {
         return conv_unique<RelocatableInst>(
             NoReloc::unique(ldrb(tmpRegister, addrRegister, 0)),
@@ -1282,7 +1279,7 @@ GetReadValue::generate(const Patch &patch, TempManager &temp_manager) const {
       }
     }
     default:
-      QBDI_ABORT_PATCH(patch, "Unexpected Read Size {}", readSize);
+      QBDI_ABORT("Unexpected Read Size {} {}", readSize, patch);
   }
 }
 
@@ -1357,8 +1354,8 @@ GetWrittenValue::generate(const Patch &patch, TempManager &temp_manager) const {
       }
     }
     case 3: {
-      QBDI_REQUIRE_ABORT_PATCH(wback, patch,
-                               "Two tempReg are needed with readSize==3");
+      QBDI_REQUIRE_ABORT(wback, "Two tempReg are needed with readSize==3 {}",
+                         patch);
       if (isARM) {
         return conv_unique<RelocatableInst>(
             NoReloc::unique(ldrb(tmpRegister, addrRegister, 0)),
@@ -1401,7 +1398,7 @@ GetWrittenValue::generate(const Patch &patch, TempManager &temp_manager) const {
       }
     }
     default:
-      QBDI_ABORT_PATCH(patch, "Unexpected Write Size", writeSize);
+      QBDI_ABORT("Unexpected Write Size {}", writeSize, patch);
   }
 }
 
@@ -1426,12 +1423,12 @@ BackupValueX2::generate(const Patch &patch, TempManager &temp_manager) const {
 
   Reg addrRegister = temp_manager.getRegForTemp(addr);
 
-  QBDI_REQUIRE_ABORT_PATCH(tmpRegister != tmp2Register, patch,
-                           "Need different TempRegister");
-  QBDI_REQUIRE_ABORT_PATCH(tmpRegister != addrRegister, patch,
-                           "Need different TempRegister");
-  QBDI_REQUIRE_ABORT_PATCH(tmp2Register != addrRegister, patch,
-                           "Need different TempRegister");
+  QBDI_REQUIRE_ABORT(tmpRegister != tmp2Register,
+                     "Need different TempRegister {}", patch);
+  QBDI_REQUIRE_ABORT(tmpRegister != addrRegister,
+                     "Need different TempRegister {}", patch);
+  QBDI_REQUIRE_ABORT(tmp2Register != addrRegister,
+                     "Need different TempRegister {}", patch);
 
   unsigned mask = (1 << tmpRegister.getID()) | (1 << tmp2Register.getID());
 
@@ -1684,18 +1681,18 @@ SetCondReachAndJump::generate(const Patch &patch,
 RelocatableInst::UniquePtrVec
 ItPatch::generate(const Patch &patch, TempManager &temp_manager) const {
   CPUMode cpumode = patch.llvmcpu->getCPUMode();
-  QBDI_REQUIRE_ABORT_PATCH(cpumode == CPUMode::Thumb, patch,
-                           "Only available in Thumb mode");
+  QBDI_REQUIRE_ABORT(cpumode == CPUMode::Thumb,
+                     "Only available in Thumb mode {}", patch);
 
   // we return a null patch if the instruction isn't in a ITblock
   // If the instruction is in a ITblock with the condition AL, we must preserve
   // the block to keep the flags behavior
   if (patch.metadata.archMetadata.posITblock == 0) {
     for (unsigned i = 0; i < nbcond; i++) {
-      QBDI_REQUIRE_ABORT_PATCH(
-          cond[i] == false, patch,
-          "Use ItPatch with invCond ({}) on a instruction outside of ITBlock",
-          i);
+      QBDI_REQUIRE_ABORT(cond[i] == false,
+                         "Use ItPatch with invCond ({}) on a instruction "
+                         "outside of ITBlock {}",
+                         i, patch);
     }
     return RelocatableInst::UniquePtrVec();
   }
@@ -1704,8 +1701,9 @@ ItPatch::generate(const Patch &patch, TempManager &temp_manager) const {
 
   if (patch.metadata.archMetadata.cond == llvm::ARMCC::AL) {
     for (unsigned i = 0; i < nbcond; i++) {
-      QBDI_REQUIRE_ABORT_PATCH(cond[i] == false, patch,
-                               "Use ItPatch with invCond ({}) on AL cond", i);
+      QBDI_REQUIRE_ABORT(cond[i] == false,
+                         "Use ItPatch with invCond ({}) on AL cond {}", i,
+                         patch);
     }
   }
 
@@ -1736,18 +1734,18 @@ TPopPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
 
   const llvm::MCInst &inst = patch.metadata.inst;
   const CPUMode cpumode = patch.llvmcpu->getCPUMode();
-  QBDI_REQUIRE_ABORT_PATCH(cpumode == CPUMode::Thumb, patch,
-                           "Only available in Thumb mode");
+  QBDI_REQUIRE_ABORT(cpumode == CPUMode::Thumb,
+                     "Only available in Thumb mode {}", patch);
 
   const unsigned numOperands = inst.getNumOperands();
 
   // verify if the instruction need PC
-  QBDI_REQUIRE_ABORT_PATCH(0 < numOperands, patch, "Invalid instruction");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(numOperands - 1).isReg(), patch,
-                           "Unexpected operand type");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(numOperands - 1).getReg() ==
-                               GPR_ID[REG_PC],
-                           patch, "Unexpected PC behavior");
+  QBDI_REQUIRE_ABORT(0 < numOperands, "Invalid instruction {}", patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(numOperands - 1).isReg(),
+                     "Unexpected operand type {}", patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(numOperands - 1).getReg() ==
+                         GPR_ID[REG_PC],
+                     "Unexpected PC behavior {}", patch);
 
   // number of register to pop (included pc)
   unsigned listRegsNum = numOperands - 2;
@@ -1800,10 +1798,10 @@ static void gent2LDMsubPatch(RelocatableInst::UniquePtrVec &vec,
   if (endOp <= startOp) {
     return;
   } else if (startOp + 1 == endOp) {
-    QBDI_REQUIRE_ABORT_PATCH(startOp < inst.getNumOperands(), patch,
-                             "Invalid operand");
-    QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(startOp).isReg(), patch,
-                             "Unexpected operand type");
+    QBDI_REQUIRE_ABORT(startOp < inst.getNumOperands(), "Invalid operand {}",
+                       patch);
+    QBDI_REQUIRE_ABORT(inst.getOperand(startOp).isReg(),
+                       "Unexpected operand type {}", patch);
     RegLLVM destReg = inst.getOperand(startOp).getReg();
     if (IA) {
       vec.push_back(NoReloc::unique(t2ldrPost(destReg, addrReg, 4)));
@@ -1811,23 +1809,24 @@ static void gent2LDMsubPatch(RelocatableInst::UniquePtrVec &vec,
       vec.push_back(NoReloc::unique(t2ldrPre(destReg, addrReg, -4)));
     }
     if (pendingTmp) {
-      QBDI_REQUIRE_ABORT_PATCH(
-          destReg == tempReg, patch,
-          "The loaded register is expected to be the TempRegister");
+      QBDI_REQUIRE_ABORT(
+          destReg == tempReg,
+          "The loaded register is expected to be the TempRegister {}", patch);
       vec.push_back(StoreDataBlock::unique(tempReg, Offset(tempReg)));
     } else {
-      QBDI_REQUIRE_ABORT_PATCH(
-          destReg != tempReg, patch,
-          "The loaded register isn't expected to be the TempRegister");
+      QBDI_REQUIRE_ABORT(
+          destReg != tempReg,
+          "The loaded register isn't expected to be the TempRegister {}",
+          patch);
     }
   } else {
     unsigned mask = 0;
     bool foundTmpReg = false;
-    QBDI_REQUIRE_ABORT_PATCH(endOp <= inst.getNumOperands(), patch,
-                             "Invalid operand");
+    QBDI_REQUIRE_ABORT(endOp <= inst.getNumOperands(), "Invalid operand {}",
+                       patch);
     for (unsigned i = startOp; i < endOp; i++) {
-      QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(i).isReg(), patch,
-                               "Unexpected operand {} type", i);
+      QBDI_REQUIRE_ABORT(inst.getOperand(i).isReg(),
+                         "Unexpected operand {} type {}", i, patch);
       RegLLVM r = inst.getOperand(i).getReg();
       switch (r.getValue()) {
         case llvm::ARM::R0:
@@ -1853,13 +1852,12 @@ static void gent2LDMsubPatch(RelocatableInst::UniquePtrVec &vec,
         // PC is handle by the caller and should be in the list
         case llvm::ARM::PC:
         default:
-          QBDI_ABORT_PATCH(patch, "Unexpected register {}", r.getValue());
+          QBDI_ABORT("Unexpected register {} {}", r.getValue(), patch);
       }
       if (r == tempReg) {
-        QBDI_REQUIRE_ABORT_PATCH(not foundTmpReg, patch,
-                                 "TempReg already found");
-        QBDI_REQUIRE_ABORT_PATCH(pendingTmp, patch,
-                                 "Unexpected TempReg in the register list");
+        QBDI_REQUIRE_ABORT(not foundTmpReg, "TempReg already found {}", patch);
+        QBDI_REQUIRE_ABORT(pendingTmp,
+                           "Unexpected TempReg in the register list {}", patch);
         foundTmpReg = true;
       }
     }
@@ -1869,8 +1867,8 @@ static void gent2LDMsubPatch(RelocatableInst::UniquePtrVec &vec,
       vec.push_back(NoReloc::unique(t2ldmdb(addrReg, mask, true)));
     }
     if (pendingTmp) {
-      QBDI_REQUIRE_ABORT_PATCH(foundTmpReg, patch,
-                               "TempReg not found in the register list");
+      QBDI_REQUIRE_ABORT(foundTmpReg,
+                         "TempReg not found in the register list {}", patch);
       vec.push_back(StoreDataBlock::unique(tempReg, Offset(tempReg)));
     }
   }
@@ -1881,22 +1879,22 @@ T2LDMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
 
   const llvm::MCInst &inst = patch.metadata.inst;
   const CPUMode cpumode = patch.llvmcpu->getCPUMode();
-  QBDI_REQUIRE_ABORT_PATCH(cpumode == CPUMode::Thumb, patch,
-                           "Only available in Thumb mode");
+  QBDI_REQUIRE_ABORT(cpumode == CPUMode::Thumb,
+                     "Only available in Thumb mode {}", patch);
 
   const unsigned opcode = inst.getOpcode();
   const unsigned numOperands = inst.getNumOperands();
 
   // verify if the instruction need PC
-  QBDI_REQUIRE_ABORT_PATCH(0 < numOperands, patch, "Invalid instruction");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(numOperands - 1).isReg(), patch,
-                           "Unexpected operand type");
+  QBDI_REQUIRE_ABORT(0 < numOperands, "Invalid instruction {}", patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(numOperands - 1).isReg(),
+                     "Unexpected operand type {}", patch);
   bool needPC = (inst.getOperand(numOperands - 1).getReg() == GPR_ID[REG_PC]);
-  QBDI_REQUIRE_ABORT_PATCH(writePC == needPC, patch, "Unexpected PC behavior");
+  QBDI_REQUIRE_ABORT(writePC == needPC, "Unexpected PC behavior {}", patch);
 
   // get baseAddr
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(0).isReg(), patch,
-                           "Unexpected operand type");
+  QBDI_REQUIRE_ABORT(inst.getOperand(0).isReg(), "Unexpected operand type {}",
+                     patch);
   RegLLVM addrReg = inst.getOperand(0).getReg();
 
   // get the number of register in the register list
@@ -1915,7 +1913,7 @@ T2LDMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
       wback = true;
       break;
     default:
-      QBDI_ABORT_PATCH(patch, "Unexpected instruction");
+      QBDI_ABORT("Unexpected instruction {}", patch);
   }
 
   // verify if the flag RegisterUsage::RegisterSavedScratch is set
@@ -1926,10 +1924,10 @@ T2LDMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
   for (unsigned i = 0; i < AVAILABLE_GPR; i++) {
     if (patch.regUsage[i] != 0 and
         (patch.regUsage[i] & RegisterUsage::RegisterSavedScratch) != 0) {
-      QBDI_REQUIRE_ABORT_PATCH(not foundSavedScratch, patch,
-                               "Maximum one reservedSavedScratch");
-      QBDI_REQUIRE_ABORT_PATCH(Reg(i) != addrReg, patch,
-                               "baseReg must not be the scratchRegister");
+      QBDI_REQUIRE_ABORT(not foundSavedScratch,
+                         "Maximum one reservedSavedScratch {}", patch);
+      QBDI_REQUIRE_ABORT(Reg(i) != addrReg,
+                         "baseReg must not be the scratchRegister {}", patch);
       unusedSavedScratch =
           ((patch.regUsage[i] & RegisterUsage::RegisterBoth) == 0);
       reservedSavedScratch = Reg(i);
@@ -1949,21 +1947,20 @@ T2LDMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
     // Otherwith, we are not sure that the tempRegister isn't in the list of
     // restored registers.
     temp_manager.lockTempManager();
-    QBDI_REQUIRE_ABORT_PATCH(temp_manager.getUsedRegisters().size() == 0, patch,
-                             "Unexpected TempManager state");
+    QBDI_REQUIRE_ABORT(temp_manager.getUsedRegisters().size() == 0,
+                       "Unexpected TempManager state {}", patch);
     return relocInstList;
   }
 
   // lock tempRegister. Only 1 register may be a temp register
   Reg tempReg = temp_manager.getRegForTemp(temp);
   temp_manager.lockTempManager();
-  QBDI_REQUIRE_ABORT_PATCH(temp_manager.getUsedRegisters().size() == 1, patch,
-                           "Unexpected TempManager state");
-  QBDI_REQUIRE_ABORT_PATCH(tempReg != addrReg, patch,
-                           "tempRegister allocation error");
-  QBDI_REQUIRE_ABORT_PATCH(tempReg != reservedSavedScratch or
-                               not foundSavedScratch,
-                           patch, "tempRegister allocation error");
+  QBDI_REQUIRE_ABORT(temp_manager.getUsedRegisters().size() == 1,
+                     "Unexpected TempManager state {}", patch);
+  QBDI_REQUIRE_ABORT(tempReg != addrReg, "tempRegister allocation error {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(tempReg != reservedSavedScratch or not foundSavedScratch,
+                     "tempRegister allocation error {}", patch);
 
   RelocatableInst::UniquePtrVec relocInstList;
 
@@ -1980,8 +1977,8 @@ T2LDMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
       bool addrRegInList = false;
       unsigned offsetAddrReg = 0;
       for (unsigned i = firstPendingReg; i < numOperands; i++) {
-        QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(i).isReg(), patch,
-                                 "Unexpected operand type");
+        QBDI_REQUIRE_ABORT(inst.getOperand(i).isReg(),
+                           "Unexpected operand type {}", patch);
         RegLLVM r = inst.getOperand(i).getReg();
         if (r == tempReg) {
           pendingTmp = true;
@@ -1995,9 +1992,10 @@ T2LDMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
           pendingTmp = false;
           firstPendingReg = i + 1;
         } else if (r == addrReg) {
-          QBDI_REQUIRE_ABORT_PATCH(
-              not wback, patch,
-              "Writeback when the address register is loaded is Undefined");
+          QBDI_REQUIRE_ABORT(
+              not wback,
+              "Writeback when the address register is loaded is Undefined {}",
+              patch);
           gent2LDMsubPatch(relocInstList, patch, tempReg, addrReg,
                            firstPendingReg, i, pendingTmp, true);
           // skip the value for now
@@ -2037,8 +2035,8 @@ T2LDMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
       unsigned offsetAddrReg = 0;
       for (unsigned i = numOperands - 1; i >= (numOperands - listRegsNum);
            i--) {
-        QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(i).isReg(), patch,
-                                 "Unexpected operand type");
+        QBDI_REQUIRE_ABORT(inst.getOperand(i).isReg(),
+                           "Unexpected operand type {}", patch);
         RegLLVM r = inst.getOperand(i).getReg();
         if (r == tempReg) {
           pendingTmp = true;
@@ -2052,9 +2050,10 @@ T2LDMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
           pendingTmp = false;
           lastPendingReg = i;
         } else if (r == addrReg) {
-          QBDI_REQUIRE_ABORT_PATCH(
-              not wback, patch,
-              "Writeback when the address register is loaded is Undefined");
+          QBDI_REQUIRE_ABORT(
+              not wback,
+              "Writeback when the address register is loaded is Undefined {}",
+              patch);
           gent2LDMsubPatch(relocInstList, patch, tempReg, addrReg, i + 1,
                            lastPendingReg, pendingTmp, false);
           // skip the value for now
@@ -2088,7 +2087,7 @@ T2LDMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
       break;
     }
     default:
-      QBDI_ABORT_PATCH(patch, "Unexpected instruction");
+      QBDI_ABORT("Unexpected instruction {}", patch);
   }
   if (patch.metadata.archMetadata.cond != llvm::ARMCC::AL) {
     const unsigned invCond = llvm::ARMCC::getOppositeCondition(
@@ -2133,22 +2132,22 @@ T2STMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
 
   const llvm::MCInst &inst = patch.metadata.inst;
   const CPUMode cpumode = patch.llvmcpu->getCPUMode();
-  QBDI_REQUIRE_ABORT_PATCH(cpumode == CPUMode::Thumb, patch,
-                           "Only available in Thumb mode");
+  QBDI_REQUIRE_ABORT(cpumode == CPUMode::Thumb,
+                     "Only available in Thumb mode {}", patch);
 
   const unsigned opcode = inst.getOpcode();
   const unsigned numOperands = inst.getNumOperands();
 
   // verify if the instruction need PC (PC not supported)
-  QBDI_REQUIRE_ABORT_PATCH(0 < numOperands, patch, "Invalid instruction");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(numOperands - 1).isReg(), patch,
-                           "Unexpected operand type");
+  QBDI_REQUIRE_ABORT(0 < numOperands, "Invalid instruction {}", patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(numOperands - 1).isReg(),
+                     "Unexpected operand type {}", patch);
   bool needPC = (inst.getOperand(numOperands - 1).getReg() == GPR_ID[REG_PC]);
-  QBDI_REQUIRE_ABORT_PATCH(not needPC, patch, "T2STM with PC is undefined");
+  QBDI_REQUIRE_ABORT(not needPC, "T2STM with PC is undefined {}", patch);
 
   // get baseAddr
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(0).isReg(), patch,
-                           "Unexpected operand type");
+  QBDI_REQUIRE_ABORT(inst.getOperand(0).isReg(), "Unexpected operand type {}",
+                     patch);
   RegLLVM addrReg = inst.getOperand(0).getReg();
 
   // get the number of register in the register list
@@ -2164,7 +2163,7 @@ T2STMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
       listRegsNum = numOperands - 4;
       break;
     default:
-      QBDI_ABORT_PATCH(patch, "Unexpected instruction");
+      QBDI_ABORT("Unexpected instruction {}", patch);
   }
 
   // verify if the flag RegisterUsage::RegisterSavedScratch is set
@@ -2175,10 +2174,10 @@ T2STMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
   for (unsigned i = 0; i < AVAILABLE_GPR; i++) {
     if (patch.regUsage[i] != 0 and
         (patch.regUsage[i] & RegisterUsage::RegisterSavedScratch) != 0) {
-      QBDI_REQUIRE_ABORT_PATCH(not foundSavedScratch, patch,
-                               "Maximum one reservedSavedScratch");
-      QBDI_REQUIRE_ABORT_PATCH(Reg(i) != addrReg, patch,
-                               "baseReg must not be the scratchRegister");
+      QBDI_REQUIRE_ABORT(not foundSavedScratch,
+                         "Maximum one reservedSavedScratch {}", patch);
+      QBDI_REQUIRE_ABORT(Reg(i) != addrReg,
+                         "baseReg must not be the scratchRegister {}", patch);
       unusedSavedScratch =
           ((patch.regUsage[i] & RegisterUsage::RegisterBoth) == 0);
       reservedSavedScratch = Reg(i);
@@ -2197,36 +2196,35 @@ T2STMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
     // Otherwith, we are not sure that the tempRegister isn't in the list of
     // restored registers.
     temp_manager.lockTempManager();
-    QBDI_REQUIRE_ABORT_PATCH(temp_manager.getUsedRegisters().size() == 0, patch,
-                             "Unexpected TempManager state");
+    QBDI_REQUIRE_ABORT(temp_manager.getUsedRegisters().size() == 0,
+                       "Unexpected TempManager state {}", patch);
     return relocInstList;
   }
 
   // lock tempRegister. Only 1 register may be a temp register
   Reg tempReg = temp_manager.getRegForTemp(temp);
   temp_manager.lockTempManager();
-  QBDI_REQUIRE_ABORT_PATCH(temp_manager.getUsedRegisters().size() == 1, patch,
-                           "Unexpected TempManager state");
-  QBDI_REQUIRE_ABORT_PATCH(tempReg != addrReg, patch,
-                           "tempRegister allocation error");
-  QBDI_REQUIRE_ABORT_PATCH(tempReg != reservedSavedScratch, patch,
-                           "tempRegister allocation error");
+  QBDI_REQUIRE_ABORT(temp_manager.getUsedRegisters().size() == 1,
+                     "Unexpected TempManager state {}", patch);
+  QBDI_REQUIRE_ABORT(tempReg != addrReg, "tempRegister allocation error {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(tempReg != reservedSavedScratch,
+                     "tempRegister allocation error {}", patch);
 
   // verify if the tempReg is a register on the register list
   // This must be the case, otherwise, the scratch register should be reserved
   // on a free register
   bool tempIsNeeded =
       (patch.regUsage[tempReg.getID()] & RegisterUsage::RegisterBoth) != 0;
-  QBDI_REQUIRE_ABORT_PATCH(tempIsNeeded, patch,
-                           "Unexpected TempRegister state");
+  QBDI_REQUIRE_ABORT(tempIsNeeded, "Unexpected TempRegister state {}", patch);
 
   // search position of scratch register in the list
   bool foundSavedScratchPosition = false;
   unsigned savedScratchPosition = 0;
 
   for (unsigned int i = (numOperands - listRegsNum); i < numOperands; i++) {
-    QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(i).isReg(), patch,
-                             "Unexpected operand type");
+    QBDI_REQUIRE_ABORT(inst.getOperand(i).isReg(), "Unexpected operand type {}",
+                       patch);
     RegLLVM r = inst.getOperand(i).getReg();
     if (r == reservedSavedScratch) {
       foundSavedScratchPosition = true;
@@ -2234,8 +2232,8 @@ T2STMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
       break;
     }
   }
-  QBDI_REQUIRE_ABORT_PATCH(foundSavedScratchPosition, patch,
-                           "Unexpected usage of the Scratch Register");
+  QBDI_REQUIRE_ABORT(foundSavedScratchPosition,
+                     "Unexpected usage of the Scratch Register {}", patch);
 
   RelocatableInst::UniquePtrVec relocInstList;
 
@@ -2270,8 +2268,8 @@ T2STMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
       fixOffset = -4 * (listRegsNum - savedScratchPosition);
       break;
     default:
-      QBDI_ABORT_PATCH(patch,
-                       "STMPatchGen should not be used for this instruction:");
+      QBDI_ABORT("STMPatchGen should not be used for this instruction: {}",
+                 patch);
   }
 
   // store ScratchRegister
@@ -2279,8 +2277,8 @@ T2STMPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
       t2stri8(tempReg, addrReg, fixOffset, patch.metadata.archMetadata.cond)));
 
   if (patch.metadata.archMetadata.cond != llvm::ARMCC::AL) {
-    QBDI_REQUIRE_ABORT_PATCH(relocInstList.size() == 5, patch,
-                             "Unexpected patch size {}", relocInstList.size());
+    QBDI_REQUIRE_ABORT(relocInstList.size() == 5, "Unexpected patch size {} {}",
+                       relocInstList.size(), patch);
   }
 
   return relocInstList;
@@ -2295,27 +2293,27 @@ T2TBBTBHPatchGen::generate(const Patch &patch,
 
   const llvm::MCInst &inst = patch.metadata.inst;
   const CPUMode cpumode = patch.llvmcpu->getCPUMode();
-  QBDI_REQUIRE_ABORT_PATCH(cpumode == CPUMode::Thumb, patch,
-                           "Only available in Thumb mode");
+  QBDI_REQUIRE_ABORT(cpumode == CPUMode::Thumb,
+                     "Only available in Thumb mode {}", patch);
 
   const unsigned opcode = inst.getOpcode();
 
   // get instruction operand
-  QBDI_REQUIRE_ABORT_PATCH(2 <= inst.getNumOperands(), patch,
-                           "Invalid instruction");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(0).isReg(), patch,
-                           "Unexpected operand type");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(1).isReg(), patch,
-                           "Unexpected operand type");
+  QBDI_REQUIRE_ABORT(2 <= inst.getNumOperands(), "Invalid instruction {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(0).isReg(), "Unexpected operand type {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(1).isReg(), "Unexpected operand type {}",
+                     patch);
   RegLLVM baseReg = inst.getOperand(0).getReg();
   RegLLVM indexReg = inst.getOperand(1).getReg();
 
-  QBDI_REQUIRE_ABORT_PATCH(baseReg != GPR_ID[REG_SP], patch,
-                           "Unsupported SP in baseRegister");
-  QBDI_REQUIRE_ABORT_PATCH(indexReg != GPR_ID[REG_SP], patch,
-                           "Unsupported SP in indexRegister");
-  QBDI_REQUIRE_ABORT_PATCH(indexReg != GPR_ID[REG_PC], patch,
-                           "Unexpected PC in indexRegister");
+  QBDI_REQUIRE_ABORT(baseReg != GPR_ID[REG_SP],
+                     "Unsupported SP in baseRegister {}", patch);
+  QBDI_REQUIRE_ABORT(indexReg != GPR_ID[REG_SP],
+                     "Unsupported SP in indexRegister {}", patch);
+  QBDI_REQUIRE_ABORT(indexReg != GPR_ID[REG_PC],
+                     "Unexpected PC in indexRegister {}", patch);
 
   // get our tempRegister
   Reg tempReg1 = temp_manager.getRegForTemp(temp1);
@@ -2350,7 +2348,7 @@ T2TBBTBHPatchGen::generate(const Patch &patch,
           tempReg1, baseReg, indexReg, 1, patch.metadata.archMetadata.cond)));
       break;
     default:
-      QBDI_ABORT_PATCH(patch, "Unexpected instruction");
+      QBDI_ABORT("Unexpected instruction {}", patch);
   }
   relocInstList.push_back(NoReloc::unique(
       t2addrsi(tempReg2, tempReg2, tempReg1, 1, llvm::ARM_AM::lsl,
@@ -2370,18 +2368,18 @@ T2BXAUTPatchGen::generate(const Patch &patch, TempManager &temp_manager) const {
 
   const llvm::MCInst &inst = patch.metadata.inst;
   const CPUMode cpumode = patch.llvmcpu->getCPUMode();
-  QBDI_REQUIRE_ABORT_PATCH(cpumode == CPUMode::Thumb, patch,
-                           "Only available in Thumb mode");
+  QBDI_REQUIRE_ABORT(cpumode == CPUMode::Thumb,
+                     "Only available in Thumb mode {}", patch);
 
   // get instruction operand
-  QBDI_REQUIRE_ABORT_PATCH(5 <= inst.getNumOperands(), patch,
-                           "Invalid instruction");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(2).isReg(), patch,
-                           "Unexpected operand type");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(3).isReg(), patch,
-                           "Unexpected operand type");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(4).isReg(), patch,
-                           "Unexpected operand type");
+  QBDI_REQUIRE_ABORT(5 <= inst.getNumOperands(), "Invalid instruction {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(2).isReg(), "Unexpected operand type {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(3).isReg(), "Unexpected operand type {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(4).isReg(), "Unexpected operand type {}",
+                     patch);
   RegLLVM targetReg = inst.getOperand(2).getReg();
   RegLLVM contextReg = inst.getOperand(3).getReg();
   RegLLVM encryptedReg = inst.getOperand(4).getReg();

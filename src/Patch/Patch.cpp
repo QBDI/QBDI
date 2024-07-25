@@ -128,7 +128,7 @@ void Patch::finalizeInstsPatch() {
     } else if (el.position == POSTINST) {
       continue;
     } else {
-      QBDI_ABORT_PATCH(*this, "Invalid position 0x{:x}", el.position);
+      QBDI_ABORT("Invalid position 0x{:x} {}", el.position, *this);
     }
   }
 
@@ -151,7 +151,7 @@ void Patch::finalizeInstsPatch() {
       v.swap(el.insts);
       append(std::move(v));
     } else {
-      QBDI_ABORT_PATCH(*this, "Invalid position 0x{:x}", el.position);
+      QBDI_ABORT("Invalid position 0x{:x} {}", el.position, *this);
     }
   }
 

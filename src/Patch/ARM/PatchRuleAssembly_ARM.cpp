@@ -1306,10 +1306,10 @@ void PatchRuleAssembly::patchSTLDMARM(Patch &patch, const LLVMCPU &llvmcpu) {
     return;
   }
 
-  QBDI_REQUIRE_ABORT_PATCH(0 < patch.metadata.inst.getNumOperands(), patch,
-                           "Invalid instruction");
-  QBDI_REQUIRE_ABORT_PATCH(patch.metadata.inst.getOperand(0).isReg(), patch,
-                           "Unexpected operand type");
+  QBDI_REQUIRE_ABORT(0 < patch.metadata.inst.getNumOperands(),
+                     "Invalid instruction {}", patch);
+  QBDI_REQUIRE_ABORT(patch.metadata.inst.getOperand(0).isReg(),
+                     "Unexpected operand type {}", patch);
 
   // don't used the base address as a tempregister
   RegLLVM baseReg = patch.metadata.inst.getOperand(0).getReg();
@@ -1402,7 +1402,7 @@ bool PatchRuleAssembly::generateARM(const llvm::MCInst &inst, rword address,
       }
     }
   }
-  QBDI_ABORT_PATCH(instPatch, "Not PatchRule found");
+  QBDI_ABORT("Not PatchRule found {}", instPatch);
 }
 
 bool PatchRuleAssembly::generateThumb(const llvm::MCInst &inst, rword address,
@@ -1431,15 +1431,15 @@ bool PatchRuleAssembly::generateThumb(const llvm::MCInst &inst, rword address,
   }
 
   if (inst.getOpcode() == llvm::ARM::t2IT) {
-    QBDI_REQUIRE_ABORT_PATCH(
-        itRemainingInst == 0, instPatch,
-        "IT instruction cannot be inside another IT block");
-    QBDI_REQUIRE_ABORT_PATCH(2 == inst.getNumOperands(), instPatch,
-                             "Invalid instruction");
-    QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(0).isImm(), instPatch,
-                             "Unexpected operand type");
-    QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(1).isImm(), instPatch,
-                             "Unexpected operand type");
+    QBDI_REQUIRE_ABORT(itRemainingInst == 0,
+                       "IT instruction cannot be inside another IT block {}",
+                       instPatch);
+    QBDI_REQUIRE_ABORT(2 == inst.getNumOperands(), "Invalid instruction {}",
+                       instPatch);
+    QBDI_REQUIRE_ABORT(inst.getOperand(0).isImm(), "Unexpected operand type {}",
+                       instPatch);
+    QBDI_REQUIRE_ABORT(inst.getOperand(1).isImm(), "Unexpected operand type {}",
+                       instPatch);
     unsigned mask = inst.getOperand(1).getImm();
     switch (mask) {
       case (unsigned)llvm::ARM::PredBlockMask::T:
@@ -1466,7 +1466,7 @@ bool PatchRuleAssembly::generateThumb(const llvm::MCInst &inst, rword address,
         itRemainingInst = 4;
         break;
       default:
-        QBDI_ABORT_PATCH(instPatch, "Unexpected IT mask {}", mask);
+        QBDI_ABORT("Unexpected IT mask {} {}", mask, instPatch);
     }
     itCond[0] = inst.getOperand(0).getImm();
     for (unsigned i = 1; i < itRemainingInst; i++) {
@@ -1478,9 +1478,9 @@ bool PatchRuleAssembly::generateThumb(const llvm::MCInst &inst, rword address,
       }
     }
   } else if (itRemainingInst > 0) {
-    QBDI_REQUIRE_ABORT_PATCH(instPatch.metadata.archMetadata.cond == itCond[0],
-                             instPatch,
-                             "Condition doesn't match the last IT condition");
+    QBDI_REQUIRE_ABORT(instPatch.metadata.archMetadata.cond == itCond[0],
+                       "Condition doesn't match the last IT condition {}",
+                       instPatch);
     itRemainingInst--;
     itCond = {itCond[1], itCond[2], itCond[3], 0};
   }
@@ -1494,8 +1494,8 @@ bool PatchRuleAssembly::generateThumb(const llvm::MCInst &inst, rword address,
       Patch &patch = patchList.back();
 
       if (patch.metadata.modifyPC) {
-        QBDI_REQUIRE_ABORT_PATCH(itRemainingInst == 0, instPatch,
-                                 "Modify PC before the end of ItBlock");
+        QBDI_REQUIRE_ABORT(itRemainingInst == 0,
+                           "Modify PC before the end of ItBlock {}", instPatch);
         reset();
         return true;
       } else {
@@ -1503,7 +1503,7 @@ bool PatchRuleAssembly::generateThumb(const llvm::MCInst &inst, rword address,
       }
     }
   }
-  QBDI_ABORT_PATCH(instPatch, "Not PatchRule found");
+  QBDI_ABORT("Not PatchRule found {}", instPatch);
 }
 
 bool PatchRuleAssembly::earlyEnd(const LLVMCPU &llvmcpu,

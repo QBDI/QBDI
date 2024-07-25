@@ -30,8 +30,8 @@ namespace QBDI {
 
 void SetOperand::transform(llvm::MCInst &inst, rword address, size_t instSize,
                            TempManager &temp_manager) const {
-  QBDI_REQUIRE_ABORT_PATCH(opn < inst.getNumOperands(), temp_manager.getPatch(),
-                           "Invalid operand {}", opn);
+  QBDI_REQUIRE_ABORT(opn < inst.getNumOperands(), "Invalid operand {} {}", opn,
+                     temp_manager.getPatch());
   switch (type) {
     case TempOperandType:
       inst.getOperand(opn).setReg(temp_manager.getRegForTemp(temp).getValue());
@@ -72,9 +72,8 @@ void AddOperand::transform(llvm::MCInst &inst, rword address, size_t instSize,
       inst.insert(inst.begin() + opn, llvm::MCOperand::createImm(imm));
       break;
     case CpyOperandType:
-      QBDI_REQUIRE_ABORT_PATCH(src < inst.getNumOperands(),
-                               temp_manager.getPatch(), "Invalid operand {}",
-                               src);
+      QBDI_REQUIRE_ABORT(src < inst.getNumOperands(), "Invalid operand {} {}",
+                         src, temp_manager.getPatch());
       if (inst.getOperand(src).isReg()) {
         inst.insert(inst.begin() + opn,
                     llvm::MCOperand::createReg(inst.getOperand(src).getReg()));
@@ -82,7 +81,7 @@ void AddOperand::transform(llvm::MCInst &inst, rword address, size_t instSize,
         inst.insert(inst.begin() + opn,
                     llvm::MCOperand::createImm(inst.getOperand(src).getImm()));
       } else {
-        QBDI_ABORT_PATCH(temp_manager.getPatch(), "Unexpected operand type");
+        QBDI_ABORT("Unexpected operand type {}", temp_manager.getPatch());
       }
       break;
   }
@@ -115,8 +114,8 @@ void ReplaceOpcode::transform(llvm::MCInst &inst, rword address,
                               size_t instSize,
                               TempManager &temp_manager) const {
   const auto it = opcode.find(inst.getOpcode());
-  QBDI_REQUIRE_ABORT_PATCH(it != opcode.end(), temp_manager.getPatch(),
-                           "Opcode not found");
+  QBDI_REQUIRE_ABORT(it != opcode.end(), "Opcode not found {}",
+                     temp_manager.getPatch());
   inst.setOpcode(it->second);
 }
 

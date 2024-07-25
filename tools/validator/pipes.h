@@ -15,6 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef VALIDATOR_PIPES_H
+#define VALIDATOR_PIPES_H
+
 #include <memory.h>
 #include <stdio.h>
 #include <vector>
@@ -70,3 +73,7 @@ int writeEvent(EVENT event, FILE *pipe);
 int readCommand(COMMAND *command, FILE *pipe);
 
 int writeCommand(COMMAND command, FILE *pipe);
+
+inline int format_as(EVENT e) { return e; }
+
+#endif // VALIDATOR_PIPES_H

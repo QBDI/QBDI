@@ -54,10 +54,10 @@ void allocateConsecutiveTempRegister(TempManager &temp_manager, Temp temp1,
                                      Temp temp2) {
   const Patch &patch = temp_manager.getPatch();
 
-  QBDI_REQUIRE_ABORT_PATCH(not temp_manager.isAllocatedId(temp1), patch,
-                           "Temp is already register");
-  QBDI_REQUIRE_ABORT_PATCH(not temp_manager.isAllocatedId(temp2), patch,
-                           "Temp is already register");
+  QBDI_REQUIRE_ABORT(not temp_manager.isAllocatedId(temp1),
+                     "Temp is already register {}", patch);
+  QBDI_REQUIRE_ABORT(not temp_manager.isAllocatedId(temp2),
+                     "Temp is already register {}", patch);
 
   for (int i = 0; i < 12; i += 2) {
     if (temp_manager.usedRegister(Reg(i)) or
@@ -69,7 +69,7 @@ void allocateConsecutiveTempRegister(TempManager &temp_manager, Temp temp1,
     temp_manager.associatedReg(temp2, Reg(i + 1));
     return;
   }
-  QBDI_ABORT_PATCH(patch, "Fail to allocate consecutive TempRegister");
+  QBDI_ABORT("Fail to allocate consecutive TempRegister {}", patch);
 }
 
 } // namespace QBDI

@@ -110,14 +110,14 @@ GetPCOffset::generate(const Patch &patch, TempManager &temp_manager) const {
       dst = temp_manager.getRegForTemp(temp);
       break;
     case OperandOperandType:
-      QBDI_REQUIRE_ABORT_PATCH(opdst < inst.getNumOperands(), patch,
-                               "Invalid operand {}", opdst);
-      QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(opdst).isReg(), patch,
-                               "Unexpected operand type");
+      QBDI_REQUIRE_ABORT(opdst < inst.getNumOperands(), "Invalid operand {} {}",
+                         opdst, patch);
+      QBDI_REQUIRE_ABORT(inst.getOperand(opdst).isReg(),
+                         "Unexpected operand type {}", patch);
       dst = inst.getOperand(opdst).getReg();
       break;
     default:
-      QBDI_ABORT_PATCH(patch, "Logical Error");
+      QBDI_ABORT("Logical Error {}", patch);
   }
   switch (type) {
     case TempConstantType: {
@@ -127,8 +127,8 @@ GetPCOffset::generate(const Patch &patch, TempManager &temp_manager) const {
     }
     case OperandOperandType:
     case TempOperandType: {
-      QBDI_REQUIRE_ABORT_PATCH(opsrc < inst.getNumOperands(), patch,
-                               "Invalid operand {}", opsrc);
+      QBDI_REQUIRE_ABORT(opsrc < inst.getNumOperands(), "Invalid operand {} {}",
+                         opsrc, patch);
       if (inst.getOperand(opsrc).isImm()) {
         sword imm = inst.getOperand(opsrc).getImm();
         switch (inst.getOpcode()) {
@@ -175,10 +175,10 @@ GetPCOffset::generate(const Patch &patch, TempManager &temp_manager) const {
       //       LoadImm::unique(dst, Constant(patch.metadata.address)),
       //       Add(dst, reg));
       // }
-      QBDI_ABORT_PATCH(patch, "Unsupported Operand type");
+      QBDI_ABORT("Unsupported Operand type {}", patch);
     }
     default: {
-      QBDI_ABORT_PATCH(patch, "Logical Error");
+      QBDI_ABORT("Logical Error {}", patch);
     }
   }
   _QBDI_UNREACHABLE();
@@ -298,7 +298,7 @@ GetReadValue::generate(const Patch &patch, TempManager &temp_manager) const {
         return conv_unique<RelocatableInst>(Ldrw(tmpRegister, addrRegister, 8));
       }
     default:
-      QBDI_ABORT_PATCH(patch, "Unexpected Read Size {}", readSize);
+      QBDI_ABORT("Unexpected Read Size {} {}", readSize, patch);
   }
 }
 
@@ -354,7 +354,7 @@ GetWrittenValue::generate(const Patch &patch, TempManager &temp_manager) const {
         return conv_unique<RelocatableInst>(Ldrw(tmpRegister, addrRegister, 8));
       }
     default:
-      QBDI_ABORT_PATCH(patch, "Unexpected Written Size {}", writtenSize);
+      QBDI_ABORT("Unexpected Written Size {} {}", writtenSize, patch);
   }
 }
 
@@ -384,7 +384,7 @@ GetReadValueX2::generate(const Patch &patch, TempManager &temp_manager) const {
         return conv_unique<RelocatableInst>(
             Ldp(tmpRegister, tmpRegister2, addrRegister, index * 8));
       } else {
-        QBDI_ABORT_PATCH(patch, "Unsupported index {} for read size 24", index);
+        QBDI_ABORT("Unsupported index {} for read size 24 {}", index, patch);
       }
     case 16:
     case 32:
@@ -399,9 +399,9 @@ GetReadValueX2::generate(const Patch &patch, TempManager &temp_manager) const {
     case 6:
     case 8:
     case 12:
-      QBDI_ABORT_PATCH(patch, "Unsupported Read Size {}", readSize);
+      QBDI_ABORT("Unsupported Read Size {} {}", readSize, patch);
     default:
-      QBDI_ABORT_PATCH(patch, "Unexpected Read Size {}", readSize);
+      QBDI_ABORT("Unexpected Read Size {} {}", readSize, patch);
   }
 }
 
@@ -432,8 +432,7 @@ GetWrittenValueX2::generate(const Patch &patch,
         return conv_unique<RelocatableInst>(
             Ldp(tmpRegister, tmpRegister2, addrRegister, index * 8));
       } else {
-        QBDI_ABORT_PATCH(patch, "Unsupported index {} for written size 24",
-                         index);
+        QBDI_ABORT("Unsupported index {} for written size 24 {}", index, patch);
       }
     case 16:
     case 32:
@@ -448,9 +447,9 @@ GetWrittenValueX2::generate(const Patch &patch,
     case 6:
     case 8:
     case 12:
-      QBDI_ABORT_PATCH(patch, "Unsupported Writren Size {}", writtenSize);
+      QBDI_ABORT("Unsupported Writren Size {} {}", writtenSize, patch);
     default:
-      QBDI_ABORT_PATCH(patch, "Unexpected Written Size {}", writtenSize);
+      QBDI_ABORT("Unexpected Written Size {} {}", writtenSize, patch);
   }
 }
 
@@ -504,26 +503,26 @@ GetAddrAuth::generate(const Patch &patch, TempManager &temp_manager) const {
       dst = temp_manager.getRegForTemp(temp);
       break;
     case OperandType:
-      QBDI_REQUIRE_ABORT_PATCH(op < inst.getNumOperands(), patch,
-                               "Invalid operand {}", op);
-      QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(op).isReg(), patch,
-                               "Unexpected operand type");
+      QBDI_REQUIRE_ABORT(op < inst.getNumOperands(), "Invalid operand {} {}",
+                         op, patch);
+      QBDI_REQUIRE_ABORT(inst.getOperand(op).isReg(),
+                         "Unexpected operand type {}", patch);
       dst = inst.getOperand(op).getReg();
       break;
     default:
-      QBDI_ABORT_PATCH(patch, "unexpected type");
+      QBDI_ABORT("unexpected type {}", patch);
   }
 
   if (bypass) {
     switch (inst.getOpcode()) {
       case llvm::AArch64::LDRAAindexed:
       case llvm::AArch64::LDRABindexed: {
-        QBDI_REQUIRE_ABORT_PATCH(2 < inst.getNumOperands(), patch,
-                                 "Invalid operand");
-        QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(1).isReg(), patch,
-                                 "Unexpected operand type");
-        QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(2).isImm(), patch,
-                                 "Unexpected operand type");
+        QBDI_REQUIRE_ABORT(2 < inst.getNumOperands(), "Invalid operand {}",
+                           patch);
+        QBDI_REQUIRE_ABORT(inst.getOperand(1).isReg(),
+                           "Unexpected operand type {}", patch);
+        QBDI_REQUIRE_ABORT(inst.getOperand(2).isImm(),
+                           "Unexpected operand type {}", patch);
         RegLLVM src = inst.getOperand(1).getReg();
         sword imm = inst.getOperand(2).getImm() * 8;
         if (src != dst)
@@ -536,12 +535,12 @@ GetAddrAuth::generate(const Patch &patch, TempManager &temp_manager) const {
       }
       case llvm::AArch64::LDRAAwriteback:
       case llvm::AArch64::LDRABwriteback: {
-        QBDI_REQUIRE_ABORT_PATCH(3 < inst.getNumOperands(), patch,
-                                 "Invalid operand");
-        QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(2).isReg(), patch,
-                                 "Unexpected operand type");
-        QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(3).isImm(), patch,
-                                 "Unexpected operand type");
+        QBDI_REQUIRE_ABORT(3 < inst.getNumOperands(), "Invalid operand {}",
+                           patch);
+        QBDI_REQUIRE_ABORT(inst.getOperand(2).isReg(),
+                           "Unexpected operand type {}", patch);
+        QBDI_REQUIRE_ABORT(inst.getOperand(3).isImm(),
+                           "Unexpected operand type {}", patch);
         RegLLVM src = inst.getOperand(2).getReg();
         sword imm = inst.getOperand(3).getImm() * 8;
         if (src != dst)
@@ -560,10 +559,10 @@ GetAddrAuth::generate(const Patch &patch, TempManager &temp_manager) const {
       case llvm::AArch64::BLRAB:
       case llvm::AArch64::BLRAAZ:
       case llvm::AArch64::BLRABZ: {
-        QBDI_REQUIRE_ABORT_PATCH(0 < inst.getNumOperands(), patch,
-                                 "Invalid operand");
-        QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(0).isReg(), patch,
-                                 "Unexpected operand type");
+        QBDI_REQUIRE_ABORT(0 < inst.getNumOperands(), "Invalid operand {}",
+                           patch);
+        QBDI_REQUIRE_ABORT(inst.getOperand(0).isReg(),
+                           "Unexpected operand type {}", patch);
         RegLLVM src = inst.getOperand(0).getReg();
         if (src != dst)
           return conv_unique<RelocatableInst>(MovReg::unique(dst, src),
@@ -579,18 +578,18 @@ GetAddrAuth::generate(const Patch &patch, TempManager &temp_manager) const {
         else
           return conv_unique<RelocatableInst>(Xpaci(dst));
       default:
-        QBDI_ABORT_PATCH(patch, "Unexpected opcode {}", inst.getOpcode());
+        QBDI_ABORT("Unexpected opcode {} {}", inst.getOpcode(), patch);
     }
   } else {
     switch (inst.getOpcode()) {
       case llvm::AArch64::BRAA:
       case llvm::AArch64::BLRAA: {
-        QBDI_REQUIRE_ABORT_PATCH(1 < inst.getNumOperands(), patch,
-                                 "Invalid operand");
-        QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(0).isReg(), patch,
-                                 "Unexpected operand type");
-        QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(1).isReg(), patch,
-                                 "Unexpected operand type");
+        QBDI_REQUIRE_ABORT(1 < inst.getNumOperands(), "Invalid operand {}",
+                           patch);
+        QBDI_REQUIRE_ABORT(inst.getOperand(0).isReg(),
+                           "Unexpected operand type {}", patch);
+        QBDI_REQUIRE_ABORT(inst.getOperand(1).isReg(),
+                           "Unexpected operand type {}", patch);
         RegLLVM src = inst.getOperand(0).getReg();
         RegLLVM ctx = inst.getOperand(1).getReg();
         if (src != dst)
@@ -601,12 +600,12 @@ GetAddrAuth::generate(const Patch &patch, TempManager &temp_manager) const {
       }
       case llvm::AArch64::BRAB:
       case llvm::AArch64::BLRAB: {
-        QBDI_REQUIRE_ABORT_PATCH(1 < inst.getNumOperands(), patch,
-                                 "Invalid operand");
-        QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(0).isReg(), patch,
-                                 "Unexpected operand type");
-        QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(1).isReg(), patch,
-                                 "Unexpected operand type");
+        QBDI_REQUIRE_ABORT(1 < inst.getNumOperands(), "Invalid operand {}",
+                           patch);
+        QBDI_REQUIRE_ABORT(inst.getOperand(0).isReg(),
+                           "Unexpected operand type {}", patch);
+        QBDI_REQUIRE_ABORT(inst.getOperand(1).isReg(),
+                           "Unexpected operand type {}", patch);
         RegLLVM src = inst.getOperand(0).getReg();
         RegLLVM ctx = inst.getOperand(1).getReg();
         if (src != dst)
@@ -617,10 +616,10 @@ GetAddrAuth::generate(const Patch &patch, TempManager &temp_manager) const {
       }
       case llvm::AArch64::BRAAZ:
       case llvm::AArch64::BLRAAZ: {
-        QBDI_REQUIRE_ABORT_PATCH(0 < inst.getNumOperands(), patch,
-                                 "Invalid operand");
-        QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(0).isReg(), patch,
-                                 "Unexpected operand type");
+        QBDI_REQUIRE_ABORT(0 < inst.getNumOperands(), "Invalid operand {}",
+                           patch);
+        QBDI_REQUIRE_ABORT(inst.getOperand(0).isReg(),
+                           "Unexpected operand type {}", patch);
         RegLLVM src = inst.getOperand(0).getReg();
         if (src != dst)
           return conv_unique<RelocatableInst>(MovReg::unique(dst, src),
@@ -630,10 +629,10 @@ GetAddrAuth::generate(const Patch &patch, TempManager &temp_manager) const {
       }
       case llvm::AArch64::BRABZ:
       case llvm::AArch64::BLRABZ: {
-        QBDI_REQUIRE_ABORT_PATCH(0 < inst.getNumOperands(), patch,
-                                 "Invalid operand");
-        QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(0).isReg(), patch,
-                                 "Unexpected operand type");
+        QBDI_REQUIRE_ABORT(0 < inst.getNumOperands(), "Invalid operand {}",
+                           patch);
+        QBDI_REQUIRE_ABORT(inst.getOperand(0).isReg(),
+                           "Unexpected operand type {}", patch);
         RegLLVM src = inst.getOperand(0).getReg();
         if (src != dst)
           return conv_unique<RelocatableInst>(MovReg::unique(dst, src),
@@ -655,7 +654,7 @@ GetAddrAuth::generate(const Patch &patch, TempManager &temp_manager) const {
           return conv_unique<RelocatableInst>(Autib(dst, Reg(31)));
 
       default:
-        QBDI_ABORT_PATCH(patch, "Unexpected opcode {}", inst.getOpcode());
+        QBDI_ABORT("Unexpected opcode {} {}", inst.getOpcode(), patch);
     }
   }
 }

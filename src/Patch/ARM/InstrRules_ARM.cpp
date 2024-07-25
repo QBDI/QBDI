@@ -38,8 +38,7 @@ namespace QBDI {
 RelocatableInst::UniquePtrVec getBreakToHost(Reg temp, const Patch &patch,
                                              bool restore) {
 
-  QBDI_REQUIRE_ABORT_PATCH(restore, patch,
-                           "ARM don't have a temporary register");
+  QBDI_REQUIRE_ABORT(restore, "ARM don't have a temporary register {}", patch);
 
   // compute offset address
   unsigned int patchSize = RelativeAddress(temp, 0xff).getSize(*patch.llvmcpu);
