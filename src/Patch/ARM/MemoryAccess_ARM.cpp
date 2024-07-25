@@ -63,10 +63,10 @@ RelocatableInst::UniquePtrVec ADDR_REG_FN(const Patch &patch, Reg dest,
   const llvm::MCInst &inst = patch.metadata.inst;
   const rword address = patch.metadata.address;
 
-  QBDI_REQUIRE_ABORT_PATCH(operandOff < inst.getNumOperands(), patch,
-                           "Invalid operand");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(operandOff).isReg(), patch,
-                           "Unexpected operand type");
+  QBDI_REQUIRE_ABORT(operandOff < inst.getNumOperands(), "Invalid operand {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(operandOff).isReg(),
+                     "Unexpected operand type {}", patch);
   RegLLVM addrReg = inst.getOperand(operandOff).getReg();
   if (addrReg == llvm::ARM::PC) {
     if (llvmcpu == CPUMode::Thumb) {
@@ -611,13 +611,13 @@ RelocatableInst::UniquePtrVec ADDR_REG_PLUS_FN(const Patch &patch, Reg dest,
   const LLVMCPU &llvmcpu = *patch.llvmcpu;
   const llvm::MCInst &inst = patch.metadata.inst;
 
-  QBDI_REQUIRE_ABORT_PATCH(operandOff < inst.getNumOperands(), patch,
-                           "Invalid operand");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(operandOff).isReg(), patch,
-                           "Unexpected operand type");
+  QBDI_REQUIRE_ABORT(operandOff < inst.getNumOperands(), "Invalid operand {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(operandOff).isReg(),
+                     "Unexpected operand type {}", patch);
   RegLLVM addrReg = inst.getOperand(operandOff).getReg();
-  QBDI_REQUIRE_ABORT_PATCH(addrReg != llvm::ARM::PC, patch,
-                           "Unexpected PC register");
+  QBDI_REQUIRE_ABORT(addrReg != llvm::ARM::PC, "Unexpected PC register {}",
+                     patch);
   return Addc(llvmcpu, dest, addrReg, offset, dest);
 }
 
@@ -710,15 +710,15 @@ RelocatableInst::UniquePtrVec ADDR_REG_SIMM_FN(const Patch &patch, Reg dest,
   const llvm::MCInst &inst = patch.metadata.inst;
   const rword address = patch.metadata.address;
 
-  QBDI_REQUIRE_ABORT_PATCH(operandOff1 < inst.getNumOperands(), patch,
-                           "Invalid operand");
-  QBDI_REQUIRE_ABORT_PATCH(operandOff2 < inst.getNumOperands(), patch,
-                           "Invalid operand");
+  QBDI_REQUIRE_ABORT(operandOff1 < inst.getNumOperands(), "Invalid operand {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(operandOff2 < inst.getNumOperands(), "Invalid operand {}",
+                     patch);
 
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(operandOff1).isReg(), patch,
-                           "Unexpected operand type");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(operandOff2).isImm(), patch,
-                           "Unexpected operand type");
+  QBDI_REQUIRE_ABORT(inst.getOperand(operandOff1).isReg(),
+                     "Unexpected operand type {}", patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(operandOff2).isImm(),
+                     "Unexpected operand type {}", patch);
   RegLLVM addrReg = inst.getOperand(operandOff1).getReg();
   sword offset = inst.getOperand(operandOff2).getImm();
   // encoding of #-0x0
@@ -878,19 +878,19 @@ RelocatableInst::UniquePtrVec ADDR_REG_REG_FN(const Patch &patch, Reg dest,
   const llvm::MCInst &inst = patch.metadata.inst;
   const rword address = patch.metadata.address;
 
-  QBDI_REQUIRE_ABORT_PATCH(operandOff1 < inst.getNumOperands(), patch,
-                           "Invalid operand");
-  QBDI_REQUIRE_ABORT_PATCH(operandOff2 < inst.getNumOperands(), patch,
-                           "Invalid operand");
+  QBDI_REQUIRE_ABORT(operandOff1 < inst.getNumOperands(), "Invalid operand {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(operandOff2 < inst.getNumOperands(), "Invalid operand {}",
+                     patch);
 
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(operandOff1).isReg(), patch,
-                           "Unexpected operand type");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(operandOff2).isReg(), patch,
-                           "Unexpected operand type");
+  QBDI_REQUIRE_ABORT(inst.getOperand(operandOff1).isReg(),
+                     "Unexpected operand type {}", patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(operandOff2).isReg(),
+                     "Unexpected operand type {}", patch);
   RegLLVM addrReg = inst.getOperand(operandOff1).getReg();
   RegLLVM offsetReg = inst.getOperand(operandOff2).getReg();
-  QBDI_REQUIRE_ABORT_PATCH(offsetReg != llvm::ARM::NoRegister, patch,
-                           "Missing offset register");
+  QBDI_REQUIRE_ABORT(offsetReg != llvm::ARM::NoRegister,
+                     "Missing offset register {}", patch);
 
   RelocatableInst::UniquePtrVec reloc;
 
@@ -969,17 +969,17 @@ ADDR_REG_1_REGSHIFT1_2_FN(const Patch &patch, Reg dest, bool writeAccess) {
   const llvm::MCInst &inst = patch.metadata.inst;
   const rword address = patch.metadata.address;
 
-  QBDI_REQUIRE_ABORT_PATCH(2 <= inst.getNumOperands(), patch,
-                           "Invalid operand number");
+  QBDI_REQUIRE_ABORT(2 <= inst.getNumOperands(), "Invalid operand number {}",
+                     patch);
 
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(0).isReg(), patch,
-                           "Unexpected operand type");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(1).isReg(), patch,
-                           "Unexpected operand type");
+  QBDI_REQUIRE_ABORT(inst.getOperand(0).isReg(), "Unexpected operand type {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(1).isReg(), "Unexpected operand type {}",
+                     patch);
   RegLLVM addrReg = inst.getOperand(0).getReg();
   RegLLVM offsetReg = inst.getOperand(1).getReg();
-  QBDI_REQUIRE_ABORT_PATCH(offsetReg != llvm::ARM::NoRegister, patch,
-                           "Missing offset register");
+  QBDI_REQUIRE_ABORT(offsetReg != llvm::ARM::NoRegister,
+                     "Missing offset register {}", patch);
 
   RelocatableInst::UniquePtrVec reloc;
 
@@ -1015,24 +1015,24 @@ RelocatableInst::UniquePtrVec ADDR_REG_REGLSL_FN(const Patch &patch, Reg dest,
   const llvm::MCInst &inst = patch.metadata.inst;
   const rword address = patch.metadata.address;
 
-  QBDI_REQUIRE_ABORT_PATCH(operandOff1 < inst.getNumOperands(), patch,
-                           "Invalid operand");
-  QBDI_REQUIRE_ABORT_PATCH(operandOff2 < inst.getNumOperands(), patch,
-                           "Invalid operand");
-  QBDI_REQUIRE_ABORT_PATCH(operandOff3 < inst.getNumOperands(), patch,
-                           "Invalid operand");
+  QBDI_REQUIRE_ABORT(operandOff1 < inst.getNumOperands(), "Invalid operand {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(operandOff2 < inst.getNumOperands(), "Invalid operand {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(operandOff3 < inst.getNumOperands(), "Invalid operand {}",
+                     patch);
 
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(operandOff1).isReg(), patch,
-                           "Unexpected operand type");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(operandOff2).isReg(), patch,
-                           "Unexpected operand type");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(operandOff3).isImm(), patch,
-                           "Unexpected operand type");
+  QBDI_REQUIRE_ABORT(inst.getOperand(operandOff1).isReg(),
+                     "Unexpected operand type {}", patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(operandOff2).isReg(),
+                     "Unexpected operand type {}", patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(operandOff3).isImm(),
+                     "Unexpected operand type {}", patch);
   RegLLVM addrReg = inst.getOperand(operandOff1).getReg();
   RegLLVM offsetReg = inst.getOperand(operandOff2).getReg();
   unsigned shift = inst.getOperand(operandOff3).getImm();
-  QBDI_REQUIRE_ABORT_PATCH(offsetReg != llvm::ARM::NoRegister, patch,
-                           "Missing offset register");
+  QBDI_REQUIRE_ABORT(offsetReg != llvm::ARM::NoRegister,
+                     "Missing offset register {}", patch);
 
   RelocatableInst::UniquePtrVec reloc;
 
@@ -1094,24 +1094,24 @@ RelocatableInst::UniquePtrVec ADDR_REG_REGSHIFT_FN(const Patch &patch, Reg dest,
   const llvm::MCInst &inst = patch.metadata.inst;
   const rword address = patch.metadata.address;
 
-  QBDI_REQUIRE_ABORT_PATCH(operandOff1 < inst.getNumOperands(), patch,
-                           "Invalid operand");
-  QBDI_REQUIRE_ABORT_PATCH(operandOff2 < inst.getNumOperands(), patch,
-                           "Invalid operand");
-  QBDI_REQUIRE_ABORT_PATCH(operandOff3 < inst.getNumOperands(), patch,
-                           "Invalid operand");
+  QBDI_REQUIRE_ABORT(operandOff1 < inst.getNumOperands(), "Invalid operand {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(operandOff2 < inst.getNumOperands(), "Invalid operand {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(operandOff3 < inst.getNumOperands(), "Invalid operand {}",
+                     patch);
 
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(operandOff1).isReg(), patch,
-                           "Unexpected operand type");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(operandOff2).isReg(), patch,
-                           "Unexpected operand type");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(operandOff3).isImm(), patch,
-                           "Unexpected operand type");
+  QBDI_REQUIRE_ABORT(inst.getOperand(operandOff1).isReg(),
+                     "Unexpected operand type {}", patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(operandOff2).isReg(),
+                     "Unexpected operand type {}", patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(operandOff3).isImm(),
+                     "Unexpected operand type {}", patch);
   RegLLVM addrReg = inst.getOperand(operandOff1).getReg();
   RegLLVM offsetReg = inst.getOperand(operandOff2).getReg();
   unsigned value = inst.getOperand(operandOff3).getImm();
-  QBDI_REQUIRE_ABORT_PATCH(offsetReg != llvm::ARM::NoRegister, patch,
-                           "Missing offset register");
+  QBDI_REQUIRE_ABORT(offsetReg != llvm::ARM::NoRegister,
+                     "Missing offset register {}", patch);
 
   unsigned shift = llvm::ARM_AM::getAM2Offset(value);
   bool offsetIsSub = llvm::ARM_AM::getAM2Op(value) == llvm::ARM_AM::sub;
@@ -1199,19 +1199,19 @@ RelocatableInst::UniquePtrVec ADDR_REG_IMMORREG_FN(const Patch &patch, Reg dest,
   const llvm::MCInst &inst = patch.metadata.inst;
   const rword address = patch.metadata.address;
 
-  QBDI_REQUIRE_ABORT_PATCH(operandOff1 < inst.getNumOperands(), patch,
-                           "Invalid operand");
-  QBDI_REQUIRE_ABORT_PATCH(operandOff2 < inst.getNumOperands(), patch,
-                           "Invalid operand");
-  QBDI_REQUIRE_ABORT_PATCH(operandOff3 < inst.getNumOperands(), patch,
-                           "Invalid operand");
+  QBDI_REQUIRE_ABORT(operandOff1 < inst.getNumOperands(), "Invalid operand {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(operandOff2 < inst.getNumOperands(), "Invalid operand {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(operandOff3 < inst.getNumOperands(), "Invalid operand {}",
+                     patch);
 
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(operandOff1).isReg(), patch,
-                           "Unexpected operand type");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(operandOff2).isReg(), patch,
-                           "Unexpected operand type");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(operandOff3).isImm(), patch,
-                           "Unexpected operand type");
+  QBDI_REQUIRE_ABORT(inst.getOperand(operandOff1).isReg(),
+                     "Unexpected operand type {}", patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(operandOff2).isReg(),
+                     "Unexpected operand type {}", patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(operandOff3).isImm(),
+                     "Unexpected operand type {}", patch);
   RegLLVM addrReg = inst.getOperand(operandOff1).getReg();
   RegLLVM offsetReg = inst.getOperand(operandOff2).getReg();
   sword imm = inst.getOperand(operandOff3).getImm();
@@ -1318,15 +1318,15 @@ RelocatableInst::UniquePtrVec ADDR_REG_IMMSHIFT_FN(const Patch &patch, Reg dest,
   const llvm::MCInst &inst = patch.metadata.inst;
   const rword address = patch.metadata.address;
 
-  QBDI_REQUIRE_ABORT_PATCH(operandOff1 < inst.getNumOperands(), patch,
-                           "Invalid operand");
-  QBDI_REQUIRE_ABORT_PATCH(operandOff2 < inst.getNumOperands(), patch,
-                           "Invalid operand");
+  QBDI_REQUIRE_ABORT(operandOff1 < inst.getNumOperands(), "Invalid operand {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(operandOff2 < inst.getNumOperands(), "Invalid operand {}",
+                     patch);
 
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(operandOff1).isReg(), patch,
-                           "Unexpected operand type");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(operandOff2).isImm(), patch,
-                           "Unexpected operand type");
+  QBDI_REQUIRE_ABORT(inst.getOperand(operandOff1).isReg(),
+                     "Unexpected operand type {}", patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(operandOff2).isImm(),
+                     "Unexpected operand type {}", patch);
   RegLLVM addrReg = inst.getOperand(operandOff1).getReg();
   sword imm = inst.getOperand(operandOff2).getImm();
 
@@ -1479,13 +1479,13 @@ RelocatableInst::UniquePtrVec ADDR_REG_IMPLICIT_PC_OFF_FN(const Patch &patch,
 
   if (PCAlign) {
     address &= (~3);
-    QBDI_REQUIRE_ABORT_PATCH(address % 4 == 0, patch, "Bad align");
+    QBDI_REQUIRE_ABORT(address % 4 == 0, "Bad align {}", patch);
   }
 
-  QBDI_REQUIRE_ABORT_PATCH(operandOff < inst.getNumOperands(), patch,
-                           "Invalid operand");
-  QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(operandOff).isImm(), patch,
-                           "Unexpected operand type");
+  QBDI_REQUIRE_ABORT(operandOff < inst.getNumOperands(), "Invalid operand {}",
+                     patch);
+  QBDI_REQUIRE_ABORT(inst.getOperand(operandOff).isImm(),
+                     "Unexpected operand type {}", patch);
   sword offset = inst.getOperand(operandOff).getImm();
 
   if (llvmcpu == CPUMode::Thumb) {
@@ -2136,8 +2136,8 @@ generateReadInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
     }
 
     default:
-      QBDI_ABORT_PATCH(patch, "Unexpected number of memory Access {}",
-                       getReadSize(patch.metadata.inst, llvmcpu));
+      QBDI_ABORT("Unexpected number of memory Access {} {}",
+                 getReadSize(patch.metadata.inst, llvmcpu), patch);
   }
 }
 
@@ -2532,8 +2532,8 @@ generatePostWriteInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
     }
 
     default:
-      QBDI_ABORT_PATCH(patch, "Unexpected number of memory Access {}",
-                       getWriteSize(patch.metadata.inst, llvmcpu));
+      QBDI_ABORT("Unexpected number of memory Access {} {}",
+                 getWriteSize(patch.metadata.inst, llvmcpu), patch);
   }
 }
 

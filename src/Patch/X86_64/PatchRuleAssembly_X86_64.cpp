@@ -351,9 +351,9 @@ bool PatchRuleAssembly::generate(const llvm::MCInst &inst, rword address,
             break;
           }
         }
-        QBDI_REQUIRE_ABORT_PATCH(
-            position != -1, instPatch,
-            "Fail to get the position to insert the new patch");
+        QBDI_REQUIRE_ABORT(
+            position != -1,
+            "Fail to get the position to insert the new patch {}", instPatch);
 
         // 3. add the instruction to merge at the flags ModifyInstructionFlags
         Patch &mergePatch = patchList.back();
@@ -389,7 +389,7 @@ bool PatchRuleAssembly::generate(const llvm::MCInst &inst, rword address,
       }
     }
   }
-  QBDI_ABORT_PATCH(instPatch, "Not PatchRule found for:");
+  QBDI_ABORT("Not PatchRule found for: {}", instPatch);
 }
 
 bool PatchRuleAssembly::earlyEnd(const LLVMCPU &llvmcpu,

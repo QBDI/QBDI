@@ -92,8 +92,8 @@ GetOperand::generate(const Patch &patch, TempManager &temp_manager) const {
   if (type == TmpType) {
     destReg = temp_manager.getRegForTemp(temp);
   }
-  QBDI_REQUIRE_ABORT_PATCH(op < inst.getNumOperands(), patch,
-                           "Invalid operand {}", op);
+  QBDI_REQUIRE_ABORT(op < inst.getNumOperands(), "Invalid operand {} {}", op,
+                     patch);
   if (inst.getOperand(op).isReg()) {
     return conv_unique<RelocatableInst>(
         MovReg::unique(destReg, inst.getOperand(op).getReg()));
@@ -113,8 +113,8 @@ RelocatableInst::UniquePtrVec
 WriteOperand::generate(const Patch &patch, TempManager &temp_manager) const {
   const llvm::MCInst &inst = patch.metadata.inst;
 
-  QBDI_REQUIRE_ABORT_PATCH(op < inst.getNumOperands(), patch,
-                           "Invalid operand {}", op);
+  QBDI_REQUIRE_ABORT(op < inst.getNumOperands(), "Invalid operand {} {}", op,
+                     patch);
   if (inst.getOperand(op).isReg()) {
     return conv_unique<RelocatableInst>(
         StoreDataBlock::unique(inst.getOperand(op).getReg(), offset));
@@ -141,8 +141,8 @@ RelocatableInst::UniquePtrVec
 GetConstantMap::generate(const Patch &patch, TempManager &temp_manager) const {
   const llvm::MCInst &inst = patch.metadata.inst;
   const auto it = opcodeMap.find(inst.getOpcode());
-  QBDI_REQUIRE_ABORT_PATCH(it != opcodeMap.end(), temp_manager.getPatch(),
-                           "Opcode not found");
+  QBDI_REQUIRE_ABORT(it != opcodeMap.end(), "Opcode not found {}",
+                     temp_manager.getPatch());
 
   return conv_unique<RelocatableInst>(
       LoadImm::unique(temp_manager.getRegForTemp(temp), it->second));
@@ -178,13 +178,13 @@ WriteTemp::generate(const Patch &patch, TempManager &temp_manager) const {
         StoreShadow::unique(temp_manager.getRegForTemp(temp), shadow, true));
   } else if (type == OperandType) {
     const llvm::MCInst &inst = patch.metadata.inst;
-    QBDI_REQUIRE_ABORT_PATCH(operand < inst.getNumOperands(), patch,
-                             "Invalid operand {}", operand);
-    QBDI_REQUIRE_ABORT_PATCH(inst.getOperand(operand).isReg(), patch,
-                             "Unexpected operand type");
+    QBDI_REQUIRE_ABORT(operand < inst.getNumOperands(), "Invalid operand {} {}",
+                       operand, patch);
+    QBDI_REQUIRE_ABORT(inst.getOperand(operand).isReg(),
+                       "Unexpected operand type {}", patch);
     int regNo = getGPRPosition(inst.getOperand(operand).getReg());
-    QBDI_REQUIRE_ABORT_PATCH(regNo != -1, patch, "Unexpected GPRregister {}",
-                             inst.getOperand(operand).getReg());
+    QBDI_REQUIRE_ABORT(regNo != -1, "Unexpected GPRregister {} {}",
+                       inst.getOperand(operand).getReg(), patch);
     return conv_unique<RelocatableInst>(
         MovReg::unique(Reg(regNo), temp_manager.getRegForTemp(temp)));
   }

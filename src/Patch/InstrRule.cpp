@@ -76,7 +76,7 @@ void InstrRule::instrument(Patch &patch,
           address = patch.metadata.endAddress();
           break;
         default:
-          QBDI_ABORT_PATCH(patch, "Invalid position {}", position);
+          QBDI_ABORT("Invalid position {} {}", position, patch);
       }
 #if defined(QBDI_ARCH_ARM)
       if (patch.metadata.cpuMode == CPUMode::Thumb) {

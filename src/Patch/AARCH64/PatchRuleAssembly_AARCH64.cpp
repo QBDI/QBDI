@@ -490,7 +490,7 @@ bool PatchRuleAssembly::generate(const llvm::MCInst &inst, rword address,
       return patch.metadata.modifyPC;
     }
   }
-  QBDI_ABORT_PATCH(instPatch, "Not PatchRule found");
+  QBDI_ABORT("Not PatchRule found {}", instPatch);
 }
 
 bool PatchRuleAssembly::earlyEnd(const LLVMCPU &llvmcpu,

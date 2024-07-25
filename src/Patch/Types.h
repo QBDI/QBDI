@@ -247,6 +247,8 @@ public:
   inline operator unsigned int() const { return idx; }
 };
 
+inline unsigned int format_as(const Operand &op) { return op; }
+
 /* Tag value for RelocatableInst
  */
 enum RelocatableInstTag {
@@ -261,6 +263,8 @@ enum RelocatableInstTag {
   RelocTagPostInstStdCBK = 0x41,
   RelocTagInvalid = 0xff,
 };
+
+inline uint32_t format_as(RelocatableInstTag t) { return t; }
 
 } // namespace QBDI
 

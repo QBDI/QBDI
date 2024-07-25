@@ -38,45 +38,6 @@
 #endif
 
 namespace QBDI {
-void dump_inst(spdlog::level::level_enum level,
-               const spdlog::memory_buf_t &message,
-               const spdlog::source_loc &loc, const Patch &patch) {
-  dump_inst(level, message, loc, *(patch.llvmcpu), patch.metadata.inst,
-            patch.metadata.address, patch.metadata.endAddress());
-}
-
-void dump_inst(spdlog::level::level_enum level,
-               const spdlog::memory_buf_t &message,
-               const spdlog::source_loc &loc, const LLVMCPU &llvmcpu,
-               const InstMetadata &metadata) {
-  dump_inst(level, message, loc, llvmcpu, metadata.inst, metadata.address,
-            metadata.endAddress());
-}
-
-void dump_inst(spdlog::level::level_enum level,
-               const spdlog::memory_buf_t &message,
-               const spdlog::source_loc &loc, const LLVMCPU &llvmcpu,
-               const llvm::MCInst &inst, rword address, rword endAddress) {
-
-  std::string disass = llvmcpu.showInst(inst, address);
-  unsigned opcode = inst.getOpcode();
-  const char *opcodeName = llvmcpu.getInstOpcodeName(opcode);
-  spdlog::default_logger_raw()->log(
-      loc, level, "{} 0x{:x}: {} | {} ({}) | ({:n}){}",
-      spdlog::string_view_t(message.data(), message.size()), address, disass,
-      opcodeName, opcode,
-      spdlog::to_hex(reinterpret_cast<uint8_t *>(address),
-                     reinterpret_cast<uint8_t *>(endAddress)),
-#if defined(QBDI_ARCH_ARM)
-      (llvmcpu == CPUMode::ARM) ? " (ARM mode)" : " (Thumb mode)"
-#else
-      ""
-#endif
-  );
-}
-
-// ====================================================
-
 namespace {
 
 class Logger {
@@ -156,5 +117,33 @@ void qbdi_setLogPriority(LogPriority priority) { logger.setPriority(priority); }
 void qbdi_setLogConsole() { logger.setConsoleLogger(); }
 
 void qbdi_setLogDefault() { logger.setDefaultLogger(); }
+
+// ====================================================
+
+std::string format_as(const QBDI::Patch &patch) {
+
+  std::string disass =
+      patch.llvmcpu->showInst(patch.metadata.inst, patch.metadata.address);
+  unsigned opcode = patch.metadata.inst.getOpcode();
+  const char *opcodeName = patch.llvmcpu->getInstOpcodeName(opcode);
+
+#ifdef SPDLOG_USE_STD_FORMAT
+  std::string message = std::vformat(
+#else
+  std::string message = fmt::format(
+#endif
+      "0x{:x}: {} | {} ({}) | ({:n}){}", patch.metadata.address, disass,
+      opcodeName, opcode,
+      spdlog::to_hex(reinterpret_cast<uint8_t *>(patch.metadata.address),
+                     reinterpret_cast<uint8_t *>(patch.metadata.endAddress())),
+#if defined(QBDI_ARCH_ARM)
+      (patch.llvmcpu->getCPUMode() == QBDI::CPUMode::ARM) ? " (ARM mode)"
+                                                          : " (Thumb mode)"
+#else
+      ""
+#endif
+  );
+  return message;
+}
 
 } // namespace QBDI

@@ -1,20 +1,3 @@
-include(FetchContent)
-
-if((QBDI_TEST) OR (QBDI_BENCHMARK))
-  FetchContent_Declare(
-    Catch2
-    URL "https://github.com/catchorg/Catch2/archive/refs/tags/v2.13.7.zip"
-    URL_HASH
-      "SHA256=3f3ccd90ad3a8fbb1beeb15e6db440ccdcbebe378dfd125d07a1f9a587a927e9"
-    DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/catch2-download")
-
-  FetchContent_GetProperties(Catch2)
-  if(NOT catch2_POPULATED)
-    FetchContent_Populate(Catch2)
-    add_subdirectory(${catch2_SOURCE_DIR} ${catch2_BINARY_DIR} EXCLUDE_FROM_ALL)
-  endif()
-endif()
-
 # test
 if(QBDI_TEST)
 

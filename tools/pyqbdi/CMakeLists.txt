@@ -2,7 +2,6 @@ if(QBDI_ARCH_X86
    OR QBDI_ARCH_X86_64
    OR QBDI_ARCH_AARCH64
    OR QBDI_ARCH_ARM)
-  include(FetchContent)
 
   find_package(Python3 COMPONENTS Interpreter Development)
 
@@ -50,19 +49,6 @@ if(QBDI_ARCH_X86
   endif()
 
   set(PYTHON_EXECUTABLE "${Python3_EXECUTABLE}")
-
-  FetchContent_Declare(
-    pybind11
-    URL "https://github.com/pybind/pybind11/archive/v2.11.1.zip"
-    URL_HASH
-      "SHA256=b011a730c8845bfc265f0f81ee4e5e9e1d354df390836d2a25880e123d021f89"
-    DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/pybind11-download")
-  FetchContent_GetProperties(pybind11)
-  if(NOT pybind11_POPULATED)
-    FetchContent_Populate(pybind11)
-    add_subdirectory(${pybind11_SOURCE_DIR} ${pybind11_BINARY_DIR}
-                     EXCLUDE_FROM_ALL)
-  endif()
 
   add_library(pyqbdi_utils INTERFACE)
   add_dependencies(pyqbdi_utils pyqbdi_pybind11)

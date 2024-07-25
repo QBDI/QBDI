@@ -331,7 +331,7 @@ void Engine::instrument(std::vector<Patch> &basicBlock, size_t patchEnd) {
 
   for (size_t i = 0; i < patchEnd; i++) {
     Patch &patch = basicBlock[i];
-    QBDI_DUMP_PATCH_DEBUG(patch, "Instrumenting");
+    QBDI_DEBUG("Instrumenting {}", patch);
 
     // Instrument
     for (const auto &item : instrRules) {
