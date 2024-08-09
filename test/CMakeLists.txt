@@ -25,6 +25,8 @@ if(QBDI_TEST)
 
   set_target_properties(QBDITest PROPERTIES CXX_STANDARD 17
                                             CXX_STANDARD_REQUIRED ON)
+
+  add_test(NAME QBDITest COMMAND QBDITest)
 endif()
 
 # Benchmark

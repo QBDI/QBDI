@@ -221,6 +221,30 @@ if(QBDI_DISABLE_AVX)
                              -D_QBDI_FORCE_DISABLE_AVX)
 endif()
 
+# Force 32bit
+if(QBDI_PLATFORM_OSX AND QBDI_ARCH_X86)
+  set(CMAKE_C_FLAGS "-arch i386 ${CMAKE_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "-arch i386 ${CMAKE_CXX_FLAGS}")
+elseif((QBDI_PLATFORM_LINUX OR QBDI_PLATFORM_ANDROID) AND QBDI_ARCH_X86)
+  set(CMAKE_C_FLAGS "-m32 ${CMAKE_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "-m32 ${CMAKE_CXX_FLAGS}")
+endif()
+
+# Disable thumb on ARM (until we support it)
+if(QBDI_ARCH_ARM)
+  # detect if -mthumb-interwork is needed
+  check_c_compiler_flag(-mthumb-interwork HAS_THUMB_INTERWORK)
+  if(HAS_THUMB_INTERWORK)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mthumb-interwork")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mthumb-interwork")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mthumb-interwork")
+    set(CMAKE_SHARED_LINKER_FLAGS
+        "${CMAKE_SHARED_LINKER_FLAGS} -mthumb-interwork")
+    set(CMAKE_MODULE_LINKER_FLAGS
+        "${CMAKE_MODULE_LINKER_FLAGS} -mthumb-interwork")
+  endif()
+endif()
+
 # Dependencies
 # ============
 set(QBDI_THIRD_PARTY_DIRECTORY
@@ -245,30 +269,6 @@ else()
   enable_language(ASM)
   if(QBDI_PLATFORM_IOS)
     set(CMAKE_ASM_FLAGS "-arch ${ARM_ARCH}")
-  endif()
-endif()
-
-# Force 32bit
-if(QBDI_PLATFORM_OSX AND QBDI_ARCH_X86)
-  set(CMAKE_C_FLAGS "-arch i386 ${CMAKE_C_FLAGS}")
-  set(CMAKE_CXX_FLAGS "-arch i386 ${CMAKE_CXX_FLAGS}")
-elseif((QBDI_PLATFORM_LINUX OR QBDI_PLATFORM_ANDROID) AND QBDI_ARCH_X86)
-  set(CMAKE_C_FLAGS "-m32 ${CMAKE_C_FLAGS}")
-  set(CMAKE_CXX_FLAGS "-m32 ${CMAKE_CXX_FLAGS}")
-endif()
-
-# Disable thumb on ARM (until we support it)
-if(QBDI_ARCH_ARM)
-  # detect if -mthumb-interwork is needed
-  check_c_compiler_flag(-mthumb-interwork HAS_THUMB_INTERWORK)
-  if(HAS_THUMB_INTERWORK)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mthumb-interwork")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mthumb-interwork")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mthumb-interwork")
-    set(CMAKE_SHARED_LINKER_FLAGS
-        "${CMAKE_SHARED_LINKER_FLAGS} -mthumb-interwork")
-    set(CMAKE_MODULE_LINKER_FLAGS
-        "${CMAKE_MODULE_LINKER_FLAGS} -mthumb-interwork")
   endif()
 endif()
 
@@ -561,6 +561,7 @@ endif()
 
 # Add tests
 if(QBDI_TEST OR QBDI_BENCHMARK)
+  enable_testing()
   add_subdirectory(test)
 endif()
 
