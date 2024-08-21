@@ -97,7 +97,7 @@ void unsetEntryBreakpoint() {
   }
 
   struct sigaction sa;
-  if (sigaction(SIGBRK, NULL, &sa) == 0 && sa.sa_flags == SA_SIGINFO &&
+  if (sigaction(SIGBRK, NULL, &sa) == 0 && (sa.sa_flags & SA_SIGINFO) != 0 &&
       sa.sa_sigaction == redirectExec) {
     if (sigaction(SIGBRK, &default_sa, NULL) != 0) {
       fprintf(stderr, "Fail to restore sigaction");
