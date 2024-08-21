@@ -47,6 +47,9 @@ static bool DEFAULT_HANDLER = false;
 GPRState ENTRY_GPR;
 FPRState ENTRY_FPR;
 
+struct sigaction default_sa;
+void redirectExec(int signum, siginfo_t *info, void *data);
+
 static struct {
   void *address;
   long value;
@@ -91,6 +94,14 @@ void unsetEntryBreakpoint() {
   mprotect((void *)base, pageSize, PROT_READ | PROT_EXEC);
   if (twoPages) {
     mprotect((void *)(base + pageSize), pageSize, PROT_READ | PROT_EXEC);
+  }
+
+  struct sigaction sa;
+  if (sigaction(SIGBRK, NULL, &sa) == 0 && sa.sa_flags == SA_SIGINFO &&
+      sa.sa_sigaction == redirectExec) {
+    if (sigaction(SIGBRK, &default_sa, NULL) != 0) {
+      fprintf(stderr, "Fail to restore sigaction");
+    }
   }
 }
 
@@ -153,7 +164,7 @@ static void *setupExceptionHandler(void (*action)(int, siginfo_t *, void *)) {
   sa.sa_sigaction = action;
   sa.sa_flags = SA_SIGINFO;
   sigemptyset(&sa.sa_mask);
-  if (sigaction(SIGBRK, &sa, NULL) == -1) {
+  if (sigaction(SIGBRK, &sa, &default_sa) == -1) {
     fprintf(stderr, "Could not set redirectExec handler ...");
     exit(QBDIPRELOAD_ERR_STARTUP_FAILED);
   }
