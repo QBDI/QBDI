@@ -736,6 +736,10 @@ const std::set<unsigned> fixupWrite{
     ST64B,
     ST64BV,
     ST64BV0,
+    STLURBi,
+    STLURHi,
+    STLURWi,
+    STLURXi,
     // clang-format on
 };
 
