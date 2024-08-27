@@ -157,6 +157,8 @@ typedef struct {
   ConditionType condition; /*!< Condition associated with the instruction */
   bool mayLoad_LLVM;       // mayLoad of 0.7.1
   bool mayStore_LLVM;      // mayStore of 0.7.1
+  uint32_t opcode_LLVM;    // instruction opcode of LLVM (must used the exact
+                           // same version of llvm)
   // ANALYSIS_DISASSEMBLY
   char *disassembly; /*!< Instruction disassembly
                       * (warning: NULL if !ANALYSIS_DISASSEMBLY) */

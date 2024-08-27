@@ -529,6 +529,7 @@ const InstAnalysis *analyzeInstMetadata(const InstMetadata &instMetadata,
         instAnalysis->loadSize != 0 || unsupportedRead(inst);
     instAnalysis->mayStore =
         instAnalysis->storeSize != 0 || unsupportedWrite(inst);
+    instAnalysis->opcode_LLVM = inst.getOpcode();
     instAnalysis->mayLoad_LLVM = desc.mayLoad();
     instAnalysis->mayStore_LLVM = desc.mayStore();
     instAnalysis->mnemonic = llvmcpu.getInstOpcodeName(inst);
