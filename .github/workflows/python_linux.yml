@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix: 
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
         QBDI_ARCH: ['X86_64', 'X86']
       fail-fast: false
     env:
@@ -42,14 +43,14 @@ jobs:
         env:
           QBDI_ARCH: ${{ matrix.QBDI_ARCH }}
         run: bash ./docker/ci_python_linux/img_build.sh
-      - name: Build Wheel
+      - name: Build Wheel for python ${{ matrix.python-version }}
         env:
           QBDI_ARCH: ${{ matrix.QBDI_ARCH }}
-        run: bash ./docker/ci_python_linux/whl_build.sh
-      - name: Export wheel
+        run: bash ./docker/ci_python_linux/whl_build.sh ${{ matrix.python-version }}
+      - name: Export wheel ${{ matrix.python-version }}
         uses: actions/upload-artifact@v4
         with:
-          name: PyQBDI_linux_${{ matrix.QBDI_ARCH }}
+          name: PyQBDI_linux_${{ matrix.QBDI_ARCH }}_python_${{ matrix.python-version }}
           path: outwheel/*
 
   trigger-rtd:

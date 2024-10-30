@@ -22,10 +22,10 @@ workflow_name = "PyQBDI Linux package"
 default_per_page = 100
 
 if sys.maxsize > 2**32:
-    artifact_name = "PyQBDI_linux_X86_64"
+    artifact_name = "PyQBDI_linux_X86_64_python_{}.{}".format(sys.version_info.major, sys.version_info.minor)
     is_64bits = True
 else:
-    artifact_name = "PyQBDI_linux_X86"
+    artifact_name = "PyQBDI_linux_X86_python_{}.{}".format(sys.version_info.major, sys.version_info.minor)
     is_64bits = False
 
 

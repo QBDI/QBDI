@@ -1,4 +1,4 @@
-ARG DOCKER_IMG="quay.io/pypa/manylinux2014_x86_64"
+ARG DOCKER_IMG="quay.io/pypa/manylinux2014"
 
 FROM $DOCKER_IMG
 

@@ -34,5 +34,6 @@ else
   build_wheel 3.10
   build_wheel 3.11
   build_wheel 3.12
+  build_wheel 3.13
 fi
 

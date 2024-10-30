@@ -12,6 +12,8 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        QBDI_ARCH: ['X86_64', 'X86']
         include:
           - QBDI_ARCH: 'X86_64'
             WINDOWS_ARCH: 'x64'
@@ -34,8 +36,9 @@ jobs:
         with:
           path: |
             ${{ env.SCCACHE_DIR }}
-          key: sccache-win-${{ matrix.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}-${{ github.run_number }}
+          key: sccache-win-${{ matrix.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}-${{ matrix.python-version }}-${{ github.run_number }}
           restore-keys: |
+            sccache-win-${{ matrix.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}-${{ matrix.python-version }}-
             sccache-win-${{ matrix.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}-
       - name: Create sccache directory
         if: steps.cache-sccache.outputs.cache-hit != 'true'
@@ -57,64 +60,12 @@ jobs:
             third-party
           key: QBDI-third-party-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**/*.cmake') }}
 
-      - name: Set up Python 3.8
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.8"
+          python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.WINDOWS_ARCH }}
-      - name: build PyQBDI 3.8
-        run: |
-          python --version
-          python -m pip --version
-          python -m pip install --upgrade pip
-          python -m pip install setuptools wheel build
-          python -m build -w
-
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.9"
-          architecture: ${{ matrix.WINDOWS_ARCH }}
-      - name: build PyQBDI 3.9
-        run: |
-          python --version
-          python -m pip --version
-          python -m pip install --upgrade pip
-          python -m pip install setuptools wheel build
-          python -m build -w
-
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          architecture: ${{ matrix.WINDOWS_ARCH }}
-      - name: build PyQBDI 3.10
-        run: |
-          python --version
-          python -m pip --version
-          python -m pip install --upgrade pip
-          python -m pip install setuptools wheel build
-          python -m build -w
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          architecture: ${{ matrix.WINDOWS_ARCH }}
-      - name: build PyQBDI 3.11
-        run: |
-          python --version
-          python -m pip --version
-          python -m pip install --upgrade pip
-          python -m pip install setuptools wheel build
-          python -m build -w
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          architecture: ${{ matrix.WINDOWS_ARCH }}
-      - name: build PyQBDI 3.12
+      - name: build PyQBDI ${{ matrix.python-version }}
         run: |
           python --version
           python -m pip --version
@@ -125,7 +76,7 @@ jobs:
       - name: Export package
         uses: actions/upload-artifact@v4
         with:
-          name: PyQBDI_windows_${{ matrix.QBDI_ARCH }}
+          name: PyQBDI_windows_${{ matrix.QBDI_ARCH }}_python_${{ matrix.python-version }}
           path: dist\PyQBDI-*.whl
       - name: Stop sccache server
         run: sccache --stop-server
