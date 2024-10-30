@@ -6,6 +6,8 @@ cd $(dirname "$0")
 BASEDIR=$(pwd -P)
 GITDIR=$(git rev-parse --show-toplevel)
 
+PYTHON_VERSION="${1:-all}"
+
 ./img_build.sh
 
 docker run --rm \
@@ -14,5 +16,5 @@ docker run --rm \
     --mount type=bind,source="${GITDIR}",target=/home/docker/qbdi \
     --mount type=bind,source="${HOME}/.ccache",target=/home/docker/.ccache \
     pyqbdi_build:base_${QBDI_ARCH} \
-    /bin/bash /home/docker/qbdi/docker/ci_python_linux/build_whl.sh
+    /bin/bash /home/docker/qbdi/docker/ci_python_linux/build_whl.sh "${PYTHON_VERSION}"
 
