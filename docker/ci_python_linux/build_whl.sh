@@ -9,6 +9,7 @@ cd ~/qbdi
 /opt/python/cp310-cp310/bin/python -m build -w
 /opt/python/cp311-cp311/bin/python -m build -w
 /opt/python/cp312-cp312/bin/python -m build -w
+/opt/python/cp313-cp313/bin/python -m build -w
 
 if [[ "${QBDI_ARCH}" = "X86_64" ]]; then
     for i in dist/*_x86_64.whl; do
