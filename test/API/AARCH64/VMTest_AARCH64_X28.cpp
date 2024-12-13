@@ -18,7 +18,7 @@
 #include <cstdint>
 #include <stdio.h>
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include "API/APITest.h"
 #include "QBDI/Memory.hpp"
 
@@ -59,7 +59,7 @@ TEST_CASE_METHOD(APITest, "VMTest_AARCH64_X28_RegisterSet_simple") {
   uint32_t instrId =
       vm.addCodeCB(QBDI::InstPosition::PREINST, dummyCB, nullptr);
   vm.call(&retval, (QBDI::rword)useX28_simple, {});
-  INFO("Case With PreInst Callback")
+  INFO("Case With PreInst Callback");
   CHECK(retval == (QBDI::rword)0x20);
   vm.deleteInstrumentation(instrId);
 
@@ -67,14 +67,14 @@ TEST_CASE_METHOD(APITest, "VMTest_AARCH64_X28_RegisterSet_simple") {
   retval = 0;
   vm.addCodeCB(QBDI::InstPosition::POSTINST, dummyCB, nullptr);
   vm.call(&retval, (QBDI::rword)useX28_simple, {});
-  INFO("Case With PostInst Callback")
+  INFO("Case With PostInst Callback");
   CHECK(retval == (QBDI::rword)0x20);
 
   state->x28 = 0x0;
   retval = 0;
   vm.addCodeCB(QBDI::InstPosition::PREINST, dummyCB, nullptr);
   vm.call(&retval, (QBDI::rword)useX28_simple, {});
-  INFO("Case With PreInst and PostInst Callback")
+  INFO("Case With PreInst and PostInst Callback");
   CHECK(retval == (QBDI::rword)0x20);
 
   SUCCEED();
@@ -114,7 +114,7 @@ TEST_CASE_METHOD(APITest, "VMTest_AARCH64_X28_RegisterSet_crossBB") {
   uint32_t instrId =
       vm.addCodeCB(QBDI::InstPosition::PREINST, dummyCB, nullptr);
   vm.call(&retval, (QBDI::rword)useX28_crossBB, {});
-  INFO("Case With PreInst Callback")
+  INFO("Case With PreInst Callback");
   CHECK(retval == (QBDI::rword)0x20);
   vm.deleteInstrumentation(instrId);
 
@@ -122,14 +122,14 @@ TEST_CASE_METHOD(APITest, "VMTest_AARCH64_X28_RegisterSet_crossBB") {
   retval = 0;
   vm.addCodeCB(QBDI::InstPosition::POSTINST, dummyCB, nullptr);
   vm.call(&retval, (QBDI::rword)useX28_crossBB, {});
-  INFO("Case With PostInst Callback")
+  INFO("Case With PostInst Callback");
   CHECK(retval == (QBDI::rword)0x20);
 
   state->x28 = 0x0;
   retval = 0;
   vm.addCodeCB(QBDI::InstPosition::PREINST, dummyCB, nullptr);
   vm.call(&retval, (QBDI::rword)useX28_crossBB, {});
-  INFO("Case With PreInst and PostInst Callback")
+  INFO("Case With PreInst and PostInst Callback");
   CHECK(retval == (QBDI::rword)0x20);
 
   SUCCEED();

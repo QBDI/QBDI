@@ -42,6 +42,7 @@ enum ShiftExtendType {
   SXTW,
   SXTX,
 };
+unsigned format_as(ShiftExtendType type);
 
 // low level layer 2
 

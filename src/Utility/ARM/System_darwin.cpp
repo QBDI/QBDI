@@ -98,9 +98,9 @@ const std::string getHostCPUName() {
 
 const std::vector<std::string> getHostCPUFeatures() {
   std::vector<std::string> mattrs = {};
-  llvm::StringMap<bool> features;
+  llvm::StringMap<bool> features = llvm::sys::getHostCPUFeatures();
 
-  bool ret = llvm::sys::getHostCPUFeatures(features);
+  bool ret = !features.empty();
 
   if (!ret) {
     features.clear();

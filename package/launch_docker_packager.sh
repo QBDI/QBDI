@@ -17,6 +17,7 @@ build_ubuntu_debian() {
     TARGET="$3"
     CMAKE_ARGUMENT="$4"
     IMG_TAG="qbdi:package_${OS}_${TAG}_${TARGET}"
+    DOCKER_PLATFORM="linux/amd64"
 
     if [[ -n "$TARGET_ARCH" ]] && [[ "$TARGET" != "$TARGET_ARCH" ]]; then
         return
@@ -24,10 +25,13 @@ build_ubuntu_debian() {
 
     if [[ "$TARGET" = "X86" ]]; then
         DOCKER_IMG="i386/${OS}:${TAG}"
+        DOCKER_PLATFORM="linux/386"
     elif [[ "$TARGET" = "ARM" ]]; then
         DOCKER_IMG="arm32v7/${OS}:${TAG}"
+        DOCKER_PLATFORM="linux/arm/v7"
     elif [[ "$TARGET" = "AARCH64" ]]; then
         DOCKER_IMG="arm64v8/${OS}:${TAG}"
+        DOCKER_PLATFORM="linux/arm64/v8"
     else
         DOCKER_IMG="${OS}:${TAG}"
     fi
@@ -35,6 +39,7 @@ build_ubuntu_debian() {
     DOCKERFILE="${GITDIR}/docker/ubuntu_debian/Dockerfile"
 
     docker build "${BASEDIR}" -t ${IMG_TAG} -f "${DOCKERFILE}" \
+                              --platform="$DOCKER_PLATFORM" \
                               --build-arg DOCKER_IMG="${DOCKER_IMG}" \
                               --build-arg QBDI_ARCH="$TARGET" \
                               --build-arg CMAKE_ARGUMENT="$CMAKE_ARGUMENT" \
@@ -89,13 +94,13 @@ build_ubuntu_debian ubuntu "${UBUNTU_LTS_TARGET}" ARM
 # ubuntu lts AARCH64
 build_ubuntu_debian ubuntu "${UBUNTU_LTS_TARGET}" AARCH64
 
-# ubuntu 23.10 x64
+# ubuntu 24.10 x64
 build_ubuntu_debian ubuntu "${UBUNTU_LAST_TARGET}" X86_64
 
-# ubuntu 23.10 ARM
+# ubuntu 24.10 ARM
 build_ubuntu_debian ubuntu "${UBUNTU_LAST_TARGET}" ARM
 
-# ubuntu 23.10 AARCH64
+# ubuntu 24.10 AARCH64
 build_ubuntu_debian ubuntu "${UBUNTU_LAST_TARGET}" AARCH64
 
 # archlinux x64

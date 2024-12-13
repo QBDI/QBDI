@@ -45,6 +45,8 @@ extern const unsigned int size_SEG_ID;
 
 // Get register size
 uint8_t getRegisterSize(RegLLVM reg);
+// Get register offset from base register (case of AH)
+uint8_t getRegisterBaseOffset(RegLLVM reg);
 // Get the number of real register in the LLVM register
 uint8_t getRegisterPacked(RegLLVM reg);
 // If packed register, get the space between to packed register

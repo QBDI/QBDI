@@ -21,10 +21,9 @@
 #include <memory>
 #include <string>
 
-#include "QBDI/Config.h"
-#include "QBDI/Logs.h"
-#include "QBDI/Options.h"
-#include "QBDI/State.h"
+#include "Patch/Types.h"
+
+#include "QBDI.h"
 #include "spdlog/spdlog.h"
 
 namespace llvm {
@@ -73,9 +72,21 @@ class Patch;
   } while (0);
 
 // formatter of internal enum
-inline uint32_t format_as(Options opt) { return opt; }
-inline uint32_t format_as(CPUMode mode) { return mode; }
+
 std::string format_as(const QBDI::Patch &patch);
+rword format_as(Options opt);
+unsigned format_as(CPUMode mode);
+unsigned format_as(InstPosition pos);
+unsigned format_as(AnalysisType t);
+unsigned format_as(const RegLLVM &r);
+unsigned format_as(const Reg &r);
+rword format_as(const Shadow &s);
+uint16_t format_as(ShadowReservedTag tag);
+rword format_as(const Constant &cst);
+int64_t format_as(const Offset &off);
+unsigned format_as(const Temp &t);
+unsigned format_as(const Operand &op);
+unsigned format_as(RelocatableInstTag tag);
 
 } // namespace QBDI
 

@@ -369,12 +369,8 @@ constexpr unsigned ADDR_REGISTER_3_TABLE[] = {
     llvm::AArch64::LDADDLX,
     llvm::AArch64::LDADDW,
     llvm::AArch64::LDADDX,
-    /* LLVM17 Bug : LDAPRWpre and LDAPRXpre name are misleading
-     * LRCPC3 intruduces post increment version of the LDAPR, but LLVM name
-     * the post increment version with 'pre'.
-     */
-    llvm::AArch64::LDAPRWpre,
-    llvm::AArch64::LDAPRXpre,
+    llvm::AArch64::LDAPRWpost,
+    llvm::AArch64::LDAPRXpost,
     llvm::AArch64::LDAXPW,
     llvm::AArch64::LDAXPX,
     llvm::AArch64::LDCLRAB,
@@ -694,12 +690,8 @@ constexpr unsigned ADDR_REGISTER_4_TABLE[] = {
     llvm::AArch64::LD4i64,
     llvm::AArch64::LD4i8,
     llvm::AArch64::LDAP1,
-    /* LLVM17 Bug : LDIAPPWpre and LDIAPPXpre name are misleading
-     * LRCPC3 intruduces LDIAPP without offset or fixed post increment,
-     * but LLVM name the post increment version with 'pre'.
-     */
-    llvm::AArch64::LDIAPPWpre,
-    llvm::AArch64::LDIAPPXpre,
+    llvm::AArch64::LDIAPPWpost,
+    llvm::AArch64::LDIAPPXpost,
     llvm::AArch64::LDPDpost,
     llvm::AArch64::LDPQpost,
     llvm::AArch64::LDPSWpost,

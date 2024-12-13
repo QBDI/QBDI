@@ -89,9 +89,7 @@ void analyseRegister(OperandAnalysis &opa, RegLLVM regNo,
   if (gprIndex != ((size_t)-1)) {
     if (MRI.isSubRegisterEq(GPR_ID[gprIndex].getValue(), regNo.getValue())) {
       if (GPR_ID[gprIndex] != regNo) {
-        RegLLVM subregidx =
-            MRI.getSubRegIndex(GPR_ID[gprIndex].getValue(), regNo.getValue());
-        opa.regOff = MRI.getSubRegIdxOffset(subregidx.getValue());
+        opa.regOff = getRegisterBaseOffset(regNo);
       }
       opa.regCtxIdx = gprIndex;
       opa.size = getRegisterSize(regNo);

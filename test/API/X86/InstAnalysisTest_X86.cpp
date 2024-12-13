@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include "API/APITest.h"
 
 #include <algorithm>
@@ -629,9 +629,34 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-callm") {
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-jmpi") {
+#define NOP8 "nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+#define NOP64 NOP8 NOP8 NOP8 NOP8 NOP8 NOP8 NOP8 NOP8
+#define NOP512 NOP64 NOP64 NOP64 NOP64 NOP64 NOP64 NOP64 NOP64
 
-  QBDI::rword addr = genASM("jmp test_jmp\ntest_jmp:\n");
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-jmpi1") {
+
+  QBDI::rword addr = genASM("jmp test_jmp\n" NOP8 "test_jmp:\n");
+
+  checkInst(
+      vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
+      ExpectedInstAnalysis{
+          "JMP_1", addr,
+          /* instSize */ 2, /* affectControlFlow */ true, /* isBranch */ true,
+          /* isCall */ false, /* isReturn */ false, /* isCompare */ false,
+          /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ false,
+          /* loadSize */ 0, /* storeSize */ 0,
+          /* condition */ QBDI::CONDITION_NONE});
+  checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
+               {
+                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_PCREL, 8, 1, 0, -1,
+                    nullptr, QBDI::REGISTER_UNUSED},
+               },
+               QBDI::REGISTER_UNUSED);
+}
+
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-jmpi4") {
+
+  QBDI::rword addr = genASM("jmp test_jmp\n" NOP512 "test_jmp:\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -644,15 +669,36 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-jmpi") {
           /* condition */ QBDI::CONDITION_NONE});
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
-                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_PCREL, 0, 4, 0, -1,
+                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_PCREL, 512, 4, 0, -1,
                     nullptr, QBDI::REGISTER_UNUSED},
                },
                QBDI::REGISTER_UNUSED);
 }
 
-TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-je") {
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-je1") {
 
-  QBDI::rword addr = genASM("je test_jmp\ntest_jmp:\n");
+  QBDI::rword addr = genASM("je test_jmp\n" NOP8 "test_jmp:\n");
+
+  checkInst(
+      vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
+      ExpectedInstAnalysis{
+          "JCC_1", addr,
+          /* instSize */ 2, /* affectControlFlow */ true, /* isBranch */ true,
+          /* isCall */ false, /* isReturn */ false, /* isCompare */ false,
+          /* isPredicable */ false, /* mayLoad */ false, /* mayStore */ false,
+          /* loadSize */ 0, /* storeSize */ 0,
+          /* condition */ QBDI::CONDITION_EQUALS});
+  checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
+               {
+                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_PCREL, 8, 1, 0, -1,
+                    nullptr, QBDI::REGISTER_UNUSED},
+               },
+               QBDI::REGISTER_READ);
+}
+
+TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-je4") {
+
+  QBDI::rword addr = genASM("je test_jmp\n" NOP512 "test_jmp:\n");
 
   checkInst(
       vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_INSTRUCTION),
@@ -665,7 +711,7 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-je") {
           /* condition */ QBDI::CONDITION_EQUALS});
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
-                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_PCREL, 0, 4, 0, -1,
+                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_PCREL, 512, 4, 0, -1,
                     nullptr, QBDI::REGISTER_UNUSED},
                },
                QBDI::REGISTER_READ);

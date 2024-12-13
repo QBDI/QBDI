@@ -23,13 +23,14 @@
 #include <QBDI/Config.h>
 #include <QBDI/Logs.h>
 
-#define CATCH_CONFIG_RUNNER
-#include <catch2/catch.hpp>
+#include <catch2/catch_session.hpp>
 
 #ifdef QBDI_PLATFORM_WINDOWS
 #include <Windows.h>
 
 static int getpid() { return GetCurrentProcessId(); }
+#else
+#include <unistd.h>
 #endif
 
 int main(int argc, char **argv) {

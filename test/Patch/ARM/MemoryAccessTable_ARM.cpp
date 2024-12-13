@@ -17,7 +17,7 @@
  */
 #include <set>
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <stdio.h>
 
 #include "ARMInstrInfo.h"
@@ -330,7 +330,9 @@ const std::set<unsigned> unsupportedInst{
 
     // arm-M instruction
     VLLDM,
+    VLLDM_T2,
     VLSTM,
+    VLSTM_T2,
 
     // Unsupported instruction
     CDP,

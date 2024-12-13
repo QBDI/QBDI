@@ -60,9 +60,9 @@ const std::string getHostCPUName() {
 
 const std::vector<std::string> getHostCPUFeatures() {
   std::vector<std::string> mattrs = {};
-  llvm::StringMap<bool> features;
+  llvm::StringMap<bool> features = llvm::sys::getHostCPUFeatures();
 
-  bool ret = llvm::sys::getHostCPUFeatures(features);
+  bool ret = !features.empty();
 
   if (!ret) {
     QBDI_WARN("Fail to detect CPUHostFeatures");
@@ -132,13 +132,13 @@ const std::vector<std::string> getHostCPUFeatures() {
       }
       // XXX: #19 Bad AVX support detection in VM environments
       // fix buggy dynamic detection
-      if (disable_avx != NULL && feat.getKey().equals(llvm::StringRef("avx"))) {
+      if (disable_avx != NULL && feat.getKey() == llvm::StringRef("avx")) {
         continue;
       }
 #if defined(_QBDI_ASAN_ENABLED_)
       bool blacklist_feature = false;
       for (int i = 0; i < asan_blacklist_feature_size; i++) {
-        if (feat.getKey().equals(llvm::StringRef(asan_blacklist_feature[i]))) {
+        if (feat.getKey() == llvm::StringRef(asan_blacklist_feature[i])) {
           blacklist_feature = true;
           break;
         }

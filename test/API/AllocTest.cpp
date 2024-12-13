@@ -18,7 +18,7 @@
 #include <cstdint>
 #include <stdio.h>
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include "QBDI/Memory.hpp"
 
 TEST_CASE("AllocAlignedTest-CorrectSize") {
