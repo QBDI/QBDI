@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <fstream>
 #include <iostream>
 
@@ -133,7 +133,7 @@ InMemoryObject::InMemoryObject(const char *source, const char *cpu,
   // Set MCStreamer as a MCObjectStreamer
   mcStr.reset(processTarget->createMCObjectStreamer(
       MSTI->getTargetTriple(), *MCTX, std::move(MAB), std::move(objectWriter),
-      std::move(MCE), *MSTI, true, false, false));
+      std::move(MCE), *MSTI));
   // Create the assembly parsers with --no-deprecated-warn
   llvm::MCTargetOptions parserOpts;
   parserOpts.MCNoDeprecatedWarn = true;

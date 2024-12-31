@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <mutex>
 #include <utility>
 
 #include "llvm/ADT/SmallVector.h"
@@ -86,10 +87,13 @@ LLVMCPU::LLVMCPU(const std::string &_cpu, const std::string &_arch,
   std::string error;
   std::string featuresStr;
 
-  llvm::InitializeAllTargetInfos();
-  llvm::InitializeAllTargetMCs();
-  llvm::InitializeAllAsmParsers();
-  llvm::InitializeAllDisassemblers();
+  static std::once_flag initializeLLVMOnce;
+  std::call_once(initializeLLVMOnce, []() {
+    llvm::InitializeAllTargetInfos();
+    llvm::InitializeAllTargetMCs();
+    llvm::InitializeAllAsmParsers();
+    llvm::InitializeAllDisassemblers();
+  });
 
   // Build features string
   if (cpu.empty()) {

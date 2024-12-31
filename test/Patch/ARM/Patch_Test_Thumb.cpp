@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 #include "Patch/ARM/Patch_Test_Thumb.h"
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tGPRSave") {
   INFO("TEST_SEED=" << seed_random());

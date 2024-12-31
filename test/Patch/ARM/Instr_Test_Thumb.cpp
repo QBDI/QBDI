@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 #include "Patch/ARM/Instr_Test_Thumb.h"
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 QBDI::VMAction incrementThumbPre(QBDI::VMInstanceRef vm,
                                  QBDI::GPRState *gprState,

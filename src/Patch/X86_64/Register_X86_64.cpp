@@ -223,6 +223,22 @@ constexpr uint16_t REGISTER_1BYTE[] = {
     llvm::X86::R13B,
     llvm::X86::R14B,
     llvm::X86::R15B,
+    llvm::X86::R16B,
+    llvm::X86::R17B,
+    llvm::X86::R18B,
+    llvm::X86::R19B,
+    llvm::X86::R20B,
+    llvm::X86::R21B,
+    llvm::X86::R22B,
+    llvm::X86::R23B,
+    llvm::X86::R24B,
+    llvm::X86::R25B,
+    llvm::X86::R26B,
+    llvm::X86::R27B,
+    llvm::X86::R28B,
+    llvm::X86::R29B,
+    llvm::X86::R30B,
+    llvm::X86::R31B,
     // artificial
     llvm::X86::SIH,
     llvm::X86::DIH,
@@ -236,6 +252,22 @@ constexpr uint16_t REGISTER_1BYTE[] = {
     llvm::X86::R13BH,
     llvm::X86::R14BH,
     llvm::X86::R15BH,
+    llvm::X86::R16BH,
+    llvm::X86::R17BH,
+    llvm::X86::R18BH,
+    llvm::X86::R19BH,
+    llvm::X86::R20BH,
+    llvm::X86::R21BH,
+    llvm::X86::R22BH,
+    llvm::X86::R23BH,
+    llvm::X86::R24BH,
+    llvm::X86::R25BH,
+    llvm::X86::R26BH,
+    llvm::X86::R27BH,
+    llvm::X86::R28BH,
+    llvm::X86::R29BH,
+    llvm::X86::R30BH,
+    llvm::X86::R31BH,
 };
 
 constexpr size_t REGISTER_1BYTE_SIZE =
@@ -258,6 +290,22 @@ constexpr uint16_t REGISTER_2BYTES[] = {
     llvm::X86::R13W,
     llvm::X86::R14W,
     llvm::X86::R15W,
+    llvm::X86::R16W,
+    llvm::X86::R17W,
+    llvm::X86::R18W,
+    llvm::X86::R19W,
+    llvm::X86::R20W,
+    llvm::X86::R21W,
+    llvm::X86::R22W,
+    llvm::X86::R23W,
+    llvm::X86::R24W,
+    llvm::X86::R25W,
+    llvm::X86::R26W,
+    llvm::X86::R27W,
+    llvm::X86::R28W,
+    llvm::X86::R29W,
+    llvm::X86::R30W,
+    llvm::X86::R31W,
     llvm::X86::IP,
     llvm::X86::FPCW,
     llvm::X86::FPSW,
@@ -279,6 +327,22 @@ constexpr uint16_t REGISTER_2BYTES[] = {
     llvm::X86::R13WH,
     llvm::X86::R14WH,
     llvm::X86::R15WH,
+    llvm::X86::R16WH,
+    llvm::X86::R17WH,
+    llvm::X86::R18WH,
+    llvm::X86::R19WH,
+    llvm::X86::R20WH,
+    llvm::X86::R21WH,
+    llvm::X86::R22WH,
+    llvm::X86::R23WH,
+    llvm::X86::R24WH,
+    llvm::X86::R25WH,
+    llvm::X86::R26WH,
+    llvm::X86::R27WH,
+    llvm::X86::R28WH,
+    llvm::X86::R29WH,
+    llvm::X86::R30WH,
+    llvm::X86::R31WH,
     // segment
     llvm::X86::CS,
     llvm::X86::DS,
@@ -311,6 +375,22 @@ constexpr uint16_t REGISTER_4BYTES[] = {
     llvm::X86::R13D,
     llvm::X86::R14D,
     llvm::X86::R15D,
+    llvm::X86::R16D,
+    llvm::X86::R17D,
+    llvm::X86::R18D,
+    llvm::X86::R19D,
+    llvm::X86::R20D,
+    llvm::X86::R21D,
+    llvm::X86::R22D,
+    llvm::X86::R23D,
+    llvm::X86::R24D,
+    llvm::X86::R25D,
+    llvm::X86::R26D,
+    llvm::X86::R27D,
+    llvm::X86::R28D,
+    llvm::X86::R29D,
+    llvm::X86::R30D,
+    llvm::X86::R31D,
     // RFLAGS isn't defined in llvm, the upper 32bits is never used
     llvm::X86::EFLAGS,
     llvm::X86::_EFLAGS,
@@ -343,6 +423,22 @@ constexpr uint16_t REGISTER_8BYTES[] = {
     llvm::X86::R13,
     llvm::X86::R14,
     llvm::X86::R15,
+    llvm::X86::R16,
+    llvm::X86::R17,
+    llvm::X86::R18,
+    llvm::X86::R19,
+    llvm::X86::R20,
+    llvm::X86::R21,
+    llvm::X86::R22,
+    llvm::X86::R23,
+    llvm::X86::R24,
+    llvm::X86::R25,
+    llvm::X86::R26,
+    llvm::X86::R27,
+    llvm::X86::R28,
+    llvm::X86::R29,
+    llvm::X86::R30,
+    llvm::X86::R31,
     llvm::X86::RFLAGS,
     llvm::X86::MM0,
     llvm::X86::MM1,
@@ -596,6 +692,18 @@ struct RegisterInfoArray {
 static constexpr RegisterInfoArray arrayInfo;
 
 uint8_t getRegisterSize(RegLLVM reg) { return arrayInfo.getSize(reg); }
+
+uint8_t getRegisterBaseOffset(RegLLVM reg) {
+  switch (reg.getValue()) {
+    case llvm::X86::AH:
+    case llvm::X86::BH:
+    case llvm::X86::CH:
+    case llvm::X86::DH:
+      return 8;
+    default:
+      return 0;
+  }
+}
 
 uint8_t getRegisterPacked(RegLLVM reg) { return 1; }
 

@@ -17,7 +17,7 @@
  */
 #include <set>
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <stdio.h>
 
 #include "AArch64InstrInfo.h"

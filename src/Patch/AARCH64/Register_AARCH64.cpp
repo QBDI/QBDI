@@ -187,6 +187,7 @@ const std::map<RegLLVM, int16_t> FPR_ID = {
     {llvm::AArch64::D30, offsetof(FPRState, v30)},
     {llvm::AArch64::D31, offsetof(FPRState, v31)},
     {llvm::AArch64::FPCR, offsetof(FPRState, fpcr)},
+    {llvm::AArch64::FPSR, offsetof(FPRState, fpsr)},
 
     // size 16b
     {llvm::AArch64::Q0, offsetof(FPRState, v0)},
@@ -305,29 +306,30 @@ constexpr size_t REGISTER_4BYTES_P2_SIZE =
     sizeof(REGISTER_4BYTES_P2) / sizeof(uint16_t);
 
 constexpr uint16_t REGISTER_8BYTES[] = {
-    llvm::AArch64::X0,  llvm::AArch64::X1,  llvm::AArch64::X2,
-    llvm::AArch64::X3,  llvm::AArch64::X4,  llvm::AArch64::X5,
-    llvm::AArch64::X6,  llvm::AArch64::X7,  llvm::AArch64::X8,
-    llvm::AArch64::X9,  llvm::AArch64::X10, llvm::AArch64::X11,
-    llvm::AArch64::X12, llvm::AArch64::X13, llvm::AArch64::X14,
-    llvm::AArch64::X15, llvm::AArch64::X16, llvm::AArch64::X17,
-    llvm::AArch64::X18, llvm::AArch64::X19, llvm::AArch64::X20,
-    llvm::AArch64::X21, llvm::AArch64::X22, llvm::AArch64::X23,
-    llvm::AArch64::X24, llvm::AArch64::X25, llvm::AArch64::X26,
-    llvm::AArch64::X27, llvm::AArch64::X28, llvm::AArch64::FP,
-    llvm::AArch64::LR,  llvm::AArch64::SP,  llvm::AArch64::XZR,
+    llvm::AArch64::X0,   llvm::AArch64::X1,  llvm::AArch64::X2,
+    llvm::AArch64::X3,   llvm::AArch64::X4,  llvm::AArch64::X5,
+    llvm::AArch64::X6,   llvm::AArch64::X7,  llvm::AArch64::X8,
+    llvm::AArch64::X9,   llvm::AArch64::X10, llvm::AArch64::X11,
+    llvm::AArch64::X12,  llvm::AArch64::X13, llvm::AArch64::X14,
+    llvm::AArch64::X15,  llvm::AArch64::X16, llvm::AArch64::X17,
+    llvm::AArch64::X18,  llvm::AArch64::X19, llvm::AArch64::X20,
+    llvm::AArch64::X21,  llvm::AArch64::X22, llvm::AArch64::X23,
+    llvm::AArch64::X24,  llvm::AArch64::X25, llvm::AArch64::X26,
+    llvm::AArch64::X27,  llvm::AArch64::X28, llvm::AArch64::FP,
+    llvm::AArch64::LR,   llvm::AArch64::SP,  llvm::AArch64::XZR,
 
-    llvm::AArch64::D0,  llvm::AArch64::D1,  llvm::AArch64::D2,
-    llvm::AArch64::D3,  llvm::AArch64::D4,  llvm::AArch64::D5,
-    llvm::AArch64::D6,  llvm::AArch64::D7,  llvm::AArch64::D8,
-    llvm::AArch64::D9,  llvm::AArch64::D10, llvm::AArch64::D11,
-    llvm::AArch64::D12, llvm::AArch64::D13, llvm::AArch64::D14,
-    llvm::AArch64::D15, llvm::AArch64::D16, llvm::AArch64::D17,
-    llvm::AArch64::D18, llvm::AArch64::D19, llvm::AArch64::D20,
-    llvm::AArch64::D21, llvm::AArch64::D22, llvm::AArch64::D23,
-    llvm::AArch64::D24, llvm::AArch64::D25, llvm::AArch64::D26,
-    llvm::AArch64::D27, llvm::AArch64::D28, llvm::AArch64::D29,
-    llvm::AArch64::D30, llvm::AArch64::D31, llvm::AArch64::FPCR,
+    llvm::AArch64::D0,   llvm::AArch64::D1,  llvm::AArch64::D2,
+    llvm::AArch64::D3,   llvm::AArch64::D4,  llvm::AArch64::D5,
+    llvm::AArch64::D6,   llvm::AArch64::D7,  llvm::AArch64::D8,
+    llvm::AArch64::D9,   llvm::AArch64::D10, llvm::AArch64::D11,
+    llvm::AArch64::D12,  llvm::AArch64::D13, llvm::AArch64::D14,
+    llvm::AArch64::D15,  llvm::AArch64::D16, llvm::AArch64::D17,
+    llvm::AArch64::D18,  llvm::AArch64::D19, llvm::AArch64::D20,
+    llvm::AArch64::D21,  llvm::AArch64::D22, llvm::AArch64::D23,
+    llvm::AArch64::D24,  llvm::AArch64::D25, llvm::AArch64::D26,
+    llvm::AArch64::D27,  llvm::AArch64::D28, llvm::AArch64::D29,
+    llvm::AArch64::D30,  llvm::AArch64::D31, llvm::AArch64::FPCR,
+    llvm::AArch64::FPSR,
 };
 
 constexpr size_t REGISTER_8BYTES_SIZE =
@@ -500,7 +502,7 @@ constexpr size_t REGISTER_16BYTES_P4_SIZE =
 /* Encode base register on one byte
  * -1: invalid
  *  0 : X0 ... 31 : X31/SP  (special 32 : XZR)
- * 33 : Q0 ... 64 : Q31     (special 65 : FPCR)
+ * 33 : Q0 ... 64 : Q31     (special 65|66 : FPCR|FPSR)
  */
 constexpr int8_t getEncodedBaseReg(unsigned reg) {
   // verify llvm register enum
@@ -581,6 +583,8 @@ constexpr int8_t getEncodedBaseReg(unsigned reg) {
         return 32;
       case llvm::AArch64::FPCR:
         return 65;
+      case llvm::AArch64::FPSR:
+        return 66;
       default:
         return -1;
     }
@@ -593,7 +597,7 @@ struct RegisterInfoArray {
   // Use to find the Higher register
   // -1: invalid
   //  0 : X0 ... 31 : X31/SP  (special 32 : XZR)
-  // 33 : Q0 ... 64 : Q31     (special 65 : FPCR)
+  // 33 : Q0 ... 64 : Q31     (special 65|66 : FPCR|FPSR)
   int8_t baseReg[llvm::AArch64::NUM_TARGET_REGS] = {0};
 
   constexpr uint16_t setValue(uint8_t size, uint8_t packed) {
@@ -691,6 +695,8 @@ struct RegisterInfoArray {
       return llvm::AArch64::Q0 + (v - 33);
     } else if (v == 65) {
       return llvm::AArch64::FPCR;
+    } else if (v == 66) {
+      return llvm::AArch64::FPSR;
     }
     // invalid positive value
     QBDI_ERROR("Wrong value {}", v);
@@ -725,6 +731,8 @@ constexpr RegisterInfoArray arrayInfo;
 } // anonymous namespace
 
 uint8_t getRegisterSize(RegLLVM reg) { return arrayInfo.getSize(reg); }
+
+uint8_t getRegisterBaseOffset(RegLLVM reg) { return 0; }
 
 uint8_t getRegisterPacked(RegLLVM reg) { return arrayInfo.getPacked(reg); }
 

@@ -1,15 +1,12 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.28)
 project(QBDI)
 
 include(GNUInstallDirs)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/"
-     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/llvm")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
 # Avoid warning about DOWNLOAD_EXTRACT_TIMESTAMP in CMake 3.24:
-if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
-  cmake_policy(SET CMP0135 NEW)
-endif()
+cmake_policy(SET CMP0135 NEW)
 
 # Config platform & arch
 include(QBDIConfig)
@@ -247,9 +244,6 @@ endif()
 
 # Dependencies
 # ============
-set(QBDI_THIRD_PARTY_DIRECTORY
-    "${CMAKE_CURRENT_SOURCE_DIR}/third-party/"
-    CACHE STRING "Dependency download directory")
 include(QBDIDependencies)
 
 # Setup assembly compile

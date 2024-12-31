@@ -12,6 +12,9 @@ ENV USER="docker" \
 # create a user
 RUN adduser --disabled-password --gecos '' --home "$HOME" "$USER"
 
+# setup backport to use cmake >= 3.28
+RUN echo 'deb http://deb.debian.org/debian bookworm-backports main contrib non-free' > /etc/apt/sources.list.d/backports.list
+
 # Get latest package list, upgrade packages, install required packages
 # and cleanup to keep container as small as possible
 RUN apt-get update && \
@@ -21,7 +24,7 @@ RUN apt-get update && \
         build-essential \
         ca-certificates \
         ccache \
-        cmake \
+        cmake/bookworm-backports \
         file \
         g++ \
         git \

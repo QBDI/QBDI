@@ -21,7 +21,8 @@
 #include "QBDI.h"
 
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
-#include <catch2/catch.hpp>
+#include <catch2/benchmark/catch_benchmark.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 static const uint8_t buffer[1 << 12] = {0};
 

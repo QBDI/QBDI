@@ -173,6 +173,11 @@ closely related to the covered ones. We currently don't support the following fe
   at any position and cannot guarantee that instructions of the same transactions unit will not be split.
 - MPX feature: bound registers aren't supported.
 - XOP instructions for ADM processors: The instructions are never been tested.
+- APX instructions are currently not tested and additionnal GPR register
+  (R16-R31) are not backuped by QBDI.
+
+If one of sush feature become well used, it may be integrate to QBDI to a future
+version.
 
 The memory access information is provided for most of general and SIMD instructions.
 The information is missing for:

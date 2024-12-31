@@ -32,6 +32,8 @@ enum EVENT {
   EXIT,
 };
 
+inline int format_as(EVENT e) { return e; }
+
 enum COMMAND {
   CONTINUE,
   STOP,
@@ -73,7 +75,5 @@ int writeEvent(EVENT event, FILE *pipe);
 int readCommand(COMMAND *command, FILE *pipe);
 
 int writeCommand(COMMAND command, FILE *pipe);
-
-inline int format_as(EVENT e) { return e; }
 
 #endif // VALIDATOR_PIPES_H

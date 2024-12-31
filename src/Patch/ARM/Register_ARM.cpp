@@ -554,6 +554,8 @@ constexpr RegisterInfoArray arrayInfo;
 
 uint8_t getRegisterSize(RegLLVM reg) { return arrayInfo.getSize(reg); }
 
+uint8_t getRegisterBaseOffset(RegLLVM reg) { return 0; }
+
 uint8_t getRegisterPacked(RegLLVM reg) { return arrayInfo.getPacked(reg); }
 
 uint8_t getRegisterSpaced(RegLLVM reg) { return arrayInfo.getSpaced(reg); }

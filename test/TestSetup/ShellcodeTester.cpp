@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 #include "TestSetup/ShellcodeTester.h"
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include "Utility/LogSys.h"
 
 llvm::sys::MemoryBlock ShellcodeTester::allocateStack(QBDI::rword size) {

@@ -19,7 +19,8 @@
 #include <QBDI.h>
 
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
-#include <catch2/catch.hpp>
+#include <catch2/benchmark/catch_benchmark.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 QBDI_NOINLINE QBDI::rword Fibonacci(QBDI::rword number) {
   if (number < 2)

@@ -1,6 +1,6 @@
 ARG DOCKER_IMG="ubuntu:latest"
 
-FROM $DOCKER_IMG as builder
+FROM $DOCKER_IMG AS builder
 
 ARG QBDI_ARCH="X86_64"
 
@@ -8,6 +8,10 @@ ENV USER="docker" \
     HOME="/home/docker" \
     PREFIX="/usr" \
     QBDI_PLATFORM="linux"
+
+# setup backport to use cmake >= 3.28
+RUN ( cat /etc/debian_version | grep -v -q 12 ) || \
+    ( echo 'deb http://deb.debian.org/debian bookworm-backports main contrib non-free' > /etc/apt/sources.list.d/backports.list )
 
 # Get latest package list, upgrade packages, install required packages
 # and cleanup to keep container as small as possible
@@ -27,6 +31,7 @@ RUN apt-get update && \
         ca-certificates \
         python3 \
         python3-dev && \
+    ( ( cat /etc/debian_version | grep -v -q 12 ) || ( apt-get install -y --no-install-recommends cmake/bookworm-backports ) ) && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

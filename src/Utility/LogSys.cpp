@@ -146,4 +146,18 @@ std::string format_as(const QBDI::Patch &patch) {
   return message;
 }
 
+rword format_as(Options opt) { return fmt::underlying(opt); }
+unsigned format_as(CPUMode mode) { return fmt::underlying(mode); }
+unsigned format_as(InstPosition pos) { return fmt::underlying(pos); }
+unsigned format_as(AnalysisType t) { return fmt::underlying(t); }
+unsigned format_as(const RegLLVM &r) { return r.getValue(); }
+unsigned format_as(const Reg &r) { return r.getID(); }
+rword format_as(const Shadow &s) { return s.getTag(); }
+uint16_t format_as(ShadowReservedTag tag) { return tag; }
+rword format_as(const Constant &cst) { return cst; }
+int64_t format_as(const Offset &off) { return off; }
+unsigned format_as(const Temp &t) { return t; }
+unsigned format_as(const Operand &op) { return op; }
+unsigned format_as(RelocatableInstTag tag) { return tag; }
+
 } // namespace QBDI

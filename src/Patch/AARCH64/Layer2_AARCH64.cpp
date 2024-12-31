@@ -27,6 +27,8 @@
 
 namespace QBDI {
 
+unsigned format_as(ShiftExtendType type) { return fmt::underlying(type); }
+
 llvm::MCInst st1_post_inc(RegLLVM regs, RegLLVM base) {
   llvm::MCInst inst;
   inst.setOpcode(llvm::AArch64::ST1Fourv2d_POST);
