@@ -20,6 +20,10 @@
 
 #include "QBDI.h"
 
+#if defined(_WIN32) || defined(WIN32)
+#include <Windows.h>
+#endif
+
 #ifdef __cplusplus
 namespace QBDI {
 extern "C" {
@@ -40,11 +44,37 @@ extern "C" {
  * declaration on a single line.
  */
 #ifdef __cplusplus
+
+#if defined(_WIN32) || defined(WIN32)
+#define QBDIPRELOAD_INIT                                      \
+  BOOLEAN WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, \
+                         LPVOID Reserved) {                   \
+    UNREFERENCED_PARAMETER(hDllHandle);                       \
+    UNREFERENCED_PARAMETER(Reserved);                         \
+    QBDI::qbdipreload_attach_init();                          \
+    return QBDI::qbdipreload_hook_init(nReason);              \
+  }
+#else // not WIN32
 #define QBDIPRELOAD_INIT \
   __attribute__((constructor)) void init() { QBDI::qbdipreload_hook_init(); }
-#else
+#endif
+
+#else // not __cplusplus
+
+#if defined(_WIN32) || defined(WIN32)
+#define QBDIPRELOAD_INIT                                      \
+  BOOLEAN WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, \
+                         LPVOID Reserved) {                   \
+    UNREFERENCED_PARAMETER(hDllHandle);                       \
+    UNREFERENCED_PARAMETER(Reserved);                         \
+    qbdipreload_attach_init();                                \
+    return qbdipreload_hook_init(nReason);                    \
+  }
+#else // not WIN32
 #define QBDIPRELOAD_INIT \
   __attribute__((constructor)) void init() { qbdipreload_hook_init(); }
+#endif
+
 #endif
 
 /*
@@ -131,7 +161,20 @@ extern int qbdipreload_on_exit(int status);
  * Private API
  */
 
+#if defined(_WIN32) || defined(WIN32)
+
+extern BOOL g_bIsAttachMode; /* TRUE if attach mode is activated */
+
+QBDI_EXPORT BOOLEAN qbdipreload_hook_init(DWORD nReason);
+BOOLEAN qbdipreload_attach_init();
+void qbdipreload_attach_close();
+QBDI_EXPORT BOOLEAN qbdipreload_read_shmem(LPVOID lpData, DWORD dwMaxBytesRead);
+
+#else
+
 int qbdipreload_hook_init();
+
+#endif
 
 void *qbdipreload_setup_exception_handler(uint32_t target, uint32_t mask,
                                           void *handler);

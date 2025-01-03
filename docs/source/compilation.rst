@@ -30,7 +30,7 @@ should be placed on the command line with the form ``-D<param>=<value>``.
 * ``QBDI_TEST`` (default ON) : build the tests suite
 * ``QBDI_BENCHMARK`` (default OFF) : build the benchmark tools
 * ``QBDI_TOOLS_QBDIPRELOAD`` (default ON on supported platform) : build
-  QBDIPreload static library (supported on Linux and OSX).
+  QBDIPreload static library.
 * ``QBDI_TOOLS_VALIDATOR`` (default ON on supported platform) : build
   the validator library (supported on Linux and OSX).
 * ``QBDI_TOOLS_PYQBDI`` (default ON on X86_64) : build PyQBDI library.

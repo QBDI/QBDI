@@ -146,6 +146,8 @@ if(QBDI_ARCH_X86
           "${CMAKE_CURRENT_SOURCE_DIR}/pyqbdipreload.py"
           "${PYQBDI_OUTPUT_DIRECTORY}/pyqbdipreload.py")
     endif()
+
+    # Note Windows : also see tools/QBDIWinPreloader/CMakeLists.txt for WinPreload in wheel package
   endif()
 
   ##
