@@ -94,7 +94,8 @@ class CMakeBuild(build_ext):
 
         cmake_args = ['-G', 'Ninja',
                       '-DPYQBDI_OUTPUT_DIRECTORY={}'.format(extdir),
-                      '-DPython3_EXECUTABLE={}'.format(sys.executable),
+                      '-DPython_EXECUTABLE={}'.format(os.path.realpath(sys.executable)),
+                      '-DPython3_EXECUTABLE={}'.format(os.path.realpath(sys.executable)),
                       '-DCMAKE_BUILD_TYPE=Release',
                       '-DQBDI_PLATFORM={}'.format(detected_platform),
                       '-DQBDI_ARCH={}'.format(detected_arch),
@@ -106,6 +107,7 @@ class CMakeBuild(build_ext):
                       '-DQBDI_TEST=OFF',
                       '-DQBDI_TOOLS_FRIDAQBDI=OFF',
                       '-DQBDI_TOOLS_PYQBDI=ON',
+                      '-DQBDI_TOOLS_PYQBDI_TARGET_PYTHON_VERSION={}'.format(platform.python_version()),
                      ]
         build_args = ['--config', 'Release', '--']
 
@@ -123,7 +125,7 @@ class CMakeBuild(build_ext):
         env = os.environ.copy()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
                                                               self.distribution.get_version())
-        for var in ["Python3_ROOT_DIR"]:
+        for var in ["Python3_ROOT_DIR", "Python_ROOT_DIR"]:
             if var in env:
                 cmake_args.append("-D{}={}".format(var, env[var]))
             elif var.upper() in env:

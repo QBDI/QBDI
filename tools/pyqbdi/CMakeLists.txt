@@ -3,10 +3,20 @@ if(QBDI_ARCH_X86
    OR QBDI_ARCH_AARCH64
    OR QBDI_ARCH_ARM)
 
-  find_package(Python3 COMPONENTS Interpreter Development)
+  if(DEFINED QBDI_TOOLS_PYQBDI_TARGET_PYTHON_VERSION)
+    find_package(
+      Python3 "${QBDI_TOOLS_PYQBDI_TARGET_PYTHON_VERSION}" EXACT REQUIRED
+      COMPONENTS Interpreter Development.Module
+      OPTIONAL_COMPONENTS Development.Embed)
+  else()
+    find_package(
+      Python3 REQUIRED
+      COMPONENTS Interpreter Development.Module
+      OPTIONAL_COMPONENTS Development.Embed)
+  endif()
 
-  if(NOT Python3_Interpreter_FOUND)
-    message(FATAL_ERROR "Python3 Interpreter not found")
+  if(NOT Python3_FOUND)
+    message(FATAL_ERROR "Python3 not found")
   endif()
 
   # in manylinux image, python doesn't have a library
@@ -47,8 +57,6 @@ if(QBDI_ARCH_X86
         "PyQBDI with Python ${PYTHON_BIT} is not compatible with the architecture ${QBDI_ARCH}"
     )
   endif()
-
-  set(PYTHON_EXECUTABLE "${Python3_EXECUTABLE}")
 
   add_library(pyqbdi_utils INTERFACE)
   add_dependencies(pyqbdi_utils pyqbdi_pybind11)
@@ -92,8 +100,19 @@ if(QBDI_ARCH_X86
   endif()
 
   if(QBDI_TOOLS_QBDIPRELOAD)
-    pybind11_add_module(pyqbdipreloadlib SHARED
-                        "${CMAKE_CURRENT_SOURCE_DIR}/preload.cpp")
+    # Due to the use of embeded interpreter in PyQBDIPreload, we should like
+    # it against the python library. However, in manylinux image,
+    # lipython3.XX.so is not available. The script pyqbdipreload.py will search
+    # for this library at the runtime, so the lipython3.XX.so is not available
+    # at build time, just omit it.
+    if(Python3_Development.Embed_FOUND)
+      pybind11_add_module(pyqbdipreloadlib SHARED
+                          "${CMAKE_CURRENT_SOURCE_DIR}/preload.cpp")
+    else()
+      pybind11_add_module(pyqbdipreloadlib
+                          "${CMAKE_CURRENT_SOURCE_DIR}/preload.cpp")
+    endif()
+
     target_include_directories(
       pyqbdipreloadlib
       PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
