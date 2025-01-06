@@ -17,6 +17,7 @@ import zipfile
 
 base_url = "https://api.github.com/repos/QBDI/QBDI"
 default_headers = {"Accept":"application/vnd.github.v3+json",
+                   "X-GitHub-Api-Version":"2022-11-28",
                    "Authorization":"token {}".format(os.environ.get('GITHUB_TOKEN')) }
 workflow_name = "PyQBDI package"
 default_per_page = 100
@@ -57,7 +58,7 @@ def get_workflow_id(name):
 
     assert False, f"Cannot found workflow '{name}'"
 
-def get_last_workflow_run(ident, branch=None, commit_hash=None):
+def get_last_workflow_run(ident, artifact_name, branch=None, commit_hash=None):
 
     nb_runs = 1
     runs = []
@@ -83,9 +84,11 @@ def get_last_workflow_run(ident, branch=None, commit_hash=None):
             continue
         if commit_hash != None and r['head_sha'] != commit_hash:
             continue
-        if r['status'] != 'completed' or r['conclusion'] != 'success':
+        if last_run is not None and dateutil.parser.isoparse(last_run['created_at']) > dateutil.parser.isoparse(r['created_at']):
             continue
-        if last_run is None or dateutil.parser.isoparse(last_run['created_at']) < dateutil.parser.isoparse(r['created_at']):
+        if ((r['status'] == 'completed' and r['conclusion'] == 'success') or
+            get_artifact(r['id'], artifact_name, check=True) is not None):
+
             last_run = r
 
     if last_run == None:
@@ -95,7 +98,7 @@ def get_last_workflow_run(ident, branch=None, commit_hash=None):
     print(f"[+] found run {last_run['id']} create at {last_run['created_at']}")
     return last_run
 
-def get_artifact(run_id, artifact_name):
+def get_artifact(run_id, artifact_name, check=False):
     nb_artifacts = 1
     artifacts = []
     page = 0
@@ -112,7 +115,8 @@ def get_artifact(run_id, artifact_name):
             print(f"[+] Found artifact {artifact['id']} create at {artifact['created_at']}")
             return artifact
 
-    assert False, f"Cannot found artifact '{artifact_name}' in run {run_id}"
+    assert check, f"Cannot found artifact '{artifact_name}' in run {run_id}"
+    return None
 
 def download_wheel(artifact):
 
@@ -183,20 +187,18 @@ def install_pyqbdi():
     workflow_ID = get_workflow_id(workflow_name)
 
     # search a run with this hash commit on this branch
-    run = get_last_workflow_run(workflow_ID, branch=current_branch, commit_hash=current_hash)
+    run = get_last_workflow_run(workflow_ID, artifact_name, branch=current_branch, commit_hash=current_hash)
     if run == None:
         # search a run with this hash commit (branch filter isn't not always associated with a run)
-        run = get_last_workflow_run(workflow_ID, branch=None, commit_hash=current_hash)
+        run = get_last_workflow_run(workflow_ID, artifact_name, branch=None, commit_hash=current_hash)
     if run == None:
         # search a run on this branch
-        run = get_last_workflow_run(workflow_ID, branch=current_branch)
+        run = get_last_workflow_run(workflow_ID, artifact_name, branch=current_branch)
     if run == None and current_branch != "dev-next":
         # search a run on dev-next
-        run = get_last_workflow_run(workflow_ID, "dev-next")
+        run = get_last_workflow_run(workflow_ID, artifact_name, "dev-next")
 
     assert run != None, f"No compatible runs found for workflow {workflow_name} (id={workflow_ID})"
-
-    assert run['status'] == 'completed' and run['conclusion'] == 'success', "Cannot install a fail run"
 
     artifact = get_artifact(run['id'], artifact_name)
     wheelname, wheeldata = download_wheel(artifact)
