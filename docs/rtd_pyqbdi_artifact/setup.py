@@ -5,29 +5,21 @@
 import dateutil.parser
 import io
 import os
+import os.path
 import platform
 from pygit2 import Repository
 import re
 import requests
 import subprocess
 import sys
-import tempfile
 import time
 import zipfile
 
 base_url = "https://api.github.com/repos/QBDI/QBDI"
 default_headers = {"Accept":"application/vnd.github.v3+json",
                    "Authorization":"token {}".format(os.environ.get('GITHUB_TOKEN')) }
-workflow_name = "PyQBDI Linux package"
+workflow_name = "PyQBDI package"
 default_per_page = 100
-
-if sys.maxsize > 2**32:
-    artifact_name = "PyQBDI_linux_X86_64_python_{}.{}".format(sys.version_info.major, sys.version_info.minor)
-    is_64bits = True
-else:
-    artifact_name = "PyQBDI_linux_X86_python_{}.{}".format(sys.version_info.major, sys.version_info.minor)
-    is_64bits = False
-
 
 def do_get_request(path, params={}, headers={}, retry=10, retry_sleep=1, binary=False):
 
@@ -60,10 +52,10 @@ def get_workflow_id(name):
     workflow_id = -1
     for w in workflows:
         if w['name'] == name:
-            print(f"[+] Found workflow_id {w['id']} for workflow '{workflow_name}'")
+            print(f"[+] Found workflow_id {w['id']} for workflow '{name}'")
             return w['id']
 
-    assert False, f"Cannot found workflow '{workflow_name}'"
+    assert False, f"Cannot found workflow '{name}'"
 
 def get_last_workflow_run(ident, branch=None, commit_hash=None):
 
@@ -140,20 +132,48 @@ def download_wheel(artifact):
 
 def install_wheel(wheelname, wheeldata):
 
-    with tempfile.TemporaryDirectory() as work_dir:
-        wheel_path = work_dir + '/' + wheelname
-        with open(wheel_path, 'wb') as f:
-            f.write(wheeldata)
+    wheel_path = os.path.join(os.path.dirname(__file__), wheelname)
+    with open(wheel_path, 'wb') as f:
+        f.write(wheeldata)
 
-        print(f'[+] install {wheel_path}')
+    print(f'[+] install {wheel_path}')
 
-        subprocess.check_call([sys.executable, "-m", "pip", "install", wheel_path])
+    subprocess.check_call([sys.executable, "-m", "pip", "install", wheel_path])
 
 def check_installation():
     print(f'[+] test installation')
     subprocess.check_call([sys.executable, "-c", "import pyqbdi; print(pyqbdi.__version__)"])
 
 def install_pyqbdi():
+
+    if hasattr(sys.implementation, "_multiarch"):
+        if '-' in sys.implementation._multiarch:
+            base_arch, base_os = sys.implementation._multiarch.split('-')[:2]
+        else:
+            base_arch = platform.machine()
+            base_os = sys.implementation._multiarch
+    else:
+        base_arch = platform.machine()
+        base_os = platform.system()
+
+    base_arch = base_arch.lower()
+    base_os = base_os.lower()
+
+    print(f"[+] Executing installation on {base_arch} {base_os}")
+
+    if base_os != 'linux':
+        print(f"[!] Not supported build for {base_os} here")
+        exit(1)
+
+    if base_arch in ['amd64', 'amd', 'x64', 'x86_64', 'x86', 'i386', 'i686']:
+        if sys.maxsize > 2**32:
+            artifact_name = "PyQBDI_linux_X86_64_python_{}.{}".format(sys.version_info.major, sys.version_info.minor)
+        else:
+            artifact_name = "PyQBDI_linux_X86_python_{}.{}".format(sys.version_info.major, sys.version_info.minor)
+    else:
+        print(f"[!] Not supported build for {base_arch} in github CI")
+        exit(1)
+
     git_repo = Repository('.')
     current_branch = os.environ.get('READTHEDOCS_VERSION', git_repo.head.shorthand)
     if current_branch in ['latest', 'stable']:

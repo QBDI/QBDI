@@ -111,9 +111,7 @@ Devel packages can be downloaded in the artefacts of:
 - `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/linux.yml?query=branch%3Adev-next>`__ for Linux C/C++/frida API (based on ubuntu)
 - `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/osx.yml?query=branch%3Adev-next>`__ for OSX C/C++/frida API
 - `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/windows.yml?query=branch%3Adev-next>`__ for Windows packages C/C++ API
-- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/python_linux.yml?query=branch%3Adev-next>`__ for Linux PyQBDI
-- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/python_osx.yml?query=branch%3Adev-next>`__ for OSX PyQBDI
-- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/python_windows.yml?query=branch%3Adev-next>`__ for windows PyQBDI
+- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/python.yml?query=branch%3Adev-next>`__ for PyQBDI
 
 Compilation
 ===========

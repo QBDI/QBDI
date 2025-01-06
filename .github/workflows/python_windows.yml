@@ -1,10 +1,7 @@
 name: PyQBDI Windows Package
 
 on:
-  push:
-    branches:
-      - master
-      - dev-next
+  workflow_call:
   workflow_dispatch:
 
 jobs:

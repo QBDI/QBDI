@@ -1,0 +1,114 @@
+name: PyQBDI package
+
+on:
+  push:
+    branches:
+      - master
+      - dev-next
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build_pyqbdi_linux:
+    uses: ./.github/workflows/python_linux.yml
+    secrets: inherit
+  build_pyqbdi_osx:
+    uses: ./.github/workflows/python_osx.yml
+    secrets: inherit
+  build_pyqbdi_windows:
+    uses: ./.github/workflows/python_windows.yml
+    secrets: inherit
+
+  trigger-rtd:
+    runs-on: ubuntu-latest
+    needs: build_pyqbdi_linux
+    steps:
+      - name: trigger Read The docs build
+        if: github.event_name == 'push'
+        run: |
+          curl -X POST -d "branches=${BRANCH}" -d "token=${RTD_TOKEN}" https://readthedocs.org/api/v2/webhook/qbdi/145608/
+        env:
+          RTD_TOKEN: ${{ secrets.RTD_TOKEN }}
+          BRANCH: ${{ github.ref_name }}
+
+  all-in-one:
+    name: All PyQBDI whell
+    needs:
+    - build_pyqbdi_linux
+    - build_pyqbdi_osx
+    - build_pyqbdi_windows
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download all wheel
+      uses: actions/download-artifact@v4
+      with:
+        pattern: PyQBDI_*
+        path: dist/
+        merge-multiple: true
+
+    - name: Export All wheels
+      uses: actions/upload-artifact@v4
+      with:
+        name: All_PyQBDI
+        path: dist/*
+
+  publish-to-testpypi:
+    name: Publish to TestPyPI
+    needs:
+    - build_pyqbdi_linux
+    - build_pyqbdi_osx
+    - build_pyqbdi_windows
+    runs-on: ubuntu-latest
+
+    if: ${{ github.event_name == 'push' && github.ref_name == 'dev-next' && github.ref_type == 'branch' }}
+
+    environment:
+      name: test
+      url: https://test.pypi.org/p/PyQBDI
+
+    permissions:
+      id-token: write
+
+    steps:
+    - name: Download all wheel
+      uses: actions/download-artifact@v4
+      with:
+        pattern: PyQBDI_*
+        path: dist/
+        merge-multiple: true
+
+    - name: Publish to TestPyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
+        skip-existing: true
+
+  publish-to-pypi:
+    name: Publish to PyPI
+    needs:
+    - build_pyqbdi_linux
+    - build_pyqbdi_osx
+    - build_pyqbdi_windows
+    runs-on: ubuntu-latest
+
+    if: ${{ github.event_name == 'tag' && startsWith(github.ref, 'refs/tags/v') }}
+
+    environment:
+      name: release
+      url: https://pypi.org/p/PyQBDI
+
+    permissions:
+      id-token: write
+
+    steps:
+    - name: Download all wheel
+      uses: actions/download-artifact@v4
+      with:
+        pattern: PyQBDI_*
+        path: dist/
+        merge-multiple: true
+
+    - name: Publish to TestPyPI
+      uses: pypa/gh-action-pypi-publish@release/v1

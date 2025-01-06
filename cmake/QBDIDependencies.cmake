@@ -92,18 +92,30 @@ endif()
 # Pybind11
 # ========
 if(QBDI_TOOLS_PYQBDI)
-  find_package(Python3 COMPONENTS Interpreter Development)
-
-  if(NOT Python3_Interpreter_FOUND)
-    message(FATAL_ERROR "Python3 Interpreter not found")
+  if(DEFINED QBDI_TOOLS_PYQBDI_TARGET_PYTHON_VERSION)
+    find_package(
+      Python3 "${QBDI_TOOLS_PYQBDI_TARGET_PYTHON_VERSION}" EXACT REQUIRED
+      COMPONENTS Interpreter Development.Module
+      OPTIONAL_COMPONENTS Development.Embed)
+  else()
+    find_package(
+      Python3 REQUIRED
+      COMPONENTS Interpreter Development.Module
+      OPTIONAL_COMPONENTS Development.Embed)
   endif()
+
+  if(NOT Python3_FOUND)
+    message(FATAL_ERROR "Python not found")
+  endif()
+
+  set(PYBIND11_FINDPYTHON ON)
 
   prepare_package(
     pybind11
     URL
-    "https://github.com/pybind/pybind11/archive/v2.11.1.zip"
+    "https://github.com/pybind/pybind11/archive/v2.13.6.zip"
     URL_HASH
-    "SHA256=b011a730c8845bfc265f0f81ee4e5e9e1d354df390836d2a25880e123d021f89"
+    "SHA256=d0a116e91f64a4a2d8fb7590c34242df92258a61ec644b79127951e821b47be6"
     EXCLUDE_FROM_ALL)
   list(APPEND qbdi_deps pybind11)
 endif()
