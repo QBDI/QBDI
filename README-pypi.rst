@@ -67,11 +67,7 @@ Devel packages
 
 There is no strict development timeline or scheduled release plan for the QBDI project.
 All the new features and fixes are merged onto the ``dev-next`` branch.
-Devel packages can be downloaded in the artefacts of:
-
-- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/python_linux.yml?query=branch%3Adev-next>`__ for Linux PyQBDI
-- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/python_osx.yml?query=branch%3Adev-next>`__ for OSX PyQBDI
-- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/python_windows.yml?query=branch%3Adev-next>`__ for windows PyQBDI
+Devel packages can be downloaded in the artefacts of `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/python.yml?query=branch%3Adev-next>`__.
 
 Compilation
 ===========
