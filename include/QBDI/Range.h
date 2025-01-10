@@ -27,9 +27,9 @@ template <typename T>
 class Range {
 
 private:
-  T min(const T a, const T b) const { return a < b ? a : b; }
+  T min_(const T a, const T b) const { return a < b ? a : b; }
 
-  T max(const T a, const T b) const { return a > b ? a : b; }
+  T max_(const T a, const T b) const { return a > b ? a : b; }
 
   T _start; /*!< Range start value. */
   T _end;   /*!< Range end value (always excluded). */
@@ -119,7 +119,7 @@ public:
    * @return  A new range.
    */
   Range<T> intersect(const Range<T> &r) const {
-    return Range<T>(max(start(), r.start()), min(end(), r.end()));
+    return Range<T>(max_(start(), r.start()), min_(end(), r.end()));
   }
 };
 
