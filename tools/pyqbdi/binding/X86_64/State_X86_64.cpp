@@ -119,12 +119,8 @@ void init_binding_State(py::module_ &m) {
       .def_readwrite("ftw", &FPRState::ftw, "x87 FPU tag word")
       .def_readwrite("fop", &FPRState::fop, "x87 FPU Opcode")
       .def_readwrite("ip", &FPRState::ip, "x87 FPU Instruction Pointer offset")
-      .def_readwrite("cs", &FPRState::cs,
-                     "x87 FPU Instruction Pointer Selector")
       .def_readwrite("dp", &FPRState::dp,
                      "x87 FPU Instruction Operand(Data) Pointer offset")
-      .def_readwrite("ds", &FPRState::ds,
-                     "x87 FPU Instruction Operand(Data) Pointer Selector")
       .def_readwrite("mxcsr", &FPRState::mxcsr, "MXCSR Register state")
       .def_readwrite("mxcsrmask", &FPRState::mxcsrmask, "MXCSR mask")
       .def_readwrite("stmm0", &FPRState::stmm0, "ST0/MM0")
@@ -372,13 +368,9 @@ void init_binding_State(py::module_ &m) {
                  << (static_cast<unsigned>(obj.ftw) & 0xff) << std::endl
                  << "fop   : 0x" << std::setw(sizeof(uint16_t) * 2) << obj.fop
                  << std::endl
-                 << "ip    : 0x" << std::setw(sizeof(uint32_t) * 2) << obj.ip
+                 << "ip    : 0x" << std::setw(sizeof(uint64_t) * 2) << obj.ip
                  << std::endl
-                 << "cs    : 0x" << std::setw(sizeof(uint16_t) * 2) << obj.cs
-                 << std::endl
-                 << "dp    : 0x" << std::setw(sizeof(uint32_t) * 2) << obj.dp
-                 << std::endl
-                 << "ds    : 0x" << std::setw(sizeof(uint16_t) * 2) << obj.ds
+                 << "dp    : 0x" << std::setw(sizeof(uint64_t) * 2) << obj.dp
                  << std::endl
                  << "mxcsr : 0x" << std::setw(sizeof(uint32_t) * 2) << obj.mxcsr
                  << std::endl

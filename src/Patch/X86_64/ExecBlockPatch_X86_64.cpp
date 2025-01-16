@@ -51,9 +51,17 @@ RelocatableInst::UniquePtrVec getExecBlockPrologue(const LLVMCPU &llvmcpu) {
              LoadReg(Reg(0), Offset(offsetof(Context, hostState.executeFlags)))
                  .genReloc(llvmcpu));
       prologue.push_back(Test(Reg(0), ExecBlockFlags::needFPU));
+#if defined(QBDI_ARCH_X86_64)
+      prologue.push_back(Je(8 + 4));
+#else
       prologue.push_back(Je(7 + 4));
+#endif
     }
+#if defined(QBDI_ARCH_X86_64)
+    prologue.push_back(Fxrstor64(Offset(offsetof(Context, fprState))));
+#else
     prologue.push_back(Fxrstor(Offset(offsetof(Context, fprState))));
+#endif
     // target je needFPU
     if (isHostCPUFeaturePresent("avx")) {
       QBDI_DEBUG("AVX support enabled in guest context switches");
@@ -205,9 +213,17 @@ RelocatableInst::UniquePtrVec getExecBlockEpilogue(const LLVMCPU &llvmcpu) {
              LoadReg(Reg(0), Offset(offsetof(Context, hostState.executeFlags)))
                  .genReloc(llvmcpu));
       epilogue.push_back(Test(Reg(0), ExecBlockFlags::needFPU));
+#if defined(QBDI_ARCH_X86_64)
+      epilogue.push_back(Je(8 + 4));
+#else
       epilogue.push_back(Je(7 + 4));
+#endif
     }
+#if defined(QBDI_ARCH_X86_64)
+    epilogue.push_back(Fxsave64(Offset(offsetof(Context, fprState))));
+#else
     epilogue.push_back(Fxsave(Offset(offsetof(Context, fprState))));
+#endif
     // target je needFPU
     if (isHostCPUFeaturePresent("avx")) {
       QBDI_DEBUG("AVX support enabled in guest context switches");

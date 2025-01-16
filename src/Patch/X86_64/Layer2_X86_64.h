@@ -82,6 +82,10 @@ llvm::MCInst fxsave(RegLLVM base, rword offset);
 
 llvm::MCInst fxrstor(RegLLVM base, rword offset);
 
+llvm::MCInst fxsave64(RegLLVM base, rword offset);
+
+llvm::MCInst fxrstor64(RegLLVM base, rword offset);
+
 llvm::MCInst vextractf128(RegLLVM base, rword offset, RegLLVM src,
                           uint8_t regoffset);
 
@@ -137,6 +141,10 @@ std::unique_ptr<RelocatableInst> JmpM(Offset offset);
 std::unique_ptr<RelocatableInst> Fxsave(Offset offset);
 
 std::unique_ptr<RelocatableInst> Fxrstor(Offset offset);
+
+std::unique_ptr<RelocatableInst> Fxsave64(Offset offset);
+
+std::unique_ptr<RelocatableInst> Fxrstor64(Offset offset);
 
 std::unique_ptr<RelocatableInst> Vextractf128(Offset offset, RegLLVM src,
                                               Constant regoffset);

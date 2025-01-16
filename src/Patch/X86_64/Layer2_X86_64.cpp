@@ -292,6 +292,32 @@ llvm::MCInst fxrstor(RegLLVM base, rword offset) {
   return inst;
 }
 
+llvm::MCInst fxsave64(RegLLVM base, rword offset) {
+  llvm::MCInst inst;
+
+  inst.setOpcode(llvm::X86::FXSAVE64);
+  inst.addOperand(llvm::MCOperand::createReg(base.getValue()));
+  inst.addOperand(llvm::MCOperand::createImm(1));
+  inst.addOperand(llvm::MCOperand::createReg(0));
+  inst.addOperand(llvm::MCOperand::createImm(offset));
+  inst.addOperand(llvm::MCOperand::createReg(0));
+
+  return inst;
+}
+
+llvm::MCInst fxrstor64(RegLLVM base, rword offset) {
+  llvm::MCInst inst;
+
+  inst.setOpcode(llvm::X86::FXRSTOR64);
+  inst.addOperand(llvm::MCOperand::createReg(base.getValue()));
+  inst.addOperand(llvm::MCOperand::createImm(1));
+  inst.addOperand(llvm::MCOperand::createReg(0));
+  inst.addOperand(llvm::MCOperand::createImm(offset));
+  inst.addOperand(llvm::MCOperand::createReg(0));
+
+  return inst;
+}
+
 llvm::MCInst vextractf128(RegLLVM base, rword offset, RegLLVM src,
                           uint8_t regoffset) {
   llvm::MCInst inst;
@@ -588,6 +614,14 @@ RelocatableInst::UniquePtr Fxsave(Offset offset) {
 
 RelocatableInst::UniquePtr Fxrstor(Offset offset) {
   return DataBlockRelx86(fxrstor(0, 0), 0, offset, 7, 7);
+}
+
+RelocatableInst::UniquePtr Fxsave64(Offset offset) {
+  return DataBlockRelx86(fxsave64(0, 0), 0, offset, 8, 8);
+}
+
+RelocatableInst::UniquePtr Fxrstor64(Offset offset) {
+  return DataBlockRelx86(fxrstor64(0, 0), 0, offset, 8, 8);
 }
 
 RelocatableInst::UniquePtr Vextractf128(Offset offset, RegLLVM src,

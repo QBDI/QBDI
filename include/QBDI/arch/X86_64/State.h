@@ -90,12 +90,8 @@ typedef struct QBDI_ALIGNED(16) {
   uint8_t ftw;        /* x87 FPU tag word */
   uint8_t rsrv1;      /* reserved */
   uint16_t fop;       /* x87 FPU Opcode */
-  uint32_t ip;        /* x87 FPU Instruction Pointer offset */
-  uint16_t cs;        /* x87 FPU Instruction Pointer Selector */
-  uint16_t rsrv2;     /* reserved */
-  uint32_t dp;        /* x87 FPU Instruction Operand(Data) Pointer offset */
-  uint16_t ds;        /* x87 FPU Instruction Operand(Data) Pointer Selector */
-  uint16_t rsrv3;     /* reserved */
+  uint64_t ip;        /* x87 FPU Instruction Pointer offset */
+  uint64_t dp;        /* x87 FPU Instruction Operand(Data) Pointer offset */
   uint32_t mxcsr;     /* MXCSR Register state */
   uint32_t mxcsrmask; /* MXCSR mask */
   MMSTReg stmm0;      /* ST0/MM0   */

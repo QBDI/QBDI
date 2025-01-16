@@ -179,12 +179,12 @@ void qbdipreload_floatCtxToFPRState(const void *gprCtx, FPRState *fprState) {
   fprState->rfsw = osCpuCtx->FltSave.StatusWord;
   fprState->ftw = osCpuCtx->FltSave.TagWord;
   fprState->rsrv1 = osCpuCtx->FltSave.Reserved1;
-  fprState->ip = osCpuCtx->FltSave.ErrorOffset;
-  fprState->cs = osCpuCtx->FltSave.ErrorSelector;
-  fprState->rsrv2 = osCpuCtx->FltSave.Reserved2;
-  fprState->dp = osCpuCtx->FltSave.DataOffset;
-  fprState->ds = osCpuCtx->FltSave.DataSelector;
-  fprState->rsrv3 = osCpuCtx->FltSave.Reserved3;
+  fprState->ip = (((uint64_t)osCpuCtx->FltSave.Reserved2) << 48) ||
+                 (((uint64_t)osCpuCtx->FltSave.ErrorSelector) << 32) ||
+                 ((uint64_t)osCpuCtx->FltSave.ErrorOffset);
+  fprState->dp = (((uint64_t)osCpuCtx->FltSave.Reserved3) << 48) ||
+                 (((uint64_t)osCpuCtx->FltSave.DataSelector) << 32) ||
+                 ((uint64_t)osCpuCtx->FltSave.DataOffset);
   fprState->mxcsr = osCpuCtx->FltSave.MxCsr;
   fprState->mxcsrmask = osCpuCtx->FltSave.MxCsr_Mask;
 #else
