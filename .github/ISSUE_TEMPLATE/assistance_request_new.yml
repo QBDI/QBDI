@@ -1,38 +1,38 @@
-name: Bug Report
-description: Create a bug report
+name: Assistance Request (new)
+description: Ask for help for using QBDI
 body:
   - type: markdown
     attributes:
       label: Description of the problem
       value: |
-        A clear description of what the bug is, including the expected and actual behavior.
+        A clear description of what your problem is.
   - type: markdown
     attributes:
       label: Compilation or execution log
       value: |
-        Any relevant log that may help to understand the bug.
+        Any relevant log that illustrate your problem.
         Please use [distinct block]https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#quoting-code) to format this section.
   - type: markdown
     attributes:
-      label: Minimal code/script to reproduce the problem
+      label: QBDI/PyQBDI/Frida script
       value: |
         Insert your script/code that use QBDI here.
   - type: markdown
     attributes:
       label: Code of the target of the instrumentation
       value: |
-        Insert your script/code that you try to instrument with QBDI.
+        Insert the script/code that you try to instrument with QBDI.
         If the instrumented code is a public library/binary, you may provide a link to download it.
   - type: markdown
     attributes:
-      label: Specific command to reproduce your issue
+      label: Specific command to reproduce your problem on other laptop
       value: |
-        Can you list all the command (if possible shell) that should be run to reproduce the bug.
+        List all the command (if possible shell) that should be run the get the same output as you.
   - type: markdown
     attributes:
       label: Information about the environment
       value: |
-        Version of your environment and any tools that is needed to reproduce the bug
+        Version of your environment and any tools that is needed to reproduce your problem
         
         If you use multiples devices (like a computer and a smartphone), please provide the information for each of them.
 
@@ -47,4 +47,4 @@ body:
       value: |
         Any other context about the problem here.
 
-        Thanks for taking the time to fill out this report!
+        Thanks for taking the time to fill out all information! This will help us to reproduce your issue on our side.
