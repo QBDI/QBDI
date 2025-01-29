@@ -23,7 +23,11 @@
 
 #include "Patch/Types.h"
 
-#include "QBDI.h"
+#include "QBDI/Callback.h"
+#include "QBDI/InstAnalysis.h"
+#include "QBDI/Logs.h"
+#include "QBDI/Options.h"
+#include "QBDI/State.h"
 #include "spdlog/spdlog.h"
 
 namespace llvm {

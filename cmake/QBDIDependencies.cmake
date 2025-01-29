@@ -151,6 +151,7 @@ if(ANDROID)
 endif()
 
 if(QBDI_PLATFORM_WINDOWS)
+  target_compile_definitions(spdlog PUBLIC _DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
 
 else()
   set(SPDLOG_QBDI_CXX_FLAGS
