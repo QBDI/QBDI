@@ -272,6 +272,8 @@ void ExecBlockManager::writeBasicBlock(std::vector<Patch> &&basicBlock,
         region.blocks.emplace_back(std::make_unique<ExecBlock>(
             llvmCPUs, vminstance, &execBlockPrologue, &execBlockEpilogue,
             epilogueSize));
+        codeBlockMap[region.blocks.back()->getBaseCodeBlock()] =
+            region.blocks.back().get();
       }
       // Write sequence
       SeqWriteResult res = region.blocks[i]->writeSequence(
@@ -493,7 +495,8 @@ size_t ExecBlockManager::findRegion(const Range<rword> &codeRange) {
   }
   QBDI_DEBUG("Creating new region {} to cover basic block [0x{:x}, 0x{:x}]",
              insert, codeRange.start(), codeRange.end());
-  regions.insert(regions.begin() + insert, {codeRange, 0, 0, {}});
+  regions.emplace(regions.begin() + insert, codeRange);
+  regionsReduceList.insertBegin(regions[insert]);
   return insert;
 }
 
@@ -532,14 +535,18 @@ void ExecBlockManager::flushCommit() {
   // It needs to be erased from last to first to preserve index validity
   if (needFlush) {
     QBDI_DEBUG("Flushing analysis caches");
-    regions.erase(std::remove_if(regions.begin(), regions.end(),
-                                 [](const ExecRegion &r) -> bool {
-                                   if (r.toFlush)
-                                     QBDI_DEBUG(
-                                         "Erasing region [0x{:x}, 0x{:x}]",
-                                         r.covered.start(), r.covered.end());
-                                   return r.toFlush;
-                                 }),
+    auto delFunc = [&](const ExecRegion &r) -> bool {
+      if (r.toFlush) {
+        QBDI_DEBUG("Erasing region [0x{:x}, 0x{:x}]", r.covered.start(),
+                   r.covered.end());
+        for (const auto &block : r.blocks) {
+          codeBlockMap.erase(block->getBaseCodeBlock());
+        }
+      }
+      return r.toFlush;
+    };
+
+    regions.erase(std::remove_if(regions.begin(), regions.end(), delFunc),
                   regions.end());
     needFlush = false;
   }
@@ -569,6 +576,33 @@ void ExecBlockManager::clearCache(bool flushNow) {
       needFlush = true;
     }
   }
+}
+
+uint32_t ExecBlockManager::getNbExecBlock() const {
+  uint32_t res = 0;
+  for (const auto &r : regions) {
+    res += r.blocks.size();
+  }
+  return res;
+}
+
+void ExecBlockManager::reduceCacheTo(uint32_t nb) {
+  uint32_t expected = getNbExecBlock();
+  uint32_t check = 0;
+
+  for (auto &r : regionsReduceList) {
+    check += r.blocks.size();
+    QBDI_REQUIRE_ACTION(check <= expected, return);
+    if (not r.toFlush) {
+      if (nb >= r.blocks.size()) {
+        nb -= r.blocks.size();
+      } else {
+        r.toFlush = true;
+        needFlush = true;
+      }
+    }
+  }
+  QBDI_REQUIRE_ACTION(check == expected, return);
 }
 
 } // namespace QBDI

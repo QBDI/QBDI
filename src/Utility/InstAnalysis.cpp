@@ -467,9 +467,8 @@ void InstAnalysisDestructor::operator()(InstAnalysis *ptr) const {
   delete ptr;
 }
 
-const InstAnalysis *analyzeInstMetadata(const InstMetadata &instMetadata,
-                                        AnalysisType type,
-                                        const LLVMCPU &llvmcpu) {
+InstAnalysis *analyzeInstMetadata(const InstMetadata &instMetadata,
+                                  AnalysisType type, const LLVMCPU &llvmcpu) {
 
   InstAnalysis *instAnalysis = instMetadata.analysis.get();
   if (instAnalysis == nullptr) {
@@ -480,14 +479,17 @@ const InstAnalysis *analyzeInstMetadata(const InstMetadata &instMetadata,
   }
 
   uint32_t oldType = instAnalysis->analysisType;
-  uint32_t newType = oldType | type;
-  uint32_t missingType = oldType ^ newType;
+  // ANALYSIS_JIT is not managed here, but in the ExecBlock
+  uint32_t supportedType = ANALYSIS_DISASSEMBLY | ANALYSIS_INSTRUCTION |
+                           ANALYSIS_OPERANDS | ANALYSIS_SYMBOL;
+  uint32_t newType = (oldType | type) & supportedType;
+  uint32_t missingType = (oldType ^ newType) & supportedType;
 
   if (missingType == 0) {
     return instAnalysis;
   }
 
-  instAnalysis->analysisType = newType;
+  instAnalysis->analysisType |= newType;
 
   const llvm::MCInstrInfo &MCII = llvmcpu.getMCII();
   const llvm::MCInst &inst = instMetadata.inst;

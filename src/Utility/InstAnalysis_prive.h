@@ -42,9 +42,8 @@ struct InstAnalysisDestructor {
 
 using InstAnalysisPtr = std::unique_ptr<InstAnalysis, InstAnalysisDestructor>;
 
-const InstAnalysis *analyzeInstMetadata(const InstMetadata &instMetadata,
-                                        AnalysisType type,
-                                        const LLVMCPU &llvmcpu);
+InstAnalysis *analyzeInstMetadata(const InstMetadata &instMetadata,
+                                  AnalysisType type, const LLVMCPU &llvmcpu);
 namespace InstructionAnalysis {
 
 ConditionType ConditionLLVM2QBDI(unsigned cond);

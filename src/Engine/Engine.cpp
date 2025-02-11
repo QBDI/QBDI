@@ -544,6 +544,10 @@ bool Engine::run(rword start, rword stop) {
   curExecBlock = nullptr;
   running = false;
 
+  if (blockManager->isFlushPending()) {
+    blockManager->flushCommit();
+  }
+
   return hasRan;
 }
 
@@ -651,6 +655,21 @@ const InstAnalysis *Engine::getInstAnalysis(rword address,
   return block->getInstAnalysis(instID, type);
 }
 
+std::optional<rword> Engine::getPatchAddressOfJit(rword address) const {
+  auto *e = blockManager->getExecBlockFromJitAddress(
+      address & ~(ExecBlock::getPageSize() - 1));
+
+  if (e == nullptr) {
+    return {};
+  }
+  uint16_t instId = e->getPatchAddressOfJit(address);
+  if (instId == NOT_FOUND) {
+    return {};
+  } else {
+    return e->getInstAddress(instId);
+  }
+}
+
 bool Engine::deleteInstrumentation(uint32_t id) {
   if (id & EVENTID_VM_MASK) {
     id &= ~EVENTID_VM_MASK;
@@ -695,6 +714,17 @@ void Engine::clearCache(rword start, rword end) {
 
 void Engine::clearCache(RangeSet<rword> rangeSet) {
   blockManager->clearCache(rangeSet);
+  if (not running && blockManager->isFlushPending()) {
+    blockManager->flushCommit();
+  }
+}
+
+uint32_t Engine::getNbExecBlock() const {
+  return blockManager->getNbExecBlock();
+}
+
+void Engine::reduceCacheTo(uint32_t nb) {
+  blockManager->reduceCacheTo(nb);
   if (not running && blockManager->isFlushPending()) {
     blockManager->flushCommit();
   }

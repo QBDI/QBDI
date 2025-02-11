@@ -380,6 +380,22 @@ void init_binding_VM(py::module_ &m) {
                     "DISASSEMBLY"),
           py::return_value_policy::copy)
       .def(
+          "getJITInstAnalysis",
+          [](const VM &vm, rword address, AnalysisType type) {
+            return vm.getJITInstAnalysis(address, type);
+          },
+          "Obtain the analysis of a JITed instruction. Analysis results are "
+          "cached in the VM. This API may be used to determine if a given "
+          "address of the current process memory correspond to the JIT patch "
+          "from this VM.",
+          "address"_a,
+          py::arg_v("type",
+                    AnalysisType::ANALYSIS_INSTRUCTION |
+                        AnalysisType::ANALYSIS_DISASSEMBLY,
+                    "AnalysisType.ANALYSIS_INSTRUCTION|AnalysisType.ANALYSIS_"
+                    "DISASSEMBLY"),
+          py::return_value_policy::copy)
+      .def(
           "getCachedInstAnalysis",
           [](const VM &vm, rword address, AnalysisType type) {
             return vm.getCachedInstAnalysis(address, type);
@@ -389,9 +405,10 @@ void init_binding_VM(py::module_ &m) {
           "address"_a,
           py::arg_v("type",
                     AnalysisType::ANALYSIS_INSTRUCTION |
-                        AnalysisType::ANALYSIS_DISASSEMBLY,
+                        AnalysisType::ANALYSIS_DISASSEMBLY |
+                        AnalysisType::ANALYSIS_JIT,
                     "AnalysisType.ANALYSIS_INSTRUCTION|AnalysisType.ANALYSIS_"
-                    "DISASSEMBLY"),
+                    "DISASSEMBLY|AnalysisType.ANALYSIS_JIT"),
           py::return_value_policy::copy)
       .def("recordMemoryAccess", &VM::recordMemoryAccess,
            "Add instrumentation rules to log memory access using inline "
@@ -409,7 +426,12 @@ void init_binding_VM(py::module_ &m) {
            "Clear a specific address range from the translation cache.",
            "start"_a, "end"_a)
       .def("clearAllCache", &VM::clearAllCache,
-           "Clear the entire translation cache.");
+           "Clear the entire translation cache.")
+      .def("getNbExecBlock", &VM::getNbExecBlock,
+           "Get the number of ExecBlock in the cache. Each block uses 2 memory "
+           "pages and some heap allocations.")
+      .def("reduceCacheTo", &VM::reduceCacheTo,
+           "Reduce the cache to X ExecBlock.", "nb"_a);
 }
 
 } // namespace pyQBDI

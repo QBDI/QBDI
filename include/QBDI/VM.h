@@ -767,6 +767,27 @@ public:
       rword address,
       AnalysisType type = ANALYSIS_INSTRUCTION | ANALYSIS_DISASSEMBLY) const;
 
+  /*! Obtain the analysis of a JITed instruction. Analysis results are cached
+   * in the VM. The validity of the returned pointer is only guaranteed until
+   * the end of the callback or a call to a noconst method of the VM object.
+   * This API may be used to determine if a given address of the current
+   * process memory correspond to the JIT patch from this VM. Note that this
+   * call may allocate memory.
+   *
+   * @param[in] address The JIT address
+   * @param[in] [type]  Properties to retrieve during analysis.
+   *                    This argument is optional, defaulting to
+   *                    QBDI::ANALYSIS_INSTRUCTION | QBDI::ANALYSIS_DISASSEMBLY
+   *                    | ANALYSIS_JIT
+   *
+   * @return A InstAnalysis structure containing the analysis result.
+   *    null if the address isn't a valid
+   */
+  QBDI_EXPORT const InstAnalysis *
+  getJITInstAnalysis(rword address, AnalysisType type = ANALYSIS_INSTRUCTION |
+                                                        ANALYSIS_DISASSEMBLY |
+                                                        ANALYSIS_JIT) const;
+
   /*! Add instrumentation rules to log memory access using inline
    * instrumentation and instruction shadows.
    *
@@ -813,6 +834,22 @@ public:
   /*! Clear the entire translation cache.
    */
   QBDI_EXPORT void clearAllCache();
+
+  /*! Get the number of ExecBlock in the cache. Each block uses 2 memory pages
+   * and some heap allocations.
+   *
+   * @return  The number of ExecBlock in the cache.
+   */
+  QBDI_EXPORT uint32_t getNbExecBlock() const;
+
+  /*! Reduce the cache to X ExecBlock. Note that this will try to purge the
+   * oldest ExecBlock first, but the block may be recreate if needed by followed
+   * execution.
+   *
+   * @param[in] nb The number of BasicBlock that should remains in the cache
+   *               after call.
+   */
+  QBDI_EXPORT void reduceCacheTo(uint32_t nb);
 };
 
 } // namespace QBDI

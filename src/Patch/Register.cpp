@@ -133,6 +133,9 @@ void getUsedGPR(const llvm::MCInst &inst, const LLVMCPU &llvmcpu,
       }
       oss << llvmcpu.getRegisterName(GPR_ID[i]);
       switch (regUsage[i] & RegisterBoth) {
+        default:
+          oss << " (--)";
+          break;
         case RegisterUsed:
           oss << " (r-)";
           break;
@@ -152,6 +155,9 @@ void getUsedGPR(const llvm::MCInst &inst, const LLVMCPU &llvmcpu,
       }
       oss << llvmcpu.getRegisterName(e.first);
       switch (e.second & RegisterBoth) {
+        default:
+          oss << " (--)";
+          break;
         case RegisterUsed:
           oss << " (r-)";
           break;

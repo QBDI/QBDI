@@ -20,6 +20,7 @@
 
 #include <cstdlib>
 #include <memory>
+#include <optional>
 #include <stdint.h>
 #include <string>
 #include <utility>
@@ -289,6 +290,17 @@ public:
    */
   const InstAnalysis *getInstAnalysis(rword address, AnalysisType type) const;
 
+  /*! Return the instruction address from a Jitted address.
+   * This function help to convert an address of a patched
+   * (inside a CodeSection of an ExecBlock) to the address of the instruction
+   * for which this patch was jitted.
+   *
+   * @param[in] address  Address of a Jitted instruction
+   *
+   * @return The address of the patch, or empty if not found.
+   */
+  std::optional<rword> getPatchAddressOfJit(rword address) const;
+
   /*! Clear a specific address range from the translation cache.
    *
    * @param[in] start Start of the address range to clear from the cache.
@@ -306,6 +318,22 @@ public:
   /*! Clear the entire translation cache.
    */
   void clearAllCache();
+
+  /*! Get the number of ExecBlock in the cache. Each block uses 2 memory pages
+   * and some heap allocations.
+   *
+   * @return  The number of ExecBlock in the cache.
+   */
+  uint32_t getNbExecBlock() const;
+
+  /*! Reduce the cache to X ExecBlock. Note that this will try to purge the
+   * oldest ExecBlock first, but the block may be recreate if needed by followed
+   * execution.
+   *
+   * @param[in] nb The number of BasicBlock that should remains in the cache
+   *               after call.
+   */
+  void reduceCacheTo(uint32_t nb);
 };
 
 } // namespace QBDI

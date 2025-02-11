@@ -203,12 +203,18 @@ RangeSet<rword> InstrRuleDynamic::affectedRange() const {
 // InstrRuleUser
 // =============
 
-InstrRuleUser::InstrRuleUser(InstrRuleCallback cbk, AnalysisType analysisType,
+InstrRuleUser::InstrRuleUser(InstrRuleCallback cbk, AnalysisType analysisType_,
                              void *cbk_data, VMInstanceRef vm,
                              RangeSet<rword> range, int priority)
     : AutoClone<InstrRule, InstrRuleUser>(priority), cbk(cbk),
-      analysisType(analysisType), cbk_data(cbk_data), vm(vm),
-      range(std::move(range)) {}
+      analysisType(analysisType_), cbk_data(cbk_data), vm(vm),
+      range(std::move(range)) {
+
+  if ((analysisType & AnalysisType::ANALYSIS_JIT) != 0) {
+    QBDI_WARN("Can't use analysis type ANALYSIS_JIT with InstrRuleCallback");
+    analysisType ^= AnalysisType::ANALYSIS_JIT;
+  }
+}
 
 InstrRuleUser::~InstrRuleUser() = default;
 

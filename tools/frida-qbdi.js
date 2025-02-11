@@ -310,6 +310,7 @@ var QBDI_C = Object.freeze({
     deleteAllInstrumentations: _qbdibinder.bind('qbdi_deleteAllInstrumentations', 'void', ['pointer']),
     getInstAnalysis: _qbdibinder.bind('qbdi_getInstAnalysis', 'pointer', ['pointer', 'uint32']),
     getCachedInstAnalysis: _qbdibinder.bind('qbdi_getCachedInstAnalysis', 'pointer', ['pointer', rword, 'uint32']),
+    getJITInstAnalysis: _qbdibinder.bind('qbdi_getJITInstAnalysis', 'pointer', ['pointer', rword, 'uint32']),
     recordMemoryAccess: _qbdibinder.bind('qbdi_recordMemoryAccess', 'uchar', ['pointer', 'uint32']),
     getInstMemoryAccess: _qbdibinder.bind('qbdi_getInstMemoryAccess', 'pointer', ['pointer', 'pointer']),
     getBBMemoryAccess: _qbdibinder.bind('qbdi_getBBMemoryAccess', 'pointer', ['pointer', 'pointer']),
@@ -333,6 +334,8 @@ var QBDI_C = Object.freeze({
     precacheBasicBlock: _qbdibinder.bind('qbdi_precacheBasicBlock', 'uchar', ['pointer', rword]),
     clearCache: _qbdibinder.bind('qbdi_clearCache', 'void', ['pointer', rword, rword]),
     clearAllCache: _qbdibinder.bind('qbdi_clearAllCache', 'void', ['pointer']),
+    getNbExecBlock: _qbdibinder.bind('qbdi_getNbExecBlock', 'uint32', ['pointer']),
+    reduceCacheTo: _qbdibinder.bind('qbdi_reduceCacheTo', 'void', ['pointer', 'uint32']),
 });
 
 // Init some globals
@@ -773,7 +776,11 @@ export var AnalysisType = Object.freeze({
     /**
      * Instruction nearest symbol (and offset).
      */
-    ANALYSIS_SYMBOL: 1 << 3
+    ANALYSIS_SYMBOL: 1 << 3,
+    /**
+     * QBDI JIT Information.
+     */
+    ANALYSIS_JIT: 1 << 4
 });
 
 /**
@@ -1325,6 +1332,27 @@ export class VM {
         QBDI_C.clearAllCache(this.#vm)
     }
 
+    /**
+     * Get the number of ExecBlock in the cache. Each block uses 2 memory pages
+     * and some heap allocations.
+     *
+     * @return {Integer} The number of ExecBlock in the cache.
+     */
+    getNbExecBlock() {
+        return QBDI_C.getNbExecBlock(this.#vm)
+    }
+
+    /** 
+     * Reduce the cache to X ExecBlock. Note that this will try to purge the
+     * oldest ExecBlock first, but the block may be recreate if needed by
+     * followed execution.
+     *
+     * @param {Integer} nb The number of BasicBlock that should remains in the
+     *                     cache
+     */
+    getNbExecBlock(nb) {
+        return QBDI_C.reduceCacheTo(this.#vm, nb)
+    }
 
     /**
      * Register a callback event if the instruction matches the mnemonic.
@@ -1551,6 +1579,28 @@ export class VM {
     getCachedInstAnalysis(addr, type) {
         type = type || (AnalysisType.ANALYSIS_INSTRUCTION | AnalysisType.ANALYSIS_DISASSEMBLY);
         var analysis = QBDI_C.getCachedInstAnalysis(this.#vm, addr.toRword(), type);
+        if (analysis.isNull()) {
+            return NULL;
+        }
+        return this._parseInstAnalysis(analysis);
+    }
+
+    /**
+     * Obtain the analysis of a JITed instruction. Analysis results are cached
+     * in the VM. The validity of the returned pointer is only guaranteed until
+     * the end of the callback or a call to a noconst method of the VM object.
+     * This API may be used to determine if a given address of the current
+     * process memory correspond to the JIT patch from this VM. Note that this
+     * call may allocate memory.
+     *
+     * @param {String|Number|NativePointer} addr    The JIT address
+     * @param {AnalysisType}  [type]  Properties to retrieve during analysis (default to ANALYSIS_INSTRUCTION | ANALYSIS_DISASSEMBLY).
+     *
+     * @return {InstAnalysis} A :js:class:`InstAnalysis` object containing the analysis result. null if the instruction isn't in the cache.
+     */
+    getJITInstAnalysis(addr, type) {
+        type = type || (AnalysisType.ANALYSIS_INSTRUCTION | AnalysisType.ANALYSIS_DISASSEMBLY | AnalysisType.ANALYSIS_JIT);
+        var analysis = QBDI_C.getJITInstAnalysis(this.#vm, addr.toRword(), type);
         if (analysis.isNull()) {
             return NULL;
         }
@@ -2158,6 +2208,10 @@ export class VM {
      * @property {string|null} moduleName
      * @property {string|null} module
      * @property {string|null} cpuMode
+     * @property {number} patchSize
+     * @property {number} patchInstOffset
+     * @property {number} patchInstSize
+     * @property {number} analysisType
      */
 
     /**
@@ -2166,69 +2220,91 @@ export class VM {
      */
     _parseInstAnalysis(ptr) {
         var analysis = {};
-        var p = ptr.add(this.#instAnalysisStructDesc.offsets[0]);
-        analysis.mnemonic = Memory.readCString(Memory.readPointer(p));
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[1]);
-        analysis.disassembly = Memory.readCString(Memory.readPointer(p));
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[2]);
-        analysis.address = Memory.readRword(p);
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[3]);
-        analysis.instSize = Memory.readU32(p);
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[4]);
-        analysis.affectControlFlow = Memory.readU8(p) == true;
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[5]);
-        analysis.isBranch = Memory.readU8(p) == true;
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[6]);
-        analysis.isCall = Memory.readU8(p) == true;
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[7]);
-        analysis.isReturn = Memory.readU8(p) == true;
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[8]);
-        analysis.isCompare = Memory.readU8(p) == true;
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[9]);
-        analysis.isPredicable = Memory.readU8(p) == true;
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[10]);
-        analysis.isMoveImm = Memory.readU8(p) == true;
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[11]);
-        analysis.mayLoad = Memory.readU8(p) == true;
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[12]);
-        analysis.mayStore = Memory.readU8(p) == true;
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[13]);
-        analysis.loadSize = Memory.readU32(p);
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[14]);
-        analysis.storeSize = Memory.readU32(p);
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[15]);
-        analysis.condition = Memory.readU8(p);
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[16]);
-        analysis.flagsAccess = Memory.readU8(p);
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[17]);
-        var numOperands = Memory.readU8(p);
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[18]);
-        var operandsPtr = Memory.readPointer(p);
-        analysis.operands = new Array(numOperands);
-        for (var i = 0; i < numOperands; i++) {
-            analysis.operands[i] = this._parseOperandAnalysis(operandsPtr);
-            operandsPtr = operandsPtr.add(this.#operandAnalysisStructDesc.size);
+        var p = ptr.add(this.#instAnalysisStructDesc.offsets[27]);
+        var analysisType = Memory.readU16(p);
+
+        if ((analysisType & AnalysisType.ANALYSIS_INSTRUCTION) != 0) {
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[0]);
+          analysis.mnemonic = Memory.readCString(Memory.readPointer(p));
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[2]);
+          analysis.address = Memory.readRword(p);
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[3]);
+          analysis.instSize = Memory.readU32(p);
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[4]);
+          analysis.affectControlFlow = Memory.readU8(p) == true;
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[5]);
+          analysis.isBranch = Memory.readU8(p) == true;
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[6]);
+          analysis.isCall = Memory.readU8(p) == true;
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[7]);
+          analysis.isReturn = Memory.readU8(p) == true;
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[8]);
+          analysis.isCompare = Memory.readU8(p) == true;
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[9]);
+          analysis.isPredicable = Memory.readU8(p) == true;
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[10]);
+          analysis.isMoveImm = Memory.readU8(p) == true;
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[11]);
+          analysis.mayLoad = Memory.readU8(p) == true;
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[12]);
+          analysis.mayStore = Memory.readU8(p) == true;
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[13]);
+          analysis.loadSize = Memory.readU32(p);
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[14]);
+          analysis.storeSize = Memory.readU32(p);
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[15]);
+          analysis.condition = Memory.readU8(p);
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[22]);
+          analysis.cpuMode = Memory.readU8(p);
         }
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[19]);
-        var symbolPtr = Memory.readPointer(p);
-        if (!symbolPtr.isNull()) {
-            analysis.symbolName = Memory.readCString(symbolPtr);
-        } else {
-            analysis.symbolName = "";
+        if ((analysisType & AnalysisType.ANALYSIS_DISASSEMBLY) != 0) {
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[1]);
+          analysis.disassembly = Memory.readCString(Memory.readPointer(p));
         }
-        analysis.symbol = analysis.symbolName; // deprecated Name
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[20]);
-        analysis.symbolOffset = Memory.readU32(p);
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[21]);
-        var modulePtr = Memory.readPointer(p);
-        if (!modulePtr.isNull()) {
-            analysis.moduleName = Memory.readCString(modulePtr);
-        } else {
-            analysis.moduleName = "";
+        if ((analysisType & AnalysisType.ANALYSIS_OPERANDS) != 0) {
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[16]);
+          analysis.flagsAccess = Memory.readU8(p);
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[17]);
+          var numOperands = Memory.readU8(p);
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[18]);
+          var operandsPtr = Memory.readPointer(p);
+          analysis.operands = new Array(numOperands);
+          for (var i = 0; i < numOperands; i++) {
+              analysis.operands[i] = this._parseOperandAnalysis(operandsPtr);
+              operandsPtr = operandsPtr.add(this.#operandAnalysisStructDesc.size);
+          }
         }
-        analysis.module = analysis.moduleName; // deprecated Name
-        p = ptr.add(this.#instAnalysisStructDesc.offsets[22]);
-        analysis.cpuMode = Memory.readU8(p);
+        if ((analysisType & AnalysisType.ANALYSIS_SYMBOL) != 0) {
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[19]);
+          var symbolPtr = Memory.readPointer(p);
+          if (!symbolPtr.isNull()) {
+              analysis.symbolName = Memory.readCString(symbolPtr);
+          } else {
+              analysis.symbolName = "";
+          }
+          analysis.symbol = analysis.symbolName; // deprecated Name
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[20]);
+          analysis.symbolOffset = Memory.readU32(p);
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[21]);
+          var modulePtr = Memory.readPointer(p);
+          if (!modulePtr.isNull()) {
+              analysis.moduleName = Memory.readCString(modulePtr);
+          } else {
+              analysis.moduleName = "";
+          }
+          analysis.module = analysis.moduleName; // deprecated Name
+        }
+        if ((analysisType & AnalysisType.ANALYSIS_JIT) != 0) {
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[23]);
+          analysis.patchAddress = Memory.readRword(p);
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[24]);
+          analysis.patchSize = Memory.readU16(p);
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[25]);
+          analysis.patchInstOffset = Memory.readU16(p);
+          p = ptr.add(this.#instAnalysisStructDesc.offsets[26]);
+          analysis.patchInstSize = Memory.readU16(p);
+        }
+
         Object.freeze(analysis);
         return analysis;
     }

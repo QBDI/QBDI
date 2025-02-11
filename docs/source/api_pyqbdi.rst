@@ -140,6 +140,8 @@ InstAnalysis
 
 .. autofunction:: pyqbdi.VM.getCachedInstAnalysis
 
+.. autofunction:: pyqbdi.VM.getJITInstAnalysis
+
 .. _memaccess-getter-pyqbdi:
 
 MemoryAccess
@@ -159,6 +161,10 @@ Cache management
 .. autofunction:: pyqbdi.VM.clearCache
 
 .. autofunction:: pyqbdi.VM.clearAllCache
+
+.. autofunction:: pyqbdi.VM.getNbExecBlock
+
+.. autofunction:: pyqbdi.VM.reduceCacheTo
 
 .. _register-state-pyqbdi:
 

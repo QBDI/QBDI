@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 #include <algorithm>
-#include <map>
 #include <memory>
 #include <stdlib.h>
 

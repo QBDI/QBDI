@@ -194,6 +194,9 @@ InstAnalysis
 .. doxygenfunction:: qbdi_getCachedInstAnalysis
     :project: QBDI_C
 
+.. doxygenfunction:: qbdi_getJITInstAnalysis
+    :project: QBDI_C
+
 .. _memaccess-getter-c:
 
 MemoryAccess
@@ -218,6 +221,12 @@ Cache management
     :project: QBDI_C
 
 .. doxygenfunction:: qbdi_clearAllCache
+    :project: QBDI_C
+
+.. doxygenfunction:: qbdi_getNbExecBlock
+    :project: QBDI_C
+
+.. doxygenfunction:: qbdi_reduceCacheTo
     :project: QBDI_C
 
 .. _register-state-c:
