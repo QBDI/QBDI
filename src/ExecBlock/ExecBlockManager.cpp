@@ -578,14 +578,6 @@ void ExecBlockManager::clearCache(bool flushNow) {
   }
 }
 
-uint32_t ExecBlockManager::getNbExecBlock() const {
-  uint32_t res = 0;
-  for (const auto &r : regions) {
-    res += r.blocks.size();
-  }
-  return res;
-}
-
 void ExecBlockManager::reduceCacheTo(uint32_t nb) {
   uint32_t expected = getNbExecBlock();
   uint32_t check = 0;

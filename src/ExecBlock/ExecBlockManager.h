@@ -132,7 +132,7 @@ public:
 
   void clearCache(RangeSet<rword> rangeSet);
 
-  uint32_t getNbExecBlock() const;
+  uint32_t getNbExecBlock() const { return codeBlockMap.size(); }
 
   void reduceCacheTo(uint32_t nb);
 
