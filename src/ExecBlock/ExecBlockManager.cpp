@@ -496,7 +496,7 @@ size_t ExecBlockManager::findRegion(const Range<rword> &codeRange) {
   QBDI_DEBUG("Creating new region {} to cover basic block [0x{:x}, 0x{:x}]",
              insert, codeRange.start(), codeRange.end());
   regions.emplace(regions.begin() + insert, codeRange);
-  regionsReduceList.insertBegin(regions[insert]);
+  regionsReduceList.insertEnd(regions[insert]);
   return insert;
 }
 
@@ -579,22 +579,21 @@ void ExecBlockManager::clearCache(bool flushNow) {
 }
 
 void ExecBlockManager::reduceCacheTo(uint32_t nb) {
-  uint32_t expected = getNbExecBlock();
-  uint32_t check = 0;
+  uint32_t nbBlock = getNbExecBlock();
+  if (nb >= nbBlock) {
+    return;
+  }
+  uint32_t target = nbBlock - nb;
+  needFlush = true;
 
   for (auto &r : regionsReduceList) {
-    check += r.blocks.size();
-    QBDI_REQUIRE_ACTION(check <= expected, return);
-    if (not r.toFlush) {
-      if (nb >= r.blocks.size()) {
-        nb -= r.blocks.size();
-      } else {
-        r.toFlush = true;
-        needFlush = true;
-      }
+    r.toFlush = true;
+
+    if (target <= r.blocks.size()) {
+      return;
     }
+    target -= r.blocks.size();
   }
-  QBDI_REQUIRE_ACTION(check == expected, return);
 }
 
 } // namespace QBDI

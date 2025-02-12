@@ -106,13 +106,14 @@ private:
   MovableDoubleLinkedListElement<T> listHead;
 
 public:
+  template <bool Reverse>
   struct Iterator {
     Iterator(MovableDoubleLinkedListElement<T> *ptr_) : ptr(ptr_) {}
 
     T &operator*() const { return ptr->getSelf(); }
-    T *operator->() { return &(ptr->getSelf()); }
+    T *operator->() const { return &(ptr->getSelf()); }
     Iterator &operator++() {
-      ptr = ptr->next;
+      ptr = (Reverse) ? ptr->prev : ptr->next;
       return *this;
     }
     bool operator==(const Iterator &b) const { return ptr == b.ptr; };
@@ -122,18 +123,19 @@ public:
     MovableDoubleLinkedListElement<T> *ptr;
   };
 
+  template <bool Reverse>
   struct ConstIterator {
     ConstIterator(MovableDoubleLinkedListElement<T> *const ptr_) : ptr(ptr_) {}
 
     const T &operator*() const { return ptr->getSelf(); }
     const T *operator->() const { return &(ptr->getSelf()); }
-    Iterator &operator++() {
-      ptr = ptr->next;
+    ConstIterator &operator++() {
+      ptr = (Reverse) ? ptr->prev : ptr->next;
       return *this;
     }
 
-    bool operator==(const Iterator &b) const { return ptr == b.ptr; };
-    bool operator!=(const Iterator &b) const { return ptr != b.ptr; };
+    bool operator==(const ConstIterator &b) const { return ptr == b.ptr; };
+    bool operator!=(const ConstIterator &b) const { return ptr != b.ptr; };
 
   private:
     MovableDoubleLinkedListElement<T> *const ptr;
@@ -150,10 +152,14 @@ public:
   MovableDoubleLinkedList(MovableDoubleLinkedList &&o) = delete;
   MovableDoubleLinkedList &operator=(MovableDoubleLinkedList &&o) = delete;
 
-  Iterator begin() { return Iterator(listHead.next); }
-  Iterator end() { return Iterator(&listHead); }
-  ConstIterator cbegin() { return ConstIterator(listHead.next); }
-  ConstIterator cend() { return ConstIterator(&listHead); }
+  Iterator<false> begin() { return Iterator<false>(listHead.next); }
+  Iterator<false> end() { return Iterator<false>(&listHead); }
+  Iterator<true> rbegin() { return Iterator<true>(listHead.next); }
+  Iterator<true> rend() { return Iterator<true>(&listHead); }
+  ConstIterator<false> cbegin() { return ConstIterator<false>(listHead.next); }
+  ConstIterator<false> cend() { return ConstIterator<false>(&listHead); }
+  ConstIterator<true> crbegin() { return ConstIterator<true>(listHead.next); }
+  ConstIterator<true> crend() { return ConstIterator<true>(&listHead); }
 
   void insertBegin(MovableDoubleLinkedListElement<T> &el) {
     el.removeSelf();
@@ -162,6 +168,15 @@ public:
 
     el.next->prev = &el;
     listHead.next = &el;
+  }
+
+  void insertEnd(MovableDoubleLinkedListElement<T> &el) {
+    el.removeSelf();
+    el.next = &listHead;
+    el.prev = listHead.prev;
+
+    el.prev->next = &el;
+    listHead.prev = &el;
   }
 };
 
