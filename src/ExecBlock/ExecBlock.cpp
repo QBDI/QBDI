@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2024 Quarkslab
+ * Copyright 2017 - 2025 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,14 @@
 
 namespace QBDI {
 
+uint64_t ExecBlock::getPageSize() {
+  // iOS now use 16k superpages, but as JIT mecanisms are totally differents
+  // on this platform, we can enforce a 4k "virtual" page size
+  return is_ios ? 4096
+                : llvm::expectedToOptional(llvm::sys::Process::getPageSize())
+                      .value_or(4096);
+}
+
 ExecBlock::ExecBlock(
     const LLVMCPUs &llvmCPUs, VMInstanceRef vminstance,
     const std::vector<std::unique_ptr<RelocatableInst>> *execBlockPrologue,
@@ -56,12 +64,7 @@ ExecBlock::ExecBlock(
 
   // Allocate memory blocks
   std::error_code ec;
-  // iOS now use 16k superpages, but as JIT mecanisms are totally differents
-  // on this platform, we can enforce a 4k "virtual" page size
-  uint64_t pageSize =
-      is_ios ? 4096
-             : llvm::expectedToOptional(llvm::sys::Process::getPageSize())
-                   .value_or(4096);
+  uint64_t pageSize = getPageSize();
   unsigned mflags = PF::MF_READ | PF::MF_WRITE;
 
   if constexpr (is_ios)
@@ -590,8 +593,35 @@ const llvm::MCInst &ExecBlock::getOriginalMCInst(uint16_t instID) const {
 const InstAnalysis *ExecBlock::getInstAnalysis(uint16_t instID,
                                                AnalysisType type) const {
   QBDI_REQUIRE(instID < instMetadata.size());
-  return analyzeInstMetadata(instMetadata[instID], type,
-                             llvmCPUs.getCPU(instMetadata[instID].cpuMode));
+  QBDI_REQUIRE(instID < instRegistry.size());
+  InstAnalysis *ana =
+      analyzeInstMetadata(instMetadata[instID], type,
+                          llvmCPUs.getCPU(instMetadata[instID].cpuMode));
+
+  // perform ANALYSIS_JIT if needed
+  if ((type & ANALYSIS_JIT) != 0 and (ana->analysisType & ANALYSIS_JIT) == 0) {
+    ana->analysisType |= ANALYSIS_JIT;
+    ana->patchAddress = getBaseCodeBlock() + instRegistry[instID].offset;
+    if (instRegistry.size() == instID + 1) {
+      ana->patchSize = codeBlockPosition - instRegistry[instID].offset;
+    } else {
+      ana->patchSize =
+          instRegistry[instID + 1].offset - instRegistry[instID].offset;
+    }
+    std::vector<TagInfo> beginInstPatchTag =
+        queryTagByInst(instID, RelocTagPatchInstBegin);
+    QBDI_REQUIRE_ABORT(beginInstPatchTag.size() == 1,
+                       "Internal Error: begin tag not found");
+    QBDI_REQUIRE_ABORT(beginInstPatchTag[0].offset >=
+                           instRegistry[instID].offset,
+                       "Internal Error: invalid begin tag");
+    ana->patchInstOffset =
+        beginInstPatchTag[0].offset - instRegistry[instID].offset;
+    ana->patchInstSize =
+        instRegistry[instID].offsetSkip - beginInstPatchTag[0].offset;
+  }
+
+  return ana;
 }
 
 uint16_t ExecBlock::getSeqID(rword address, CPUMode cpuMode) const {
@@ -709,6 +739,35 @@ float ExecBlock::occupationRatio() const {
 const LLVMCPU &ExecBlock::getLLVMCPUByInst(uint16_t instID) const {
   QBDI_REQUIRE(instID < instRegistry.size());
   return llvmCPUs.getCPU(instMetadata[instID].cpuMode);
+}
+
+uint16_t ExecBlock::getPatchAddressOfJit(rword address) const {
+  if (address >= getCurrentPC()) {
+    // the address is after the last patch of this execblock. This may be an
+    // address outside of this Execblock, or in the epilogue
+    return NOT_FOUND;
+  }
+  if (instRegistry.size() <= 0) {
+    return NOT_FOUND;
+  }
+  if (address < getBaseCodeBlock() + instRegistry[0].offset) {
+    // the address is before the first patch of this execblock. This may be an
+    // address outside of this Execblock, or in the prologue
+    return NOT_FOUND;
+  }
+  uint16_t targetOffset = static_cast<uint16_t>(address - getBaseCodeBlock());
+
+  auto it =
+      std::lower_bound(instRegistry.cbegin(), instRegistry.cend(), targetOffset,
+                       [](const InstInfo &info, uint16_t value) {
+                         return info.offset <= value;
+                       });
+
+  if (it == instRegistry.cend()) {
+    return instRegistry.size() - 1;
+  } else {
+    return std::distance(instRegistry.cbegin(), it) - 1;
+  }
 }
 
 } // namespace QBDI

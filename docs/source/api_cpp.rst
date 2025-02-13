@@ -171,6 +171,8 @@ InstAnalysis
 
 .. doxygenfunction:: QBDI::VM::getCachedInstAnalysis
 
+.. doxygenfunction:: QBDI::VM::getJITInstAnalysis
+
 .. _memaccess-getter-cpp:
 
 MemoryAccess
@@ -190,6 +192,10 @@ Cache management
 .. doxygenfunction:: QBDI::VM::clearCache
 
 .. doxygenfunction:: QBDI::VM::clearAllCache
+
+.. doxygenfunction:: QBDI::VM::getNbExecBlock
+
+.. doxygenfunction:: QBDI::VM::reduceCacheTo
 
 .. _register-state-cpp:
 

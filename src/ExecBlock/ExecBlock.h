@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2024 Quarkslab
+ * Copyright 2017 - 2025 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -196,6 +196,8 @@ public:
    */
   void run();
 
+  static uint64_t getPageSize();
+
   /*! Execute the sequence currently programmed in the selector of the exec
    * block. Take care of the callbacks handling.
    */
@@ -221,6 +223,16 @@ public:
    * @return The new sequence ID.
    */
   uint16_t splitSequence(uint16_t instID);
+
+  /*! Get the patch address associated with a Jitted Address.
+   *
+   * @param address  [in] The Jitted address. This is expected to point inside
+   *                      the codeBlock of this basicBlock
+   *
+   * @return The instruction ID that correspond to this JIT address, or
+   * NOT_FOUND.
+   */
+  uint16_t getPatchAddressOfJit(rword address) const;
 
   /*! Get the address of the DataBlock
    *
@@ -262,6 +274,14 @@ public:
    */
   rword getCurrentPC() const {
     return reinterpret_cast<rword>(codeBlock.base()) + codeBlockPosition;
+  }
+
+  /*! Get the begining of the codeBlock
+   *
+   * @return The first address of the codeBlock
+   */
+  rword getBaseCodeBlock() const {
+    return reinterpret_cast<rword>(codeBlock.base());
   }
 
   /*! Obtain the current instruction ID.

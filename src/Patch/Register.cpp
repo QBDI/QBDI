@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2024 Quarkslab
+ * Copyright 2017 - 2025 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -133,6 +133,9 @@ void getUsedGPR(const llvm::MCInst &inst, const LLVMCPU &llvmcpu,
       }
       oss << llvmcpu.getRegisterName(GPR_ID[i]);
       switch (regUsage[i] & RegisterBoth) {
+        default:
+          oss << " (--)";
+          break;
         case RegisterUsed:
           oss << " (r-)";
           break;
@@ -152,6 +155,9 @@ void getUsedGPR(const llvm::MCInst &inst, const LLVMCPU &llvmcpu,
       }
       oss << llvmcpu.getRegisterName(e.first);
       switch (e.second & RegisterBoth) {
+        default:
+          oss << " (--)";
+          break;
         case RegisterUsed:
           oss << " (r-)";
           break;

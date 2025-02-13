@@ -1,7 +1,7 @@
 /*
  * This file is part of pyQBDI (python binding for QBDI).
  *
- * Copyright 2017 - 2024 Quarkslab
+ * Copyright 2017 - 2025 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,6 +134,7 @@ void init_binding_InstAnalysis(py::module_ &m) {
              "Instruction operands analysis")
       .value("ANALYSIS_SYMBOL", AnalysisType::ANALYSIS_SYMBOL,
              "Instruction symbol")
+      .value("ANALYSIS_JIT", AnalysisType::ANALYSIS_JIT, "QBDI JIT Information")
       .export_values()
       .def_invert()
       .def_repr_str();
@@ -338,7 +339,40 @@ void init_binding_InstAnalysis(py::module_ &m) {
                                            ANALYSIS_SYMBOL);
           },
           "Instruction module name (if ANALYSIS_SYMBOL and found) "
-          "(deprecated)");
+          "(deprecated)")
+      // ANALYSIS_JIT
+      .def_property_readonly(
+          "patchAddress",
+          [](const InstAnalysis &obj) {
+            return get_InstAnalysis_member(obj, &InstAnalysis::patchAddress,
+                                           ANALYSIS_JIT);
+          },
+          "Begin of the instrumentation patch for this instruction (if "
+          "ANALYSIS_JIT)")
+      .def_property_readonly(
+          "patchSize",
+          [](const InstAnalysis &obj) {
+            return get_InstAnalysis_member(obj, &InstAnalysis::patchSize,
+                                           ANALYSIS_JIT);
+          },
+          "Whole size of the instrumentation patch (if "
+          "ANALYSIS_JIT)")
+      .def_property_readonly(
+          "patchInstOffset",
+          [](const InstAnalysis &obj) {
+            return get_InstAnalysis_member(obj, &InstAnalysis::patchInstOffset,
+                                           ANALYSIS_JIT);
+          },
+          "Offset of the JIT instruction in the path (if "
+          "ANALYSIS_JIT)")
+      .def_property_readonly(
+          "patchInstSize",
+          [](const InstAnalysis &obj) {
+            return get_InstAnalysis_member(obj, &InstAnalysis::patchInstSize,
+                                           ANALYSIS_JIT);
+          },
+          "Size of the JIT instruction in the path (if "
+          "ANALYSIS_JIT)");
 }
 
 } // namespace pyQBDI

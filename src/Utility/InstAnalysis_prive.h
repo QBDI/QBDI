@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2024 Quarkslab
+ * Copyright 2017 - 2025 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,9 +42,8 @@ struct InstAnalysisDestructor {
 
 using InstAnalysisPtr = std::unique_ptr<InstAnalysis, InstAnalysisDestructor>;
 
-const InstAnalysis *analyzeInstMetadata(const InstMetadata &instMetadata,
-                                        AnalysisType type,
-                                        const LLVMCPU &llvmcpu);
+InstAnalysis *analyzeInstMetadata(const InstMetadata &instMetadata,
+                                  AnalysisType type, const LLVMCPU &llvmcpu);
 namespace InstructionAnalysis {
 
 ConditionType ConditionLLVM2QBDI(unsigned cond);

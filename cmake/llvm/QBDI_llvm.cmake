@@ -135,6 +135,10 @@ else()
   message(FATAL_ERROR "Unsupported LLVM Architecture.")
 endif()
 
+if(QBDI_PLATFORM_WINDOWS)
+  add_compile_definitions(_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
+endif()
+
 if(NOT ("${QBDI_LLVM_TRIPLE}" STREQUAL ""))
   set(LLVM_DEFAULT_TARGET_TRIPLE
       "${QBDI_LLVM_TRIPLE}"

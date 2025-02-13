@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2024 Quarkslab
+ * Copyright 2017 - 2025 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -203,12 +203,18 @@ RangeSet<rword> InstrRuleDynamic::affectedRange() const {
 // InstrRuleUser
 // =============
 
-InstrRuleUser::InstrRuleUser(InstrRuleCallback cbk, AnalysisType analysisType,
+InstrRuleUser::InstrRuleUser(InstrRuleCallback cbk, AnalysisType analysisType_,
                              void *cbk_data, VMInstanceRef vm,
                              RangeSet<rword> range, int priority)
     : AutoClone<InstrRule, InstrRuleUser>(priority), cbk(cbk),
-      analysisType(analysisType), cbk_data(cbk_data), vm(vm),
-      range(std::move(range)) {}
+      analysisType(analysisType_), cbk_data(cbk_data), vm(vm),
+      range(std::move(range)) {
+
+  if ((analysisType & AnalysisType::ANALYSIS_JIT) != 0) {
+    QBDI_WARN("Can't use analysis type ANALYSIS_JIT with InstrRuleCallback");
+    analysisType ^= AnalysisType::ANALYSIS_JIT;
+  }
+}
 
 InstrRuleUser::~InstrRuleUser() = default;
 

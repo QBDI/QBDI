@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2024 Quarkslab
+ * Copyright 2017 - 2025 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -276,6 +276,12 @@ const InstAnalysis *qbdi_getCachedInstAnalysis(const VMInstanceRef instance,
                                                                   type);
 }
 
+const InstAnalysis *qbdi_getJITInstAnalysis(const VMInstanceRef instance,
+                                            rword address, AnalysisType type) {
+  QBDI_REQUIRE_ACTION(instance, return nullptr);
+  return static_cast<const VM *>(instance)->getJITInstAnalysis(address, type);
+}
+
 bool qbdi_recordMemoryAccess(VMInstanceRef instance, MemoryAccessType type) {
   QBDI_REQUIRE_ACTION(instance, return false);
   return static_cast<VM *>(instance)->recordMemoryAccess(type);
@@ -332,6 +338,14 @@ void qbdi_clearAllCache(VMInstanceRef instance) {
 
 void qbdi_clearCache(VMInstanceRef instance, rword start, rword end) {
   static_cast<VM *>(instance)->clearCache(start, end);
+}
+
+uint32_t qbdi_getNbExecBlock(VMInstanceRef instance) {
+  return static_cast<VM *>(instance)->getNbExecBlock();
+}
+
+void qbdi_reduceCacheTo(VMInstanceRef instance, uint32_t nb) {
+  static_cast<VM *>(instance)->reduceCacheTo(nb);
 }
 
 uint32_t qbdi_addInstrRule(VMInstanceRef instance, InstrRuleCallbackC cbk,

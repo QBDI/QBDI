@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2024 Quarkslab
+ * Copyright 2017 - 2025 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,40 @@ typename std::enable_if<EnableBitMaskOperators<Enum>::enable, Enum>::type &
 operator|=(Enum &lhs, Enum rhs) {
   using underlying = typename std::underlying_type<Enum>::type;
   lhs = static_cast<Enum>(static_cast<underlying>(lhs) |
+                          static_cast<underlying>(rhs));
+  return lhs;
+}
+
+template <typename Enum>
+typename std::enable_if<EnableBitMaskOperators<Enum>::enable, Enum>::type
+operator&(Enum lhs, Enum rhs) {
+  using underlying = typename std::underlying_type<Enum>::type;
+  return static_cast<Enum>(static_cast<underlying>(lhs) &
+                           static_cast<underlying>(rhs));
+}
+
+template <typename Enum>
+typename std::enable_if<EnableBitMaskOperators<Enum>::enable, Enum>::type &
+operator&=(Enum &lhs, Enum rhs) {
+  using underlying = typename std::underlying_type<Enum>::type;
+  lhs = static_cast<Enum>(static_cast<underlying>(lhs) &
+                          static_cast<underlying>(rhs));
+  return lhs;
+}
+
+template <typename Enum>
+typename std::enable_if<EnableBitMaskOperators<Enum>::enable, Enum>::type
+operator^(Enum lhs, Enum rhs) {
+  using underlying = typename std::underlying_type<Enum>::type;
+  return static_cast<Enum>(static_cast<underlying>(lhs) ^
+                           static_cast<underlying>(rhs));
+}
+
+template <typename Enum>
+typename std::enable_if<EnableBitMaskOperators<Enum>::enable, Enum>::type &
+operator^=(Enum &lhs, Enum rhs) {
+  using underlying = typename std::underlying_type<Enum>::type;
+  lhs = static_cast<Enum>(static_cast<underlying>(lhs) ^
                           static_cast<underlying>(rhs));
   return lhs;
 }

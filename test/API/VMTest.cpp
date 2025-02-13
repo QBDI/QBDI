@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2024 Quarkslab
+ * Copyright 2017 - 2025 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
  */
 #include <algorithm>
 #include <catch2/catch_test_macros.hpp>
+#include <set>
 #include "APITest.h"
 
 #include "inttypes.h"
@@ -1802,4 +1803,153 @@ TEST_CASE_METHOD(APITest, "VMTest-SelfModifyingCode2") {
   REQUIRE(ret == (QBDI::rword)42);
 
   SUCCEED();
+}
+
+struct CheckReduceSizeData {
+  size_t lastCount;
+};
+
+TEST_CASE_METHOD(APITest, "VMTest-ReduceSize1") {
+  uint32_t count = 0;
+  // add dummy callback in order to increase the size of each patch
+  vm.addCodeCB(QBDI::InstPosition::PREINST, countInstruction, &count);
+  vm.addCodeCB(QBDI::InstPosition::POSTINST, countInstruction, &count);
+
+  CheckReduceSizeData data = {0};
+  vm.addVMEventCB(QBDI::SEQUENCE_ENTRY | QBDI::SEQUENCE_EXIT |
+                      QBDI::BASIC_BLOCK_NEW,
+                  [&](QBDI::VM *evm, const QBDI::VMState *vmState,
+                      QBDI::GPRState *gprState, QBDI::FPRState *fprState) {
+                    CHECK(evm == &vm);
+                    if ((vmState->event & QBDI::BASIC_BLOCK_NEW) != 0) {
+                      data.lastCount = vm.getNbExecBlock();
+                    }
+                    CHECK(data.lastCount == vm.getNbExecBlock());
+                    return QBDI::VMAction::CONTINUE;
+                  });
+
+  CHECK(vm.getNbExecBlock() == 0);
+
+  // backup GPRState to have the same state before each run
+  QBDI::GPRState backup = *(vm.getGPRState());
+
+  for (QBDI::rword j = 0; j < 4; j++) {
+    for (QBDI::rword i = 0; i < 8; i++) {
+      QBDI_DEBUG("Begin Loop iteration {} {}", j, i);
+      vm.setGPRState(&backup);
+
+      QBDI::rword retval;
+      bool ran =
+          vm.call(&retval, reinterpret_cast<QBDI::rword>(dummyFunBB),
+                  {i ^ j, 5, 13, reinterpret_cast<QBDI::rword>(dummyFun1),
+                   reinterpret_cast<QBDI::rword>(dummyFun1),
+                   reinterpret_cast<QBDI::rword>(dummyFun1)});
+      CHECK(ran);
+      CHECK(data.lastCount != 0);
+    }
+  }
+
+  size_t currentExecBlock = vm.getNbExecBlock();
+  while (currentExecBlock != 0) {
+    vm.reduceCacheTo(currentExecBlock - 1);
+    size_t newExecBlock = vm.getNbExecBlock();
+    CHECK(newExecBlock < currentExecBlock);
+    currentExecBlock = newExecBlock;
+  }
+}
+
+TEST_CASE_METHOD(APITest, "VMTest-ReduceSize2") {
+  uint32_t count = 0;
+  // add dummy callback in order to increase the size of each patch
+  vm.addCodeCB(QBDI::InstPosition::PREINST, countInstruction, &count);
+  vm.addCodeCB(QBDI::InstPosition::POSTINST, countInstruction, &count);
+
+  vm.addVMEventCB(QBDI::BASIC_BLOCK_NEW,
+                  [](QBDI::VM *vm, const QBDI::VMState *vmState,
+                     QBDI::GPRState *gprState, QBDI::FPRState *fprState) {
+                    size_t lastCount = vm->getNbExecBlock();
+                    vm->reduceCacheTo(0);
+                    // vm doesn't clear the cache immediatly
+                    CHECK(lastCount == vm->getNbExecBlock());
+                    return QBDI::VMAction::CONTINUE;
+                  });
+
+  CHECK(vm.getNbExecBlock() == 0);
+
+  // backup GPRState to have the same state before each run
+  QBDI::GPRState backup = *(vm.getGPRState());
+
+  for (QBDI::rword j = 0; j < 4; j++) {
+    for (QBDI::rword i = 0; i < 8; i++) {
+      QBDI_DEBUG("Begin Loop iteration {} {}", j, i);
+      vm.setGPRState(&backup);
+
+      QBDI::rword retval;
+      bool ran =
+          vm.call(&retval, reinterpret_cast<QBDI::rword>(dummyFunBB),
+                  {i ^ j, 5, 13, reinterpret_cast<QBDI::rword>(dummyFun1),
+                   reinterpret_cast<QBDI::rword>(dummyFun1),
+                   reinterpret_cast<QBDI::rword>(dummyFun1)});
+      CHECK(ran);
+      CHECK(vm.getNbExecBlock() == 0);
+    }
+  }
+}
+
+TEST_CASE_METHOD(APITest, "VMTest-JitAnalysis") {
+  uint32_t count = 0;
+  // add dummy callback in order to increase the size of each patch
+  vm.addCodeCB(QBDI::InstPosition::PREINST, countInstruction, &count);
+  vm.addCodeCB(QBDI::InstPosition::POSTINST, countInstruction, &count);
+
+  std::set<QBDI::rword> instAddress;
+
+  vm.addInstrRule(
+      [&](QBDI::VM *evm, const QBDI::InstAnalysis *inst)
+          -> std::vector<QBDI::InstrRuleDataCBK> {
+        CHECK(evm == &vm);
+        instAddress.insert(inst->address);
+        return {};
+      },
+      QBDI::AnalysisType::ANALYSIS_INSTRUCTION);
+
+  // backup GPRState to have the same state before each run
+  QBDI::GPRState backup = *(vm.getGPRState());
+
+  for (QBDI::rword j = 0; j < 4; j++) {
+    for (QBDI::rword i = 0; i < 8; i++) {
+      QBDI_DEBUG("Begin Loop iteration {} {}", j, i);
+      vm.setGPRState(&backup);
+
+      QBDI::rword retval;
+      bool ran =
+          vm.call(&retval, reinterpret_cast<QBDI::rword>(dummyFunBB),
+                  {i ^ j, 5, 13, reinterpret_cast<QBDI::rword>(dummyFun1),
+                   reinterpret_cast<QBDI::rword>(dummyFun1),
+                   reinterpret_cast<QBDI::rword>(dummyFun1)});
+      CHECK(ran);
+    }
+  }
+
+  for (auto address : instAddress) {
+    const auto *ana = vm.getCachedInstAnalysis(
+        address, QBDI::AnalysisType::ANALYSIS_JIT |
+                     QBDI::AnalysisType::ANALYSIS_INSTRUCTION);
+    REQUIRE(ana != nullptr);
+    CHECK(ana->patchAddress != 0);
+    CHECK(((uint32_t)ana->patchInstOffset) + ((uint32_t)ana->patchInstSize) <=
+          ((uint32_t)ana->patchSize));
+
+    const size_t increment = (QBDI::is_arm || QBDI::is_aarch64) ? 4 : 1;
+
+    for (size_t i = 0; i < ana->patchSize; i += increment) {
+      const auto *anaJit = vm.getJITInstAnalysis(
+          ana->patchAddress + i, QBDI::AnalysisType::ANALYSIS_JIT |
+                                     QBDI::AnalysisType::ANALYSIS_INSTRUCTION);
+      CHECK(anaJit != nullptr);
+      if (anaJit != nullptr) {
+        CHECK(anaJit->address == address);
+      }
+    }
+  }
 }

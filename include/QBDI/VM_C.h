@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2024 Quarkslab
+ * Copyright 2017 - 2025 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -561,6 +561,24 @@ QBDI_EXPORT const InstAnalysis *
 qbdi_getCachedInstAnalysis(const VMInstanceRef instance, rword address,
                            AnalysisType type);
 
+/*! Obtain the analysis of a JITed instruction. Analysis results are cached
+ * in the VM. The validity of the returned pointer is only guaranteed until
+ * the end of the callback or a call to a noconst method of the VM object.
+ * This API may be used to determine if a given address of the current
+ * process memory correspond to the JIT patch from this VM. Note that this
+ * call may allocate memory.
+ *
+ * @param[in] instance     VM instance.
+ * @param[in] address      The JIT address
+ * @param[in] type         Properties to retrieve during analysis.
+ *
+ * @return A InstAnalysis structure containing the analysis result.
+ *    null if the address isn't a valid
+ */
+QBDI_EXPORT const InstAnalysis *
+qbdi_getJITInstAnalysis(const VMInstanceRef instance, rword address,
+                        AnalysisType type);
+
 /*! Add instrumentation rules to log memory access using inline instrumentation
  and
  *  instruction shadows.
@@ -595,7 +613,7 @@ QBDI_EXPORT MemoryAccess *qbdi_getInstMemoryAccess(VMInstanceRef instance,
  *
  *  @param[in]  instance     VM instance.
  *  @param[out] size         Will be set to the number of elements in the
- * returned array.
+ *                           returned array.
  *
  * @return An array of memory accesses made by the basic block.
  */
@@ -627,6 +645,25 @@ QBDI_EXPORT void qbdi_clearCache(VMInstanceRef instance, rword start,
  * @param[in] instance     VM instance.
  */
 QBDI_EXPORT void qbdi_clearAllCache(VMInstanceRef instance);
+
+/*! Get the number of ExecBlock in the cache. Each block uses 2 memory pages
+ * and some heap allocations.
+ *
+ * @param[in] instance     VM instance.
+ *
+ * @return  The number of ExecBlock in the cache.
+ */
+QBDI_EXPORT uint32_t qbdi_getNbExecBlock(const VMInstanceRef instance);
+
+/*! Reduce the cache to X ExecBlock. Note that this will try to purge the
+ * oldest ExecBlock first, but the block may be recreate if needed by
+ * followed execution.
+ *
+ * @param[in] instance  VM instance.
+ * @param[in] nb        The number of BasicBlock that should remains in the
+ *                      cache after call.
+ */
+QBDI_EXPORT void qbdi_reduceCacheTo(VMInstanceRef instance, uint32_t nb);
 
 #ifdef __cplusplus
 } // "C"

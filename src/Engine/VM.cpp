@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2024 Quarkslab
+ * Copyright 2017 - 2025 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -934,6 +934,16 @@ const InstAnalysis *VM::getCachedInstAnalysis(rword address,
   return engine->getInstAnalysis(address, type);
 }
 
+const InstAnalysis *VM::getJITInstAnalysis(rword jitAddress,
+                                           AnalysisType type) const {
+  std::optional<rword> address = engine->getPatchAddressOfJit(jitAddress);
+  if (address) {
+    return engine->getInstAnalysis(*address, type);
+  } else {
+    return nullptr;
+  }
+}
+
 // recordMemoryAccess
 
 bool VM::recordMemoryAccess(MemoryAccessType type) {
@@ -1000,5 +1010,13 @@ void VM::clearAllCache() { engine->clearAllCache(); }
 // clearCache
 
 void VM::clearCache(rword start, rword end) { engine->clearCache(start, end); }
+
+// getNbExecBlock
+
+uint32_t VM::getNbExecBlock() const { return engine->getNbExecBlock(); }
+
+// reduceCacheTo
+
+void VM::reduceCacheTo(uint32_t nb) { engine->reduceCacheTo(nb); }
 
 } // namespace QBDI

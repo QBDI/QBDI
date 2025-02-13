@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2024 Quarkslab
+ * Copyright 2017 - 2025 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,6 +119,7 @@ typedef enum {
   _QBDI_EI(ANALYSIS_DISASSEMBLY) = 1 << 1, /*!< Instruction disassembly */
   _QBDI_EI(ANALYSIS_OPERANDS) = 1 << 2,    /*!< Instruction operands analysis */
   _QBDI_EI(ANALYSIS_SYMBOL) = 1 << 3,      /*!< Instruction symbol */
+  _QBDI_EI(ANALYSIS_JIT) = 1 << 4,         /*!< QBDI JIT Information */
 } AnalysisType;
 
 _QBDI_ENABLE_BITMASK_OPERATORS(AnalysisType)
@@ -181,8 +182,15 @@ typedef struct {
   const char *moduleName; /*!< Instruction module name
                            * (warning: NULL if !ANALYSIS_SYMBOL or not found)
                            */
+  // ANALYSIS_JIT
+  rword patchAddress;       /*!< Begin of the instrumentation patch for this
+                             *  instruction */
+  uint16_t patchSize;       /*!< Whole size of the instrumentation patch */
+  uint16_t patchInstOffset; /*!< Offset of the JIT instruction in the path */
+  uint16_t patchInstSize;   /*!< Size of the JIT instruction in the path */
+
   // INTERNAL
-  uint32_t analysisType; /*!< INTERNAL: Instruction analysis type
+  uint16_t analysisType; /*!< INTERNAL: Instruction analysis type
                           * (this should NOT be used)
                           */
 } InstAnalysis;

@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2024 Quarkslab
+ * Copyright 2017 - 2025 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,16 @@ namespace QBDI {
 extern "C" {
 #endif
 
+// If Windows.h is included, ERROR macro may be defined
+// and will cause an error on LogPriority::ERROR
+#ifdef QBDI_PLATFORM_WINDOWS
+#ifdef ERROR
+#pragma push_macro("ERROR")
+#undef ERROR
+#define QBDI_LOGS_DISABLE_ERROR
+#endif
+#endif
+
 /*! Each log has a priority (or level) which can be used to control verbosity.
  * In production builds, only Warning and Error logs are kept.
  */
@@ -40,6 +50,12 @@ typedef enum {
   _QBDI_EI(ERROR),          /*!< Error logs */
   _QBDI_EI(DISABLE) = 0xff, /*!< Disable logs message */
 } LogPriority;
+
+#ifdef QBDI_PLATFORM_WINDOWS
+#ifdef QBDI_LOGS_DISABLE_ERROR
+#pragma pop_macro("ERROR")
+#endif
+#endif
 
 /*! Redirect logs to a file.
  *

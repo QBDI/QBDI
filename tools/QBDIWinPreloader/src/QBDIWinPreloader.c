@@ -8,7 +8,8 @@ int main(int argc, TCHAR **argv) {
   int argCount;
   si.cb = sizeof(si);
 
-  LPWSTR *argList = CommandLineToArgvW(GetCommandLineW(), &argCount);
+  LPWSTR commandLine = GetCommandLineW();
+  LPWSTR *argList = CommandLineToArgvW(commandLine, &argCount);
   if (!argList) {
     printf("Failed to retrieve commandline arguments\n");
     return -1;
@@ -31,11 +32,44 @@ int main(int argc, TCHAR **argv) {
   wchar_t target[MAX_PATH] = {0};
   wcscpy_s(target, MAX_PATH, argList[2]);
 
-  wchar_t targetCmdLine[MAX_PATH] = {0};
-  for (int i = 3; i < argCount; i++) {
-    wcscat_s(targetCmdLine, MAX_PATH, L" ");
-    wcscat_s(targetCmdLine, MAX_PATH, argList[i]);
+  // Create a sage escaped command line is really difficult. However,
+  // we alreay have GetCommandLineW() that is escaped with 2 additionnals
+  // arguments at the begin. Just remove these two args to have the target
+  // escape command line.
+
+  LPWSTR targetCmdLineRO = commandLine;
+  for (int i = 0; i < 2; i++) {
+    LPWSTR currentArg = argList[i];
+    while (currentArg[0] != L'\0') {
+      while (targetCmdLineRO[0] != currentArg[0]) {
+        if (targetCmdLineRO[0] == L'\0') {
+          printf("Failed to create commandLine for target : %ls\n",
+                 commandLine);
+          return -1;
+        }
+        targetCmdLineRO++;
+      }
+      currentArg++;
+    }
+    while (targetCmdLineRO[0] != L' ') {
+      if (targetCmdLineRO[0] == L'\0') {
+        printf("Failed to create commandLine for target : %ls\n", commandLine);
+        return -1;
+      }
+      targetCmdLineRO++;
+    }
+    while (targetCmdLineRO[0] == L' ') {
+      if (targetCmdLineRO[0] == L'\0') {
+        printf("Failed to create commandLine for target : %ls\n", commandLine);
+        return -1;
+      }
+      targetCmdLineRO++;
+    }
   }
+
+  wchar_t *targetCmdLine =
+      malloc(sizeof(wchar_t) * wcslen(targetCmdLineRO) + 1);
+  wcscpy(targetCmdLine, targetCmdLineRO);
 
   printf("Target: %ls\n", target);
   printf("Target CommandLine: %ls\n", targetCmdLine);
@@ -97,5 +131,6 @@ int main(int argc, TCHAR **argv) {
   CloseHandle(pi.hThread);
   CloseHandle(pi.hProcess);
   LocalFree(argList);
+  free(targetCmdLine);
   return 0;
 }

@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2024 Quarkslab
+ * Copyright 2017 - 2025 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ QBDI_EXPORT const StructDesc *qbdi_getOperandAnalysisStructDesc() {
 QBDI_EXPORT const StructDesc *qbdi_getInstAnalysisStructDesc() {
   static const StructDesc InstAnalysisDesc{
       sizeof(InstAnalysis),
-      23,
+      28,
       {
           offsetof(InstAnalysis, mnemonic),
           offsetof(InstAnalysis, disassembly),
@@ -112,6 +112,11 @@ QBDI_EXPORT const StructDesc *qbdi_getInstAnalysisStructDesc() {
           offsetof(InstAnalysis, symbolOffset),
           offsetof(InstAnalysis, moduleName),
           offsetof(InstAnalysis, cpuMode),
+          offsetof(InstAnalysis, patchAddress),
+          offsetof(InstAnalysis, patchSize),
+          offsetof(InstAnalysis, patchInstOffset),
+          offsetof(InstAnalysis, patchInstSize),
+          offsetof(InstAnalysis, analysisType),
       }};
   return &InstAnalysisDesc;
 }

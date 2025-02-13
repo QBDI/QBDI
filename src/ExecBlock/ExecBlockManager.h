@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2024 Quarkslab
+ * Copyright 2017 - 2025 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@
 #include "QBDI/Range.h"
 #include "QBDI/State.h"
 
+#include "Utility/MovableDoubleLinkedList.h"
+
 namespace QBDI {
 
 class ExecBlock;
@@ -50,10 +52,11 @@ struct SeqLoc {
   rword seqEnd;
 };
 
-struct ExecRegion {
+class ExecRegion : public MovableDoubleLinkedListElement<ExecRegion> {
+public:
   Range<rword> covered;
-  unsigned translated;
-  unsigned available;
+  unsigned translated = 0;
+  unsigned available = 0;
   std::vector<std::unique_ptr<ExecBlock>> blocks;
   // Note for sequenceCache instCache
   // The key must be generate with getExecRegionKey
@@ -65,14 +68,16 @@ struct ExecRegion {
   // These pointers should be remove at the same time as the region
   std::vector<std::unique_ptr<InstCbLambda>> userInstCB;
 
-  ExecRegion(ExecRegion &&) = default;
-  ExecRegion &operator=(ExecRegion &&) = default;
+  ExecRegion(const Range<rword> &c)
+      : MovableDoubleLinkedListElement<ExecRegion>(), covered(c) {}
 };
 
 class ExecBlockManager {
 private:
   std::unique_ptr<ExecBroker> execBroker;
   std::vector<ExecRegion> regions;
+  std::map<rword, ExecBlock *> codeBlockMap;
+  MovableDoubleLinkedList<ExecRegion> regionsReduceList;
   rword total_translated_size;
   rword total_translation_size;
   bool needFlush;
@@ -126,6 +131,19 @@ public:
   void clearCache(Range<rword> range);
 
   void clearCache(RangeSet<rword> rangeSet);
+
+  uint32_t getNbExecBlock() const { return codeBlockMap.size(); }
+
+  void reduceCacheTo(uint32_t nb);
+
+  const ExecBlock *getExecBlockFromJitAddress(rword address) const {
+    auto it = codeBlockMap.find(address);
+    if (it == codeBlockMap.end()) {
+      return nullptr;
+    } else {
+      return it->second;
+    }
+  }
 };
 
 } // namespace QBDI

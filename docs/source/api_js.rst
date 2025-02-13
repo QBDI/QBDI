@@ -179,6 +179,8 @@ InstAnalysis
 
 .. js:autofunction:: VM#getCachedInstAnalysis
 
+.. js:autofunction:: VM#getJITInstAnalysis
+
 .. _memaccess-getter-js:
 
 MemoryAccess
@@ -198,6 +200,10 @@ Cache management
 .. js:autofunction:: VM#clearCache
 
 .. js:autofunction:: VM#clearAllCache
+
+.. js:autofunction:: VM#getNbExecBlock
+
+.. js:autofunction:: VM#reduceCacheTo
 
 .. _register-state-js:
 
@@ -298,6 +304,7 @@ InstAnalysis
     .. js:autoattribute:: ANALYSIS_DISASSEMBLY
     .. js:autoattribute:: ANALYSIS_OPERANDS
     .. js:autoattribute:: ANALYSIS_SYMBOL
+    .. js:autoattribute:: ANALYSIS_JIT
 
 
 .. js:class:: InstAnalysis
@@ -387,6 +394,22 @@ InstAnalysis
   .. js:attribute:: symbolOffset
 
     Instruction symbol offset (if ANALYSIS_SYMBOL and found)
+
+  .. js:attribute:: patchAddress
+
+    Begin of the instrumentation patch for this instruction
+
+  .. js:attribute:: patchSize
+
+    Whole size of the instrumentation patch
+
+  .. js:attribute:: patchInstOffset
+
+    Offset of the JIT instruction in the path
+
+  .. js:attribute:: patchInstSize
+
+    Size of the JIT instruction in the path
 
 .. js:autoclass:: ConditionType
 
