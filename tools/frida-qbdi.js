@@ -1350,7 +1350,7 @@ export class VM {
      * @param {Integer} nb The number of BasicBlock that should remains in the
      *                     cache
      */
-    getNbExecBlock(nb) {
+    reduceCacheTo(nb) {
         return QBDI_C.reduceCacheTo(this.#vm, nb)
     }
 
