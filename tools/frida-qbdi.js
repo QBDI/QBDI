@@ -200,10 +200,13 @@ var QBDI_LIB_FULLPATH = _qbdibinder.load();
  * An alias to Frida uint type with the size of general registers (**uint64** or **uint32**)
  */
 export var rword = Process.pointerSize === 8 ? 'uint64' : 'uint32';
+export var sword = Process.pointerSize === 8 ? 'int64' : 'int32';
 
 Memory.readRword = Process.pointerSize === 8 ? Memory.readU64 : Memory.readU32;
+Memory.readSword = Process.pointerSize === 8 ? Memory.readS64 : Memory.readS32;
 
 Memory.writeRword = Process.pointerSize === 8 ? Memory.writeU64 : Memory.writeU32;
+Memory.writeSword = Process.pointerSize === 8 ? Memory.writeS64 : Memory.writeS32;
 
 // Convert a number to its register-sized representation
 
@@ -237,6 +240,10 @@ Number.prototype.toRword = function () {
  * It exists only to provide a unified **toRword** interface.
  */
 UInt64.prototype.toRword = function () {
+    return this;
+}
+
+Int64.prototype.toSword = function () {
     return this;
 }
 
@@ -2162,7 +2169,7 @@ export class VM {
         p = ptr.add(this.#operandAnalysisStructDesc.offsets[1]);
         analysis.flag = Memory.readU8(p);
         p = ptr.add(this.#operandAnalysisStructDesc.offsets[2]);
-        analysis.value = Memory.readRword(p);
+        analysis.value = Memory.readSword(p);
         p = ptr.add(this.#operandAnalysisStructDesc.offsets[3]);
         analysis.size = Memory.readU8(p);
         p = ptr.add(this.#operandAnalysisStructDesc.offsets[4]);
