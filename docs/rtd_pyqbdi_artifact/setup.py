@@ -124,7 +124,7 @@ def download_wheel(artifact):
 
     art = do_get_request(f"/actions/artifacts/{artifact['id']}/zip", binary=True)
 
-    name_regex = re.compile("^PyQBDI-.*-cp{}{}-.*\\.whl$".format(sys.version_info.major, sys.version_info.minor))
+    name_regex = re.compile("^PyQBDI-.*-cp{}{}-.*\\.whl$".format(sys.version_info.major, sys.version_info.minor), re.IGNORECASE)
     with zipfile.ZipFile(io.BytesIO(art)) as zip_archive:
         for f in zip_archive.infolist():
             if bool(name_regex.match(f.filename)):
