@@ -3,13 +3,17 @@ if(QBDI_PLATFORM_LINUX)
                  PRIVATE "${CMAKE_CURRENT_LIST_DIR}/linux_preload.c")
 elseif(QBDI_PLATFORM_OSX)
   # Generate MIG interface at config time in the build directory
-  execute_process(
+  add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/mach_excServer.c"
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMAND mig ${CMAKE_OSX_SYSROOT}/usr/include/mach/mach_exc.defs)
+    COMMAND mig "${CMAKE_CURRENT_LIST_DIR}/darwin_exception.defs"
+    DEPENDS "${CMAKE_CURRENT_LIST_DIR}/darwin_exception.defs"
+    VERBATIM)
   target_sources(
     QBDIPreload
     PRIVATE "${CMAKE_CURRENT_LIST_DIR}/darwin_preload.c"
-            "${CMAKE_CURRENT_LIST_DIR}/darwin_exceptd.c" "mach_excServer.c")
+            "${CMAKE_CURRENT_LIST_DIR}/darwin_exceptd.c"
+            "${CMAKE_CURRENT_BINARY_DIR}/mach_excServer.c")
 elseif(QBDI_PLATFORM_WINDOWS)
   target_sources(QBDIPreload PRIVATE "${CMAKE_CURRENT_LIST_DIR}/win_preload.c")
 else()

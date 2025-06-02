@@ -391,7 +391,12 @@ const char *LoopCode_s =
     "    push %rcx\n"
     "    mov $0x0, %rax\n"
     "    mov $0x5, %rcx\n"
+    "    jrcxz loop_start\n"
+    "    mov $0x10, %rax\n"
     "loop_start:\n"
     "    addq $0x1, %rax\n"
     "    loop loop_start\n"
+    "    jrcxz loop_end1\n"
+    "    shlq	$0x2, %rax\n"
+    "loop_end1:\n"
     "    pop %rcx\n";

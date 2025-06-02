@@ -76,8 +76,8 @@ void getUsedGPR(const llvm::MCInst &inst, const LLVMCPU &llvmcpu,
   }
   DEBUG_REGISTER(
       "Opcode : {}, Variadic : {}, opIsUsedBegin : {}, opIsUsedEnd : {}",
-      MCII.getName(inst.getOpcode()), desc.isVariadic(), opIsUsedBegin,
-      opIsUsedEnd);
+      llvmcpu.getInstOpcodeName(inst.getOpcode()), desc.isVariadic(),
+      opIsUsedBegin, opIsUsedEnd);
 
   for (unsigned int i = 0; i < inst.getNumOperands(); i++) {
     const llvm::MCOperand &op = inst.getOperand(i);

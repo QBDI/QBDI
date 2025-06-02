@@ -197,7 +197,9 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
   rules.emplace_back(
       Or::unique(conv_unique<PatchCondition>(
           OpIs::unique(llvm::X86::JCC_1), OpIs::unique(llvm::X86::LOOP),
-          OpIs::unique(llvm::X86::LOOPE), OpIs::unique(llvm::X86::LOOPNE))),
+          OpIs::unique(llvm::X86::LOOPE), OpIs::unique(llvm::X86::LOOPNE),
+          OpIs::unique(llvm::X86::JRCXZ), OpIs::unique(llvm::X86::JECXZ),
+          OpIs::unique(llvm::X86::JCXZ))),
       conv_unique<PatchGenerator>(
           GetPCOffset::unique(Temp(0), Operand(0)),
           ModifyInstruction::unique(

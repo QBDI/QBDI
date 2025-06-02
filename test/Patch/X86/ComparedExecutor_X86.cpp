@@ -316,7 +316,12 @@ const char *LoopCode_s =
     "    push %ecx\n"
     "    mov $0x0, %eax\n"
     "    mov $0x5, %ecx\n"
+    "    jecxz loop_start\n"
+    "    mov $0x10, %eax\n"
     "loop_start:\n"
     "    addl $0x1, %eax\n"
     "    loop loop_start\n"
+    "    jecxz loop_end1\n"
+    "    shll	$0x2, %eax\n"
+    "loop_end1:\n"
     "    pop %ecx\n";
