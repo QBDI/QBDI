@@ -100,7 +100,7 @@ class Binder {
 
     bind(name, ret, args) {
         return this.safeNativeFunction(function () {
-            return Module.findExportByName(null, name);
+            return Module.findGlobalExportByName(name);
         }, ret, args);
     }
 }
@@ -137,7 +137,7 @@ class QBDIBinder extends Binder {
     bind(name, ret, args) {
         var libpath = this.QBDI_LIB;
         return this.safeNativeFunction(function () {
-            return Module.findExportByName(libpath, name);
+            return Process.getModuleByName(libpath).findExportByName(name);
         }, ret, args);
     }
 
@@ -171,7 +171,7 @@ var System = Object.freeze({
             return val.toString();
         }
         var strPtr = System_C.dlerror();
-        return Memory.readCString(strPtr);
+        return strPtr.readCString();
 
     },
     dlopen: function (library) {
@@ -202,11 +202,11 @@ var QBDI_LIB_FULLPATH = _qbdibinder.load();
 export var rword = Process.pointerSize === 8 ? 'uint64' : 'uint32';
 export var sword = Process.pointerSize === 8 ? 'int64' : 'int32';
 
-Memory.readRword = Process.pointerSize === 8 ? Memory.readU64 : Memory.readU32;
-Memory.readSword = Process.pointerSize === 8 ? Memory.readS64 : Memory.readS32;
+NativePointer.prototype.readRword = Process.pointerSize === 8 ? NativePointer.prototype.readU64 : NativePointer.prototype.readU32;
+NativePointer.prototype.readSword = Process.pointerSize === 8 ? NativePointer.prototype.readS64 : NativePointer.prototype.readS32;
 
-Memory.writeRword = Process.pointerSize === 8 ? Memory.writeU64 : Memory.writeU32;
-Memory.writeSword = Process.pointerSize === 8 ? Memory.writeS64 : Memory.writeS32;
+NativePointer.prototype.writeRword = Process.pointerSize === 8 ? NativePointer.prototype.writeU64 : NativePointer.prototype.writeU32;
+NativePointer.prototype.writeSword = Process.pointerSize === 8 ? NativePointer.prototype.writeS64 : NativePointer.prototype.writeS32;
 
 // Convert a number to its register-sized representation
 
@@ -1133,8 +1133,8 @@ export class VM {
         var version = {};
         var versionPtr = Memory.alloc(4);
         var vStrPtr = QBDI_C.getVersion(versionPtr);
-        var vInt = Memory.readU32(versionPtr);
-        version.string = Memory.readCString(vStrPtr);
+        var vInt = versionPtr.readU32();
+        version.string = vStrPtr.readCString();
         version.integer = vInt;
         version.major = (vInt >> 16) & 0xff;
         version.minor = (vInt >> 8) & 0xff;
@@ -1658,7 +1658,7 @@ export class VM {
         if (ret == false) {
             return NULL;
         }
-        return Memory.readPointer(stackPtr);
+        return stackPtr.readPointer();
     }
 
 
@@ -1709,15 +1709,15 @@ export class VM {
     getModuleNames() {
         var sizePtr = Memory.alloc(4);
         var modsPtr = QBDI_C.getModuleNames(sizePtr);
-        var size = Memory.readU32(sizePtr);
+        var size = sizePtr.readU32();
         if (modsPtr.isNull() || size === 0) {
             return [];
         }
         var mods = [];
         var p = modsPtr;
         for (var i = 0; i < size; i++) {
-            var strPtr = Memory.readPointer(p);
-            var str = Memory.readCString(strPtr);
+            var strPtr = p.readPointer();
+            var str = strPtr.readCString();
             mods.push(str);
             System.free(strPtr);
             p = p.add(Process.pointerSize);
@@ -1870,7 +1870,7 @@ export class VM {
      *       >>> var vm = new VM();
      *       >>> var state = vm.getGPRState();
      *       >>> var stackTopPtr = vm.allocateVirtualStack(state, 0x1000000);
-     *       >>> var aFunction = Module.findExportByName(null, "Secret");
+     *       >>> var aFunction = Module.findGlobalExportByName("Secret");
      *       >>> vm.addInstrumentedModuleFromAddr(aFunction);
      *       >>> vm.call(aFunction, [42]);
      *       >>> vm.alignedFree(stackTopPtr);
@@ -1889,7 +1889,7 @@ export class VM {
             if (res == false) {
                 throw new EvalError('Execution failed');
             }
-            return ptr(Memory.readRword(retPtr));
+            return ptr(retPtr.readRword());
         }
         return _call.apply(null, fargs[1]);
     }
@@ -1905,7 +1905,7 @@ export class VM {
      * Example:
      *       >>> var vm = new VM();
      *       >>> var state = vm.getGPRState();
-     *       >>> var aFunction = Module.findExportByName(null, "Secret");
+     *       >>> var aFunction = Module.findGlobalExportByName("Secret");
      *       >>> vm.addInstrumentedModuleFromAddr(aFunction);
      *       >>> vm.switchStackAndCall(aFunction, [42]);
      *
@@ -1927,7 +1927,7 @@ export class VM {
             if (res == false) {
                 throw new EvalError('Execution failed');
             }
-            return ptr(Memory.readRword(retPtr));
+            return ptr(retPtr.readRword());
         }
         return _scall.apply(null, fargs[1]);
     }
@@ -1938,13 +1938,13 @@ export class VM {
 
     _parseStructDesc(ptr) {
         var desc = {};
-        desc.size = Memory.readU32(ptr);
+        desc.size = ptr.readU32();
         ptr = ptr.add(4);
-        desc.items = Memory.readU32(ptr);
+        desc.items = ptr.readU32();
         ptr = ptr.add(4);
         desc.offsets = [];
         for (var i = 0; i < desc.items; i++) {
-            var offset = Memory.readU32(ptr);
+            var offset = ptr.readU32();
             ptr = ptr.add(4);
             desc.offsets.push(offset);
         }
@@ -1955,7 +1955,7 @@ export class VM {
     _initVM() {
         var vmPtr = Memory.alloc(Process.pointerSize);
         QBDI_C.initVM(vmPtr, NULL, NULL, 0);
-        return Memory.readPointer(vmPtr);
+        return vmPtr.readPointer();
     }
 
     _terminateVM(v) {
@@ -2080,17 +2080,17 @@ export class VM {
     _parseMemoryAccess(ptr) {
         var access = {};
         var p = ptr.add(this.#instAnalysisStructDesc.offsets[0]);
-        access.instAddress = Memory.readRword(p);
+        access.instAddress = p.readRword();
         p = ptr.add(this.#memoryAccessDesc.offsets[1]);
-        access.accessAddress = Memory.readRword(p);
+        access.accessAddress = p.readRword();
         p = ptr.add(this.#memoryAccessDesc.offsets[2]);
-        access.value = Memory.readRword(p);
+        access.value = p.readRword();
         p = ptr.add(this.#memoryAccessDesc.offsets[3]);
-        access.size = Memory.readU16(p);
+        access.size = p.readU16();
         p = ptr.add(this.#memoryAccessDesc.offsets[4]);
-        access.type = Memory.readU8(p);
+        access.type = p.readU8();
         p = ptr.add(this.#memoryAccessDesc.offsets[5]);
-        access.flags = Memory.readU8(p);
+        access.flags = p.readU8();
         Object.freeze(access);
         return access;
     }
@@ -2102,7 +2102,7 @@ export class VM {
         if (accessPtr.isNull()) {
             return [];
         }
-        var cnt = Memory.readU32(sizePtr);
+        var cnt = sizePtr.readU32();
         var sSize = this.#memoryAccessDesc.size;
         var p = accessPtr;
         for (var i = 0; i < cnt; i++) {
@@ -2131,17 +2131,17 @@ export class VM {
     _parseVMState(ptr) {
         var state = {};
         var p = ptr.add(this.#instAnalysisStructDesc.offsets[0]);
-        state.event = Memory.readU8(p);
+        state.event = p.readU8();
         p = ptr.add(this.#vmStateStructDesc.offsets[1]);
-        state.sequenceStart = Memory.readRword(p);
+        state.sequenceStart = p.readRword();
         p = ptr.add(this.#vmStateStructDesc.offsets[2]);
-        state.sequenceEnd = Memory.readRword(p);
+        state.sequenceEnd = p.readRword();
         p = ptr.add(this.#vmStateStructDesc.offsets[3]);
-        state.basicBlockStart = Memory.readRword(p);
+        state.basicBlockStart = p.readRword();
         p = ptr.add(this.#vmStateStructDesc.offsets[4]);
-        state.basicBlockEnd = Memory.readRword(p);
+        state.basicBlockEnd = p.readRword();
         p = ptr.add(this.#vmStateStructDesc.offsets[5]);
-        state.lastSignal = Memory.readRword(p);
+        state.lastSignal = p.readRword();
         Object.freeze(state);
         return state;
     }
@@ -2165,26 +2165,26 @@ export class VM {
     _parseOperandAnalysis(ptr) {
         var analysis = {};
         var p = ptr.add(this.#instAnalysisStructDesc.offsets[0]);
-        analysis.type = Memory.readU32(p);
+        analysis.type = p.readU32();
         p = ptr.add(this.#operandAnalysisStructDesc.offsets[1]);
-        analysis.flag = Memory.readU8(p);
+        analysis.flag = p.readU8();
         p = ptr.add(this.#operandAnalysisStructDesc.offsets[2]);
-        analysis.value = Memory.readSword(p);
+        analysis.value = p.readSword();
         p = ptr.add(this.#operandAnalysisStructDesc.offsets[3]);
-        analysis.size = Memory.readU8(p);
+        analysis.size = p.readU8();
         p = ptr.add(this.#operandAnalysisStructDesc.offsets[4]);
-        analysis.regOff = Memory.readU8(p);
+        analysis.regOff = p.readU8();
         p = ptr.add(this.#operandAnalysisStructDesc.offsets[5]);
-        analysis.regCtxIdx = Memory.readS16(p);
+        analysis.regCtxIdx = p.readS16();
         p = ptr.add(this.#operandAnalysisStructDesc.offsets[6]);
-        var regNamePtr = Memory.readPointer(p);
+        var regNamePtr = p.readPointer();
         if (regNamePtr.isNull()) {
             analysis.regName = undefined;
         } else {
-            analysis.regName = Memory.readCString(regNamePtr);
+            analysis.regName = regNamePtr.readCString();
         }
         p = ptr.add(this.#operandAnalysisStructDesc.offsets[7]);
-        analysis.regAccess = Memory.readU8(p);
+        analysis.regAccess = p.readU8();
         Object.freeze(analysis);
         return analysis;
     }
@@ -2228,53 +2228,53 @@ export class VM {
     _parseInstAnalysis(ptr) {
         var analysis = {};
         var p = ptr.add(this.#instAnalysisStructDesc.offsets[27]);
-        var analysisType = Memory.readU16(p);
+        var analysisType = p.readU16();
 
         if ((analysisType & AnalysisType.ANALYSIS_INSTRUCTION) != 0) {
           p = ptr.add(this.#instAnalysisStructDesc.offsets[0]);
-          analysis.mnemonic = Memory.readCString(Memory.readPointer(p));
+          analysis.mnemonic = p.readPointer().readCString();
           p = ptr.add(this.#instAnalysisStructDesc.offsets[2]);
-          analysis.address = Memory.readRword(p);
+          analysis.address = p.readRword();
           p = ptr.add(this.#instAnalysisStructDesc.offsets[3]);
-          analysis.instSize = Memory.readU32(p);
+          analysis.instSize = p.readU32();
           p = ptr.add(this.#instAnalysisStructDesc.offsets[4]);
-          analysis.affectControlFlow = Memory.readU8(p) == true;
+          analysis.affectControlFlow = p.readU8() == true;
           p = ptr.add(this.#instAnalysisStructDesc.offsets[5]);
-          analysis.isBranch = Memory.readU8(p) == true;
+          analysis.isBranch = p.readU8() == true;
           p = ptr.add(this.#instAnalysisStructDesc.offsets[6]);
-          analysis.isCall = Memory.readU8(p) == true;
+          analysis.isCall = p.readU8() == true;
           p = ptr.add(this.#instAnalysisStructDesc.offsets[7]);
-          analysis.isReturn = Memory.readU8(p) == true;
+          analysis.isReturn = p.readU8() == true;
           p = ptr.add(this.#instAnalysisStructDesc.offsets[8]);
-          analysis.isCompare = Memory.readU8(p) == true;
+          analysis.isCompare = p.readU8() == true;
           p = ptr.add(this.#instAnalysisStructDesc.offsets[9]);
-          analysis.isPredicable = Memory.readU8(p) == true;
+          analysis.isPredicable = p.readU8() == true;
           p = ptr.add(this.#instAnalysisStructDesc.offsets[10]);
-          analysis.isMoveImm = Memory.readU8(p) == true;
+          analysis.isMoveImm = p.readU8() == true;
           p = ptr.add(this.#instAnalysisStructDesc.offsets[11]);
-          analysis.mayLoad = Memory.readU8(p) == true;
+          analysis.mayLoad = p.readU8() == true;
           p = ptr.add(this.#instAnalysisStructDesc.offsets[12]);
-          analysis.mayStore = Memory.readU8(p) == true;
+          analysis.mayStore = p.readU8() == true;
           p = ptr.add(this.#instAnalysisStructDesc.offsets[13]);
-          analysis.loadSize = Memory.readU32(p);
+          analysis.loadSize = p.readU32();
           p = ptr.add(this.#instAnalysisStructDesc.offsets[14]);
-          analysis.storeSize = Memory.readU32(p);
+          analysis.storeSize = p.readU32();
           p = ptr.add(this.#instAnalysisStructDesc.offsets[15]);
-          analysis.condition = Memory.readU8(p);
+          analysis.condition = p.readU8();
           p = ptr.add(this.#instAnalysisStructDesc.offsets[22]);
-          analysis.cpuMode = Memory.readU8(p);
+          analysis.cpuMode = p.readU8();
         }
         if ((analysisType & AnalysisType.ANALYSIS_DISASSEMBLY) != 0) {
           p = ptr.add(this.#instAnalysisStructDesc.offsets[1]);
-          analysis.disassembly = Memory.readCString(Memory.readPointer(p));
+          analysis.disassembly = p.readPointer().readCString();
         }
         if ((analysisType & AnalysisType.ANALYSIS_OPERANDS) != 0) {
           p = ptr.add(this.#instAnalysisStructDesc.offsets[16]);
-          analysis.flagsAccess = Memory.readU8(p);
+          analysis.flagsAccess = p.readU8();
           p = ptr.add(this.#instAnalysisStructDesc.offsets[17]);
-          var numOperands = Memory.readU8(p);
+          var numOperands = p.readU8();
           p = ptr.add(this.#instAnalysisStructDesc.offsets[18]);
-          var operandsPtr = Memory.readPointer(p);
+          var operandsPtr = p.readPointer();
           analysis.operands = new Array(numOperands);
           for (var i = 0; i < numOperands; i++) {
               analysis.operands[i] = this._parseOperandAnalysis(operandsPtr);
@@ -2283,19 +2283,19 @@ export class VM {
         }
         if ((analysisType & AnalysisType.ANALYSIS_SYMBOL) != 0) {
           p = ptr.add(this.#instAnalysisStructDesc.offsets[19]);
-          var symbolPtr = Memory.readPointer(p);
+          var symbolPtr = p.readPointer();
           if (!symbolPtr.isNull()) {
-              analysis.symbolName = Memory.readCString(symbolPtr);
+              analysis.symbolName = symbolPtr.readCString();
           } else {
               analysis.symbolName = "";
           }
           analysis.symbol = analysis.symbolName; // deprecated Name
           p = ptr.add(this.#instAnalysisStructDesc.offsets[20]);
-          analysis.symbolOffset = Memory.readU32(p);
+          analysis.symbolOffset = p.readU32();
           p = ptr.add(this.#instAnalysisStructDesc.offsets[21]);
-          var modulePtr = Memory.readPointer(p);
+          var modulePtr = p.readPointer();
           if (!modulePtr.isNull()) {
-              analysis.moduleName = Memory.readCString(modulePtr);
+              analysis.moduleName = modulePtr.readCString();
           } else {
               analysis.moduleName = "";
           }
@@ -2303,13 +2303,13 @@ export class VM {
         }
         if ((analysisType & AnalysisType.ANALYSIS_JIT) != 0) {
           p = ptr.add(this.#instAnalysisStructDesc.offsets[23]);
-          analysis.patchAddress = Memory.readRword(p);
+          analysis.patchAddress = p.readRword();
           p = ptr.add(this.#instAnalysisStructDesc.offsets[24]);
-          analysis.patchSize = Memory.readU16(p);
+          analysis.patchSize = p.readU16();
           p = ptr.add(this.#instAnalysisStructDesc.offsets[25]);
-          analysis.patchInstOffset = Memory.readU16(p);
+          analysis.patchInstOffset = p.readU16();
           p = ptr.add(this.#instAnalysisStructDesc.offsets[26]);
-          analysis.patchInstSize = Memory.readU16(p);
+          analysis.patchInstSize = p.readU16();
         }
 
         Object.freeze(analysis);

@@ -7,7 +7,7 @@ var state = vm.getGPRState();
 var stack = vm.allocateVirtualStack(state, 0x100000);
 
 // Instrument "Secret" function from demo.bin
-var funcPtr = Module.findExportByName(null, "Secret");
+var funcPtr = Module.findGlobalExportByName("Secret");
 if (!funcPtr) {
     funcPtr = DebugSymbol.fromName("Secret").address;
 }
