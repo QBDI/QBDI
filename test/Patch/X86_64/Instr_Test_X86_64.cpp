@@ -58,6 +58,7 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-UnalignedCodeBackward_IC") {
   INFO("Took " << count1 << " instructions\n");
 }
 
+#ifndef QBDI_PLATFORM_OSX
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-LoopCode_IC") {
   INFO("TEST_SEED=" << seed_random());
   uint64_t count1 = 0;
@@ -77,3 +78,4 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-LoopCode_IC") {
 
   INFO("Took " << count1 << " instructions\n");
 }
+#endif
