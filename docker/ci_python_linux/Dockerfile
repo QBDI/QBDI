@@ -26,9 +26,9 @@ RUN yum update -y && \
     (yum install -y ccache || true) && \
     yum clean all
 
-RUN /opt/python/cp37-cp37m/bin/pip install ninja==1.10.0.post2
+RUN /opt/python/cp38-cp38/bin/pip install ninja==1.10.0.post2
 
-ENV PATH=$PATH:/opt/python/cp37-cp37m/bin/ \
+ENV PATH=$PATH:/opt/python/cp38-cp38/bin/ \
     CCACHE_URL="https://github.com/ccache/ccache/releases/download/v${CCACHE_VERSION}/ccache-${CCACHE_VERSION}.tar.gz" \
     CCACHE_ARCHIVE="ccache-${CCACHE_VERSION}.tar.gz" 
 
