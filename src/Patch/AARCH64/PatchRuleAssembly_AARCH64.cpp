@@ -36,7 +36,7 @@ namespace {
 
 std::vector<PatchRule> getDefaultPatchRules(Options opts) {
   std::vector<PatchRule> rules;
-  bool bypassPauth = ((opts & Options::OPT_DISABLE_LOCAL_MONITOR) != 0);
+  bool bypassPauth = ((opts & Options::OPT_BYPASS_PAUTH) != 0);
 
   /* Rule #0: Restore all register for SVC and BRK
    *

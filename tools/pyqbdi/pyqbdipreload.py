@@ -121,6 +121,15 @@ def run():
                 print("PyQBDI in PRELOAD mode need lib{}.so".format(libpythonname))
                 exit(1)
 
+        for s in [libpython, preloadlib]:
+            for c in [" ", ";", os.pathsep]:
+                if c in s:
+                    print(f"Error: found character '{c}' in {s}")
+                    print(f"PyQBDIPrelaod is based on ld.so, which didn't accept '{c}' in LD_PRELOAD.")
+                    print("Please check your installation to avoid ' ' and ';' in file path")
+                    exit(1)
+
+
         environ["LD_PRELOAD"] = os.pathsep.join([libpython, preloadlib])
         environ["LD_BIND_NOW"] = "1"
     elif platform.system() == 'Windows':

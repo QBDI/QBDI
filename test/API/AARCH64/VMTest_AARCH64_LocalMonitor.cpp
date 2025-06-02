@@ -22,7 +22,7 @@
 #include "API/APITest.h"
 #include "QBDI/Memory.hpp"
 
-QBDI_NOINLINE uint64_t sinpleStore() {
+QBDI_NOINLINE uint64_t simpleStore() {
   uint64_t v = 0x20;
 
   asm("ldxr x1, [%0]\n"
@@ -35,10 +35,10 @@ QBDI_NOINLINE uint64_t sinpleStore() {
   return v;
 }
 
-TEST_CASE_METHOD(APITest, "VMTest_AARCH64_LocalMonitor-sinpleStore") {
+TEST_CASE_METHOD(APITest, "VMTest_AARCH64_LocalMonitor-simpleStore") {
   QBDI::rword retval;
 
-  vm.call(&retval, (QBDI::rword)sinpleStore, {});
+  vm.call(&retval, (QBDI::rword)simpleStore, {});
   REQUIRE(retval == (QBDI::rword)0x21);
 
   SUCCEED();
