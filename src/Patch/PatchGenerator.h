@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "QBDI/State.h"
+#include "Patch/InstTransform.h"
 #include "Patch/PatchUtils.h"
 #include "Patch/Types.h"
 
