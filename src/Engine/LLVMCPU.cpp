@@ -168,7 +168,7 @@ LLVMCPU::LLVMCPU(const std::string &_cpu, const std::string &_arch,
   asmPrinter = std::unique_ptr<llvm::MCInstPrinter>(target->createMCInstPrinter(
       MSTI->getTargetTriple(), variant, *MAI, *MCII, *MRI));
   asmPrinter->setPrintImmHex(true);
-  asmPrinter->setPrintImmHex(llvm::HexStyle::C);
+  asmPrinter->setPrintHexStyle(llvm::HexStyle::C);
 }
 
 LLVMCPU::~LLVMCPU() = default;
@@ -253,7 +253,7 @@ void LLVMCPU::setOptions(Options opts) {
             ((opts & Options::OPT_ATT_SYNTAX) == 0) ? 1 : 0, *MAI, *MCII,
             *MRI));
     asmPrinter->setPrintImmHex(true);
-    asmPrinter->setPrintImmHex(llvm::HexStyle::C);
+    asmPrinter->setPrintHexStyle(llvm::HexStyle::C);
   }
 #endif
   options = opts;
