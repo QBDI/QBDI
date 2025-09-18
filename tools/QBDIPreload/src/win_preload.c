@@ -102,6 +102,18 @@ void qbdipreload_threadCtxToGPRState(const void *gprCtx, GPRState *gprState) {
   gprState->eflags = osCpuCtx->EFlags;
 }
 
+/* Convert the legacy 2-bit x87 tag word to the FXSAVE abridged format. */
+static uint8_t fullTagWordToAbridged(uint16_t fullTag) {
+  uint8_t abridged = 0;
+  for (unsigned i = 0; i < 8; i++) {
+    uint16_t tag = (fullTag >> (i * 2)) & 0x3;
+    if (tag != 0x3) {
+      abridged |= (uint8_t)(1u << i);
+    }
+  }
+  return abridged;
+}
+
 /*
  * Conversion from windows CONTEXT ARCH dependent structure
  * to QBDI FPR state (Floating point registers)
@@ -177,7 +189,7 @@ void qbdipreload_floatCtxToFPRState(const void *gprCtx, FPRState *fprState) {
 #if defined(QBDI_ARCH_X86_64)
   fprState->rfcw = osCpuCtx->FltSave.ControlWord;
   fprState->rfsw = osCpuCtx->FltSave.StatusWord;
-  fprState->ftw = osCpuCtx->FltSave.TagWord;
+  fprState->ftw = fullTagWordToAbridged(osCpuCtx->FltSave.TagWord);
   fprState->rsrv1 = osCpuCtx->FltSave.Reserved1;
   fprState->ip = osCpuCtx->FltSave.ErrorOffset;
   fprState->cs = osCpuCtx->FltSave.ErrorSelector;
@@ -190,7 +202,7 @@ void qbdipreload_floatCtxToFPRState(const void *gprCtx, FPRState *fprState) {
 #else
   fprState->rfcw = osCpuCtx->FloatSave.ControlWord;
   fprState->rfsw = osCpuCtx->FloatSave.StatusWord;
-  fprState->ftw = osCpuCtx->FloatSave.TagWord;
+  fprState->ftw = fullTagWordToAbridged(osCpuCtx->FloatSave.TagWord);
   fprState->ip = osCpuCtx->FloatSave.ErrorOffset;
   fprState->cs = osCpuCtx->FloatSave.ErrorSelector;
   fprState->dp = osCpuCtx->FloatSave.DataOffset;
