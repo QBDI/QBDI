@@ -84,7 +84,7 @@ bool isRWXSupported() {
     struct vm_region_submap_info_64 info;
     mach_msg_type_number_t info_count;
     kern_return_t kr;
-    size_t pageSize = llvm::sys::Process::getPageSize();
+    size_t pageSize = llvm::sys::Process::getPageSize().get();
 
     task = mach_task_self();
 
@@ -137,7 +137,7 @@ allocateMappedMemory(size_t numBytes,
   }
 
   // convert size in bytes to a number of pages
-  static const size_t pageSize = llvm::sys::Process::getPageSize();
+  static const size_t pageSize = llvm::sys::Process::getPageSize().get();
   const size_t numPages = (numBytes + pageSize - 1) / pageSize;
 
   // try allocate memory
@@ -183,7 +183,7 @@ allocateMappedMemory(size_t numBytes,
 }
 
 void releaseMappedMemory(llvm::sys::MemoryBlock &block) {
-  vm_deallocate(mach_task_self(), (vm_address_t)block.base(), block.size());
+  vm_deallocate(mach_task_self(), (vm_address_t)block.base(), block.allocatedSize());
 }
 
 } // namespace QBDI

@@ -12,7 +12,7 @@ if(QBDI_PLATFORM_ANDROID OR QBDI_PLATFORM_LINUX)
   target_sources(
     QBDI_src INTERFACE "${CMAKE_CURRENT_LIST_DIR}/Memory_linux.cpp"
                        "${CMAKE_CURRENT_LIST_DIR}/System_generic.cpp")
-elseif(QBDI_PLATFORM_OSX)
+elseif(QBDI_PLATFORM_OSX OR QBDI_PLATFORM_IOS)
   target_sources(QBDI_src INTERFACE "${CMAKE_CURRENT_LIST_DIR}/Memory_osx.cpp")
   if(NOT QBDI_ARCH_AARCH64)
     target_sources(QBDI_src

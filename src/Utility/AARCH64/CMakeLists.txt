@@ -7,11 +7,11 @@ elseif(QBDI_PLATFORM_OSX)
        "${CMAKE_CURRENT_LIST_DIR}/System_OSX.cpp"
        "${CMAKE_CURRENT_LIST_DIR}/System_darwin.cpp")
 
-  #elseif(QBDI_PLATFORM_IOS)
-  #  list(APPEND SOURCES "${CMAKE_CURRENT_LIST_DIR}/ios-AARCH64.s"
-  #                      "${CMAKE_CURRENT_LIST_DIR}/System_iOS.cpp"
-  #                      "${CMAKE_CURRENT_LIST_DIR}/System_darwin.cpp"
-  #                      "${CMAKE_CURRENT_LIST_DIR}/server-iOS-jit-user.c")
+elseif(QBDI_PLATFORM_IOS)
+  list(APPEND SOURCES "${CMAKE_CURRENT_LIST_DIR}/ios-AARCH64.s"
+                      "${CMAKE_CURRENT_LIST_DIR}/System_iOS.cpp"
+                      "${CMAKE_CURRENT_LIST_DIR}/System_darwin.cpp"
+                      "${CMAKE_CURRENT_LIST_DIR}/server-iOS-jit-user.c")
 
 else()
   message(FATAL_ERROR "No stub for ${QBDI_PLATFORM} (${QBDI_ARCH})")
