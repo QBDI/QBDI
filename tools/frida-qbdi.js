@@ -121,6 +121,8 @@ class QBDIBinder extends Binder {
     // paths where QBDI library may be
     get QBDI_PATHS() {
         return [
+            //palera1n path
+            '/var/jb/usr/lib',
             // UNIX default paths
             '/usr/lib/',
             '/usr/local/lib/',
