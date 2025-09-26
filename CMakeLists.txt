@@ -19,6 +19,27 @@ include(CMakeFindBinUtils)
 # Macros
 include(merge_archives)
 
+# FIXME?
+if(QBDI_PLATFORM_IOS)
+  set(CMAKE_SYSTEM_NAME "iOS")
+  set(CMAKE_OSX_SYSROOT "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk")
+endif()
+# if(QBDI_PLATFORM_IOS)
+#   execute_process(
+#     COMMAND xcrun --sdk iphoneos --show-sdk-path
+#     OUTPUT_VARIABLE IOS_SYSROOT
+#     OUTPUT_STRIP_TRAILING_WHITESPACE
+#     RESULT_VARIABLE XCRUN_RESULT
+#   )
+#   if(XCRUN_RESULT EQUAL 0)
+#     set(CMAKE_SYSTEM_NAME "iOS")
+#     set(CMAKE_OSX_SYSROOT ${IOS_SYSROOT} CACHE PATH "The sysroot for iOS development")
+#     message(STATUS "iOS Sysroot set to: ${CMAKE_SYSROOT}")
+#   else()
+#       message(FATAL_ERROR "Could not find SDK path using xcrun for ${SDK_NAME}. Result: ${XCRUN_RESULT}")
+#   endif()
+# endif()
+
 # CCACHE
 # ======
 if(QBDI_CCACHE)
@@ -264,7 +285,7 @@ elseif(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
 else()
   enable_language(ASM)
   if(QBDI_PLATFORM_IOS)
-    set(CMAKE_ASM_FLAGS "-arch ${ARM_ARCH}")
+    set(CMAKE_ASM_FLAGS "-arch arm64")
   endif()
 endif()
 

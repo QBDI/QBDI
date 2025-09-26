@@ -61,6 +61,8 @@ void *alignedAlloc(size_t size, size_t align) {
   }
 #elif defined(QBDI_PLATFORM_WINDOWS)
   allocated = _aligned_malloc(size, align);
+#elif defined(QBDI_PLATFORM_IOS)
+  allocated = aligned_alloc(align, size);
 #endif
   return allocated;
 }
