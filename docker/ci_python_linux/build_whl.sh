@@ -24,6 +24,9 @@ fi
 if [[ "${PYTHON_VERSION}" = "all" ]] || [[ "${PYTHON_VERSION}" = "3.13" ]]; then
   /opt/python/cp313-cp313/bin/python -m build -w
 fi
+if [[ "${PYTHON_VERSION}" = "all" ]] || [[ "${PYTHON_VERSION}" = "3.14" ]]; then
+  /opt/python/cp314-cp314/bin/python -m build -w
+fi
 
 if [[ "${QBDI_ARCH}" = "X86_64" ]]; then
     for i in dist/*_x86_64.whl; do
