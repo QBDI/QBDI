@@ -113,9 +113,9 @@ if(QBDI_TOOLS_PYQBDI)
   prepare_package(
     pybind11
     URL
-    "https://github.com/pybind/pybind11/archive/v2.13.6.zip"
+    "https://github.com/pybind/pybind11/archive/v3.0.1.zip"
     URL_HASH
-    "SHA256=d0a116e91f64a4a2d8fb7590c34242df92258a61ec644b79127951e821b47be6"
+    "SHA256=20fb420fe163d0657a262a8decb619b7c3101ea91db35f1a7227e67c426d4c7e"
     EXCLUDE_FROM_ALL)
   list(APPEND qbdi_deps pybind11)
 endif()
