@@ -57,7 +57,7 @@ ComparedExecutor_AARCH64::compileWithContextSwitch(const char *source) {
       << "ldr x15, [x1, #" << offsetof(QBDI::Context, gprState.x15) << "]\n"
       << "ldr x16, [x1, #" << offsetof(QBDI::Context, gprState.x16) << "]\n"
       << "ldr x17, [x1, #" << offsetof(QBDI::Context, gprState.x17) << "]\n"
-#ifndef QBDI_PLATFORM_OSX
+#if not(defined(QBDI_PLATFORM_OSX) || defined(QBDI_PLATFORM_IOS))
       << "ldr x18, [x1, #" << offsetof(QBDI::Context, gprState.x18) << "]\n"
 #endif
       << "ldr x19, [x1, #" << offsetof(QBDI::Context, gprState.x19) << "]\n"
@@ -110,7 +110,7 @@ ComparedExecutor_AARCH64::compileWithContextSwitch(const char *source) {
       << "str x15, [x1, #" << offsetof(QBDI::Context, gprState.x15) << "]\n"
       << "str x16, [x1, #" << offsetof(QBDI::Context, gprState.x16) << "]\n"
       << "str x17, [x1, #" << offsetof(QBDI::Context, gprState.x17) << "]\n"
-#ifndef QBDI_PLATFORM_OSX
+#if not(defined(QBDI_PLATFORM_OSX) || defined(QBDI_PLATFORM_IOS))
       << "str x18, [x1, #" << offsetof(QBDI::Context, gprState.x18) << "]\n"
 #endif
       << "str x19, [x1, #" << offsetof(QBDI::Context, gprState.x19) << "]\n"
@@ -213,7 +213,7 @@ ComparedExecutor_AARCH64::realExec(llvm::ArrayRef<uint8_t> code,
         "v5", "v6", "v7", "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
         "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25",
         "v26", "v27", "v28", "v29", "v30", "v31",
-#ifndef QBDI_PLATFORM_OSX
+#if not(defined(QBDI_PLATFORM_OSX) || defined(QBDI_PLATFORM_IOS))
         "x18",
 #endif
         "memory");
@@ -279,7 +279,7 @@ const char *GPRSave_s =
     "    mov x15, #16\n"
     "    mov x16, #17\n"
     "    mov x17, #18\n"
-#ifndef QBDI_PLATFORM_OSX
+#if not(defined(QBDI_PLATFORM_OSX) || defined(QBDI_PLATFORM_IOS))
     "    mov x18, #19\n"
 #endif
     "    mov x19, #20\n"
@@ -304,7 +304,7 @@ const char *GPRShuffle_s =
     "    stp x12, x13,  [sp, #-16]!\n"
     "    stp x14, x15,  [sp, #-16]!\n"
     "    stp x16, x17,  [sp, #-16]!\n"
-#ifndef QBDI_PLATFORM_OSX
+#if not(defined(QBDI_PLATFORM_OSX) || defined(QBDI_PLATFORM_IOS))
     "    stp x18, x19,  [sp, #-16]!\n"
 #else
     "    stp xzr, x19,  [sp, #-16]!\n"
@@ -328,7 +328,7 @@ const char *GPRShuffle_s =
     "    ldp x8,  x12,  [sp], 16\n"
     "    ldp x23, x14,  [sp], 16\n"
     "    ldp x19, x7,   [sp], 16\n"
-#ifndef QBDI_PLATFORM_OSX
+#if not(defined(QBDI_PLATFORM_OSX) || defined(QBDI_PLATFORM_IOS))
     "    ldp x16, x18,  [sp], 16\n";
 #else
     "    ldp x16, xzr,  [sp], 16\n";

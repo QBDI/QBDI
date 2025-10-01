@@ -53,26 +53,22 @@ void *alignedAlloc(size_t size, size_t align) {
   if ((align == 0) || ((align & (align - 1)) != 0)) {
     return nullptr;
   }
-#if defined(QBDI_PLATFORM_LINUX) || defined(QBDI_PLATFORM_ANDROID) || \
-    defined(QBDI_PLATFORM_OSX)
+#if defined(QBDI_PLATFORM_WINDOWS)
+  allocated = _aligned_malloc(size, align);
+#else
   int ret = posix_memalign(&allocated, align, size);
   if (ret != 0) {
     return nullptr;
   }
-#elif defined(QBDI_PLATFORM_WINDOWS)
-  allocated = _aligned_malloc(size, align);
-#elif defined(QBDI_PLATFORM_IOS)
-  allocated = aligned_alloc(align, size);
 #endif
   return allocated;
 }
 
 void alignedFree(void *ptr) {
-#if defined(QBDI_PLATFORM_LINUX) || defined(QBDI_PLATFORM_ANDROID) || \
-    defined(QBDI_PLATFORM_OSX)
-  free(ptr);
-#elif defined(QBDI_PLATFORM_WINDOWS)
+#if defined(QBDI_PLATFORM_WINDOWS)
   _aligned_free(ptr);
+#else
+  free(ptr);
 #endif
 }
 

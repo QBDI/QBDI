@@ -94,7 +94,7 @@ RelocatableInst::UniquePtrVec getExecBlockPrologue(const LLVMCPU &llvmcpu) {
   // Load other registers
   // ====================
   for (int i = 26; i >= 0; i -= 2) {
-    if constexpr (is_osx) {
+    if constexpr (is_osx or is_ios) {
       if (i == 18) {
         // skip x18 that is platform reserved
         prologue.push_back(Ldr(Reg(i + 1), Reg(0), (i + 1) * sizeof(rword)));
@@ -128,7 +128,7 @@ RelocatableInst::UniquePtrVec getExecBlockEpilogue(const LLVMCPU &llvmcpu) {
   // Save GPR from the guest
   // =======================
   for (unsigned i = 0; i < 28; i += 2) {
-    if constexpr (is_osx) {
+    if constexpr (is_osx or is_ios) {
       if (i == 18) {
         // skip x18 that is platform reserved
         epilogue.push_back(

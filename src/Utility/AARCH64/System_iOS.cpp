@@ -15,8 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "Platform.h"
-
 #include <mach/host_info.h>
 #include <mach/mach.h>
 #include <mach/mach_host.h>
@@ -27,7 +25,6 @@
 #include "llvm/Support/Process.h"
 #include "llvm/TargetParser/Host.h"
 
-#include "Utility/AARCH64/server-iOS-jit-user.h"
 #include "Utility/LogSys.h"
 #include "Utility/System.h"
 
@@ -36,92 +33,104 @@
 #define PT_DETACH 11
 #endif
 
-static mach_port_t frida_jit = MACH_PORT_NULL;
-
-extern "C" {
-kern_return_t bootstrap_look_up(mach_port_t bp, const char *service_name,
-                                mach_port_t *sp);
-int ptrace(int request, pid_t pid, caddr_t addr, int data);
-}
-
 namespace QBDI {
-
-void init_jit_server() {
-  // connect to frida JIT server
-  if (frida_jit == MACH_PORT_NULL) {
-    bootstrap_look_up(bootstrap_port, "com.apple.uikit.viewservice.frida",
-                      &frida_jit);
-    if (frida_jit == MACH_PORT_NULL) {
-      QBDI_ERROR("Cannot attach to Frida JIT server !");
-    }
-  }
-  // disable code signature enforcement
-  ptrace(PT_TRACE_ME, 0, 0, 0);
-  ptrace(PT_DETACH, 0, 0, 0);
-}
-
-void terminate_jit_server() {
-  if (frida_jit != MACH_PORT_NULL) {
-    mach_port_deallocate(mach_task_self(), frida_jit);
-    frida_jit = MACH_PORT_NULL;
-  }
-}
 
 std::once_flag rwxflag;
 using PF = llvm::sys::Memory::ProtectionFlags;
 
-bool isRWXSupported() {
-  static bool cached_result = false;
+namespace {
 
-  std::call_once(rwxflag, []() {
-    bool supported = false;
-    bool success = false;
-    mach_port_t task;
-    vm_address_t page = 0;
-    vm_address_t address;
-    vm_size_t size = 0;
-    natural_t depth = 0;
-    struct vm_region_submap_info_64 info;
-    mach_msg_type_number_t info_count;
-    kern_return_t kr;
-    size_t pageSize = llvm::sys::Process::getPageSize().get();
+vm_prot_t getPageProtection(vm_address_t address_, mach_port_t &task) {
+  vm_address_t address = address_;
+  vm_size_t size = 0;
+  natural_t depth = 0;
+  kern_return_t kr;
+  struct vm_region_submap_info_64 info;
+  mach_msg_type_number_t info_count;
+  while (true) {
+    info_count = VM_REGION_SUBMAP_INFO_COUNT_64;
+    kr = vm_region_recurse_64(task, &address, &size, &depth,
+                              (vm_region_recurse_info_t)&info, &info_count);
+    if (kr != KERN_SUCCESS)
+      break;
 
-    task = mach_task_self();
-
-    kr = vm_allocate(task, &page, pageSize, VM_FLAGS_ANYWHERE);
-    QBDI_REQUIRE_ACTION(kr == KERN_SUCCESS, return);
-
-    llvm::sys::MemoryBlock block((void *)page, pageSize);
-
-    std::error_code ec = llvm::sys::Memory::protectMappedMemory(
-        block, PF::MF_READ | PF::MF_WRITE | PF::MF_EXEC);
-    success = ec.value() == 0;
-
-    address = page;
-    while (success) {
-      info_count = VM_REGION_SUBMAP_INFO_COUNT_64;
-      kr = vm_region_recurse_64(task, &address, &size, &depth,
-                                (vm_region_recurse_info_t)&info, &info_count);
-      if (kr != KERN_SUCCESS)
-        break;
-
-      if (info.is_submap) {
-        depth++;
-        continue;
-      } else {
-        vm_prot_t requested_prot =
-            VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE;
-        supported = (info.protection & requested_prot) == requested_prot;
-        break;
-      }
+    if (info.is_submap) {
+      depth++;
+      continue;
+    } else {
+      return (info.protection &
+              (VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE));
     }
+  }
+  return 0;
+}
 
-    vm_deallocate(task, page, pageSize);
+bool cached_RWX_supported = false;
+bool cached_RW_RX_supported = false;
 
-    cached_result = supported;
-  });
+void cache_RWXSupported() {
+  bool success = false;
+  mach_port_t task;
+  vm_address_t page = 0;
+  kern_return_t kr;
+  size_t pageSize = llvm::sys::Process::getPageSize().get();
 
-  return cached_result;
+  task = mach_task_self();
+
+  kr = vm_allocate(task, &page, pageSize, VM_FLAGS_ANYWHERE);
+  QBDI_REQUIRE_ACTION(kr == KERN_SUCCESS, return);
+
+  llvm::sys::MemoryBlock block((void *)page, pageSize);
+
+  std::error_code ec = llvm::sys::Memory::protectMappedMemory(
+      block, PF::MF_READ | PF::MF_WRITE | PF::MF_EXEC);
+  success = ec.value() == 0;
+
+  if (success) {
+    cached_RWX_supported = getPageProtection(page, task) ==
+                           (VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE);
+  } else {
+    cached_RWX_supported = false;
+  }
+
+  ec =
+      llvm::sys::Memory::protectMappedMemory(block, PF::MF_READ | PF::MF_WRITE);
+  cached_RW_RX_supported = ec.value() == 0;
+  if (cached_RW_RX_supported) {
+    cached_RW_RX_supported &=
+        getPageProtection(page, task) == (VM_PROT_READ | VM_PROT_WRITE);
+  }
+  if (cached_RW_RX_supported) {
+    ec = llvm::sys::Memory::protectMappedMemory(block,
+                                                PF::MF_READ | PF::MF_EXEC);
+    cached_RW_RX_supported &= ec.value() == 0;
+  }
+  if (cached_RW_RX_supported) {
+    cached_RW_RX_supported &=
+        getPageProtection(page, task) == (VM_PROT_READ | VM_PROT_EXECUTE);
+  }
+
+  vm_deallocate(task, page, pageSize);
+
+  QBDI_DEBUG("Support RW_RX pages : {}", cached_RW_RX_supported);
+  QBDI_DEBUG("Support RWX pages : {}", cached_RWX_supported);
+  if (not(cached_RW_RX_supported or cached_RWX_supported)) {
+    QBDI_CRITICAL("Cannot create JIT compatible page");
+  }
+}
+
+} // anonymous namespace
+
+bool isRWXSupported() {
+  std::call_once(rwxflag, cache_RWXSupported);
+
+  return cached_RWX_supported;
+}
+
+bool isRWRXSupported() {
+  std::call_once(rwxflag, cache_RWXSupported);
+
+  return cached_RW_RX_supported;
 }
 
 llvm::sys::MemoryBlock
@@ -144,35 +153,15 @@ allocateMappedMemory(size_t numBytes,
   kern_return_t kr;
   vm_size_t size = numPages * pageSize;
   vm_address_t address = 0;
-  mach_vm_address_t page =
-      0; // careful here to use correct type as size can be different
-  bool setPerms = true;
 
-  // we want executable memory and our process can't have it...
-  // try to use a JIT server (Frida one by default)
-  if ((pFlags & llvm::sys::Memory::MF_EXEC) && !isRWXSupported()) {
-    // lazily init JIT server
-    if (frida_jit == MACH_PORT_NULL) {
-      init_jit_server();
-    }
-    QBDI_REQUIRE_ACTION(frida_jit != MACH_PORT_NULL, return empty);
-    kr = frida_jit_alloc(frida_jit, mach_task_self(), &page, size,
-                         VM_FLAGS_ANYWHERE);
-    address = page;
-    // no need to set permissions later
-    setPerms = false;
-  } else {
-    kr = vm_allocate(mach_task_self(), &address, size, VM_FLAGS_ANYWHERE);
-  }
+  kr = vm_allocate(mach_task_self(), &address, size, VM_FLAGS_ANYWHERE);
   QBDI_REQUIRE_ACTION(kr == KERN_SUCCESS, return empty);
   // everything should be fine, set error code to 0
   ec = std::error_code();
 
   llvm::sys::MemoryBlock Result((void *)address, size);
   // set permissions on memory range (if needed)
-  if (setPerms) {
-    ec = llvm::sys::Memory::protectMappedMemory(Result, pFlags);
-  }
+  ec = llvm::sys::Memory::protectMappedMemory(Result, pFlags);
 
   // flush instruction cache if we successfully allocated executable memory
   if ((ec.value() == 0) && (pFlags & llvm::sys::Memory::MF_EXEC)) {
@@ -183,7 +172,8 @@ allocateMappedMemory(size_t numBytes,
 }
 
 void releaseMappedMemory(llvm::sys::MemoryBlock &block) {
-  vm_deallocate(mach_task_self(), (vm_address_t)block.base(), block.allocatedSize());
+  vm_deallocate(mach_task_self(), (vm_address_t)block.base(),
+                block.allocatedSize());
 }
 
 } // namespace QBDI

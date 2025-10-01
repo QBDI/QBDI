@@ -163,11 +163,7 @@ uintptr_t getImageSlideWithHeader(const struct dyld_image_info *image_info,
   return 0;
 }
 
-std::vector<MemoryMap> getCurrentProcessMaps(bool full_path) {
-  return getRemoteProcessMaps(getpid(), full_path);
-}
-
-std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path) {
+static std::vector<MemoryMap> getProcessMaps(task_t task, bool full_path) {
   uint32_t icnt = 0;
   struct STRUCT_HEADER *mh = NULL;
   char *path = NULL;
@@ -185,11 +181,7 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path) {
   vm_size_t size = 0;
   mach_msg_type_number_t count = VM_REGION_SUBMAP_SHORT_INFO_COUNT_64;
   uint32_t depth = 1;
-  task_t task = 0;
   kern_return_t kr;
-
-  kr = task_for_pid(mach_task_self(), pid, &task);
-  QBDI_REQUIRE_ACTION(kr == KERN_SUCCESS, return memMaps);
 
   // Create a memory map
   while (1) {
@@ -295,6 +287,23 @@ std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path) {
             });
 
   return omaps;
+}
+
+std::vector<MemoryMap> getCurrentProcessMaps(bool full_path) {
+  task_t task = 0;
+  kern_return_t kr = task_for_pid(mach_task_self(), getpid(), &task);
+  if (kr == KERN_SUCCESS) {
+    return getProcessMaps(task, full_path);
+  } else {
+    return getProcessMaps(mach_task_self(), full_path);
+  }
+}
+
+std::vector<MemoryMap> getRemoteProcessMaps(QBDI::rword pid, bool full_path) {
+  task_t task = 0;
+  kern_return_t kr = task_for_pid(mach_task_self(), pid, &task);
+  QBDI_REQUIRE_ACTION(kr == KERN_SUCCESS, return {});
+  return getProcessMaps(task, full_path);
 }
 
 } // namespace QBDI

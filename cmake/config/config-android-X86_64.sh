@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
+BASEDIR="$(cd "$(dirname "$0")" && pwd -P)"
+GITDIR="$(realpath "${BASEDIR}/../..")"
+
 if [ -z "${NDK_PATH}" ]; then
   if [ -z "${ANDROID_SDK_ROOT}" ]; then
     echo "ANDROID_SDK_ROOT or NDK_PATH variable should be set to configure cmake."
@@ -18,13 +21,13 @@ if [ ! -d "${NDK_PATH}" ]; then
   exit 1
 fi
 
-cmake  .. \
-      -DQBDI_PLATFORM=android \
-      -DQBDI_ARCH=X86_64 \
-      -DCMAKE_BUILD_TYPE=Release \
+cmake "${GITDIR}"                        \
+      -DQBDI_PLATFORM=android            \
+      -DQBDI_ARCH=X86_64                 \
+      -DCMAKE_BUILD_TYPE=Release         \
       -DCMAKE_TOOLCHAIN_FILE="${NDK_PATH}/build/cmake/android.toolchain.cmake" \
-      -DANDROID_ABI=x86_64 \
-      -DANDROID_PLATFORM=23 \
+      -DANDROID_ABI=x86_64               \
+      -DANDROID_PLATFORM=23              \
       -G Ninja
 
 

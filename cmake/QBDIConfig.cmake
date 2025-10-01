@@ -104,13 +104,6 @@ else()
   )
 endif()
 
-# Check local llvm-tablen
-if(QBDI_PLATFORM_IOS)
-  if("${NATIVE_TABLEN_PATH}" STREQUAL "")
-    message(FATAL_ERROR "If you want compile IOS version, Please set NATIVE_TABLEN_PATH")
-  endif()
-endif()
-
 # Check arch
 if(NOT DEFINED QBDI_ARCH)
   message(

@@ -27,6 +27,7 @@
 #include "Patch/Patch.h"
 #include "Patch/RelocatableInst.h"
 #include "Utility/LogSys.h"
+#include "Utility/System.h"
 
 extern void qbdi_runCodeBlock(void *codeBlock,
                               QBDI::rword execflags) asm("__qbdi_runCodeBlock")
@@ -56,10 +57,16 @@ void ExecBlock::selectSeq(uint16_t seqID) {
 }
 
 void ExecBlock::run() {
-  // Pages are RWX on iOS
   if constexpr (is_ios) {
-    llvm::sys::Memory::InvalidateInstructionCache(codeBlock.base(),
-                                                  codeBlock.allocatedSize());
+    if (isRWRXSupported()) {
+      if (not isRX()) {
+        makeRX();
+      }
+    } else {
+      // Pages are RWX on iOS
+      llvm::sys::Memory::InvalidateInstructionCache(codeBlock.base(),
+                                                    codeBlock.allocatedSize());
+    }
   } else {
     if (not isRX()) {
       makeRX();

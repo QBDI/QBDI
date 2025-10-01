@@ -27,6 +27,7 @@
 
 namespace QBDI {
 bool isRWXSupported();
+bool isRWRXSupported();
 llvm::sys::MemoryBlock
 allocateMappedMemory(size_t NumBytes,
                      const llvm::sys::MemoryBlock *const NearBlock,

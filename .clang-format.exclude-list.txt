@@ -1,1 +1,2 @@
 cmake/llvm/.*\.patch\.txt
+cmake/config/ios.toolchain.cmake

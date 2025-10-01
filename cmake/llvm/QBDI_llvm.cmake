@@ -113,6 +113,9 @@ elseif(QBDI_ARCH_AARCH64)
   if(QBDI_PLATFORM_ANDROID)
     set(QBDI_LLVM_TRIPLE aarch64-linux-android)
   elseif(QBDI_PLATFORM_IOS)
+    set(LLVM_ENABLE_LIBCXX
+        ON
+        CACHE INTERNAL "set LLVM_ENABLE_LIBCXX")
     set(QBDI_LLVM_TRIPLE arm64-apple-darwin)
   else()
     set(QBDI_LLVM_TRIPLE aarch64-linux-gnu)
@@ -161,9 +164,9 @@ set(CMAKE_CXX_VISIBILITY_PRESET
     "hidden"
     CACHE STRING "set CMAKE_CXX_VISIBILITY_PRESET" FORCE)
 
-if(NOT ("${NATIVE_TABLEN_PATH}" STREQUAL ""))
+if(NOT ("${NATIVE_TABLEGEN_PATH}" STREQUAL ""))
   set(LLVM_TABLEGEN
-      "${NATIVE_TABLEN_PATH}"
+      "${NATIVE_TABLEGEN_PATH}"
       CACHE INTERNAL "force tablegen")
 elseif(NOT ("${QBDI_LLVM_TABLEN_TOOLSCHAIN}" STREQUAL ""))
   # create a second directory to build the native llvm-tblgen
@@ -182,6 +185,18 @@ else()
         "${LLVM_TABLEN_BIN}"
         CACHE STRING "force tablegen")
   endif()
+endif()
+
+if(QBDI_PLATFORM_IOS AND "${LLVM_TABLEGEN}" STREQUAL "")
+  # llvm fail to compile in this platform. Force to compile tablegen
+  # with native toolchains
+  set(QBDI_LLVM_TABLEN_TOOLSCHAIN
+      "${CMAKE_CURRENT_BINARY_DIR}/QBDI_empty_toolchains.cmake")
+  file(TOUCH "${QBDI_LLVM_TABLEN_TOOLSCHAIN}")
+  include(QBDI_llvm_tblgen)
+  set(LLVM_TABLEGEN
+      "${QBDI_LLVM_NATIVE_TBLGEN}"
+      CACHE INTERNAL "force tablegen")
 endif()
 
 if(QBDI_CCACHE AND CCACHE_FOUND)

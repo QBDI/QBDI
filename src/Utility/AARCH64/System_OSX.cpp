@@ -35,6 +35,7 @@
 namespace QBDI {
 
 bool isRWXSupported() { return false; }
+bool isRWRXSupported() { return true; }
 
 llvm::sys::MemoryBlock
 allocateMappedMemory(size_t numBytes,

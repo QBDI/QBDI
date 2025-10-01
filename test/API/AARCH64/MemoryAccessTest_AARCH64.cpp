@@ -39,13 +39,13 @@ static bool checkFeature(const char *f) {
                                                QBDI::FPRState *fprState,
                                                void *data) {
   const QBDI::InstAnalysis *instAnalysis = vm->getInstAnalysis();
-  printf("0x%lx (%10s): %s\n", instAnalysis->address, instAnalysis->mnemonic,
+  printf("0x%llx (%10s): %s\n", instAnalysis->address, instAnalysis->mnemonic,
          instAnalysis->disassembly);
 
   for (auto &a : vm->getInstMemoryAccess()) {
     printf(
-        " - inst: 0x%lx, addr: 0x%lx, size: %d, type: %c%c, "
-        "value: 0x%lx, flags : 0x %x\n",
+        " - inst: 0x%llx, addr: 0x%llx, size: %d, type: %c%c, "
+        "value: 0x%llx, flags : 0x %x\n",
         a.instAddress, a.accessAddress, a.size,
         ((a.type & QBDI::MEMORY_READ) != 0) ? 'r' : '-',
         ((a.type & QBDI::MEMORY_WRITE) != 0) ? 'w' : '-', a.value, a.flags);

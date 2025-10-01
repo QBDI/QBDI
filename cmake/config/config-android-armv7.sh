@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
+BASEDIR="$(cd "$(dirname "$0")" && pwd -P)"
+GITDIR="$(realpath "${BASEDIR}/../..")"
+
 if [ -z "${NDK_PATH}" ]; then
   if [ -z "${ANDROID_SDK_ROOT}" ]; then
     echo "ANDROID_SDK_ROOT or NDK_PATH variable should be set to configure cmake."
@@ -18,7 +21,7 @@ if [ ! -d "${NDK_PATH}" ]; then
   exit 1
 fi
 
-cmake  ..                                \
+cmake "${GITDIR}"                        \
       -DQBDI_PLATFORM=android            \
       -DQBDI_ARCH=ARM                    \
       -DCMAKE_BUILD_TYPE=RelWithDebInfo  \
