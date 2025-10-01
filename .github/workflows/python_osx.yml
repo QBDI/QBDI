@@ -9,7 +9,7 @@ jobs:
     runs-on: macos-13
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
       fail-fast: false
     env:
       QBDI_PLATFORM: 'osx'
@@ -19,9 +19,10 @@ jobs:
       ARCHFLAGS: "-arch x86_64"
     steps:
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
+          allow-prereleases: ${{ matrix.python-version == '3.14' }}
       - name: Install system dependencies
         run: |
           brew install cmake ninja ccache
@@ -62,7 +63,7 @@ jobs:
     runs-on: macos-14
     strategy:
       matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
       fail-fast: false
     env:
       QBDI_ARCH: 'AARCH64'
@@ -72,9 +73,10 @@ jobs:
       ARCHFLAGS: "-arch arm64"
     steps:
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
+          allow-prereleases: ${{ matrix.python-version == '3.14' }}
       - name: Install system dependencies
         run: |
           brew install cmake ninja ccache

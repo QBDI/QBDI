@@ -9,7 +9,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
         QBDI_ARCH: ['X86_64', 'X86']
         include:
           - QBDI_ARCH: 'X86_64'
@@ -58,9 +58,10 @@ jobs:
           key: QBDI-third-party-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**/*.cmake') }}
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
+          allow-prereleases: ${{ matrix.python-version == '3.14' }}
           architecture: ${{ matrix.WINDOWS_ARCH }}
       - name: build PyQBDI ${{ matrix.python-version }}
         run: |
