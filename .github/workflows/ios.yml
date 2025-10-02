@@ -1,0 +1,63 @@
+name: Package IOS
+
+on:
+  push:
+    branches:
+      - master
+      - dev-next
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    env:
+      QBDI_ARCH: 'AARCH64'
+      QBDI_PLATFORM: 'ios'
+      MACOSX_DEPLOYMENT_TARGET: '15.0'
+    steps:
+      - name: Set up Python env
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install system dependencies
+        run: |
+          brew install cmake ninja ccache
+          python3 -m pip install --upgrade pip setuptools wheel
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: Cache ccache
+        uses: actions/cache@v4
+        id: cache-ccache
+        with:
+          path: |
+            ~/.ccache
+          key: ccache-ios-${{ env.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}-${{ github.run_number }}
+          restore-keys: |
+            ccache-ios-${{ env.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}-
+      - if: steps.cache-ccache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/.ccache
+          cp .github/workflows/ccache.conf ~/.ccache/ccache.conf
+      - name: Cache third-party
+        uses: actions/cache@v4
+        with:
+          path: |
+            third-party
+          key: QBDI-third-party-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**/*.cmake') }}
+      - run: mkdir -p build
+      - name: build QBDI
+        working-directory: ./build
+        run: |
+          cmake -G Ninja \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DQBDI_PLATFORM=${{ env.QBDI_PLATFORM }} \
+                -DQBDI_ARCH=${{ env.QBDI_ARCH }} \
+                -DCMAKE_TOOLCHAIN_FILE="../cmake/config/ios.toolchain.cmake" \
+                ..
+          ninja
+          cpack
+      - name: Export package
+        uses: actions/upload-artifact@v4
+        with:
+          name: package_IOS_${{ env.QBDI_ARCH }}
+          path: build/QBDI-*.pkg
