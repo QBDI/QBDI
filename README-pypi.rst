@@ -39,16 +39,16 @@ Status
 .. role:: orange
 .. role:: red
 
-=======   ==============================   ========================   =================================
-CPU       Operating Systems                Execution                  Memory Access Information
-=======   ==============================   ========================   =================================
-x86-64    Android, Linux, macOS, Windows   :green:`Supported`         :green:`Supported`
-x86       Android, Linux, macOS, Windows   :green:`Supported`         :green:`Supported`
-ARM       Android, Linux                   :yellow:`Supported (*)`    :yellow:`Supported (*)`
-AArch64   Android, Linux, macOS            :yellow:`Supported (*)`    :yellow:`Supported (*)`
-=======   ==============================   ========================   =================================
+=======   ==============================   ==================   =========================
+CPU       Operating Systems                Execution            Memory Access Information
+=======   ==============================   ==================   =========================
+x86-64    Android, Linux, macOS, Windows   :green:`Supported`   :green:`Supported`
+x86       Android, Linux, macOS, Windows   :green:`Supported`   :green:`Supported`
+ARM       Android, Linux                   :green:`Supported`   :green:`Supported`
+AArch64   Android, Linux, macOS, IOs (*)   :green:`Supported`   :green:`Supported`
+=======   ==============================   ==================   =========================
 
-\* The ARM and AArch64 instruction sets are supported but in early support.
+\* IOs support is unstable and need a jailbroken device.
 
 Installation
 ============
