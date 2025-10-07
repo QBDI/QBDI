@@ -4,7 +4,9 @@ endif()
 set(__add_qbdi_deps ON)
 include(FetchContent)
 
-set(QBDI_THIRD_PARTY_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/third-party/")
+if(NOT DEFINED QBDI_THIRD_PARTY_DIRECTORY)
+  set(QBDI_THIRD_PARTY_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/third-party/")
+endif()
 set(qbdi_deps)
 
 # Custom FetchContent Command
