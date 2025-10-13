@@ -93,13 +93,9 @@ perform_action_by_image() {
 }
 
 perform_action_by_image "build"
-if [[ "${PUSH_IMAGE}" -ne 0 ]]; then
-    docker_login
-fi
+docker_login
 perform_action_by_image "push"
-if [[ "${PUSH_IMAGE}" -ne 0 ]]; then
-    docker_logout
-fi
+docker_logout
 perform_action_by_image "hash"
 
 cat "$HASHFILE"

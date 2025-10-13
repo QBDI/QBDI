@@ -24,7 +24,7 @@ RUN apt-get update && \
         cmake \
         g++ \
         git \
-        libstdc++-11-dev \
+        libstdc++-13-dev \
         ninja-build \
         pkg-config \
         wget \
@@ -77,6 +77,7 @@ WORKDIR /root
 
 COPY --from=builder /home/docker/qbdi/build/*.deb .
 RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive \
     apt-get install -y ./*.deb && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
