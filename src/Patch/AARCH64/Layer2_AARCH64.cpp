@@ -379,7 +379,6 @@ llvm::MCInst ldxrb(RegLLVM dest, RegLLVM addr) {
   inst.setOpcode(llvm::AArch64::LDXRB);
   inst.addOperand(llvm::MCOperand::createReg(dest.getValue()));
   inst.addOperand(llvm::MCOperand::createReg(addr.getValue()));
-  inst.addOperand(llvm::MCOperand::createImm(0));
   return inst;
 }
 
@@ -599,6 +598,7 @@ llvm::MCInst autia(RegLLVM reg, RegLLVM ctx) {
   llvm::MCInst inst;
   inst.setOpcode(llvm::AArch64::AUTIA);
   inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
+  inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
   inst.addOperand(llvm::MCOperand::createReg(ctx.getValue()));
   return inst;
 }
@@ -606,6 +606,7 @@ llvm::MCInst autia(RegLLVM reg, RegLLVM ctx) {
 llvm::MCInst autib(RegLLVM reg, RegLLVM ctx) {
   llvm::MCInst inst;
   inst.setOpcode(llvm::AArch64::AUTIB);
+  inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
   inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
   inst.addOperand(llvm::MCOperand::createReg(ctx.getValue()));
   return inst;
@@ -615,12 +616,14 @@ llvm::MCInst autiza(RegLLVM reg) {
   llvm::MCInst inst;
   inst.setOpcode(llvm::AArch64::AUTIZA);
   inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
+  inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
   return inst;
 }
 
 llvm::MCInst autizb(RegLLVM reg) {
   llvm::MCInst inst;
   inst.setOpcode(llvm::AArch64::AUTIZB);
+  inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
   inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
   return inst;
 }

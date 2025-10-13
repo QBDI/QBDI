@@ -36,10 +36,11 @@ void InMemoryObject::perform_reloc(llvm::object::ObjectFile *object,
 
   for (auto sit = object->sections().begin(); sit != object->sections().end();
        ++sit) {
-    if (!sit->getRelocatedSection())
+    auto relocatedSectionExpect = sit->getRelocatedSection();
+    if (!relocatedSectionExpect)
       continue;
 
-    auto relocatedSection = *sit->getRelocatedSection();
+    auto relocatedSection = relocatedSectionExpect.get();
     if (relocatedSection == object->sections().end())
       continue;
     // only relocated the text section, our bytes code
