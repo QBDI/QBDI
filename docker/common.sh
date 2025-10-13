@@ -1,5 +1,5 @@
 
-QBDI_VERSION="0.11.1-devel"
+QBDI_VERSION="0.12.0-devel"
 DOCKERHUB_REPO="qbdi/qbdi"
 DOCKER_BUILD_DIR="/home/docker/qbdi/build"
 
