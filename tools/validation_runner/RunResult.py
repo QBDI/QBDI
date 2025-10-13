@@ -159,7 +159,7 @@ class RunResult:
             self.branch = 'UNKNOWN'
         else:
             self.commit = scan_for_pattern(out, '# branch.oid ([0-9a-fA-F]+)')[0]
-            self.branch = scan_for_pattern(out, '# branch.head (\S+)')[0]
+            self.branch = scan_for_pattern(out, '# branch.head (\\S+)')[0]
 
     def write_to_db(self, db):
         run_id = db.insert_run_result(self)

@@ -61,21 +61,21 @@ class TestResult:
 
             try:
                 # Process result file, getting statistics
-                self.total_instr = int(scan_for_pattern(result, 'Executed (\d+) total instructions')[0])
-                self.unique_instr = int(scan_for_pattern(result, 'Executed (\d+) unique instructions')[0])
-                self.diff_map = int(scan_for_pattern(result, 'Encountered (\d+) difference mappings')[0])
-                self.errors = int(scan_for_pattern(result, 'Encountered (\d+) errors')[0])
-                self.no_impact_err = int(scan_for_pattern(result, 'No impact errors: (\d+)')[0])
-                self.non_critical_err = int(scan_for_pattern(result, 'Non critical errors: (\d+)')[0])
-                self.critical_err = int(scan_for_pattern(result, 'Critical errors: (\d+)')[0])
-                self.cascades = int(scan_for_pattern(result, 'Encountered (\d+) error cascades')[0])
-                self.no_impact_casc = int(scan_for_pattern(result, 'No impact cascades: (\d+)')[0])
-                self.non_critical_casc = int(scan_for_pattern(result, 'Non critical cascades: (\d+)')[0])
-                self.critical_casc = int(scan_for_pattern(result, 'Critical cascades: (\d+)')[0])
-                self.memaccess_error = int(scan_for_pattern(result, 'Encountered (\d+) memoryAccess errors')[0])
-                self.memaccess_unique_error = int(scan_for_pattern(result, 'Encountered (\d+) memoryAccess unique errors')[0])
-                self.output_len_dbg = int(scan_for_pattern(result, 'SizeOutput: (\d+) (\d+)')[0])
-                self.output_len_dbi = int(scan_for_pattern(result, 'SizeOutput: (\d+) (\d+)')[1])
+                self.total_instr = int(scan_for_pattern(result, 'Executed (\\d+) total instructions')[0])
+                self.unique_instr = int(scan_for_pattern(result, 'Executed (\\d+) unique instructions')[0])
+                self.diff_map = int(scan_for_pattern(result, 'Encountered (\\d+) difference mappings')[0])
+                self.errors = int(scan_for_pattern(result, 'Encountered (\\d+) errors')[0])
+                self.no_impact_err = int(scan_for_pattern(result, 'No impact errors: (\\d+)')[0])
+                self.non_critical_err = int(scan_for_pattern(result, 'Non critical errors: (\\d+)')[0])
+                self.critical_err = int(scan_for_pattern(result, 'Critical errors: (\\d+)')[0])
+                self.cascades = int(scan_for_pattern(result, 'Encountered (\\d+) error cascades')[0])
+                self.no_impact_casc = int(scan_for_pattern(result, 'No impact cascades: (\\d+)')[0])
+                self.non_critical_casc = int(scan_for_pattern(result, 'Non critical cascades: (\\d+)')[0])
+                self.critical_casc = int(scan_for_pattern(result, 'Critical cascades: (\\d+)')[0])
+                self.memaccess_error = int(scan_for_pattern(result, 'Encountered (\\d+) memoryAccess errors')[0])
+                self.memaccess_unique_error = int(scan_for_pattern(result, 'Encountered (\\d+) memoryAccess unique errors')[0])
+                self.output_len_dbg = int(scan_for_pattern(result, 'SizeOutput: (\\d+) (\\d+)')[0])
+                self.output_len_dbi = int(scan_for_pattern(result, 'SizeOutput: (\\d+) (\\d+)')[1])
                 self.same_output = 1 if 'SameOutput: True' in result else 0
             except Scan_Pattern_Exception as e:
                 print("[!] {}".format(e))
@@ -89,7 +89,7 @@ class TestResult:
                 self.cascades_log = result[cascade_start:]
                 self.coverage_log = coverage_to_log(self.coverage.items())
 
-                self.memaccess_unique = scan_for_multipattern(self.memaccess_log, "MemoryAccess Error \(mnemonic : ([^\)]+)\)")
+                self.memaccess_unique = scan_for_multipattern(self.memaccess_log, "MemoryAccess Error \\(mnemonic : ([^\\)]+)\\)")
                 self.memaccess_unique_log = coverage_to_log(self.memaccess_unique.items())
         if error:
             # Process result file, getting statistics
