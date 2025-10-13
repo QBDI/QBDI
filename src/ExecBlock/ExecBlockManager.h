@@ -70,6 +70,9 @@ public:
 
   ExecRegion(const Range<rword> &c)
       : MovableDoubleLinkedListElement<ExecRegion>(), covered(c) {}
+
+  ExecRegion(ExecRegion &&o) = default;
+  ExecRegion &operator=(ExecRegion &&o) = default;
 };
 
 class ExecBlockManager {
