@@ -290,16 +290,17 @@ public:
    */
   const InstAnalysis *getInstAnalysis(rword address, AnalysisType type) const;
 
-  /*! Return the instruction address from a Jitted address.
+  /*! Return ExecBlock and InstID from a Jitted address.
    * This function help to convert an address of a patched
    * (inside a CodeSection of an ExecBlock) to the address of the instruction
    * for which this patch was jitted.
    *
    * @param[in] address  Address of a Jitted instruction
    *
-   * @return The address of the patch, or empty if not found.
+   * @return The ExecBlock and the InstId of the Jitted instruction if any
    */
-  std::optional<rword> getPatchAddressOfJit(rword address) const;
+  std::optional<std::pair<const ExecBlock *, uint16_t>>
+  getPatchInfoOfJit(rword address) const;
 
   /*! Clear a specific address range from the translation cache.
    *

@@ -934,11 +934,12 @@ const InstAnalysis *VM::getCachedInstAnalysis(rword address,
   return engine->getInstAnalysis(address, type);
 }
 
+// getJITInstAnalysis
 const InstAnalysis *VM::getJITInstAnalysis(rword jitAddress,
                                            AnalysisType type) const {
-  std::optional<rword> address = engine->getPatchAddressOfJit(jitAddress);
-  if (address) {
-    return engine->getInstAnalysis(*address, type);
+  auto info = engine->getPatchInfoOfJit(jitAddress);
+  if (info and info->second != NOT_FOUND) {
+    return info->first->getInstAnalysis(info->second, type);
   } else {
     return nullptr;
   }
