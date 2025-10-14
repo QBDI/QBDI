@@ -1,10 +1,29 @@
 CHANGELOG
 =========
 
-Next release (0.11.1)
+Next release (0.12.0)
 ---------------------
 
+2025-10-XX QBDI Team <qbdi@quarkslab.com>
 
+* Add QBDIPreload implementation for windows (`#110 <https://github.com/QBDI/QBDI/pull/110>`_, `#227 <https://github.com/QBDI/QBDI/pull/227>`_ and `#277 <https://github.com/QBDI/QBDI/pull/277>`_)
+* Experimental support for IOS AArch64
+  (`#300 <https://github.com/QBDI/QBDI/pull/300>`_ and `#303 <https://github.com/QBDI/QBDI/pull/303>`_).
+  This support is experimental and work only on some jailbroken device.
+* Add new user API ``QBDI::VM::getNbExecBlock`` and ``QBDI::VM::reduceCacheTo`` to control the size of QBDI cache (`#277 <https://github.com/QBDI/QBDI/pull/277>`_)
+* Add new user API ``QBDI::VM::getJITInstAnalysis`` and new analysis
+  ``QBDI::AnalysisType::ANALYSIS_JIT`` to provide JIT information (`#277 <https://github.com/QBDI/QBDI/pull/277>`_)
+* Support legacy instruction JCXZ/JECXZ/JRCXZ on X86 and X86_64 (`#289 <https://github.com/QBDI/QBDI/pull/289>`_)
+* Add error message when PyQBDI preload fail (`#286 <https://github.com/QBDI/QBDI/pull/286>`_)
+* Update Frida API (`#290 <https://github.com/QBDI/QBDI/pull/290>`_, `#266 <https://github.com/QBDI/QBDI/pull/266>`_ and `#282 <https://github.com/QBDI/QBDI/pull/282>`_)
+* Update to LLVM19 (`#271 <https://github.com/QBDI/QBDI/pull/271>`_)
+* Support python 3.13 and 3.14 (`#270 <https://github.com/QBDI/QBDI/pull/270>`_ and `#302 <https://github.com/QBDI/QBDI/pull/302>`_)
+* Fix missing header (`#292 <https://github.com/QBDI/QBDI/pull/292>`_)
+* Fix bugeous initialisation of FTW register on windows (`#299 <https://github.com/QBDI/QBDI/pull/299>`_)
+* Fix docs typos (`#265 <https://github.com/QBDI/QBDI/pull/265>`_)
+* Fix immediate representation in disassembly (`#295 <https://github.com/QBDI/QBDI/pull/295>`_ and `#296 <https://github.com/QBDI/QBDI/pull/296>`_)
+* Fix wrong number of operand in LLVM::MCInst (`#291 <https://github.com/QBDI/QBDI/pull/291>`_ and `#304 <https://github.com/QBDI/QBDI/pull/304>`_)
+* Update template with new name from 0.11.0 (`#259 <https://github.com/QBDI/QBDI/pull/259>`_)
 
 Version (0.11.0)
 ----------------

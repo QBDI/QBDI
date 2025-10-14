@@ -47,6 +47,7 @@ public:
   MovableDoubleLinkedListElement &
   operator=(const MovableDoubleLinkedListElement &) = delete;
 
+protected:
   MovableDoubleLinkedListElement(MovableDoubleLinkedListElement &&o) {
     prev = o.prev;
     next = o.next;
@@ -64,7 +65,7 @@ public:
     }
   }
 
-  virtual MovableDoubleLinkedListElement &
+  MovableDoubleLinkedListElement &
   operator=(MovableDoubleLinkedListElement &&o) {
     removeSelf();
     prev = o.prev;
@@ -84,6 +85,7 @@ public:
     return *this;
   }
 
+public:
   void removeSelf() {
     if (prev != this) {
       prev->next = next;

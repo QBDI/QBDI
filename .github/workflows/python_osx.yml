@@ -22,7 +22,7 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-          allow-prereleases: ${{ matrix.python-version == '3.14' }}
+          allow-prereleases: ${{ matrix.python-version == '3.15' }}
       - name: Install system dependencies
         run: |
           brew install cmake ninja ccache
@@ -76,7 +76,7 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-          allow-prereleases: ${{ matrix.python-version == '3.14' }}
+          allow-prereleases: ${{ matrix.python-version == '3.15' }}
       - name: Install system dependencies
         run: |
           brew install cmake ninja ccache

@@ -9,22 +9,19 @@ ENV USER="docker" \
     PREFIX="/usr" \
     QBDI_PLATFORM="linux"
 
-# create a user
-RUN adduser --disabled-password --gecos '' --home "$HOME" "$USER"
-
 # Get latest package list, upgrade packages, install required packages
 # and cleanup to keep container as small as possible
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
+        adduser \
         bash \
         sudo \
         build-essential \
         cmake \
         g++ \
-        g++-multilib \
         git \
-        libstdc++-11-dev \
+        libstdc++-13-dev \
         ninja-build \
         pkg-config \
         wget \
@@ -40,6 +37,11 @@ RUN apt-get update && \
         git && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# create a user and add user in sudo to ease debug
+RUN adduser --disabled-password --gecos '' --home "$HOME" "$USER" && \
+    adduser $USER sudo && \
+    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 # build / test / install QBDI
 ARG CMAKE_ARGUMENT=""
@@ -76,13 +78,6 @@ RUN mkdir build && \
     rm -f QBDI-*-$QBDI_PLATFORM.deb && \
     cpack -G DEB && \
     sudo dpkg -i QBDI-*-$QBDI_PLATFORM-$QBDI_ARCH.deb
-
-# add user in sudo to ease debug
-USER root
-
-RUN adduser $USER sudo && \
-    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-USER $USER
 
 WORKDIR $HOME
 

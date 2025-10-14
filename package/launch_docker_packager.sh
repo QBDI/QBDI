@@ -73,16 +73,16 @@ build_archlinux () {
 
 prepare_archive
 
-# debian12 ARM
+# debian13 ARM
 build_ubuntu_debian debian "${DEBIAN_TARGET}" ARM
 
-# debian12 AARCH64
+# debian13 AARCH64
 build_ubuntu_debian debian "${DEBIAN_TARGET}" AARCH64
 
-# debian12 x86
+# debian13 x86
 build_ubuntu_debian debian "${DEBIAN_TARGET}" X86
 
-# debian12 x64
+# debian13 x64
 build_ubuntu_debian debian "${DEBIAN_TARGET}" X86_64
 
 # ubuntu lts x64
@@ -94,13 +94,13 @@ build_ubuntu_debian ubuntu "${UBUNTU_LTS_TARGET}" ARM
 # ubuntu lts AARCH64
 build_ubuntu_debian ubuntu "${UBUNTU_LTS_TARGET}" AARCH64
 
-# ubuntu 24.10 x64
+# ubuntu 25.10 x64
 build_ubuntu_debian ubuntu "${UBUNTU_LAST_TARGET}" X86_64
 
-# ubuntu 24.10 ARM
+# ubuntu 25.10 ARM
 build_ubuntu_debian ubuntu "${UBUNTU_LAST_TARGET}" ARM
 
-# ubuntu 24.10 AARCH64
+# ubuntu 25.10 AARCH64
 build_ubuntu_debian ubuntu "${UBUNTU_LAST_TARGET}" AARCH64
 
 # archlinux x64

@@ -9,28 +9,23 @@ ENV USER="docker" \
     QBDI_PLATFORM="linux" \
     CLICOLOR_FORCE=1
 
-# create a user
-RUN adduser --disabled-password --gecos '' --home "$HOME" "$USER"
-
-# setup backport to use cmake >= 3.28
-RUN echo 'deb http://deb.debian.org/debian bookworm-backports main contrib non-free' > /etc/apt/sources.list.d/backports.list
-
 # Get latest package list, upgrade packages, install required packages
 # and cleanup to keep container as small as possible
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
+        adduser \
         bash \
         build-essential \
         ca-certificates \
         ccache \
-        cmake/bookworm-backports \
+        cmake \
         file \
         g++ \
         git \
         gzip \
         imagemagick \
-        libstdc++-10-dev \
+        libstdc++-13-dev \
         ninja-build \
         openssl \
         pkg-config \
@@ -44,6 +39,9 @@ RUN apt-get update && \
         && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# create a user
+RUN adduser --disabled-password --gecos '' --home "$HOME" "$USER"
 
 # switch to new user
 USER $USER

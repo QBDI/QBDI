@@ -45,6 +45,7 @@
 #include "llvm/TargetParser/SubtargetFeature.h"
 #include "llvm/TargetParser/Triple.h"
 
+#include "devVariable.h"
 #include "QBDI/Config.h"
 #include "Engine/LLVMCPU.h"
 #include "Patch/Types.h"
@@ -192,6 +193,24 @@ void LLVMCPU::writeInstruction(const llvm::MCInst inst,
                                rword address) const {
   // MCCodeEmitter needs a fixups array
   llvm::SmallVector<llvm::MCFixup, 4> fixups;
+
+#if CHECK_NUM_OPERANDS
+  auto opcode = inst.getOpcode();
+  const llvm::MCInstrDesc &desc = MCII->get(opcode);
+  if (desc.isVariadic() and inst.getNumOperands() < desc.getNumOperands()) {
+    QBDI_CRITICAL(
+        "Invalid number of operand (get {}, expect at least {}) for {} ({})",
+        inst.getNumOperands(), desc.getNumOperands(), getInstOpcodeName(opcode),
+        opcode);
+    std::abort();
+  } else if (!desc.isVariadic() and
+             inst.getNumOperands() != desc.getNumOperands()) {
+    QBDI_CRITICAL("Invalid number of operand (get {}, expect {}) for {} ({})",
+                  inst.getNumOperands(), desc.getNumOperands(),
+                  getInstOpcodeName(opcode), opcode);
+    std::abort();
+  }
+#endif
 
   uint64_t pos = CB.size();
   QBDI_DEBUG_BLOCK({

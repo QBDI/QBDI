@@ -61,7 +61,7 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-          allow-prereleases: ${{ matrix.python-version == '3.14' }}
+          allow-prereleases: ${{ matrix.python-version == '3.15' }}
           architecture: ${{ matrix.WINDOWS_ARCH }}
       - name: build PyQBDI ${{ matrix.python-version }}
         run: |

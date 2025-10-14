@@ -39,10 +39,11 @@ void InMemoryObject::perform_reloc(llvm::object::ObjectFile *object,
 
   for (auto sit = object->sections().begin(); sit != object->sections().end();
        ++sit) {
-    if (!sit->getRelocatedSection())
+    auto relocatedSectionExpect = sit->getRelocatedSection();
+    if (!relocatedSectionExpect)
       continue;
 
-    auto relocatedSection = *sit->getRelocatedSection();
+    auto relocatedSection = relocatedSectionExpect.get();
     if (relocatedSection == object->sections().end())
       continue;
     // only relocated the text section, our bytes code
@@ -158,6 +159,12 @@ void InMemoryObject::perform_reloc(llvm::object::ObjectFile *object,
                              "Unexpected operand number");
           QBDI_REQUIRE_ABORT(inst.getOperand(2).isImm(),
                              "Unexpected operand type");
+
+          if (inst.getNumOperands() == 4 && inst.getOperand(3).isReg() &&
+              inst.getOperand(3).getReg() == llvm::ARM::CPSR &&
+              llvmcpu.getMCII().get(llvm::ARM::tBLXi).getNumOperands() == 3) {
+            inst.erase(inst.begin() + 3);
+          }
 
           uint32_t value =
               inst.getOperand(2).getImm() + address - relocIt->getOffset();

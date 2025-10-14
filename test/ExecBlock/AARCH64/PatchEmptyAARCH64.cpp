@@ -26,6 +26,7 @@ QBDI::Patch generateEmptyPatch(QBDI::rword address,
   llvm::MCInst inst;
 
   inst.setOpcode(llvm::AArch64::HINT);
+  inst.addOperand(llvm::MCOperand::createImm(0));
 
   const QBDI::LLVMCPU &llvmcpu = llvmcpus.getCPU(QBDI::CPUMode::DEFAULT);
 

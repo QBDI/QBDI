@@ -655,18 +655,27 @@ const InstAnalysis *Engine::getInstAnalysis(rword address,
   return block->getInstAnalysis(instID, type);
 }
 
-std::optional<rword> Engine::getPatchAddressOfJit(rword address) const {
-  auto *e = blockManager->getExecBlockFromJitAddress(
-      address & ~(ExecBlock::getPageSize() - 1));
+std::optional<std::pair<const ExecBlock *, uint16_t>>
+Engine::getPatchInfoOfJit(rword address) const {
+  rword pageAddress = address & ~(ExecBlock::getPageSize() - 1);
+  QBDI_DEBUG("Search Patch address 0x{:x} with page address 0x{:x}", address,
+             pageAddress);
+  auto *e = blockManager->getExecBlockFromJitAddress(pageAddress);
 
   if (e == nullptr) {
+    QBDI_DEBUG("No ExecBlock with page address 0x{:x}", pageAddress);
     return {};
   }
   uint16_t instId = e->getPatchAddressOfJit(address);
   if (instId == NOT_FOUND) {
-    return {};
+    QBDI_DEBUG("No Instruction in execBlock 0x{:x} with JIT address 0x{:x}",
+               reinterpret_cast<uintptr_t>(e), address);
+    return {{e, NOT_FOUND}};
   } else {
-    return e->getInstAddress(instId);
+    QBDI_DEBUG(
+        "Found Instruction {} in execBlock 0x{:x} with JIT address 0x{:x}",
+        instId, reinterpret_cast<uintptr_t>(e), address);
+    return {{e, instId}};
   }
 }
 

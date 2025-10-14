@@ -1908,7 +1908,15 @@ TEST_CASE_METHOD(APITest, "VMTest-JitAnalysis") {
       [&](QBDI::VM *evm, const QBDI::InstAnalysis *inst)
           -> std::vector<QBDI::InstrRuleDataCBK> {
         CHECK(evm == &vm);
+#ifdef QBDI_ARCH_ARM
+        if (inst->cpuMode == QBDI::CPUMode::Thumb) {
+          instAddress.insert(inst->address | 1);
+        } else {
+          instAddress.insert(inst->address);
+        }
+#else
         instAddress.insert(inst->address);
+#endif
         return {};
       },
       QBDI::AnalysisType::ANALYSIS_INSTRUCTION);
@@ -1948,7 +1956,7 @@ TEST_CASE_METHOD(APITest, "VMTest-JitAnalysis") {
                                      QBDI::AnalysisType::ANALYSIS_INSTRUCTION);
       CHECK(anaJit != nullptr);
       if (anaJit != nullptr) {
-        CHECK(anaJit->address == address);
+        CHECK(anaJit->address == ana->address);
       }
     }
   }

@@ -6,7 +6,7 @@ cd $(dirname "$0")
 BASEDIR=$(pwd -P)
 GITDIR=$(git rev-parse --show-toplevel)
 TAG_PREFIX="pyqbdi/wheel_arm_building"
-BASE_DEBIAN="bookworm"
+BASE_DEBIAN="trixie"
 PYTHON_VERSION="$1"
 
 ./images/build_docker_img.sh "${PYTHON_VERSION}"
@@ -17,6 +17,7 @@ build_wheel() {
   PYTHON_VERSION="$1"
 
   docker run --rm -it \
+      --platform="linux/arm/v7" \
       -e QBDI_PLATFORM="${QBDI_PLATFORM}" \
       -e QBDI_ARCH="${QBDI_ARCH}" \
       --mount type=bind,source="${GITDIR}",target=/home/docker/QBDI \
@@ -29,11 +30,11 @@ build_wheel() {
 if [[ -n "$PYTHON_VERSION" ]]; then
   build_wheel "$PYTHON_VERSION"
 else
-  build_wheel 3.8
   build_wheel 3.9
   build_wheel 3.10
   build_wheel 3.11
   build_wheel 3.12
   build_wheel 3.13
+  build_wheel 3.14
 fi
 

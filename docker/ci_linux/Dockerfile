@@ -1,4 +1,4 @@
-ARG DOCKER_IMG="debian:12"
+ARG DOCKER_IMG="debian:13"
 
 FROM $DOCKER_IMG
 
@@ -9,25 +9,20 @@ ENV USER="docker" \
 
 ARG USER_ID=1000
 
-# create a user
-RUN adduser --uid "$USER_ID" --disabled-password --gecos '' --home "$HOME" "$USER"
-
-# setup backport to use cmake >= 3.28
-RUN echo 'deb http://deb.debian.org/debian bookworm-backports main contrib non-free' > /etc/apt/sources.list.d/backports.list
-
 # Get latest package list, upgrade packages, install required packages 
 # and cleanup to keep container as small as possible
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
+        adduser \
         bash \
         git \
         build-essential \
-        cmake/bookworm-backports \
         ccache \
+        cmake \
         g++ \
         g++-multilib \
-        libstdc++-11-dev \
+        libstdc++-13-dev \
         make \
         ninja-build \
         pkg-config \
@@ -41,6 +36,9 @@ RUN apt-get update && \
         xxd && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# create a user
+RUN adduser --uid "$USER_ID" --disabled-password --gecos '' --home "$HOME" "$USER"
 
 WORKDIR $HOME
 

@@ -7,9 +7,9 @@ BASEDIR=$(pwd -P)
 GITDIR=$(git rev-parse --show-toplevel)
 
 if [[ "${QBDI_ARCH}" = "X86_64" ]]; then
-    DOCKER_IMG="amd64/debian:12"
+    DOCKER_IMG="amd64/debian:13"
 elif [[ "${QBDI_ARCH}" = "X86" ]]; then
-    DOCKER_IMG="i386/debian:12"
+    DOCKER_IMG="i386/debian:13"
 else
     echo "Unknown QBDI_ARCH : ${QBDI_ARCH}"
     exit 1
