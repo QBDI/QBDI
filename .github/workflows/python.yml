@@ -93,7 +93,7 @@ jobs:
     - build_pyqbdi_windows
     runs-on: ubuntu-latest
 
-    if: ${{ github.event_name == 'tag' && startsWith(github.ref, 'refs/tags/v') }}
+    if: startsWith(github.ref, 'refs/tags/v')
 
     environment:
       name: release
@@ -110,5 +110,5 @@ jobs:
         path: dist/
         merge-multiple: true
 
-    - name: Publish to TestPyPI
+    - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
