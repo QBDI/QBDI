@@ -1,10 +1,10 @@
 CHANGELOG
 =========
 
-Next release (0.12.0)
----------------------
+Version (0.12.0)
+----------------
 
-2025-10-XX QBDI Team <qbdi@quarkslab.com>
+2025-10-14 QBDI Team <qbdi@quarkslab.com>
 
 * Add QBDIPreload implementation for windows (`#110 <https://github.com/QBDI/QBDI/pull/110>`_, `#227 <https://github.com/QBDI/QBDI/pull/227>`_ and `#277 <https://github.com/QBDI/QBDI/pull/277>`_)
 * Experimental support for IOS AArch64
