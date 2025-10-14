@@ -65,7 +65,7 @@ jobs:
           path: build/QBDI-*-linux-${{ matrix.QBDI_ARCH }}.tar.gz
 
   build_ARM_AARCH64:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm64
     strategy:
       matrix:
         QBDI_ARCH: ['AARCH64', 'ARM']
@@ -105,17 +105,18 @@ jobs:
           path: |
             tools/validation_runner/travis_db
           key: test-linux-${{ matrix.QBDI_ARCH }}
-
       - name: Create build image
-        run: bash ./docker/ci_linux_arm/images/img_build.sh ${{ matrix.QBDI_ARCH }}
-
+        env:
+          QBDI_ARCH: ${{ matrix.QBDI_ARCH }}
+        run: bash ./docker/ci_linux/img_build.sh
       - name: Build and test QBDI
-        run: bash ./docker/ci_linux_arm/build_qbdi_linux.sh ${{ matrix.QBDI_ARCH }}
-
+        env:
+          QBDI_ARCH: ${{ matrix.QBDI_ARCH }}
+        run: bash ./docker/ci_linux/qbdi.sh
       - name: Export package
         uses: actions/upload-artifact@v4
         with:
           name: package_linux_${{ matrix.QBDI_ARCH }}
-          path: build-docker-*/QBDI-*-linux-*.tar.gz
+          path: build/QBDI-*-linux-${{ matrix.QBDI_ARCH }}.tar.gz
 
 
