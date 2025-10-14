@@ -60,4 +60,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: package_IOS_${{ env.QBDI_ARCH }}
-          path: build/QBDI-*.pkg
+          path: build/QBDI-*.tar.gz
