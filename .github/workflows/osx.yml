@@ -74,6 +74,7 @@ jobs:
       QBDI_ARCH: 'AARCH64'
       QBDI_PLATFORM: 'osx'
       MACOSX_DEPLOYMENT_TARGET: '10.14'
+      CMAKE_OSX_ARCHITECTURES: "arm64"
     steps:
       - name: Set up Python env
         uses: actions/setup-python@v5
