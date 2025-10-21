@@ -16,7 +16,7 @@ jobs:
       QBDI_ARCH: 'X86_64'
       MACOSX_DEPLOYMENT_TARGET: '10.14'
       _PYTHON_HOST_PLATFORM: "macosx-10.14-x86_64"
-      ARCHFLAGS: "-arch x86_64"
+      CMAKE_OSX_ARCHITECTURES: "x86_64"
     steps:
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
@@ -70,7 +70,7 @@ jobs:
       QBDI_PLATFORM: 'osx'
       MACOSX_DEPLOYMENT_TARGET: '11.0'
       _PYTHON_HOST_PLATFORM: "macosx-11.0-arm64"
-      ARCHFLAGS: "-arch arm64"
+      CMAKE_OSX_ARCHITECTURES: "arm64"
     steps:
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
