@@ -44,7 +44,7 @@ static inline rword getPC(THREAD_STATE *state) {
 }
 
 static inline void setPC(THREAD_STATE *state, rword address) {
-  __darwin_arm_thread_state64_set_pc_fptr(*state, address);
+  __darwin_arm_thread_state64_set_pc_fptr(*state, (void *)address);
 }
 
 static inline void prepareStack(void *newStack, size_t sizeStack,
