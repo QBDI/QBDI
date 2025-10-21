@@ -16,7 +16,7 @@ jobs:
           python-version: "3.12"
       - name: Install system dependencies
         run: |
-          sudo apt install -y --no-install-recommends clang-format-${{ env.CLANG_FORMAT_VERSION }}
+          sudo apt install -y --no-install-recommends clang-format-${{ env.CLANG_FORMAT_VERSION }}
           python3 -m pip install cmakelang
       - name: Check format
         run: bash ./.github/format_check.sh
