@@ -38,6 +38,8 @@
 
 #cmakedefine QBDI_EXPORT_SYM @QBDI_EXPORT_SYM@
 
+#cmakedefine QBDI_PTRAUTH   @QBDI_PTRAUTH@
+
 #ifdef __cplusplus
 namespace QBDI {
 

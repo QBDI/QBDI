@@ -178,6 +178,14 @@ if(QBDI_PLATFORM_OSX)
   endif()
 endif()
 
+if(QBDI_PTRAUTH AND NOT ((QBDI_PLATFORM_OSX OR QBDI_PLATFORM_IOS)
+                         AND QBDI_ARCH_AARCH64))
+  message(
+    FATAL_ERROR
+      "PTRAUTH is only supported for IOS and OSX platforms and AARCH64 architecture."
+  )
+endif()
+
 message(STATUS "")
 message(STATUS "== QBDI Target ==")
 message(STATUS "QBDI Platform:      ${QBDI_PLATFORM}")

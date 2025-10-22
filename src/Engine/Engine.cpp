@@ -38,6 +38,7 @@
 #include "QBDI/Bitmask.h"
 #include "QBDI/Config.h"
 #include "QBDI/Errors.h"
+#include "QBDI/PtrAuth.h"
 #include "QBDI/Range.h"
 #include "QBDI/State.h"
 
@@ -248,6 +249,8 @@ void Engine::removeAllInstrumentedRanges() {
 }
 
 std::vector<Patch> Engine::patch(rword start) {
+  start = (rword)QBDI_PTRAUTH_STRIP(start);
+
   std::vector<Patch> basicBlock;
   const LLVMCPU &llvmcpu = llvmCPUs->getCPU(curCPUMode);
 
@@ -377,6 +380,8 @@ bool Engine::precacheBasicBlock(rword pc) {
 }
 
 bool Engine::run(rword start, rword stop) {
+  start = (rword)QBDI_PTRAUTH_STRIP(start);
+  stop = (rword)QBDI_PTRAUTH_STRIP(stop);
   QBDI_REQUIRE_ABORT(not running, "Cannot run an already running Engine");
 
   rword currentPC = start;
@@ -532,8 +537,9 @@ bool Engine::run(rword start, rword stop) {
       curExecBlock = nullptr;
     }
     // Get next block PC
-    currentPC = QBDI_GPR_GET(curGPRState, REG_PC);
-    QBDI_DEBUG("Next address to execute is 0x{:x}", currentPC);
+    currentPC = (rword)QBDI_PTRAUTH_STRIP(QBDI_GPR_GET(curGPRState, REG_PC));
+    QBDI_DEBUG("Next address to execute is 0x{:x} (stop is 0x{:x})", currentPC,
+               stop);
   } while (currentPC != stop);
 
   // Copy final context
