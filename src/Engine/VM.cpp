@@ -30,6 +30,7 @@
 #include "QBDI/InstAnalysis.h"
 #include "QBDI/Memory.hpp"
 #include "QBDI/Options.h"
+#include "QBDI/PtrAuth.h"
 #include "QBDI/Range.h"
 #include "QBDI/State.h"
 #include "QBDI/VM.h"
@@ -560,6 +561,8 @@ uint32_t VM::addInstrRule(InstrRuleCbLambda &&cbk, AnalysisType type) {
 
 uint32_t VM::addInstrRuleRange(rword start, rword end, InstrRuleCallback cbk,
                                AnalysisType type, void *data) {
+  start = (rword)QBDI_PTRAUTH_STRIP(start);
+  end = (rword)QBDI_PTRAUTH_STRIP(end);
   RangeSet<rword> r;
   r.add(Range<rword>(start, end));
   return engine->addInstrRule(InstrRuleUser::unique(cbk, type, data, this, r));
@@ -595,8 +598,14 @@ uint32_t VM::addInstrRuleRange(rword start, rword end, InstrRuleCbLambda &&cbk,
 
 // addInstrRuleRangeSet
 
-uint32_t VM::addInstrRuleRangeSet(RangeSet<rword> range, InstrRuleCallback cbk,
+uint32_t VM::addInstrRuleRangeSet(RangeSet<rword> range2, InstrRuleCallback cbk,
                                   AnalysisType type, void *data) {
+  RangeSet<rword> range;
+  for (auto r : range2.getRanges()) {
+    auto start = (rword)QBDI_PTRAUTH_STRIP(r.start());
+    auto end = (rword)QBDI_PTRAUTH_STRIP(r.end());
+    range.add(Range(start, end));
+  }
   return engine->addInstrRule(
       InstrRuleUser::unique(cbk, type, data, this, std::move(range)));
 }
@@ -678,6 +687,7 @@ uint32_t VM::addCodeCB(InstPosition pos, InstCbLambda &&cbk, int priority) {
 
 uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk,
                            void *data, int priority) {
+  address = (rword)QBDI_PTRAUTH_STRIP(address);
   QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
   return engine->addInstrRule(InstrRuleBasicCBK::unique(
       AddressIs::unique(address), cbk, data, pos, true, priority,
@@ -706,6 +716,8 @@ uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCbLambda &&cbk,
 
 uint32_t VM::addCodeRangeCB(rword start, rword end, InstPosition pos,
                             InstCallback cbk, void *data, int priority) {
+  start = (rword)QBDI_PTRAUTH_STRIP(start);
+  end = (rword)QBDI_PTRAUTH_STRIP(end);
   QBDI_REQUIRE_ACTION(start < end, return VMError::INVALID_EVENTID);
   QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
   return engine->addInstrRule(InstrRuleBasicCBK::unique(
@@ -777,6 +789,7 @@ uint32_t VM::addMemAccessCB(MemoryAccessType type, InstCbLambda &&cbk,
 
 uint32_t VM::addMemAddrCB(rword address, MemoryAccessType type,
                           InstCallback cbk, void *data) {
+  address = (rword)QBDI_PTRAUTH_STRIP(address);
   QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
   return addMemRangeCB(address, address + 1, type, cbk, data);
 }
@@ -801,6 +814,8 @@ uint32_t VM::addMemAddrCB(rword address, MemoryAccessType type,
 
 uint32_t VM::addMemRangeCB(rword start, rword end, MemoryAccessType type,
                            InstCallback cbk, void *data) {
+  start = (rword)QBDI_PTRAUTH_STRIP(start);
+  end = (rword)QBDI_PTRAUTH_STRIP(end);
   QBDI_REQUIRE_ACTION(start < end, return VMError::INVALID_EVENTID);
   QBDI_REQUIRE_ACTION(type & MEMORY_READ_WRITE,
                       return VMError::INVALID_EVENTID);

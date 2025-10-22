@@ -24,6 +24,7 @@
 
 #include "QBDI/Memory.hpp"
 #include "QBDI/Platform.h"
+#include "QBDI/PtrAuth.h"
 #include "Utility/LogSys.h"
 #include "Utility/String.h"
 
@@ -335,11 +336,13 @@ QBDI::VMAction checkTransfer(QBDI::VMInstanceRef vm, const QBDI::VMState *state,
   int *s = (int *)data;
   if (state->event == QBDI::VMEvent::EXEC_TRANSFER_CALL) {
     REQUIRE((*s % 2) == 0);
-    REQUIRE(reinterpret_cast<QBDI::rword>(dummyFun1) == state->sequenceStart);
+    REQUIRE(reinterpret_cast<QBDI::rword>(QBDI_PTRAUTH_STRIP(dummyFun1)) ==
+            state->sequenceStart);
     *s += 1;
   } else if (state->event == QBDI::VMEvent::EXEC_TRANSFER_RETURN) {
     REQUIRE((*s % 2) == 1);
-    REQUIRE(reinterpret_cast<QBDI::rword>(dummyFun1) == state->sequenceStart);
+    REQUIRE(reinterpret_cast<QBDI::rword>(QBDI_PTRAUTH_STRIP(dummyFun1)) ==
+            state->sequenceStart);
     *s += 1;
   }
   return QBDI::VMAction::CONTINUE;

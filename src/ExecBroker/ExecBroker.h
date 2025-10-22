@@ -27,6 +27,7 @@
 
 #include "QBDI/Callback.h"
 #include "QBDI/Config.h"
+#include "QBDI/PtrAuth.h"
 #include "QBDI/Range.h"
 #include "QBDI/State.h"
 #include "ExecBlock/ExecBlock.h"
@@ -65,7 +66,9 @@ public:
 
   void changeVMInstanceRef(VMInstanceRef vminstance);
 
-  bool isInstrumented(rword addr) const { return instrumented.contains(addr); }
+  bool isInstrumented(rword addr) const {
+    return instrumented.contains((rword)QBDI_PTRAUTH_STRIP(addr));
+  }
 
   void setInstrumentedRange(const RangeSet<rword> &r) { instrumented = r; }
 

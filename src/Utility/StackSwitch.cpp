@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include "QBDI/PtrAuth.h"
+
 #include "Utility/StackSwitch.h"
 
 #if defined(QBDI_PLATFORM_WINDOWS)
@@ -42,9 +44,11 @@ QBDI::rword stackSwitchInternalHandler(void *switchContext,
 
 rword switchStack(void *newStackPtr, std::function<rword(rword)> handler) {
   auto handler_ = handler;
-
-  return qbdi_asmStackSwitch(&handler_, reinterpret_cast<rword>(newStackPtr),
-                             &stackSwitchInternalHandler);
+  using InternalHandlerType = QBDI::rword (*)(void *, QBDI::rword);
+  return qbdi_asmStackSwitch(
+      &handler_, reinterpret_cast<rword>(newStackPtr),
+      reinterpret_cast<InternalHandlerType>(
+          QBDI_PTRAUTH_STRIP((void *)&stackSwitchInternalHandler)));
 }
 
 } // namespace QBDI
