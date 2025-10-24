@@ -110,6 +110,8 @@ class CMakeBuild(build_ext):
                       '-DQBDI_TOOLS_PYQBDI=ON',
                       '-DQBDI_TOOLS_PYQBDI_TARGET_PYTHON_VERSION={}'.format(python_version),
                      ]
+        if os.getenv('CMAKE_OSX_ARCHITECTURES') == 'arm64e':
+            cmake_args += ['-DQBDI_PTRAUTH=ON']
         build_args = ['--config', 'Release', '--']
 
         if HAS_NINJA:
