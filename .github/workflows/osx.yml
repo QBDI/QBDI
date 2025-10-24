@@ -128,3 +128,64 @@ jobs:
         with:
           name: package_OSX_${{ env.QBDI_ARCH }}
           path: build/QBDI-*.pkg
+
+  build-aarch64-arm64e:
+    runs-on: macos-14
+    env:
+      QBDI_ARCH: 'AARCH64'
+      QBDI_PLATFORM: 'osx'
+      MACOSX_DEPLOYMENT_TARGET: '10.14'
+      CMAKE_OSX_ARCHITECTURES: "arm64e"
+    steps:
+      - name: Set up Python env
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install system dependencies
+        run: |
+          brew install cmake ninja ccache
+          python3 -m pip install --upgrade pip setuptools wheel
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: Cache ccache
+        uses: actions/cache@v4
+        id: cache-ccache
+        with:
+          path: |
+            ~/.ccache
+          key: ccache-osx-${{ env.QBDI_ARCH }}-arm64e-${{ hashFiles('.github/workflows/ccache.conf') }}-${{ github.run_number }}
+          restore-keys: |
+            ccache-osx-${{ env.QBDI_ARCH }}-arm64e-${{ hashFiles('.github/workflows/ccache.conf') }}-
+      - if: steps.cache-ccache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/.ccache
+          cp .github/workflows/ccache.conf ~/.ccache/ccache.conf
+      - name: Cache third-party
+        uses: actions/cache@v4
+        with:
+          path: |
+            third-party
+          key: QBDI-third-party-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**/*.cmake') }}
+      - run: mkdir -p build
+      - name: build QBDI
+        working-directory: ./build
+        run: |
+          cmake -G Ninja \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DQBDI_PLATFORM=${{ env.QBDI_PLATFORM }} \
+                -DQBDI_ARCH=${{ env.QBDI_ARCH }} \
+                -DQBDI_PTRAUTH=ON \
+                -DQBDI_TOOLS_VALIDATOR=ON \
+                -DQBDI_EXAMPLES=ON \
+                ..
+          ninja
+          cpack
+      - name: test QBDI
+        working-directory: ./build/test
+        run: |
+          ./QBDITest
+      - name: Export package
+        uses: actions/upload-artifact@v4
+        with:
+          name: package_OSX_${{ env.QBDI_ARCH }}_arm64e
+          path: build/QBDI-*.pkg
