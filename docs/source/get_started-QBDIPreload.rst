@@ -148,60 +148,45 @@ The binary responsible for generating a template is shipped in the release packa
     cmake ..
     make
 
-MacOS setup
------------
 
-When QBDIPreload (and also PyQBDIPreload) are used on macOS, the injection can
-failed for various reasons.
+On macOS
+--------
 
-Copy the target binary
-++++++++++++++++++++++
+.. _macos-apple-silicon:
 
-If the binary is a system binary, the
-`System Integrity Protection <https://support.apple.com/en-us/HT204899>`_
-prevent the injection of library with ``DYLD_INSERT_LIBRARIES``. You can try to
-copy the binary in your user home folder before the instrumentation to avoid the
-protection.
+Apple silicon architecture
+++++++++++++++++++++++++++
 
-Run the instrumentation as root
-+++++++++++++++++++++++++++++++
+(This information was last verified on macOS Tahoe 26.0.1. Other versions might differ slightly.)
 
-The injection of library can be disable for standard user. Run the injection
-with ``sudo`` can bypass this limitation.
-
-Instrument ``arm64e`` binary
-++++++++++++++++++++++++++++
-
-QBDIPreload is not compatible with ``arm64e`` binary. To verify if your binary is a
-``arm64e`` binary, you can execute the followed command:
+On Apple silicon, binaries can be compiled for two different ABIs, i.e. ``arm64`` and ``arm64e``.
+To check which ABI a binary was compiled for, use:
 
 .. code:: bash
 
     lipo -archs $BINARY_PATH
 
-You can try to convert your target binary from ``arm64e`` to ``arm64`` with the
-followed script. However, this don't work if the target binary use some ``arm64e`` bind
-opcode (like ``BIND_OPCODE_THREADED``).
+For user-built binaries, QBDIPreload should function correctly without any additional setup, provided that a QBDIPreload version matching the target ABI is used.
 
-.. code:: python
+Injecting into system binaries, which are always ``arm64e``, requires however at minimum to disable `System Integrity Protection <https://support.apple.com/en-us/HT204899>`_.
+For example, doing so makes it possible to inject QBDIPreload into ``/bin/ls``.
 
-    import lief
-    import subprocess
+Other platform binaries, such as ``imagent``, additionally requires disabling Apple Mobile File Integrity (AMFI),
+i.e. by setting the appropriate boot-arg with:
 
-    binary = lief.MachO.parse(inputfile)
-    for index in range(binary.size):
-        if binary.at(index).header.cpu_type == lief.MachO.CPU_TYPES.ARM64:
-            binary.at(index).header.cpu_subtype ^= (~2)
-    binary.write(outputfile)
-    subprocess.run(["codesign", "--force", "--sign", "-", outputfile], check=True)
+.. code:: bash
 
-Disable System Integrity Protection
-+++++++++++++++++++++++++++++++++++
+    sudo nvram boot-args='amfi_get_out_of_my_way=1'
 
-We recommand to disable the `System Integrity Protection` only as a last resort,
-as we successfully inject the QBDIPreload under ``macOS Ventura`` (version
-13.1).  However, this may help you to debug the injection and bypass some
-signature validation.  You can found the procedure `here
-<https://developer.apple.com/documentation/security/disabling_and_enabling_system_integrity_protection>`_.
+Disabling AMFI may break some apps.
 
-Don't forget to reenable it afterwards.
+To troubleshoot injection failures, review system log messages using the Console application.
+
+Intel architecture
+++++++++++++++++++
+
+(This information hasn't been recently verified and may be outdated.)
+
+For user-built binaries, QBDIPreload should function correctly without any additional setup.
+
+For system binaries, the same caveats described for the Apple silicon architecture likely apply.
