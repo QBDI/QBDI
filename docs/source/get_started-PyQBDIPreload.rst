@@ -74,3 +74,13 @@ which prints the instructions that are being executed by the target executable.
 
 .. include:: ../../examples/pyqbdi/trace_preload.py
    :code:
+
+On macOS
+--------
+
+Apple silicon architecture
+++++++++++++++++++++++++++
+
+In addition to the caveats discussed for QBDIPreload (see :ref:`macos-apple-silicon`), using PyQBDIPreload on ``arm64e`` binaries requires a Python interpreter built for the same ABI.
+
+Example commands for compiling OpenSSL and Python from sources for ``arm64e`` are provided in the workflow file ``.github/workflows/python_osx.yml``.
