@@ -368,8 +368,7 @@ void catchEntrypoint(int argc, char **argv) {
     qbdi_setFPRState(vm, &ENTRY_FPR);
 
     rword start = QBDI_GPR_GET(qbdi_getGPRState(vm), REG_PC);
-    rword stop = *((rword *)QBDI_GPR_GET(qbdi_getGPRState(vm), REG_SP));
-
+    rword stop = getReturnAddress(qbdi_getGPRState(vm));
     status = qbdipreload_on_run(vm, start, stop);
   }
   exit(status);

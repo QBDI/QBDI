@@ -39,6 +39,10 @@ static const uint32_t BRK_INS = 0xD4200000; // brk 3ff;
 void qbdipreload_threadCtxToGPRState(const void *gprCtx, GPRState *gprState);
 void qbdipreload_floatCtxToFPRState(const void *fprCtx, FPRState *fprState);
 
+static inline rword getReturnAddress(GPRState *gprState) {
+  return QBDI_GPR_GET(gprState, REG_LR);
+}
+
 static inline rword getPC(THREAD_STATE *state) {
   return __darwin_arm_thread_state64_get_pc(*state);
 }
