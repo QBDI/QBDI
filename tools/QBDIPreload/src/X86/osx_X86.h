@@ -38,6 +38,10 @@ static const uint8_t BRK_INS = 0xCC;
 void qbdipreload_threadCtxToGPRState(const void *gprCtx, GPRState *gprState);
 void qbdipreload_floatCtxToFPRState(const void *fprCtx, FPRState *fprState);
 
+static inline rword getReturnAddress(GPRState *gprState) {
+  return *((rword *)QBDI_GPR_GET(gprState, REG_SP));
+}
+
 static inline rword getPC(THREAD_STATE *state) { return state->__rip; }
 
 static inline void setPC(THREAD_STATE *state, rword address) {
