@@ -538,7 +538,8 @@ bool Engine::run(rword start, rword stop) {
     }
     // Get next block PC
     currentPC = (rword)QBDI_PTRAUTH_STRIP(QBDI_GPR_GET(curGPRState, REG_PC));
-    QBDI_DEBUG("Next address to execute is 0x{:x}", currentPC);
+    QBDI_DEBUG("Next address to execute is 0x{:x} (stop is 0x{:x})", currentPC,
+               stop);
   } while (currentPC != stop);
 
   // Copy final context
