@@ -42,6 +42,7 @@
 #include "Utility/System.h"
 
 #include "QBDI/Options.h"
+#include "QBDI/PtrAuth.h"
 #include "QBDI/State.h"
 
 namespace QBDI {
@@ -74,6 +75,9 @@ ExecBlock::ExecBlock(
   // Allocate 2 pages block
   codeBlock = QBDI::allocateMappedMemory(2 * pageSize, nullptr, mflags, ec);
   QBDI_REQUIRE_ABORT(codeBlock.base() != nullptr, "allocation fail");
+  QBDI_REQUIRE_ABORT(
+      codeBlock.base() == strip_ptrauth(codeBlock.base()),
+      "Allocate a buffer with authenticated pointer, not supported");
   // Split it in two blocks
   dataBlock = llvm::sys::MemoryBlock(
       reinterpret_cast<void *>(reinterpret_cast<uint64_t>(codeBlock.base()) +

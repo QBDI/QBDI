@@ -167,9 +167,9 @@ QBDI::VMAction checkArrayRead8(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
 
   TestInfo *info = (TestInfo *)data;
   std::vector<QBDI::MemoryAccess> memaccesses = vm->getInstMemoryAccess();
-  QBDI::Range<QBDI::rword> brange((QBDI::rword)info->buffer,
-                                  ((QBDI::rword)info->buffer) +
-                                      info->buffer_size);
+  QBDI::Range<QBDI::rword> brange(
+      (QBDI::rword)info->buffer,
+      ((QBDI::rword)info->buffer) + info->buffer_size, QBDI::auth_addr_t());
   for (const QBDI::MemoryAccess &memaccess : memaccesses) {
     if (memaccess.type == QBDI::MEMORY_READ) {
       if (brange.contains(memaccess.accessAddress)) {
@@ -189,9 +189,9 @@ QBDI::VMAction checkArrayRead16(QBDI::VMInstanceRef vm,
 
   TestInfo *info = (TestInfo *)data;
   std::vector<QBDI::MemoryAccess> memaccesses = vm->getInstMemoryAccess();
-  QBDI::Range<QBDI::rword> brange((QBDI::rword)info->buffer,
-                                  ((QBDI::rword)info->buffer) +
-                                      info->buffer_size);
+  QBDI::Range<QBDI::rword> brange(
+      (QBDI::rword)info->buffer,
+      ((QBDI::rword)info->buffer) + info->buffer_size, QBDI::auth_addr_t());
   for (const QBDI::MemoryAccess &memaccess : memaccesses) {
     if (memaccess.type == QBDI::MEMORY_READ) {
       if (brange.contains(memaccess.accessAddress)) {
@@ -212,9 +212,9 @@ QBDI::VMAction checkArrayRead32(QBDI::VMInstanceRef vm,
 
   TestInfo *info = (TestInfo *)data;
   std::vector<QBDI::MemoryAccess> memaccesses = vm->getInstMemoryAccess();
-  QBDI::Range<QBDI::rword> brange((QBDI::rword)info->buffer,
-                                  ((QBDI::rword)info->buffer) +
-                                      info->buffer_size);
+  QBDI::Range<QBDI::rword> brange(
+      (QBDI::rword)info->buffer,
+      ((QBDI::rword)info->buffer) + info->buffer_size, QBDI::auth_addr_t());
   for (const QBDI::MemoryAccess &memaccess : memaccesses) {
     if (memaccess.type == QBDI::MEMORY_READ) {
       if (brange.contains(memaccess.accessAddress)) {
@@ -235,9 +235,9 @@ QBDI::VMAction checkArrayWrite8(QBDI::VMInstanceRef vm,
 
   TestInfo *info = (TestInfo *)data;
   std::vector<QBDI::MemoryAccess> memaccesses = vm->getInstMemoryAccess();
-  QBDI::Range<QBDI::rword> brange((QBDI::rword)info->buffer,
-                                  ((QBDI::rword)info->buffer) +
-                                      info->buffer_size);
+  QBDI::Range<QBDI::rword> brange(
+      (QBDI::rword)info->buffer,
+      ((QBDI::rword)info->buffer) + info->buffer_size, QBDI::auth_addr_t());
   for (const QBDI::MemoryAccess &memaccess : memaccesses) {
     if (memaccess.type == QBDI::MEMORY_WRITE) {
       if (brange.contains(memaccess.accessAddress)) {
@@ -257,9 +257,9 @@ QBDI::VMAction checkArrayWrite16(QBDI::VMInstanceRef vm,
 
   TestInfo *info = (TestInfo *)data;
   std::vector<QBDI::MemoryAccess> memaccesses = vm->getInstMemoryAccess();
-  QBDI::Range<QBDI::rword> brange((QBDI::rword)info->buffer,
-                                  ((QBDI::rword)info->buffer) +
-                                      info->buffer_size);
+  QBDI::Range<QBDI::rword> brange(
+      (QBDI::rword)info->buffer,
+      ((QBDI::rword)info->buffer) + info->buffer_size, QBDI::auth_addr_t());
   for (const QBDI::MemoryAccess &memaccess : memaccesses) {
     if (memaccess.type == QBDI::MEMORY_WRITE) {
       if (brange.contains(memaccess.accessAddress)) {
@@ -280,9 +280,9 @@ QBDI::VMAction checkArrayWrite32(QBDI::VMInstanceRef vm,
 
   TestInfo *info = (TestInfo *)data;
   std::vector<QBDI::MemoryAccess> memaccesses = vm->getInstMemoryAccess();
-  QBDI::Range<QBDI::rword> brange((QBDI::rword)info->buffer,
-                                  ((QBDI::rword)info->buffer) +
-                                      info->buffer_size);
+  QBDI::Range<QBDI::rword> brange(
+      (QBDI::rword)info->buffer,
+      ((QBDI::rword)info->buffer) + info->buffer_size, QBDI::auth_addr_t());
   for (const QBDI::MemoryAccess &memaccess : memaccesses) {
     if (memaccess.type == QBDI::MEMORY_WRITE) {
       if (brange.contains(memaccess.accessAddress)) {
@@ -303,9 +303,9 @@ QBDI::VMAction checkUnrolledReadInst(QBDI::VMInstanceRef vm,
 
   TestInfo *info = (TestInfo *)data;
   std::vector<QBDI::MemoryAccess> memaccesses = vm->getInstMemoryAccess();
-  QBDI::Range<QBDI::rword> brange((QBDI::rword)info->buffer,
-                                  ((QBDI::rword)info->buffer) +
-                                      info->buffer_size);
+  QBDI::Range<QBDI::rword> brange(
+      (QBDI::rword)info->buffer,
+      ((QBDI::rword)info->buffer) + info->buffer_size, QBDI::auth_addr_t());
   for (const QBDI::MemoryAccess &memaccess : memaccesses) {
     if (memaccess.type == QBDI::MEMORY_READ) {
       if (brange.contains(memaccess.accessAddress)) {
@@ -325,9 +325,9 @@ QBDI::VMAction checkUnrolledWriteInst(QBDI::VMInstanceRef vm,
 
   TestInfo *info = (TestInfo *)data;
   std::vector<QBDI::MemoryAccess> memaccesses = vm->getInstMemoryAccess();
-  QBDI::Range<QBDI::rword> brange((QBDI::rword)info->buffer,
-                                  ((QBDI::rword)info->buffer) +
-                                      info->buffer_size);
+  QBDI::Range<QBDI::rword> brange(
+      (QBDI::rword)info->buffer,
+      ((QBDI::rword)info->buffer) + info->buffer_size, QBDI::auth_addr_t());
   for (const QBDI::MemoryAccess &memaccess : memaccesses) {
     if (memaccess.type == QBDI::MEMORY_WRITE) {
       if (brange.contains(memaccess.accessAddress)) {
@@ -348,9 +348,9 @@ QBDI::VMAction checkUnrolledReadBB(QBDI::VMInstanceRef vm,
 
   TestInfo *info = (TestInfo *)data;
   std::vector<QBDI::MemoryAccess> memaccesses = vm->getBBMemoryAccess();
-  QBDI::Range<QBDI::rword> brange((QBDI::rword)info->buffer,
-                                  ((QBDI::rword)info->buffer) +
-                                      info->buffer_size);
+  QBDI::Range<QBDI::rword> brange(
+      (QBDI::rword)info->buffer,
+      ((QBDI::rword)info->buffer) + info->buffer_size, QBDI::auth_addr_t());
   for (const QBDI::MemoryAccess &memaccess : memaccesses) {
     if (memaccess.type == QBDI::MEMORY_READ) {
       if (brange.contains(memaccess.accessAddress)) {
@@ -371,9 +371,9 @@ QBDI::VMAction checkUnrolledWriteBB(QBDI::VMInstanceRef vm,
 
   TestInfo *info = (TestInfo *)data;
   std::vector<QBDI::MemoryAccess> memaccesses = vm->getBBMemoryAccess();
-  QBDI::Range<QBDI::rword> brange((QBDI::rword)info->buffer,
-                                  ((QBDI::rword)info->buffer) +
-                                      info->buffer_size);
+  QBDI::Range<QBDI::rword> brange(
+      (QBDI::rword)info->buffer,
+      ((QBDI::rword)info->buffer) + info->buffer_size, QBDI::auth_addr_t());
   for (const QBDI::MemoryAccess &memaccess : memaccesses) {
     if (memaccess.type == QBDI::MEMORY_WRITE) {
       if (brange.contains(memaccess.accessAddress)) {

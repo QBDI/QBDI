@@ -44,11 +44,8 @@ QBDI::rword stackSwitchInternalHandler(void *switchContext,
 
 rword switchStack(void *newStackPtr, std::function<rword(rword)> handler) {
   auto handler_ = handler;
-  using InternalHandlerType = QBDI::rword (*)(void *, QBDI::rword);
-  return qbdi_asmStackSwitch(
-      &handler_, reinterpret_cast<rword>(newStackPtr),
-      reinterpret_cast<InternalHandlerType>(
-          QBDI_PTRAUTH_STRIP((void *)&stackSwitchInternalHandler)));
+  return qbdi_asmStackSwitch(&handler_, reinterpret_cast<rword>(newStackPtr),
+                             sign_code_ptrauth(&stackSwitchInternalHandler));
 }
 
 } // namespace QBDI

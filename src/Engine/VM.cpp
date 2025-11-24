@@ -61,7 +61,8 @@ VMAction memReadGate(VMInstanceRef vm, GPRState *gprState, FPRState *fprState,
   for (const MemoryAccess &memAccess : memAccesses) {
     if (memAccess.type & MEMORY_READ) {
       Range<rword> accessRange(memAccess.accessAddress,
-                               memAccess.accessAddress + memAccess.size);
+                               memAccess.accessAddress + memAccess.size,
+                               real_addr_t());
       readRange.add(accessRange);
     }
   }
@@ -90,7 +91,8 @@ VMAction memWriteGate(VMInstanceRef vm, GPRState *gprState, FPRState *fprState,
   RangeSet<rword> writeRange;
   for (const MemoryAccess &memAccess : memAccesses) {
     Range<rword> accessRange(memAccess.accessAddress,
-                             memAccess.accessAddress + memAccess.size);
+                             memAccess.accessAddress + memAccess.size,
+                             real_addr_t());
     if (memAccess.type & MEMORY_READ) {
       readRange.add(accessRange);
     }
@@ -374,8 +376,8 @@ void VM::setOptions(Options options) {
 // addInstrumentedRange
 
 void VM::addInstrumentedRange(rword start, rword end) {
-  QBDI_REQUIRE_ACTION(start < end, return);
-  engine->addInstrumentedRange(start, end);
+  QBDI_REQUIRE_ACTION(strip_ptrauth(start) < strip_ptrauth(end), return);
+  engine->addInstrumentedRange(strip_ptrauth(start), strip_ptrauth(end));
 }
 
 // addInstrumentedModule
@@ -387,7 +389,7 @@ bool VM::addInstrumentedModule(const std::string &name) {
 // addInstrumentedModuleFromAddr
 
 bool VM::addInstrumentedModuleFromAddr(rword addr) {
-  return engine->addInstrumentedModuleFromAddr(addr);
+  return engine->addInstrumentedModuleFromAddr(strip_ptrauth(addr));
 }
 
 // instrumentAllExecutableMaps
@@ -399,8 +401,8 @@ bool VM::instrumentAllExecutableMaps() {
 // removeInstrumentedRange
 
 void VM::removeInstrumentedRange(rword start, rword end) {
-  QBDI_REQUIRE_ACTION(start < end, return);
-  engine->removeInstrumentedRange(start, end);
+  QBDI_REQUIRE_ACTION(strip_ptrauth(start) < strip_ptrauth(end), return);
+  engine->removeInstrumentedRange(strip_ptrauth(start), strip_ptrauth(end));
 }
 
 // removeAllInstrumentedRanges
@@ -418,15 +420,15 @@ bool VM::removeInstrumentedModule(const std::string &name) {
 // removeInstrumentedModuleFromAddr
 
 bool VM::removeInstrumentedModuleFromAddr(rword addr) {
-  return engine->removeInstrumentedModuleFromAddr(addr);
+  return engine->removeInstrumentedModuleFromAddr(strip_ptrauth(addr));
 }
 
 // run
 
 bool VM::run(rword start, rword stop) {
-  uint32_t stopCB =
-      addCodeAddrCB(stop, InstPosition::PREINST, stopCallback, nullptr);
-  bool ret = engine->run(start, stop);
+  uint32_t stopCB = addCodeAddrCB(strip_ptrauth(stop), InstPosition::PREINST,
+                                  stopCallback, nullptr);
+  bool ret = engine->run(strip_ptrauth(start), strip_ptrauth(stop));
   deleteInstrumentation(stopCB);
   return ret;
 }
@@ -529,15 +531,15 @@ bool VM::switchStackAndCallV(rword *retval, rword function, uint32_t argNum,
 uint32_t VM::addInstrRule(InstrRuleCallback cbk, AnalysisType type,
                           void *data) {
   RangeSet<rword> r;
-  r.add(Range<rword>(0, (rword)-1));
+  r.add(Range<rword>(0, (rword)-1, real_addr_t()));
   return engine->addInstrRule(
       InstrRuleUser::unique(cbk, type, data, this, std::move(r)));
 }
 
 uint32_t VM::addInstrRule(InstrRuleCallbackC cbk, AnalysisType type,
                           void *data) {
-  InstrCBInfo *_data =
-      new InstrCBInfo{Range<rword>(0, (rword)-1), cbk, type, data};
+  InstrCBInfo *_data = new InstrCBInfo{
+      Range<rword>(0, (rword)-1, real_addr_t()), cbk, type, data};
   uint32_t id = addInstrRule(InstrCBGateC, type, _data);
   instrCBInfos->emplace_back(id, _data);
   return id;
@@ -561,17 +563,15 @@ uint32_t VM::addInstrRule(InstrRuleCbLambda &&cbk, AnalysisType type) {
 
 uint32_t VM::addInstrRuleRange(rword start, rword end, InstrRuleCallback cbk,
                                AnalysisType type, void *data) {
-  start = (rword)QBDI_PTRAUTH_STRIP(start);
-  end = (rword)QBDI_PTRAUTH_STRIP(end);
   RangeSet<rword> r;
-  r.add(Range<rword>(start, end));
+  r.add(Range<rword>(start, end, auth_addr_t()));
   return engine->addInstrRule(InstrRuleUser::unique(cbk, type, data, this, r));
 }
 
 uint32_t VM::addInstrRuleRange(rword start, rword end, InstrRuleCallbackC cbk,
                                AnalysisType type, void *data) {
   InstrCBInfo *_data =
-      new InstrCBInfo{Range<rword>(start, end), cbk, type, data};
+      new InstrCBInfo{Range<rword>(start, end, auth_addr_t()), cbk, type, data};
   uint32_t id = addInstrRuleRange(start, end, InstrCBGateC, type, _data);
   instrCBInfos->emplace_back(id, _data);
   return id;
@@ -598,14 +598,8 @@ uint32_t VM::addInstrRuleRange(rword start, rword end, InstrRuleCbLambda &&cbk,
 
 // addInstrRuleRangeSet
 
-uint32_t VM::addInstrRuleRangeSet(RangeSet<rword> range2, InstrRuleCallback cbk,
+uint32_t VM::addInstrRuleRangeSet(RangeSet<rword> range, InstrRuleCallback cbk,
                                   AnalysisType type, void *data) {
-  RangeSet<rword> range;
-  for (auto r : range2.getRanges()) {
-    auto start = (rword)QBDI_PTRAUTH_STRIP(r.start());
-    auto end = (rword)QBDI_PTRAUTH_STRIP(r.end());
-    range.add(Range(start, end));
-  }
   return engine->addInstrRule(
       InstrRuleUser::unique(cbk, type, data, this, std::move(range)));
 }
@@ -687,10 +681,9 @@ uint32_t VM::addCodeCB(InstPosition pos, InstCbLambda &&cbk, int priority) {
 
 uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk,
                            void *data, int priority) {
-  address = (rword)QBDI_PTRAUTH_STRIP(address);
   QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
   return engine->addInstrRule(InstrRuleBasicCBK::unique(
-      AddressIs::unique(address), cbk, data, pos, true, priority,
+      AddressIs::unique(strip_ptrauth(address)), cbk, data, pos, true, priority,
       (pos == PREINST) ? RelocTagPreInstStdCBK : RelocTagPostInstStdCBK));
 }
 
@@ -716,12 +709,11 @@ uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCbLambda &&cbk,
 
 uint32_t VM::addCodeRangeCB(rword start, rword end, InstPosition pos,
                             InstCallback cbk, void *data, int priority) {
-  start = (rword)QBDI_PTRAUTH_STRIP(start);
-  end = (rword)QBDI_PTRAUTH_STRIP(end);
   QBDI_REQUIRE_ACTION(start < end, return VMError::INVALID_EVENTID);
   QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
   return engine->addInstrRule(InstrRuleBasicCBK::unique(
-      InstructionInRange::unique(start, end), cbk, data, pos, true, priority,
+      InstructionInRange::unique(strip_ptrauth(start), strip_ptrauth(end)), cbk,
+      data, pos, true, priority,
       (pos == PREINST) ? RelocTagPreInstStdCBK : RelocTagPostInstStdCBK));
 }
 
@@ -789,7 +781,6 @@ uint32_t VM::addMemAccessCB(MemoryAccessType type, InstCbLambda &&cbk,
 
 uint32_t VM::addMemAddrCB(rword address, MemoryAccessType type,
                           InstCallback cbk, void *data) {
-  address = (rword)QBDI_PTRAUTH_STRIP(address);
   QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
   return addMemRangeCB(address, address + 1, type, cbk, data);
 }
@@ -812,10 +803,10 @@ uint32_t VM::addMemAddrCB(rword address, MemoryAccessType type,
 
 // addMemRangeCB
 
-uint32_t VM::addMemRangeCB(rword start, rword end, MemoryAccessType type,
+uint32_t VM::addMemRangeCB(rword start_, rword end_, MemoryAccessType type,
                            InstCallback cbk, void *data) {
-  start = (rword)QBDI_PTRAUTH_STRIP(start);
-  end = (rword)QBDI_PTRAUTH_STRIP(end);
+  rword start = strip_ptrauth(start_);
+  rword end = strip_ptrauth(end_);
   QBDI_REQUIRE_ACTION(start < end, return VMError::INVALID_EVENTID);
   QBDI_REQUIRE_ACTION(type & MEMORY_READ_WRITE,
                       return VMError::INVALID_EVENTID);
@@ -837,8 +828,9 @@ uint32_t VM::addMemRangeCB(rword start, rword end, MemoryAccessType type,
   uint32_t id = memCBID++;
   QBDI_REQUIRE_ACTION(id < EVENTID_VIRTCB_MASK,
                       return VMError::INVALID_EVENTID);
-  memCBInfos->emplace_back(id | EVENTID_VIRTCB_MASK,
-                           MemCBInfo{type, {start, end}, cbk, data});
+  memCBInfos->emplace_back(
+      id | EVENTID_VIRTCB_MASK,
+      MemCBInfo{type, {start, end, real_addr_t()}, cbk, data});
   return id | EVENTID_VIRTCB_MASK;
 }
 
@@ -946,13 +938,13 @@ const InstAnalysis *VM::getInstAnalysis(AnalysisType type) const {
 
 const InstAnalysis *VM::getCachedInstAnalysis(rword address,
                                               AnalysisType type) const {
-  return engine->getInstAnalysis(address, type);
+  return engine->getInstAnalysis(strip_ptrauth(address), type);
 }
 
 // getJITInstAnalysis
 const InstAnalysis *VM::getJITInstAnalysis(rword jitAddress,
                                            AnalysisType type) const {
-  auto info = engine->getPatchInfoOfJit(jitAddress);
+  auto info = engine->getPatchInfoOfJit(strip_ptrauth(jitAddress));
   if (info and info->second != NOT_FOUND) {
     return info->first->getInstAnalysis(info->second, type);
   } else {
@@ -1017,7 +1009,9 @@ std::vector<MemoryAccess> VM::getBBMemoryAccess() const {
 
 // precacheBasicBlock
 
-bool VM::precacheBasicBlock(rword pc) { return engine->precacheBasicBlock(pc); }
+bool VM::precacheBasicBlock(rword pc) {
+  return engine->precacheBasicBlock(strip_ptrauth(pc));
+}
 
 // clearAllCache
 
@@ -1025,7 +1019,9 @@ void VM::clearAllCache() { engine->clearAllCache(); }
 
 // clearCache
 
-void VM::clearCache(rword start, rword end) { engine->clearCache(start, end); }
+void VM::clearCache(rword start, rword end) {
+  engine->clearCache(strip_ptrauth(start), strip_ptrauth(end));
+}
 
 // getNbExecBlock
 

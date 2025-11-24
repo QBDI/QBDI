@@ -219,9 +219,9 @@ InstrRuleUser::InstrRuleUser(InstrRuleCallback cbk, AnalysisType analysisType_,
 InstrRuleUser::~InstrRuleUser() = default;
 
 bool InstrRuleUser::tryInstrument(Patch &patch, const LLVMCPU &llvmcpu) const {
-  if (!range.contains(
-          Range<rword>(patch.metadata.address,
-                       patch.metadata.address + patch.metadata.instSize))) {
+  if (!range.contains(Range<rword>(
+          patch.metadata.address,
+          patch.metadata.address + patch.metadata.instSize, real_addr_t()))) {
     return false;
   }
 

@@ -40,17 +40,13 @@ void ExecBroker::changeVMInstanceRef(VMInstanceRef vminstance) {
 
 void ExecBroker::addInstrumentedRange(const Range<rword> &r) {
   QBDI_DEBUG("Adding instrumented range [0x{:x}, 0x{:x}]", r.start(), r.end());
-  auto start = (rword)QBDI_PTRAUTH_STRIP(r.start());
-  auto end = (rword)QBDI_PTRAUTH_STRIP(r.end());
-  instrumented.add(Range(start, end));
+  instrumented.add(r);
 }
 
 void ExecBroker::removeInstrumentedRange(const Range<rword> &r) {
   QBDI_DEBUG("Removing instrumented range [0x{:x}, 0x{:x}]", r.start(),
              r.end());
-  auto start = (rword)QBDI_PTRAUTH_STRIP(r.start());
-  auto end = (rword)QBDI_PTRAUTH_STRIP(r.end());
-  instrumented.remove(Range(start, end));
+  instrumented.remove(r);
 }
 
 void ExecBroker::removeAllInstrumentedRanges() { instrumented.clear(); }
@@ -71,7 +67,6 @@ bool ExecBroker::addInstrumentedModule(const std::string &name) {
 }
 
 bool ExecBroker::addInstrumentedModuleFromAddr(rword addr) {
-  addr = (rword)QBDI_PTRAUTH_STRIP(addr);
   for (const MemoryMap &m : getCurrentProcessMaps()) {
     if (m.range.contains(addr)) {
       if (not m.name.empty()) {
@@ -100,7 +95,6 @@ bool ExecBroker::removeInstrumentedModule(const std::string &name) {
 }
 
 bool ExecBroker::removeInstrumentedModuleFromAddr(rword addr) {
-  addr = (rword)QBDI_PTRAUTH_STRIP(addr);
   for (const MemoryMap &m : getCurrentProcessMaps()) {
     if (m.range.contains(addr)) {
       removeInstrumentedRange(m.range);
