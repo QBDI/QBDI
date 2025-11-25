@@ -15,12 +15,26 @@ add_custom_target(
   COMMAND doxygen qbdipreload.doxygen)
 
 add_custom_target(
+  docs-install-jsdoc
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  COMMAND npm install jsdoc)
+
+execute_process(COMMAND npm install jsdoc
+                WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+execute_process(
+  COMMAND npm root
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  OUTPUT_VARIABLE NPM_JSDOC_ROOT
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+add_custom_target(
   docs-sphinx
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/source
   DEPENDS docs-doxygen pyqbdi
   COMMAND
     ${CMAKE_COMMAND} -E env
     "PYTHONPATH=${PROJECT_BINARY_DIR}/docs:$ENV{PYTHONPATH}"
+    "SPHINX_JS_NODE_MODULES=${NPM_JSDOC_ROOT}"
     "QBDI_DOXYGEN_DIRS=${CMAKE_CURRENT_BINARY_DIR}" sphinx-build -a -b html .
     "${CMAKE_CURRENT_BINARY_DIR}/build")
 

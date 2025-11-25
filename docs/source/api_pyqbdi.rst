@@ -28,7 +28,8 @@ VM class
                       removeInstrumentedRange, removeInstrumentedModule, removeInstrumentedModuleFromAddr, removeAllInstrumentedRanges,
                       addCodeCB, addCodeAddrCB, addCodeRangeCB, addMnemonicCB, addVMEventCB, addMemAccessCB, addMemAddrCB, addMemRangeCB,
                       recordMemoryAccess, addInstrRule, addInstrRuleRange, deleteInstrumentation, deleteAllInstrumentations, run, call,
-                      getInstAnalysis, getCachedInstAnalysis, getInstMemoryAccess, getBBMemoryAccess, precacheBasicBlock, clearCache, clearAllCache
+                      getInstAnalysis, getCachedInstAnalysis, getInstMemoryAccess, getBBMemoryAccess, precacheBasicBlock, clearCache, clearAllCache,
+                      reduceCacheTo, getNbExecBlock, getJITInstAnalysis
 
 .. _state-management-pyqbdi:
 

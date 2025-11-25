@@ -18,7 +18,7 @@ import os
 import subprocess
 import re
 
-RE_VERSION = re.compile('.*QBDI_VERSION_(\S*)\s*(\d*).*')
+RE_VERSION = re.compile('.*QBDI_VERSION_(\\S*)\\s*(\\d*).*')
 
 # Parse version
 def extract_version(cmakefile):
