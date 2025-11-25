@@ -160,6 +160,7 @@ Apple silicon architecture
 (This information was last verified on macOS Tahoe 26.0.1. Other versions might differ slightly.)
 
 On Apple silicon, binaries can be compiled for two different ABIs, i.e. ``arm64`` and ``arm64e``.
+QBDI should be compiled with the matching ABIS, by adding ``-DCMAKE_OSX_ARCHITECTURES="arm64"`` or ``-DCMAKE_OSX_ARCHITECTURES="arm64e"`` in cmake command line.
 To check which ABI a binary was compiled for, use:
 
 .. code:: bash

@@ -40,6 +40,37 @@ Local Monitor
 The AARCH64 support includes an emulator of the Local Monitor. You can disable it
 with the option :cpp:enumerator:`OPT_DISABLE_LOCAL_MONITOR`.
 
+Pointer Authentification
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+QBDI supports the instrumentation of code using authentication pointer.
+As different type of authentification is possible (ie, keyA vs keyB, instruction
+vs data, modificator, ...), QBDI only handle unauthenticated internally. As it,
+pointers should be unauthenticated when:
+
+- Setting the register PC in :cpp:struct:`QBDI::GPRState`,
+- Setting the instrumentation range,
+- Create an instruction or memory callback by specifying an address or a range of address,
+- Beginning the instrumentation by using :cpp:func:`QBDI::VM::call`, :cpp:func:`QBDI::VM::run` or similar functions,
+- Retriving the :cpp:struct:`QBDI::InstAnalysis` using
+  :cpp:func:`QBDI::VM::getCachedInstAnalysis` or
+  :cpp:func:`QBDI::VM::getJITInstAnalysis`
+- Managed the cache (with :cpp:func:`QBDI::VM::precacheBasicBlock` or :cpp:func:`QBDI::VM::clearCache`)
+
+QBDI will always report unauthenticated address, especially:
+
+- In PC register of :cpp:struct:`QBDI::GPRState`,
+- In the :cpp:struct:`QBDI::InstAnalysis` structure,
+- In :cpp:struct:`QBDI::MemoryAccess` structure,
+- during VMEvent in the :cpp:struct:`QBDI::VMState` structure
+
+On OSX, QBDI should be compile with the same achitectures (ie, ``arm64`` or
+``arm64e``) as the target (by settings the cmake parameter ``-DCMAKE_OSX_ARCHITECTURES="arm64e"``).
+
+At the compile time, the option ``-DQBDI_PTRAUTH=ON`` can be enabled to
+strip the authentication of any pointer that should be given
+unauthenticated by the user.
+
 Instruction Coverage
 ^^^^^^^^^^^^^^^^^^^^
 

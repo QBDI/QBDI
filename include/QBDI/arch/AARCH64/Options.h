@@ -48,8 +48,11 @@ typedef enum {
   // architecture specific option between 24 and 31
   _QBDI_EI(OPT_DISABLE_LOCAL_MONITOR) =
       1 << 24, /*!< Disable the local monitor for instruction like stxr */
-  _QBDI_EI(OPT_BYPASS_PAUTH) = 1 << 25, /*!< Disable pointeur authentication */
-  _QBDI_EI(OPT_ENABLE_BTI) = 1 << 26,   /*!< Enable BTI on instrumented code*/
+  _QBDI_EI(OPT_BYPASS_PAUTH) =
+      1 << 25, /*!< Disable pointeur authentication. When set, QBDI will
+                  strip/ignore the authentication bits instead of checking them.
+                */
+  _QBDI_EI(OPT_ENABLE_BTI) = 1 << 26, /*!< Enable BTI on instrumented code */
 } Options;
 
 _QBDI_ENABLE_BITMASK_OPERATORS(Options)
