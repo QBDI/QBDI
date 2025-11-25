@@ -10,7 +10,7 @@ on:
 
 jobs:
   build-x86:
-    runs-on: macos-13
+    runs-on: macos-15-intel
     env:
       QBDI_ARCH: 'X86_64'
       QBDI_PLATFORM: 'osx'
@@ -70,7 +70,7 @@ jobs:
           path: build/QBDI-*.pkg
 
   build-aarch64:
-    runs-on: macos-14
+    runs-on: macos-15
     env:
       QBDI_ARCH: 'AARCH64'
       QBDI_PLATFORM: 'osx'
@@ -130,7 +130,7 @@ jobs:
           path: build/QBDI-*.pkg
 
   build-aarch64-arm64e:
-    runs-on: macos-14
+    runs-on: macos-15
     env:
       QBDI_ARCH: 'AARCH64'
       QBDI_PLATFORM: 'osx'
@@ -182,7 +182,7 @@ jobs:
                 ..
           ninja
           cpack
-      ## github action doesn't seems to be able to execute arm64e binary
+      # github action doesn't seems to be able to execute arm64e binary
       # - name: test QBDI
       #   working-directory: ./build/test
       #   run: |

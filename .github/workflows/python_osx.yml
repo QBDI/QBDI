@@ -6,7 +6,7 @@ on:
 
 jobs:
   build-pyqbdi-x64:
-    runs-on: macos-13
+    runs-on: macos-15-intel
     strategy:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
@@ -60,7 +60,7 @@ jobs:
           path: dist/*
 
   build-pyqbdi-aarch64:
-    runs-on: macos-14
+    runs-on: macos-15
     strategy:
       matrix:
         python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
@@ -113,54 +113,54 @@ jobs:
           name: PyQBDI_OSX_AARCH64_${{ matrix.python-version }}
           path: dist/*
 
-  build-pyqbdi-aarch64-arm64e:
-    runs-on: macos-14
-    env:
-      QBDI_ARCH: 'AARCH64'
-      QBDI_PLATFORM: 'osx'
-      MACOSX_DEPLOYMENT_TARGET: '11.0'
-      _PYTHON_HOST_PLATFORM: 'macosx-11.0-arm64'
-      CMAKE_OSX_ARCHITECTURES: 'arm64e'
-      OPENSSL_VERSION: '3.5.4'
-      OPENSSL_PREFIX: ${{ github.workspace }}/openssl-build
-      PYTHON_VERSION: '3.14.0'
-      PYTHON_PREFIX: ${{ github.workspace }}/python-build
-      PYTHON_VENV: ${{ github.workspace }}/python-venv
-    steps:
-      - name: Download OpenSSL
-        run: |
-          wget -O- https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_VERSION}/openssl-${OPENSSL_VERSION}.tar.gz | tar xJf -
-      - name: Build OpenSSL for arm64e
-        working-directory: openssl-${{ env.OPENSSL_VERSION }}
-        run: |
-          sed -i'' -e 's/-arch arm64/-arch arm64e/g' Configurations/10-main.conf
-          ./configure --prefix=${OPENSSL_PREFIX} --openssldir=${OPENSSL_PREFIX}/ssl
-          make -j$(nproc)
-          make install
-      - name: Download Python
-        run: |
-          wget -O- https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tar.xz | tar xJf -
-      - name: Build Python for arm64e
-        working-directory: Python-${{ env.PYTHON_VERSION }}
-        run: |
-          ./configure --prefix=${PYTHON_PREFIX} --with-pydebug --with-openssl=${OPENSSL_PREFIX} \
-            CFLAGS='-arch arm64e' LDFLAGS='-arch arm64e'
-          make -j$(nproc)
-          make install
-      - name: Checkout QBDI
-        uses: actions/checkout@v4
-      - name: Install system dependencies
-        run: |
-          brew install cmake
-      - name: Create Python virtual environment
-        run: |
-          ${PYTHON_PREFIX}/bin/python3 -m venv ${PYTHON_VENV}
-          ${PYTHON_VENV}/bin/python3 -m pip install --upgrade pip setuptools wheel build
-      - name: Build PyQBDI ${PYTHON_VERSION}
-        run: |
-          ${PYTHON_VENV}/bin/python3 -m build -w
-      - name: Export package
-        uses: actions/upload-artifact@v4
-        with:
-          name: PyQBDI_OSX_AARCH64_arm64e_${PYTHON_VERSION}
-          path: dist/*
+#  build-pyqbdi-aarch64-arm64e:
+#    runs-on: macos-15
+#    env:
+#      QBDI_ARCH: 'AARCH64'
+#      QBDI_PLATFORM: 'osx'
+#      MACOSX_DEPLOYMENT_TARGET: '11.0'
+#      _PYTHON_HOST_PLATFORM: 'macosx-11.0-arm64'
+#      CMAKE_OSX_ARCHITECTURES: 'arm64e'
+#      OPENSSL_VERSION: '3.5.4'
+#      OPENSSL_PREFIX: ${{ github.workspace }}/openssl-build
+#      PYTHON_VERSION: '3.14.0'
+#      PYTHON_PREFIX: ${{ github.workspace }}/python-build
+#      PYTHON_VENV: ${{ github.workspace }}/python-venv
+#    steps:
+#      - name: Download OpenSSL
+#        run: |
+#          wget -O- https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_VERSION}/openssl-${OPENSSL_VERSION}.tar.gz | tar xJf -
+#      - name: Build OpenSSL for arm64e
+#        working-directory: openssl-${{ env.OPENSSL_VERSION }}
+#        run: |
+#          sed -i'' -e 's/-arch arm64/-arch arm64e/g' Configurations/10-main.conf
+#          ./configure --prefix=${OPENSSL_PREFIX} --openssldir=${OPENSSL_PREFIX}/ssl
+#          make -j$(nproc)
+#          make install
+#      - name: Download Python
+#        run: |
+#          wget -O- https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tar.xz | tar xJf -
+#      - name: Build Python for arm64e
+#        working-directory: Python-${{ env.PYTHON_VERSION }}
+#        run: |
+#          ./configure --prefix=${PYTHON_PREFIX} --with-pydebug --with-openssl=${OPENSSL_PREFIX} \
+#            CFLAGS='-arch arm64e' LDFLAGS='-arch arm64e'
+#          make -j$(nproc)
+#          make install
+#      - name: Checkout QBDI
+#        uses: actions/checkout@v4
+#      - name: Install system dependencies
+#        run: |
+#          brew install cmake
+#      - name: Create Python virtual environment
+#        run: |
+#          ${PYTHON_PREFIX}/bin/python3 -m venv ${PYTHON_VENV}
+#          ${PYTHON_VENV}/bin/python3 -m pip install --upgrade pip setuptools wheel build
+#      - name: Build PyQBDI ${PYTHON_VERSION}
+#        run: |
+#          ${PYTHON_VENV}/bin/python3 -m build -w
+#      - name: Export package
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: PyQBDI_OSX_AARCH64_arm64e_${PYTHON_VERSION}
+#          path: dist/*
