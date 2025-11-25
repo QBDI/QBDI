@@ -51,6 +51,7 @@ void ExecBlock::selectSeq(uint16_t seqID) {
   currentInst = seqRegistry[currentSeq].startInstID;
   context->hostState.currentSROffset =
       seqRegistry[currentSeq].sr.scratchRegisterOffset;
+  // Note: selector is currently not an authenticated pointer
   context->hostState.selector =
       reinterpret_cast<rword>(codeBlock.base()) +
       static_cast<rword>(instRegistry[currentInst].offset);
@@ -81,6 +82,7 @@ void ExecBlock::run() {
                getDataBlockBase());
 
   // Restore errno and Execute
+  // Note: codeBlock.base() is currently not an authenticated pointer
   if (not llvmCPUs.hasOptions(Options::OPT_DISABLE_ERRNO_BACKUP)) {
     errno = vminstance->getErrno();
     qbdi_runCodeBlock(codeBlock.base(), context->hostState.executeFlags);

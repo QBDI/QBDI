@@ -28,8 +28,11 @@
 QBDI_NOINLINE QBDI::rword satanicFun(QBDI::rword arg0);
 
 #define MNEM_COUNT 1u
+#if defined(QBDI_PTRAUTH)
+#define MNEM_VALIDATION 32u
+#else
 #define MNEM_VALIDATION 33u
-
+#endif
 #define MAX_OPERAND 4
 #define MNEM_CMP "SUBS*"
 

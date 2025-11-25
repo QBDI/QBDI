@@ -45,7 +45,7 @@ typedef uint64_t rword;
 typedef int64_t sword;
 
 // SPHINX_AARCH64_FPRSTATE_BEGIN
-/*! ARM Floating Point Register context.
+/*! AARCH64 Floating Point Register context.
  */
 typedef struct QBDI_ALIGNED(8) {
   __uint128_t v0;
@@ -94,7 +94,7 @@ typedef struct QBDI_ALIGNED(8) {
 // SPHINX_AARCH64_FPRSTATE_END
 
 // SPHINX_AARCH64_GPRSTATE_BEGIN
-/*! ARM General Purpose Register context.
+/*! AARCH64 General Purpose Register context.
  */
 typedef struct QBDI_ALIGNED(8) {
   rword x0;

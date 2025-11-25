@@ -38,6 +38,7 @@
 #include "QBDI/Bitmask.h"
 #include "QBDI/Config.h"
 #include "QBDI/Errors.h"
+#include "QBDI/PtrAuth.h"
 #include "QBDI/Range.h"
 #include "QBDI/State.h"
 
@@ -216,7 +217,7 @@ bool Engine::isPreInst() const {
 }
 
 void Engine::addInstrumentedRange(rword start, rword end) {
-  execBroker->addInstrumentedRange(Range<rword>(start, end));
+  execBroker->addInstrumentedRange(Range<rword>(start, end, real_addr_t()));
 }
 
 bool Engine::addInstrumentedModule(const std::string &name) {
@@ -232,7 +233,7 @@ bool Engine::instrumentAllExecutableMaps() {
 }
 
 void Engine::removeInstrumentedRange(rword start, rword end) {
-  execBroker->removeInstrumentedRange(Range<rword>(start, end));
+  execBroker->removeInstrumentedRange(Range<rword>(start, end, real_addr_t()));
 }
 
 bool Engine::removeInstrumentedModule(const std::string &name) {
@@ -248,6 +249,9 @@ void Engine::removeAllInstrumentedRanges() {
 }
 
 std::vector<Patch> Engine::patch(rword start) {
+  QBDI_REQUIRE_ABORT(start == strip_ptrauth(start),
+                     "Internal Error, unsupported authenticated pointer");
+
   std::vector<Patch> basicBlock;
   const LLVMCPU &llvmcpu = llvmCPUs->getCPU(curCPUMode);
 
@@ -356,6 +360,8 @@ void Engine::handleNewBasicBlock(rword pc) {
 }
 
 bool Engine::precacheBasicBlock(rword pc) {
+  QBDI_REQUIRE_ABORT(pc == strip_ptrauth(pc),
+                     "Internal Error, unsupported authenticated pointer");
   QBDI_REQUIRE_ABORT(not running,
                      "Cannot precacheBasicBlock on a running Engine");
   if (blockManager->isFlushPending()) {
@@ -377,10 +383,17 @@ bool Engine::precacheBasicBlock(rword pc) {
 }
 
 bool Engine::run(rword start, rword stop) {
+  QBDI_REQUIRE_ABORT(
+      start == strip_ptrauth(start),
+      "Internal Error, unsupported authenticated pointer for start pointer");
+  QBDI_REQUIRE_ABORT(
+      stop == strip_ptrauth(stop),
+      "Internal Error, unsupported authenticated pointer for stop pointer");
   QBDI_REQUIRE_ABORT(not running, "Cannot run an already running Engine");
 
   rword currentPC = start;
   bool hasRan = false;
+  bool warnAuthPC = true;
   curGPRState = gprState.get();
   curFPRState = fprState.get();
 
@@ -533,7 +546,20 @@ bool Engine::run(rword start, rword stop) {
     }
     // Get next block PC
     currentPC = QBDI_GPR_GET(curGPRState, REG_PC);
-    QBDI_DEBUG("Next address to execute is 0x{:x}", currentPC);
+    rword noAuthPC = strip_ptrauth(currentPC);
+    if (currentPC != noAuthPC) {
+      if (warnAuthPC) {
+        QBDI_WARN(
+            "REG_PC value should not be authenticated pointer (get 0x{:x}, "
+            "should be 0x{:x})",
+            currentPC, noAuthPC);
+        warnAuthPC = false;
+      }
+      currentPC = noAuthPC;
+    }
+
+    QBDI_DEBUG("Next address to execute is 0x{:x} (stop is 0x{:x})", currentPC,
+               stop);
   } while (currentPC != stop);
 
   // Copy final context
@@ -715,7 +741,7 @@ void Engine::deleteAllInstrumentations() {
 void Engine::clearAllCache() { blockManager->clearCache(not running); }
 
 void Engine::clearCache(rword start, rword end) {
-  blockManager->clearCache(Range<rword>(start, end));
+  blockManager->clearCache(Range<rword>(start, end, real_addr_t()));
   if (not running && blockManager->isFlushPending()) {
     blockManager->flushCommit();
   }

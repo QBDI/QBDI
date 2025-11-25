@@ -104,7 +104,8 @@ void init_binding_Range(py::module_ &m) {
             if (t.size() != 2)
               throw std::runtime_error("Invalid state!");
 
-            return {t[0].cast<rword>(), t[1].cast<rword>()};
+            return {t[0].cast<rword>(), t[1].cast<rword>(),
+                    QBDI::real_addr_t()};
           }));
 }
 

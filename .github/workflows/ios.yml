@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-15
     env:
       QBDI_ARCH: 'AARCH64'
       QBDI_PLATFORM: 'ios'

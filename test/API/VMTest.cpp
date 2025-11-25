@@ -24,6 +24,7 @@
 
 #include "QBDI/Memory.hpp"
 #include "QBDI/Platform.h"
+#include "QBDI/PtrAuth.h"
 #include "Utility/LogSys.h"
 #include "Utility/String.h"
 
@@ -335,11 +336,13 @@ QBDI::VMAction checkTransfer(QBDI::VMInstanceRef vm, const QBDI::VMState *state,
   int *s = (int *)data;
   if (state->event == QBDI::VMEvent::EXEC_TRANSFER_CALL) {
     REQUIRE((*s % 2) == 0);
-    REQUIRE(reinterpret_cast<QBDI::rword>(dummyFun1) == state->sequenceStart);
+    REQUIRE(QBDI::strip_ptrauth(reinterpret_cast<QBDI::rword>(dummyFun1)) ==
+            state->sequenceStart);
     *s += 1;
   } else if (state->event == QBDI::VMEvent::EXEC_TRANSFER_RETURN) {
     REQUIRE((*s % 2) == 1);
-    REQUIRE(reinterpret_cast<QBDI::rword>(dummyFun1) == state->sequenceStart);
+    REQUIRE(QBDI::strip_ptrauth(reinterpret_cast<QBDI::rword>(dummyFun1)) ==
+            state->sequenceStart);
     *s += 1;
   }
   return QBDI::VMAction::CONTINUE;
@@ -1473,7 +1476,8 @@ TEST_CASE_METHOD(APITest, "VMTest-InstrRuleCbLambda-addInstrRuleRangeSet") {
     return {};
   };
   QBDI::RangeSet<QBDI::rword> s;
-  s.add({(QBDI::rword)dummyFun0, (QBDI::rword)dummyFun0 + 0x100});
+  s.add({(QBDI::rword)dummyFun0, (QBDI::rword)dummyFun0 + 0x100,
+         QBDI::auth_addr_t()});
 
   vm.addInstrRuleRangeSet(s, cbk, QBDI::ANALYSIS_INSTRUCTION);
 
@@ -1757,14 +1761,15 @@ TEST_CASE_METHOD(APITest, "VMTest-SelfModifyingCode2") {
   vm.addInstrumentedRange(start, stop);
 
   QBDI::RangeSet<QBDI::rword> instrumentedRange{};
-  QBDI::Range<QBDI::rword> currentSeq{0, 0};
+  QBDI::Range<QBDI::rword> currentSeq{0, 0, QBDI::real_addr_t()};
 
   // set the current sequence
   vm.addVMEventCB(QBDI::VMEvent::SEQUENCE_ENTRY,
                   [&instrumentedRange, &currentSeq](
                       QBDI::VMInstanceRef vm, const QBDI::VMState *vmState,
                       QBDI::GPRState *, QBDI::FPRState *) {
-                    currentSeq = {vmState->sequenceStart, vmState->sequenceEnd};
+                    currentSeq = {vmState->sequenceStart, vmState->sequenceEnd,
+                                  QBDI::real_addr_t()};
                     instrumentedRange.add(currentSeq);
                     return QBDI::VMAction::CONTINUE;
                   });
@@ -1781,14 +1786,16 @@ TEST_CASE_METHOD(APITest, "VMTest-SelfModifyingCode2") {
           if ((acc.flags & QBDI::MemoryAccessFlags::MEMORY_UNKNOWN_SIZE) != 0) {
             continue;
           }
-          if (instrumentedRange.overlaps(
-                  {acc.accessAddress, acc.accessAddress + acc.size})) {
+          if (instrumentedRange.overlaps({acc.accessAddress,
+                                          acc.accessAddress + acc.size,
+                                          QBDI::real_addr_t()})) {
             // the access override a code address, clear the cache
             vm->clearCache(acc.accessAddress, acc.accessAddress + acc.size);
             // if the access is in the current sequence, schedule
             // the clear now
-            if (currentSeq.overlaps(
-                    {acc.accessAddress, acc.accessAddress + acc.size})) {
+            if (currentSeq.overlaps({acc.accessAddress,
+                                     acc.accessAddress + acc.size,
+                                     QBDI::real_addr_t()})) {
               return QBDI::VMAction::BREAK_TO_VM;
             }
           }

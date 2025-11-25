@@ -203,7 +203,8 @@ ExecBlockManager::preWriteBasicBlock(const std::vector<Patch> &basicBlock) {
 
   // Locating an approriate cache region
   const Range<rword> bbRange{basicBlock.front().metadata.address,
-                             basicBlock.back().metadata.endAddress()};
+                             basicBlock.back().metadata.endAddress(),
+                             real_addr_t()};
   size_t r = findRegion(bbRange);
   ExecRegion &region = regions[r];
 
@@ -230,7 +231,7 @@ void ExecBlockManager::writeBasicBlock(std::vector<Patch> &&basicBlock,
   rword bbEnd = lastPatch.metadata.endAddress();
 
   // Locating an approriate cache region
-  const Range<rword> bbRange{bbStart, bbEnd};
+  const Range<rword> bbRange{bbStart, bbEnd, real_addr_t()};
   size_t r = findRegion(bbRange);
   ExecRegion &region = regions[r];
 

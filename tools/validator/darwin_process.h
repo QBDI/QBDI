@@ -52,9 +52,18 @@ static const uint8_t BRK_INS = 0xCC;
 #define THREAD_STATE_FP_COUNT ARM_NEON_STATE64_COUNT
 #define THREAD_STATE arm_thread_state64_t
 #define THREAD_STATE_FP arm_neon_state64_t
-#define THREAD_STATE_BP __fp
-#define THREAD_STATE_SP __sp
-#define THREAD_STATE_PC __pc
+
+static inline QBDI::rword getSP(THREAD_STATE *state) {
+  return __darwin_arm_thread_state64_get_sp(*state);
+}
+
+static inline void setSP(THREAD_STATE *state, QBDI::rword address) {
+  __darwin_arm_thread_state64_set_sp(*state, (void *)address);
+}
+
+static inline void setBP(THREAD_STATE *state, QBDI::rword address) {
+  __darwin_arm_thread_state64_set_fp(*state, (void *)address);
+}
 #endif
 
 class DarwinProcess : public Process {

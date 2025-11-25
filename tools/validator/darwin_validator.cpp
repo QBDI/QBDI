@@ -96,16 +96,29 @@ int QBDI::qbdipreload_on_premain(void *gprCtx, void *fpuCtx) {
     threadState->THREAD_STATE_BP = (rword)newStack + STACK_SIZE - 8;
     threadState->THREAD_STATE_SP = threadState->THREAD_STATE_BP - 44;
     memcpy((void *)threadState->THREAD_STATE_SP, (void *)ENTRY_GPR.esp, 44);
-#else
+#elif defined(QBDI_ARCH_X86_64)
     threadState->THREAD_STATE_BP = (rword)newStack + STACK_SIZE - 8;
     threadState->THREAD_STATE_SP = threadState->THREAD_STATE_BP;
+#else
+    setBP(threadState, (rword)newStack + STACK_SIZE - 8);
+    setSP(threadState, (rword)newStack + STACK_SIZE - 8);
 #endif
   } else if (ROLE == Role::Master) {
     // LC_UNIXTHREAD binaries use a different calling convention
     // This allow to call catchEntrypoint, and have not side effect
     // as original execution is never resumed in Master mode
-    if ((threadState->THREAD_STATE_SP & 0x8) == 0) {
-      threadState->THREAD_STATE_SP -= 8;
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+    auto sp = threadState->THREAD_STATE_SP;
+#else
+    auto sp = getSP(threadState);
+#endif
+    if ((sp & 0x8) == 0) {
+      sp -= 8;
+#if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
+      threadState->THREAD_STATE_SP = sp;
+#else
+      setSP(threadState, sp);
+#endif
     }
   }
 

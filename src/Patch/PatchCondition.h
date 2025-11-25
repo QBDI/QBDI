@@ -46,7 +46,7 @@ public:
 
   virtual RangeSet<rword> affectedRange() const {
     RangeSet<rword> r;
-    r.add(Range<rword>(0, (rword)-1));
+    r.add(Range<rword>(0, (rword)-1, real_addr_t()));
     return r;
   }
 
@@ -105,7 +105,8 @@ public:
    * @param[in] start Start of the range.
    * @param[in] end   End of the range (not included).
    */
-  InstructionInRange(Constant start, Constant end) : range(start, end) {
+  InstructionInRange(Constant start, Constant end)
+      : range(start, end, real_addr_t()) {
     // for ARM, remove the LSB
     if constexpr (is_arm) {
       range.setStart(range.start() & (~1));
@@ -113,8 +114,8 @@ public:
   }
 
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override {
-    return range.contains(
-        Range<rword>(patch.metadata.address, patch.metadata.endAddress()));
+    return range.contains(Range<rword>(
+        patch.metadata.address, patch.metadata.endAddress(), real_addr_t()));
   }
 
   RangeSet<rword> affectedRange() const override {
@@ -143,7 +144,7 @@ public:
 
   RangeSet<rword> affectedRange() const override {
     RangeSet<rword> r;
-    r.add(Range<rword>(breakpoint, breakpoint + 1));
+    r.add(Range<rword>(breakpoint, breakpoint + 1, real_addr_t()));
     return r;
   }
 };
@@ -169,7 +170,7 @@ public:
 
   RangeSet<rword> affectedRange() const override {
     RangeSet<rword> r;
-    r.add(Range<rword>(0, (rword)-1));
+    r.add(Range<rword>(0, (rword)-1, real_addr_t()));
     for (unsigned int i = 0; i < conditions.size(); i++) {
       r.intersect(conditions[i]->affectedRange());
     }

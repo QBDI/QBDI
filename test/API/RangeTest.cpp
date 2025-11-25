@@ -41,12 +41,17 @@ void checkRangeSetInvariant(const QBDI::RangeSet<T> &set) {
 TEST_CASE("Range-UnitTest") {
 
   std::vector<QBDI::Range<int>> testRanges = {
-      {50, 60}, {85, 90}, {10, 20}, {25, 30}, {65, 70}, {70, 75},  {74, 80},
-      {80, 84}, {60, 85}, {40, 60}, {9, 120}, {55, 67}, {80, 200}, {5, 150},
+      {50, 60, QBDI::real_addr_t()},  {85, 90, QBDI::real_addr_t()},
+      {10, 20, QBDI::real_addr_t()},  {25, 30, QBDI::real_addr_t()},
+      {65, 70, QBDI::real_addr_t()},  {70, 75, QBDI::real_addr_t()},
+      {74, 80, QBDI::real_addr_t()},  {80, 84, QBDI::real_addr_t()},
+      {60, 85, QBDI::real_addr_t()},  {40, 60, QBDI::real_addr_t()},
+      {9, 120, QBDI::real_addr_t()},  {55, 67, QBDI::real_addr_t()},
+      {80, 200, QBDI::real_addr_t()}, {5, 150, QBDI::real_addr_t()},
   };
   QBDI::RangeSet<int> rangeSet;
   QBDI::RangeSet<int> rangeSetInv;
-  rangeSetInv.add({0, 1000});
+  rangeSetInv.add({0, 1000, QBDI::real_addr_t()});
 
   for (unsigned i = 0; i < testRanges.size(); i++) {
     rangeSet.add(testRanges[i]);
@@ -83,7 +88,7 @@ TEST_CASE("Range-StateIntegrity") {
     int start = get_random() % 900;
     int end = start + get_random() % 100 + 1;
     int delta = -rangeSet.size();
-    QBDI::Range<int> r(start, end);
+    QBDI::Range<int> r(start, end, QBDI::real_addr_t());
 
     testRanges.push_back(r);
     rangeSet.add(r);
@@ -133,7 +138,7 @@ TEST_CASE("Range-Commutativity") {
   for (unsigned i = 0; i < N; i++) {
     int start = get_random() % 1000000;
     int end = start + 1 + get_random() % 10000;
-    QBDI::Range<int> r(start, end);
+    QBDI::Range<int> r(start, end, QBDI::real_addr_t());
     testRanges.push_back(r);
     rangeSet.add(r);
     checkRangeSetInvariant(rangeSet);
@@ -167,14 +172,14 @@ TEST_CASE("Range-Intersection") {
   for (unsigned i = 0; i < N; i++) {
     int start = get_random() % 1000000;
     int end = start + 1 + get_random() % 10000;
-    rangeSet1.add(QBDI::Range<int>(start, end));
+    rangeSet1.add(QBDI::Range<int>(start, end, QBDI::real_addr_t()));
     checkRangeSetInvariant(rangeSet1);
   }
 
   for (unsigned i = 0; i < N; i++) {
     int start = get_random() % 1000000;
     int end = start + 1 + get_random() % 10000;
-    rangeSet2.add(QBDI::Range<int>(start, end));
+    rangeSet2.add(QBDI::Range<int>(start, end, QBDI::real_addr_t()));
     checkRangeSetInvariant(rangeSet2);
   }
 
@@ -201,7 +206,7 @@ TEST_CASE("Range-IntersectionAndOverlaps") {
   for (unsigned i = 0; i < N; i++) {
     int start = get_random() % 900;
     int end = start + get_random() % 100 + 1;
-    QBDI::Range<int> newRange{start, end};
+    QBDI::Range<int> newRange{start, end, QBDI::real_addr_t()};
 
     for (const QBDI::Range<int> &r : testRanges) {
       QBDI::RangeSet<int> set;

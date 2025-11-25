@@ -15,6 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "QBDI/PtrAuth.h"
+
 #include "Engine/LLVMCPU.h"
 #include "ExecBlock/ExecBlock.h"
 #include "ExecBroker/ExecBroker.h"
@@ -143,13 +145,13 @@ void ExecBroker::initExecBrokerSequences(const LLVMCPUs &llvmCPUs) {
 rword *ExecBroker::getReturnPoint(GPRState *gprState) const {
   auto ptr = reinterpret_cast<rword *>(gprState->sp);
 
-  if (isInstrumented(gprState->lr)) {
+  if (isInstrumented(strip_ptrauth(gprState->lr))) {
     QBDI_DEBUG("Found instrumented return address in LR register");
     return &(gprState->lr);
   }
 
   for (size_t i = 0; i < SCAN_DISTANCE; ++i) {
-    if (isInstrumented(ptr[i])) {
+    if (isInstrumented(strip_ptrauth(ptr[i]))) {
       QBDI_DEBUG("Found instrumented return address on the stack at {:p}",
                  reinterpret_cast<void *>(&(ptr[i])));
       return &(ptr[i]);

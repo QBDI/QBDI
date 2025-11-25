@@ -22,7 +22,10 @@
 #include <ostream>
 #include <vector>
 
+#include "QBDI/PtrAuth.h"
+
 namespace QBDI {
+
 template <typename T>
 class Range {
 
@@ -48,11 +51,12 @@ public:
       _start = _end;
   }
 
-  /*! Construct a new range.
-   * @param[in] start  Range start value.
-   * @param[in] end  Range end value (excluded).
+  /*! Construct a new range from not authenticated pointer.
+   * @param[in] start   Range start value.
+   * @param[in] end     Range end value (excluded).
+   * @param[in] mark    Real address mark
    */
-  Range(const T start, const T end) {
+  Range(const T start, const T end, const real_addr_t &) {
     if (start < end) {
       this->_start = start;
       this->_end = end;
@@ -60,6 +64,22 @@ public:
       this->_end = this->_start = start;
     }
   }
+
+#ifdef QBDI_PTRAUTH
+  /*! Construct a new range from authenticated pointer.
+   * @param[in] start   Range start value.
+   * @param[in] end     Range end value (excluded).
+   * @param[in] mark    Auth address mark
+   */
+  Range(const T start, const T end, const auth_addr_t &)
+      : Range(strip_ptrauth(start), strip_ptrauth(end), real_addr_t()) {}
+#endif
+
+  /*! Construct a new range.
+   * @param[in] start  Range start value.
+   * @param[in] end  Range end value (excluded).
+   */
+  Range(const T start, const T end) : Range(start, end, auth_addr_t()) {}
 
   /*! Return the total length of a range.
    */
@@ -119,7 +139,8 @@ public:
    * @return  A new range.
    */
   Range<T> intersect(const Range<T> &r) const {
-    return Range<T>(max_(start(), r.start()), min_(end(), r.end()));
+    return Range<T>(max_(start(), r.start()), min_(end(), r.end()),
+                    real_addr_t());
   }
 };
 
@@ -271,7 +292,7 @@ public:
       if (t.end() < lower->end()) {
         // t is a part of lower, but with extra both at the start and the end
         // -> split lower in two
-        Range<T> preRange = {lower->start(), t.start()};
+        Range<T> preRange = {lower->start(), t.start(), real_addr_t()};
         lower->setStart(t.end());
         ranges.insert(lower, preRange);
         return;

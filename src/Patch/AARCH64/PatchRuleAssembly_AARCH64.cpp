@@ -249,8 +249,7 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
                     {llvm::AArch64::AUTIA, llvm::AArch64::XPACI},
                     {llvm::AArch64::AUTIB, llvm::AArch64::XPACI},
                 })),
-                RemoveOperand::unique(Operand(1)),
-                AddOperand::unique(Operand(1), Operand(0)))),
+                RemoveOperand::unique(Operand(2)))),
             SaveX28IfSet::unique()));
 
     /* Rule #13: Replace AUTDZA, AUTDZB, AUTIZA, AUTIZB
@@ -270,8 +269,7 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
                     {llvm::AArch64::AUTDZB, llvm::AArch64::XPACD},
                     {llvm::AArch64::AUTIZA, llvm::AArch64::XPACI},
                     {llvm::AArch64::AUTIZB, llvm::AArch64::XPACI},
-                })),
-                AddOperand::unique(Operand(1), Operand(0)))),
+                })))),
             SaveX28IfSet::unique()));
 
     /* Rule #14: Replace AUTIA1716, AUTIB1716
