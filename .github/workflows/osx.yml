@@ -170,6 +170,7 @@ jobs:
       - name: build QBDI
         working-directory: ./build
         run: |
+          echo 'set("CMAKE_OSX_ARCHITECTURES" "arm64" CACHE STRING "" FORCE)' > QBDI_llvm_tblgen.cmake
           cmake -G Ninja \
                 -DCMAKE_BUILD_TYPE=Release \
                 -DQBDI_PLATFORM=${{ env.QBDI_PLATFORM }} \
@@ -177,13 +178,15 @@ jobs:
                 -DQBDI_PTRAUTH=ON \
                 -DQBDI_TOOLS_VALIDATOR=ON \
                 -DQBDI_EXAMPLES=ON \
+                -DQBDI_LLVM_TABLEN_TOOLSCHAIN=$(pwd)/QBDI_llvm_tblgen.cmake \
                 ..
           ninja
           cpack
-      - name: test QBDI
-        working-directory: ./build/test
-        run: |
-          ./QBDITest
+      ## github action doesn't seems to be able to execute arm64e binary
+      # - name: test QBDI
+      #   working-directory: ./build/test
+      #   run: |
+      #     ./QBDITest
       - name: Export package
         uses: actions/upload-artifact@v4
         with:
