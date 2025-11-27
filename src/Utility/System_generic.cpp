@@ -93,34 +93,11 @@ const std::vector<std::string> getHostCPUFeatures() {
 #if defined(_QBDI_ASAN_ENABLED_)
     const char *asan_blacklist_feature[] = {
 #if defined(QBDI_ARCH_X86_64) || defined(QBDI_ARCH_X86)
-      "x87",
-      "fxsr",
-      "xsave",
-      "xsaveopt",
-      "xsavec",
-      "xsaves",
-      "sse",
-      "sse2",
-      "sse3",
-      "ssse3",
-      "sse4.1",
-      "sse4.2",
-      "mmx",
-      "3dnow",
-      "3dnowa",
-      "sse4a",
-      "avx",
-      "avx2",
-      "fma",
-      "f16c",
-      "pclmul",
-      "gfni",
-      "vpclmulqdq",
-      "fma4",
-      "xop",
-      "aes",
-      "vaes",
-      "sha"
+        "x87", "fxsr",  "xsave",  "xsaveopt", "xsavec",     "xsaves",
+        "sse", "sse2",  "sse3",   "ssse3",    "sse4.1",     "sse4.2",
+        "mmx", "3dnow", "3dnowa", "sse4a",    "avx",        "avx2",
+        "fma", "f16c",  "pclmul", "gfni",     "vpclmulqdq", "fma4",
+        "xop", "aes",   "vaes",   "sha"
 #endif
     };
     const size_t asan_blacklist_feature_size =

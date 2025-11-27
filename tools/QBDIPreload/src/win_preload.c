@@ -465,7 +465,7 @@ int enable_debug_privilege() {
  * Must be called when the main thread is in "suspended" state
  */
 #ifndef MAKEULONGLONG
-#define MAKEULONGLONG(ldw, hdw) (((ULONGLONG)hdw << 32) | ((ldw)&0xFFFFFFFF))
+#define MAKEULONGLONG(ldw, hdw) (((ULONGLONG)hdw << 32) | ((ldw) & 0xFFFFFFFF))
 #endif
 
 #ifndef MAXULONGLONG

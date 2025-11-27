@@ -4,9 +4,9 @@ on: [push, pull_request]
 
 jobs:
   check:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
-      CLANG_FORMAT_VERSION: 15
+      CLANG_FORMAT_VERSION: 19
     steps:
       - name: checkout
         uses: actions/checkout@v4

@@ -63,7 +63,7 @@ public:
 
   inline void setPriority(int priority) { this->priority = priority; };
 
-  inline virtual void changeVMInstanceRef(VMInstanceRef vminstance){};
+  inline virtual void changeVMInstanceRef(VMInstanceRef vminstance) {};
 
   inline virtual bool changeDataPtr(void *data) { return false; };
 

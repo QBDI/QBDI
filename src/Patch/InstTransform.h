@@ -97,7 +97,7 @@ public:
    * @param[in] reg   Register which will be substituted.
    * @param[in] temp  Temporary register which will be substituted with.
    */
-  SubstituteWithTemp(Reg reg, Temp temp) : reg(reg), temp(temp){};
+  SubstituteWithTemp(Reg reg, Temp temp) : reg(reg), temp(temp) {};
 
   void transform(llvm::MCInst &inst, rword address, size_t instSize,
                  TempManager &temp_manager) const override;

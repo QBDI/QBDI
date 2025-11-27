@@ -32,7 +32,7 @@ namespace QBDI {
 
 PatchRule::PatchRule(PatchCondition::UniquePtr &&condition,
                      std::vector<std::unique_ptr<PatchGenerator>> &&generators)
-    : condition(std::move(condition)), generators(std::move(generators)){};
+    : condition(std::move(condition)), generators(std::move(generators)) {};
 
 PatchRule::~PatchRule() = default;
 

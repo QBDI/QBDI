@@ -49,7 +49,9 @@ class Patch;
 #define QBDI_DEBUG(...) SPDLOG_DEBUG(__VA_ARGS__)
 #else
 #define QBDI_DEBUG_BLOCK(block) \
-  { (void)0; }
+  {                             \
+    (void)0;                    \
+  }
 #define QBDI_DEBUG(...) (void)0
 #endif
 

@@ -289,7 +289,9 @@ mig_external kern_return_t frida_jit_alloc(mach_port_t server, vm_map_t task,
   __AfterSendRpc(421337,
                  "frida_jit_alloc") if (msg_result != MACH_MSG_SUCCESS) {
     __MachMsgErrorWithoutTimeout(msg_result);
-    { return msg_result; }
+    {
+      return msg_result;
+    }
   }
 
 #if defined(__MIG_check__Reply__frida_jit_alloc_t__defined)

@@ -32,9 +32,9 @@
 
 namespace QBDI {
 
-#define PROT_ISREAD(PROT) ((PROT)&0xEE)
-#define PROT_ISWRITE(PROT) ((PROT)&0xCC)
-#define PROT_ISEXEC(PROT) ((PROT)&0xF0)
+#define PROT_ISREAD(PROT) ((PROT) & 0xEE)
+#define PROT_ISWRITE(PROT) ((PROT) & 0xCC)
+#define PROT_ISEXEC(PROT) ((PROT) & 0xF0)
 
 std::vector<MemoryMap> getCurrentProcessMaps(bool full_path) {
   return getRemoteProcessMaps(GetCurrentProcessId(), full_path);

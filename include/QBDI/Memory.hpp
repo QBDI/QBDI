@@ -58,7 +58,7 @@ struct MemoryMap {
 
   /* Construct a new (empty) MemoryMap.
    */
-  MemoryMap() : range(0, 0, real_addr_t()), permission(QBDI::PF_NONE){};
+  MemoryMap() : range(0, 0, real_addr_t()), permission(QBDI::PF_NONE) {};
 
   /*! Construct a new MemoryMap (given some properties).
    *

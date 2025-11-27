@@ -28,7 +28,7 @@ public:
   /*! Return true if the instruction has a condition and may be execute as a NOP
    * depending of the flags
    */
-  HasCond(){};
+  HasCond() {};
 
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
 };
@@ -44,12 +44,12 @@ public:
   /*! Return true if the operand is the expected register
    */
   OperandIs(unsigned int position, RegLLVM reg)
-      : position(position), reg(reg), imm(0), type(RegType){};
+      : position(position), reg(reg), imm(0), type(RegType) {};
 
   /*! Return true if the operand is the expected immediate
    */
   OperandIs(unsigned int position, Constant imm)
-      : position(position), reg(0), imm(imm), type(ImmType){};
+      : position(position), reg(0), imm(imm), type(ImmType) {};
 
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
 };
@@ -59,7 +59,7 @@ class InITBlock : public AutoClone<PatchCondition, InITBlock> {
 public:
   /*! Return true if the instruction is in a ITBlock
    */
-  InITBlock(){};
+  InITBlock() {};
 
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
 };
@@ -73,7 +73,7 @@ public:
    * Return false if the instruction is outside of an ITBlock, or inside but not
    * the last instruction.
    */
-  LastInITBlock(){};
+  LastInITBlock() {};
 
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
 };

@@ -44,7 +44,7 @@ public:
    *
    *  @param[in] id The llvm id of the register to represent.
    */
-  inline RegLLVM(unsigned int id = 0) : id(id){};
+  inline RegLLVM(unsigned int id = 0) : id(id) {};
 
   /*! Get the llvm value of the register
    *
@@ -81,7 +81,7 @@ public:
    *
    *  @param[in] id The id of the register to represent.
    */
-  inline Reg(unsigned int id) : id(id){};
+  inline Reg(unsigned int id) : id(id) {};
 
   /*! Get back the id of the register in GPRState
    *

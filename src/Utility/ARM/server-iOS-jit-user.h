@@ -190,8 +190,7 @@ union __ReplyUnion__frida_jit_subsystem {
 #endif /* !__RequestUnion__frida_jit_subsystem__defined */
 
 #ifndef subsystem_to_name_map_frida_jit
-#define subsystem_to_name_map_frida_jit \
-  { "frida_jit_alloc", 421337 }
+#define subsystem_to_name_map_frida_jit {"frida_jit_alloc", 421337}
 #endif
 
 #ifdef __AfterMigUserHeader

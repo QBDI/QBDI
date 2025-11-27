@@ -29,7 +29,7 @@ public:
   /*! Return true if the instruction has a condition and may be execute as a NOP
    * depending of the flags
    */
-  IsMOPSReadPrologue(){};
+  IsMOPSReadPrologue() {};
 
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
 };
@@ -41,7 +41,7 @@ public:
   /*! Return true if the instruction has a condition and may be execute as a NOP
    * depending of the flags
    */
-  IsMOPSWritePrologue(){};
+  IsMOPSWritePrologue() {};
 
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
 };

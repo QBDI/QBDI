@@ -117,7 +117,7 @@ class PatchGenFlags
   uint32_t flags;
 
 public:
-  PatchGenFlags(uint32_t flags) : flags(flags){};
+  PatchGenFlags(uint32_t flags) : flags(flags) {};
 
   /*!
    * Output:

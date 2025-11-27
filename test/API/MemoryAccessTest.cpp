@@ -31,7 +31,7 @@
 #define FAKE_RET_ADDR 0x666
 
 #define N_SUM(N) ((N) * ((N) + 1) / 2)
-#define OFFSET_SUM(N) N_SUM((N)-1)
+#define OFFSET_SUM(N) N_SUM((N) - 1)
 
 struct TestInfo {
   void *buffer;

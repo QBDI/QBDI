@@ -56,7 +56,7 @@ PureEval<AutoClone<PatchGenerator, JmpEpilogue>>::generate(
 // =================
 
 ModifyInstruction::ModifyInstruction(InstTransform::UniquePtrVec &&transforms)
-    : transforms(std::forward<InstTransform::UniquePtrVec>(transforms)){};
+    : transforms(std::forward<InstTransform::UniquePtrVec>(transforms)) {};
 
 std::unique_ptr<PatchGenerator> ModifyInstruction::clone() const {
   return ModifyInstruction::unique(cloneVec(transforms));
