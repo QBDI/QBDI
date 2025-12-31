@@ -145,9 +145,9 @@ if(QBDI_PLATFORM_WINDOWS)
 endif()
 
 if(NOT ("${QBDI_LLVM_TRIPLE}" STREQUAL ""))
-  set(LLVM_DEFAULT_TARGET_TRIPLE
+  set(LLVM_HOST_TRIPLE
       "${QBDI_LLVM_TRIPLE}"
-      CACHE STRING "set LLVM_DEFAULT_TARGET_TRIPLE")
+      CACHE STRING "set LLVM_HOST_TRIPLE")
 endif()
 
 # build llvm with visibility hidden
