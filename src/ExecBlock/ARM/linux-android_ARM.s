@@ -61,4 +61,4 @@ __qbdi_runCodeBlock:
     pop {r0-r12,pc};
 
 # mark stack as no-exec
-.section	.note.GNU-stack
+.section	.note.GNU-stack,"",%progbits
