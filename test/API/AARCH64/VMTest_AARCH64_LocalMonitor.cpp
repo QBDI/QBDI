@@ -22,6 +22,14 @@
 #include "API/APITest.h"
 #include "QBDI/Memory.hpp"
 
+namespace {
+QBDI::VMAction x28CBK(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
+                      QBDI::FPRState *fprState, void *data) {
+  REQUIRE(gprState->x28 == 0);
+  return QBDI::VMAction::CONTINUE;
+}
+} // namespace
+
 QBDI_NOINLINE uint64_t simpleStore() {
   uint64_t v = 0x20;
 
@@ -38,6 +46,8 @@ QBDI_NOINLINE uint64_t simpleStore() {
 TEST_CASE_METHOD(APITest, "VMTest_AARCH64_LocalMonitor-simpleStore") {
   QBDI::rword retval;
 
+  vm.addCodeCB(QBDI::InstPosition::PREINST, x28CBK, nullptr);
+  vm.addCodeCB(QBDI::InstPosition::POSTINST, x28CBK, nullptr);
   vm.call(&retval, (QBDI::rword)simpleStore, {});
   REQUIRE(retval == (QBDI::rword)0x21);
 
@@ -61,6 +71,8 @@ QBDI_NOINLINE uint64_t clearMonitor() {
 TEST_CASE_METHOD(APITest, "VMTest_AARCH64_LocalMonitor-clearMonitor") {
   QBDI::rword retval;
 
+  vm.addCodeCB(QBDI::InstPosition::PREINST, x28CBK, nullptr);
+  vm.addCodeCB(QBDI::InstPosition::POSTINST, x28CBK, nullptr);
   vm.call(&retval, (QBDI::rword)clearMonitor, {});
   REQUIRE(retval == (QBDI::rword)0x20);
 
@@ -88,6 +100,8 @@ QBDI_NOINLINE uint64_t doubleStackStore() {
 TEST_CASE_METHOD(APITest, "VMTest_AARCH64_LocalMonitor-doubleStackStore") {
   QBDI::rword retval;
 
+  vm.addCodeCB(QBDI::InstPosition::PREINST, x28CBK, nullptr);
+  vm.addCodeCB(QBDI::InstPosition::POSTINST, x28CBK, nullptr);
   vm.call(&retval, (QBDI::rword)doubleStackStore, {});
   REQUIRE(retval == (QBDI::rword)0x310020);
 
@@ -118,6 +132,8 @@ TEST_CASE_METHOD(APITest, "VMTest_AARCH64_LocalMonitor-doubleStore") {
   uint64_t *allocated_val = new uint64_t;
   *allocated_val = 0x30;
 
+  vm.addCodeCB(QBDI::InstPosition::PREINST, x28CBK, nullptr);
+  vm.addCodeCB(QBDI::InstPosition::POSTINST, x28CBK, nullptr);
   vm.call(&retval, (QBDI::rword)doubleStore, {(QBDI::rword)allocated_val});
   REQUIRE(retval == (QBDI::rword)0x20);
   REQUIRE(*allocated_val == 0x30);
