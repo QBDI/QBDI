@@ -17,8 +17,8 @@ elseif(QBDI_PLATFORM_LINUX OR QBDI_PLATFORM_ANDROID)
     set(ASM_STUB_EXECBLOCK "${CMAKE_CURRENT_LIST_DIR}/linux_X86.s")
   endif()
   list(APPEND SOURCES "${ASM_STUB_EXECBLOCK}")
-  set_property(SOURCE "${ASM_STUB_EXECBLOCK}" PROPERTY COMPILE_FLAGS
-                                                       --noexecstack)
+  set_property(SOURCE "${ASM_STUB_EXECBLOCK}" PROPERTY LINK_FLAGS
+                                                       "-Wl,-z,noexecstack")
 
 elseif(QBDI_PLATFORM_WINDOWS)
 
