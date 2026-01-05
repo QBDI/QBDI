@@ -308,18 +308,28 @@ std::vector<PatchRule> getARMPatchRules(Options opts) {
     /* Rule #11: Clear local monitor state
      */
     rules.emplace_back(
-        Or::unique(conv_unique<PatchCondition>(OpIs::unique(llvm::ARM::CLREX),
-                                               OpIs::unique(llvm::ARM::SVC))),
+        OpIs::unique(llvm::ARM::CLREX),
         conv_unique<PatchGenerator>(
             ModifyInstruction::unique(InstTransform::UniquePtrVec()),
-            // for SVC, we need to backup the value of Temp(0) after the syscall
-            SaveTemp::unique(Temp(0)),
             GetConstant::unique(Temp(0), Constant(0)),
             WriteTempCC::unique(
                 Temp(0),
                 Offset(offsetof(Context, gprState.localMonitor.enable)))));
 
-    /* Rule #12: exclusive load 1 register
+    /* Rule #12: Clear local monitor state
+     */
+    rules.emplace_back(
+        OpIs::unique(llvm::ARM::SVC),
+        conv_unique<PatchGenerator>(
+            ModifyInstruction::unique(InstTransform::UniquePtrVec()),
+            // for SVC, we need to backup the value of Temp(0) after the syscall
+            SaveTemp::unique(Temp(0), true),
+            GetConstant::unique(Temp(0), Constant(0)),
+            WriteTempCC::unique(
+                Temp(0),
+                Offset(offsetof(Context, gprState.localMonitor.enable)))));
+
+    /* Rule #13: exclusive load 1 register
      */
     rules.emplace_back(
         Or::unique(conv_unique<PatchCondition>(
@@ -341,7 +351,7 @@ std::vector<PatchRule> getARMPatchRules(Options opts) {
                 Offset(offsetof(Context, gprState.localMonitor.addr))),
             ModifyInstruction::unique(InstTransform::UniquePtrVec())));
 
-    /* Rule #13: exclusive store
+    /* Rule #14: exclusive store
      */
     rules.emplace_back(
         Or::unique(conv_unique<PatchCondition>(
@@ -359,7 +369,7 @@ std::vector<PatchRule> getARMPatchRules(Options opts) {
   // Instruction without PC
   // ======================
 
-  /* Rule #14: instruction to skip (barrier, preload)
+  /* Rule #15: instruction to skip (barrier, preload)
    */
   rules.emplace_back(
       Or::unique(conv_unique<PatchCondition>(
@@ -368,7 +378,7 @@ std::vector<PatchRule> getARMPatchRules(Options opts) {
           OpIs::unique(llvm::ARM::PLIi12), OpIs::unique(llvm::ARM::PLIrs))),
       PatchGenerator::UniquePtrVec());
 
-  /* Rule #15: all other instruction without PC
+  /* Rule #16: all other instruction without PC
    *
    * Note: This patch should be at the end of the list. However, as many
    * instruction doesn't used PC, we place it here to apply it early on
@@ -387,7 +397,7 @@ std::vector<PatchRule> getARMPatchRules(Options opts) {
   // Instruction with PC : special case LDM / STM
   // ============================================
 
-  /* Rule #16: LDM with PC
+  /* Rule #17: LDM with PC
    */
   rules.emplace_back(
       And::unique(conv_unique<PatchCondition>(
@@ -402,7 +412,7 @@ std::vector<PatchRule> getARMPatchRules(Options opts) {
       conv_unique<PatchGenerator>(LDMPatchGen::unique(Temp(0)),
                                   SetExchange::unique(Temp(0))));
 
-  /* Rule #17: STM with PC
+  /* Rule #18: STM with PC
    */
   rules.emplace_back(
       And::unique(conv_unique<PatchCondition>(
@@ -419,7 +429,7 @@ std::vector<PatchRule> getARMPatchRules(Options opts) {
   // Instruction with PC as source
   // =============================
 
-  /* Rule #18: ADD/SUB/... with PC as source only:
+  /* Rule #19: ADD/SUB/... with PC as source only:
    * - both in second and third operand (src only)
    * - both in first and third operand (src only)
    * - in first (src) operand
@@ -467,7 +477,7 @@ std::vector<PatchRule> getARMPatchRules(Options opts) {
   // Instruction with PC 3 times and dest
   // ====================================
 
-  /* Rule #19: LDR/ADD/SUB/... with PC in first (dst) and second/third (src)
+  /* Rule #20: LDR/ADD/SUB/... with PC in first (dst) and second/third (src)
    * operand and without cond
    *  - add pc, pc, pc
    *
@@ -486,7 +496,7 @@ std::vector<PatchRule> getARMPatchRules(Options opts) {
               SubstituteWithTemp::unique(Reg(REG_PC), Temp(0)))),
           WritePC::unique(Temp(0)), SetExchange::unique(Temp(0))));
 
-  /* Rule #20: LDR/ADD/SUB/... with PC in first (dst) and second/third (src)
+  /* Rule #21: LDR/ADD/SUB/... with PC in first (dst) and second/third (src)
    * operand and with cond
    *  - addcc pc, pc, pc
    *
@@ -512,7 +522,7 @@ std::vector<PatchRule> getARMPatchRules(Options opts) {
   // Instruction with PC 2 times and dest
   // ====================================
 
-  /* Rule #21: ADD/SUB/... with PC in first (dst) and third (src) operand and
+  /* Rule #22: ADD/SUB/... with PC in first (dst) and third (src) operand and
    * without cond
    *  - add pc, r12, pc
    *
@@ -532,7 +542,7 @@ std::vector<PatchRule> getARMPatchRules(Options opts) {
               SubstituteWithTemp::unique(Reg(REG_PC), Temp(0)))),
           WritePC::unique(Temp(0)), SetExchange::unique(Temp(0))));
 
-  /* Rule #22: ADD/SUB/... with PC in first (dst) and third (src) operand and
+  /* Rule #23: ADD/SUB/... with PC in first (dst) and third (src) operand and
    * with cond
    *  - addcc pc, r12, pc
    *
@@ -555,7 +565,7 @@ std::vector<PatchRule> getARMPatchRules(Options opts) {
               SetOperand::unique(Operand(2), Temp(1)))),
           WritePC::unique(Temp(0)), SetExchange::unique(Temp(0))));
 
-  /* Rule #23: LDR/ADD/SUB/... with PC in first (dst) and second (src) operand
+  /* Rule #24: LDR/ADD/SUB/... with PC in first (dst) and second (src) operand
    * and without cond
    *  - ldr pc, [pc, #0x80]
    *
@@ -576,7 +586,7 @@ std::vector<PatchRule> getARMPatchRules(Options opts) {
               SubstituteWithTemp::unique(Reg(REG_PC), Temp(0)))),
           WritePC::unique(Temp(0)), SetExchange::unique(Temp(0))));
 
-  /* Rule #24: LDR/ADD/SUB/... with PC in first (dst) and second (src) operand
+  /* Rule #25: LDR/ADD/SUB/... with PC in first (dst) and second (src) operand
    * and with cond
    *  - ldrcc pc, [pc, #0x80]
    *
@@ -603,7 +613,7 @@ std::vector<PatchRule> getARMPatchRules(Options opts) {
   // Instruction with PC 1 times and dst
   // ===================================
 
-  /* Rule #25: LDR/ADD/SUB/... with PC in first (dst) operand and without cond
+  /* Rule #26: LDR/ADD/SUB/... with PC in first (dst) operand and without cond
    *  - ldr pc, [r0, #0x80]
    *
    *  ldr temp0, [r0, #0x80]
@@ -622,7 +632,7 @@ std::vector<PatchRule> getARMPatchRules(Options opts) {
               SubstituteWithTemp::unique(Reg(REG_PC), Temp(0)))),
           WritePC::unique(Temp(0)), SetExchange::unique(Temp(0))));
 
-  /* Rule #26: LDR/ADD/SUB/... with PC in first (dst) operand and with cond
+  /* Rule #27: LDR/ADD/SUB/... with PC in first (dst) operand and with cond
    *  - ldrcc pc, [r0, #0x80]
    *
    *  mov temp0, <PC-4>
@@ -1137,19 +1147,30 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
     /* Rule #27: Clear local monitor state
      */
     rules.emplace_back(
-        Or::unique(conv_unique<PatchCondition>(OpIs::unique(llvm::ARM::t2CLREX),
-                                               OpIs::unique(llvm::ARM::tSVC))),
+        OpIs::unique(llvm::ARM::t2CLREX),
         conv_unique<PatchGenerator>(
             ItPatch::unique(false),
             ModifyInstruction::unique(InstTransform::UniquePtrVec()),
-            // for SVC, we need to backup the value of Temp(0) after the syscall
-            SaveTemp::unique(Temp(0)),
             GetConstant::unique(Temp(0), Constant(0)),
             WriteTempCC::unique(
                 Temp(0),
                 Offset(offsetof(Context, gprState.localMonitor.enable)))));
 
-    /* Rule #28: exclusive load 1 register
+    /* Rule #28: Clear local monitor state on svc
+     */
+    rules.emplace_back(
+        OpIs::unique(llvm::ARM::tSVC),
+        conv_unique<PatchGenerator>(
+            ItPatch::unique(false),
+            ModifyInstruction::unique(InstTransform::UniquePtrVec()),
+            // for SVC, we need to backup the value of Temp(0) after the syscall
+            SaveTemp::unique(Temp(0), true),
+            GetConstant::unique(Temp(0), Constant(0)),
+            WriteTempCC::unique(
+                Temp(0),
+                Offset(offsetof(Context, gprState.localMonitor.enable)))));
+
+    /* Rule #29: exclusive load 1 register
      */
     rules.emplace_back(
         Or::unique(
@@ -1171,7 +1192,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
             ItPatch::unique(false),
             ModifyInstruction::unique(InstTransform::UniquePtrVec())));
 
-    /* Rule #29: exclusive load 1 register + offset
+    /* Rule #30: exclusive load 1 register + offset
      */
     rules.emplace_back(
         OpIs::unique(llvm::ARM::t2LDREX),
@@ -1186,7 +1207,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
             ItPatch::unique(false),
             ModifyInstruction::unique(InstTransform::UniquePtrVec())));
 
-    /* Rule #30: exclusive load 2 registers
+    /* Rule #31: exclusive load 2 registers
      */
     rules.emplace_back(
         OpIs::unique(llvm::ARM::t2LDREXD),
@@ -1201,7 +1222,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
             ItPatch::unique(false),
             ModifyInstruction::unique(InstTransform::UniquePtrVec())));
 
-    /* Rule #31: exclusive store
+    /* Rule #32: exclusive store
      */
     rules.emplace_back(
         Or::unique(conv_unique<PatchCondition>(
@@ -1220,7 +1241,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
   // Instruction with no PC
   // ======================
 
-  /* Rule #32: instruction to skip (it, barrier, preload)
+  /* Rule #33: instruction to skip (it, barrier, preload)
    */
   rules.emplace_back(
       Or::unique(conv_unique<PatchCondition>(
@@ -1234,7 +1255,7 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
               )),
       PatchGenerator::UniquePtrVec());
 
-  /* Rule #33: all other
+  /* Rule #34: all other
    */
   rules.emplace_back(
       Not::unique(Or::unique(conv_unique<PatchCondition>(

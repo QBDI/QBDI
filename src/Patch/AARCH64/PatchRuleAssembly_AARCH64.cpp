@@ -354,7 +354,7 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
         conv_unique<PatchGenerator>(
             ModifyInstruction::unique(InstTransform::UniquePtrVec()),
             // for SVC, we need to backup the value of Temp(0) after the syscall
-            SaveTemp::unique(Temp(0)),
+            SaveTemp::unique(Temp(0), true),
             GetConstant::unique(Temp(0), Constant(0)),
             WriteTemp::unique(
                 Temp(0),

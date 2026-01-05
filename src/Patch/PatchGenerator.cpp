@@ -206,8 +206,12 @@ RelocatableInst::UniquePtrVec
 SaveTemp::generate(const Patch &patch, TempManager &temp_manager) const {
 
   Reg reg = temp_manager.getRegForTemp(temp);
-  return conv_unique<RelocatableInst>(
-      StoreDataBlock::unique(reg, reg.offset()));
+  if ((not checkManager) or temp_manager.shouldRestore(reg)) {
+    return conv_unique<RelocatableInst>(
+        StoreDataBlock::unique(reg, reg.offset()));
+  } else {
+    return {};
+  }
 }
 
 // SaveReg

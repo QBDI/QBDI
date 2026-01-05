@@ -341,15 +341,19 @@ public:
 
 class SaveTemp : public AutoClone<PatchGenerator, SaveTemp> {
   Temp temp;
+  bool checkManager;
 
 public:
   /*! Save the value of the temporary register in the datablock.
    * This can be used when an instruction can change the value of the register
    * used as a temp
    *
-   * @param[in] temp     A temp to save.
+   * @param[in] temp              A temp to save.
+   * @param[in] checkTmpManager   Only save if the register is saved by the
+   *                              register manager
    */
-  SaveTemp(Temp temp) : temp(temp) {}
+  SaveTemp(Temp temp, bool checkTmpManager)
+      : temp(temp), checkManager(checkTmpManager) {}
 
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const Patch &patch, TempManager &temp_manager) const override;
