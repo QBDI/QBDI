@@ -338,9 +338,19 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
     /* Rule #12: Clear local monitor state
      */
     rules.emplace_back(
-        Or::unique(
-            conv_unique<PatchCondition>(OpIs::unique(llvm::AArch64::CLREX),
-                                        OpIs::unique(llvm::AArch64::SVC))),
+        OpIs::unique(llvm::AArch64::CLREX),
+        conv_unique<PatchGenerator>(
+            ModifyInstruction::unique(InstTransform::UniquePtrVec()),
+            GetConstant::unique(Temp(0), Constant(0)),
+            WriteTemp::unique(
+                Temp(0),
+                Offset(offsetof(Context, gprState.localMonitor.enable))),
+            SaveX28IfSet::unique()));
+
+    /* Rule #13: Clear local monitor state on SVC
+     */
+    rules.emplace_back(
+        OpIs::unique(llvm::AArch64::SVC),
         conv_unique<PatchGenerator>(
             ModifyInstruction::unique(InstTransform::UniquePtrVec()),
             // for SVC, we need to backup the value of Temp(0) after the syscall
@@ -351,7 +361,7 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
                 Offset(offsetof(Context, gprState.localMonitor.enable))),
             SaveX28IfSet::unique()));
 
-    /* Rule #13: exclusive load 1 register
+    /* Rule #14: exclusive load 1 register
      */
     rules.emplace_back(
         Or::unique(
@@ -374,7 +384,7 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
             ModifyInstruction::unique(InstTransform::UniquePtrVec()),
             SaveX28IfSet::unique()));
 
-    /* Rule #14: exclusive load 2 register
+    /* Rule #15: exclusive load 2 register
      */
     rules.emplace_back(
         Or::unique(
@@ -393,7 +403,7 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
             ModifyInstruction::unique(InstTransform::UniquePtrVec()),
             SaveX28IfSet::unique()));
 
-    /* Rule #15: exclusive store
+    /* Rule #16: exclusive store
      */
     rules.emplace_back(
         Or::unique(
