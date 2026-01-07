@@ -24,7 +24,7 @@
  */
 export var QBDI_MAJOR = 0;
 export var QBDI_MINOR = 12;
-export var QBDI_PATCH = 0;
+export var QBDI_PATCH = 1;
 /**
  * Minimum version of QBDI to use Frida bindings
  */
