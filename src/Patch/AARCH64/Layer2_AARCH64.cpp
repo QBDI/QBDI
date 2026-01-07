@@ -75,35 +75,10 @@ llvm::MCInst addr(RegLLVM dst, RegLLVM src1, RegLLVM src2, ShiftExtendType type,
                   unsigned int shift) {
 
   QBDI_REQUIRE_ABORT(shift <= 4, "Unsupported shift {}", shift);
-  unsigned immValue;
-  switch (type) {
-    case UXTB:
-      immValue = getArithExtendImm(llvm::AArch64_AM::UXTB, shift);
-      break;
-    case UXTH:
-      immValue = getArithExtendImm(llvm::AArch64_AM::UXTH, shift);
-      break;
-    case UXTW:
-      immValue = getArithExtendImm(llvm::AArch64_AM::UXTW, shift);
-      break;
-    case UXTX:
-      immValue = getArithExtendImm(llvm::AArch64_AM::UXTX, shift);
-      break;
-    case SXTB:
-      immValue = getArithExtendImm(llvm::AArch64_AM::SXTB, shift);
-      break;
-    case SXTH:
-      immValue = getArithExtendImm(llvm::AArch64_AM::SXTH, shift);
-      break;
-    case SXTW:
-      immValue = getArithExtendImm(llvm::AArch64_AM::SXTW, shift);
-      break;
-    case SXTX:
-      immValue = getArithExtendImm(llvm::AArch64_AM::SXTX, shift);
-      break;
-    default:
-      QBDI_ABORT("Unexpected type %d", type);
+  if (type > SXTX) {
+    QBDI_ABORT("Unexpected type %d", type);
   }
+  unsigned immValue = (type << 3) | (shift & 0x7);
 
   llvm::MCInst inst;
   RegLLVM extReg;
