@@ -925,6 +925,36 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest_AARCH64-ldrwui") {
   CHECK(state->x0 == ((v1[0] >> 32) & 0xffffffff));
 }
 
+TEST_CASE_METHOD(APITest, "MemoryAccessTest_AARCH64-ldr_sxtw") {
+
+  const char source[] = "ldr x3, [x1, w2, SXTW#3]\n";
+
+  QBDI::rword v1[] = {0xab3672016bef61aeull, 0x8e060b1505409a1bull,
+                      0x54869574235eab1eull, 0x13709731a1fe1cb4ull};
+  ExpectedMemoryAccesses expectedPre = {{
+      {((QBDI::rword)&v1[1]), v1[1], 8, QBDI::MEMORY_READ,
+       QBDI::MEMORY_NO_FLAGS},
+  }};
+
+  vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  vm.addMnemonicCB("LDRXroW", QBDI::PREINST, checkAccess, &expectedPre);
+
+  QBDI::GPRState *state = vm.getGPRState();
+  state->x1 = reinterpret_cast<QBDI::rword>(&v1) + 24;
+  state->x2 = 0xfffffffe;
+  vm.setGPRState(state);
+
+  QBDI::rword retval;
+  bool ran = runOnASM(&retval, source);
+
+  CHECK(ran);
+  for (auto &e : expectedPre.accesses)
+    CHECK(e.see);
+
+  state = vm.getGPRState();
+  CHECK(state->x3 == v1[1]);
+}
+
 TEST_CASE_METHOD(APITest, "MemoryAccessTest_AARCH64-ldrwpre") {
 
   const char source[] = "ldr w0, [x1, #4]!\n";
