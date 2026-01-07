@@ -1,10 +1,14 @@
 CHANGELOG
 =========
 
-Next Release (0.12.1)
----------------------
+Version (0.12.1)
+----------------
 
+2026-01-07 QBDI Team <qbdi@quarkslab.com>
 
+* Support for Arm64e on OSX (`#310 <https://github.com/QBDI/QBDI/pull/310>`_)
+* Fix cross-compiling from windows to android (`#315 <https://github.com/QBDI/QBDI/pull/315>`_, `#316 <https://github.com/QBDI/QBDI/pull/316>`_ and `#318 <https://github.com/QBDI/QBDI/pull/318>`_)
+* Fix broken support of some AArch64 instructions (`313 <https://github.com/QBDI/QBDI/pull/313>`_ and `320 <https://github.com/QBDI/QBDI/pull/320>`_)
 
 Version (0.12.0)
 ----------------
