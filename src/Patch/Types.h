@@ -62,11 +62,11 @@ public:
 };
 
 inline bool operator==(unsigned int id, const RegLLVM &reg) {
-  return reg == id;
+  return reg.getValue() == id;
 }
 
 inline bool operator!=(unsigned int id, const RegLLVM &reg) {
-  return reg != id;
+  return reg.getValue() != id;
 }
 
 /*! Structure representing a register variable in PatchDSL.
