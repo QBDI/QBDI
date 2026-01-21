@@ -159,7 +159,6 @@ var System_C = Object.freeze({
     GetLastError: _binder.bind('GetLastError', 'int', []),
     dlopen: _binder.bind('dlopen', 'pointer', ['pointer', 'int']),
     dlerror: _binder.bind('dlerror', 'pointer', []),
-    free: _binder.bind('free', 'void', ['pointer']),
 });
 
 
@@ -184,9 +183,6 @@ var System = Object.freeze({
             return System_C.LoadLibraryEx(path, 0, 0);
         }
         return System_C.dlopen(path, RTLD_LOCAL | RTLD_LAZY);
-    },
-    free: function (ptr) {
-        System_C.free(ptr);
     }
 });
 
@@ -345,6 +341,7 @@ var QBDI_C = Object.freeze({
     clearAllCache: _qbdibinder.bind('qbdi_clearAllCache', 'void', ['pointer']),
     getNbExecBlock: _qbdibinder.bind('qbdi_getNbExecBlock', 'uint32', ['pointer']),
     reduceCacheTo: _qbdibinder.bind('qbdi_reduceCacheTo', 'void', ['pointer', 'uint32']),
+    free: _qbdibinder.bind('qbdi_free', 'void', ['pointer']),
 });
 
 // Init some globals
@@ -1721,10 +1718,10 @@ export class VM {
             var strPtr = p.readPointer();
             var str = strPtr.readCString();
             mods.push(str);
-            System.free(strPtr);
+            QBDI_C.free(strPtr);
             p = p.add(Process.pointerSize);
         }
-        System.free(modsPtr);
+        QBDI_C.free(modsPtr);
         return mods;
     }
 
@@ -2112,7 +2109,7 @@ export class VM {
             accesses.push(access);
             p = p.add(sSize);
         }
-        System.free(accessPtr);
+        QBDI_C.free(accessPtr);
         return accesses;
     }
 
