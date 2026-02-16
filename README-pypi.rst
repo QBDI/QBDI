@@ -45,10 +45,10 @@ CPU       Operating Systems                Execution            Memory Access In
 x86-64    Android, Linux, macOS, Windows   :green:`Supported`   :green:`Supported`
 x86       Android, Linux, macOS, Windows   :green:`Supported`   :green:`Supported`
 ARM       Android, Linux                   :green:`Supported`   :green:`Supported`
-AArch64   Android, Linux, macOS, IOs (*)   :green:`Supported`   :green:`Supported`
+AArch64   Android, Linux, macOS, iOS (*)   :green:`Supported`   :green:`Supported`
 =======   ==============================   ==================   =========================
 
-\* IOs support is unstable and need a jailbroken device.
+\* iOS support is unstable and need a jailbroken device.
 
 Installation
 ============

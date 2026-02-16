@@ -182,7 +182,7 @@ if(QBDI_PTRAUTH AND NOT ((QBDI_PLATFORM_OSX OR QBDI_PLATFORM_IOS)
                          AND QBDI_ARCH_AARCH64))
   message(
     FATAL_ERROR
-      "PTRAUTH is only supported for IOS and OSX platforms and AARCH64 architecture."
+      "PTRAUTH is only supported for iOS and macOS platforms and AARCH64 architecture."
   )
 endif()
 

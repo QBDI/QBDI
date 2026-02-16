@@ -68,7 +68,7 @@ It's worth mentioning that since some parts are still under development, those a
 - `Windows devel packages <https://ci.appveyor.com/project/QBDI/qbdi/branch/dev-next>`_
 - `Linux (Ubuntu) devel packages <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Tests+and+Package+Linux%22+branch%3Adev-next>`_
 - `Android devel packages <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Package+Android%22+branch%3Adev-next>`_
-- `OSX devel packages <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Tests+and+Package+OSX%22+branch%3Adev-next>`_
+- `macOS devel packages <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Tests+and+Package+OSX%22+branch%3Adev-next>`_
 
 PyQBDI installation
 -------------------

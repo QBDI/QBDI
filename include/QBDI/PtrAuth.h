@@ -64,7 +64,7 @@ inline void *sign_code_ptrauth<void *>(void *addr) {
 
 } // namespace QBDI
 #else
-#error "PTRAUTH is only implemented for OSX and IOS"
+#error "PTRAUTH is only implemented for macOS and iOS"
 #endif
 
 #else // QBDI_PTRAUTH

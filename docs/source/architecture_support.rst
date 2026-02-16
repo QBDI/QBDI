@@ -31,7 +31,7 @@ Some extensions are not supported by QBDI, in particular:
 - Memory Tagging Extension (MTE)
 - Transactional Memory Extension (TME)
 
-For OSX, the register X18 is defined as platform reserved. QBDI doesn't set or
+For macOS, the register X18 is defined as platform reserved. QBDI doesn't set or
 use this register.
 
 Local Monitor
@@ -64,7 +64,7 @@ QBDI will always report unauthenticated address, especially:
 - In :cpp:struct:`QBDI::MemoryAccess` structure,
 - during VMEvent in the :cpp:struct:`QBDI::VMState` structure
 
-On OSX, QBDI should be compiled with the same architectures (ie, ``arm64`` or
+On macOS, QBDI should be compiled with the same architectures (ie, ``arm64`` or
 ``arm64e``) as the target (by settings the CMake parameter ``-DCMAKE_OSX_ARCHITECTURES="arm64e"``).
 
 At the compile time, the option ``-DQBDI_PTRAUTH=ON`` can be enabled to
