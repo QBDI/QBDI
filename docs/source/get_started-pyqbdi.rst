@@ -18,7 +18,7 @@ Memory allocation
 -----------------
 
 Unlike the C/C++ APIs, interacting with the process' memory is much more complicated while in Python -- that is, memory regions cannot be allocated, read or written.
-Luckily, PyQBDI offers helpers to allow users perform these actions.
+Luckily, PyQBDI offers helpers to allow users to perform these actions.
 
 .. code:: python
 
@@ -63,7 +63,7 @@ Allocate a virtual stack
 
 The virtual machine does not work with the regular stack that your process uses -- instead, QBDI needs its own stack.
 Therefore, we have to ask for a virtual stack using :func:`pyqbdi.allocateVirtualStack`. This function is
-responsible for allocating an aligned memory space, set the stack pointer register accordingly and return the top address of this brand-new memory region.
+responsible for allocating an aligned memory space, setting the stack pointer register accordingly and returning the top address of this brand-new memory region.
 
 .. code:: python
 
@@ -82,10 +82,10 @@ and the disassembly of the instruction and print it.
 
 As the callback will be called on an instruction, the callback must follow the :func:`InstCallback <pyqbdi.InstCallback>` type. Inside the
 callback, we can get an :class:`InstAnalysis` of the current instruction with :func:`pyqbdi.VM.getInstAnalysis`.
-To have the address and the disassembly, the :class:`InstAnalysis` need to have the type
+To have the address and the disassembly, the :class:`InstAnalysis` needs to have the type
 :data:`pyqbdi.ANALYSIS_INSTRUCTION <pyqbdi.AnalysisType>` (for the address) and
 :data:`pyqbdi.ANALYSIS_DISASSEMBLY <pyqbdi.AnalysisType>` (for the disassembly). These
-two :data:`pyqbdi.AnalysisType` are the default parameter of :func:`pyqbdi.VM.getInstAnalysis` and
+two :data:`pyqbdi.AnalysisType` are the default parameters of :func:`pyqbdi.VM.getInstAnalysis` and
 can be omitted.
 
 .. code:: python
@@ -126,7 +126,7 @@ QBDI needs a range of addresses where the code should be instrumented. If the ex
 QBDI will try to restore an uninstrumented execution.
 
 In our example, we need to include the method in the instrumented range. The method :func:`pyqbdi.VM.addInstrumentedModuleFromAddr`
-can be used to add a whole module (binary or library) in the range of instrumentation with a single address of this module.
+can be used to add a whole module (binary or library) in the instrumentation range with a single address of this module.
 
 .. code:: python
 
@@ -145,8 +145,8 @@ fake address.
     asrun, retval = vm.call(funcPtr, [args1, args2])
     assert asrun
 
-:func:`pyqbdi.VM.call` returns if the function has completely run in the context of QBDI.
-The first argument has been filled with the value of the return register (e.g. ``RAX`` for X86_64).
+:func:`pyqbdi.VM.call` returns when the function has completely run in the context of QBDI.
+The first return value has been filled with the value of the return register (e.g. ``RAX`` for X86_64).
 
 It may turn out that the function does not expect the calling convention :func:`pyqbdi.VM.call` uses.
 In this precise case, you must set up the proper context and the stack yourself and call :func:`pyqbdi.VM.run` afterwards.
@@ -154,7 +154,7 @@ In this precise case, you must set up the proper context and the stack yourself 
 Terminate the execution properly
 --------------------------------
 
-At last, before exiting, we need to free up the virtual stack we have allocated calling :func:`pyqbdi.alignedFree`.
+At last, before exiting, we need to free up the virtual stack we have allocated by calling :func:`pyqbdi.alignedFree`.
 
 .. code:: python
 

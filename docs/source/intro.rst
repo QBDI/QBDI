@@ -24,12 +24,12 @@ inside the binary at runtime.
 Why QBDI?
 ----------
 
-Existing DBI framework were designed more than 15 years ago, focusing on features and
-platforms that made sense at the time. Mobile platform support is often unstable or inexistent
+Existing DBI frameworks were designed more than 15 years ago, focusing on features and
+platforms that made sense at the time. Mobile platform support is often unstable or nonexistent
 and instrumentation features are either simplistic or buried in low-level details.
 
 QBDI attempts to retain the interesting features of those frameworks while avoiding their pitfalls
-and bringing new designs and ideas. Its goal is to be a cross-platform and multi-architectures
+and bringing new designs and ideas. Its goal is to be a cross-platform and multi-architecture
 modular DBI framework. The modular design exposes the DBI engine as a library that can start an
 instrumented execution anywhere, anytime and easily be incorporated in other tools.
 
@@ -37,9 +37,9 @@ QBDI : How does it work?
 -------------------------
 
 The core of DBI frameworks relies on the Just-In-Time (JIT) recompilation of the original program.
-This allows to interleave additional assembly code which can instrument any part of the execution.
+This allows interleaving additional assembly code which can instrument any part of the execution.
 The DBI engine performing the JIT recompilation and the JITed code itself run in the same process
-but need to each have their own processor context. This requires to perform context switches between
+but each need to have their own processor context. This requires performing context switches between
 the two like a virtual machine would. We thus call the DBI context the **host** and the original
 program context the **guest**.
 
@@ -58,7 +58,7 @@ is then executed. Each loop iteration operates on a basic block, a sequence of i
 ends with a branching instruction. This basic block is first patched, to accommodate the JIT
 process, and then instrumented as instructed by the instrumentation tool. This instrumented basic
 block is written in executable memory, executed and returns the address of the next basic block to
-execute. To avoid doing twice the same work, this **instrumented code** is actually written in a
+execute. To avoid doing the same work twice, this **instrumented code** is actually written in a
 code cache.
 
 .. _intro_limitations:
@@ -71,11 +71,11 @@ they use the same heap and the same libraries and this will cause issues with an
 code. We could have chosen to shield users from those issues by forbidding instrumentation tools to
 use any external libraries like some other DBI frameworks have done. However we believe this is
 an overblown issue and that there are effective mechanisms to mitigate the problem. Nonetheless
-users need to be aware of this design limitation and the mitigations side-effects.
+users need to be aware of this design limitation and the mitigations' side effects.
 
 For example, tracing the heap memory allocator will cause deadlocks because it is not reentrant.
 There are other problematic cases but they are mostly limited to the standard C library and the OS
-loader. To avoid such issues we have an execution brokering system that allows to whitelist/blacklist
+loader. To avoid such issues we have an execution brokering system that allows whitelisting/blacklisting
 specific pieces of code. These will be executed outside of the instrumentation process via a call
 hooking mechanism. This execution broker system is documented in the :ref:`API description <instrumentation_range>`.
 

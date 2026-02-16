@@ -70,7 +70,7 @@ Instrumentation ranges
 ----------------------
 - Global APIs: :ref:`C <instrumentation-range-c>`, :ref:`C++ <instrumentation-range-cpp>`, :ref:`PyQBDI <instrumentation-range-pyqbdi>`, :ref:`Frida/QBDI <instrumentation-range-js>`
 
-The Instrumentation Range is a range of addresses where QBDI will intrument the original code.
+The Instrumentation Range is a range of addresses where QBDI will instrument the original code.
 When the programme counter gets out of this scope, QBDI will try to restore a native and uninstrumented execution.
 For performance reasons, it is rarely recommended to instrument all the guest code.
 Moreover, you must bear in mind that QBDI shares the same standard library as the guest and some methods are not *reentrant* (more details in :ref:`intro_limitations`).
@@ -78,7 +78,7 @@ Moreover, you must bear in mind that QBDI shares the same standard library as th
 The current mechanism is implemented by the :cpp:class:`ExecBroker` and only supports external calls out of the instrumentation range.
 When the execution gets out of the range, :cpp:class:`ExecBroker` will try to find an address on the stack that is inside the instrumentation range.
 If an address is found, it will be replaced by a custom one and the execution is restored without instrumentation. When the process returns to
-this address :cpp:class:`ExecBroker` will capture its state and continue the execution at the expected address. If any valid return address is found,
+this address :cpp:class:`ExecBroker` will capture its state and continue the execution at the expected address. If no valid return address is found,
 the instrumentation will continue until finding a valid return address.
 
 The following limitations are known:
@@ -88,16 +88,16 @@ The following limitations are known:
 - When the native instrumentation goes out of the instrumentation range, the only method to restore
   the instrumentation is to return to the modified address. Any other executions of code inside the
   instrumentation range will not be caught (callbacks, ...).
-- The current :cpp:class:`ExecBroker` doesn't support any exception mechanism, included the `setjmp/longjmp`.
+- The current :cpp:class:`ExecBroker` doesn't support any exception mechanism, including the `setjmp/longjmp`.
 - The instrumentation range, and QBDI in general, are **not** a security sandbox. The code may
-  escape and runs without instrumentation.
+  escape and run without instrumentation.
 
 The instrumentation ranges can be managed through:
 
-- ``addInstrumentedRange`` and ``removeInstrumentedRange`` to add or remove a specific range of address
-- ``addInstrumentedModule`` and ``removeInstrumentedModule`` to add or remove a library/module with his name
-- ``addInstrumentedModuleFromAddr`` and ``removeInstrumentedModuleFromAddr`` to add or remove a library/module with one of his addresses
-- ``instrumentAllExecutableMaps`` and ``removeAllInstrumentedRanges`` to add or remove all the executable range
+- ``addInstrumentedRange`` and ``removeInstrumentedRange`` to add or remove a specific range of addresses
+- ``addInstrumentedModule`` and ``removeInstrumentedModule`` to add or remove a library/module with its name
+- ``addInstrumentedModuleFromAddr`` and ``removeInstrumentedModuleFromAddr`` to add or remove a library/module with one of its addresses
+- ``instrumentAllExecutableMaps`` and ``removeAllInstrumentedRanges`` to add or remove all the executable ranges
 
 
 Register state
@@ -108,10 +108,10 @@ Register state
 QBDI defines two structures for the registers: ``GPRState`` and ``FPRState``.
 
 - ``GPRState`` contains all the General Purpose registers such as ``rax``, ``rsp``, ``rip`` or ``eflags`` on X86_64.
-- ``FPRState`` contains the the Floating Point registers.
+- ``FPRState`` contains the Floating Point registers.
 
 Inside a ``InstCallback`` and ``VMCallback``, the current state is passed as a parameter and any change on it will affect the execution.
-Outside of a callback, ``GPRState`` and ``FPRState`` can be retrieved and set with ``getGPRState``, ``getFPRState``, ``getGPRState`` and ``getFPRState``.
+Outside of a callback, ``GPRState`` and ``FPRState`` can be retrieved and set with ``getGPRState``, ``getFPRState``, ``setGPRState`` and ``setFPRState``.
 
 .. note::
 
@@ -155,7 +155,7 @@ Therefore, an ``InstCallback`` can be inserted at two different positions:
 
 An ``InstCallback`` can be registered for a specific instruction (``addCodeAddrCB``),
 any instruction in a specified range (``addCodeRangeCB``) or any instrumented instruction (``addCodeCB``).
-The instruction also be targeted by their mnemonic (or LLVM opcode) (``addMnemonicCB``).
+The instruction also be targeted by its mnemonic (or LLVM opcode) (``addMnemonicCB``).
 
 .. _api_desc_VMCallback:
 
@@ -186,7 +186,7 @@ Memory callbacks
 
 The memory callback is an ``InstCallback`` that will be called when the target program reads or writes the memory.
 The callback can be called only when a specific address is accessed (``addMemAddrCB``),
-when a range of address is accessed (``addMemRangeCB``) or when any memory is accessed (``addMemAccessCB``).
+when a range of addresses is accessed (``addMemRangeCB``) or when any memory is accessed (``addMemAccessCB``).
 
 Unlike with the instruction callback registration, the position of a memory callback cannot be manually specified.
 If a memory callback is solely registered for read accesses, it will be called **before** the instruction.
@@ -204,7 +204,7 @@ An ``InstrRuleCallback`` can be registered for all instructions (``addInstrRule`
 
 .. note::
 
-    The instrumentation process of QBDI responsible of *JITing* instructions may analyse more than once the same instruction.
+    The instrumentation process of QBDI responsible for *JITing* instructions may analyse more than once the same instruction.
     Consequently, the instrumentation rule callback must always return the same result even though the instruction has already been instrumented.
 
 Instruction analysis
@@ -220,9 +220,9 @@ Four types of analysis are available. If a type of analysis is not selected, the
 
 - ``ANALYSIS_INSTRUCTION``: This analysis type provides some generic information about the instruction, like its address, its size, its mnemonic (LLVM opcode)
   or its condition type if the instruction is conditional.
-- ``ANALYSIS_DISASSEMBLY``: This analysis type provides the disassembly of the instruction. For X86 and X86_64, the syntax Intel is used by default.
+- ``ANALYSIS_DISASSEMBLY``: This analysis type provides the disassembly of the instruction. For X86 and X86_64, the Intel syntax is used by default.
   The syntax can be changed with the option ``OPT_ATT_SYNTAX``.
-- ``ANALYSIS_OPERANDS``: This analysis type provides information about the operand of the instruction.
+- ``ANALYSIS_OPERANDS``: This analysis type provides information about the operands of the instruction.
   An operand can be a register or an immediate. If a register operand can be empty, the special type ``OPERAND_INVALID`` is used.
   The implicit register of instruction is also present with a specific flag.
   Moreover, the member ``flagsAccess`` specifies whether the instruction will use or set the generic flag.
@@ -245,7 +245,7 @@ Two APIs can be used to get the memory accesses:
   If the callback is before the instruction (``PREINST``), only read accesses will be available.
 - ``getBBMemoryAccess`` must be used in a ``VMEvent`` callback with ``SEQUENCE_EXIT`` to get all the memory accesses for the last sequence.
 
-Both return a list of ``MemoryAccess``. Generally speaking, a ``MemoryAccess`` will have the address of the instruction responsible of the access,
+Both return a list of ``MemoryAccess``. Generally speaking, a ``MemoryAccess`` will have the address of the instruction responsible for the access,
 the access address and size, the type of access and the value read or written. However, some instructions can do complex accesses and
 some information can be missing or incomplete. The ``flags`` of ``MemoryAccess`` can be used to detect these cases:
 

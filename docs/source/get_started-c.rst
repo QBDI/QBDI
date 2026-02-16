@@ -8,7 +8,7 @@ Load the target code
 
 In this tutorial, we aim at figuring out how many iterations a Fibonacci function is doing.
 To do so, we will rely on QBDI to instrument the function.
-For convenience sake, its source code is compiled along with the one we are about to write.
+For convenience's sake, its source code is compiled along with the one we are about to write.
 
 .. code:: c
 
@@ -19,7 +19,7 @@ For convenience sake, its source code is compiled along with the one we are abou
     }
 
 However, it's not always the case.
-Sometimes, we need to look into a function we don't have the source code of -- that is, it has been already compiled.
+Sometimes, we need to look into a function we don't have the source code of -- that is, it has already been compiled.
 As a result, we have to find a way to load the code we want to inspect into our process' memory space.
 For instance, if the function of interest is embedded in a dynamic library, we can link our code with this library when compiling
 or import it at runtime by calling either ``dlopen`` or ``LoadLibraryA``.
@@ -57,7 +57,7 @@ Allocate a virtual stack
 
 The virtual machine does not work with the regular stack that your process uses -- instead, QBDI needs its own stack.
 Therefore, we have to ask for a virtual stack using :cpp:func:`qbdi_allocateVirtualStack`. This function is
-responsible for allocating an aligned memory space, set the stack pointer register accordingly and return the top address of this brand-new memory region.
+responsible for allocating an aligned memory space, setting the stack pointer register accordingly and returning the top address of this brand-new memory region.
 
 .. code:: c
 
@@ -161,7 +161,7 @@ fake address.
     res = qbdi_call(vm, &retval, (rword) fibonacci, 1, 25);
     assert(res == true);
 
-:cpp:func:`qbdi_call` returns if the function has completely run in the context of QBDI.
+:cpp:func:`qbdi_call` returns when the function has completely run in the context of QBDI.
 The first argument has been filled with the value of the return register (e.g. ``RAX`` for X86_64).
 
 It may turn out that the function does not expect the calling convention :cpp:func:`qbdi_call` uses.
@@ -189,7 +189,7 @@ Generate a template
 -------------------
 
 A QBDI template can be considered as a baseline project, a minimal component you can modify and build your instrumentation tool on.
-They are provided to help you effortlessly start off a new QBDI based project.
+They are provided to help you effortlessly start off a new QBDI-based project.
 The binary responsible for generating a template is shipped in the release packages and can be used as follows:
 
 .. code:: bash

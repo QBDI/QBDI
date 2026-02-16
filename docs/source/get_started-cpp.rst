@@ -8,7 +8,7 @@ Load the target code
 
 In this tutorial, we aim at figuring out how many iterations a Fibonacci function is doing.
 To do so, we will rely on QBDI to instrument the function.
-For convenience sake, its source code is compiled along with the one we are about to write.
+For convenience's sake, its source code is compiled along with the one we are about to write.
 
 .. code:: c
 
@@ -19,7 +19,7 @@ For convenience sake, its source code is compiled along with the one we are abou
     }
 
 However, it's not always the case.
-Sometimes, we need to look into a function we don't have the source code of -- that is, it has been already compiled.
+Sometimes, we need to look into a function we don't have the source code of -- that is, it has already been compiled.
 As a result, we have to find a way to load the code we want to inspect into our process' memory space.
 For instance, if the function of interest is embedded in a dynamic library, we can link our code with this library when compiling
 or import it at runtime by calling either ``dlopen`` or ``LoadLibraryA``.
@@ -54,7 +54,7 @@ Allocate a virtual stack
 
 The virtual machine does not work with the regular stack that your process uses -- instead, QBDI needs its own stack.
 Therefore, we have to ask for a virtual stack using :cpp:func:`QBDI::allocateVirtualStack`. This function is
-responsible for allocating an aligned memory space, set the stack pointer register accordingly and return the top address of this brand-new memory region.
+responsible for allocating an aligned memory space, setting the stack pointer register accordingly and returning the top address of this brand-new memory region.
 
 .. code:: cpp
 
@@ -72,10 +72,10 @@ and the disassembly of the instruction and print it.
 
 As the callback will be called on an instruction, the callback must follow the :cpp:type:`QBDI::InstCallback` type. Inside the
 callback, we can get an :cpp:struct:`QBDI::InstAnalysis` of the current instruction with :cpp:func:`QBDI::VM::getInstAnalysis`.
-To have the address and the disassembly, the :cpp:struct:`QBDI::InstAnalysis` need to have the type
+To have the address and the disassembly, the :cpp:struct:`QBDI::InstAnalysis` needs to have the type
 :cpp:enumerator:`QBDI::AnalysisType::ANALYSIS_INSTRUCTION` (for the address) and
 :cpp:enumerator:`QBDI::AnalysisType::ANALYSIS_DISASSEMBLY` (for the disassembly). These
-two :cpp:enum:`QBDI::AnalysisType` are the default parameter of :cpp:func:`QBDI::VM::getInstAnalysis` and
+two :cpp:enum:`QBDI::AnalysisType` are the default parameters of :cpp:func:`QBDI::VM::getInstAnalysis` and
 can be omitted.
 
 
@@ -156,11 +156,11 @@ fake address.
 
 .. code:: cpp
 
-    rword retval;
+    QBDI::rword retval;
     res = vm.call(&retval, reinterpret_cast<QBDI::rword>(fibonacci), {25});
     assert(res == true);
 
-:cpp:func:`QBDI::VM::call` returns if the function has completely run in the context of QBDI.
+:cpp:func:`QBDI::VM::call` returns when the function has completely run in the context of QBDI.
 The first argument has been filled with the value of the return register (e.g. ``RAX`` for X86_64).
 
 It may turn out that the function does not expect the calling convention :cpp:func:`QBDI::VM::call` uses.
@@ -169,7 +169,7 @@ In this precise case, you must set up the proper context and the stack yourself 
 Terminate the execution properly
 --------------------------------
 
-At last, before exiting, we need to free up the virtual stack we have allocated calling :cpp:func:`QBDI::alignedFree`.
+At last, before exiting, we need to free up the virtual stack we have allocated by calling :cpp:func:`QBDI::alignedFree`.
 
 .. code:: cpp
 

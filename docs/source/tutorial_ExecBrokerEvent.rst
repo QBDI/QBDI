@@ -1,16 +1,16 @@
-Execution transfert event
+Execution transfer event
 =========================
 
 Introduction
 ------------
 
-One limitation of QBDI is it shares the heap and some library with the instrumented code.
+One limitation of QBDI is that it shares the heap and some library with the instrumented code.
 With this design, the user may use any shared library and doesn't need to statically link all their
 dependencies with their code. However, some method must not be instrumented in QBDI:
 
 - The heap allocator method (malloc, free, ...).
-- Any no reentrant method shared between the target code and QBDI itself.
-- Any no reentrant method shared between the target code and user callbacks.
+- Any non-reentrant method shared between the target code and QBDI itself.
+- Any non-reentrant method shared between the target code and user callbacks.
 
 When the target code calls one of these methods, QBDI restores the native execution.
 The return address is changed in order to catch the return and to continue the instrumentation of the
@@ -19,7 +19,7 @@ code. Two events allow the user to detect this mechanism:
 - ``EXEC_TRANSFER_CALL``: called before restoring native execution for the method.
 - ``EXEC_TRANSFER_RETURN``: called after the execution of the method.
 
-These two events can be used to retrieve the method and its parameters before the call and its return value after.
+These two events can be used to retrieve the method and its parameters before the call, and its return value afterward.
 ``EXEC_TRANSFER_CALL`` can also be used to emulate a method call.
 
 
@@ -27,12 +27,12 @@ Get native call symbols
 -----------------------
 
 When QBDI needs to restore the native execution, the user may retrieve the name of the calling method
-based on the current address. The associated symbol can be found with ``dladdr`` (on Linux and OSX) or ``SymFromAddr`` (on Windows).
+based on the current address. The associated symbol can be found with ``dladdr`` (on Linux and macOS) or ``SymFromAddr`` (on Windows).
 
 We recommend forcing the linker to resolve all symbols before running the VM. This can be achieved with:
 
 - ``LD_BIND_NOW=1`` on Linux
-- ``DYLD_BIND_AT_LAUNCH=1`` on OSX
+- ``DYLD_BIND_AT_LAUNCH=1`` on macOS
 
 
 With dladdr
@@ -69,7 +69,7 @@ If several symbols are associated, only one is returned.
                     ('dli_saddr', ctypes.c_void_p)]
 
     libdl_path = ctypes.util.find_library('dl')
-    assert libdl_path != None
+    assert libdl_path is not None
     libdl = ctypes.cdll.LoadLibrary(libdl_path)
     libdl.dladdr.argtypes = (ctypes.c_void_p, ctypes.POINTER(Dl_info))
 
@@ -93,13 +93,13 @@ If several symbols are associated, only one is returned.
 With lief
 +++++++++
 
-`Lief <https://lief.quarkslab.com/>`_ is a C, C++ and python library
+`Lief <https://lief.quarkslab.com/>`_ is a C, C++ and Python library
 that aims to parse ELF, PE and MachO file formats. This library can
 extract all the symbols associated with an address, including the non-exported one.
 This solution can resolve more addresses, but could be slower than ``dladdr``.
 
-For ELF binary, the following code prints for each ``EXEC_TRANSFER_CALL``
-event, the symbols associated with the target address. For PE library, the user may
+For an ELF binary, the following code prints for each ``EXEC_TRANSFER_CALL``
+event, the symbols associated with the target address. For a PE library, the user may
 need to parse the PDB file of the library to get the symbol associated with the
 target address.
 
@@ -191,7 +191,7 @@ target address.
         if (!symnames.empty()) {
             return symnames;
         }
-        std::cout << std::setbase(16) << "Fail to found 0x" << addr << std::endl;
+        std::cout << std::setbase(16) << "Failed to find 0x" << addr << std::endl;
         const Module* m = getModule(addr);
         if (m != nullptr) {
             loadModule(*m);
@@ -287,7 +287,7 @@ target address.
                 return self.resolv_cache[addr]
 
             maps = self.get_addr_maps(addr)
-            if maps == None:
+            if maps is None:
                 return []
             self.load_lib(maps)
             if addr in self.resolv_cache:
