@@ -1,4 +1,4 @@
-name: Tests and Package OSX
+name: Tests and Package macOS
 
 on:
   push:
@@ -13,7 +13,7 @@ jobs:
     runs-on: macos-15-intel
     env:
       QBDI_ARCH: 'X86_64'
-      QBDI_PLATFORM: 'osx'
+      QBDI_PLATFORM: 'macos'
       MACOSX_DEPLOYMENT_TARGET: '10.14'
       CMAKE_OSX_ARCHITECTURES: "x86_64"
     steps:
@@ -33,9 +33,9 @@ jobs:
         with:
           path: |
             ~/.ccache
-          key: ccache-osx-${{ env.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}-${{ github.run_number }}
+          key: ccache-macos-${{ env.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}-${{ github.run_number }}
           restore-keys: |
-            ccache-osx-${{ env.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}-
+            ccache-macos-${{ env.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}-
       - if: steps.cache-ccache.outputs.cache-hit != 'true'
         run: |
           mkdir -p ~/.ccache
@@ -66,14 +66,14 @@ jobs:
       - name: Export package
         uses: actions/upload-artifact@v4
         with:
-          name: package_OSX_${{ env.QBDI_ARCH }}
+          name: package_macOS_${{ env.QBDI_ARCH }}
           path: build/QBDI-*.pkg
 
   build-aarch64:
     runs-on: macos-15
     env:
       QBDI_ARCH: 'AARCH64'
-      QBDI_PLATFORM: 'osx'
+      QBDI_PLATFORM: 'macos'
       MACOSX_DEPLOYMENT_TARGET: '10.14'
       CMAKE_OSX_ARCHITECTURES: "arm64"
     steps:
@@ -93,9 +93,9 @@ jobs:
         with:
           path: |
             ~/.ccache
-          key: ccache-osx-${{ env.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}-${{ github.run_number }}
+          key: ccache-macos-${{ env.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}-${{ github.run_number }}
           restore-keys: |
-            ccache-osx-${{ env.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}-
+            ccache-macos-${{ env.QBDI_ARCH }}-${{ hashFiles('.github/workflows/ccache.conf') }}-
       - if: steps.cache-ccache.outputs.cache-hit != 'true'
         run: |
           mkdir -p ~/.ccache
@@ -126,14 +126,14 @@ jobs:
       - name: Export package
         uses: actions/upload-artifact@v4
         with:
-          name: package_OSX_${{ env.QBDI_ARCH }}
+          name: package_macOS_${{ env.QBDI_ARCH }}
           path: build/QBDI-*.pkg
 
   build-aarch64-arm64e:
     runs-on: macos-15
     env:
       QBDI_ARCH: 'AARCH64'
-      QBDI_PLATFORM: 'osx'
+      QBDI_PLATFORM: 'macos'
       MACOSX_DEPLOYMENT_TARGET: '10.14'
       CMAKE_OSX_ARCHITECTURES: "arm64e"
     steps:
@@ -153,9 +153,9 @@ jobs:
         with:
           path: |
             ~/.ccache
-          key: ccache-osx-${{ env.QBDI_ARCH }}-arm64e-${{ hashFiles('.github/workflows/ccache.conf') }}-${{ github.run_number }}
+          key: ccache-macos-${{ env.QBDI_ARCH }}-arm64e-${{ hashFiles('.github/workflows/ccache.conf') }}-${{ github.run_number }}
           restore-keys: |
-            ccache-osx-${{ env.QBDI_ARCH }}-arm64e-${{ hashFiles('.github/workflows/ccache.conf') }}-
+            ccache-macos-${{ env.QBDI_ARCH }}-arm64e-${{ hashFiles('.github/workflows/ccache.conf') }}-
       - if: steps.cache-ccache.outputs.cache-hit != 'true'
         run: |
           mkdir -p ~/.ccache
@@ -190,5 +190,5 @@ jobs:
       - name: Export package
         uses: actions/upload-artifact@v4
         with:
-          name: package_OSX_${{ env.QBDI_ARCH }}_arm64e
+          name: package_macOS_${{ env.QBDI_ARCH }}_arm64e
           path: build/QBDI-*.pkg

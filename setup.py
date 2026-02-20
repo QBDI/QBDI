@@ -49,7 +49,7 @@ def detect_QBDI_platform():
     base_os = base_os.lower()
 
     if base_os == 'darwin':
-        current_os = 'osx'
+        current_os = 'macos'
     elif base_os == 'windows':
         current_os = 'windows'
     elif base_os == 'linux':

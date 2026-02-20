@@ -13,7 +13,7 @@ The compilation of QBDI can be configured with the command line. Each parameter
 should be placed on the command line with the form ``-D<param>=<value>``.
 
 * ``QBDI_PLATFORM`` (mandatory) : Target platform of the compilation
-  (supported: ``windows``, ``linux``, ``android``, ``osx``)
+  (supported: ``windows``, ``linux``, ``android``, ``macos``)
 * ``QBDI_ARCH`` (mandatory) : Target architecture of the compilation
   (supported: ``X86_64``, ``X86``)
 * ``QBDI_CCACHE`` (default ON) : enable compilation optimisation with ccache or sccache.

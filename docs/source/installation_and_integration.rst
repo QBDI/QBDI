@@ -68,7 +68,7 @@ It's worth mentioning that since some parts are still under development, those a
 - `Windows devel packages <https://ci.appveyor.com/project/QBDI/qbdi/branch/dev-next>`_
 - `Linux (Ubuntu) devel packages <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Tests+and+Package+Linux%22+branch%3Adev-next>`_
 - `Android devel packages <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Package+Android%22+branch%3Adev-next>`_
-- `macOS devel packages <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Tests+and+Package+OSX%22+branch%3Adev-next>`_
+- `macOS devel packages <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Tests+and+Package+macOS%22+branch%3Adev-next>`_
 
 PyQBDI installation
 -------------------
@@ -91,7 +91,7 @@ The devel wheel files which contain the latest versions of the `dev-next branch 
 
 - `PyQBDI for Windows <https://ci.appveyor.com/project/QBDI/qbdi/branch/dev-next>`_
 - `PyQBDI for Linux <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22PyQBDI+Linux+package%22+branch%3Adev-next>`_
-- `PyQBDI for OSX <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22PyQBDI+OSX+package%22+branch%3Adev-next>`_
+- `PyQBDI for macOS <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22PyQBDI+macOS+package%22+branch%3Adev-next>`_
 
 .. note::
    Only Python3 is supported. If you need to use Python2, we recommend using QBDI 0.7.0 instead.

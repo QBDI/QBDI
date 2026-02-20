@@ -9,7 +9,7 @@ if(QBDI_PLATFORM_LINUX OR QBDI_PLATFORM_ANDROID)
   target_sources(
     validator PRIVATE "${CMAKE_CURRENT_LIST_DIR}/linux_validator.cpp"
                       "${CMAKE_CURRENT_LIST_DIR}/linux_process.cpp")
-elseif(QBDI_PLATFORM_OSX)
+elseif(QBDI_PLATFORM_MACOS)
   target_sources(
     validator PRIVATE "${CMAKE_CURRENT_LIST_DIR}/darwin_validator.cpp"
                       "${CMAKE_CURRENT_LIST_DIR}/darwin_process.cpp")

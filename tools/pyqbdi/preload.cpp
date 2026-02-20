@@ -89,7 +89,7 @@ int QBDI::qbdipreload_on_main(int argc, char **argv) {
     sys.attr("argv") = args;
     // remove LD_PRELOAD to avoid reuse it in subprocess.popen
     py::module_ os = py::module_::import("os");
-#if defined(QBDI_PLATFORM_OSX)
+#if defined(QBDI_PLATFORM_MACOS)
     os.attr("environ").attr("__delitem__")("DYLD_INSERT_LIBRARIES");
 #elif defined(QBDI_PLATFORM_LINUX) || defined(QBDI_PLATFORM_ANDROID)
     os.attr("environ").attr("__delitem__")("LD_PRELOAD");

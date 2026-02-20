@@ -1,4 +1,4 @@
-name: PyQBDI OSX package
+name: PyQBDI macOS package
 
 on:
   workflow_call:
@@ -12,7 +12,7 @@ jobs:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
       fail-fast: false
     env:
-      QBDI_PLATFORM: 'osx'
+      QBDI_PLATFORM: 'macos'
       QBDI_ARCH: 'X86_64'
       MACOSX_DEPLOYMENT_TARGET: '10.14'
       _PYTHON_HOST_PLATFORM: "macosx-10.14-x86_64"
@@ -35,10 +35,10 @@ jobs:
         with:
           path: |
             ~/.ccache
-          key: ccache-osx-X86_64-${{ hashFiles('.github/workflows/ccache.conf') }}-python-${{ matrix.python-version }}-${{ github.run_number }}
+          key: ccache-macos-X86_64-${{ hashFiles('.github/workflows/ccache.conf') }}-python-${{ matrix.python-version }}-${{ github.run_number }}
           restore-keys: |
-            ccache-osx-X86_64-${{ hashFiles('.github/workflows/ccache.conf') }}-python-${{ matrix.python-version }}-
-            ccache-osx-X86_64-${{ hashFiles('.github/workflows/ccache.conf') }}-
+            ccache-macos-X86_64-${{ hashFiles('.github/workflows/ccache.conf') }}-python-${{ matrix.python-version }}-
+            ccache-macos-X86_64-${{ hashFiles('.github/workflows/ccache.conf') }}-
       - if: steps.cache-ccache-python.outputs.cache-hit != 'true'
         run: |
           mkdir -p ~/.ccache
@@ -56,7 +56,7 @@ jobs:
       - name: Export package
         uses: actions/upload-artifact@v4
         with:
-          name: PyQBDI_OSX_X86_64_${{ matrix.python-version }}
+          name: PyQBDI_macOS_X86_64_${{ matrix.python-version }}
           path: dist/*
 
   build-pyqbdi-aarch64:
@@ -67,7 +67,7 @@ jobs:
       fail-fast: false
     env:
       QBDI_ARCH: 'AARCH64'
-      QBDI_PLATFORM: 'osx'
+      QBDI_PLATFORM: 'macos'
       MACOSX_DEPLOYMENT_TARGET: '11.0'
       _PYTHON_HOST_PLATFORM: "macosx-11.0-arm64"
       CMAKE_OSX_ARCHITECTURES: "arm64"
@@ -89,10 +89,10 @@ jobs:
         with:
           path: |
             ~/.ccache
-          key: ccache-osx-AARCH64-${{ hashFiles('.github/workflows/ccache.conf') }}-python-${{ matrix.python-version }}-${{ github.run_number }}
+          key: ccache-macos-AARCH64-${{ hashFiles('.github/workflows/ccache.conf') }}-python-${{ matrix.python-version }}-${{ github.run_number }}
           restore-keys: |
-            ccache-osx-AARCH64-${{ hashFiles('.github/workflows/ccache.conf') }}-python-${{ matrix.python-version }}-
-            ccache-osx-AARCH64-${{ hashFiles('.github/workflows/ccache.conf') }}-
+            ccache-macos-AARCH64-${{ hashFiles('.github/workflows/ccache.conf') }}-python-${{ matrix.python-version }}-
+            ccache-macos-AARCH64-${{ hashFiles('.github/workflows/ccache.conf') }}-
       - if: steps.cache-ccache-python.outputs.cache-hit != 'true'
         run: |
           mkdir -p ~/.ccache
@@ -110,14 +110,14 @@ jobs:
       - name: Export package
         uses: actions/upload-artifact@v4
         with:
-          name: PyQBDI_OSX_AARCH64_${{ matrix.python-version }}
+          name: PyQBDI_macOS_AARCH64_${{ matrix.python-version }}
           path: dist/*
 
 #  build-pyqbdi-aarch64-arm64e:
 #    runs-on: macos-15
 #    env:
 #      QBDI_ARCH: 'AARCH64'
-#      QBDI_PLATFORM: 'osx'
+#      QBDI_PLATFORM: 'macos'
 #      MACOSX_DEPLOYMENT_TARGET: '11.0'
 #      _PYTHON_HOST_PLATFORM: 'macosx-11.0-arm64'
 #      CMAKE_OSX_ARCHITECTURES: 'arm64e'
@@ -162,5 +162,5 @@ jobs:
 #      - name: Export package
 #        uses: actions/upload-artifact@v4
 #        with:
-#          name: PyQBDI_OSX_AARCH64_arm64e_${PYTHON_VERSION}
+#          name: PyQBDI_macOS_AARCH64_arm64e_${PYTHON_VERSION}
 #          path: dist/*

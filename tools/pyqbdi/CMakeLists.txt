@@ -90,7 +90,7 @@ if(QBDI_ARCH_X86
 
   set_target_properties(pyqbdi PROPERTIES PREFIX "")
 
-  if(QBDI_PLATFORM_OSX)
+  if(QBDI_PLATFORM_MACOS)
     set_target_properties(pyqbdi PROPERTIES LINK_FLAGS
                                             "-undefined dynamic_lookup")
   elseif(QBDI_PLATFORM_LINUX)
@@ -126,7 +126,7 @@ if(QBDI_ARCH_X86
                                                       CXX_STANDARD_REQUIRED ON)
     set_target_properties(pyqbdipreloadlib PROPERTIES PREFIX "")
 
-    if(QBDI_PLATFORM_OSX)
+    if(QBDI_PLATFORM_MACOS)
       set_target_properties(pyqbdipreloadlib
                             PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
       # fix import library of pyqbdipreloadlib:
@@ -139,7 +139,7 @@ if(QBDI_ARCH_X86
         POST_BUILD
         COMMAND
           "${Python3_EXECUTABLE}"
-          "${CMAKE_CURRENT_SOURCE_DIR}/fix_preload_lib_osx.py"
+          "${CMAKE_CURRENT_SOURCE_DIR}/fix_preload_lib_macos.py"
           $<TARGET_FILE:pyqbdipreloadlib>)
     elseif(QBDI_PLATFORM_LINUX)
       set_target_properties(pyqbdipreloadlib PROPERTIES LINK_FLAGS "-s")

@@ -34,7 +34,7 @@ TEST_CASE_METHOD(Patch_Test, "Patch_Test-UnalignedCodeBackward") {
   comparedExec(UnalignedCodeBackward_s, inputState, 4096);
 }
 
-#ifndef QBDI_PLATFORM_OSX
+#ifndef QBDI_PLATFORM_MACOS
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-LoopCode") {
   INFO("TEST_SEED=" << seed_random());
   QBDI::Context inputState;

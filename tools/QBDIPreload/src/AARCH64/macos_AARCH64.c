@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "osx_AARCH64.h"
+#include "macos_AARCH64.h"
 #include "QBDIPreload.h"
 
 #include <mach/thread_act.h>

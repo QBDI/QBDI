@@ -26,7 +26,8 @@
 #cmakedefine QBDI_PLATFORM_WINDOWS @QBDI_PLATFORM_WINDOWS@
 #cmakedefine QBDI_PLATFORM_LINUX   @QBDI_PLATFORM_LINUX@
 #cmakedefine QBDI_PLATFORM_ANDROID @QBDI_PLATFORM_ANDROID@
-#cmakedefine QBDI_PLATFORM_OSX     @QBDI_PLATFORM_OSX@
+#cmakedefine QBDI_PLATFORM_OSX     @QBDI_PLATFORM_MACOS@
+#cmakedefine QBDI_PLATFORM_MACOS   @QBDI_PLATFORM_MACOS@
 #cmakedefine QBDI_PLATFORM_IOS     @QBDI_PLATFORM_IOS@
 
 #cmakedefine QBDI_NOT_AVX_SUPPORT  @QBDI_DISABLE_AVX@
@@ -45,7 +46,8 @@ namespace QBDI {
 
 static constexpr bool is_android = @QBDI_PLATFORM_ANDROID@;
 static constexpr bool is_linux   = @QBDI_PLATFORM_LINUX@;
-static constexpr bool is_osx     = @QBDI_PLATFORM_OSX@;
+static constexpr bool is_osx     = @QBDI_PLATFORM_MACOS@;
+static constexpr bool is_macos   = @QBDI_PLATFORM_MACOS@;
 static constexpr bool is_ios     = @QBDI_PLATFORM_IOS@;
 static constexpr bool is_windows = @QBDI_PLATFORM_WINDOWS@;
 

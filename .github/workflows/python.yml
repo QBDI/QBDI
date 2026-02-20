@@ -13,8 +13,8 @@ jobs:
   build_pyqbdi_linux:
     uses: ./.github/workflows/python_linux.yml
     secrets: inherit
-  build_pyqbdi_osx:
-    uses: ./.github/workflows/python_osx.yml
+  build_pyqbdi_macos:
+    uses: ./.github/workflows/python_macos.yml
     secrets: inherit
   build_pyqbdi_windows:
     uses: ./.github/workflows/python_windows.yml
@@ -36,7 +36,7 @@ jobs:
     name: All PyQBDI whell
     needs:
     - build_pyqbdi_linux
-    - build_pyqbdi_osx
+    - build_pyqbdi_macos
     - build_pyqbdi_windows
     runs-on: ubuntu-latest
 
@@ -58,7 +58,7 @@ jobs:
     name: Publish to TestPyPI
     needs:
     - build_pyqbdi_linux
-    - build_pyqbdi_osx
+    - build_pyqbdi_macos
     - build_pyqbdi_windows
     runs-on: ubuntu-latest
 
@@ -89,7 +89,7 @@ jobs:
     name: Publish to PyPI
     needs:
     - build_pyqbdi_linux
-    - build_pyqbdi_osx
+    - build_pyqbdi_macos
     - build_pyqbdi_windows
     runs-on: ubuntu-latest
 
