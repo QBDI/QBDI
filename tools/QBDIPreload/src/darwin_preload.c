@@ -38,11 +38,11 @@
 #include <QBDI.h>
 
 #if defined(QBDI_ARCH_X86)
-#include "X86/osx_X86.h"
+#include "X86/macos_X86.h"
 #elif defined(QBDI_ARCH_X86_64)
-#include "X86_64/osx_X86_64.h"
+#include "X86_64/macos_X86_64.h"
 #elif defined(QBDI_ARCH_AARCH64)
-#include "AARCH64/osx_AARCH64.h"
+#include "AARCH64/macos_AARCH64.h"
 #else
 #error "Architecture not supported"
 #endif

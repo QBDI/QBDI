@@ -32,7 +32,7 @@ struct real_addr_t {
 
 #ifndef QBDI_ARCH_AARCH64
 #error "PTRAUTH is only implemented for AARCH64 architecture"
-#elif defined(QBDI_PLATFORM_OSX) || defined(QBDI_PLATFORM_IOS)
+#elif defined(QBDI_PLATFORM_MACOS) || defined(QBDI_PLATFORM_IOS)
 
 #include <ptrauth.h>
 namespace QBDI {
@@ -64,7 +64,7 @@ inline void *sign_code_ptrauth<void *>(void *addr) {
 
 } // namespace QBDI
 #else
-#error "PTRAUTH is only implemented for OSX and IOS"
+#error "PTRAUTH is only implemented for macOS and iOS"
 #endif
 
 #else // QBDI_PTRAUTH

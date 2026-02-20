@@ -1,7 +1,7 @@
 if(QBDI_PLATFORM_LINUX)
   target_sources(QBDIPreload PRIVATE "${CMAKE_CURRENT_LIST_DIR}/linux_X86.c")
-elseif(QBDI_PLATFORM_OSX)
-  target_sources(QBDIPreload PRIVATE "${CMAKE_CURRENT_LIST_DIR}/osx_X86.c")
+elseif(QBDI_PLATFORM_MACOS)
+  target_sources(QBDIPreload PRIVATE "${CMAKE_CURRENT_LIST_DIR}/macos_X86.c")
 elseif(QBDI_PLATFORM_WINDOWS)
   target_sources(QBDIPreload PRIVATE "${CMAKE_CURRENT_LIST_DIR}/win_x86.asm")
   set_source_files_properties("${CMAKE_CURRENT_LIST_DIR}/win_x86.asm"

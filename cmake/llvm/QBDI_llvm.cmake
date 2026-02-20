@@ -124,7 +124,7 @@ elseif(QBDI_ARCH_X86)
   set(LLVM_BUILD_32_BITS
       ON
       CACHE INTERNAL "set LLVM_BUILD_32_BITS")
-  if(QBDI_PLATFORM_OSX)
+  if(QBDI_PLATFORM_MACOS)
     set(LLVM_ENABLE_LIBCXX
         ON
         CACHE INTERNAL "set LLVM_ENABLE_LIBCXX")
@@ -274,7 +274,7 @@ add_llvm_lib(
   LLVMBitstreamReader
   LLVMRemarks)
 
-if(QBDI_PLATFORM_OSX OR QBDI_PLATFORM_IOS)
+if(QBDI_PLATFORM_MACOS OR QBDI_PLATFORM_IOS)
   add_llvm_lib(LLVMDemangle)
 endif()
 
@@ -290,7 +290,7 @@ else()
   message(FATAL_ERROR "Unsupported LLVM Architecture.")
 endif()
 
-if(QBDI_PLATFORM_OSX)
+if(QBDI_PLATFORM_MACOS)
   find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
   set(LLVMSupportFixName "${llvm_BINARY_DIR}/libLLVMSupportFix.a")

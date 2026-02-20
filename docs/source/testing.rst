@@ -29,21 +29,21 @@ not alter their normal functions. It is only compatible with Linux and macOS at 
 
 The idea is to pilot a debugging session using an instrumented execution of the same program. These
 two instances share the same environment and arguments and originated from the same fork thus have
-the same memory layout. This allows to compare the program state at each step and verify that both
-execution take the same path and give the same result. The validator is not only capable of
+the same memory layout. This allows comparing the program state at each step and verify that both
+executions take the same path and give the same result. The validator is not only capable of
 determining if two executions differ but also capable of identifying where they diverged. It thus
-double down as a debugging tool.
+doubles as a debugging tool.
 
-There is, however, a few caveats to this approach. First, the two instances of the program will
+There are, however, a few caveats to this approach. First, the two instances of the program will
 compete for resources. This means running ``sha1sum test.txt`` will work because the two instances
 can read the same file at the same time, but removing a directory ``rmdir testdir/`` will always fail because
 only one instance will be able to delete the directory. Second, the dynamic memory allocations will
 not match on the two instances. This is because the instrumented instance is running the whole QBDI
 framework and validator instrumentation which is making extra allocations in between the original
 program allocations. A partial mitigation was nevertheless implemented which tracks allocations on both
-sides and compute an allowed offset for specific memory address ranges.
+sides and computes an allowed offset for specific memory address ranges.
 
-One of the essential concepts of the validator are error cascades. They establish a probable
+One of the essential concepts of the validator is error cascades. They establish a probable
 causality chain between errors and allow to backtrack from the point where the execution crashed
 or diverged to the probable cause. Indeed, an error might only cause problems thousands of
 instructions later.
@@ -72,7 +72,7 @@ macOS
 
 The validator uses ``DYLD_INSERT_LIBRARIES`` for injection under macOS and an example command line would be::
 
-    $ DYLD_INSERT_LIBRARIES=./tools/validator/libvalidator.dyld VALIDATOR_VERBOSITY=Detail VALIDATOR_COVERAGE=coverage.txt ./ls
+    $ DYLD_INSERT_LIBRARIES=./tools/validator/libvalidator.dylib VALIDATOR_VERBOSITY=Detail VALIDATOR_COVERAGE=coverage.txt ./ls
 
 Please note that, under macOS, SIP prevents from debugging system binaries. A workaround is to copy
 the target binary in a local directory. Also, for the moment, the validator requires root to
@@ -81,6 +81,6 @@ obtain debugging rights.
 Validation Runner
 -----------------
 
-The validation runner is an automation system to run a series of validation task specified in a
+The validation runner is an automation system to run a series of validation tasks specified in a
 configuration file and aggregate the results. Those results are stored in a database which enables
-to perform historical comparison between validation runs and warns in case of an anomaly.
+historical comparisons between validation runs and warns in case of an anomaly.

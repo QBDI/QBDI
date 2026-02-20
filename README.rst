@@ -46,10 +46,10 @@ CPU       Operating Systems                Execution            Memory Access In
 x86-64    Android, Linux, macOS, Windows   :green:`Supported`   :green:`Supported`
 x86       Android, Linux, macOS, Windows   :green:`Supported`   :green:`Supported`
 ARM       Android, Linux                   :green:`Supported`   :green:`Supported`
-AArch64   Android, Linux, macOS, IOs (*)   :green:`Supported`   :green:`Supported`
+AArch64   Android, Linux, macOS, iOS (*)   :green:`Supported`   :green:`Supported`
 =======   ==============================   ==================   =========================
 
-\* IOs support is unstable and need a jailbroken device.
+\* iOS support is unstable and need a jailbroken device.
 
 **stable**
 
@@ -63,8 +63,8 @@ AArch64   Android, Linux, macOS, IOs (*)   :green:`Supported`   :green:`Supporte
 .. image:: https://github.com/QBDI/QBDI/actions/workflows/linux.yml/badge.svg?branch=master
     :target: https://github.com/QBDI/QBDI/actions/workflows/linux.yml?query=branch%3Amaster
 
-.. image:: https://github.com/QBDI/QBDI/actions/workflows/osx.yml/badge.svg?branch=master
-    :target: https://github.com/QBDI/QBDI/actions/workflows/osx.yml?query=branch%3Amaster
+.. image:: https://github.com/QBDI/QBDI/actions/workflows/macos.yml/badge.svg?branch=master
+    :target: https://github.com/QBDI/QBDI/actions/workflows/macos.yml?query=branch%3Amaster
 
 **dev**
 
@@ -78,8 +78,8 @@ AArch64   Android, Linux, macOS, IOs (*)   :green:`Supported`   :green:`Supporte
 .. image:: https://github.com/QBDI/QBDI/actions/workflows/linux.yml/badge.svg?branch=dev-next
     :target: https://github.com/QBDI/QBDI/actions/workflows/linux.yml?query=branch%3Adev-next
 
-.. image:: https://github.com/QBDI/QBDI/actions/workflows/osx.yml/badge.svg?branch=dev-next
-    :target: https://github.com/QBDI/QBDI/actions/workflows/osx.yml?query=branch%3Adev-next
+.. image:: https://github.com/QBDI/QBDI/actions/workflows/macos.yml/badge.svg?branch=dev-next
+    :target: https://github.com/QBDI/QBDI/actions/workflows/macos.yml?query=branch%3Adev-next
 
 .. intro-end
 
@@ -89,7 +89,7 @@ Installation
 C/C++/Frida APIs
 ++++++++++++++++
 
-Every new QBDI version is compiled and made available on the Github `release page <https://github.com/QBDI/QBDI/releases>`_.
+Every new QBDI version is compiled and made available on the GitHub `release page <https://github.com/QBDI/QBDI/releases>`_.
 
 Python API (PyQBDI)
 +++++++++++++++++++
@@ -107,11 +107,11 @@ There is no strict development timeline or scheduled release plan for the QBDI p
 All the new features and fixes are merged onto the ``dev-next`` branch.
 Devel packages can be downloaded in the artefacts of:
 
-- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/android.yml?query=branch%3Adev-next>`__ for Android C/C++/frida API
-- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/linux.yml?query=branch%3Adev-next>`__ for Linux C/C++/frida API (based on ubuntu)
-- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/osx.yml?query=branch%3Adev-next>`__ for OSX C/C++/frida API
-- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/windows.yml?query=branch%3Adev-next>`__ for Windows packages C/C++ API
-- `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/python.yml?query=branch%3Adev-next>`__ for PyQBDI
+- `GitHub Actions <https://github.com/QBDI/QBDI/actions/workflows/android.yml?query=branch%3Adev-next>`__ for Android C/C++/frida API
+- `GitHub Actions <https://github.com/QBDI/QBDI/actions/workflows/linux.yml?query=branch%3Adev-next>`__ for Linux C/C++/frida API (based on ubuntu)
+- `GitHub Actions <https://github.com/QBDI/QBDI/actions/workflows/macos.yml?query=branch%3Adev-next>`__ for macOS C/C++/frida API
+- `GitHub Actions <https://github.com/QBDI/QBDI/actions/workflows/windows.yml?query=branch%3Adev-next>`__ for Windows packages C/C++ API
+- `GitHub Actions <https://github.com/QBDI/QBDI/actions/workflows/python.yml?query=branch%3Adev-next>`__ for PyQBDI
 
 Compilation
 ===========

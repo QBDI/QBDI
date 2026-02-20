@@ -1,7 +1,7 @@
 if(QBDI_PLATFORM_LINUX)
   target_sources(QBDIPreload
                  PRIVATE "${CMAKE_CURRENT_LIST_DIR}/linux_preload.c")
-elseif(QBDI_PLATFORM_OSX)
+elseif(QBDI_PLATFORM_MACOS)
   # Generate MIG interface at config time in the build directory
   add_custom_command(
     OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/mach_excServer.c"

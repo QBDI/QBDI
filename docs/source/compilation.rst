@@ -13,7 +13,7 @@ The compilation of QBDI can be configured with the command line. Each parameter
 should be placed on the command line with the form ``-D<param>=<value>``.
 
 * ``QBDI_PLATFORM`` (mandatory) : Target platform of the compilation
-  (supported: ``windows``, ``linux``, ``android``, ``osx``)
+  (supported: ``windows``, ``linux``, ``android``, ``macos``)
 * ``QBDI_ARCH`` (mandatory) : Target architecture of the compilation
   (supported: ``X86_64``, ``X86``)
 * ``QBDI_CCACHE`` (default ON) : enable compilation optimisation with ccache or sccache.
@@ -32,9 +32,9 @@ should be placed on the command line with the form ``-D<param>=<value>``.
 * ``QBDI_TOOLS_QBDIPRELOAD`` (default ON on supported platform) : build
   QBDIPreload static library.
 * ``QBDI_TOOLS_VALIDATOR`` (default ON on supported platform) : build
-  the validator library (supported on Linux and OSX).
+  the validator library (supported on Linux and macOS).
 * ``QBDI_TOOLS_PYQBDI`` (default ON on X86_64) : build PyQBDI library.
-  Supported on Linux, Windows and OSX.
+  Supported on Linux, Windows and macOS.
 * ``QBDI_TOOLS_FRIDAQBDI`` (default ON) : add Frida/QBDI in the package.
 
 

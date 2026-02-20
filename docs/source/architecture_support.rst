@@ -22,17 +22,17 @@ AARCH64
 -------
 
 The AARCH64 support with the Memory Access.
-The support is more recent that X86_64 and some bug should be expected.
+The support is more recent than X86_64 and some bugs should be expected.
 
-Some extensions isn't supported by QBDI, in particular:
+Some extensions are not supported by QBDI, in particular:
 
 - Scalable Vector Extension (SVE and SVE2)
 - Scalable Matrix Extension (SME)
 - Memory Tagging Extension (MTE)
 - Transactional Memory Extension (TME)
 
-For OSX, the register X18 is defined as platforms reserved. QBDI doesn't set or
-used this register.
+For macOS, the register X18 is defined as platform reserved. QBDI doesn't set or
+use this register.
 
 Local Monitor
 ^^^^^^^^^^^^^
@@ -40,19 +40,19 @@ Local Monitor
 The AARCH64 support includes an emulator of the Local Monitor. You can disable it
 with the option :cpp:enumerator:`OPT_DISABLE_LOCAL_MONITOR`.
 
-Pointer Authentification
+Pointer Authentication
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 QBDI supports the instrumentation of code using authentication pointer.
-As different type of authentification is possible (ie, keyA vs keyB, instruction
-vs data, modificator, ...), QBDI only handle unauthenticated internally. As it,
+As different types of authentication are possible (ie, keyA vs keyB, instruction
+vs data, modifier, ...), QBDI only handle unauthenticated internally. As it,
 pointers should be unauthenticated when:
 
 - Setting the register PC in :cpp:struct:`QBDI::GPRState`,
 - Setting the instrumentation range,
 - Create an instruction or memory callback by specifying an address or a range of address,
 - Beginning the instrumentation by using :cpp:func:`QBDI::VM::call`, :cpp:func:`QBDI::VM::run` or similar functions,
-- Retriving the :cpp:struct:`QBDI::InstAnalysis` using
+- Retrieving the :cpp:struct:`QBDI::InstAnalysis` using
   :cpp:func:`QBDI::VM::getCachedInstAnalysis` or
   :cpp:func:`QBDI::VM::getJITInstAnalysis`
 - Managed the cache (with :cpp:func:`QBDI::VM::precacheBasicBlock` or :cpp:func:`QBDI::VM::clearCache`)
@@ -64,8 +64,8 @@ QBDI will always report unauthenticated address, especially:
 - In :cpp:struct:`QBDI::MemoryAccess` structure,
 - during VMEvent in the :cpp:struct:`QBDI::VMState` structure
 
-On OSX, QBDI should be compile with the same achitectures (ie, ``arm64`` or
-``arm64e``) as the target (by settings the cmake parameter ``-DCMAKE_OSX_ARCHITECTURES="arm64e"``).
+On macOS, QBDI should be compiled with the same architectures (ie, ``arm64`` or
+``arm64e``) as the target (by settings the CMake parameter ``-DCMAKE_OSX_ARCHITECTURES="arm64e"``).
 
 At the compile time, the option ``-DQBDI_PTRAUTH=ON`` can be enabled to
 strip the authentication of any pointer that should be given
@@ -79,19 +79,19 @@ TODO
 ARMv7
 -----
 
-The ARMv7 has been refactor to support both ARM and Thumb mode with the Memory Access.
-The support is more recent that X86_64 and some bug should be expected.
+The ARMv7 has been refactored to support both ARM and Thumb mode with the Memory Access.
+The support is more recent than X86_64 and some bugs should be expected.
 
 Thumb Mode
 ^^^^^^^^^^
 
 When the CPU is in Thumb Mode, the LSB of ``GPRState.PC`` is set to 1. However,
-QBDI doesn't set the corrsponding byte in ``GPRState.CPSR``. In addition, when
+QBDI doesn't set the corresponding byte in ``GPRState.CPSR``. In addition, when
 an InstAnalysis is provided for a Thumb instruction, the ``address`` field
-always has his LSB set to 0 and the field ``cpuMode`` must be used to distinguish
+always has its LSB set to 0 and the field ``cpuMode`` must be used to distinguish
 an ARM instruction from a Thumb instruction.
 
-QBDI support the Thumb2 instruction IT. However, this instruction is handle
+QBDI supports the Thumb2 instruction IT. However, this instruction is handled
 internally. The ``GPRState.CPSR`` doesn't include the ITSTATE. To avoid
 undefined behavior, you must not:
 - Clear the VM cache during the execution of an ITBlock.
@@ -193,27 +193,27 @@ Intel x86-64
 ------------
 
 The x86-64 support is complete and mature. Only a small part of SIMD instructions are covered
-by our tests but we do not expect any problems with the uncovered ones because their semantic are
+by our tests but we do not expect any problems with the uncovered ones because their semantics are
 closely related to the covered ones. We currently don't support the following features:
 
 - AVX512: the register of this extension isn't supported and will not be restored/backup during the execution
-- privileged instruction: QBDI is an userland (ring3) application and privileged registers aren't managed
+- privileged instruction: QBDI is a userland (ring3) application and privileged registers aren't managed
 - CET feature: shadow stack is not implemented and the current instrumentation doesn't support
   indirect branch tracking.
 - HLE and RTM features and any instructions for multithreading: QBDI allows inserting callbacks
   at any position and cannot guarantee that instructions of the same transactions unit will not be split.
 - MPX feature: bound registers aren't supported.
-- XOP instructions for ADM processors: The instructions are never been tested.
-- APX instructions are currently not tested and additionnal GPR register
-  (R16-R31) are not backuped by QBDI.
+- XOP instructions for AMD processors: The instructions are never been tested.
+- APX instructions are currently not tested and additional GPR register
+  (R16-R31) are not backed up by QBDI.
 
-If one of sush feature become well used, it may be integrate to QBDI to a future
+If one of these features become well used, it may be integrated to QBDI to a future
 version.
 
 The memory access information is provided for most of general and SIMD instructions.
 The information is missing for:
 
-- The instructions include in an unsupported feature
+- The instructions included in an unsupported feature
 - VGATHER* and VPGATHER* instructions of AVX2.
 
 Instruction Coverage

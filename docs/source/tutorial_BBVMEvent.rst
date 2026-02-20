@@ -24,10 +24,10 @@ A basic block in QBDI
 
 QBDI doesn't analyze the whole program before the run. Basic blocks are dynamically detected and so may not match basic blocks given by other tools.
 In QBDI, a basic block is a sequence of consecutive instructions that do not modify the instruction pointer except for the last one.
-Any instruction that may modify the instruction pointer (method call, jump, conditional jump, method return, ...) are always the
+Any instruction that may modify the instruction pointer (method call, jump, conditional jump, method return, ...) is always the
 last instruction of a basic block.
 
-For QBDI, is the beginning for a basic block:
+For QBDI, the beginning of a basic block is one of the following:
 
 - the very first instruction to be executed in QBDI;
 - the first instruction to be executed after the end of the previous basic block;
@@ -66,13 +66,13 @@ This behavior can be observed in the following code:
 
 In this snippet, QBDI can detect 4 different basic blocks. If the first jump isn't taken:
 
-- The begin of the method, between 0x1000 and 0x101e;
+- The beginning of the method, between 0x1000 and 0x101e;
 - The block between 0x101e and 0x1027;
 - The last block between 0x1033 and 0x103d.
 
 If the first jump is taken:
 
-- The begin of the method, between 0x1000 and 0x101e;
+- The beginning of the method, between 0x1000 and 0x101e;
 - The last block between 0x1027 and 0x103d.
 
 
@@ -80,13 +80,13 @@ Getting basic block information
 -------------------------------
 
 To receive basic block information, a ``VMCallback`` should be registered to the VM with ``addVMEventCB`` for
-one of ``BASIC_BLOCK_*`` events. Once a registered event occurs, the callback is ran with a description of the VM (``VMState``).
+one of ``BASIC_BLOCK_*`` events. Once a registered event occurs, the callback is run with a description of the VM (``VMState``).
 
 The address of the current basic block can be retrieved with ``VMState.basicBlockStart`` and ``VMState.basicBlockEnd``.
 
 .. note::
 
-    A callback may register for both ``BASIC_BLOCK_NEW`` and ``BASIC_BLOCK_ENTRY`` events but would be called only once would these two events happen at the same time.
+    A callback may register for both ``BASIC_BLOCK_NEW`` and ``BASIC_BLOCK_ENTRY`` events, but would be called only once if these two events happen at the same time.
     You can retrieve the events that triggered the callback in ``VMState.event``.
 
 The following example registers for the three events in the VM and displays the basic block's bounds.
@@ -190,9 +190,9 @@ However, it wouldn't work in the following cases:
 - If the code triggers an interruption (exception, signal, ...)
 - If the code uses overlapping instructions or other forms of obfuscation.
 
-Moreover, if a VM is reused from an execution to another, cache will be kept
+Moreover, if a VM is reused from an execution to another, the cache will be kept
 and so coverage would be incremental. Clear the cache between every run to have
-independent coverage results
+independent coverage results.
 
 For more precise coverage, a user may register ``BASIC_BLOCK_ENTRY`` or ``BASIC_BLOCK_EXIT`` events and handle deduplication themselves.
 
@@ -300,5 +300,5 @@ Frida/QBDI coverage
 Edge coverage
 -------------
 
-The ``BASIC_BLOCK_EXIT`` event can be used to detect the edge between basic blocks. As the event is triggered at the end of a basic block (ie. after instruction pointer is modified),
+The ``BASIC_BLOCK_EXIT`` event can be used to detect the edge between basic blocks. As the event is triggered at the end of a basic block (i.e., after the instruction pointer is modified),
 the next address can be found in the GPRState. So, the couple ``(state.basicBlockEnd, gpr.rip)`` is the edge to store in the coverage.

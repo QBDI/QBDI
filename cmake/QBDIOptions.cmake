@@ -73,7 +73,7 @@ endif()
 if(QBDI_BITS_64
    AND (QBDI_PLATFORM_WINDOWS
         OR QBDI_PLATFORM_LINUX
-        OR QBDI_PLATFORM_OSX))
+        OR QBDI_PLATFORM_MACOS))
   option(QBDI_TOOLS_PYQBDI "Compile python binding" ON)
 else()
   option(QBDI_TOOLS_PYQBDI "Compile python binding" OFF)

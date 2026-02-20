@@ -5,7 +5,7 @@ Installation and Integration
 C/C++ API installation
 ----------------------
 
-When a new stable version of QBDI is released, prebuilt packages can be downloaded through the `release page <https://github.com/QBDI/QBDI/releases>`_ on Github. In order to make sure you have downloaded the right package, you can verify its integrity with the file ``SHA256``.
+When a new stable version of QBDI is released, prebuilt packages can be downloaded through the `release page <https://github.com/QBDI/QBDI/releases>`_ on GitHub. In order to make sure you have downloaded the right package, you can verify its integrity with the file ``SHA256``.
 
 A GPG signature of ``SHA256`` by our `developer key (2763 2215 DED8 D717 AD08 477D 874D 3F16 4D45 2193) <https://qbdi.quarkslab.com/qbdi.asc>`_ is available in ``SHA256.sig``.
 
@@ -63,35 +63,35 @@ Devel packages
 ++++++++++++++
 
 Devel packages embed the latest features the developers are currently working on for the next release (available on the `dev-next branch <https://github.com/QBDI/QBDI/tree/dev-next/>`_).
-It's worth mentioning that since some parts are still under development, those are likely to be **unstable** -- you must be aware that it may contain some bugs and are not as reliable as release packages.
+It's worth mentioning that since some parts are still under development, those are likely to be **unstable** -- you must be aware that they may contain some bugs and are not as reliable as release packages.
 
 - `Windows devel packages <https://ci.appveyor.com/project/QBDI/qbdi/branch/dev-next>`_
 - `Linux (Ubuntu) devel packages <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Tests+and+Package+Linux%22+branch%3Adev-next>`_
 - `Android devel packages <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Package+Android%22+branch%3Adev-next>`_
-- `OSX devel packages <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Tests+and+Package+OSX%22+branch%3Adev-next>`_
+- `macOS devel packages <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22Tests+and+Package+macOS%22+branch%3Adev-next>`_
 
 PyQBDI installation
 -------------------
 
-Every time a new stable release of PyQBDI is available, it is automatically pushed onto the `PyPI platform <https://pypi.org/project/PyQBDI/>`_, thus can be easily installed with ``pip`` (>= 19.3).
+Every time a new stable release of PyQBDI is available, it is automatically pushed onto the `PyPI platform <https://pypi.org/project/PyQBDI/>`_, and can therefore be easily installed with ``pip`` (>= 19.3).
 
 .. code-block:: bash
 
-    pip install --user --update pip
+    pip install --user --upgrade pip
     pip install --user PyQBDI
 
 If you want to use a devel version, download the corresponding prebuilt wheel file and run the following commands:
 
 .. code-block:: bash
 
-    pip install --user --update pip
+    pip install --user --upgrade pip
     pip install --user PyQBDI-*.whl
 
 The devel wheel files which contain the latest versions of the `dev-next branch <https://github.com/QBDI/QBDI/tree/dev-next/>`_ are available at:
 
 - `PyQBDI for Windows <https://ci.appveyor.com/project/QBDI/qbdi/branch/dev-next>`_
 - `PyQBDI for Linux <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22PyQBDI+Linux+package%22+branch%3Adev-next>`_
-- `PyQBDI for OSX <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22PyQBDI+OSX+package%22+branch%3Adev-next>`_
+- `PyQBDI for macOS <https://github.com/QBDI/QBDI/actions?query=workflow%3A%22PyQBDI+macOS+package%22+branch%3Adev-next>`_
 
 .. note::
    Only Python3 is supported. If you need to use Python2, we recommend using QBDI 0.7.0 instead.
@@ -117,7 +117,7 @@ Using it requires having Frida installed (>= 14.0) on your workstation as well a
 Android target
 ++++++++++++++
 
-In order to use Frida/QBDI on an Android device, the Frida server must be running on the target device and the ``libQBDI.so`` library have to be placed in ``/data/local/tmp``.
+In order to use Frida/QBDI on an Android device, the Frida server must be running on the target device and the ``libQBDI.so`` library has to be placed in ``/data/local/tmp``.
 
 .. note::
    Latest Frida server binaries are available on the `Frida official release page <https://github.com/frida/frida/releases>`_.
@@ -132,7 +132,7 @@ You have to install the needed application or modify the following Dockerfile ac
 .. literalinclude:: ../../examples/Dockerfile
    :language: dockerfile
 
-To run the container, we recommend allowing the usage of PTRACE which is mandatory to use QBDIPreload.
+To run the container, we recommend allowing PTRACE usage, which is mandatory for QBDIPreload.
 
 .. code-block:: bash
 

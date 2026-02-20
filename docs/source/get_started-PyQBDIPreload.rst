@@ -7,10 +7,10 @@ PyQBDIPreload
 
 PyQBDIPreload is an implementation of QBDIPreload for PyQBDI.
 It allows users to inject the Python runtime into a target process and execute their own script in it.
-The limitations are pretty much the same as those we face on QBDIPreload and PyQBDI:
+The limitations are pretty much the same as those we face with QBDIPreload and PyQBDI:
 
 - For Linux and macOS the executable should be injectable with ``LD_PRELOAD`` or ``DYLD_INSERT_LIBRARIES``
-- PyQBDIPreload cannot be injected in a Python process
+- PyQBDIPreload cannot be injected into a Python process
 - The Python runtime and the target must share the same architecture
 - An extra :class:`VM` must not be created. An already prepared :class:`VM` is provided to :func:`pyqbdipreload_on_run`.
 
@@ -23,9 +23,9 @@ Main hook process
 
 Unlike QBDIPreload, the hook of the main function cannot be customised so you are unable to alter the hook process.
 The Python interpreter is only initialised once the main function is hooked and the script is loaded.
-Furthermore, some modifications are made on the environment of the interpreter before the user script loading:
+Furthermore, some modifications are made to the environment of the interpreter before the user script loading:
 
-- ``sys.argv`` are the argument of the executable
+- ``sys.argv`` are the arguments of the executable
 - ``LD_PRELOAD`` or ``DYLD_INSERT_LIBRARIES`` are removed from ``os.environ``
 - ``pyqbdi.__preload__`` is set to ``True``
 
@@ -54,13 +54,13 @@ The ``atexit`` module is triggered when the execution is finished, or when ``exi
 
 .. note::
 
-    Any :class:`VM` object is invalided when the ``atexit`` module is triggered and should never be used.
+    Any :class:`VM` object is invalidated when the ``atexit`` module is triggered and should never be used.
 
 Execution
 ---------
 
-A script called ``pyqbdipreload.py`` is brought to set the environment up and run the executable.
-The first parameter is the PyQBDIPreload script. Next are the binary followed by its respective arguments if any.
+A script called ``pyqbdipreload.py`` is provided to set up the environment and run the executable.
+The first parameter is the PyQBDIPreload script. Next comes the binary, followed by its respective arguments if any.
 
 .. code:: bash
 
@@ -83,4 +83,4 @@ Apple silicon architecture
 
 In addition to the caveats discussed for QBDIPreload (see :ref:`macos-apple-silicon`), using PyQBDIPreload on ``arm64e`` binaries requires a Python interpreter built for the same ABI.
 
-Example commands for compiling OpenSSL and Python from sources for ``arm64e`` are provided in the workflow file ``.github/workflows/python_osx.yml``.
+Example commands for compiling OpenSSL and Python from sources for ``arm64e`` are provided in the workflow file ``.github/workflows/python_macos.yml``.

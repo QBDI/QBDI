@@ -45,10 +45,10 @@ CPU       Operating Systems                Execution            Memory Access In
 x86-64    Android, Linux, macOS, Windows   :green:`Supported`   :green:`Supported`
 x86       Android, Linux, macOS, Windows   :green:`Supported`   :green:`Supported`
 ARM       Android, Linux                   :green:`Supported`   :green:`Supported`
-AArch64   Android, Linux, macOS, IOs (*)   :green:`Supported`   :green:`Supported`
+AArch64   Android, Linux, macOS, iOS (*)   :green:`Supported`   :green:`Supported`
 =======   ==============================   ==================   =========================
 
-\* IOs support is unstable and need a jailbroken device.
+\* iOS support is unstable and need a jailbroken device.
 
 Installation
 ============
@@ -67,7 +67,7 @@ Devel packages
 
 There is no strict development timeline or scheduled release plan for the QBDI project.
 All the new features and fixes are merged onto the ``dev-next`` branch.
-Devel packages can be downloaded in the artefacts of `Github Actions <https://github.com/QBDI/QBDI/actions/workflows/python.yml?query=branch%3Adev-next>`__.
+Devel packages can be downloaded in the artefacts of `GitHub Actions <https://github.com/QBDI/QBDI/actions/workflows/python.yml?query=branch%3Adev-next>`__.
 
 Compilation
 ===========

@@ -12,7 +12,7 @@ Common tasks
 ------------
 
 This section solely shows a few basic actions and gives you a general overview of what you can do with Frida.
-Keep in mind that Frida offers many more awesome features, all listed in the `Javascript API documentation <https://frida.re/docs/javascript-api/>`_.
+Keep in mind that Frida offers many more awesome features, all listed in the `JavaScript API documentation <https://frida.re/docs/javascript-api/>`_.
 
 Read memory
 +++++++++++
@@ -125,12 +125,12 @@ JavaScript and external control in Python (or any language supported by `Frida`)
 Compilation
 +++++++++++
 
-In order to actually import QBDI bindings into your project, your script needs be *compiled* with the `frida-compile <https://www.npmjs.com/package/frida-compile>`_ utility.
+In order to actually import QBDI bindings into your project, your script needs to be *compiled* with the `frida-compile <https://www.npmjs.com/package/frida-compile>`_ utility.
 Installing it requires you to have ``npm`` installed. The `babelify package <https://www.npmjs.com/package/babelify>`_ might be also needed.
 Otherwise, you will not be able to successfully compile/load it and some errors will show up once running it with Frida.
 
 Before running frida-compile, be sure that the script ``frida-qbdi.js`` is
-inside you current directory.
+inside your current directory.
 
 .. code:: bash
 
@@ -182,7 +182,7 @@ Concrete example
 ----------------
 
 If you have already had a look at the default instrumentation of the template generated with *qbdi-frida-template* (see :ref:`qbdi-frida-template`), you are probably familiar with the following example.
-Roughly speaking, what it does is creating a native call to the *Secret()* function, and instrument it looking for *XOR*.
+Roughly speaking, what it does is create a native call to the *Secret()* function, and instrument it looking for *XOR*.
 
 Source code
 +++++++++++
@@ -203,7 +203,7 @@ Generate a template
 -------------------
 
 A QBDI template can be considered as a baseline project, a minimal component you can modify and build your instrumentation tool on.
-They are provided to help you effortlessly start off a new QBDI based project.
+They are provided to help you effortlessly start off a new QBDI-based project.
 If you want to get started using QBDI bindings, you can create a brand-new default project doing:
 
 .. code:: bash

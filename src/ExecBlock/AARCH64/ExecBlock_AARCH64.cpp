@@ -144,7 +144,7 @@ void ExecBlock::initScratchRegisterForPatch(
 
   std::set<RegLLVM> freeRegister(&GPR_ID[0], &GPR_ID[AVAILABLE_GPR]);
 
-  if constexpr (is_osx or is_ios) {
+  if constexpr (is_macos or is_ios) {
     // x18 is reserved by the platform, we can used it
     freeRegister.erase(GPR_ID[18]);
   }
