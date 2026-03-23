@@ -230,12 +230,27 @@ VMAction ExecBlock::execute() {
         case SKIP_INST:
           QBDI_DEBUG("Callback 0x{:x} returned SKIP_INST",
                      context->hostState.callback);
-          if (not instMetadata[currentInst].modifyPC and
-              QBDI_GPR_GET(&context->gprState, REG_PC) != currentPC) {
-            QBDI_WARN(
-                "Callback returned SKIP_INST but change PC: Ignore new value");
-          }
           if (currentPC == instMetadata[currentInst].address) {
+            rword setPC = QBDI_GPR_GET(&context->gprState, REG_PC);
+            if (not instMetadata[currentInst].modifyPC) {
+              // warn only if PC is changed and isn't the endAddress
+              if (setPC != currentPC and
+                  setPC != instMetadata[currentInst].endAddress()) {
+                QBDI_WARN(
+                    "Callback returned SKIP_INST but change PC: Ignore new "
+                    "value");
+              }
+            } else {
+              // warn is PC is unchanged and equals to current instruction
+              // address
+              if (setPC == currentPC and
+                  setPC == instMetadata[currentInst].address) {
+                QBDI_WARN(
+                    "Callback returned SKIP_INST without changing PC on "
+                    "instruction that should set it: this may create an "
+                    "infinite loop");
+              }
+            }
             context->hostState.selector =
                 reinterpret_cast<rword>(codeBlock.base()) +
                 static_cast<rword>(instRegistry[currentInst].offsetSkip);
