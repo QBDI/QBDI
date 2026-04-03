@@ -240,6 +240,13 @@ bool InstrRuleUser::tryInstrument(Patch &patch, const LLVMCPU &llvmcpu) const {
   }
 
   for (const InstrRuleDataCBK &cbkToAdd : vec) {
+    if (cbkToAdd.priority == PRIORITY_MEMACCESS_LIMIT ||
+        cbkToAdd.priority == PRIORITY_MEMACCESS_LIMIT + 1) {
+      QBDI_WARN(
+          "Using priority {} may conflict with QBDI internal callback for "
+          "memory access",
+          cbkToAdd.priority);
+    }
     if (cbkToAdd.lambdaCbk == nullptr) {
       instrument(patch, getCallbackGenerator(cbkToAdd.cbk, cbkToAdd.data), true,
                  cbkToAdd.position, cbkToAdd.priority,

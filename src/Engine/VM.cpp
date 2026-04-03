@@ -52,6 +52,18 @@
 
 namespace QBDI {
 
+namespace {
+inline void warmConflictPriority(int priority) {
+  if (priority == PRIORITY_MEMACCESS_LIMIT ||
+      priority == PRIORITY_MEMACCESS_LIMIT + 1) {
+    QBDI_WARN(
+        "Using priority {} may conflict with QBDI internal callback for memory "
+        "access",
+        priority);
+  }
+}
+} // namespace
+
 VMAction memReadGate(VMInstanceRef vm, GPRState *gprState, FPRState *fprState,
                      void *data) {
   std::vector<std::pair<uint32_t, MemCBInfo>> &memCBInfos =
@@ -629,6 +641,7 @@ uint32_t VM::addMnemonicCB(const char *mnemonic, InstPosition pos,
                            InstCallback cbk, void *data, int priority) {
   QBDI_REQUIRE_ACTION(mnemonic != nullptr, return VMError::INVALID_EVENTID);
   QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
+  warmConflictPriority(priority);
   return engine->addInstrRule(InstrRuleBasicCBK::unique(
       MnemonicIs::unique(mnemonic), cbk, data, pos, true, priority,
       (pos == PREINST) ? RelocTagPreInstStdCBK : RelocTagPostInstStdCBK));
@@ -636,6 +649,7 @@ uint32_t VM::addMnemonicCB(const char *mnemonic, InstPosition pos,
 
 uint32_t VM::addMnemonicCB(const char *mnemonic, InstPosition pos,
                            const InstCbLambda &cbk, int priority) {
+  warmConflictPriority(priority);
   auto &el = instCBData.emplace_front(0xffffffff, cbk);
   uint32_t id =
       addMnemonicCB(mnemonic, pos, InstCBLambdaProxy, &el.second, priority);
@@ -645,6 +659,7 @@ uint32_t VM::addMnemonicCB(const char *mnemonic, InstPosition pos,
 
 uint32_t VM::addMnemonicCB(const char *mnemonic, InstPosition pos,
                            InstCbLambda &&cbk, int priority) {
+  warmConflictPriority(priority);
   auto &el = instCBData.emplace_front(0xffffffff, std::move(cbk));
   uint32_t id =
       addMnemonicCB(mnemonic, pos, InstCBLambdaProxy, &el.second, priority);
@@ -657,6 +672,7 @@ uint32_t VM::addMnemonicCB(const char *mnemonic, InstPosition pos,
 uint32_t VM::addCodeCB(InstPosition pos, InstCallback cbk, void *data,
                        int priority) {
   QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
+  warmConflictPriority(priority);
   return engine->addInstrRule(InstrRuleBasicCBK::unique(
       True::unique(), cbk, data, pos, true, priority,
       (pos == PREINST) ? RelocTagPreInstStdCBK : RelocTagPostInstStdCBK));
@@ -664,6 +680,7 @@ uint32_t VM::addCodeCB(InstPosition pos, InstCallback cbk, void *data,
 
 uint32_t VM::addCodeCB(InstPosition pos, const InstCbLambda &cbk,
                        int priority) {
+  warmConflictPriority(priority);
   auto &el = instCBData.emplace_front(0xffffffff, cbk);
   uint32_t id = addCodeCB(pos, InstCBLambdaProxy, &el.second, priority);
   el.first = id;
@@ -671,6 +688,7 @@ uint32_t VM::addCodeCB(InstPosition pos, const InstCbLambda &cbk,
 }
 
 uint32_t VM::addCodeCB(InstPosition pos, InstCbLambda &&cbk, int priority) {
+  warmConflictPriority(priority);
   auto &el = instCBData.emplace_front(0xffffffff, std::move(cbk));
   uint32_t id = addCodeCB(pos, InstCBLambdaProxy, &el.second, priority);
   el.first = id;
@@ -681,6 +699,7 @@ uint32_t VM::addCodeCB(InstPosition pos, InstCbLambda &&cbk, int priority) {
 
 uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk,
                            void *data, int priority) {
+  warmConflictPriority(priority);
   QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
   return engine->addInstrRule(InstrRuleBasicCBK::unique(
       AddressIs::unique(strip_ptrauth(address)), cbk, data, pos, true, priority,
@@ -689,6 +708,7 @@ uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCallback cbk,
 
 uint32_t VM::addCodeAddrCB(rword address, InstPosition pos,
                            const InstCbLambda &cbk, int priority) {
+  warmConflictPriority(priority);
   auto &el = instCBData.emplace_front(0xffffffff, cbk);
   uint32_t id =
       addCodeAddrCB(address, pos, InstCBLambdaProxy, &el.second, priority);
@@ -698,6 +718,7 @@ uint32_t VM::addCodeAddrCB(rword address, InstPosition pos,
 
 uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCbLambda &&cbk,
                            int priority) {
+  warmConflictPriority(priority);
   auto &el = instCBData.emplace_front(0xffffffff, std::move(cbk));
   uint32_t id =
       addCodeAddrCB(address, pos, InstCBLambdaProxy, &el.second, priority);
@@ -709,6 +730,7 @@ uint32_t VM::addCodeAddrCB(rword address, InstPosition pos, InstCbLambda &&cbk,
 
 uint32_t VM::addCodeRangeCB(rword start, rword end, InstPosition pos,
                             InstCallback cbk, void *data, int priority) {
+  warmConflictPriority(priority);
   QBDI_REQUIRE_ACTION(start < end, return VMError::INVALID_EVENTID);
   QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
   return engine->addInstrRule(InstrRuleBasicCBK::unique(
@@ -719,6 +741,7 @@ uint32_t VM::addCodeRangeCB(rword start, rword end, InstPosition pos,
 
 uint32_t VM::addCodeRangeCB(rword start, rword end, InstPosition pos,
                             const InstCbLambda &cbk, int priority) {
+  warmConflictPriority(priority);
   auto &el = instCBData.emplace_front(0xffffffff, cbk);
   uint32_t id =
       addCodeRangeCB(start, end, pos, InstCBLambdaProxy, &el.second, priority);
@@ -728,6 +751,7 @@ uint32_t VM::addCodeRangeCB(rword start, rword end, InstPosition pos,
 
 uint32_t VM::addCodeRangeCB(rword start, rword end, InstPosition pos,
                             InstCbLambda &&cbk, int priority) {
+  warmConflictPriority(priority);
   auto &el = instCBData.emplace_front(0xffffffff, std::move(cbk));
   uint32_t id =
       addCodeRangeCB(start, end, pos, InstCBLambdaProxy, &el.second, priority);
@@ -739,6 +763,7 @@ uint32_t VM::addCodeRangeCB(rword start, rword end, InstPosition pos,
 
 uint32_t VM::addMemAccessCB(MemoryAccessType type, InstCallback cbk, void *data,
                             int priority) {
+  warmConflictPriority(priority);
   QBDI_REQUIRE_ACTION(cbk != nullptr, return VMError::INVALID_EVENTID);
   recordMemoryAccess(type);
   switch (type) {
@@ -763,6 +788,7 @@ uint32_t VM::addMemAccessCB(MemoryAccessType type, InstCallback cbk, void *data,
 
 uint32_t VM::addMemAccessCB(MemoryAccessType type, const InstCbLambda &cbk,
                             int priority) {
+  warmConflictPriority(priority);
   auto &el = instCBData.emplace_front(0xffffffff, cbk);
   uint32_t id = addMemAccessCB(type, InstCBLambdaProxy, &el.second, priority);
   el.first = id;
@@ -771,6 +797,7 @@ uint32_t VM::addMemAccessCB(MemoryAccessType type, const InstCbLambda &cbk,
 
 uint32_t VM::addMemAccessCB(MemoryAccessType type, InstCbLambda &&cbk,
                             int priority) {
+  warmConflictPriority(priority);
   auto &el = instCBData.emplace_front(0xffffffff, std::move(cbk));
   uint32_t id = addMemAccessCB(type, InstCBLambdaProxy, &el.second, priority);
   el.first = id;
