@@ -28,7 +28,7 @@
 
 static bool checkFeature(const char *f) {
   if (!QBDI::isHostCPUFeaturePresent(f)) {
-    WARN("Host doesn't support " << f << " feature: SKIP");
+    // WARN("Host doesn't support " << f << " feature: SKIP");
     return false;
   }
   return true;
@@ -74,17 +74,16 @@ static QBDI::VMAction checkAccess(QBDI::VMInstanceRef vm,
                   [](ExpectedMemoryAccess &a) { return a.see; }))
     return QBDI::VMAction::CONTINUE;
 
-  CHECKED_IF(memaccesses.size() == info->accesses.size()) {
-    for (size_t i = 0; i < info->accesses.size(); i++) {
-      auto &memaccess = memaccesses[i];
-      auto &expect = info->accesses[i];
-      CHECKED_IF(memaccess.accessAddress == expect.address)
-      CHECKED_IF((memaccess.value == expect.value || expect.value == 0))
-      CHECKED_IF(memaccess.size == expect.size)
-      CHECKED_IF(memaccess.type == expect.type)
-      CHECKED_IF(memaccess.flags == expect.flags)
-      expect.see = true;
-    }
+  REQUIRE(memaccesses.size() == info->accesses.size());
+  for (size_t i = 0; i < info->accesses.size(); i++) {
+    auto &memaccess = memaccesses[i];
+    auto &expect = info->accesses[i];
+    CHECKED_IF(memaccess.accessAddress == expect.address)
+    CHECKED_IF((memaccess.value == expect.value || expect.value == 0))
+    CHECKED_IF(memaccess.size == expect.size)
+    CHECKED_IF(memaccess.type == expect.type)
+    CHECKED_IF(memaccess.flags == expect.flags)
+    expect.see = true;
   }
   return QBDI::VMAction::CONTINUE;
 }
