@@ -189,7 +189,7 @@ bool LLVMCPU::getInstruction(llvm::MCInst &instr, uint64_t &size,
   return status != llvm::MCDisassembler::Fail;
 }
 
-void LLVMCPU::writeInstruction(const llvm::MCInst inst,
+void LLVMCPU::writeInstruction(const llvm::MCInst &inst,
                                llvm::SmallVectorImpl<char> &CB,
                                rword address) const {
   // MCCodeEmitter needs a fixups array

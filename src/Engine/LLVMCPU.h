@@ -85,7 +85,8 @@ public:
   LLVMCPU(const LLVMCPU &) = delete;
   LLVMCPU &operator=(const LLVMCPU &) = delete;
 
-  void writeInstruction(llvm::MCInst inst, llvm::SmallVectorImpl<char> &CB,
+  void writeInstruction(const llvm::MCInst &inst,
+                        llvm::SmallVectorImpl<char> &CB,
                         rword address = 0) const;
 
   bool getInstruction(llvm::MCInst &inst, uint64_t &size,

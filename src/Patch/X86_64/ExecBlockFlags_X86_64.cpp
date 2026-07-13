@@ -43,7 +43,8 @@ struct ExecBlockFlagsArray {
       } else if ((llvm::X86::XMM0 <= i && i <= llvm::X86::XMM15) ||
                  (llvm::X86::ST0 <= i && i <= llvm::X86::ST7) ||
                  (llvm::X86::MM0 <= i && i <= llvm::X86::MM7) ||
-                 llvm::X86::FPSW == i || llvm::X86::FPCW == i) {
+                 llvm::X86::FPSW == i || llvm::X86::FPCW == i ||
+                 llvm::X86::MXCSR == i) {
         arr[i] = ExecBlockFlags::needFPU;
       } else if (i == llvm::X86::FS || i == llvm::X86::GS) {
         arr[i] = ExecBlockFlags::needFSGS;

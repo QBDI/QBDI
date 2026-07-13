@@ -20,6 +20,7 @@
 #include "X86InstrInfo.h"
 #include "llvm/MC/MCInst.h"
 
+#include "Patch/Register.h"
 #include "Patch/RelocatableInst.h"
 #include "Patch/X86_64/Layer2_X86_64.h"
 #include "Patch/X86_64/RelocatableInst_X86_64.h"
@@ -560,12 +561,21 @@ static unsigned lenInstLEAtype(RegLLVM base, RegLLVM scale, Constant cst,
 
   if (segment != 0) {
     return lenInstLEAtype(base, scale, cst, 0) + 1;
-  } else if (base == 0 and scale == 0) {
-    return (is_x86_64) ? 8 : 6;
+  }
+
+  unsigned addrSizePrefix = 0;
+  if constexpr (is_x86_64) {
+    if (getRegisterSize(base) == 4 or getRegisterSize(scale) == 4) {
+      addrSizePrefix = 1;
+    }
+  }
+
+  if (base == 0 and scale == 0) {
+    return addrSizePrefix + ((is_x86_64) ? 8 : 6);
   } else if (base == llvm::X86::RIP) {
     return 7;
   } else if (base == 0) {
-    return (is_x86_64) ? 8 : 7;
+    return addrSizePrefix + ((is_x86_64) ? 8 : 7);
   } else {
     unsigned len = (is_x86_64) ? 2 : 1;
     if (scale != 0 or base == llvm::X86::ESP or base == llvm::X86::RSP or
@@ -580,7 +590,7 @@ static unsigned lenInstLEAtype(RegLLVM base, RegLLVM scale, Constant cst,
     } else {
       len++;
     }
-    return len;
+    return addrSizePrefix + len;
   }
 }
 

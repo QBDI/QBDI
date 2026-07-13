@@ -368,7 +368,9 @@ GetWriteAddress::generate(const Patch &patch, TempManager &temp_manager) const {
     // MOVDIR64B instruction
     else if (opcode == llvm::X86::MOVDIR64B16 ||
              opcode == llvm::X86::MOVDIR64B32 ||
-             opcode == llvm::X86::MOVDIR64B64) {
+             opcode == llvm::X86::MOVDIR64B64 ||
+             opcode == llvm::X86::MOVDIR64B32_EVEX ||
+             opcode == llvm::X86::MOVDIR64B64_EVEX) {
       QBDI_REQUIRE_ABORT(0 < inst.getNumOperands(),
                          "Unexpected number of operand {}", patch);
       return conv_unique<RelocatableInst>(

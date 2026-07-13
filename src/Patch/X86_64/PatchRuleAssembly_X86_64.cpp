@@ -383,6 +383,16 @@ static void setRegisterSaved(Patch &patch) {
           patch.regUsage[i] |= RegisterUsage::RegisterSaved;
         }
         break;
+      case llvm::X86::CMPXCHG8B:
+        patch.regUsage[getGPRPosition(llvm::X86::EAX)] |=
+            RegisterUsage::RegisterSaved;
+        patch.regUsage[getGPRPosition(llvm::X86::EBX)] |=
+            RegisterUsage::RegisterSaved;
+        patch.regUsage[getGPRPosition(llvm::X86::ECX)] |=
+            RegisterUsage::RegisterSaved;
+        patch.regUsage[getGPRPosition(llvm::X86::EDX)] |=
+            RegisterUsage::RegisterSaved;
+        break;
       default:
         break;
     }
