@@ -80,7 +80,7 @@ uint8_t getExecBlockFlags(const llvm::MCInst &inst,
   for (size_t i = 0; i < inst.getNumOperands(); i++) {
     const llvm::MCOperand &op = inst.getOperand(i);
     if (op.isReg()) {
-      flags |= cache.get(op.getReg());
+      flags |= cache.get(op.getReg().id());
     }
   }
 

@@ -632,7 +632,8 @@ void fixLLVMUsedGPR(const llvm::MCInst &inst, const LLVMCPU &llvmcpu,
 
     for (unsigned int opn = 0; opn < desc.getNumOperands(); opn++) {
       const llvm::MCOperandInfo &opInfo = desc.operands()[opn];
-      if (opInfo.RegClass == llvm::ARM::CCRRegClassID) {
+      if (opInfo.RegClass == llvm::ARM::CCRRegClassID and
+          not opInfo.isPredicate()) {
         // found the position of CSPR set operand
         const llvm::MCOperand &op = inst.getOperand(opn);
         QBDI_REQUIRE_ABORT(op.isReg(), "Unexpected operand type");

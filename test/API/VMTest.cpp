@@ -1675,6 +1675,11 @@ TEST_CASE_METHOD(APITest, "VMTest-InstCbLambda-InstrRuleDataCBK") {
   SUCCEED();
 }
 
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfree-nonheap-object"
+#endif
+
 TEST_CASE_METHOD(APITest, "VMTest-InvalidInstruction") {
   auto tc = TestCode["VMTest-InvalidInstruction"];
   auto code = tc.code;
@@ -1811,6 +1816,10 @@ TEST_CASE_METHOD(APITest, "VMTest-SelfModifyingCode2") {
 
   SUCCEED();
 }
+
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 struct CheckReduceSizeData {
   size_t lastCount;

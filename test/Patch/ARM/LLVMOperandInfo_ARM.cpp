@@ -78,7 +78,8 @@ void LLVMOperandInfoCheck::checkPredicate(QBDI::CPUMode cpuMode) {
           predicateNumber++;
         }
       }
-      if (opInfo.RegClass == llvm::ARM::CCRRegClassID) {
+      if (opInfo.RegClass == llvm::ARM::CCRRegClassID &&
+          not opInfo.isPredicate()) {
         CHECK(opInfo.isOptionalDef());
         numCCRRegClassID++;
       }

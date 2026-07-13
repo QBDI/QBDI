@@ -43,6 +43,10 @@
 #include "QBDI/InstAnalysis.h"
 #include "QBDI/State.h"
 
+#if defined(QBDI_ARCH_AARCH64)
+#include "MCTargetDesc/AArch64MCTargetDesc.h"
+#endif
+
 #ifndef QBDI_PLATFORM_WINDOWS
 #if defined(QBDI_PLATFORM_LINUX) && !defined(__USE_GNU)
 #define __USE_GNU
@@ -339,7 +343,7 @@ void analyseOperands(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
       // if the operand is tied_to the previous operand, add the access to the
       // operand.
       if (tied_to != -1 and operandBias == 0) {
-        QBDI_REQUIRE(tied_to == i - 1);
+        QBDI_REQUIRE(tied_to == static_cast<int>(i) - 1);
         QBDI_REQUIRE(inst.getOperand(i - 1).isReg());
         if constexpr (is_arm)
           QBDI_REQUIRE(not isFlagOperand(inst.getOpcode(), i, opdesc));
@@ -371,6 +375,9 @@ void analyseOperands(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
           opa.flag |= OPERANDFLAG_ADDR;
           break;
         case llvm::MCOI::OPERAND_UNKNOWN:
+#if defined(QBDI_ARCH_AARCH64)
+        case llvm::AArch64::OPERAND_SHIFTED_REGISTER:
+#endif
           opa.flag |= OPERANDFLAG_UNDEFINED_EFFECT;
           break;
         default:
@@ -411,6 +418,12 @@ void analyseOperands(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
           opa.flag |= OPERANDFLAG_PCREL;
           break;
         case llvm::MCOI::OPERAND_UNKNOWN:
+#if defined(QBDI_ARCH_AARCH64)
+        case llvm::AArch64::OPERAND_SHIFT_MSL:
+        case llvm::AArch64::OPERAND_SHIFTED_IMMEDIATE:
+        case llvm::AArch64::OPERAND_IMPLICIT_IMM_0:
+        case llvm::AArch64::OPERAND_SHIFTED_REGISTER:
+#endif
           opa.flag |= OPERANDFLAG_UNDEFINED_EFFECT;
           opa.size = sizeof(rword);
           break;

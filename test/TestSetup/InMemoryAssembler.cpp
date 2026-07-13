@@ -103,14 +103,15 @@ InMemoryObject::InMemoryObject(const char *source, const char *cpu,
       llvm::TargetRegistry::lookupTarget(arch, processTriple, error);
 
   llvm::MCTargetOptions options;
+  llvm::Triple mcTriple(tripleName);
   // Allocate all LLVM classes
   MRI = std::unique_ptr<llvm::MCRegisterInfo>(
-      processTarget->createMCRegInfo(tripleName));
+      processTarget->createMCRegInfo(mcTriple));
   MAI = std::unique_ptr<llvm::MCAsmInfo>(
-      processTarget->createMCAsmInfo(*MRI, tripleName, options));
+      processTarget->createMCAsmInfo(*MRI, mcTriple, options));
   MCII = std::unique_ptr<llvm::MCInstrInfo>(processTarget->createMCInstrInfo());
   MSTI = std::unique_ptr<llvm::MCSubtargetInfo>(
-      processTarget->createMCSubtargetInfo(tripleName, cpu, featuresStr));
+      processTarget->createMCSubtargetInfo(mcTriple, cpu, featuresStr));
   MCTX = std::make_unique<llvm::MCContext>(processTriple, MAI.get(), MRI.get(),
                                            MSTI.get(), &SrcMgr);
   MOFI = std::unique_ptr<llvm::MCObjectFileInfo>(

@@ -205,7 +205,7 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
           ModifyInstruction::unique(
               conv_unique<InstTransform>(SetOperand::unique(
                   Operand(0),
-                  Constant(is_x86 ? 6 : 11)) // Offset to jump the next load.
+                  Constant(is_x86 ? 5 : 10)) // Offset to jump the next load.
                                          )),
           GetPCOffset::unique(Temp(0), Constant(0)),
           WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))));
@@ -222,7 +222,7 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
       conv_unique<PatchGenerator>(
           GetPCOffset::unique(Temp(0), Operand(0)),
           ModifyInstruction::unique(conv_unique<InstTransform>(
-              SetOperand::unique(Operand(0), Constant(is_x86 ? 7 : 12)))),
+              SetOperand::unique(Operand(0), Constant(is_x86 ? 5 : 10)))),
           GetPCOffset::unique(Temp(0), Constant(0)),
           WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))));
 
@@ -238,7 +238,7 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
       conv_unique<PatchGenerator>(
           GetPCOffset::unique(Temp(0), Operand(0)),
           ModifyInstruction::unique(conv_unique<InstTransform>(
-              SetOperand::unique(Operand(0), Constant(is_x86 ? 9 : 14)))),
+              SetOperand::unique(Operand(0), Constant(is_x86 ? 5 : 10)))),
           GetPCOffset::unique(Temp(0), Constant(0)),
           WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))));
 

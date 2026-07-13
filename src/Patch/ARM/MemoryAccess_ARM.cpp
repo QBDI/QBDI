@@ -372,6 +372,8 @@ constexpr unsigned ADDR_REG_3_TABLE[] = {
     llvm::ARM::STREXB,
     llvm::ARM::STREXD,
     llvm::ARM::STREXH,
+    llvm::ARM::STRHTi,
+    llvm::ARM::STRHTr,
     llvm::ARM::STRH_POST,
     llvm::ARM::STRT_POST_IMM,
     llvm::ARM::STRT_POST_REG,
@@ -785,8 +787,12 @@ constexpr unsigned ADDR_REG_2_SIMM_3_TABLE[] = {
     llvm::ARM::VSTR_VPR_post,
     // unsigned imm8
     llvm::ARM::t2LDRBT,
+    llvm::ARM::t2LDRHT,
+    llvm::ARM::t2LDRSBT,
+    llvm::ARM::t2LDRSHT,
     llvm::ARM::t2LDRT,
     llvm::ARM::t2STRBT,
+    llvm::ARM::t2STRHT,
     llvm::ARM::t2STRT,
     // unsigned imm12
     llvm::ARM::t2LDRBi12,

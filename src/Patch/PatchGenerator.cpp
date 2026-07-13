@@ -184,7 +184,7 @@ WriteTemp::generate(const Patch &patch, TempManager &temp_manager) const {
                        "Unexpected operand type {}", patch);
     int regNo = getGPRPosition(inst.getOperand(operand).getReg());
     QBDI_REQUIRE_ABORT(regNo != -1, "Unexpected GPRregister {} {}",
-                       inst.getOperand(operand).getReg(), patch);
+                       inst.getOperand(operand).getReg().id(), patch);
     return conv_unique<RelocatableInst>(
         MovReg::unique(Reg(regNo), temp_manager.getRegForTemp(temp)));
   }

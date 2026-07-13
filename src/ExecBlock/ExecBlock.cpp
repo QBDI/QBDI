@@ -624,7 +624,7 @@ const InstAnalysis *ExecBlock::getInstAnalysis(uint16_t instID,
   if ((type & ANALYSIS_JIT) != 0 and (ana->analysisType & ANALYSIS_JIT) == 0) {
     ana->analysisType |= ANALYSIS_JIT;
     ana->patchAddress = getBaseCodeBlock() + instRegistry[instID].offset;
-    if (instRegistry.size() == instID + 1) {
+    if (instRegistry.size() == static_cast<size_t>(instID) + 1) {
       ana->patchSize = codeBlockPosition - instRegistry[instID].offset;
     } else {
       ana->patchSize =

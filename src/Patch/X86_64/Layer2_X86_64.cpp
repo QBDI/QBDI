@@ -296,7 +296,7 @@ llvm::MCInst vextractf128(RegLLVM base, rword offset, RegLLVM src,
                           uint8_t regoffset) {
   llvm::MCInst inst;
 
-  inst.setOpcode(llvm::X86::VEXTRACTF128mr);
+  inst.setOpcode(llvm::X86::VEXTRACTF128mri);
   inst.addOperand(llvm::MCOperand::createReg(base.getValue()));
   inst.addOperand(llvm::MCOperand::createImm(1));
   inst.addOperand(llvm::MCOperand::createReg(0));
@@ -312,7 +312,7 @@ llvm::MCInst vinsertf128(RegLLVM dst, RegLLVM base, rword offset,
                          uint8_t regoffset) {
   llvm::MCInst inst;
 
-  inst.setOpcode(llvm::X86::VINSERTF128rm);
+  inst.setOpcode(llvm::X86::VINSERTF128rmi);
   inst.addOperand(llvm::MCOperand::createReg(dst.getValue()));
   inst.addOperand(llvm::MCOperand::createReg(dst.getValue()));
   inst.addOperand(llvm::MCOperand::createReg(base.getValue()));

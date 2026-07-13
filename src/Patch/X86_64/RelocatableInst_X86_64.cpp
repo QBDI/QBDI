@@ -201,7 +201,7 @@ int InstId::getSize(const LLVMCPU &llvmcpu) const {
 // ============
 
 llvm::MCInst EpilogueJump::reloc(ExecBlock *execBlock, CPUMode cpumode) const {
-  return jmp(execBlock->getEpilogueOffset() - 1);
+  return jmp(execBlock->getEpilogueOffset() - 5);
 }
 
 int EpilogueJump::getSize(const LLVMCPU &llvmcpu) const { return 5; }

@@ -17,6 +17,7 @@ set(SOURCES
     "${CMAKE_CURRENT_LIST_DIR}/PatchGenerator.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/PatchRule.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/Register.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/TempManager.cpp")
+    "${CMAKE_CURRENT_LIST_DIR}/TempManager.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/Types.cpp")
 
 target_sources(QBDI_src INTERFACE "${SOURCES}")

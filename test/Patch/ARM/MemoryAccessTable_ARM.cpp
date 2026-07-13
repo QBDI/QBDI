@@ -377,6 +377,9 @@ const std::set<unsigned> unsupportedInst{
 const std::set<unsigned> fixupRead{
     // clang-format off
     t2LDRBT,
+    t2LDRHT,
+    t2LDRSBT,
+    t2LDRSHT,
     t2LDRT,
     t2TBB,
     t2TBH,
@@ -386,11 +389,6 @@ const std::set<unsigned> fixupRead{
 // instruction that writes memory but without mayStore
 const std::set<unsigned> fixupWrite{
     // clang-format off
-    STRBT_POST_IMM,
-    STRBT_POST_REG,
-    STRH_PRE,
-    t2STRBT,
-    t2STRT,
     // clang-format on
 };
 
@@ -519,7 +517,6 @@ const std::set<unsigned> fixupNoWrite{
     USAX,
     USUB16,
     USUB8,
-    VMRS,
     VMSR,
     t2CLREX,
     t2DBG,
