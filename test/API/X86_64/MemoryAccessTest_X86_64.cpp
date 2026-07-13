@@ -1703,19 +1703,19 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86_64-movdir64b") {
 
   const char source[] = "movdir64b (%rax), %rcx\n";
 
-  uint8_t v[512] = {0};
-  uint8_t buff[512] = {0};
+  alignas(64) uint8_t v[512] = {0};
+  alignas(64) uint8_t buff[512] = {0};
 
   for (size_t i = 0; i < sizeof(v); i++) {
     v[i] = (i % 256);
   }
 
   ExpectedMemoryAccesses expectedPre = {{
-      {(QBDI::rword)&v, 0, 512, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+      {(QBDI::rword)&v, 0, 64, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
   }};
   ExpectedMemoryAccesses expectedPost = {{
-      {(QBDI::rword)&v, 0, 512, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
-      {(QBDI::rword)&buff, 0, 512, QBDI::MEMORY_WRITE,
+      {(QBDI::rword)&v, 0, 64, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+      {(QBDI::rword)&buff, 0, 64, QBDI::MEMORY_WRITE,
        QBDI::MEMORY_UNKNOWN_VALUE},
   }};
 
@@ -1732,8 +1732,10 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86_64-movdir64b") {
   bool ran = runOnASM(&retval, source);
 
   CHECK(ran);
-  for (size_t i = 0; i < sizeof(v); i++)
+  for (size_t i = 0; i < 64; i++)
     CHECK(buff[i] == (i % 256));
+  for (size_t i = 64; i < sizeof(buff); i++)
+    CHECK(buff[i] == 0);
   for (auto &e : expectedPre.accesses)
     CHECK(e.see);
   for (auto &e : expectedPost.accesses)

@@ -21,7 +21,6 @@
 #include <vector>
 
 using QBDITestBatch2::checkAccess;
-using QBDITestBatch2::checkEmptyAccess;
 using QBDITestBatch2::checkFeature;
 using QBDITestBatch2::ExpectedMemoryAccess;
 using QBDITestBatch2::ExpectedMemoryAccesses;
@@ -47,8 +46,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-SLDT16m") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x0000);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-STRm") {
@@ -106,10 +105,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-VERRm") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x0033);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-VERWm") {
@@ -135,10 +132,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-VERWm") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x0033);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-LKGS16m") {
@@ -166,8 +161,6 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-LKGS16m") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }

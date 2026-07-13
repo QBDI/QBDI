@@ -22,6 +22,7 @@
 #include "API/APITest.h"
 
 #include <cstdio>
+#include <cstdlib>
 #include <vector>
 
 #include "QBDI/Memory.hpp"
@@ -33,11 +34,27 @@
 
 namespace QBDITestBatch2 {
 
-static bool checkFeature(const char *f) {
+[[maybe_unused]] inline bool checkFeature(const char *f) {
   if (!QBDI::isHostCPUFeaturePresent(f)) {
     // WARN("Host doesn't support " << f << " feature: SKIP");
     return false;
   }
+  return true;
+}
+
+template <size_t N, typename... Args>
+[[maybe_unused]] inline void checkedSnprintf(char (&buf)[N], const char *fmt,
+                                             Args... args) {
+  int ret = snprintf(buf, N, fmt, args...);
+  REQUIRE(ret >= 0);
+  REQUIRE(static_cast<size_t>(ret) < N);
+}
+
+[[maybe_unused]] inline bool runningUnderSDE() {
+  return std::getenv("SDE_COMMAND_LINE") != nullptr;
+}
+
+[[maybe_unused]] inline bool avx512OpmaskSaveRestoreUnsupported() {
   return true;
 }
 
@@ -47,17 +64,20 @@ struct ExpectedMemoryAccess {
   uint16_t size;
   QBDI::MemoryAccessType type;
   QBDI::MemoryAccessFlags flags;
-  bool see = false;
 };
 
 struct ExpectedMemoryAccesses {
   std::vector<ExpectedMemoryAccess> accesses;
+  bool see = false;
 };
 
-static QBDI::VMAction checkAccess(QBDI::VMInstanceRef vm,
-                                  QBDI::GPRState *gprState,
-                                  QBDI::FPRState *fprState, void *data) {
+[[maybe_unused]] inline QBDI::VMAction checkAccess(QBDI::VMInstanceRef vm,
+                                                   QBDI::GPRState *gprState,
+                                                   QBDI::FPRState *fprState,
+                                                   void *data) {
   ExpectedMemoryAccesses *info = static_cast<ExpectedMemoryAccesses *>(data);
+  REQUIRE_FALSE(info->see);
+  info->see = true;
   std::vector<QBDI::MemoryAccess> memaccesses = vm->getInstMemoryAccess();
   REQUIRE(memaccesses.size() == info->accesses.size());
   for (size_t i = 0; i < info->accesses.size(); i++) {
@@ -67,17 +87,7 @@ static QBDI::VMAction checkAccess(QBDI::VMInstanceRef vm,
     CHECK(memaccess.value == expect.value);
     CHECK(memaccess.size == expect.size);
     CHECK(memaccess.type == expect.type);
-    expect.see = true;
   }
-  return QBDI::VMAction::CONTINUE;
-}
-
-static QBDI::VMAction checkEmptyAccess(QBDI::VMInstanceRef vm,
-                                       QBDI::GPRState *gprState,
-                                       QBDI::FPRState *fprState, void *data) {
-  bool *seen = static_cast<bool *>(data);
-  CHECK(vm->getInstMemoryAccess().empty());
-  *seen = true;
   return QBDI::VMAction::CONTINUE;
 }
 

@@ -19,7 +19,6 @@
 #include "MemAccessTestUtils_X86_64.h"
 
 using QBDITestBatch2::checkAccess;
-using QBDITestBatch2::checkEmptyAccess;
 using QBDITestBatch2::checkFeature;
 using QBDITestBatch2::ExpectedMemoryAccess;
 using QBDITestBatch2::ExpectedMemoryAccesses;
@@ -57,10 +56,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PUSH64rmm") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*reinterpret_cast<uint64_t *>(stackAddr) == 0x1122334455667788ULL);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-POP64rmm") {
@@ -98,10 +95,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-POP64rmm") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x5566778899001122ULL);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-JMP64m") {

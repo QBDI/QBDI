@@ -19,18 +19,20 @@
 #include "MemAccessTestUtils_X86_64.h"
 
 using QBDITestBatch2::checkAccess;
-using QBDITestBatch2::checkEmptyAccess;
+using QBDITestBatch2::checkedSnprintf;
 using QBDITestBatch2::checkFeature;
 using QBDITestBatch2::ExpectedMemoryAccess;
 using QBDITestBatch2::ExpectedMemoryAccesses;
 
 namespace {
-void encodeAddr64LE(uint64_t addr, char *out) {
-  snprintf(out, 64, "0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x",
-           (unsigned)(addr & 0xff), (unsigned)((addr >> 8) & 0xff),
-           (unsigned)((addr >> 16) & 0xff), (unsigned)((addr >> 24) & 0xff),
-           (unsigned)((addr >> 32) & 0xff), (unsigned)((addr >> 40) & 0xff),
-           (unsigned)((addr >> 48) & 0xff), (unsigned)((addr >> 56) & 0xff));
+template <size_t N>
+void encodeAddr64LE(uint64_t addr, char (&out)[N]) {
+  checkedSnprintf(
+      out, "0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x",
+      (unsigned)(addr & 0xff), (unsigned)((addr >> 8) & 0xff),
+      (unsigned)((addr >> 16) & 0xff), (unsigned)((addr >> 24) & 0xff),
+      (unsigned)((addr >> 32) & 0xff), (unsigned)((addr >> 40) & 0xff),
+      (unsigned)((addr >> 48) & 0xff), (unsigned)((addr >> 56) & 0xff));
 }
 } // namespace
 
@@ -44,7 +46,7 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV8ao64") {
   char source[160];
   // mov 0x<target>, %al (a0 = moffs8->AL opcode, MOV8ao64; <target> is
   // the runtime address of `target`, little-endian)
-  snprintf(source, sizeof(source), ".byte 0xa0,%s\n", addrBytes);
+  checkedSnprintf(source, ".byte 0xa0,%s\n", addrBytes);
   ExpectedMemoryAccesses expectedPre = {{
       {targetAddr, 0x2a, 1, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
   }};
@@ -61,10 +63,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV8ao64") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK((vm.getGPRState()->rax & 0xff) == 0x2a);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV8o64a") {
@@ -77,7 +77,7 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV8o64a") {
   char source[160];
   // mov %al, 0x<target> (a2 = AL->moffs8 opcode, MOV8o64a; <target> is
   // the runtime address of `target`, little-endian)
-  snprintf(source, sizeof(source), ".byte 0xa2,%s\n", addrBytes);
+  checkedSnprintf(source, ".byte 0xa2,%s\n", addrBytes);
   ExpectedMemoryAccesses expectedPre = {{}};
   ExpectedMemoryAccesses expectedPost = {{
       {targetAddr, 0x2a, 1, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
@@ -92,8 +92,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV8o64a") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x2a);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV8mi") {
@@ -115,8 +115,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV8mi") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(buffer[21] == 0x2a);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV8mr") {
@@ -139,8 +139,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV8mr") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(buffer[21] == 0x2b);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV8rm") {
@@ -167,10 +167,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV8rm") {
   CHECK(ran);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xff) == 0x2c);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVSX16rm8") {
@@ -197,10 +195,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVSX16rm8") {
   CHECK(ran);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffffULL) == 0xfff3ULL);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVSX32rm8") {
@@ -227,10 +223,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVSX32rm8") {
   CHECK(ran);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffffffffULL) == 0xfffffff3ULL);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVSX64rm8") {
@@ -257,10 +251,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVSX64rm8") {
   CHECK(ran);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffffffffffffffffULL) == 0xfffffffffffffff3ULL);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVZX16rm8") {
@@ -287,10 +279,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVZX16rm8") {
   CHECK(ran);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffffULL) == 0xf3ULL);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVZX32rm8") {
@@ -317,10 +307,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVZX32rm8") {
   CHECK(ran);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffffffffULL) == 0xf3ULL);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVZX64rm8") {
@@ -347,10 +335,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVZX64rm8") {
   CHECK(ran);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffffffffffffffffULL) == 0xf3ULL);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVRS8rm") {
@@ -377,10 +363,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVRS8rm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVRS8rm_EVEX") {
@@ -410,8 +394,6 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVRS8rm_EVEX") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }

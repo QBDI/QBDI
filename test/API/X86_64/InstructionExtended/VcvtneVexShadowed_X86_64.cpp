@@ -49,10 +49,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-VCVTNEPS2BF16rm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-VCVTNEPS2BF16Yrm") {
@@ -82,8 +80,6 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-VCVTNEPS2BF16Yrm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }

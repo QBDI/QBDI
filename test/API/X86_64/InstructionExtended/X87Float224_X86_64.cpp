@@ -42,10 +42,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-FLDENVm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-FSTENVm") {
@@ -64,6 +62,5 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-FSTENVm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPost.see);
 }

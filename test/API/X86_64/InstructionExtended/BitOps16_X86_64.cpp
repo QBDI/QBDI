@@ -19,7 +19,6 @@
 #include "MemAccessTestUtils_X86_64.h"
 
 using QBDITestBatch2::checkAccess;
-using QBDITestBatch2::checkEmptyAccess;
 using QBDITestBatch2::checkFeature;
 using QBDITestBatch2::ExpectedMemoryAccess;
 using QBDITestBatch2::ExpectedMemoryAccesses;
@@ -47,10 +46,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-BT16mi8") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x1030);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-BT16mr") {
@@ -77,10 +74,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-BT16mr") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x1030);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-BTC16mi8") {
@@ -107,10 +102,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-BTC16mi8") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x1020);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-BTC16mr") {
@@ -138,10 +131,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-BTC16mr") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x1020);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-BTR16mi8") {
@@ -168,10 +159,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-BTR16mi8") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x1020);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-BTR16mr") {
@@ -199,10 +188,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-BTR16mr") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x1020);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-BTS16mi8") {
@@ -229,10 +216,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-BTS16mi8") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x1030);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-BTS16mr") {
@@ -260,8 +245,6 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-BTS16mr") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x1030);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }

@@ -19,7 +19,6 @@
 #include "MemAccessTestUtils_X86_64.h"
 
 using QBDITestBatch2::checkAccess;
-using QBDITestBatch2::checkEmptyAccess;
 using QBDITestBatch2::checkFeature;
 using QBDITestBatch2::ExpectedMemoryAccess;
 using QBDITestBatch2::ExpectedMemoryAccesses;
@@ -49,10 +48,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-XADD32rm") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x15151515);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-XCHG32rm") {
@@ -80,10 +77,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-XCHG32rm") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x22222222);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CMPXCHG32rm") {
@@ -112,19 +107,17 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CMPXCHG32rm") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x99999999);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-AADD32mr") {
   if (!checkFeature("egpr")) {
     return;
   }
-  const char source[] = "aadd %ebx, 0x11(%rdx,%rsi,4)\n";
-  uint8_t buffer[40] = {0};
-  uint32_t *target = reinterpret_cast<uint32_t *>(&buffer[21]);
+  const char source[] = "aadd %ebx, 0x10(%rdx,%rsi,4)\n";
+  alignas(4) uint8_t buffer[40] = {0};
+  uint32_t *target = reinterpret_cast<uint32_t *>(&buffer[20]);
   *target = 0x0000000f;
   QBDI::rword targetAddr = (QBDI::rword)target;
   ExpectedMemoryAccesses expectedPre = {{
@@ -146,19 +139,17 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-AADD32mr") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x000000ff);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-AADD32mr_EVEX") {
   if (!checkFeature("egpr")) {
     return;
   }
-  const char source[] = "{evex} aadd %ebx, 0x11(%rdx,%rsi,4)\n";
-  uint8_t buffer[40] = {0};
-  uint32_t *target = reinterpret_cast<uint32_t *>(&buffer[21]);
+  const char source[] = "{evex} aadd %ebx, 0x10(%rdx,%rsi,4)\n";
+  alignas(4) uint8_t buffer[40] = {0};
+  uint32_t *target = reinterpret_cast<uint32_t *>(&buffer[20]);
   *target = 0x0000000f;
   QBDI::rword targetAddr = (QBDI::rword)target;
   ExpectedMemoryAccesses expectedPre = {{
@@ -180,19 +171,17 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-AADD32mr_EVEX") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x000000ff);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-AAND32mr") {
   if (!checkFeature("egpr")) {
     return;
   }
-  const char source[] = "aand %ebx, 0x11(%rdx,%rsi,4)\n";
-  uint8_t buffer[40] = {0};
-  uint32_t *target = reinterpret_cast<uint32_t *>(&buffer[21]);
+  const char source[] = "aand %ebx, 0x10(%rdx,%rsi,4)\n";
+  alignas(4) uint8_t buffer[40] = {0};
+  uint32_t *target = reinterpret_cast<uint32_t *>(&buffer[20]);
   *target = 0x0000000f;
   QBDI::rword targetAddr = (QBDI::rword)target;
   ExpectedMemoryAccesses expectedPre = {{
@@ -214,19 +203,17 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-AAND32mr") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x00000000);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-AAND32mr_EVEX") {
   if (!checkFeature("egpr")) {
     return;
   }
-  const char source[] = "{evex} aand %ebx, 0x11(%rdx,%rsi,4)\n";
-  uint8_t buffer[40] = {0};
-  uint32_t *target = reinterpret_cast<uint32_t *>(&buffer[21]);
+  const char source[] = "{evex} aand %ebx, 0x10(%rdx,%rsi,4)\n";
+  alignas(4) uint8_t buffer[40] = {0};
+  uint32_t *target = reinterpret_cast<uint32_t *>(&buffer[20]);
   *target = 0x0000000f;
   QBDI::rword targetAddr = (QBDI::rword)target;
   ExpectedMemoryAccesses expectedPre = {{
@@ -248,19 +235,17 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-AAND32mr_EVEX") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x00000000);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-AOR32mr") {
   if (!checkFeature("egpr")) {
     return;
   }
-  const char source[] = "axor %ebx, 0x11(%rdx,%rsi,4)\n";
-  uint8_t buffer[40] = {0};
-  uint32_t *target = reinterpret_cast<uint32_t *>(&buffer[21]);
+  const char source[] = "aor %ebx, 0x10(%rdx,%rsi,4)\n";
+  alignas(4) uint8_t buffer[40] = {0};
+  uint32_t *target = reinterpret_cast<uint32_t *>(&buffer[20]);
   *target = 0x0000000f;
   QBDI::rword targetAddr = (QBDI::rword)target;
   ExpectedMemoryAccesses expectedPre = {{
@@ -282,19 +267,17 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-AOR32mr") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x000000ff);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-AOR32mr_EVEX") {
   if (!checkFeature("egpr")) {
     return;
   }
-  const char source[] = "{evex} axor %ebx, 0x11(%rdx,%rsi,4)\n";
-  uint8_t buffer[40] = {0};
-  uint32_t *target = reinterpret_cast<uint32_t *>(&buffer[21]);
+  const char source[] = "{evex} aor %ebx, 0x10(%rdx,%rsi,4)\n";
+  alignas(4) uint8_t buffer[40] = {0};
+  uint32_t *target = reinterpret_cast<uint32_t *>(&buffer[20]);
   *target = 0x0000000f;
   QBDI::rword targetAddr = (QBDI::rword)target;
   ExpectedMemoryAccesses expectedPre = {{
@@ -316,19 +299,17 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-AOR32mr_EVEX") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x000000ff);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-AXOR32mr") {
   if (!checkFeature("egpr")) {
     return;
   }
-  const char source[] = "axor %ebx, 0x11(%rdx,%rsi,4)\n";
-  uint8_t buffer[40] = {0};
-  uint32_t *target = reinterpret_cast<uint32_t *>(&buffer[21]);
+  const char source[] = "axor %ebx, 0x10(%rdx,%rsi,4)\n";
+  alignas(4) uint8_t buffer[40] = {0};
+  uint32_t *target = reinterpret_cast<uint32_t *>(&buffer[20]);
   *target = 0x0000000f;
   QBDI::rword targetAddr = (QBDI::rword)target;
   ExpectedMemoryAccesses expectedPre = {{
@@ -350,19 +331,17 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-AXOR32mr") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x000000ff);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-AXOR32mr_EVEX") {
   if (!checkFeature("egpr")) {
     return;
   }
-  const char source[] = "{evex} axor %ebx, 0x11(%rdx,%rsi,4)\n";
-  uint8_t buffer[40] = {0};
-  uint32_t *target = reinterpret_cast<uint32_t *>(&buffer[21]);
+  const char source[] = "{evex} axor %ebx, 0x10(%rdx,%rsi,4)\n";
+  alignas(4) uint8_t buffer[40] = {0};
+  uint32_t *target = reinterpret_cast<uint32_t *>(&buffer[20]);
   *target = 0x0000000f;
   QBDI::rword targetAddr = (QBDI::rword)target;
   ExpectedMemoryAccesses expectedPre = {{
@@ -384,19 +363,17 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-AXOR32mr_EVEX") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x000000ff);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CMPCCXADDmr32") {
   if (!checkFeature("cmpccxadd")) {
     return;
   }
-  const char source[] = "cmpbxadd %eax, %ecx, 0x11(%rbx,%rsi,4)\n";
-  uint8_t buffer[40] = {0};
-  uint32_t *target = reinterpret_cast<uint32_t *>(&buffer[21]);
+  const char source[] = "cmpbxadd %eax, %ecx, 0x10(%rbx,%rsi,4)\n";
+  alignas(4) uint8_t buffer[40] = {0};
+  uint32_t *target = reinterpret_cast<uint32_t *>(&buffer[20]);
   *target = 0x00000005;
   QBDI::rword targetAddr = (QBDI::rword)target;
   ExpectedMemoryAccesses expectedPre = {{
@@ -404,7 +381,7 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CMPCCXADDmr32") {
   }};
   ExpectedMemoryAccesses expectedPost = {{
       {targetAddr, 0x00000005, 4, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
-      {targetAddr, 0x0000000e, 4, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
+      {targetAddr, 0x0000000a, 4, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
   }};
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
   vm.addMnemonicCB("CMPCCXADDmr32", QBDI::PREINST, checkAccess, &expectedPre);
@@ -418,11 +395,11 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CMPCCXADDmr32") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  CHECK(*target == 0x0000000e);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(*target == 0x0000000a);
+  QBDI::GPRState *finalState = vm.getGPRState();
+  CHECK(finalState->rcx == 0x00000005);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CMPCCXADDmr32_EVEX") {
@@ -432,9 +409,9 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CMPCCXADDmr32_EVEX") {
   if (!checkFeature("egpr")) {
     return;
   }
-  const char source[] = "{evex} cmpbxadd %eax, %ecx, 0x11(%rbx,%rsi,4)\n";
-  uint8_t buffer[40] = {0};
-  uint32_t *target = reinterpret_cast<uint32_t *>(&buffer[21]);
+  const char source[] = "{evex} cmpbxadd %eax, %ecx, 0x10(%rbx,%rsi,4)\n";
+  alignas(4) uint8_t buffer[40] = {0};
+  uint32_t *target = reinterpret_cast<uint32_t *>(&buffer[20]);
   *target = 0x00000005;
   QBDI::rword targetAddr = (QBDI::rword)target;
   ExpectedMemoryAccesses expectedPre = {{
@@ -442,7 +419,7 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CMPCCXADDmr32_EVEX") {
   }};
   ExpectedMemoryAccesses expectedPost = {{
       {targetAddr, 0x00000005, 4, QBDI::MEMORY_READ, QBDI::MEMORY_NO_FLAGS},
-      {targetAddr, 0x0000000e, 4, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
+      {targetAddr, 0x0000000a, 4, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
   }};
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
   vm.addMnemonicCB("CMPCCXADDmr32_EVEX", QBDI::PREINST, checkAccess,
@@ -458,9 +435,9 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CMPCCXADDmr32_EVEX") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  CHECK(*target == 0x0000000e);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(*target == 0x0000000a);
+  QBDI::GPRState *finalState = vm.getGPRState();
+  CHECK(finalState->rcx == 0x00000005);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }

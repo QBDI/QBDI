@@ -19,7 +19,6 @@
 #include "MemAccessTestUtils_X86_64.h"
 
 using QBDITestBatch2::checkAccess;
-using QBDITestBatch2::checkEmptyAccess;
 using QBDITestBatch2::checkFeature;
 using QBDITestBatch2::ExpectedMemoryAccess;
 using QBDITestBatch2::ExpectedMemoryAccesses;
@@ -48,10 +47,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-DEC16m") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x302f);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-DEC16m_EVEX") {
@@ -81,10 +78,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-DEC16m_EVEX") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x302f);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-DEC16m_ND") {
@@ -115,10 +110,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-DEC16m_ND") {
   CHECK(*target == 0x3030);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->r8 & 0xffff) == 0x302f);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-DEC16m_NF") {
@@ -148,10 +141,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-DEC16m_NF") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x302f);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-DEC16m_NF_ND") {
@@ -185,10 +176,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-DEC16m_NF_ND") {
   CHECK(*target == 0x3030);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->r8 & 0xffff) == 0x302f);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-INC16m") {
@@ -215,10 +204,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-INC16m") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3031);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-INC16m_EVEX") {
@@ -248,10 +235,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-INC16m_EVEX") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3031);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-INC16m_ND") {
@@ -282,10 +267,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-INC16m_ND") {
   CHECK(*target == 0x3030);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->r8 & 0xffff) == 0x3031);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-INC16m_NF") {
@@ -315,10 +298,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-INC16m_NF") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3031);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-INC16m_NF_ND") {
@@ -352,10 +333,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-INC16m_NF_ND") {
   CHECK(*target == 0x3030);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->r8 & 0xffff) == 0x3031);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-NEG16m") {
@@ -382,10 +361,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-NEG16m") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0xcfd0);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-NEG16m_EVEX") {
@@ -415,10 +392,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-NEG16m_EVEX") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0xcfd0);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-NEG16m_ND") {
@@ -449,10 +424,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-NEG16m_ND") {
   CHECK(*target == 0x3030);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->r8 & 0xffff) == 0xcfd0);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-NEG16m_NF") {
@@ -482,10 +455,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-NEG16m_NF") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0xcfd0);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-NEG16m_NF_ND") {
@@ -519,10 +490,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-NEG16m_NF_ND") {
   CHECK(*target == 0x3030);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->r8 & 0xffff) == 0xcfd0);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-NOT16m") {
@@ -549,10 +518,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-NOT16m") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0xcfcf);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-NOT16m_EVEX") {
@@ -582,10 +549,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-NOT16m_EVEX") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0xcfcf);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-NOT16m_ND") {
@@ -616,10 +581,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-NOT16m_ND") {
   CHECK(*target == 0x3030);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->r8 & 0xffff) == 0xcfcf);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-DIV16m") {
@@ -646,10 +609,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-DIV16m") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-DIV16m_EVEX") {
@@ -679,10 +640,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-DIV16m_EVEX") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-DIV16m_NF") {
@@ -712,10 +671,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-DIV16m_NF") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IDIV16m") {
@@ -742,10 +699,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IDIV16m") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IDIV16m_EVEX") {
@@ -775,10 +730,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IDIV16m_EVEX") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IDIV16m_NF") {
@@ -808,10 +761,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IDIV16m_NF") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16m") {
@@ -838,10 +789,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16m") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16m_EVEX") {
@@ -871,10 +820,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16m_EVEX") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16m_NF") {
@@ -904,10 +851,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16m_NF") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MUL16m") {
@@ -934,10 +879,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MUL16m") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MUL16m_EVEX") {
@@ -967,10 +910,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MUL16m_EVEX") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MUL16m_NF") {
@@ -1000,10 +941,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MUL16m_NF") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16rm") {
@@ -1032,10 +971,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16rm") {
   CHECK(*target == 0x5);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffff) == 0xf);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16rm_EVEX") {
@@ -1067,10 +1004,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16rm_EVEX") {
   CHECK(*target == 0x5);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffff) == 0xf);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16rm_ND") {
@@ -1102,10 +1037,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16rm_ND") {
   CHECK(*target == 0x5);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->r8 & 0xffff) == 0xf);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16rm_NF") {
@@ -1137,10 +1070,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16rm_NF") {
   CHECK(*target == 0x5);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffff) == 0xf);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16rm_NF_ND") {
@@ -1176,10 +1107,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16rm_NF_ND") {
   CHECK(*target == 0x5);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->r8 & 0xffff) == 0xf);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16rmi") {
@@ -1207,10 +1136,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16rmi") {
   CHECK(*target == 0x5);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffff) == 0x5b04);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16rmi_EVEX") {
@@ -1242,10 +1169,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16rmi_EVEX") {
   CHECK(*target == 0x5);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffff) == 0x5b04);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16rmi_NF") {
@@ -1276,10 +1201,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16rmi_NF") {
   CHECK(*target == 0x5);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffff) == 0x5b04);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16rmi8") {
@@ -1307,10 +1230,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16rmi8") {
   CHECK(*target == 0x5);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffff) == 0x19);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16rmi8_EVEX") {
@@ -1342,10 +1263,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16rmi8_EVEX") {
   CHECK(*target == 0x5);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffff) == 0x19);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16rmi8_NF") {
@@ -1376,10 +1295,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMUL16rmi8_NF") {
   CHECK(*target == 0x5);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffff) == 0x19);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMULZU16rmi") {
@@ -1410,10 +1327,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMULZU16rmi") {
   CHECK(*target == 0x5);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffff) == 0x5b04);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMULZU16rmi8") {
@@ -1444,10 +1359,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-IMULZU16rmi8") {
   CHECK(*target == 0x5);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffff) == 0x19);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-BSF16rm") {
@@ -1476,10 +1389,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-BSF16rm") {
   CHECK(*target == 0x28);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffff) == 0x3);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-BSR16rm") {
@@ -1508,10 +1419,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-BSR16rm") {
   CHECK(*target == 0x28);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffff) == 0x5);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-POPCNT16rm") {
@@ -1543,10 +1452,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-POPCNT16rm") {
   CHECK(*target == 0x28);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffff) == 0x2);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-POPCNT16rm_EVEX") {
@@ -1582,10 +1489,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-POPCNT16rm_EVEX") {
   CHECK(*target == 0x28);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffff) == 0x2);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-POPCNT16rm_NF") {
@@ -1620,10 +1525,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-POPCNT16rm_NF") {
   CHECK(*target == 0x28);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffff) == 0x2);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-LZCNT16rm") {
@@ -1655,10 +1558,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-LZCNT16rm") {
   CHECK(*target == 0x28);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffff) == 0xa);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-LZCNT16rm_EVEX") {
@@ -1694,10 +1595,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-LZCNT16rm_EVEX") {
   CHECK(*target == 0x28);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffff) == 0xa);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-LZCNT16rm_NF") {
@@ -1732,10 +1631,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-LZCNT16rm_NF") {
   CHECK(*target == 0x28);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffff) == 0xa);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-TZCNT16rm") {
@@ -1767,10 +1664,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-TZCNT16rm") {
   CHECK(*target == 0x28);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffff) == 0x3);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-TZCNT16rm_EVEX") {
@@ -1806,10 +1701,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-TZCNT16rm_EVEX") {
   CHECK(*target == 0x28);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffff) == 0x3);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-TZCNT16rm_NF") {
@@ -1844,8 +1737,6 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-TZCNT16rm_NF") {
   CHECK(*target == 0x28);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rax & 0xffff) == 0x3);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }

@@ -19,18 +19,20 @@
 #include "MemAccessTestUtils_X86_64.h"
 
 using QBDITestBatch2::checkAccess;
-using QBDITestBatch2::checkEmptyAccess;
+using QBDITestBatch2::checkedSnprintf;
 using QBDITestBatch2::checkFeature;
 using QBDITestBatch2::ExpectedMemoryAccess;
 using QBDITestBatch2::ExpectedMemoryAccesses;
 
 namespace {
-void encodeAddr64LE(uint64_t addr, char *out) {
-  snprintf(out, 64, "0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x",
-           (unsigned)(addr & 0xff), (unsigned)((addr >> 8) & 0xff),
-           (unsigned)((addr >> 16) & 0xff), (unsigned)((addr >> 24) & 0xff),
-           (unsigned)((addr >> 32) & 0xff), (unsigned)((addr >> 40) & 0xff),
-           (unsigned)((addr >> 48) & 0xff), (unsigned)((addr >> 56) & 0xff));
+template <size_t N>
+void encodeAddr64LE(uint64_t addr, char (&out)[N]) {
+  checkedSnprintf(
+      out, "0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x",
+      (unsigned)(addr & 0xff), (unsigned)((addr >> 8) & 0xff),
+      (unsigned)((addr >> 16) & 0xff), (unsigned)((addr >> 24) & 0xff),
+      (unsigned)((addr >> 32) & 0xff), (unsigned)((addr >> 40) & 0xff),
+      (unsigned)((addr >> 48) & 0xff), (unsigned)((addr >> 56) & 0xff));
 }
 } // namespace
 
@@ -45,7 +47,7 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV64ao64") {
   // mov 0x<target>, %rax (48 = REX.W, a1 = moffs->RAX opcode,
   // MOV64ao64; <target> is the runtime address of `target`,
   // little-endian)
-  snprintf(source, sizeof(source), ".byte 0x48,0xa1,%s\n", addrBytes);
+  checkedSnprintf(source, ".byte 0x48,0xa1,%s\n", addrBytes);
   ExpectedMemoryAccesses expectedPre = {{
       {targetAddr, 0x2a2a2a2a2a2a2a2a, 8, QBDI::MEMORY_READ,
        QBDI::MEMORY_NO_FLAGS},
@@ -64,10 +66,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV64ao64") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(vm.getGPRState()->rax == 0x2a2a2a2a2a2a2a2a);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV64o64a") {
@@ -81,7 +81,7 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV64o64a") {
   // mov %rax, 0x<target> (48 = REX.W, a3 = RAX->moffs opcode,
   // MOV64o64a; <target> is the runtime address of `target`,
   // little-endian)
-  snprintf(source, sizeof(source), ".byte 0x48,0xa3,%s\n", addrBytes);
+  checkedSnprintf(source, ".byte 0x48,0xa3,%s\n", addrBytes);
   ExpectedMemoryAccesses expectedPre = {{}};
   ExpectedMemoryAccesses expectedPost = {{
       {targetAddr, 0x2a2a2a2a2a2a2a2a, 8, QBDI::MEMORY_WRITE,
@@ -97,8 +97,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV64o64a") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x2a2a2a2a2a2a2a2a);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV64mi32") {
@@ -122,8 +122,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV64mi32") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x000000002a2a2a2a);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV64mr") {
@@ -148,8 +148,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV64mr") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x2a2a2a2a2a2a2a2a);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV64rm") {
@@ -177,10 +177,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV64rm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVBE64rm") {
@@ -210,10 +208,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVBE64rm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVBE64rm_EVEX") {
@@ -247,10 +243,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVBE64rm_EVEX") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVBE64mr") {
@@ -278,8 +272,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVBE64mr") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x8877665544332211);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVBE64mr_EVEX") {
@@ -311,8 +305,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVBE64mr_EVEX") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x8877665544332211);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVDIRI64") {
@@ -340,8 +334,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVDIRI64") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x1234567812345678);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVDIRI64_EVEX") {
@@ -373,8 +367,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVDIRI64_EVEX") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x1234567812345678);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVNTI_64mr") {
@@ -399,8 +393,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVNTI_64mr") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x1234567812345678);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVRS64rm") {
@@ -430,10 +424,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVRS64rm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVRS64rm_EVEX") {
@@ -467,8 +459,6 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVRS64rm_EVEX") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }

@@ -19,7 +19,6 @@
 #include "MemAccessTestUtils_X86_64.h"
 
 using QBDITestBatch2::checkAccess;
-using QBDITestBatch2::checkEmptyAccess;
 using QBDITestBatch2::checkFeature;
 using QBDITestBatch2::ExpectedMemoryAccess;
 using QBDITestBatch2::ExpectedMemoryAccesses;
@@ -51,10 +50,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-ADDSDrm_Int") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-SUBSDrm_Int") {
@@ -84,10 +81,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-SUBSDrm_Int") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MULSDrm_Int") {
@@ -117,10 +112,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MULSDrm_Int") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-DIVSDrm_Int") {
@@ -150,10 +143,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-DIVSDrm_Int") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MAXSDrm_Int") {
@@ -183,10 +174,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MAXSDrm_Int") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MINSDrm_Int") {
@@ -216,10 +205,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MINSDrm_Int") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CMPSDrmi_Int") {
@@ -249,10 +236,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CMPSDrmi_Int") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-ROUNDSDmi_Int") {
@@ -282,10 +267,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-ROUNDSDmi_Int") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-SQRTSDm_Int") {
@@ -315,10 +298,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-SQRTSDm_Int") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-COMISDrm") {
@@ -348,10 +329,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-COMISDrm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-UCOMISDrm") {
@@ -381,10 +360,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-UCOMISDrm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CVTSD2SI64rm_Int") {
@@ -416,10 +393,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CVTSD2SI64rm_Int") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CVTSD2SIrm_Int") {
@@ -450,10 +425,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CVTSD2SIrm_Int") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CVTSD2SSrm_Int") {
@@ -484,10 +457,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CVTSD2SSrm_Int") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CVTSI642SDrm_Int") {
@@ -519,10 +490,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CVTSI642SDrm_Int") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CVTSI642SSrm_Int") {
@@ -554,10 +523,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CVTSI642SSrm_Int") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CVTTSD2SI64rm_Int") {
@@ -589,10 +556,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CVTTSD2SI64rm_Int") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CVTTSD2SIrm_Int") {
@@ -623,10 +588,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CVTTSD2SIrm_Int") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CVTDQ2PDrm") {
@@ -656,10 +619,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CVTDQ2PDrm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CVTPS2PDrm") {
@@ -689,10 +650,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CVTPS2PDrm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVDDUPrm") {
@@ -722,10 +681,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVDDUPrm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVHPDrm") {
@@ -755,10 +712,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVHPDrm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVHPSrm") {
@@ -788,10 +743,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVHPSrm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVLPDrm") {
@@ -821,10 +774,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVLPDrm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVLPSrm") {
@@ -854,10 +805,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVLPSrm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVSDrm") {
@@ -887,10 +836,38 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVSDrm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
+}
+
+TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV64toPQIrm") {
+  if (!checkFeature("sse2")) {
+    return;
+  }
+  // movq 0x11(%rbx,%rsi,4), %xmm0
+  const char source[] =
+      ".byte 0x66,0x48,0x0f,0x6e,0x84,0xb3,0x11,0x00,0x00,0x00\n";
+  uint8_t buffer[48] = {0};
+  uint64_t *target = reinterpret_cast<uint64_t *>(&buffer[21]);
+  *target = 0x0102030405060708;
+  QBDI::rword targetAddr = (QBDI::rword)target;
+  ExpectedMemoryAccesses expectedPre = {{
+      {targetAddr, 0x0102030405060708, 8, QBDI::MEMORY_READ,
+       QBDI::MEMORY_NO_FLAGS},
+  }};
+  ExpectedMemoryAccesses expectedPost = expectedPre;
+  vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  vm.addMnemonicCB("MOV64toPQIrm", QBDI::PREINST, checkAccess, &expectedPre);
+  vm.addMnemonicCB("MOV64toPQIrm", QBDI::POSTINST, checkAccess, &expectedPost);
+  QBDI::GPRState *state = vm.getGPRState();
+  state->rbx = (QBDI::rword)&buffer[0];
+  state->rsi = 1;
+  vm.setGPRState(state);
+  QBDI::rword retval;
+  bool ran = runOnASM(&retval, source);
+  CHECK(ran);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVQI2PQIrm") {
@@ -920,10 +897,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVQI2PQIrm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVHPDmr") {
@@ -958,8 +933,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVHPDmr") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3ff0000000000000);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVHPSmr") {
@@ -994,8 +969,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVHPSmr") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3ff0000000000000);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVLPDmr") {
@@ -1028,8 +1003,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVLPDmr") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3ff0000000000000);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVLPSmr") {
@@ -1062,8 +1037,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVLPSmr") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3ff0000000000000);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVSDmr") {
@@ -1096,8 +1071,44 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVSDmr") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3ff0000000000000);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
+}
+
+TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVPQIto64mr") {
+  if (!checkFeature("sse2")) {
+    return;
+  }
+  // movq %xmm0, 0x11(%rbx,%rsi,4)
+  const char source[] =
+      "movq 0x11(%rcx,%rdi,4), %xmm0\n"
+      ".byte 0x66,0x48,0x0f,0x7e,0x84,0xb3,0x11,0x00,0x00,0x00\n";
+  uint8_t buffer[48] = {0};
+  uint8_t srcBuffer[48] = {0};
+  uint64_t *target = reinterpret_cast<uint64_t *>(&buffer[21]);
+  uint64_t *srcTarget = reinterpret_cast<uint64_t *>(&srcBuffer[21]);
+  *srcTarget = 0x0102030405060708;
+  QBDI::rword targetAddr = (QBDI::rword)target;
+  ExpectedMemoryAccesses expectedPre = {{}};
+  ExpectedMemoryAccesses expectedPost = {{
+      {targetAddr, 0x0102030405060708, 8, QBDI::MEMORY_WRITE,
+       QBDI::MEMORY_NO_FLAGS},
+  }};
+  vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  vm.addMnemonicCB("MOVPQIto64mr", QBDI::PREINST, checkAccess, &expectedPre);
+  vm.addMnemonicCB("MOVPQIto64mr", QBDI::POSTINST, checkAccess, &expectedPost);
+  QBDI::GPRState *state = vm.getGPRState();
+  state->rbx = (QBDI::rword)&buffer[0];
+  state->rsi = 1;
+  state->rcx = (QBDI::rword)&srcBuffer[0];
+  state->rdi = 1;
+  vm.setGPRState(state);
+  QBDI::rword retval;
+  bool ran = runOnASM(&retval, source);
+  CHECK(ran);
+  CHECK(*target == 0x0102030405060708);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVPQI2QImr") {
@@ -1130,8 +1141,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVPQI2QImr") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3ff0000000000000);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVNTSD") {
@@ -1164,8 +1175,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOVNTSD") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3ff0000000000000);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PEXTRQmri") {
@@ -1198,8 +1209,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PEXTRQmri") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x3ff0000000000000);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PINSRQrmi") {
@@ -1229,10 +1240,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PINSRQrmi") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PMOVSXBWrm") {
@@ -1262,10 +1271,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PMOVSXBWrm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PMOVSXDQrm") {
@@ -1295,10 +1302,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PMOVSXDQrm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PMOVSXWDrm") {
@@ -1328,10 +1333,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PMOVSXWDrm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PMOVZXBWrm") {
@@ -1361,10 +1364,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PMOVZXBWrm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PMOVZXDQrm") {
@@ -1394,10 +1395,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PMOVZXDQrm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PMOVZXWDrm") {
@@ -1427,8 +1426,6 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PMOVZXWDrm") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }

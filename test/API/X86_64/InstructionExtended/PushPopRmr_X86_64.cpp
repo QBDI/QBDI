@@ -47,8 +47,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PUSH16rmr") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*reinterpret_cast<uint16_t *>(stackAddr) == 0x5678);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-POP16rmr") {
@@ -77,10 +77,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-POP16rmr") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK((vm.getGPRState()->rax & 0xffff) == 0x9abc);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PUSH64rmr") {
@@ -109,8 +107,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PUSH64rmr") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*reinterpret_cast<uint64_t *>(stackAddr) == 0x1122334455667788);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-POP64rmr") {
@@ -140,8 +138,6 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-POP64rmr") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(vm.getGPRState()->rax == 0x1122334455667788);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }

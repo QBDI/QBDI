@@ -19,7 +19,6 @@
 #include "MemAccessTestUtils_X86_64.h"
 
 using QBDITestBatch2::checkAccess;
-using QBDITestBatch2::checkEmptyAccess;
 using QBDITestBatch2::checkFeature;
 using QBDITestBatch2::ExpectedMemoryAccess;
 using QBDITestBatch2::ExpectedMemoryAccesses;
@@ -50,10 +49,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-CMPXCHG16rm") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*target == 0x9999);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-XADD16rm") {
@@ -83,10 +80,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-XADD16rm") {
   CHECK(*target == 0x1515);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rbx & 0xffff) == 0x1010);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-XCHG16rm") {
@@ -116,8 +111,6 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-XCHG16rm") {
   CHECK(*target == 0x0505);
   QBDI::GPRState *finalState = vm.getGPRState();
   CHECK((finalState->rbx & 0xffff) == 0x1010);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }

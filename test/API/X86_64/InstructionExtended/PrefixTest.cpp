@@ -28,44 +28,13 @@
 
 #include "Utility/System.h"
 
-static bool checkFeature(const char *f) {
-  if (!QBDI::isHostCPUFeaturePresent(f)) {
-    // WARN("Host doesn't support " << f << " feature: SKIP");
-    return false;
-  }
-  return true;
-}
+#include "MemAccessTestUtils_X86_64.h"
 
-struct ExpectedMemoryAccess {
-  QBDI::rword address;
-  QBDI::rword value;
-  uint16_t size;
-  QBDI::MemoryAccessType type;
-  QBDI::MemoryAccessFlags flags;
-  bool see = false;
-};
-
-struct ExpectedMemoryAccesses {
-  std::vector<ExpectedMemoryAccess> accesses;
-};
-
-static QBDI::VMAction checkAccess(QBDI::VMInstanceRef vm,
-                                  QBDI::GPRState *gprState,
-                                  QBDI::FPRState *fprState, void *data) {
-  ExpectedMemoryAccesses *info = static_cast<ExpectedMemoryAccesses *>(data);
-  std::vector<QBDI::MemoryAccess> memaccesses = vm->getInstMemoryAccess();
-  REQUIRE(memaccesses.size() == info->accesses.size());
-  for (size_t i = 0; i < info->accesses.size(); i++) {
-    auto &memaccess = memaccesses[i];
-    auto &expect = info->accesses[i];
-    CHECK(memaccess.accessAddress == expect.address);
-    CHECK(memaccess.value == expect.value);
-    CHECK(memaccess.size == expect.size);
-    CHECK(memaccess.type == expect.type);
-    expect.see = true;
-  }
-  return QBDI::VMAction::CONTINUE;
-}
+using QBDITestBatch2::checkAccess;
+using QBDITestBatch2::checkFeature;
+using QBDITestBatch2::ExpectedMemoryAccess;
+using QBDITestBatch2::ExpectedMemoryAccesses;
+using QBDITestBatch2::runningUnderSDE;
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-lock_add") {
   const char source[] = "lock addl $1, (%rax)\n";
@@ -92,10 +61,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-lock_add") {
 
   CHECK(ran);
   CHECK(v == 0x42);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-rep_movsb") {
@@ -205,6 +172,9 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-data16_mov") {
 TEST_CASE_METHOD(APITest,
                  "InstructionExtendedTest_X86_64-segment_override_fs") {
   if (!checkFeature("fsgsbase")) {
+    return;
+  }
+  if (runningUnderSDE()) {
     return;
   }
 

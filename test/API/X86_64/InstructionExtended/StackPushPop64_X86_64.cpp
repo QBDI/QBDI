@@ -43,8 +43,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PUSH64i32") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*reinterpret_cast<uint64_t *>(stackAddr) == 0x11223344ULL);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PUSH64i8") {
@@ -68,8 +68,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PUSH64i8") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*reinterpret_cast<uint64_t *>(stackAddr) == 0x5);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PUSH64r") {
@@ -95,8 +95,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PUSH64r") {
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
   CHECK(*reinterpret_cast<uint64_t *>(stackAddr) == 0x1122334455667788ULL);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PUSHF64") {
@@ -120,8 +120,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-PUSHF64") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-POP64r") {
@@ -147,10 +147,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-POP64r") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
 
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-POPF64") {
@@ -175,8 +173,6 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-POPF64") {
   QBDI::rword retval;
   bool ran = runOnASM(&retval, source);
   CHECK(ran);
-  for (auto &e : expectedPre.accesses)
-    CHECK(e.see);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
 }
