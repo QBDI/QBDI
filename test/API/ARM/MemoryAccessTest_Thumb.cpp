@@ -2008,7 +2008,7 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest_Thumb-ldrsb_reg1") {
   }};
 
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-  vm.addMnemonicCB("tLDRSBr", QBDI::PREINST, checkAccess, &expectedPre);
+  vm.addMnemonicCB("tLDRSB", QBDI::PREINST, checkAccess, &expectedPre);
 
   QBDI::GPRState *state = vm.getGPRState();
   state->r0 = reinterpret_cast<QBDI::rword>(&v) + 25;
@@ -2299,7 +2299,7 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest_Thumb-ldrsh_reg1") {
   }};
 
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-  vm.addMnemonicCB("tLDRSHr", QBDI::PREINST, checkAccess, &expectedPre);
+  vm.addMnemonicCB("tLDRSH", QBDI::PREINST, checkAccess, &expectedPre);
 
   QBDI::GPRState *state = vm.getGPRState();
   state->r0 = reinterpret_cast<QBDI::rword>(&v) + 25;

@@ -32,7 +32,7 @@ bool startsWith(const char *prefix, const char *str) {
     // matches a character in the str
     if (*prefix == '*') {
       if (toupper(*(prefix + 1)) == toupper(*str++)) {
-        prefix++;
+        prefix += 2;
       }
       continue;
     }
@@ -42,7 +42,10 @@ bool startsWith(const char *prefix, const char *str) {
     }
   }
   // check pending character after wildcard
-  if (*prefix && *(prefix + 1)) {
+  if (*prefix == '*' && *(prefix + 1) == '\0') {
+    return true;
+  }
+  if (*prefix) {
     return false;
   }
   // prefix checking, if next char is not either \0, "_" or [0-9] then do not

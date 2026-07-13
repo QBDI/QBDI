@@ -50,3 +50,14 @@ TEST_CASE("startsWithTest-Prefix") {
   CHECK_FALSE(QBDI::String::startsWith("B", "BIQ"));
   CHECK(QBDI::String::startsWith("B*", "BIQ"));
 }
+
+TEST_CASE("startsWithTest-AArch64Prefix") {
+  CHECK_FALSE(QBDI::String::startsWith("BL", "B"));
+  CHECK_FALSE(QBDI::String::startsWith("BLR", "B"));
+  CHECK_FALSE(QBDI::String::startsWith("BLX", "B"));
+  CHECK_FALSE(QBDI::String::startsWith("BLR", "BL"));
+  CHECK_FALSE(QBDI::String::startsWith("RETX", "RET"));
+  CHECK(QBDI::String::startsWith("BL", "BL"));
+  CHECK(QBDI::String::startsWith("BL", "BL2"));
+  CHECK(QBDI::String::startsWith("BL", "BL_pseudo"));
+}
