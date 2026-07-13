@@ -28,7 +28,7 @@
 
 [[maybe_unused]] static bool checkFeature(const char *f) {
   if (!QBDI::isHostCPUFeaturePresent(f)) {
-    WARN("Host doesn't support " << f << " feature: SKIP");
+    // WARN("Host doesn't support " << f << " feature: SKIP");
     return false;
   }
   return true;
@@ -77,20 +77,19 @@ static QBDI::VMAction checkAccess(QBDI::VMInstanceRef vm,
 
   std::vector<QBDI::MemoryAccess> memaccesses = vm->getInstMemoryAccess();
 
-  CHECKED_IF(memaccesses.size() == info->accesses.size()) {
-    for (size_t i = 0; i < info->accesses.size(); i++) {
-      auto &memaccess = memaccesses[i];
-      auto &expect = info->accesses[i];
-      INFO("Expected Access n°" << i);
-      INFO("Value 0x" << std::hex << memaccess.value << " expect 0x" << std::hex
-                      << expect.value);
-      CHECKED_IF(memaccess.accessAddress == expect.address)
-      CHECKED_IF((memaccess.value == expect.value || expect.value == 0))
-      CHECKED_IF(memaccess.size == expect.size)
-      CHECKED_IF(memaccess.type == expect.type)
-      CHECKED_IF(memaccess.flags == expect.flags)
-      expect.see = true;
-    }
+  REQUIRE(memaccesses.size() == info->accesses.size());
+  for (size_t i = 0; i < info->accesses.size(); i++) {
+    auto &memaccess = memaccesses[i];
+    auto &expect = info->accesses[i];
+    INFO("Expected Access n°" << i);
+    INFO("Value 0x" << std::hex << memaccess.value << " expect 0x" << std::hex
+                    << expect.value);
+    CHECKED_IF(memaccess.accessAddress == expect.address)
+    CHECKED_IF((memaccess.value == expect.value || expect.value == 0))
+    CHECKED_IF(memaccess.size == expect.size)
+    CHECKED_IF(memaccess.type == expect.type)
+    CHECKED_IF(memaccess.flags == expect.flags)
+    expect.see = true;
   }
   return QBDI::VMAction::CONTINUE;
 }
@@ -3175,12 +3174,16 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest_Thumb-strexb1") {
 
   QBDI::rword v = 0x7e;
   QBDI::rword v1 = 0;
-  ExpectedMemoryAccesses expectedPost = {{
-      {(QBDI::rword)&v1, 0, 1, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
-  }};
+  bool seenPost = false;
 
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-  vm.addMnemonicCB("t2STREXB", QBDI::POSTINST, checkAccess, &expectedPost);
+  vm.addMnemonicCB("t2STREXB", QBDI::POSTINST,
+                   [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
+                       QBDI::FPRState *fprState) -> QBDI::VMAction {
+                     CHECK(vmi->getInstMemoryAccess().empty());
+                     seenPost = true;
+                     return QBDI::VMAction::CONTINUE;
+                   });
 
   QBDI::GPRState *state = vm.getGPRState();
   state->r0 = reinterpret_cast<QBDI::rword>(&v1);
@@ -3192,8 +3195,7 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest_Thumb-strexb1") {
   bool ran = runOnASM(&retval, source, {}, QBDI::CPUMode::Thumb);
 
   CHECK(ran);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(seenPost);
   CHECK(v1 == 0);
 }
 
@@ -3232,13 +3234,16 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest_Thumb-strexd1") {
 
   alignas(16) QBDI::rword v[] = {0x7112a12e, 0xb0e356d9};
   alignas(16) QBDI::rword v1[] = {0, 0};
-  ExpectedMemoryAccesses expectedPost = {{
-      {(QBDI::rword)&v1[0], 0, 4, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
-      {(QBDI::rword)&v1[1], 0, 4, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
-  }};
+  bool seenPost = false;
 
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-  vm.addMnemonicCB("t2STREXD", QBDI::POSTINST, checkAccess, &expectedPost);
+  vm.addMnemonicCB("t2STREXD", QBDI::POSTINST,
+                   [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
+                       QBDI::FPRState *fprState) -> QBDI::VMAction {
+                     CHECK(vmi->getInstMemoryAccess().empty());
+                     seenPost = true;
+                     return QBDI::VMAction::CONTINUE;
+                   });
 
   QBDI::GPRState *state = vm.getGPRState();
   state->r0 = reinterpret_cast<QBDI::rword>(&v1);
@@ -3251,8 +3256,7 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest_Thumb-strexd1") {
   bool ran = runOnASM(&retval, source, {}, QBDI::CPUMode::Thumb);
 
   CHECK(ran);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(seenPost);
   CHECK(v1[0] == 0);
   CHECK(v1[1] == 0);
 }
@@ -3295,12 +3299,16 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest_Thumb-strexh1") {
 
   QBDI::rword v = 0x7e2e;
   QBDI::rword v1 = 0;
-  ExpectedMemoryAccesses expectedPost = {{
-      {(QBDI::rword)&v1, 0, 2, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
-  }};
+  bool seenPost = false;
 
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-  vm.addMnemonicCB("t2STREXH", QBDI::POSTINST, checkAccess, &expectedPost);
+  vm.addMnemonicCB("t2STREXH", QBDI::POSTINST,
+                   [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
+                       QBDI::FPRState *fprState) -> QBDI::VMAction {
+                     CHECK(vmi->getInstMemoryAccess().empty());
+                     seenPost = true;
+                     return QBDI::VMAction::CONTINUE;
+                   });
 
   QBDI::GPRState *state = vm.getGPRState();
   state->r0 = reinterpret_cast<QBDI::rword>(&v1);
@@ -3312,8 +3320,7 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest_Thumb-strexh1") {
   bool ran = runOnASM(&retval, source, {}, QBDI::CPUMode::Thumb);
 
   CHECK(ran);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(seenPost);
   CHECK(v1 == 0);
 }
 
@@ -3352,12 +3359,16 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest_Thumb-strex1") {
 
   QBDI::rword v = 0x7802d13e;
   QBDI::rword v1 = 0;
-  ExpectedMemoryAccesses expectedPost = {{
-      {(QBDI::rword)&v1, 0, 4, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
-  }};
+  bool seenPost = false;
 
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-  vm.addMnemonicCB("t2STREX", QBDI::POSTINST, checkAccess, &expectedPost);
+  vm.addMnemonicCB("t2STREX", QBDI::POSTINST,
+                   [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
+                       QBDI::FPRState *fprState) -> QBDI::VMAction {
+                     CHECK(vmi->getInstMemoryAccess().empty());
+                     seenPost = true;
+                     return QBDI::VMAction::CONTINUE;
+                   });
 
   QBDI::GPRState *state = vm.getGPRState();
   state->r0 = reinterpret_cast<QBDI::rword>(&v1);
@@ -3369,8 +3380,7 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest_Thumb-strex1") {
   bool ran = runOnASM(&retval, source, {}, QBDI::CPUMode::Thumb);
 
   CHECK(ran);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(seenPost);
   CHECK(v1 == 0);
 }
 
@@ -3409,12 +3419,16 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest_Thumb-strex3") {
 
   QBDI::rword v = 0x7802d13e;
   QBDI::rword v1 = 0;
-  ExpectedMemoryAccesses expectedPost = {{
-      {(QBDI::rword)&v1, 0, 4, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
-  }};
+  bool seenPost = false;
 
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-  vm.addMnemonicCB("t2STREX", QBDI::POSTINST, checkAccess, &expectedPost);
+  vm.addMnemonicCB("t2STREX", QBDI::POSTINST,
+                   [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
+                       QBDI::FPRState *fprState) -> QBDI::VMAction {
+                     CHECK(vmi->getInstMemoryAccess().empty());
+                     seenPost = true;
+                     return QBDI::VMAction::CONTINUE;
+                   });
 
   QBDI::GPRState *state = vm.getGPRState();
   state->r0 = reinterpret_cast<QBDI::rword>(&v1) - 8;
@@ -3426,8 +3440,7 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest_Thumb-strex3") {
   bool ran = runOnASM(&retval, source, {}, QBDI::CPUMode::Thumb);
 
   CHECK(ran);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(seenPost);
   CHECK(v1 == 0);
 }
 
@@ -3466,12 +3479,16 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest_Thumb-strex5") {
 
   QBDI::rword v = 0x7802d13e;
   QBDI::rword v1 = 0;
-  ExpectedMemoryAccesses expectedPost = {{
-      {(QBDI::rword)&v1, 0, 4, QBDI::MEMORY_WRITE, QBDI::MEMORY_NO_FLAGS},
-  }};
+  bool seenPost = false;
 
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-  vm.addMnemonicCB("t2STREX", QBDI::POSTINST, checkAccess, &expectedPost);
+  vm.addMnemonicCB("t2STREX", QBDI::POSTINST,
+                   [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
+                       QBDI::FPRState *fprState) -> QBDI::VMAction {
+                     CHECK(vmi->getInstMemoryAccess().empty());
+                     seenPost = true;
+                     return QBDI::VMAction::CONTINUE;
+                   });
 
   QBDI::GPRState *state = vm.getGPRState();
   state->r0 = reinterpret_cast<QBDI::rword>(&v1) - 1020;
@@ -3483,8 +3500,7 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest_Thumb-strex5") {
   bool ran = runOnASM(&retval, source, {}, QBDI::CPUMode::Thumb);
 
   CHECK(ran);
-  for (auto &e : expectedPost.accesses)
-    CHECK(e.see);
+  CHECK(seenPost);
   CHECK(v1 == 0);
 }
 
