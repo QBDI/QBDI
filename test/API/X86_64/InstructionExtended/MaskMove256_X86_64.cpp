@@ -1,0 +1,294 @@
+/*
+ * This file is part of QBDI.
+ *
+ * Copyright 2017 - 2026 Quarkslab
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "MemAccessTestUtils_X86_64.h"
+
+#include <cstring>
+
+using QBDITestBatch2::checkAccess;
+using QBDITestBatch2::checkFeature;
+using QBDITestBatch2::ExpectedMemoryAccess;
+using QBDITestBatch2::ExpectedMemoryAccesses;
+
+TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-VMASKMOVPDYmr") {
+  if (!checkFeature("avx")) {
+    return;
+  }
+  const char source[] = "vmaskmovpd %ymm0, %ymm1, 0x11(%rbx,%rsi,4)\n";
+  alignas(32) uint8_t buffer[96] = {0};
+  QBDI::rword targetAddr = (QBDI::rword)&buffer[21];
+  ExpectedMemoryAccesses expectedPre = {{
+      {targetAddr, 0, 32, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+  }};
+  ExpectedMemoryAccesses expectedPost = {{
+      {targetAddr, 0, 32, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+      {targetAddr, 0, 32, QBDI::MEMORY_WRITE, QBDI::MEMORY_UNKNOWN_VALUE},
+  }};
+  vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  vm.addMnemonicCB("VMASKMOVPDYmr", QBDI::PREINST, checkAccess, &expectedPre);
+  vm.addMnemonicCB("VMASKMOVPDYmr", QBDI::POSTINST, checkAccess, &expectedPost);
+  QBDI::GPRState *state = vm.getGPRState();
+  state->rbx = (QBDI::rword)&buffer[0];
+  state->rsi = 1;
+  vm.setGPRState(state);
+  QBDI::FPRState *fpr = vm.getFPRState();
+  memset(&fpr->xmm1, 0xFF, 16);
+  memset(&fpr->ymm1, 0xFF, 16);
+  vm.setFPRState(fpr);
+  QBDI::rword retval;
+  bool ran = runOnASM(&retval, source);
+  CHECK(ran);
+  for (auto &e : expectedPre.accesses)
+    CHECK(e.see);
+  for (auto &e : expectedPost.accesses)
+    CHECK(e.see);
+}
+
+TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-VMASKMOVPDYrm") {
+  if (!checkFeature("avx")) {
+    return;
+  }
+  const char source[] = "vmaskmovpd 0x11(%rbx,%rsi,4), %ymm1, %ymm0\n";
+  alignas(32) uint8_t buffer[96] = {0};
+  QBDI::rword targetAddr = (QBDI::rword)&buffer[21];
+  ExpectedMemoryAccesses expectedPre = {{
+      {targetAddr, 0, 32, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+  }};
+  ExpectedMemoryAccesses expectedPost = {{
+      {targetAddr, 0, 32, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+  }};
+  vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  vm.addMnemonicCB("VMASKMOVPDYrm", QBDI::PREINST, checkAccess, &expectedPre);
+  vm.addMnemonicCB("VMASKMOVPDYrm", QBDI::POSTINST, checkAccess, &expectedPost);
+  QBDI::GPRState *state = vm.getGPRState();
+  state->rbx = (QBDI::rword)&buffer[0];
+  state->rsi = 1;
+  vm.setGPRState(state);
+  QBDI::FPRState *fpr = vm.getFPRState();
+  memset(&fpr->xmm1, 0xFF, 16);
+  memset(&fpr->ymm1, 0xFF, 16);
+  vm.setFPRState(fpr);
+  QBDI::rword retval;
+  bool ran = runOnASM(&retval, source);
+  CHECK(ran);
+  for (auto &e : expectedPre.accesses)
+    CHECK(e.see);
+  for (auto &e : expectedPost.accesses)
+    CHECK(e.see);
+}
+
+TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-VMASKMOVPSYmr") {
+  if (!checkFeature("avx")) {
+    return;
+  }
+  const char source[] = "vmaskmovps %ymm0, %ymm1, 0x11(%rbx,%rsi,4)\n";
+  alignas(32) uint8_t buffer[96] = {0};
+  QBDI::rword targetAddr = (QBDI::rword)&buffer[21];
+  ExpectedMemoryAccesses expectedPre = {{
+      {targetAddr, 0, 32, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+  }};
+  ExpectedMemoryAccesses expectedPost = {{
+      {targetAddr, 0, 32, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+      {targetAddr, 0, 32, QBDI::MEMORY_WRITE, QBDI::MEMORY_UNKNOWN_VALUE},
+  }};
+  vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  vm.addMnemonicCB("VMASKMOVPSYmr", QBDI::PREINST, checkAccess, &expectedPre);
+  vm.addMnemonicCB("VMASKMOVPSYmr", QBDI::POSTINST, checkAccess, &expectedPost);
+  QBDI::GPRState *state = vm.getGPRState();
+  state->rbx = (QBDI::rword)&buffer[0];
+  state->rsi = 1;
+  vm.setGPRState(state);
+  QBDI::FPRState *fpr = vm.getFPRState();
+  memset(&fpr->xmm1, 0xFF, 16);
+  memset(&fpr->ymm1, 0xFF, 16);
+  vm.setFPRState(fpr);
+  QBDI::rword retval;
+  bool ran = runOnASM(&retval, source);
+  CHECK(ran);
+  for (auto &e : expectedPre.accesses)
+    CHECK(e.see);
+  for (auto &e : expectedPost.accesses)
+    CHECK(e.see);
+}
+
+TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-VMASKMOVPSYrm") {
+  if (!checkFeature("avx")) {
+    return;
+  }
+  const char source[] = "vmaskmovps 0x11(%rbx,%rsi,4), %ymm1, %ymm0\n";
+  alignas(32) uint8_t buffer[96] = {0};
+  QBDI::rword targetAddr = (QBDI::rword)&buffer[21];
+  ExpectedMemoryAccesses expectedPre = {{
+      {targetAddr, 0, 32, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+  }};
+  ExpectedMemoryAccesses expectedPost = {{
+      {targetAddr, 0, 32, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+  }};
+  vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  vm.addMnemonicCB("VMASKMOVPSYrm", QBDI::PREINST, checkAccess, &expectedPre);
+  vm.addMnemonicCB("VMASKMOVPSYrm", QBDI::POSTINST, checkAccess, &expectedPost);
+  QBDI::GPRState *state = vm.getGPRState();
+  state->rbx = (QBDI::rword)&buffer[0];
+  state->rsi = 1;
+  vm.setGPRState(state);
+  QBDI::FPRState *fpr = vm.getFPRState();
+  memset(&fpr->xmm1, 0xFF, 16);
+  memset(&fpr->ymm1, 0xFF, 16);
+  vm.setFPRState(fpr);
+  QBDI::rword retval;
+  bool ran = runOnASM(&retval, source);
+  CHECK(ran);
+  for (auto &e : expectedPre.accesses)
+    CHECK(e.see);
+  for (auto &e : expectedPost.accesses)
+    CHECK(e.see);
+}
+
+TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-VPMASKMOVDYmr") {
+  if (!checkFeature("avx2")) {
+    return;
+  }
+  const char source[] = "vpmaskmovd %ymm0, %ymm1, 0x11(%rbx,%rsi,4)\n";
+  alignas(32) uint8_t buffer[96] = {0};
+  QBDI::rword targetAddr = (QBDI::rword)&buffer[21];
+  ExpectedMemoryAccesses expectedPre = {{
+      {targetAddr, 0, 32, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+  }};
+  ExpectedMemoryAccesses expectedPost = {{
+      {targetAddr, 0, 32, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+      {targetAddr, 0, 32, QBDI::MEMORY_WRITE, QBDI::MEMORY_UNKNOWN_VALUE},
+  }};
+  vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  vm.addMnemonicCB("VPMASKMOVDYmr", QBDI::PREINST, checkAccess, &expectedPre);
+  vm.addMnemonicCB("VPMASKMOVDYmr", QBDI::POSTINST, checkAccess, &expectedPost);
+  QBDI::GPRState *state = vm.getGPRState();
+  state->rbx = (QBDI::rword)&buffer[0];
+  state->rsi = 1;
+  vm.setGPRState(state);
+  QBDI::FPRState *fpr = vm.getFPRState();
+  memset(&fpr->xmm1, 0xFF, 16);
+  memset(&fpr->ymm1, 0xFF, 16);
+  vm.setFPRState(fpr);
+  QBDI::rword retval;
+  bool ran = runOnASM(&retval, source);
+  CHECK(ran);
+  for (auto &e : expectedPre.accesses)
+    CHECK(e.see);
+  for (auto &e : expectedPost.accesses)
+    CHECK(e.see);
+}
+
+TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-VPMASKMOVDYrm") {
+  if (!checkFeature("avx2")) {
+    return;
+  }
+  const char source[] = "vpmaskmovd 0x11(%rbx,%rsi,4), %ymm1, %ymm0\n";
+  alignas(32) uint8_t buffer[96] = {0};
+  QBDI::rword targetAddr = (QBDI::rword)&buffer[21];
+  ExpectedMemoryAccesses expectedPre = {{
+      {targetAddr, 0, 32, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+  }};
+  ExpectedMemoryAccesses expectedPost = {{
+      {targetAddr, 0, 32, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+  }};
+  vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  vm.addMnemonicCB("VPMASKMOVDYrm", QBDI::PREINST, checkAccess, &expectedPre);
+  vm.addMnemonicCB("VPMASKMOVDYrm", QBDI::POSTINST, checkAccess, &expectedPost);
+  QBDI::GPRState *state = vm.getGPRState();
+  state->rbx = (QBDI::rword)&buffer[0];
+  state->rsi = 1;
+  vm.setGPRState(state);
+  QBDI::FPRState *fpr = vm.getFPRState();
+  memset(&fpr->xmm1, 0xFF, 16);
+  memset(&fpr->ymm1, 0xFF, 16);
+  vm.setFPRState(fpr);
+  QBDI::rword retval;
+  bool ran = runOnASM(&retval, source);
+  CHECK(ran);
+  for (auto &e : expectedPre.accesses)
+    CHECK(e.see);
+  for (auto &e : expectedPost.accesses)
+    CHECK(e.see);
+}
+
+TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-VPMASKMOVQYmr") {
+  if (!checkFeature("avx2")) {
+    return;
+  }
+  const char source[] = "vpmaskmovq %ymm0, %ymm1, 0x11(%rbx,%rsi,4)\n";
+  alignas(32) uint8_t buffer[96] = {0};
+  QBDI::rword targetAddr = (QBDI::rword)&buffer[21];
+  ExpectedMemoryAccesses expectedPre = {{
+      {targetAddr, 0, 32, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+  }};
+  ExpectedMemoryAccesses expectedPost = {{
+      {targetAddr, 0, 32, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+      {targetAddr, 0, 32, QBDI::MEMORY_WRITE, QBDI::MEMORY_UNKNOWN_VALUE},
+  }};
+  vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  vm.addMnemonicCB("VPMASKMOVQYmr", QBDI::PREINST, checkAccess, &expectedPre);
+  vm.addMnemonicCB("VPMASKMOVQYmr", QBDI::POSTINST, checkAccess, &expectedPost);
+  QBDI::GPRState *state = vm.getGPRState();
+  state->rbx = (QBDI::rword)&buffer[0];
+  state->rsi = 1;
+  vm.setGPRState(state);
+  QBDI::FPRState *fpr = vm.getFPRState();
+  memset(&fpr->xmm1, 0xFF, 16);
+  memset(&fpr->ymm1, 0xFF, 16);
+  vm.setFPRState(fpr);
+  QBDI::rword retval;
+  bool ran = runOnASM(&retval, source);
+  CHECK(ran);
+  for (auto &e : expectedPre.accesses)
+    CHECK(e.see);
+  for (auto &e : expectedPost.accesses)
+    CHECK(e.see);
+}
+
+TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-VPMASKMOVQYrm") {
+  if (!checkFeature("avx2")) {
+    return;
+  }
+  const char source[] = "vpmaskmovq 0x11(%rbx,%rsi,4), %ymm1, %ymm0\n";
+  alignas(32) uint8_t buffer[96] = {0};
+  QBDI::rword targetAddr = (QBDI::rword)&buffer[21];
+  ExpectedMemoryAccesses expectedPre = {{
+      {targetAddr, 0, 32, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+  }};
+  ExpectedMemoryAccesses expectedPost = {{
+      {targetAddr, 0, 32, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+  }};
+  vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  vm.addMnemonicCB("VPMASKMOVQYrm", QBDI::PREINST, checkAccess, &expectedPre);
+  vm.addMnemonicCB("VPMASKMOVQYrm", QBDI::POSTINST, checkAccess, &expectedPost);
+  QBDI::GPRState *state = vm.getGPRState();
+  state->rbx = (QBDI::rword)&buffer[0];
+  state->rsi = 1;
+  vm.setGPRState(state);
+  QBDI::FPRState *fpr = vm.getFPRState();
+  memset(&fpr->xmm1, 0xFF, 16);
+  memset(&fpr->ymm1, 0xFF, 16);
+  vm.setFPRState(fpr);
+  QBDI::rword retval;
+  bool ran = runOnASM(&retval, source);
+  CHECK(ran);
+  for (auto &e : expectedPre.accesses)
+    CHECK(e.see);
+  for (auto &e : expectedPost.accesses)
+    CHECK(e.see);
+}
