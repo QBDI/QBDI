@@ -203,24 +203,104 @@ RelocatableInst::UniquePtrVec
 CondExclusifLoad::generate(const Patch &patch,
                            TempManager &temp_manager) const {
 
-  static constexpr int JUMP_OFFSET = 12;
+  Reg tmpReg = temp_manager.getRegForTemp(temp);
+  Reg tmp2Reg = temp_manager.getRegForTemp(temp2);
+
+  sword expectedSize;
+  switch (patch.metadata.inst.getOpcode()) {
+    case llvm::AArch64::STXRB:
+    case llvm::AArch64::STLXRB:
+      expectedSize = 1;
+      break;
+    case llvm::AArch64::STXRH:
+    case llvm::AArch64::STLXRH:
+      expectedSize = 2;
+      break;
+    case llvm::AArch64::STXRW:
+    case llvm::AArch64::STLXRW:
+      expectedSize = 4;
+      break;
+    case llvm::AArch64::STXRX:
+    case llvm::AArch64::STLXRX:
+      expectedSize = 8;
+      break;
+    case llvm::AArch64::STXPW:
+    case llvm::AArch64::STLXPW:
+      expectedSize = 0x800;
+      break;
+    case llvm::AArch64::STXPX:
+    case llvm::AArch64::STLXPX:
+      expectedSize = 16;
+      break;
+    default:
+      QBDI_ABORT("Unexpected opcode {} {}", patch.metadata.inst.getOpcode(),
+                 patch);
+  }
+
+  RelocatableInst::UniquePtrVec loadPatch;
+
+  auto bitForSize = [](sword size) -> unsigned {
+    switch (size) {
+      case 1:
+        return 0;
+      case 2:
+        return 1;
+      case 4:
+        return 2;
+      case 8:
+        return 3;
+      case 16:
+        return 4;
+      default:
+        return 11;
+    }
+  };
+
+  auto addCase = [&](sword size, RelocatableInst::UniquePtrVec block) {
+    int remaining = getUniquePtrVecSize(loadPatch, *patch.llvmcpu);
+    if (remaining > 0) {
+      block.push_back(Branch(4 + remaining));
+    }
+
+    RelocatableInst::UniquePtrVec cond;
+    cond.push_back(Tbz(tmpReg, bitForSize(size),
+                       4 + getUniquePtrVecSize(block, *patch.llvmcpu)));
+
+    prepend(block, std::move(cond));
+    prepend(loadPatch, std::move(block));
+  };
+
+  auto blockFor = [&](sword size) {
+    switch (size) {
+      case 16:
+        return conv_unique<RelocatableInst>(Ldxp(tmpReg, tmp2Reg, tmp2Reg));
+      case 0x800:
+        return conv_unique<RelocatableInst>(Ldxpw(tmpReg, tmp2Reg, tmp2Reg));
+      case 8:
+        return conv_unique<RelocatableInst>(Ldxr(tmpReg, tmp2Reg));
+      case 4:
+        return conv_unique<RelocatableInst>(Ldxrw(tmpReg, tmp2Reg));
+      case 2:
+        return conv_unique<RelocatableInst>(Ldxrh(tmpReg, tmp2Reg));
+      default:
+        return conv_unique<RelocatableInst>(Ldxrb(tmpReg, tmp2Reg));
+    }
+  };
+
+  for (sword size : {16, 0x800, 8, 4, 2, 1}) {
+    if (size == expectedSize) {
+      continue;
+    }
+    addCase(size, blockFor(size));
+  }
+  addCase(expectedSize, blockFor(expectedSize));
 
   RelocatableInst::UniquePtrVec p;
-  Reg tmpReg = temp_manager.getRegForTemp(tmp);
-
-  // load enable flag
   p.push_back(
       Ldr(tmpReg, Offset(offsetof(Context, gprState.localMonitor.enable))));
-
-  // if monitor in exclusive mode (if cond == 0 => jump)
-  p.push_back(Cbz(tmpReg, Constant(JUMP_OFFSET)));
-
-  // {
-  //  do a exclusive load. reuse the tmp register to store the result
   p.push_back(
-      Ldr(tmpReg, Offset(offsetof(Context, gprState.localMonitor.addr))));
-  p.push_back(Ldxrb(tmpReg, tmpReg));
-  // }
+      Ldr(tmp2Reg, Offset(offsetof(Context, gprState.localMonitor.addr))));
+  append(p, std::move(loadPatch));
 
   return p;
 }

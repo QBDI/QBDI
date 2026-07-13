@@ -122,10 +122,11 @@ public:
 };
 
 class CondExclusifLoad : public AutoClone<PatchGenerator, CondExclusifLoad> {
-  Temp tmp;
+  Temp temp;
+  Temp temp2;
 
 public:
-  CondExclusifLoad(Temp tmp) : tmp(tmp) {}
+  CondExclusifLoad(Temp temp, Temp temp2) : temp(temp), temp2(temp2) {}
 
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const Patch &patch, TempManager &temp_manager) const override;

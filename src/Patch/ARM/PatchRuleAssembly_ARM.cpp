@@ -351,14 +351,14 @@ std::vector<PatchRule> getARMPatchRules(Options opts) {
                 Offset(offsetof(Context, gprState.localMonitor.addr))),
             ModifyInstruction::unique(InstTransform::UniquePtrVec())));
 
-    /* Rule #14: exclusive store
+    /* Rule #14: exclusive store register(s)
      */
     rules.emplace_back(
         Or::unique(conv_unique<PatchCondition>(
-            OpIs::unique(llvm::ARM::STREX), OpIs::unique(llvm::ARM::STREXB),
-            OpIs::unique(llvm::ARM::STREXD), OpIs::unique(llvm::ARM::STREXH))),
+            OpIs::unique(llvm::ARM::STREXB), OpIs::unique(llvm::ARM::STREXH),
+            OpIs::unique(llvm::ARM::STREX), OpIs::unique(llvm::ARM::STREXD))),
         conv_unique<PatchGenerator>(
-            CondExclusifLoad::unique(Temp(0), Temp(1)),
+            CondExclusifLoad::unique(Temp(0), Temp(1), Temp(2)),
             ModifyInstruction::unique(InstTransform::UniquePtrVec()),
             GetConstant::unique(Temp(0), Constant(0)),
             WriteTempCC::unique(
@@ -1222,15 +1222,16 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
             ItPatch::unique(false),
             ModifyInstruction::unique(InstTransform::UniquePtrVec())));
 
-    /* Rule #32: exclusive store
+    /* Rule #32: exclusive store register(s)
      */
     rules.emplace_back(
         Or::unique(conv_unique<PatchCondition>(
-            OpIs::unique(llvm::ARM::t2STREX), OpIs::unique(llvm::ARM::t2STREXB),
-            OpIs::unique(llvm::ARM::t2STREXD),
-            OpIs::unique(llvm::ARM::t2STREXH))),
+            OpIs::unique(llvm::ARM::t2STREXB),
+            OpIs::unique(llvm::ARM::t2STREXH), OpIs::unique(llvm::ARM::t2STREX),
+            OpIs::unique(llvm::ARM::t2STREXD))),
         conv_unique<PatchGenerator>(
-            CondExclusifLoad::unique(Temp(0), Temp(1)), ItPatch::unique(false),
+            CondExclusifLoad::unique(Temp(0), Temp(1), Temp(2)),
+            ItPatch::unique(false),
             ModifyInstruction::unique(InstTransform::UniquePtrVec()),
             GetConstant::unique(Temp(0), Constant(0)),
             WriteTempCC::unique(

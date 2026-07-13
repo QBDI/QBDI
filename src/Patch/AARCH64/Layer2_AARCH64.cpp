@@ -204,16 +204,19 @@ llvm::MCInst branch(rword offset) {
   return inst;
 }
 
-llvm::MCInst cbz(RegLLVM reg, sword offset) {
+llvm::MCInst tbz(RegLLVM reg, unsigned bit, sword offset) {
+  QBDI_REQUIRE_ABORT(bit < 32, "bit must be in [0, 31] (current : {})", bit);
   QBDI_REQUIRE_ABORT(offset % 4 == 0,
-                     "offset = SignExtend(imm19:'00', 64); (current : {})",
+                     "offset = SignExtend(imm14:'00', 64); (current : {})",
                      offset);
-  QBDI_REQUIRE_ABORT(-(1 << 20) <= offset and offset < (1 << 20),
-                     "offset = SignExtend(imm19:'00', 64); (current : {})",
+  QBDI_REQUIRE_ABORT(-(1 << 15) <= offset and offset < (1 << 15),
+                     "offset = SignExtend(imm14:'00', 64); (current : {})",
                      offset);
+  RegLLVM wreg = llvm::getWRegFromXReg(reg.getValue());
   llvm::MCInst inst;
-  inst.setOpcode(llvm::AArch64::CBZX);
-  inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
+  inst.setOpcode(llvm::AArch64::TBZW);
+  inst.addOperand(llvm::MCOperand::createReg(wreg.getValue()));
+  inst.addOperand(llvm::MCOperand::createImm(bit));
   inst.addOperand(llvm::MCOperand::createImm(offset / 4));
   return inst;
 }
@@ -378,6 +381,48 @@ llvm::MCInst ldxrb(RegLLVM dest, RegLLVM addr) {
   llvm::MCInst inst;
   inst.setOpcode(llvm::AArch64::LDXRB);
   inst.addOperand(llvm::MCOperand::createReg(dest.getValue()));
+  inst.addOperand(llvm::MCOperand::createReg(addr.getValue()));
+  return inst;
+}
+
+llvm::MCInst ldxrh(RegLLVM dest, RegLLVM addr) {
+  llvm::MCInst inst;
+  inst.setOpcode(llvm::AArch64::LDXRH);
+  inst.addOperand(llvm::MCOperand::createReg(dest.getValue()));
+  inst.addOperand(llvm::MCOperand::createReg(addr.getValue()));
+  return inst;
+}
+
+llvm::MCInst ldxrw(RegLLVM dest, RegLLVM addr) {
+  llvm::MCInst inst;
+  inst.setOpcode(llvm::AArch64::LDXRW);
+  inst.addOperand(llvm::MCOperand::createReg(dest.getValue()));
+  inst.addOperand(llvm::MCOperand::createReg(addr.getValue()));
+  return inst;
+}
+
+llvm::MCInst ldxr(RegLLVM dest, RegLLVM addr) {
+  llvm::MCInst inst;
+  inst.setOpcode(llvm::AArch64::LDXRX);
+  inst.addOperand(llvm::MCOperand::createReg(dest.getValue()));
+  inst.addOperand(llvm::MCOperand::createReg(addr.getValue()));
+  return inst;
+}
+
+llvm::MCInst ldxpw(RegLLVM dest1, RegLLVM dest2, RegLLVM addr) {
+  llvm::MCInst inst;
+  inst.setOpcode(llvm::AArch64::LDXPW);
+  inst.addOperand(llvm::MCOperand::createReg(dest1.getValue()));
+  inst.addOperand(llvm::MCOperand::createReg(dest2.getValue()));
+  inst.addOperand(llvm::MCOperand::createReg(addr.getValue()));
+  return inst;
+}
+
+llvm::MCInst ldxp(RegLLVM dest1, RegLLVM dest2, RegLLVM addr) {
+  llvm::MCInst inst;
+  inst.setOpcode(llvm::AArch64::LDXPX);
+  inst.addOperand(llvm::MCOperand::createReg(dest1.getValue()));
+  inst.addOperand(llvm::MCOperand::createReg(dest2.getValue()));
   inst.addOperand(llvm::MCOperand::createReg(addr.getValue()));
   return inst;
 }
@@ -679,8 +724,12 @@ RelocatableInst::UniquePtr Blr(RegLLVM reg) {
   return NoReloc::unique(blr(reg));
 }
 
-RelocatableInst::UniquePtr Cbz(RegLLVM reg, Constant offset) {
-  return NoReloc::unique(cbz(reg, offset));
+RelocatableInst::UniquePtr Tbz(RegLLVM reg, unsigned bit, Constant offset) {
+  return NoReloc::unique(tbz(reg, bit, offset));
+}
+
+RelocatableInst::UniquePtr Branch(Constant offset) {
+  return NoReloc::unique(branch(offset));
 }
 
 RelocatableInst::UniquePtr Ret() {
@@ -738,6 +787,38 @@ RelocatableInst::UniquePtr Ldxrb(RegLLVM dst, RegLLVM addr) {
   // need a w register
   RegLLVM wreg = llvm::getWRegFromXReg(dst.getValue());
   return NoReloc::unique(ldxrb(wreg, addr));
+}
+
+RelocatableInst::UniquePtr Ldxrh(RegLLVM dst, RegLLVM addr) {
+  QBDI_REQUIRE(llvm::AArch64::X0 <= dst.getValue() and
+               dst.getValue() <= llvm::AArch64::X28);
+  RegLLVM wreg = llvm::getWRegFromXReg(dst.getValue());
+  return NoReloc::unique(ldxrh(wreg, addr));
+}
+
+RelocatableInst::UniquePtr Ldxrw(RegLLVM dst, RegLLVM addr) {
+  QBDI_REQUIRE(llvm::AArch64::X0 <= dst.getValue() and
+               dst.getValue() <= llvm::AArch64::X28);
+  RegLLVM wreg = llvm::getWRegFromXReg(dst.getValue());
+  return NoReloc::unique(ldxrw(wreg, addr));
+}
+
+RelocatableInst::UniquePtr Ldxr(RegLLVM dst, RegLLVM addr) {
+  return NoReloc::unique(ldxr(dst, addr));
+}
+
+RelocatableInst::UniquePtr Ldxpw(RegLLVM dst1, RegLLVM dst2, RegLLVM addr) {
+  QBDI_REQUIRE(llvm::AArch64::X0 <= dst1.getValue() and
+               dst1.getValue() <= llvm::AArch64::X28);
+  QBDI_REQUIRE(llvm::AArch64::X0 <= dst2.getValue() and
+               dst2.getValue() <= llvm::AArch64::X28);
+  RegLLVM wreg1 = llvm::getWRegFromXReg(dst1.getValue());
+  RegLLVM wreg2 = llvm::getWRegFromXReg(dst2.getValue());
+  return NoReloc::unique(ldxpw(wreg1, wreg2, addr));
+}
+
+RelocatableInst::UniquePtr Ldxp(RegLLVM dst1, RegLLVM dst2, RegLLVM addr) {
+  return NoReloc::unique(ldxp(dst1, dst2, addr));
 }
 
 RelocatableInst::UniquePtr LdrPost(RegLLVM dest, RegLLVM base, Constant imm) {

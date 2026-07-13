@@ -139,8 +139,14 @@ typedef struct QBDI_ALIGNED(8) {
    */
   struct {
     rword addr;
-    rword enable; /* 0=>disable, 1=>exclusive state, use a rword to not break
-                     align */
+    rword enable; /* 0=>disable,
+                   * 1=>enable by ldxrb/ldaxrb,
+                   * 2=>enable by ldxrh/ldaxrh,
+                   * 4=>enable by ldxr (w)/ldaxr (w),
+                   * 8=>enable by ldxr (x)/ldaxr (x),
+                   * 0x800=>enable by ldxp/ldaxp (w),
+                   * 16=>enable by ldxp/ldaxp (x)
+                   */
   } localMonitor;
 
 } GPRState;
