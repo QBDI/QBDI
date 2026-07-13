@@ -210,10 +210,18 @@ bool Engine::isPreInst() const {
     return false;
   }
   uint16_t instID = curExecBlock->getCurrentInstID();
+  rword instAddress = curExecBlock->getInstAddress(instID);
+#if defined(QBDI_ARCH_ARM)
+  // The PREINST/POSTINST PC value set for a breakToHost follows the ARM
+  // interworking convention (bit 0 set for Thumb, see InstrRule::instrument),
+  // while getInstAddress() always returns the plain instruction address.
+  if (curExecBlock->getLLVMCPUByInst(instID).getCPUMode() == CPUMode::Thumb) {
+    instAddress |= 1;
+  }
+#endif
   // By internal convention, PREINST => PC == Current instruction address
   // (not matter of architecture)
-  return curExecBlock->getInstAddress(instID) ==
-         QBDI_GPR_GET(getGPRState(), REG_PC);
+  return instAddress == QBDI_GPR_GET(getGPRState(), REG_PC);
 }
 
 void Engine::addInstrumentedRange(rword start, rword end) {
