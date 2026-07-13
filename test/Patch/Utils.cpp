@@ -36,6 +36,6 @@ QBDI::rword get_random() {
   if constexpr (QBDI::it_bits_32) {
     return rand();
   } else {
-    return ((uint64_t)rand()) << 32 || rand();
+    return ((uint64_t)rand()) << 32 | rand();
   }
 }
