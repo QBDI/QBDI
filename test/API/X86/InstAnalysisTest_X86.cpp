@@ -926,7 +926,7 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-movdir64b") {
           /* instSize */ 6, /* affectControlFlow */ false, /* isBranch */ false,
           /* isCall */ false, /* isReturn */ false, /* isCompare */ false,
           /* isPredicable */ false, /* mayLoad */ true, /* mayStore */ true,
-          /* loadSize */ 512, /* storeSize */ 512,
+          /* loadSize */ 64, /* storeSize */ 64,
           /* condition */ QBDI::CONDITION_NONE});
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {
