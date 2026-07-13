@@ -242,8 +242,8 @@ QBDI::VMAction evilMnemCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
     info[0]++; // CMP count
     info[1]++;
     // validate address
-    CHECKED_IF(ana->address >= (QBDI::rword)&satanicFun)
-    CHECKED_IF(ana->address < (((QBDI::rword)&satanicFun) + 0x100))
+    CHECK(ana->address >= (QBDI::rword)&satanicFun);
+    CHECK(ana->address < (((QBDI::rword)&satanicFun) + 0x100));
     info[1]++;
     // validate inst size
     const struct TestInst &currentInst = TestInsts[info[0] - 1];
@@ -257,10 +257,10 @@ QBDI::VMAction evilMnemCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
     // validate instruction type (kinda...)
     if (currentInst.isCompare) {
       // CHECKED_IF doesn't support && operator
-      CHECKED_IF(!ana->isBranch)
-      CHECKED_IF(!ana->isCall)
-      CHECKED_IF(!ana->isReturn)
-      CHECKED_IF(ana->isCompare)
+      CHECK(!ana->isBranch);
+      CHECK(!ana->isCall);
+      CHECK(!ana->isReturn);
+      CHECK(ana->isCompare);
       info[1]++;
     }
     CHECKED_IF(ana->flagsAccess == currentInst.flagsAccess) { info[1]++; }
@@ -281,9 +281,9 @@ QBDI::VMAction evilMnemCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
         if (op.regName == nullptr && cmpOp.regName == nullptr) {
           info[1]++;
         } else {
-          CHECKED_IF(op.regName != nullptr)
-          CHECKED_IF(cmpOp.regName != nullptr)
-          CHECKED_IF(std::string(op.regName) == std::string(cmpOp.regName))
+          CHECK(op.regName != nullptr);
+          CHECK(cmpOp.regName != nullptr);
+          CHECK(std::string(op.regName) == std::string(cmpOp.regName));
           info[1]++;
         }
         CHECKED_IF(op.size == cmpOp.size) { info[1]++; }

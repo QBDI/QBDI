@@ -58,10 +58,10 @@ static QBDI::VMAction checkAccess(QBDI::VMInstanceRef vm,
   for (size_t i = 0; i < info->accesses.size(); i++) {
     auto &memaccess = memaccesses[i];
     auto &expect = info->accesses[i];
-    CHECKED_IF(memaccess.accessAddress == expect.address)
-    CHECKED_IF(memaccess.value == expect.value)
-    CHECKED_IF(memaccess.size == expect.size)
-    CHECKED_IF(memaccess.type == expect.type)
+    CHECK(memaccess.accessAddress == expect.address);
+    CHECK(memaccess.value == expect.value);
+    CHECK(memaccess.size == expect.size);
+    CHECK(memaccess.type == expect.type);
     expect.see = true;
   }
   return QBDI::VMAction::CONTINUE;
