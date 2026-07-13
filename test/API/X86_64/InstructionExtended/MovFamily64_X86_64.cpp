@@ -24,6 +24,83 @@ using QBDITestBatch2::checkFeature;
 using QBDITestBatch2::ExpectedMemoryAccess;
 using QBDITestBatch2::ExpectedMemoryAccesses;
 
+namespace {
+void encodeAddr64LE(uint64_t addr, char *out) {
+  snprintf(out, 64, "0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x",
+           (unsigned)(addr & 0xff), (unsigned)((addr >> 8) & 0xff),
+           (unsigned)((addr >> 16) & 0xff), (unsigned)((addr >> 24) & 0xff),
+           (unsigned)((addr >> 32) & 0xff), (unsigned)((addr >> 40) & 0xff),
+           (unsigned)((addr >> 48) & 0xff), (unsigned)((addr >> 56) & 0xff));
+}
+} // namespace
+
+TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV64ao64") {
+  uint64_t buffer[16] = {0};
+  uint64_t *target = &buffer[8];
+  *target = 0x2a2a2a2a2a2a2a2a;
+  QBDI::rword targetAddr = (QBDI::rword)target;
+  char addrBytes[64];
+  encodeAddr64LE((uint64_t)targetAddr, addrBytes);
+  char source[160];
+  // mov 0x<target>, %rax (48 = REX.W, a1 = moffs->RAX opcode,
+  // MOV64ao64; <target> is the runtime address of `target`,
+  // little-endian)
+  snprintf(source, sizeof(source), ".byte 0x48,0xa1,%s\n", addrBytes);
+  ExpectedMemoryAccesses expectedPre = {{
+      {targetAddr, 0x2a2a2a2a2a2a2a2a, 8, QBDI::MEMORY_READ,
+       QBDI::MEMORY_NO_FLAGS},
+  }};
+  ExpectedMemoryAccesses expectedPost = {{
+      {targetAddr, 0x2a2a2a2a2a2a2a2a, 8, QBDI::MEMORY_READ,
+       QBDI::MEMORY_NO_FLAGS},
+  }};
+  vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  vm.addMnemonicCB("MOV64ao64", QBDI::PREINST, checkAccess, &expectedPre);
+  vm.addMnemonicCB("MOV64ao64", QBDI::POSTINST, checkAccess, &expectedPost);
+  QBDI::GPRState *state = vm.getGPRState();
+  state->rax = 0;
+  vm.setGPRState(state);
+  QBDI::rword retval;
+  bool ran = runOnASM(&retval, source);
+  CHECK(ran);
+  CHECK(vm.getGPRState()->rax == 0x2a2a2a2a2a2a2a2a);
+  for (auto &e : expectedPre.accesses)
+    CHECK(e.see);
+  for (auto &e : expectedPost.accesses)
+    CHECK(e.see);
+}
+
+TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV64o64a") {
+  uint64_t buffer[16] = {0};
+  uint64_t *target = &buffer[8];
+  *target = 0;
+  QBDI::rword targetAddr = (QBDI::rword)target;
+  char addrBytes[64];
+  encodeAddr64LE((uint64_t)targetAddr, addrBytes);
+  char source[160];
+  // mov %rax, 0x<target> (48 = REX.W, a3 = RAX->moffs opcode,
+  // MOV64o64a; <target> is the runtime address of `target`,
+  // little-endian)
+  snprintf(source, sizeof(source), ".byte 0x48,0xa3,%s\n", addrBytes);
+  ExpectedMemoryAccesses expectedPre = {{}};
+  ExpectedMemoryAccesses expectedPost = {{
+      {targetAddr, 0x2a2a2a2a2a2a2a2a, 8, QBDI::MEMORY_WRITE,
+       QBDI::MEMORY_NO_FLAGS},
+  }};
+  vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  vm.addMnemonicCB("MOV64o64a", QBDI::PREINST, checkAccess, &expectedPre);
+  vm.addMnemonicCB("MOV64o64a", QBDI::POSTINST, checkAccess, &expectedPost);
+  QBDI::GPRState *state = vm.getGPRState();
+  state->rax = 0x2a2a2a2a2a2a2a2a;
+  vm.setGPRState(state);
+  QBDI::rword retval;
+  bool ran = runOnASM(&retval, source);
+  CHECK(ran);
+  CHECK(*target == 0x2a2a2a2a2a2a2a2a);
+  for (auto &e : expectedPost.accesses)
+    CHECK(e.see);
+}
+
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86_64-MOV64mi32") {
   const char source[] = "movq $0x2a2a2a2a, 0x11(%rbx,%rsi,4)\n";
   uint8_t buffer[48] = {0};

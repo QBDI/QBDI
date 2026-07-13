@@ -133,6 +133,43 @@ public:
   bool modifyPC() const override { return true; }
 };
 
+class SimulateLret : public AutoClone<PatchGenerator, SimulateLret> {
+
+  Temp temp;
+
+public:
+  /*! Simulate the effects of a far return instruction. The return address
+   * is read from the stack into a temporary (without popping it), the
+   * discarded code-segment selector slot that follows it is accounted for
+   * (QBDI does not track real segment registers, so a far return is only
+   * ever simulated as a same-segment reload), an optional stack
+   * deallocation is performed, and the whole consumed stack range (return
+   * address + selector slot + optional deallocation) is reclaimed in a
+   * single RSP adjustment. The return address is then written in the
+   * stored value of RIP in the context part of the data block. This
+   * generator signals a PC modification and triggers an end of basic
+   * block.
+   *
+   * The optional deallocation is performed if the current instruction has
+   * one single immediate operand (which is the case of LRETI64/LRETI32/
+   * LRETI16).
+   *
+   * @param[in] temp   Any unused temporary, overwritten by this generator.
+   */
+  SimulateLret(Temp temp) : temp(temp) {}
+
+  /*! Output:
+   *
+   * MOV REG64 temp, MEM64 [RSP]
+   * ADD RSP, IMM64 (2 * operand-size + deallocation) # deallocation optional
+   * MOV MEM64 DataBlock[Offset(RIP)], REG64 temp
+   */
+  std::vector<std::unique_ptr<RelocatableInst>>
+  generate(const Patch &patch, TempManager &temp_manager) const override;
+
+  bool modifyPC() const override { return true; }
+};
+
 class GetReadAddress : public AutoClone<PatchGenerator, GetReadAddress> {
 
   Temp temp;

@@ -65,3 +65,51 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86-call_pcrel32") {
   CHECK(seenPost);
   CHECK(retval == 0x3333);
 }
+
+TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86-call_pcrel16") {
+  const char source[] =
+      "callw pcrel16_callee\n"
+      "jmp pcrel16_end\n"
+      "pcrel16_callee:\n"
+      "movl $0x4444, %eax\n"
+      "addl $2, %esp\n"
+      "pcrel16_end:\n";
+
+  QBDI::rword preCallEsp = 0;
+  QBDI::rword expectedReturnAddr = 0;
+  bool seenPre = false, seenPost = false;
+
+  vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  vm.addMnemonicCB("CALLpcrel16", QBDI::PREINST,
+                   [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
+                       QBDI::FPRState *fprState) -> QBDI::VMAction {
+                     CHECK(vmi->getInstMemoryAccess().empty());
+                     const QBDI::InstAnalysis *ia =
+                         vmi->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION);
+                     preCallEsp = gprState->esp;
+                     expectedReturnAddr = ia->address + ia->instSize;
+                     seenPre = true;
+                     return QBDI::VMAction::CONTINUE;
+                   });
+  vm.addMnemonicCB("CALLpcrel16", QBDI::POSTINST,
+                   [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
+                       QBDI::FPRState *fprState) -> QBDI::VMAction {
+                     auto accesses = vmi->getInstMemoryAccess();
+                     REQUIRE(accesses.size() == 1);
+                     CHECK(accesses[0].accessAddress == preCallEsp - 2);
+                     CHECK(accesses[0].value == (expectedReturnAddr & 0xffff));
+                     CHECK(accesses[0].size == 2);
+                     CHECK(accesses[0].type == QBDI::MEMORY_WRITE);
+                     CHECK(gprState->esp == preCallEsp - 2);
+                     seenPost = true;
+                     return QBDI::VMAction::CONTINUE;
+                   });
+
+  QBDI::rword retval;
+  bool ran = runOnASM(&retval, source);
+
+  CHECK(ran);
+  CHECK(seenPre);
+  CHECK(seenPost);
+  CHECK(retval == 0x4444);
+}

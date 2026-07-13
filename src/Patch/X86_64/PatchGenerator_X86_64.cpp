@@ -92,11 +92,35 @@ GetPCOffset::generate(const Patch &patch, TempManager &temp_manager) const {
 
 RelocatableInst::UniquePtrVec
 SimulateCall::generate(const Patch &patch, TempManager &temp_manager) const {
+  const unsigned opcode = patch.metadata.inst.getOpcode();
   RelocatableInst::UniquePtrVec p;
+
+  if constexpr (is_x86_64) {
+    QBDI_REQUIRE_ABORT(
+        opcode != llvm::X86::CALL32r and opcode != llvm::X86::CALL32m and
+            opcode != llvm::X86::CALLpcrel32,
+        "CALL32r/CALL32m/CALLpcrel32 is not reachable when compiled for "
+        "X86_64 {}",
+        patch);
+  } else {
+    QBDI_REQUIRE_ABORT(
+        opcode != llvm::X86::CALL64r and opcode != llvm::X86::CALL64m and
+            opcode != llvm::X86::CALL64pcrel32,
+        "CALL64r/CALL64m/CALL64pcrel32 is not reachable when compiled for "
+        "X86 (32 bits) {}",
+        patch);
+  }
 
   append(p, WriteTemp(temp, Offset(Reg(REG_PC))).generate(patch, temp_manager));
   append(p, GetPCOffset(temp, Constant(0)).generate(patch, temp_manager));
-  p.push_back(Pushr(temp_manager.getRegForTemp(temp)));
+
+  if (opcode == llvm::X86::CALLpcrel16 or opcode == llvm::X86::CALL16r or
+      opcode == llvm::X86::CALL16m) {
+    RegLLVM dst = temp_manager.getRegForTemp(temp);
+    p.push_back(Push16r(temp_manager.getSizedSubReg(dst, 2)));
+  } else {
+    p.push_back(Pushr(temp_manager.getRegForTemp(temp)));
+  }
 
   return p;
 }
@@ -107,13 +131,83 @@ SimulateCall::generate(const Patch &patch, TempManager &temp_manager) const {
 RelocatableInst::UniquePtrVec
 SimulateRet::generate(const Patch &patch, TempManager &temp_manager) const {
   const llvm::MCInst &inst = patch.metadata.inst;
+  const unsigned opcode = inst.getOpcode();
   RelocatableInst::UniquePtrVec p;
 
-  p.push_back(Popr(temp_manager.getRegForTemp(temp)));
+  if constexpr (!is_x86_64) {
+    QBDI_REQUIRE_ABORT(
+        opcode != llvm::X86::RET64 and opcode != llvm::X86::RETI64,
+        "RET64/RETI64 is not reachable when compiled for X86 (32 bits) {}",
+        patch);
+  } else {
+    QBDI_REQUIRE_ABORT(
+        opcode != llvm::X86::RET32 and opcode != llvm::X86::RETI32,
+        "RET32/RETI32 is not reachable when compiled for X86_64 {}", patch);
+  }
+
+  const bool isNativeOperandSize =
+      is_x86_64 ? (opcode == llvm::X86::RET64 or opcode == llvm::X86::RETI64)
+                : (opcode == llvm::X86::RET32 or opcode == llvm::X86::RETI32);
+
+  if (isNativeOperandSize) {
+    p.push_back(Popr(temp_manager.getRegForTemp(temp)));
+  } else {
+    RegLLVM dst = temp_manager.getRegForTemp(temp);
+    p.push_back(Xorrr(dst, dst));
+    p.push_back(Pop16r(temp_manager.getSizedSubReg(dst, 2)));
+  }
+
   if (inst.getNumOperands() == 1 and inst.getOperand(0).isImm()) {
     p.push_back(
         Add(Reg(REG_SP), Reg(REG_SP), Constant(inst.getOperand(0).getImm())));
   }
+  append(p, WriteTemp(temp, Offset(Reg(REG_PC))).generate(patch, temp_manager));
+
+  return p;
+}
+
+// SimulateLret
+// ============
+
+RelocatableInst::UniquePtrVec
+SimulateLret::generate(const Patch &patch, TempManager &temp_manager) const {
+  const llvm::MCInst &inst = patch.metadata.inst;
+  const unsigned opcode = inst.getOpcode();
+  RelocatableInst::UniquePtrVec p;
+
+  if constexpr (!is_x86_64) {
+    QBDI_REQUIRE_ABORT(
+        opcode != llvm::X86::LRET64 and opcode != llvm::X86::LRETI64,
+        "LRET64/LRETI64 is not reachable when compiled for X86 (32 bits) {}",
+        patch);
+  }
+
+  const unsigned operandSize =
+      (opcode == llvm::X86::LRET64 or opcode == llvm::X86::LRETI64)   ? 8
+      : (opcode == llvm::X86::LRET32 or opcode == llvm::X86::LRETI32) ? 4
+                                                                      : 2;
+
+  RegLLVM dst = temp_manager.getRegForTemp(temp);
+  if (operandSize == 8) {
+    p.push_back(Mov64rm(dst, Reg(REG_SP), 0));
+  } else if (operandSize == 4) {
+    if constexpr (is_x86_64) {
+      dst = temp_manager.getSizedSubReg(dst, 4);
+    }
+    p.push_back(Mov32rm(dst, Reg(REG_SP), 0));
+  } else {
+    if constexpr (is_x86_64) {
+      dst = temp_manager.getSizedSubReg(dst, 4);
+    }
+    p.push_back(Mov32rm16(dst, Reg(REG_SP), 0));
+  }
+
+  rword stackDelta = 2 * operandSize;
+  if (inst.getNumOperands() == 1 and inst.getOperand(0).isImm()) {
+    stackDelta += inst.getOperand(0).getImm();
+  }
+  p.push_back(Add(Reg(REG_SP), Reg(REG_SP), Constant(stackDelta)));
+
   append(p, WriteTemp(temp, Offset(Reg(REG_PC))).generate(patch, temp_manager));
 
   return p;
@@ -168,9 +262,8 @@ GetReadAddress::generate(const Patch &patch, TempManager &temp_manager) const {
                          "Unexpected operand type {}", patch);
       QBDI_REQUIRE_ABORT(inst.getOperand(1).isReg(),
                          "Unexpected operand type {}", patch);
-      return conv_unique<RelocatableInst>(Lea(dest, 0, 1, 0,
-                                              inst.getOperand(0).getImm(),
-                                              inst.getOperand(1).getReg()));
+      return conv_unique<RelocatableInst>(
+          LoadImm::unique(dest, Constant(inst.getOperand(0).getImm())));
     }
     // XLAT instruction
     else if (inst.getOpcode() == llvm::X86::XLAT) {
@@ -269,9 +362,8 @@ GetWriteAddress::generate(const Patch &patch, TempManager &temp_manager) const {
                          "Unexpected operand type {}", patch);
       QBDI_REQUIRE_ABORT(inst.getOperand(1).isReg(),
                          "Unexpected operand type {}", patch);
-      return conv_unique<RelocatableInst>(Lea(dest, 0, 1, 0,
-                                              inst.getOperand(0).getImm(),
-                                              inst.getOperand(1).getReg()));
+      return conv_unique<RelocatableInst>(
+          LoadImm::unique(dest, Constant(inst.getOperand(0).getImm())));
     }
     // MOVDIR64B instruction
     else if (opcode == llvm::X86::MOVDIR64B16 ||

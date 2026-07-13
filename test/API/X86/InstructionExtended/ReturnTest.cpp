@@ -172,3 +172,303 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86-reti32") {
   CHECK(seenRetPost);
   CHECK(retval == 0);
 }
+
+TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86-ret16") {
+  const char source[] =
+      "xchg %esp, %edx\n"
+      "retw\n";
+  QBDI::rword tmpStack[10] = {0};
+  uint16_t *stackTop = reinterpret_cast<uint16_t *>(&tmpStack[8]);
+  *stackTop = 0x9abc;
+  QBDI::rword stackAddr = (QBDI::rword)stackTop;
+  QBDI::rword rspBefore = 0;
+  bool seenPre = false, seenPost = false;
+
+  vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  vm.addMnemonicCB("RET16", QBDI::PREINST,
+                   [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
+                       QBDI::FPRState *fprState) -> QBDI::VMAction {
+                     rspBefore = gprState->esp;
+                     auto accesses = vmi->getInstMemoryAccess();
+                     REQUIRE(accesses.size() == 1);
+                     CHECK(accesses[0].accessAddress == stackAddr);
+                     CHECK(accesses[0].value == 0x9abc);
+                     CHECK(accesses[0].size == 2);
+                     CHECK(accesses[0].type == QBDI::MEMORY_READ);
+                     seenPre = true;
+                     return QBDI::VMAction::CONTINUE;
+                   });
+  vm.addMnemonicCB("RET16", QBDI::POSTINST,
+                   [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
+                       QBDI::FPRState *fprState) -> QBDI::VMAction {
+                     auto accesses = vmi->getInstMemoryAccess();
+                     REQUIRE(accesses.size() == 1);
+                     CHECK(accesses[0].accessAddress == stackAddr);
+                     CHECK(accesses[0].value == 0x9abc);
+                     CHECK(accesses[0].size == 2);
+                     CHECK(accesses[0].type == QBDI::MEMORY_READ);
+                     CHECK(gprState->esp == rspBefore + 2);
+                     CHECK(gprState->eip == 0x9abc);
+                     seenPost = true;
+                     return QBDI::VMAction::STOP;
+                   });
+  QBDI::GPRState *state = vm.getGPRState();
+  state->edx = stackAddr;
+  vm.setGPRState(state);
+  QBDI::rword retval;
+  bool ran = runOnASM(&retval, source);
+
+  CHECK(ran);
+  CHECK(seenPre);
+  CHECK(seenPost);
+}
+
+TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86-reti16") {
+  const char source[] =
+      "xchg %esp, %edx\n"
+      "retw $4\n";
+  QBDI::rword tmpStack[10] = {0};
+  uint16_t *stackTop = reinterpret_cast<uint16_t *>(&tmpStack[8]);
+  *stackTop = 0x9abc;
+  QBDI::rword stackAddr = (QBDI::rword)stackTop;
+  QBDI::rword rspBefore = 0;
+  bool seenPre = false, seenPost = false;
+
+  vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  vm.addMnemonicCB("RETI16", QBDI::PREINST,
+                   [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
+                       QBDI::FPRState *fprState) -> QBDI::VMAction {
+                     rspBefore = gprState->esp;
+                     auto accesses = vmi->getInstMemoryAccess();
+                     REQUIRE(accesses.size() == 1);
+                     CHECK(accesses[0].accessAddress == stackAddr);
+                     CHECK(accesses[0].value == 0x9abc);
+                     CHECK(accesses[0].size == 2);
+                     CHECK(accesses[0].type == QBDI::MEMORY_READ);
+                     seenPre = true;
+                     return QBDI::VMAction::CONTINUE;
+                   });
+  vm.addMnemonicCB("RETI16", QBDI::POSTINST,
+                   [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
+                       QBDI::FPRState *fprState) -> QBDI::VMAction {
+                     auto accesses = vmi->getInstMemoryAccess();
+                     REQUIRE(accesses.size() == 1);
+                     CHECK(accesses[0].accessAddress == stackAddr);
+                     CHECK(accesses[0].value == 0x9abc);
+                     CHECK(accesses[0].size == 2);
+                     CHECK(accesses[0].type == QBDI::MEMORY_READ);
+                     CHECK(gprState->esp == rspBefore + 2 + 4);
+                     CHECK(gprState->eip == 0x9abc);
+                     seenPost = true;
+                     return QBDI::VMAction::STOP;
+                   });
+  QBDI::GPRState *state = vm.getGPRState();
+  state->edx = stackAddr;
+  vm.setGPRState(state);
+  QBDI::rword retval;
+  bool ran = runOnASM(&retval, source);
+
+  CHECK(ran);
+  CHECK(seenPre);
+  CHECK(seenPost);
+}
+
+TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86-lret32") {
+  const char source[] =
+      "xchg %esp, %edx\n"
+      "lretl\n";
+  QBDI::rword tmpStack[10] = {0};
+  uint32_t *stackTop = reinterpret_cast<uint32_t *>(&tmpStack[6]);
+  stackTop[0] = 0x11223344;
+  stackTop[1] = 0x33; // CS slot, value irrelevant: QBDI discards it
+  QBDI::rword stackAddr = (QBDI::rword)stackTop;
+  QBDI::rword rspBefore = 0;
+  bool seenPre = false, seenPost = false;
+
+  vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  vm.addMnemonicCB("LRET32", QBDI::PREINST,
+                   [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
+                       QBDI::FPRState *fprState) -> QBDI::VMAction {
+                     rspBefore = gprState->esp;
+                     auto accesses = vmi->getInstMemoryAccess();
+                     REQUIRE(accesses.size() == 1);
+                     CHECK(accesses[0].accessAddress == stackAddr);
+                     CHECK(accesses[0].value == 0x11223344);
+                     CHECK(accesses[0].size == 4);
+                     CHECK(accesses[0].type == QBDI::MEMORY_READ);
+                     seenPre = true;
+                     return QBDI::VMAction::CONTINUE;
+                   });
+  vm.addMnemonicCB("LRET32", QBDI::POSTINST,
+                   [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
+                       QBDI::FPRState *fprState) -> QBDI::VMAction {
+                     auto accesses = vmi->getInstMemoryAccess();
+                     REQUIRE(accesses.size() == 1);
+                     CHECK(accesses[0].value == 0x11223344);
+                     CHECK(accesses[0].size == 4);
+                     CHECK(accesses[0].type == QBDI::MEMORY_READ);
+                     CHECK(gprState->esp == rspBefore + 8);
+                     CHECK(gprState->eip == 0x11223344);
+                     seenPost = true;
+                     return QBDI::VMAction::STOP;
+                   });
+  QBDI::GPRState *state = vm.getGPRState();
+  state->edx = stackAddr;
+  vm.setGPRState(state);
+  QBDI::rword retval;
+  bool ran = runOnASM(&retval, source);
+
+  CHECK(ran);
+  CHECK(seenPre);
+  CHECK(seenPost);
+}
+
+TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86-lreti32") {
+  const char source[] =
+      "xchg %esp, %edx\n"
+      "lretl $8\n";
+  QBDI::rword tmpStack[10] = {0};
+  uint32_t *stackTop = reinterpret_cast<uint32_t *>(&tmpStack[6]);
+  stackTop[0] = 0x11223344;
+  stackTop[1] = 0x33;
+  QBDI::rword stackAddr = (QBDI::rword)stackTop;
+  QBDI::rword rspBefore = 0;
+  bool seenPre = false, seenPost = false;
+
+  vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  vm.addMnemonicCB("LRETI32", QBDI::PREINST,
+                   [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
+                       QBDI::FPRState *fprState) -> QBDI::VMAction {
+                     rspBefore = gprState->esp;
+                     auto accesses = vmi->getInstMemoryAccess();
+                     REQUIRE(accesses.size() == 1);
+                     CHECK(accesses[0].accessAddress == stackAddr);
+                     CHECK(accesses[0].value == 0x11223344);
+                     CHECK(accesses[0].size == 4);
+                     CHECK(accesses[0].type == QBDI::MEMORY_READ);
+                     seenPre = true;
+                     return QBDI::VMAction::CONTINUE;
+                   });
+  vm.addMnemonicCB("LRETI32", QBDI::POSTINST,
+                   [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
+                       QBDI::FPRState *fprState) -> QBDI::VMAction {
+                     auto accesses = vmi->getInstMemoryAccess();
+                     REQUIRE(accesses.size() == 1);
+                     CHECK(accesses[0].value == 0x11223344);
+                     CHECK(accesses[0].size == 4);
+                     CHECK(accesses[0].type == QBDI::MEMORY_READ);
+                     CHECK(gprState->esp == rspBefore + 8 + 8);
+                     CHECK(gprState->eip == 0x11223344);
+                     seenPost = true;
+                     return QBDI::VMAction::STOP;
+                   });
+  QBDI::GPRState *state = vm.getGPRState();
+  state->edx = stackAddr;
+  vm.setGPRState(state);
+  QBDI::rword retval;
+  bool ran = runOnASM(&retval, source);
+
+  CHECK(ran);
+  CHECK(seenPre);
+  CHECK(seenPost);
+}
+
+TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86-lret16") {
+  const char source[] =
+      "xchg %esp, %edx\n"
+      "lretw\n";
+  QBDI::rword tmpStack[10] = {0};
+  uint16_t *stackTop = reinterpret_cast<uint16_t *>(&tmpStack[8]);
+  stackTop[0] = 0x9abc;
+  stackTop[1] = 0x33; // CS slot, value irrelevant
+  QBDI::rword stackAddr = (QBDI::rword)stackTop;
+  QBDI::rword rspBefore = 0;
+  bool seenPre = false, seenPost = false;
+
+  vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  vm.addMnemonicCB("LRET16", QBDI::PREINST,
+                   [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
+                       QBDI::FPRState *fprState) -> QBDI::VMAction {
+                     rspBefore = gprState->esp;
+                     auto accesses = vmi->getInstMemoryAccess();
+                     REQUIRE(accesses.size() == 1);
+                     CHECK(accesses[0].accessAddress == stackAddr);
+                     CHECK(accesses[0].value == 0x9abc);
+                     CHECK(accesses[0].size == 2);
+                     CHECK(accesses[0].type == QBDI::MEMORY_READ);
+                     seenPre = true;
+                     return QBDI::VMAction::CONTINUE;
+                   });
+  vm.addMnemonicCB("LRET16", QBDI::POSTINST,
+                   [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
+                       QBDI::FPRState *fprState) -> QBDI::VMAction {
+                     auto accesses = vmi->getInstMemoryAccess();
+                     REQUIRE(accesses.size() == 1);
+                     CHECK(accesses[0].value == 0x9abc);
+                     CHECK(accesses[0].size == 2);
+                     CHECK(accesses[0].type == QBDI::MEMORY_READ);
+                     CHECK(gprState->esp == rspBefore + 4);
+                     CHECK(gprState->eip == 0x9abc);
+                     seenPost = true;
+                     return QBDI::VMAction::STOP;
+                   });
+  QBDI::GPRState *state = vm.getGPRState();
+  state->edx = stackAddr;
+  vm.setGPRState(state);
+  QBDI::rword retval;
+  bool ran = runOnASM(&retval, source);
+
+  CHECK(ran);
+  CHECK(seenPre);
+  CHECK(seenPost);
+}
+
+TEST_CASE_METHOD(APITest, "InstructionExtendedTest_X86-lreti16") {
+  const char source[] =
+      "xchg %esp, %edx\n"
+      "lretw $4\n";
+  QBDI::rword tmpStack[10] = {0};
+  uint16_t *stackTop = reinterpret_cast<uint16_t *>(&tmpStack[8]);
+  stackTop[0] = 0x9abc;
+  stackTop[1] = 0x33;
+  QBDI::rword stackAddr = (QBDI::rword)stackTop;
+  QBDI::rword rspBefore = 0;
+  bool seenPre = false, seenPost = false;
+
+  vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  vm.addMnemonicCB("LRETI16", QBDI::PREINST,
+                   [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
+                       QBDI::FPRState *fprState) -> QBDI::VMAction {
+                     rspBefore = gprState->esp;
+                     auto accesses = vmi->getInstMemoryAccess();
+                     REQUIRE(accesses.size() == 1);
+                     CHECK(accesses[0].accessAddress == stackAddr);
+                     CHECK(accesses[0].value == 0x9abc);
+                     CHECK(accesses[0].size == 2);
+                     CHECK(accesses[0].type == QBDI::MEMORY_READ);
+                     seenPre = true;
+                     return QBDI::VMAction::CONTINUE;
+                   });
+  vm.addMnemonicCB("LRETI16", QBDI::POSTINST,
+                   [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
+                       QBDI::FPRState *fprState) -> QBDI::VMAction {
+                     auto accesses = vmi->getInstMemoryAccess();
+                     REQUIRE(accesses.size() == 1);
+                     CHECK(accesses[0].value == 0x9abc);
+                     CHECK(accesses[0].size == 2);
+                     CHECK(accesses[0].type == QBDI::MEMORY_READ);
+                     CHECK(gprState->esp == rspBefore + 4 + 4);
+                     CHECK(gprState->eip == 0x9abc);
+                     seenPost = true;
+                     return QBDI::VMAction::STOP;
+                   });
+  QBDI::GPRState *state = vm.getGPRState();
+  state->edx = stackAddr;
+  vm.setGPRState(state);
+  QBDI::rword retval;
+  bool ran = runOnASM(&retval, source);
+
+  CHECK(ran);
+  CHECK(seenPre);
+  CHECK(seenPost);
+}

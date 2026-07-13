@@ -25,6 +25,48 @@ FetchContent_Populate(
   BINARY_DIR "${FETCHCONTENT_BASE_DIR}/llvm-build"
   SUBBUILD_DIR "${FETCHCONTENT_BASE_DIR}/llvm-subbuild"
   QUIET)
+
+# Apply QBDI-specific patches to the fetched LLVM source
+# ========================================================
+# Patches are grouped in per-architecture subdirectories of
+# ${CMAKE_CURRENT_LIST_DIR}/patches/ and only applied when building for the
+# matching target architecture. Each patch file gets its own stamp (named
+# after the patch), so patches are tracked and applied independently of
+# each other rather than as one all-or-nothing batch.
+set(QBDI_LLVM_PATCH_DIRS)
+if(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
+  list(APPEND QBDI_LLVM_PATCH_DIRS "${CMAKE_CURRENT_LIST_DIR}/patches/X86")
+endif()
+if(QBDI_ARCH_ARM)
+  list(APPEND QBDI_LLVM_PATCH_DIRS "${CMAKE_CURRENT_LIST_DIR}/patches/ARM")
+endif()
+if(QBDI_ARCH_AARCH64)
+  list(APPEND QBDI_LLVM_PATCH_DIRS "${CMAKE_CURRENT_LIST_DIR}/patches/AARCH64")
+endif()
+
+set(QBDI_LLVM_PATCH_STAMP_DIR "${llvm_SOURCE_DIR}/.qbdi_patches_applied")
+foreach(patch_dir ${QBDI_LLVM_PATCH_DIRS})
+  file(GLOB QBDI_LLVM_PATCH_FILES "${patch_dir}/*.patch")
+  list(SORT QBDI_LLVM_PATCH_FILES)
+  foreach(patch_file ${QBDI_LLVM_PATCH_FILES})
+    get_filename_component(QBDI_LLVM_PATCH_NAME "${patch_file}" NAME)
+    set(QBDI_LLVM_PATCH_STAMP
+        "${QBDI_LLVM_PATCH_STAMP_DIR}/${QBDI_LLVM_PATCH_NAME}")
+    if(NOT EXISTS "${QBDI_LLVM_PATCH_STAMP}")
+      find_package(Patch REQUIRED)
+      message(STATUS "Applying LLVM patch: ${patch_file}")
+      execute_process(
+        COMMAND "${Patch_EXECUTABLE}" -p1 --binary --input=${patch_file}
+        WORKING_DIRECTORY "${llvm_SOURCE_DIR}"
+        RESULT_VARIABLE QBDI_LLVM_PATCH_RESULT)
+      if(NOT QBDI_LLVM_PATCH_RESULT EQUAL 0)
+        message(FATAL_ERROR "Failed to apply LLVM patch: ${patch_file}")
+      endif()
+      file(WRITE "${QBDI_LLVM_PATCH_STAMP}" "")
+    endif()
+  endforeach()
+endforeach()
+
 set(llvm_SOURCE_DIR "${llvm_SOURCE_DIR}/llvm")
 
 set(CMAKE_CXX_STANDARD

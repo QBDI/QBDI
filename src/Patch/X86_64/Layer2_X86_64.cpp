@@ -343,6 +343,15 @@ llvm::MCInst push64r(RegLLVM reg) {
   return inst;
 }
 
+llvm::MCInst push16r(RegLLVM reg) {
+  llvm::MCInst inst;
+
+  inst.setOpcode(llvm::X86::PUSH16r);
+  inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
+
+  return inst;
+}
+
 llvm::MCInst pop32r(RegLLVM reg) {
   llvm::MCInst inst;
 
@@ -356,6 +365,15 @@ llvm::MCInst pop64r(RegLLVM reg) {
   llvm::MCInst inst;
 
   inst.setOpcode(llvm::X86::POP64r);
+  inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
+
+  return inst;
+}
+
+llvm::MCInst pop16r(RegLLVM reg) {
+  llvm::MCInst inst;
+
+  inst.setOpcode(llvm::X86::POP16r);
   inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
 
   return inst;
@@ -523,6 +541,14 @@ llvm::MCInst xor64rr(RegLLVM dst, RegLLVM src) {
     case llvm::X86::R13:
     case llvm::X86::R14:
     case llvm::X86::R15:
+    case llvm::X86::R8W:
+    case llvm::X86::R9W:
+    case llvm::X86::R10W:
+    case llvm::X86::R11W:
+    case llvm::X86::R12W:
+    case llvm::X86::R13W:
+    case llvm::X86::R14W:
+    case llvm::X86::R15W:
       return true;
   }
 }
@@ -607,11 +633,19 @@ RelocatableInst::UniquePtr Pushr(Reg reg) {
     return NoRelocSized::unique(push32r(reg), 1);
 }
 
+RelocatableInst::UniquePtr Push16r(RegLLVM reg) {
+  return NoRelocSized::unique(push16r(reg), isr8_15Reg(reg) ? 3 : 2);
+}
+
 RelocatableInst::UniquePtr Popr(Reg reg) {
   if constexpr (is_x86_64)
     return NoRelocSized::unique(pop64r(reg), isr8_15Reg(reg) ? 2 : 1);
   else
     return NoRelocSized::unique(pop32r(reg), 1);
+}
+
+RelocatableInst::UniquePtr Pop16r(RegLLVM reg) {
+  return NoRelocSized::unique(pop16r(reg), isr8_15Reg(reg) ? 3 : 2);
 }
 
 RelocatableInst::UniquePtr Add(Reg dest, Reg src, Constant cst) {

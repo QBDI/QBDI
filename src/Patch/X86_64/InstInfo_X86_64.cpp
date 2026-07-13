@@ -3930,6 +3930,11 @@ constexpr size_t WRITE_4608_SIZE = sizeof(WRITE_4608) / sizeof(unsigned);
 
 constexpr unsigned STACK_WRITE_16[] = {
     // clang-format off
+    llvm::X86::CALL16m,
+    llvm::X86::CALL16m_NT,
+    llvm::X86::CALL16r,
+    llvm::X86::CALL16r_NT,
+    llvm::X86::CALLpcrel16,
     llvm::X86::PUSH16i,
     llvm::X86::PUSH16i8,
     llvm::X86::PUSH16r,
@@ -3943,23 +3948,13 @@ constexpr size_t STACK_WRITE_16_SIZE =
     sizeof(STACK_WRITE_16) / sizeof(unsigned);
 
 constexpr unsigned STACK_WRITE_32[] = {
-// clang-format off
-#ifdef QBDI_ARCH_X86
-    llvm::X86::CALL16m,
-    llvm::X86::CALL16m_NT,
-    llvm::X86::CALL16r,
-    llvm::X86::CALL16r_NT,
+    // clang-format off
     llvm::X86::CALL32m,
     llvm::X86::CALL32m_NT,
     llvm::X86::CALL32r,
     llvm::X86::CALL32r_NT,
-    llvm::X86::CALL64m,
-    llvm::X86::CALL64m_NT,
-    llvm::X86::CALL64pcrel32,
-    llvm::X86::CALL64r,
-    llvm::X86::CALL64r_NT,
-    llvm::X86::CALLpcrel16,
     llvm::X86::CALLpcrel32,
+#ifdef QBDI_ARCH_X86
     llvm::X86::ENTER,
 #endif
     llvm::X86::PUSH32i,
@@ -3977,23 +3972,13 @@ constexpr size_t STACK_WRITE_32_SIZE =
 constexpr unsigned STACK_WRITE_64[] = {
 // clang-format off
 #ifdef QBDI_ARCH_X86_64
-    llvm::X86::CALL16m,
-    llvm::X86::CALL16m_NT,
-    llvm::X86::CALL16r,
-    llvm::X86::CALL16r_NT,
-    llvm::X86::CALL32m,
-    llvm::X86::CALL32m_NT,
-    llvm::X86::CALL32r,
-    llvm::X86::CALL32r_NT,
+    llvm::X86::ENTER,
+#endif
     llvm::X86::CALL64m,
     llvm::X86::CALL64m_NT,
     llvm::X86::CALL64pcrel32,
     llvm::X86::CALL64r,
     llvm::X86::CALL64r_NT,
-    llvm::X86::CALLpcrel16,
-    llvm::X86::CALLpcrel32,
-    llvm::X86::ENTER,
-#endif
     llvm::X86::PUSH64i32,
     llvm::X86::PUSH64i8,
     llvm::X86::PUSH64r,
@@ -4029,10 +4014,14 @@ constexpr size_t STACK_WRITE_256_SIZE =
 
 constexpr unsigned STACK_READ_16[] = {
     // clang-format off
+    llvm::X86::LRET16,
+    llvm::X86::LRETI16,
     llvm::X86::POP16r,
     llvm::X86::POP16rmm,
     llvm::X86::POP16rmr,
     llvm::X86::POPF16,
+    llvm::X86::RET16,
+    llvm::X86::RETI16,
     // clang-format on
 };
 
@@ -4042,25 +4031,15 @@ constexpr unsigned STACK_READ_32[] = {
 // clang-format off
 #ifdef QBDI_ARCH_X86
     llvm::X86::LEAVE,
-    llvm::X86::LRETI32,
-    llvm::X86::LRETI64,
-    llvm::X86::LRETI16,
-    llvm::X86::LRET32,
-    llvm::X86::LRET64,
-    llvm::X86::LRET16,
 #endif
+    llvm::X86::LRETI32,
+    llvm::X86::LRET32,
     llvm::X86::POP32r,
     llvm::X86::POP32rmm,
     llvm::X86::POP32rmr,
     llvm::X86::POPF32,
-#ifdef QBDI_ARCH_X86
-    llvm::X86::RET16,
     llvm::X86::RET32,
-    llvm::X86::RET64,
-    llvm::X86::RETI16,
     llvm::X86::RETI32,
-    llvm::X86::RETI64,
-#endif
     // clang-format on
 };
 
@@ -4072,27 +4051,15 @@ constexpr unsigned STACK_READ_64[] = {
     llvm::X86::LEAVE,
 #endif
     llvm::X86::LEAVE64,
-#ifdef QBDI_ARCH_X86_64
-    llvm::X86::LRET16,
-    llvm::X86::LRET32,
     llvm::X86::LRET64,
-    llvm::X86::LRETI16,
-    llvm::X86::LRETI32,
     llvm::X86::LRETI64,
-#endif
     llvm::X86::POP64r,
     llvm::X86::POP64rmm,
     llvm::X86::POP64rmr,
     llvm::X86::POPF64,
     llvm::X86::POPP64r,
-#ifdef QBDI_ARCH_X86_64
-    llvm::X86::RET16,
-    llvm::X86::RET32,
     llvm::X86::RET64,
-    llvm::X86::RETI16,
-    llvm::X86::RETI32,
     llvm::X86::RETI64,
-#endif
     // clang-format on
 };
 

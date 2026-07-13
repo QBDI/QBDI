@@ -1,0 +1,28 @@
+--- a/llvm/lib/Target/X86/X86InstrControl.td
++++ b/llvm/lib/Target/X86/X86InstrControl.td
+@@ -221,10 +221,10 @@
+                         Requires<[Not64BitMode]>, Sched<[WriteJump]>;
+     def CALL16r     : I<0xFF, MRM2r, (outs), (ins GR16:$dst),
+                         "call{w}\t{*}$dst", [(X86call GR16:$dst)]>,
+-                      OpSize16, Requires<[Not64BitMode]>, Sched<[WriteJump]>;
++                      OpSize16, Sched<[WriteJump]>;
+     def CALL16m     : I<0xFF, MRM2m, (outs), (ins i16mem:$dst),
+                         "call{w}\t{*}$dst", [(X86call (loadi16 addr:$dst))]>,
+-                        OpSize16, Requires<[Not64BitMode,FavorMemIndirectCall]>,
++                        OpSize16, Requires<[FavorMemIndirectCall]>,
+                         Sched<[WriteJumpLd]>;
+     def CALL32r     : I<0xFF, MRM2r, (outs), (ins GR32:$dst),
+                         "call{l}\t{*}$dst", [(X86call GR32:$dst)]>, OpSize32,
+@@ -330,10 +330,11 @@
+                         "call{q}\t$dst", []>, OpSize32,
+                       Requires<[In64BitMode]>;
+   def CALL64r       : I<0xFF, MRM2r, (outs), (ins GR64:$dst),
+-                        "call{q}\t{*}$dst", [(X86call GR64:$dst)]>,
++                        "call{q}\t{*}$dst", [(X86call GR64:$dst)]>, OpSize32,
+                       Requires<[In64BitMode,NotUseIndirectThunkCalls,ImportCallOptimizationDisabled]>;
+   def CALL64m       : I<0xFF, MRM2m, (outs), (ins i64mem:$dst),
+                         "call{q}\t{*}$dst", [(X86call (loadi64 addr:$dst))]>,
++                      OpSize32,
+                       Requires<[In64BitMode,FavorMemIndirectCall,
+                                 NotUseIndirectThunkCalls]>;
+ 

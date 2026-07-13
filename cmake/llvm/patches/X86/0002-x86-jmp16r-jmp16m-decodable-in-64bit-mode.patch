@@ -1,0 +1,30 @@
+--- a/llvm/lib/Target/X86/X86InstrControl.td
++++ b/llvm/lib/Target/X86/X86InstrControl.td
+@@ -108,10 +108,10 @@
+ // Indirect branches
+ let isBranch = 1, isTerminator = 1, isBarrier = 1, isIndirectBranch = 1 in {
+   def JMP16r     : I<0xFF, MRM4r, (outs), (ins GR16:$dst), "jmp{w}\t{*}$dst",
+-                     [(brind GR16:$dst)]>, Requires<[Not64BitMode]>,
++                     [(brind GR16:$dst)]>,
+                      OpSize16, Sched<[WriteJump]>;
+   def JMP16m     : I<0xFF, MRM4m, (outs), (ins i16mem:$dst), "jmp{w}\t{*}$dst",
+-                     [(brind (loadi16 addr:$dst))]>, Requires<[Not64BitMode]>,
++                     [(brind (loadi16 addr:$dst))]>,
+                      OpSize16, Sched<[WriteJumpLd]>;
+ 
+   def JMP32r     : I<0xFF, MRM4r, (outs), (ins GR32:$dst), "jmp{l}\t{*}$dst",
+@@ -122,10 +122,12 @@
+                      OpSize32, Sched<[WriteJumpLd]>;
+ 
+   def JMP64r     : I<0xFF, MRM4r, (outs), (ins GR64:$dst), "jmp{q}\t{*}$dst",
+-                     [(brind GR64:$dst)]>, Requires<[In64BitMode]>,
++                     [(brind GR64:$dst)]>, OpSize32,
++                     Requires<[In64BitMode]>,
+                      Sched<[WriteJump]>;
+   def JMP64m     : I<0xFF, MRM4m, (outs), (ins i64mem:$dst), "jmp{q}\t{*}$dst",
+-                     [(brind (loadi64 addr:$dst))]>, Requires<[In64BitMode]>,
++                     [(brind (loadi64 addr:$dst))]>, OpSize32,
++                     Requires<[In64BitMode]>,
+                      Sched<[WriteJumpLd]>;
+ 
+   // Win64 wants indirect jumps leaving the function to have a REX_W prefix.

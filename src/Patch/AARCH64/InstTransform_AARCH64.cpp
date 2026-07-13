@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "Utils/AArch64BaseInfo.h"
 #include "llvm/MC/MCInst.h"
 
 #include "Patch/AARCH64/InstTransform_AARCH64.h"
@@ -30,7 +29,7 @@ void SetOperandW::transform(llvm::MCInst &inst, rword address, size_t instSize,
   QBDI_REQUIRE_ABORT(opn < inst.getNumOperands(), "Invalid operand {} {}", opn,
                      temp_manager.getPatch());
   Reg tempReg = temp_manager.getRegForTemp(temp);
-  RegLLVM wreg = llvm::getWRegFromXReg(tempReg.getValue());
+  RegLLVM wreg = temp_manager.getSizedSubReg(tempReg, 4);
   inst.getOperand(opn).setReg(wreg.getValue());
 }
 
