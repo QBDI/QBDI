@@ -112,4 +112,5 @@ target_sources(
           "${CMAKE_CURRENT_LIST_DIR}/StackFrame_X86_64.cpp"
           "${CMAKE_CURRENT_LIST_DIR}/MoffsAdSize32_X86_64.cpp"
           "${CMAKE_CURRENT_LIST_DIR}/VcvtneVexShadowed_X86_64.cpp"
-          "${CMAKE_CURRENT_LIST_DIR}/PushPopRmr_X86_64.cpp")
+          "${CMAKE_CURRENT_LIST_DIR}/PushPopRmr_X86_64.cpp"
+          "${CMAKE_CURRENT_LIST_DIR}/ShlGrp2Alias_X86_64.cpp")

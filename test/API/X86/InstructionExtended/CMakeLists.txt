@@ -7,4 +7,5 @@ target_sources(
           "${CMAKE_CURRENT_LIST_DIR}/RegisterJumpCallTest.cpp"
           "${CMAKE_CURRENT_LIST_DIR}/ConditionalJumpTest.cpp"
           "${CMAKE_CURRENT_LIST_DIR}/PcrelCallTest.cpp"
-          "${CMAKE_CURRENT_LIST_DIR}/ReturnTest.cpp")
+          "${CMAKE_CURRENT_LIST_DIR}/ReturnTest.cpp"
+          "${CMAKE_CURRENT_LIST_DIR}/ShlGrp2Alias_X86.cpp")

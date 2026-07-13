@@ -1,0 +1,22 @@
+--- a/llvm/lib/Target/X86/X86InstrShiftRotate.td
++++ b/llvm/lib/Target/X86/X86InstrShiftRotate.td
+@@ -224,6 +224,19 @@
+   }
+ }
+ defm SHL: ShiftRotate<"shl", MRM4r, MRM4m, shl, WriteShiftCL, WriteShift, WriteShiftCLLd, WriteShiftLd>;
++
++// Undocumented alias: Group 2 opcode extension /6 (register-immediate form,
++// 0xC0/0xC1 ModRM.reg=6) executes identically to /4 (SHL/SAL) on real
++// hardware, but is absent from Intel/AMD's documented opcode maps. Modeled
++// here for the disassembler only -- text assembly for "shl"/"sal" must keep
++// resolving to the canonical /4 (SHL8ri/16ri/32ri/64ri) encoding.
++let isCodeGenOnly = 1, ForceDisassemble = 1 in {
++def SHL8ri_alt  : BinOpRI8U_R<"shl", MRM6r, Xi8>,  Sched<[WriteShift]>, DefEFLAGS;
++def SHL16ri_alt : BinOpRI8U_R<"shl", MRM6r, Xi16>, Sched<[WriteShift]>, DefEFLAGS, OpSize16;
++def SHL32ri_alt : BinOpRI8U_R<"shl", MRM6r, Xi32>, Sched<[WriteShift]>, DefEFLAGS, OpSize32;
++def SHL64ri_alt : BinOpRI8U_R<"shl", MRM6r, Xi64>, Sched<[WriteShift]>, DefEFLAGS;
++}
++
+ defm SHR: ShiftRotate<"shr", MRM5r, MRM5m, srl, WriteShiftCL, WriteShift, WriteShiftCLLd, WriteShiftLd>;
+ defm SAR: ShiftRotate<"sar", MRM7r, MRM7m, sra, WriteShiftCL, WriteShift, WriteShiftCLLd, WriteShiftLd>;
+ 
