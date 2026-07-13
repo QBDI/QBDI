@@ -25,6 +25,19 @@
 namespace QBDI {
 class RelocatableInst;
 
+enum MemoryTag : uint16_t {
+  MEM_READ_ADDRESS_TAG = MEMORY_TAG_BEGIN + 0,
+  MEM_WRITE_ADDRESS_TAG = MEMORY_TAG_BEGIN + 1,
+
+  MEM_READ_VALUE_TAG = MEMORY_TAG_BEGIN + 2,
+  MEM_WRITE_VALUE_TAG = MEMORY_TAG_BEGIN + 3,
+  MEM_VALUE_EXTENDED_TAG = MEMORY_TAG_BEGIN + 4,
+
+  MEM_MOPS_SIZE_TAG = MEMORY_TAG_BEGIN + 5,
+
+  MEM_EXCLUSIVE_STATUS_TAG = MEMORY_TAG_BEGIN + 6,
+};
+
 /* Generate the patch to retrive the address of the access from an instruction
  *
  * @param[in] patch          The patch of the instruction that performed the

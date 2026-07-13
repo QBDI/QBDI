@@ -689,22 +689,36 @@ WriteOperandCC::generate(const Patch &patch, TempManager &temp_manager) const {
 
   QBDI_REQUIRE_ABORT(op < inst.getNumOperands(), "Invalid operand {} {}", op,
                      patch);
-  if (inst.getOperand(op).isReg()) {
-    if (patch.metadata.archMetadata.cond != llvm::ARMCC::AL and
-        cpumode == CPUMode::Thumb) {
+  if (not inst.getOperand(op).isReg()) {
+    QBDI_ERROR("Invalid operand type for WriteOperandCC()");
+    return {};
+  }
+
+  RegLLVM reg = inst.getOperand(op).getReg();
+
+  if (patch.metadata.archMetadata.cond != llvm::ARMCC::AL and
+      cpumode == CPUMode::Thumb) {
+    if (type == OffsetType) {
       return conv_unique<RelocatableInst>(
           T2it(cpumode, patch.metadata.archMetadata.cond,
                (unsigned)llvm::ARM::PredBlockMask::T),
-          StoreDataBlockCC::unique(inst.getOperand(op).getReg(), offset,
+          StoreDataBlockCC::unique(reg, offset,
                                    patch.metadata.archMetadata.cond));
     } else {
       return conv_unique<RelocatableInst>(
-          StoreDataBlockCC::unique(inst.getOperand(op).getReg(), offset,
-                                   patch.metadata.archMetadata.cond));
+          T2it(cpumode, patch.metadata.archMetadata.cond,
+               (unsigned)llvm::ARM::PredBlockMask::T),
+          StoreShadowCC::unique(reg, shadow, true,
+                                patch.metadata.archMetadata.cond));
     }
   } else {
-    QBDI_ERROR("Invalid operand type for WriteOperand()");
-    return {};
+    if (type == OffsetType) {
+      return conv_unique<RelocatableInst>(StoreDataBlockCC::unique(
+          reg, offset, patch.metadata.archMetadata.cond));
+    } else {
+      return conv_unique<RelocatableInst>(StoreShadowCC::unique(
+          reg, shadow, true, patch.metadata.archMetadata.cond));
+    }
   }
 }
 

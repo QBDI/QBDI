@@ -15,28 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "Target/ARM/Utils/ARMBaseInfo.h"
-#include "llvm/ADT/StringRef.h"
+#include "Utils/AArch64BaseInfo.h"
 #include "llvm/MC/MCInst.h"
-#include "llvm/MC/MCInstrDesc.h"
 
-#include "Engine/LLVMCPU.h"
-#include "Patch/ARM/PatchCondition_ARM.h"
-#include "Patch/InstInfo.h"
+#include "Patch/AARCH64/InstTransform_AARCH64.h"
+#include "Patch/Patch.h"
+#include "Patch/TempManager.h"
 #include "Utility/LogSys.h"
 
 namespace QBDI {
 
-bool HasCond::test(const Patch &patch, const LLVMCPU &llvmcpu) const {
-  return patch.metadata.archMetadata.cond != llvm::ARMCC::AL;
-}
-
-bool InITBlock::test(const Patch &patch, const LLVMCPU &llvmcpu) const {
-  return patch.metadata.archMetadata.posITblock > 0;
-}
-
-bool LastInITBlock::test(const Patch &patch, const LLVMCPU &llvmcpu) const {
-  return patch.metadata.archMetadata.posITblock == 1;
+void SetOperandW::transform(llvm::MCInst &inst, rword address, size_t instSize,
+                            TempManager &temp_manager) const {
+  QBDI_REQUIRE_ABORT(opn < inst.getNumOperands(), "Invalid operand {} {}", opn,
+                     temp_manager.getPatch());
+  Reg tempReg = temp_manager.getRegForTemp(temp);
+  RegLLVM wreg = llvm::getWRegFromXReg(tempReg.getValue());
+  inst.getOperand(opn).setReg(wreg.getValue());
 }
 
 } // namespace QBDI

@@ -115,12 +115,16 @@ WriteOperand::generate(const Patch &patch, TempManager &temp_manager) const {
 
   QBDI_REQUIRE_ABORT(op < inst.getNumOperands(), "Invalid operand {} {}", op,
                      patch);
-  if (inst.getOperand(op).isReg()) {
+  if (not inst.getOperand(op).isReg()) {
+    QBDI_ERROR("Invalid operand type for WriteOperand()");
+    return {};
+  }
+  if (type == OffsetType) {
     return conv_unique<RelocatableInst>(
         StoreDataBlock::unique(inst.getOperand(op).getReg(), offset));
   } else {
-    QBDI_ERROR("Invalid operand type for WriteOperand()");
-    return {};
+    return conv_unique<RelocatableInst>(
+        StoreShadow::unique(inst.getOperand(op).getReg(), shadow, true));
   }
 }
 

@@ -94,6 +94,27 @@ public:
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
 };
 
+class OperandIs : public AutoClone<PatchCondition, OperandIs> {
+  unsigned int position;
+  RegLLVM reg;
+  Constant imm;
+
+  enum { RegType, ImmType } type;
+
+public:
+  /*! Return true if the operand is the expected register
+   */
+  OperandIs(unsigned int position, RegLLVM reg)
+      : position(position), reg(reg), imm(0), type(RegType) {};
+
+  /*! Return true if the operand is the expected immediate
+   */
+  OperandIs(unsigned int position, Constant imm)
+      : position(position), reg(0), imm(imm), type(ImmType) {};
+
+  bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
+};
+
 class InstructionInRange
     : public AutoClone<PatchCondition, InstructionInRange> {
   Range<rword> range;

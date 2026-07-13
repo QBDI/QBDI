@@ -20,6 +20,7 @@
 #include "Engine/LLVMCPU.h"
 #include "Patch/ARM/InstInfo_ARM.h"
 #include "Patch/ARM/Layer2_ARM.h"
+#include "Patch/ARM/MemoryAccess_ARM.h"
 #include "Patch/ARM/PatchCondition_ARM.h"
 #include "Patch/ARM/PatchGenerator_ARM.h"
 #include "Patch/ExecBlockFlags.h"
@@ -360,10 +361,24 @@ std::vector<PatchRule> getARMPatchRules(Options opts) {
         conv_unique<PatchGenerator>(
             CondExclusifLoad::unique(Temp(0), Temp(1), Temp(2)),
             ModifyInstruction::unique(InstTransform::UniquePtrVec()),
+            WriteOperandCC::unique(Operand(0),
+                                   Shadow(MEM_EXCLUSIVE_STATUS_TAG)),
             GetConstant::unique(Temp(0), Constant(0)),
             WriteTempCC::unique(
                 Temp(0),
                 Offset(offsetof(Context, gprState.localMonitor.enable)))));
+  } else {
+
+    /* Rule #14b: exclusive store register(s), local monitor disabled
+     */
+    rules.emplace_back(
+        Or::unique(conv_unique<PatchCondition>(
+            OpIs::unique(llvm::ARM::STREXB), OpIs::unique(llvm::ARM::STREXH),
+            OpIs::unique(llvm::ARM::STREX), OpIs::unique(llvm::ARM::STREXD))),
+        conv_unique<PatchGenerator>(
+            ModifyInstruction::unique(InstTransform::UniquePtrVec()),
+            WriteOperandCC::unique(Operand(0),
+                                   Shadow(MEM_EXCLUSIVE_STATUS_TAG))));
   }
 
   // Instruction without PC
@@ -1233,10 +1248,26 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
             CondExclusifLoad::unique(Temp(0), Temp(1), Temp(2)),
             ItPatch::unique(false),
             ModifyInstruction::unique(InstTransform::UniquePtrVec()),
+            WriteOperandCC::unique(Operand(0),
+                                   Shadow(MEM_EXCLUSIVE_STATUS_TAG)),
             GetConstant::unique(Temp(0), Constant(0)),
             WriteTempCC::unique(
                 Temp(0),
                 Offset(offsetof(Context, gprState.localMonitor.enable)))));
+  } else {
+
+    /* Rule #32b: exclusive store register(s), local monitor disabled
+     */
+    rules.emplace_back(
+        Or::unique(conv_unique<PatchCondition>(
+            OpIs::unique(llvm::ARM::t2STREXB),
+            OpIs::unique(llvm::ARM::t2STREXH), OpIs::unique(llvm::ARM::t2STREX),
+            OpIs::unique(llvm::ARM::t2STREXD))),
+        conv_unique<PatchGenerator>(
+            ItPatch::unique(false),
+            ModifyInstruction::unique(InstTransform::UniquePtrVec()),
+            WriteOperandCC::unique(Operand(0),
+                                   Shadow(MEM_EXCLUSIVE_STATUS_TAG))));
   }
 
   // Instruction with no PC

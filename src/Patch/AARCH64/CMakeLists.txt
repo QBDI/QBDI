@@ -3,6 +3,7 @@ set(SOURCES
     "${CMAKE_CURRENT_LIST_DIR}/ExecBlockPatch_AARCH64.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/InstInfo_AARCH64.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/InstrRules_AARCH64.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/InstTransform_AARCH64.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/Layer2_AARCH64.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/MemoryAccess_AARCH64.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/PatchCondition_AARCH64.cpp"

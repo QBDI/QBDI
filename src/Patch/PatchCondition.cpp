@@ -45,6 +45,23 @@ bool UseReg::test(const Patch &patch, const LLVMCPU &llvmcpu) const {
   return false;
 }
 
+bool OperandIs::test(const Patch &patch, const LLVMCPU &llvmcpu) const {
+  if (position >= patch.metadata.inst.getNumOperands()) {
+    return false;
+  }
+  const llvm::MCOperand &op = patch.metadata.inst.getOperand(position);
+  if (type == RegType and op.isReg()) {
+    return reg == op.getReg();
+  } else if (type == ImmType and op.isImm()) {
+    return static_cast<int64_t>(static_cast<rword>(imm)) == op.getImm();
+  } else {
+    // OperandIs can be used before the check of the opcode
+    // If the operand doesn't have the good type, return false to skip the
+    // current Patchrules.
+    return false;
+  }
+}
+
 bool DoesReadAccess::test(const Patch &patch, const LLVMCPU &llvmcpu) const {
   return getReadSize(patch.metadata.inst, llvmcpu) > 0;
 }

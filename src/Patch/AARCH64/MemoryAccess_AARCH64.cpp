@@ -1807,17 +1807,6 @@ RelocatableInst::UniquePtrVec generateAddressPatch(const Patch &patch,
 
 namespace {
 
-enum MemoryTag : uint16_t {
-  MEM_READ_ADDRESS_TAG = MEMORY_TAG_BEGIN + 0,
-  MEM_WRITE_ADDRESS_TAG = MEMORY_TAG_BEGIN + 1,
-
-  MEM_READ_VALUE_TAG = MEMORY_TAG_BEGIN + 2,
-  MEM_WRITE_VALUE_TAG = MEMORY_TAG_BEGIN + 3,
-  MEM_VALUE_EXTENDED_TAG = MEMORY_TAG_BEGIN + 4,
-
-  MEM_MOPS_SIZE_TAG = MEMORY_TAG_BEGIN + 5,
-};
-
 const PatchGenerator::UniquePtrVec &
 generateReadInstrumentPatch(Patch &patch, const LLVMCPU &llvmcpu) {
   if (llvmcpu.hasOptions(Options::OPT_DISABLE_MEMORYACCESS_VALUE)) {
@@ -2174,6 +2163,19 @@ void analyseMemoryAccessAddrValue(const ExecBlock &curExecBlock,
 
   if (llvmcpu.hasOptions(Options::OPT_DISABLE_MEMORYACCESS_VALUE) and
       not isMOPSPrologue(inst)) {
+    // search if the shadow MEM_EXCLUSIVE_STATUS_TAG is present, and drop the
+    // access if the exclusive store failed.
+    for (const ShadowInfo &info : shadows) {
+      if (shadows[0].instID != info.instID) {
+        break;
+      }
+      if (info.tag == MEM_EXCLUSIVE_STATUS_TAG) {
+        if (curExecBlock.getShadow(info.shadowID) != 0) {
+          return;
+        }
+        break;
+      }
+    }
     access.flags |= MEMORY_UNKNOWN_VALUE;
     access.value = 0;
     dest.push_back(access);
@@ -2191,6 +2193,10 @@ void analyseMemoryAccessAddrValue(const ExecBlock &curExecBlock,
       return;
     }
     QBDI_REQUIRE_ACTION(shadows[0].instID == shadows[index].instID, return);
+    // if the exclusive store failed, drop the shadows.
+    if (shadows[index].tag == MEM_EXCLUSIVE_STATUS_TAG and
+        curExecBlock.getShadow(shadows[index].shadowID) != 0)
+      return;
     // special case for MOPS instruction
     if (shadows[index].tag == MEM_MOPS_SIZE_TAG) {
       rword size = curExecBlock.getShadow(shadows[index].shadowID);
