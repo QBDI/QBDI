@@ -11,4 +11,6 @@ if(NOT (QBDI_PLATFORM_MACOS OR QBDI_PLATFORM_IOS))
                  PRIVATE "${CMAKE_CURRENT_LIST_DIR}/VMTest_AARCH64_LDRL.cpp")
 endif()
 
-include("${CMAKE_CURRENT_LIST_DIR}/InstructionExtended/CMakeLists.txt")
+if(QBDI_TEST_INSTRUCTION_EXTENDED)
+  include("${CMAKE_CURRENT_LIST_DIR}/InstructionExtended/CMakeLists.txt")
+endif()
