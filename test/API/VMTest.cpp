@@ -1692,6 +1692,7 @@ TEST_CASE_METHOD(APITest, "VMTest-InvalidInstruction") {
   QBDI::simulateCall(state, FAKE_RET_ADDR);
 
   // Instrument the whole code but only execute what is valid
+  vm.removeAllInstrumentedRanges();
   vm.addInstrumentedRange(start, stop);
   bool ran = vm.run(start, start + tc.size);
   REQUIRE(ran);
@@ -1708,6 +1709,7 @@ TEST_CASE_METHOD(APITest, "VMTest-BreakingInstruction") {
   auto start = (QBDI::rword)code.data();
 
   // Instrument only a part of the code
+  vm.removeAllInstrumentedRanges();
   vm.addInstrumentedRange(start, start + tc.size);
 
   // set the current sequence
@@ -1738,6 +1740,7 @@ TEST_CASE_METHOD(APITest, "VMTest-SelfModifyingCode1") {
 
   QBDI::simulateCall(state, FAKE_RET_ADDR);
 
+  vm.removeAllInstrumentedRanges();
   vm.addInstrumentedRange(start, stop);
   bool ran = vm.run(start, FAKE_RET_ADDR);
   REQUIRE(ran);
@@ -1763,6 +1766,7 @@ TEST_CASE_METHOD(APITest, "VMTest-SelfModifyingCode2") {
 
   QBDI::simulateCall(state, FAKE_RET_ADDR);
 
+  vm.removeAllInstrumentedRanges();
   vm.addInstrumentedRange(start, stop);
 
   QBDI::RangeSet<QBDI::rword> instrumentedRange{};

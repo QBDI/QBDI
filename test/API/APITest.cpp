@@ -45,6 +45,7 @@ APITest::APITest() : vm() {
   // of the execution
   bool ret = QBDI::allocateVirtualStack(state, STACK_SIZE, &fakestack);
   REQUIRE(ret == true);
+  memset(fakestack, 0, STACK_SIZE);
 }
 
 APITest::~APITest() {
