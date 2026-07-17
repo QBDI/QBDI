@@ -19,7 +19,7 @@
 #include "Patch/Patch_Test.h"
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-STLDMIA") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -27,7 +27,7 @@ TEST_CASE_METHOD(Patch_Test, "Patch_Test-STLDMIA") {
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-STLDMIB") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -35,7 +35,7 @@ TEST_CASE_METHOD(Patch_Test, "Patch_Test-STLDMIB") {
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-STLDMDA") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -43,7 +43,7 @@ TEST_CASE_METHOD(Patch_Test, "Patch_Test-STLDMDA") {
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-STLDMDB") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -51,7 +51,7 @@ TEST_CASE_METHOD(Patch_Test, "Patch_Test-STLDMDB") {
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-STMDB_LDMIA_post") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
   initContext(inputState);
 
@@ -59,7 +59,7 @@ TEST_CASE_METHOD(Patch_Test, "Patch_Test-STMDB_LDMIA_post") {
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-STMDA_LDMIB_post") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
   initContext(inputState);
 
@@ -67,7 +67,7 @@ TEST_CASE_METHOD(Patch_Test, "Patch_Test-STMDA_LDMIB_post") {
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-STMIB_LDMDA_post") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
   initContext(inputState);
 
@@ -75,7 +75,7 @@ TEST_CASE_METHOD(Patch_Test, "Patch_Test-STMIB_LDMDA_post") {
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-STMIA_LDMDB_post") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
   initContext(inputState);
 
@@ -83,7 +83,7 @@ TEST_CASE_METHOD(Patch_Test, "Patch_Test-STMIA_LDMDB_post") {
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-LDREXTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
   uint8_t buffer[4096] = {0};
 

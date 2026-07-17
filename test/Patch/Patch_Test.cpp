@@ -19,7 +19,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-EmptyFunction") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -27,7 +27,7 @@ TEST_CASE_METHOD(Patch_Test, "Patch_Test-EmptyFunction") {
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-GPRSave") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -35,7 +35,7 @@ TEST_CASE_METHOD(Patch_Test, "Patch_Test-GPRSave") {
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-GPRShuffle") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -43,7 +43,7 @@ TEST_CASE_METHOD(Patch_Test, "Patch_Test-GPRShuffle") {
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-RelativeAddressing") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -51,7 +51,7 @@ TEST_CASE_METHOD(Patch_Test, "Patch_Test-RelativeAddressing") {
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-ConditionalBranching") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -59,7 +59,7 @@ TEST_CASE_METHOD(Patch_Test, "Patch_Test-ConditionalBranching") {
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-FibonacciRecursion") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -68,7 +68,7 @@ TEST_CASE_METHOD(Patch_Test, "Patch_Test-FibonacciRecursion") {
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-StackTricks") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);

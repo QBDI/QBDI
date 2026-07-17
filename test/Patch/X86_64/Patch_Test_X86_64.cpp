@@ -19,7 +19,7 @@
 #include "Patch/Patch_Test.h"
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-UnalignedCodeForward") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -27,7 +27,7 @@ TEST_CASE_METHOD(Patch_Test, "Patch_Test-UnalignedCodeForward") {
 }
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-UnalignedCodeBackward") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -36,7 +36,7 @@ TEST_CASE_METHOD(Patch_Test, "Patch_Test-UnalignedCodeBackward") {
 
 #ifndef QBDI_PLATFORM_MACOS
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-LoopCode") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);

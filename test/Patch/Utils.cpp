@@ -16,20 +16,29 @@
  * limitations under the License.
  */
 
+#include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+
+#include <catch2/catch_get_random_seed.hpp>
 
 #include "Utils.h"
 
-QBDI::rword seed_random() {
+unsigned int seed_random() {
+  static bool setStaticSeed = false;
+  static unsigned int staticSeed = 0;
 
-  unsigned int seed;
-  if (getenv("TEST_SEED")) {
-    seed = atoi(getenv("TEST_SEED"));
-  } else {
-    seed = rand();
+  if (!setStaticSeed) {
+    setStaticSeed = true;
+    if (getenv("TEST_SEED")) {
+      staticSeed = atoi(getenv("TEST_SEED"));
+    } else {
+      staticSeed = Catch::getSeed();
+    }
   }
-  srand(seed);
-  return seed;
+
+  srand(staticSeed);
+  return staticSeed;
 }
 
 QBDI::rword get_random() {

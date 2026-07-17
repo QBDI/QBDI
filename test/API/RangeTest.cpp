@@ -79,7 +79,7 @@ TEST_CASE("Range-UnitTest") {
 }
 
 TEST_CASE("Range-StateIntegrity") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   static const unsigned N = 100;
   std::vector<QBDI::Range<int>> testRanges;
   QBDI::RangeSet<int> rangeSet;
@@ -130,7 +130,7 @@ void randomPermutation(std::vector<T> &v) {
 }
 
 TEST_CASE("Range-Commutativity") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   static const unsigned N = 100;
   std::vector<QBDI::Range<int>> testRanges;
   QBDI::RangeSet<int> rangeSet;
@@ -162,7 +162,7 @@ TEST_CASE("Range-Commutativity") {
 }
 
 TEST_CASE("Range-Intersection") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   static const unsigned N = 100;
   QBDI::RangeSet<int> rangeSet1;
   QBDI::RangeSet<int> rangeSet2;
@@ -199,7 +199,7 @@ TEST_CASE("Range-Intersection") {
 }
 
 TEST_CASE("Range-IntersectionAndOverlaps") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   static const unsigned N = 100;
   std::vector<QBDI::Range<int>> testRanges;
 

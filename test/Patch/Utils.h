@@ -20,7 +20,7 @@
 
 #include "QBDI/State.h"
 
+unsigned int seed_random();
 QBDI::rword get_random();
-QBDI::rword seed_random();
 
 #endif /* UTILS_H */
