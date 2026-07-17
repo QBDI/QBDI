@@ -28,7 +28,7 @@
 #include "QBDI/Platform.h"
 #include "QBDI/Range.h"
 
-#define STACK_SIZE 4096
+#define STACK_SIZE 32768
 
 static void dummyFn() {}
 

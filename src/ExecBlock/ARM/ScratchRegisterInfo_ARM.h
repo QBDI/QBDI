@@ -25,7 +25,7 @@ class Patch;
 
 struct ScratchRegisterInfo {
   // Execution variable
-  CPUMode cpuMode;
+  CPUMode cpuMode = CPUMode::ARM;
 
   // WriteSequence variable
   const Patch *endSRPatch;
