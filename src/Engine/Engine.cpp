@@ -287,17 +287,21 @@ std::vector<Patch> Engine::patch(rword start) {
 
     // handle disassembly error
     if (not dstatus) {
-      QBDI_DEBUG("Bump into invalid instruction at address {:x}", address);
+      size_t sizeDump = start + sizeCode - address;
+      if (sizeDump > 16) {
+        sizeDump = 16;
+      }
+      QBDI_DEBUG(
+          "Bump into invalid instruction at address {:x} (CPUMode {}) ({:n})",
+          address, curCPUMode,
+          spdlog::to_hex(reinterpret_cast<uint8_t *>(address),
+                         reinterpret_cast<uint8_t *>(address + sizeDump)));
 
       // Current instruction is invalid, stop the basic block right here
       bool rollbackOK = patchRuleAssembly->earlyEnd(llvmcpu, basicBlock);
 
       // if fail to rollback or no Patch has been generated : fail
       if ((not rollbackOK) or (basicBlock.size() == 0)) {
-        size_t sizeDump = start + sizeCode - address;
-        if (sizeDump > 16) {
-          sizeDump = 16;
-        }
         QBDI_ABORT(
             "Disassembly error : fail to parse address 0x{:x} (CPUMode {}) "
             "({:n})",
