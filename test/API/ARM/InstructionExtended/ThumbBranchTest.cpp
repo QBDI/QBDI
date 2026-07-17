@@ -18,6 +18,11 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include "API/APITest.h"
+#include "MemAccessTestUtils_ARM.h"
+
+using QBDITestBatch2::checkAccess;
+using QBDITestBatch2::ExpectedMemoryAccess;
+using QBDITestBatch2::ExpectedMemoryAccesses;
 
 static constexpr QBDI::rword CPSR_Z = (1u << 30);
 
@@ -59,8 +64,17 @@ static void checkTbxCond(APITest &fixture, bool taken) {
       "mov r0, #0x2222\n"
       "tbxcond_end:\n";
 
+  bool seen = false;
   bool seenPost = false;
   fixture.vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  fixture.vm.addMnemonicCB("tBX", QBDI::PREINST,
+                           [&](QBDI::VMInstanceRef vmi,
+                               QBDI::GPRState *gprState,
+                               QBDI::FPRState *fprState) -> QBDI::VMAction {
+                             CHECK(vmi->getInstMemoryAccess().empty());
+                             seen = true;
+                             return QBDI::VMAction::CONTINUE;
+                           });
   fixture.vm.addMnemonicCB("tBX", QBDI::POSTINST,
                            [&](QBDI::VMInstanceRef vmi,
                                QBDI::GPRState *gprState,
@@ -76,6 +90,7 @@ static void checkTbxCond(APITest &fixture, bool taken) {
   bool ran = fixture.runOnASM(&retval, source, {}, QBDI::CPUMode::Thumb);
 
   CHECK(ran);
+  CHECK(seen);
   CHECK(seenPost);
   CHECK(retval == (taken ? 0x2222 : 0x1111));
 }
@@ -94,8 +109,9 @@ static void checkTblCond(APITest &fixture, bool taken) {
       "tblcond_end:\n";
 
   QBDI::rword expectedReturnAddr = 0;
-  bool seenPost = false;
   fixture.vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  ExpectedMemoryAccesses expectedPre{}, expectedPost{};
+  fixture.vm.addMnemonicCB("tBL", QBDI::PREINST, checkAccess, &expectedPre);
   fixture.vm.addMnemonicCB(
       "tBL", QBDI::PREINST,
       [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
@@ -105,15 +121,14 @@ static void checkTblCond(APITest &fixture, bool taken) {
         expectedReturnAddr = ia->address + ia->instSize;
         return QBDI::VMAction::CONTINUE;
       });
+  fixture.vm.addMnemonicCB("tBL", QBDI::POSTINST, checkAccess, &expectedPost);
   fixture.vm.addMnemonicCB("tBL", QBDI::POSTINST,
                            [&](QBDI::VMInstanceRef vmi,
                                QBDI::GPRState *gprState,
                                QBDI::FPRState *fprState) -> QBDI::VMAction {
-                             CHECK(vmi->getInstMemoryAccess().empty());
                              if (taken) {
                                CHECK(gprState->lr == (expectedReturnAddr | 1));
                              }
-                             seenPost = true;
                              return QBDI::VMAction::CONTINUE;
                            });
 
@@ -123,7 +138,8 @@ static void checkTblCond(APITest &fixture, bool taken) {
   bool ran = fixture.runOnASM(&retval, source, {}, QBDI::CPUMode::Thumb);
 
   CHECK(ran);
-  CHECK(seenPost);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
   CHECK(retval == (taken ? 0x4444 : 0x1111));
 }
 
@@ -136,25 +152,10 @@ static void checkTbcc(APITest &fixture, bool taken) {
       "mov r0, #0x2222\n"
       "tbcc_end:\n";
 
-  bool seen = false;
-  bool seenPost = false;
   fixture.vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-  fixture.vm.addMnemonicCB("tBcc", QBDI::PREINST,
-                           [&](QBDI::VMInstanceRef vmi,
-                               QBDI::GPRState *gprState,
-                               QBDI::FPRState *fprState) -> QBDI::VMAction {
-                             CHECK(vmi->getInstMemoryAccess().empty());
-                             seen = true;
-                             return QBDI::VMAction::CONTINUE;
-                           });
-  fixture.vm.addMnemonicCB("tBcc", QBDI::POSTINST,
-                           [&](QBDI::VMInstanceRef vmi,
-                               QBDI::GPRState *gprState,
-                               QBDI::FPRState *fprState) -> QBDI::VMAction {
-                             CHECK(vmi->getInstMemoryAccess().empty());
-                             seenPost = true;
-                             return QBDI::VMAction::CONTINUE;
-                           });
+  ExpectedMemoryAccesses expectedPre{}, expectedPost{};
+  fixture.vm.addMnemonicCB("tBcc", QBDI::PREINST, checkAccess, &expectedPre);
+  fixture.vm.addMnemonicCB("tBcc", QBDI::POSTINST, checkAccess, &expectedPost);
 
   setZ(fixture, taken);
 
@@ -162,33 +163,19 @@ static void checkTbcc(APITest &fixture, bool taken) {
   bool ran = fixture.runOnASM(&retval, source, {}, QBDI::CPUMode::Thumb);
 
   CHECK(ran);
-  CHECK(seen);
-  CHECK(seenPost);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
   CHECK(retval == (taken ? 0x2222 : 0x1111));
 }
 
 static void checkRegBranchThumb(APITest &fixture, const char *mnemonic,
                                 const char *source, QBDI::rword r0Taken,
                                 QBDI::rword r0NotTaken, bool taken) {
-  bool seen = false;
-  bool seenPost = false;
   fixture.vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
-  fixture.vm.addMnemonicCB(mnemonic, QBDI::PREINST,
-                           [&](QBDI::VMInstanceRef vmi,
-                               QBDI::GPRState *gprState,
-                               QBDI::FPRState *fprState) -> QBDI::VMAction {
-                             CHECK(vmi->getInstMemoryAccess().empty());
-                             seen = true;
-                             return QBDI::VMAction::CONTINUE;
-                           });
-  fixture.vm.addMnemonicCB(mnemonic, QBDI::POSTINST,
-                           [&](QBDI::VMInstanceRef vmi,
-                               QBDI::GPRState *gprState,
-                               QBDI::FPRState *fprState) -> QBDI::VMAction {
-                             CHECK(vmi->getInstMemoryAccess().empty());
-                             seenPost = true;
-                             return QBDI::VMAction::CONTINUE;
-                           });
+  ExpectedMemoryAccesses expectedPre{}, expectedPost{};
+  fixture.vm.addMnemonicCB(mnemonic, QBDI::PREINST, checkAccess, &expectedPre);
+  fixture.vm.addMnemonicCB(mnemonic, QBDI::POSTINST, checkAccess,
+                           &expectedPost);
 
   QBDI::GPRState *state = fixture.vm.getGPRState();
   state->r0 = taken ? r0Taken : r0NotTaken;
@@ -198,8 +185,8 @@ static void checkRegBranchThumb(APITest &fixture, const char *mnemonic,
   bool ran = fixture.runOnASM(&retval, source, {}, QBDI::CPUMode::Thumb);
 
   CHECK(ran);
-  CHECK(seen);
-  CHECK(seenPost);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
   CHECK(retval == (taken ? 0x2222 : 0x1111));
 }
 
@@ -253,24 +240,22 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_Thumb-tbl") {
       "tbl_end:\n";
 
   QBDI::rword expectedReturnAddr = 0;
-  bool seen = false, seenPost = false;
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  ExpectedMemoryAccesses expectedPre{}, expectedPost{};
+  vm.addMnemonicCB("tBL", QBDI::PREINST, checkAccess, &expectedPre);
   vm.addMnemonicCB("tBL", QBDI::PREINST,
                    [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
                        QBDI::FPRState *fprState) -> QBDI::VMAction {
-                     CHECK(vmi->getInstMemoryAccess().empty());
                      const QBDI::InstAnalysis *ia =
                          vmi->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION);
                      expectedReturnAddr = ia->address + ia->instSize;
-                     seen = true;
                      return QBDI::VMAction::CONTINUE;
                    });
+  vm.addMnemonicCB("tBL", QBDI::POSTINST, checkAccess, &expectedPost);
   vm.addMnemonicCB("tBL", QBDI::POSTINST,
                    [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
                        QBDI::FPRState *fprState) -> QBDI::VMAction {
-                     CHECK(vmi->getInstMemoryAccess().empty());
                      CHECK(gprState->lr == (expectedReturnAddr | 1));
-                     seenPost = true;
                      return QBDI::VMAction::CONTINUE;
                    });
 
@@ -278,8 +263,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_Thumb-tbl") {
   bool ran = runOnASM(&retval, source, {}, QBDI::CPUMode::Thumb);
 
   CHECK(ran);
-  CHECK(seen);
-  CHECK(seenPost);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
   CHECK(retval == 0x4444);
   CHECK(expectedReturnAddr != 0);
 }

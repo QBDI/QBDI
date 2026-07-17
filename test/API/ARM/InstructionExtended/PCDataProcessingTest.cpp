@@ -41,8 +41,18 @@ static void checkMovPcRCond(APITest &fixture, bool taken) {
       "mov r0, #0x2222\n"
       "movpccond_end:\n";
 
-  bool seenPost = false;
+  bool seenPre = false, seenPost = false;
   fixture.vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  fixture.vm.addMnemonicCB("MOVr", QBDI::PREINST,
+                           [&](QBDI::VMInstanceRef vmi,
+                               QBDI::GPRState *gprState,
+                               QBDI::FPRState *fprState) -> QBDI::VMAction {
+                             if (!seenPre) {
+                               CHECK(vmi->getInstMemoryAccess().empty());
+                               seenPre = true;
+                             }
+                             return QBDI::VMAction::CONTINUE;
+                           });
   fixture.vm.addMnemonicCB("MOVr", QBDI::POSTINST,
                            [&](QBDI::VMInstanceRef vmi,
                                QBDI::GPRState *gprState,
@@ -60,6 +70,7 @@ static void checkMovPcRCond(APITest &fixture, bool taken) {
   bool ran = fixture.runOnASM(&retval, source);
 
   CHECK(ran);
+  CHECK(seenPre);
   CHECK(seenPost);
   CHECK(retval == (taken ? 0x2222 : 0x1111));
 }
@@ -74,8 +85,16 @@ static void checkAddPcPcRCond(APITest &fixture, bool taken) {
       "mov r0, #0x2222\n"
       "addpccond_end:\n";
 
-  bool seenPost = false;
+  bool seenPre = false, seenPost = false;
   fixture.vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  fixture.vm.addMnemonicCB("ADDrr", QBDI::PREINST,
+                           [&](QBDI::VMInstanceRef vmi,
+                               QBDI::GPRState *gprState,
+                               QBDI::FPRState *fprState) -> QBDI::VMAction {
+                             CHECK(vmi->getInstMemoryAccess().empty());
+                             seenPre = true;
+                             return QBDI::VMAction::CONTINUE;
+                           });
   fixture.vm.addMnemonicCB("ADDrr", QBDI::POSTINST,
                            [&](QBDI::VMInstanceRef vmi,
                                QBDI::GPRState *gprState,
@@ -91,6 +110,7 @@ static void checkAddPcPcRCond(APITest &fixture, bool taken) {
   bool ran = fixture.runOnASM(&retval, source);
 
   CHECK(ran);
+  CHECK(seenPre);
   CHECK(seenPost);
   CHECK(retval == (taken ? 0x2222 : 0x1111));
 }
@@ -295,8 +315,15 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_ARM-mov_pc_r") {
 TEST_CASE_METHOD(APITest, "InstructionExtendedTest_ARM-mov_r_pc") {
   const char source[] = "mov r1, pc\n";
 
-  bool seen = false;
+  bool seenPre = false, seen = false;
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  vm.addMnemonicCB("MOVr", QBDI::PREINST,
+                   [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
+                       QBDI::FPRState *fprState) -> QBDI::VMAction {
+                     CHECK(vmi->getInstMemoryAccess().empty());
+                     seenPre = true;
+                     return QBDI::VMAction::CONTINUE;
+                   });
   vm.addMnemonicCB("MOVr", QBDI::POSTINST,
                    [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
                        QBDI::FPRState *fprState) -> QBDI::VMAction {
@@ -312,6 +339,7 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_ARM-mov_r_pc") {
   bool ran = runOnASM(&retval, source);
 
   CHECK(ran);
+  CHECK(seenPre);
   CHECK(seen);
 }
 
@@ -410,8 +438,15 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_Thumb-tadr") {
       "tadr_target:\n"
       "mov r1, #0x2222\n";
 
-  bool seen = false;
+  bool seenPre = false, seen = false;
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  vm.addMnemonicCB("t2ADR", QBDI::PREINST,
+                   [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
+                       QBDI::FPRState *fprState) -> QBDI::VMAction {
+                     CHECK(vmi->getInstMemoryAccess().empty());
+                     seenPre = true;
+                     return QBDI::VMAction::CONTINUE;
+                   });
   vm.addMnemonicCB("t2ADR", QBDI::POSTINST,
                    [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
                        QBDI::FPRState *fprState) -> QBDI::VMAction {
@@ -424,5 +459,6 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_Thumb-tadr") {
   bool ran = runOnASM(&retval, source, {}, QBDI::CPUMode::Thumb);
 
   CHECK(ran);
+  CHECK(seenPre);
   CHECK(seen);
 }

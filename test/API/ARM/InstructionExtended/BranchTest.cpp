@@ -18,6 +18,11 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include "API/APITest.h"
+#include "MemAccessTestUtils_ARM.h"
+
+using QBDITestBatch2::checkAccess;
+using QBDITestBatch2::ExpectedMemoryAccess;
+using QBDITestBatch2::ExpectedMemoryAccesses;
 
 static constexpr QBDI::rword CPSR_Z = (1u << 30);
 
@@ -85,8 +90,17 @@ static void checkBxRetCond(APITest &fixture, bool taken) {
       "mov lr, r1\n"
       "retcond_end:\n";
 
+  bool seen = false;
   bool seenPost = false;
   fixture.vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  fixture.vm.addMnemonicCB("BX_RET", QBDI::PREINST,
+                           [&](QBDI::VMInstanceRef vmi,
+                               QBDI::GPRState *gprState,
+                               QBDI::FPRState *fprState) -> QBDI::VMAction {
+                             CHECK(vmi->getInstMemoryAccess().empty());
+                             seen = true;
+                             return QBDI::VMAction::CONTINUE;
+                           });
   fixture.vm.addMnemonicCB("BX_RET", QBDI::POSTINST,
                            [&](QBDI::VMInstanceRef vmi,
                                QBDI::GPRState *gprState,
@@ -102,6 +116,7 @@ static void checkBxRetCond(APITest &fixture, bool taken) {
   bool ran = fixture.runOnASM(&retval, source);
 
   CHECK(ran);
+  CHECK(seen);
   CHECK(seenPost);
   CHECK(retval == (taken ? 0x2222 : 0x1111));
 }
@@ -116,8 +131,17 @@ static void checkBxCond(APITest &fixture, bool taken) {
       "mov r0, #0x2222\n"
       "bxcond_end:\n";
 
+  bool seen = false;
   bool seenPost = false;
   fixture.vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  fixture.vm.addMnemonicCB("BX", QBDI::PREINST,
+                           [&](QBDI::VMInstanceRef vmi,
+                               QBDI::GPRState *gprState,
+                               QBDI::FPRState *fprState) -> QBDI::VMAction {
+                             CHECK(vmi->getInstMemoryAccess().empty());
+                             seen = true;
+                             return QBDI::VMAction::CONTINUE;
+                           });
   fixture.vm.addMnemonicCB("BX", QBDI::POSTINST,
                            [&](QBDI::VMInstanceRef vmi,
                                QBDI::GPRState *gprState,
@@ -133,6 +157,7 @@ static void checkBxCond(APITest &fixture, bool taken) {
   bool ran = fixture.runOnASM(&retval, source);
 
   CHECK(ran);
+  CHECK(seen);
   CHECK(seenPost);
   CHECK(retval == (taken ? 0x2222 : 0x1111));
 }
@@ -151,8 +176,9 @@ static void checkBlxCond(APITest &fixture, bool taken) {
       "blxcond_end:\n";
 
   QBDI::rword expectedReturnAddr = 0;
-  bool seenPost = false;
   fixture.vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  ExpectedMemoryAccesses expectedPre{}, expectedPost{};
+  fixture.vm.addMnemonicCB("BLX", QBDI::PREINST, checkAccess, &expectedPre);
   fixture.vm.addMnemonicCB(
       "BLX", QBDI::PREINST,
       [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
@@ -162,15 +188,14 @@ static void checkBlxCond(APITest &fixture, bool taken) {
         expectedReturnAddr = ia->address + ia->instSize;
         return QBDI::VMAction::CONTINUE;
       });
+  fixture.vm.addMnemonicCB("BLX", QBDI::POSTINST, checkAccess, &expectedPost);
   fixture.vm.addMnemonicCB("BLX", QBDI::POSTINST,
                            [&](QBDI::VMInstanceRef vmi,
                                QBDI::GPRState *gprState,
                                QBDI::FPRState *fprState) -> QBDI::VMAction {
-                             CHECK(vmi->getInstMemoryAccess().empty());
                              if (taken) {
                                CHECK(gprState->lr == expectedReturnAddr);
                              }
-                             seenPost = true;
                              return QBDI::VMAction::CONTINUE;
                            });
 
@@ -180,7 +205,8 @@ static void checkBlxCond(APITest &fixture, bool taken) {
   bool ran = fixture.runOnASM(&retval, source);
 
   CHECK(ran);
-  CHECK(seenPost);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
   CHECK(retval == (taken ? 0x3333 : 0x1111));
 }
 
@@ -197,8 +223,9 @@ static void checkBlCond(APITest &fixture, bool taken) {
       "blcond_end:\n";
 
   QBDI::rword expectedReturnAddr = 0;
-  bool seenPost = false;
   fixture.vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  ExpectedMemoryAccesses expectedPre{}, expectedPost{};
+  fixture.vm.addMnemonicCB("BL", QBDI::PREINST, checkAccess, &expectedPre);
   fixture.vm.addMnemonicCB(
       "BL", QBDI::PREINST,
       [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
@@ -208,15 +235,14 @@ static void checkBlCond(APITest &fixture, bool taken) {
         expectedReturnAddr = ia->address + ia->instSize;
         return QBDI::VMAction::CONTINUE;
       });
+  fixture.vm.addMnemonicCB("BL", QBDI::POSTINST, checkAccess, &expectedPost);
   fixture.vm.addMnemonicCB("BL", QBDI::POSTINST,
                            [&](QBDI::VMInstanceRef vmi,
                                QBDI::GPRState *gprState,
                                QBDI::FPRState *fprState) -> QBDI::VMAction {
-                             CHECK(vmi->getInstMemoryAccess().empty());
                              if (taken) {
                                CHECK(gprState->lr == expectedReturnAddr);
                              }
-                             seenPost = true;
                              return QBDI::VMAction::CONTINUE;
                            });
 
@@ -226,7 +252,8 @@ static void checkBlCond(APITest &fixture, bool taken) {
   bool ran = fixture.runOnASM(&retval, source);
 
   CHECK(ran);
-  CHECK(seenPost);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
   CHECK(retval == (taken ? 0x4444 : 0x1111));
 }
 
@@ -320,28 +347,22 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_ARM-blx") {
       "blx_end:\n";
 
   QBDI::rword expectedReturnAddr = 0;
-  bool seen = false;
-  bool seenPost = false;
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  ExpectedMemoryAccesses expectedPre{}, expectedPost{};
+  vm.addMnemonicCB("BLX", QBDI::PREINST, checkAccess, &expectedPre);
   vm.addMnemonicCB("BLX", QBDI::PREINST,
                    [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
                        QBDI::FPRState *fprState) -> QBDI::VMAction {
-                     CHECK(vmi->getInstMemoryAccess().empty());
                      const QBDI::InstAnalysis *ia =
                          vmi->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION);
                      expectedReturnAddr = ia->address + ia->instSize;
-                     seen = true;
                      return QBDI::VMAction::CONTINUE;
                    });
+  vm.addMnemonicCB("BLX", QBDI::POSTINST, checkAccess, &expectedPost);
   vm.addMnemonicCB("BLX", QBDI::POSTINST,
                    [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
                        QBDI::FPRState *fprState) -> QBDI::VMAction {
-                     CHECK(vmi->getInstMemoryAccess().empty());
-                     const QBDI::InstAnalysis *ia =
-                         vmi->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION);
-                     expectedReturnAddr = ia->address + ia->instSize;
                      CHECK(gprState->lr == expectedReturnAddr);
-                     seenPost = true;
                      return QBDI::VMAction::CONTINUE;
                    });
 
@@ -349,8 +370,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_ARM-blx") {
   bool ran = runOnASM(&retval, source);
 
   CHECK(ran);
-  CHECK(seen);
-  CHECK(seenPost);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
   CHECK(retval == 0x3333);
   CHECK(expectedReturnAddr != 0);
 }
@@ -367,24 +388,22 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_ARM-bl") {
       "bl_end:\n";
 
   QBDI::rword expectedReturnAddr = 0;
-  bool seen = false, seenPost = false;
   vm.recordMemoryAccess(QBDI::MEMORY_READ_WRITE);
+  ExpectedMemoryAccesses expectedPre{}, expectedPost{};
+  vm.addMnemonicCB("BL", QBDI::PREINST, checkAccess, &expectedPre);
   vm.addMnemonicCB("BL", QBDI::PREINST,
                    [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
                        QBDI::FPRState *fprState) -> QBDI::VMAction {
-                     CHECK(vmi->getInstMemoryAccess().empty());
                      const QBDI::InstAnalysis *ia =
                          vmi->getInstAnalysis(QBDI::ANALYSIS_INSTRUCTION);
                      expectedReturnAddr = ia->address + ia->instSize;
-                     seen = true;
                      return QBDI::VMAction::CONTINUE;
                    });
+  vm.addMnemonicCB("BL", QBDI::POSTINST, checkAccess, &expectedPost);
   vm.addMnemonicCB("BL", QBDI::POSTINST,
                    [&](QBDI::VMInstanceRef vmi, QBDI::GPRState *gprState,
                        QBDI::FPRState *fprState) -> QBDI::VMAction {
-                     CHECK(vmi->getInstMemoryAccess().empty());
                      CHECK(gprState->lr == expectedReturnAddr);
-                     seenPost = true;
                      return QBDI::VMAction::CONTINUE;
                    });
 
@@ -392,8 +411,8 @@ TEST_CASE_METHOD(APITest, "InstructionExtendedTest_ARM-bl") {
   bool ran = runOnASM(&retval, source);
 
   CHECK(ran);
-  CHECK(seen);
-  CHECK(seenPost);
+  CHECK(expectedPre.see);
+  CHECK(expectedPost.see);
   CHECK(retval == 0x4444);
   CHECK(expectedReturnAddr != 0);
 }
