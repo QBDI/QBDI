@@ -408,7 +408,7 @@ GetWrittenValue::generate(const Patch &patch, TempManager &temp_manager) const {
     case 3: {
       Reg orRegister = temp_manager.getRegForTemp(Temp(0xffff));
       return conv_unique<RelocatableInst>(
-          Ldrh(tmpRegister, addrRegister, 0), Ldrb(orRegister, addrRegister, 2),
+          Ldrb(orRegister, addrRegister, 2), Ldrh(tmpRegister, addrRegister, 0),
           Orrs(tmpRegister, tmpRegister, orRegister, 16));
     }
     case 4:
@@ -416,7 +416,7 @@ GetWrittenValue::generate(const Patch &patch, TempManager &temp_manager) const {
     case 6: {
       Reg orRegister = temp_manager.getRegForTemp(Temp(0xffff));
       return conv_unique<RelocatableInst>(
-          Ldrw(tmpRegister, addrRegister, 0), Ldrh(orRegister, addrRegister, 4),
+          Ldrh(orRegister, addrRegister, 4), Ldrw(tmpRegister, addrRegister, 0),
           Orrs(tmpRegister, tmpRegister, orRegister, 32));
     }
     case 8:
