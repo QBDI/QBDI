@@ -85,6 +85,10 @@ RelocatableInst::UniquePtrVec ADDR_REG_FN(const Patch &patch, Reg dest,
 // address base in 1st operand
 constexpr unsigned ADDR_REG_1_TABLE[] = {
     // clang-format off
+    llvm::ARM::FLDMXIA,
+    llvm::ARM::FLDMXIA_UPD,
+    llvm::ARM::FSTMXIA,
+    llvm::ARM::FSTMXIA_UPD,
     llvm::ARM::LDMIA,
     llvm::ARM::LDMIA_UPD,
     llvm::ARM::STMIA,
@@ -675,6 +679,29 @@ RelocatableInst::UniquePtrVec ADDR_REG_1_DYN_FN(const Patch &patch, Reg dest,
   }
 }
 
+// address base in 1st operand - dynamique argument size - 4 (no PC)
+constexpr unsigned ADDR_REG_1_DYN_MIN_4_TABLE[] = {
+    // clang-format off
+    llvm::ARM::FLDMXDB_UPD,
+    llvm::ARM::FSTMXDB_UPD,
+    // clang-format on
+};
+
+constexpr size_t ADDR_REG_1_DYN_MIN_4_SIZE =
+    sizeof(ADDR_REG_1_DYN_MIN_4_TABLE) / sizeof(unsigned);
+
+RelocatableInst::UniquePtrVec
+ADDR_REG_1_DYN_FN_MIN_4(const Patch &patch, Reg dest, bool writeAccess) {
+  const LLVMCPU &llvmcpu = *patch.llvmcpu;
+  const llvm::MCInst &inst = patch.metadata.inst;
+
+  if (writeAccess) {
+    return ADDR_REG_PLUS_FN(patch, dest, 0, -getWriteSize(inst, llvmcpu) - 4);
+  } else {
+    return ADDR_REG_PLUS_FN(patch, dest, 0, -getReadSize(inst, llvmcpu) - 4);
+  }
+}
+
 // address base in 1st operand - dynamique argument size + 4 (no PC)
 constexpr unsigned ADDR_REG_1_DYN_PLUS4_TABLE[] = {
     // clang-format off
@@ -730,8 +757,12 @@ RelocatableInst::UniquePtrVec ADDR_REG_SIMM_FN(const Patch &patch, Reg dest,
   }
   if (addrReg == llvm::ARM::PC) {
     if (llvmcpu == CPUMode::Thumb) {
+      rword pc = address + 4;
+      if (address % 4 == 2) {
+        pc -= 2;
+      }
       return conv_unique<RelocatableInst>(
-          LoadImm::unique(dest, Constant(address + 4 + offset)));
+          LoadImm::unique(dest, Constant(pc + offset)));
     } else {
       return conv_unique<RelocatableInst>(
           LoadImm::unique(dest, Constant(address + 8 + offset)));
@@ -1344,7 +1375,11 @@ RelocatableInst::UniquePtrVec ADDR_REG_IMMSHIFT_FN(const Patch &patch, Reg dest,
 
   if (addrReg == llvm::ARM::PC) {
     if (llvmcpu == CPUMode::Thumb) {
-      reloc.push_back(LoadImm::unique(dest, address + 4));
+      rword pc = address + 4;
+      if (address % 4 == 2) {
+        pc -= 2;
+      }
+      reloc.push_back(LoadImm::unique(dest, pc));
     } else {
       reloc.push_back(LoadImm::unique(dest, address + 8));
     }
@@ -1525,7 +1560,7 @@ ADDR_REG_ALIGNPC_OFF_2_FN(const Patch &patch, Reg dest, bool writeAccess) {
 }
 
 struct MemoryAccessInfoArray {
-  AddressGenFn *addrFn[28] = {};
+  AddressGenFn *addrFn[29] = {};
   uint8_t addrArr[llvm::ARM::INSTRUCTION_LIST_END] = {0};
 
   constexpr void addData(size_t index, const unsigned insts[],
@@ -1552,6 +1587,8 @@ struct MemoryAccessInfoArray {
             ADDR_REG_1_PLUS4_FN);
     addData(index++, ADDR_REG_1_DYN_TABLE, ADDR_REG_1_DYN_SIZE,
             ADDR_REG_1_DYN_FN);
+    addData(index++, ADDR_REG_1_DYN_MIN_4_TABLE, ADDR_REG_1_DYN_MIN_4_SIZE,
+            ADDR_REG_1_DYN_FN_MIN_4);
     addData(index++, ADDR_REG_1_DYN_PLUS4_TABLE, ADDR_REG_1_DYN_PLUS4_SIZE,
             ADDR_REG_1_DYN_PLUS4_FN);
     addData(index++, ADDR_REG_1_SIMM_2_TABLE, ADDR_REG_1_SIMM_2_SIZE,
@@ -1613,6 +1650,8 @@ int checkTable() {
       {ADDR_REG_6_TABLE, ADDR_REG_6_SIZE, ADDR_REG_6_FN},
       {ADDR_REG_1_PLUS4_TABLE, ADDR_REG_1_PLUS4_SIZE, ADDR_REG_1_PLUS4_FN},
       {ADDR_REG_1_DYN_TABLE, ADDR_REG_1_DYN_SIZE, ADDR_REG_1_DYN_FN},
+      {ADDR_REG_1_DYN_MIN_4_TABLE, ADDR_REG_1_DYN_MIN_4_SIZE,
+       ADDR_REG_1_DYN_FN_MIN_4},
       {ADDR_REG_1_DYN_PLUS4_TABLE, ADDR_REG_1_DYN_PLUS4_SIZE,
        ADDR_REG_1_DYN_PLUS4_FN},
       {ADDR_REG_1_SIMM_2_TABLE, ADDR_REG_1_SIMM_2_SIZE, ADDR_REG_1_SIMM_2_FN},

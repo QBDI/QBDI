@@ -462,6 +462,9 @@ constexpr size_t READ_32_DYN_SIZE = sizeof(READ_32_DYN) / sizeof(unsigned);
 
 constexpr unsigned READ_64_DYN[] = {
     // clang-format off
+    llvm::ARM::FLDMXDB_UPD,
+    llvm::ARM::FLDMXIA,
+    llvm::ARM::FLDMXIA_UPD,
     llvm::ARM::VLDMDDB_UPD,
     llvm::ARM::VLDMDIA,
     llvm::ARM::VLDMDIA_UPD,
@@ -926,6 +929,9 @@ constexpr size_t WRITE_32_DYN_SIZE = sizeof(WRITE_32_DYN) / sizeof(unsigned);
 
 constexpr unsigned WRITE_64_DYN[] = {
     // clang-format off
+    llvm::ARM::FSTMXDB_UPD,
+    llvm::ARM::FSTMXIA,
+    llvm::ARM::FSTMXIA_UPD,
     llvm::ARM::VSTMDDB_UPD,
     llvm::ARM::VSTMDIA,
     llvm::ARM::VSTMDIA_UPD,
@@ -1349,6 +1355,9 @@ unsigned getReadSize(const llvm::MCInst &inst, const LLVMCPU &llvmcpu) {
       case llvm::ARM::LDMIA_UPD:
       case llvm::ARM::LDMIB:
       case llvm::ARM::LDMIB_UPD:
+      case llvm::ARM::FLDMXDB_UPD:
+      case llvm::ARM::FLDMXIA:
+      case llvm::ARM::FLDMXIA_UPD:
       case llvm::ARM::VLDMDDB_UPD:
       case llvm::ARM::VLDMDIA:
       case llvm::ARM::VLDMDIA_UPD:
@@ -1389,6 +1398,9 @@ unsigned getWriteSize(const llvm::MCInst &inst, const LLVMCPU &llvmcpu) {
       case llvm::ARM::STMIA_UPD:
       case llvm::ARM::STMIB:
       case llvm::ARM::STMIB_UPD:
+      case llvm::ARM::FSTMXDB_UPD:
+      case llvm::ARM::FSTMXIA:
+      case llvm::ARM::FSTMXIA_UPD:
       case llvm::ARM::VSTMDDB_UPD:
       case llvm::ARM::VSTMDIA:
       case llvm::ARM::VSTMDIA_UPD:
@@ -1505,6 +1517,9 @@ bool variadicOpsIsWrite(const llvm::MCInst &inst) {
     case llvm::ARM::LDMIA_UPD:
     case llvm::ARM::LDMIB:
     case llvm::ARM::LDMIB_UPD:
+    case llvm::ARM::FLDMXDB_UPD:
+    case llvm::ARM::FLDMXIA:
+    case llvm::ARM::FLDMXIA_UPD:
     case llvm::ARM::VLDMDDB_UPD:
     case llvm::ARM::VLDMDIA:
     case llvm::ARM::VLDMDIA_UPD:

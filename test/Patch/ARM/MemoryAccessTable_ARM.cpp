@@ -376,6 +376,9 @@ const std::set<unsigned> unsupportedInst{
 // instruction that reads memory but without mayLoad
 const std::set<unsigned> fixupRead{
     // clang-format off
+    FLDMXDB_UPD,
+    FLDMXIA,
+    FLDMXIA_UPD,
     t2LDRBT,
     t2LDRHT,
     t2LDRSBT,
@@ -389,6 +392,9 @@ const std::set<unsigned> fixupRead{
 // instruction that writes memory but without mayStore
 const std::set<unsigned> fixupWrite{
     // clang-format off
+    FSTMXDB_UPD,
+    FSTMXIA,
+    FSTMXIA_UPD,
     // clang-format on
 };
 

@@ -335,7 +335,9 @@ std::vector<PatchRule> getARMPatchRules(Options opts) {
     rules.emplace_back(
         Or::unique(conv_unique<PatchCondition>(
             OpIs::unique(llvm::ARM::LDREX), OpIs::unique(llvm::ARM::LDREXB),
-            OpIs::unique(llvm::ARM::LDREXD), OpIs::unique(llvm::ARM::LDREXH))),
+            OpIs::unique(llvm::ARM::LDREXD), OpIs::unique(llvm::ARM::LDREXH),
+            OpIs::unique(llvm::ARM::LDAEX), OpIs::unique(llvm::ARM::LDAEXB),
+            OpIs::unique(llvm::ARM::LDAEXD), OpIs::unique(llvm::ARM::LDAEXH))),
         conv_unique<PatchGenerator>(
             GetConstantMap::unique(Temp(0),
                                    std::map<unsigned, Constant>({
@@ -343,6 +345,10 @@ std::vector<PatchRule> getARMPatchRules(Options opts) {
                                        {llvm::ARM::LDREXH, Constant(2)},
                                        {llvm::ARM::LDREX, Constant(4)},
                                        {llvm::ARM::LDREXD, Constant(8)},
+                                       {llvm::ARM::LDAEXB, Constant(1)},
+                                       {llvm::ARM::LDAEXH, Constant(2)},
+                                       {llvm::ARM::LDAEX, Constant(4)},
+                                       {llvm::ARM::LDAEXD, Constant(8)},
                                    })),
             WriteTempCC::unique(
                 Temp(0),
@@ -357,7 +363,9 @@ std::vector<PatchRule> getARMPatchRules(Options opts) {
     rules.emplace_back(
         Or::unique(conv_unique<PatchCondition>(
             OpIs::unique(llvm::ARM::STREXB), OpIs::unique(llvm::ARM::STREXH),
-            OpIs::unique(llvm::ARM::STREX), OpIs::unique(llvm::ARM::STREXD))),
+            OpIs::unique(llvm::ARM::STREX), OpIs::unique(llvm::ARM::STREXD),
+            OpIs::unique(llvm::ARM::STLEXB), OpIs::unique(llvm::ARM::STLEXH),
+            OpIs::unique(llvm::ARM::STLEX), OpIs::unique(llvm::ARM::STLEXD))),
         conv_unique<PatchGenerator>(
             CondExclusifLoad::unique(Temp(0), Temp(1), Temp(2)),
             ModifyInstruction::unique(InstTransform::UniquePtrVec()),
@@ -374,7 +382,9 @@ std::vector<PatchRule> getARMPatchRules(Options opts) {
     rules.emplace_back(
         Or::unique(conv_unique<PatchCondition>(
             OpIs::unique(llvm::ARM::STREXB), OpIs::unique(llvm::ARM::STREXH),
-            OpIs::unique(llvm::ARM::STREX), OpIs::unique(llvm::ARM::STREXD))),
+            OpIs::unique(llvm::ARM::STREX), OpIs::unique(llvm::ARM::STREXD),
+            OpIs::unique(llvm::ARM::STLEXB), OpIs::unique(llvm::ARM::STLEXH),
+            OpIs::unique(llvm::ARM::STLEX), OpIs::unique(llvm::ARM::STLEXD))),
         conv_unique<PatchGenerator>(
             ModifyInstruction::unique(InstTransform::UniquePtrVec()),
             WriteOperandCC::unique(Operand(0),
@@ -1190,13 +1200,18 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
     rules.emplace_back(
         Or::unique(
             conv_unique<PatchCondition>(OpIs::unique(llvm::ARM::t2LDREXB),
-                                        OpIs::unique(llvm::ARM::t2LDREXH))),
+                                        OpIs::unique(llvm::ARM::t2LDREXH),
+                                        OpIs::unique(llvm::ARM::t2LDAEXB),
+                                        OpIs::unique(llvm::ARM::t2LDAEXH),
+                                        OpIs::unique(llvm::ARM::t2LDAEX))),
         conv_unique<PatchGenerator>(
-            GetConstant::unique(Temp(0), Constant(1)),
             GetConstantMap::unique(Temp(0),
                                    std::map<unsigned, Constant>({
                                        {llvm::ARM::t2LDREXB, Constant(1)},
                                        {llvm::ARM::t2LDREXH, Constant(2)},
+                                       {llvm::ARM::t2LDAEXB, Constant(1)},
+                                       {llvm::ARM::t2LDAEXH, Constant(2)},
+                                       {llvm::ARM::t2LDAEX, Constant(4)},
                                    })),
             WriteTempCC::unique(
                 Temp(0),
@@ -1225,7 +1240,9 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
     /* Rule #31: exclusive load 2 registers
      */
     rules.emplace_back(
-        OpIs::unique(llvm::ARM::t2LDREXD),
+        Or::unique(
+            conv_unique<PatchCondition>(OpIs::unique(llvm::ARM::t2LDREXD),
+                                        OpIs::unique(llvm::ARM::t2LDAEXD))),
         conv_unique<PatchGenerator>(
             GetConstant::unique(Temp(0), Constant(8)),
             WriteTempCC::unique(
@@ -1243,7 +1260,10 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
         Or::unique(conv_unique<PatchCondition>(
             OpIs::unique(llvm::ARM::t2STREXB),
             OpIs::unique(llvm::ARM::t2STREXH), OpIs::unique(llvm::ARM::t2STREX),
-            OpIs::unique(llvm::ARM::t2STREXD))),
+            OpIs::unique(llvm::ARM::t2STREXD),
+            OpIs::unique(llvm::ARM::t2STLEXB),
+            OpIs::unique(llvm::ARM::t2STLEXH), OpIs::unique(llvm::ARM::t2STLEX),
+            OpIs::unique(llvm::ARM::t2STLEXD))),
         conv_unique<PatchGenerator>(
             CondExclusifLoad::unique(Temp(0), Temp(1), Temp(2)),
             ItPatch::unique(false),
@@ -1262,7 +1282,10 @@ std::vector<PatchRule> getThumbPatchRules(Options opts) {
         Or::unique(conv_unique<PatchCondition>(
             OpIs::unique(llvm::ARM::t2STREXB),
             OpIs::unique(llvm::ARM::t2STREXH), OpIs::unique(llvm::ARM::t2STREX),
-            OpIs::unique(llvm::ARM::t2STREXD))),
+            OpIs::unique(llvm::ARM::t2STREXD),
+            OpIs::unique(llvm::ARM::t2STLEXB),
+            OpIs::unique(llvm::ARM::t2STLEXH), OpIs::unique(llvm::ARM::t2STLEX),
+            OpIs::unique(llvm::ARM::t2STLEXD))),
         conv_unique<PatchGenerator>(
             ItPatch::unique(false),
             ModifyInstruction::unique(InstTransform::UniquePtrVec()),

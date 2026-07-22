@@ -1485,18 +1485,26 @@ CondExclusifLoad::generate(const Patch &patch,
   switch (patch.metadata.inst.getOpcode()) {
     case llvm::ARM::STREXB:
     case llvm::ARM::t2STREXB:
+    case llvm::ARM::STLEXB:
+    case llvm::ARM::t2STLEXB:
       expectedSize = 1;
       break;
     case llvm::ARM::STREXH:
     case llvm::ARM::t2STREXH:
+    case llvm::ARM::STLEXH:
+    case llvm::ARM::t2STLEXH:
       expectedSize = 2;
       break;
     case llvm::ARM::STREX:
     case llvm::ARM::t2STREX:
+    case llvm::ARM::STLEX:
+    case llvm::ARM::t2STLEX:
       expectedSize = 4;
       break;
     case llvm::ARM::STREXD:
     case llvm::ARM::t2STREXD:
+    case llvm::ARM::STLEXD:
+    case llvm::ARM::t2STLEXD:
       expectedSize = 8;
       break;
     default:
