@@ -1253,16 +1253,16 @@ GetReadValue::generate(const Patch &patch, TempManager &temp_manager) const {
                          patch);
       if (isARM) {
         return conv_unique<RelocatableInst>(
-            NoReloc::unique(ldrb(tmpRegister, addrRegister, 0)),
+            NoReloc::unique(ldrh(tmpRegister, addrRegister, 0)),
             NoReloc::unique(ldrb(addrRegister, addrRegister, 2)),
             NoReloc::unique(
-                orrshift(tmpRegister, tmpRegister, addrRegister, 2)));
+                orrshift(tmpRegister, tmpRegister, addrRegister, 16)));
       } else {
         return conv_unique<RelocatableInst>(
-            NoReloc::unique(t2ldrb(tmpRegister, addrRegister, 0)),
+            NoReloc::unique(t2ldrh(tmpRegister, addrRegister, 0)),
             NoReloc::unique(t2ldrb(addrRegister, addrRegister, 2)),
             NoReloc::unique(
-                t2orrshift(tmpRegister, tmpRegister, addrRegister, 2)));
+                t2orrshift(tmpRegister, tmpRegister, addrRegister, 16)));
       }
     }
     case 4:
@@ -1372,16 +1372,16 @@ GetWrittenValue::generate(const Patch &patch, TempManager &temp_manager) const {
                          patch);
       if (isARM) {
         return conv_unique<RelocatableInst>(
-            NoReloc::unique(ldrb(tmpRegister, addrRegister, 0)),
+            NoReloc::unique(ldrh(tmpRegister, addrRegister, 0)),
             NoReloc::unique(ldrb(addrRegister, addrRegister, 2)),
             NoReloc::unique(
-                orrshift(tmpRegister, tmpRegister, addrRegister, 2)));
+                orrshift(tmpRegister, tmpRegister, addrRegister, 16)));
       } else {
         return conv_unique<RelocatableInst>(
-            NoReloc::unique(t2ldrb(tmpRegister, addrRegister, 0)),
+            NoReloc::unique(t2ldrh(tmpRegister, addrRegister, 0)),
             NoReloc::unique(t2ldrb(addrRegister, addrRegister, 2)),
             NoReloc::unique(
-                t2orrshift(tmpRegister, tmpRegister, addrRegister, 2)));
+                t2orrshift(tmpRegister, tmpRegister, addrRegister, 16)));
       }
     }
     case 4:
