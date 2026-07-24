@@ -32,6 +32,20 @@ namespace QBDI {
 class LLVMCPU;
 class Patch;
 
+/*! Result of PatchRuleAssemblyBase::generate()
+ */
+enum class PatchRuleResult {
+  UNSUPPORTED,  /*!< No PatchRule matches this instruction, nothing was added
+                 *   to patchList
+                 */
+  VALID,        /*!< A patch was added to patchList, the basicBlock can
+                 *   continue with the next instruction
+                 */
+  VALID_END_BB, /*!< A patch was added to patchList, this instruction is the
+                 *   last of the basicBlock
+                 */
+};
+
 /*! The patchRule allows QBDI to apply property for an instruction to the next
  *  one (in the same basicblock).
  */
@@ -47,18 +61,25 @@ public:
 
   /*! Generate a patch for this MCInst
    *
-   * @param[in] inst      The instruction to instrument
-   * @param[in] address   The address of the instruction
-   * @param[in] instSize  The size of the instruction
-   * @param[in] llvmcpu   The CPU used for this instruction. The same CPU is
-   *                      used for all instruction in the same BB
-   * @param[in] patchList The list of patch generated
+   * @param[in] inst              The instruction to instrument
+   * @param[in] address           The address of the instruction
+   * @param[in] instSize          The size of the instruction
+   * @param[in] llvmcpu           The CPU used for this instruction. The same
+   *                              CPU is used for all instruction in the same
+   *                              BB
+   * @param[in] patchList         The list of patch generated
+   * @param[out] unsupportedReason When UNSUPPORTED is returned, set to a
+   *                              constant string explaining why this
+   *                              instruction isn't supported, or left
+   *                              untouched if no specific reason is known
    *
-   * @return  True if this instruction is the last of a basicBlock
+   * @return  UNSUPPORTED if no PatchRule matches this instruction, VALID_END_BB
+   *          if this instruction is the last of a basicBlock, VALID otherwise
    */
-  virtual bool generate(const llvm::MCInst &inst, rword address,
-                        uint32_t instSize, const LLVMCPU &llvmcpu,
-                        std::vector<Patch> &patchList) = 0;
+  virtual PatchRuleResult generate(const llvm::MCInst &inst, rword address,
+                                   uint32_t instSize, const LLVMCPU &llvmcpu,
+                                   std::vector<Patch> &patchList,
+                                   const char *&unsupportedReason) = 0;
 
   /*! Clean patchList if the basicBlock should be end early (ie: if error in the
    *  in the next instruction or read unmapped memory). This flush the pending

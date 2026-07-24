@@ -149,6 +149,11 @@ typedef struct QBDI_ALIGNED(8) {
                    */
   } localMonitor;
 
+  /* Set to 1 after a PACM instruction if followed by an instruction that
+   * may change behavior when preceded by a PACM instruction.
+   */
+  rword pacm;
+
 } GPRState;
 // SPHINX_AARCH64_GPRSTATE_END
 

@@ -204,6 +204,20 @@ llvm::MCInst branch(rword offset) {
   return inst;
 }
 
+llvm::MCInst cbz(RegLLVM reg, sword offset) {
+  QBDI_REQUIRE_ABORT(offset % 4 == 0,
+                     "offset = SignExtend(imm19:'00', 64); (current : {})",
+                     offset);
+  QBDI_REQUIRE_ABORT(-(1 << 20) <= offset and offset < (1 << 20),
+                     "offset = SignExtend(imm19:'00', 64); (current : {})",
+                     offset);
+  llvm::MCInst inst;
+  inst.setOpcode(llvm::AArch64::CBZX);
+  inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
+  inst.addOperand(llvm::MCOperand::createImm(offset / 4));
+  return inst;
+}
+
 llvm::MCInst tbz(RegLLVM reg, unsigned bit, sword offset) {
   QBDI_REQUIRE_ABORT(bit < 32, "bit must be in [0, 31] (current : {})", bit);
   QBDI_REQUIRE_ABORT(offset % 4 == 0,
@@ -673,6 +687,62 @@ llvm::MCInst autizb(RegLLVM reg) {
   return inst;
 }
 
+llvm::MCInst autiasppcr(RegLLVM reg) {
+  llvm::MCInst inst;
+  inst.setOpcode(llvm::AArch64::AUTIASPPCr);
+  inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
+  return inst;
+}
+
+llvm::MCInst autibsppcr(RegLLVM reg) {
+  llvm::MCInst inst;
+  inst.setOpcode(llvm::AArch64::AUTIBSPPCr);
+  inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
+  return inst;
+}
+
+llvm::MCInst autiasp() {
+  llvm::MCInst inst;
+  inst.setOpcode(llvm::AArch64::AUTIASP);
+  return inst;
+}
+
+llvm::MCInst autibsp() {
+  llvm::MCInst inst;
+  inst.setOpcode(llvm::AArch64::AUTIBSP);
+  return inst;
+}
+
+llvm::MCInst pacm() {
+  llvm::MCInst inst;
+  inst.setOpcode(llvm::AArch64::PACM);
+  return inst;
+}
+
+llvm::MCInst pacia1716() {
+  llvm::MCInst inst;
+  inst.setOpcode(llvm::AArch64::PACIA1716);
+  return inst;
+}
+
+llvm::MCInst pacib1716() {
+  llvm::MCInst inst;
+  inst.setOpcode(llvm::AArch64::PACIB1716);
+  return inst;
+}
+
+llvm::MCInst pacia171615() {
+  llvm::MCInst inst;
+  inst.setOpcode(llvm::AArch64::PACIA171615);
+  return inst;
+}
+
+llvm::MCInst pacib171615() {
+  llvm::MCInst inst;
+  inst.setOpcode(llvm::AArch64::PACIB171615);
+  return inst;
+}
+
 // =================================================
 
 RelocatableInst::UniquePtr Ld1PostInc(RegLLVM regs, RegLLVM base) {
@@ -722,6 +792,10 @@ RelocatableInst::UniquePtr Br(RegLLVM reg) { return NoReloc::unique(br(reg)); }
 
 RelocatableInst::UniquePtr Blr(RegLLVM reg) {
   return NoReloc::unique(blr(reg));
+}
+
+RelocatableInst::UniquePtr Cbz(RegLLVM reg, Constant offset) {
+  return NoReloc::unique(cbz(reg, offset));
 }
 
 RelocatableInst::UniquePtr Tbz(RegLLVM reg, unsigned bit, Constant offset) {
@@ -935,8 +1009,34 @@ RelocatableInst::UniquePtr Autiza(RegLLVM reg) {
   return NoReloc::unique(autiza(reg));
 }
 
+RelocatableInst::UniquePtr Autiasp() { return NoReloc::unique(autiasp()); }
+
+RelocatableInst::UniquePtr Autibsp() { return NoReloc::unique(autibsp()); }
+
+RelocatableInst::UniquePtr Pacm() { return NoReloc::unique(pacm()); }
+
+RelocatableInst::UniquePtr Pacia1716() { return NoReloc::unique(pacia1716()); }
+
+RelocatableInst::UniquePtr Pacib1716() { return NoReloc::unique(pacib1716()); }
+
+RelocatableInst::UniquePtr Pacia171615() {
+  return NoReloc::unique(pacia171615());
+}
+
+RelocatableInst::UniquePtr Pacib171615() {
+  return NoReloc::unique(pacib171615());
+}
+
 RelocatableInst::UniquePtr Autizb(RegLLVM reg) {
   return NoReloc::unique(autizb(reg));
+}
+
+RelocatableInst::UniquePtr AutiaSPPCr(RegLLVM reg) {
+  return NoReloc::unique(autiasppcr(reg));
+}
+
+RelocatableInst::UniquePtr AutibSPPCr(RegLLVM reg) {
+  return NoReloc::unique(autibsppcr(reg));
 }
 
 } // namespace QBDI

@@ -485,11 +485,10 @@ void init_binding_State(py::module_ &m) {
           "localMonitor : exclusive base address")
       .def_property(
           "localMonitor_enable",
-          [](const GPRState &t) {
-            return py::bool_(t.localMonitor.enable != 0);
-          },
-          [](GPRState &t, py::bool_ v) { t.localMonitor.enable = v ? 1 : 0; },
+          [](const GPRState &t) { return py::int_(t.localMonitor.enable); },
+          [](GPRState &t, py::int_ v) { t.localMonitor.enable = v; },
           "localMonitor : exclusive state")
+      .def_readwrite("pacm", &GPRState::pacm, "PACM state")
       // cross architecture access
       .def_readwrite("REG_RETURN", &GPRState::x0, "shadow of x0")
       .def_readwrite("AVAILABLE_GPR", &GPRState::x28, "shadow of x28")

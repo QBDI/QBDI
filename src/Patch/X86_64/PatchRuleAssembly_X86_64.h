@@ -39,8 +39,10 @@ public:
 
   bool changeOptions(Options opts) override;
 
-  bool generate(const llvm::MCInst &inst, rword address, uint32_t instSize,
-                const LLVMCPU &llvmcpu, std::vector<Patch> &patchList) override;
+  PatchRuleResult generate(const llvm::MCInst &inst, rword address,
+                           uint32_t instSize, const LLVMCPU &llvmcpu,
+                           std::vector<Patch> &patchList,
+                           const char *&unsupportedReason) override;
 
   bool earlyEnd(const LLVMCPU &llvmcpu, std::vector<Patch> &patchList) override;
 };

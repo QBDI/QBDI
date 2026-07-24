@@ -220,6 +220,8 @@ WritePC::generate(const Patch &patch, TempManager &temp_manager) const {
     case llvm::ARM::BX:
     case llvm::ARM::BX_RET:
     case llvm::ARM::BX_pred:
+    case llvm::ARM::BXJ:
+    case llvm::ARM::t2BXJ:
     case llvm::ARM::tBLXr:
       // register operand, depend on the value of the register
       // do nothings
@@ -389,7 +391,9 @@ SetExchange::generate(const Patch &patch, TempManager &temp_manager) const {
     case llvm::ARM::BX:
     case llvm::ARM::BX_RET:
     case llvm::ARM::BX_pred:
+    case llvm::ARM::BXJ:
     case llvm::ARM::t2BXAUT:
+    case llvm::ARM::t2BXJ:
     case llvm::ARM::tBLXi:
     case llvm::ARM::tBLXr:
     case llvm::ARM::tBX:

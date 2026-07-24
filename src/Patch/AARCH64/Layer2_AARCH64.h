@@ -62,6 +62,7 @@ llvm::MCInst subri(RegLLVM dst, RegLLVM src, rword offset);
 llvm::MCInst br(RegLLVM reg);
 llvm::MCInst blr(RegLLVM reg);
 llvm::MCInst branch(rword offset);
+llvm::MCInst cbz(RegLLVM reg, sword offset);
 llvm::MCInst tbz(RegLLVM reg, unsigned bit, sword offset);
 llvm::MCInst ret(RegLLVM reg);
 llvm::MCInst adr(RegLLVM reg, sword offset);
@@ -116,6 +117,20 @@ llvm::MCInst autib(RegLLVM reg, RegLLVM ctx);
 llvm::MCInst autiza(RegLLVM reg);
 llvm::MCInst autizb(RegLLVM reg);
 
+llvm::MCInst autiasppcr(RegLLVM reg);
+llvm::MCInst autibsppcr(RegLLVM reg);
+
+llvm::MCInst autiasp();
+llvm::MCInst autibsp();
+
+llvm::MCInst pacm();
+
+llvm::MCInst pacia1716();
+llvm::MCInst pacib1716();
+
+llvm::MCInst pacia171615();
+llvm::MCInst pacib171615();
+
 // high level layer 2
 
 std::unique_ptr<RelocatableInst> Ld1PostInc(RegLLVM regs, RegLLVM base);
@@ -131,6 +146,7 @@ std::unique_ptr<RelocatableInst> Addr(RegLLVM dst, RegLLVM src1, RegLLVM src2,
 
 std::unique_ptr<RelocatableInst> Br(RegLLVM reg);
 std::unique_ptr<RelocatableInst> Blr(RegLLVM reg);
+std::unique_ptr<RelocatableInst> Cbz(RegLLVM reg, Constant offset);
 std::unique_ptr<RelocatableInst> Tbz(RegLLVM reg, unsigned bit,
                                      Constant offset);
 std::unique_ptr<RelocatableInst> Branch(Constant offset);
@@ -198,6 +214,20 @@ std::unique_ptr<RelocatableInst> Autia(RegLLVM reg, RegLLVM ctx);
 std::unique_ptr<RelocatableInst> Autib(RegLLVM reg, RegLLVM ctx);
 std::unique_ptr<RelocatableInst> Autiza(RegLLVM reg);
 std::unique_ptr<RelocatableInst> Autizb(RegLLVM reg);
+
+std::unique_ptr<RelocatableInst> AutiaSPPCr(RegLLVM reg);
+std::unique_ptr<RelocatableInst> AutibSPPCr(RegLLVM reg);
+
+std::unique_ptr<RelocatableInst> Autiasp();
+std::unique_ptr<RelocatableInst> Autibsp();
+
+std::unique_ptr<RelocatableInst> Pacm();
+
+std::unique_ptr<RelocatableInst> Pacia1716();
+std::unique_ptr<RelocatableInst> Pacib1716();
+
+std::unique_ptr<RelocatableInst> Pacia171615();
+std::unique_ptr<RelocatableInst> Pacib171615();
 
 } // namespace QBDI
 

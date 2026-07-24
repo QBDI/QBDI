@@ -323,8 +323,35 @@ std::vector<Patch> Engine::patch(rword start) {
       std::string disass = llvmcpu.showInst(inst, address);
       QBDI_DEBUG("Patching 0x{:x} {}", address, disass.c_str());
     });
-    endLoop = not patchRuleAssembly->generate(inst, address, instSize, llvmcpu,
-                                              basicBlock);
+    const char *unsupportedReason = nullptr;
+    PatchRuleResult patchResult = patchRuleAssembly->generate(
+        inst, address, instSize, llvmcpu, basicBlock, unsupportedReason);
+
+    if (patchResult == PatchRuleResult::UNSUPPORTED) {
+      QBDI_DEBUG(
+          "Bump into unsupported instruction at address {:x} (CPUMode {}) : {}",
+          address, curCPUMode, llvmcpu.showInst(inst, address).c_str());
+
+      // Current instruction is unsupported, stop the basic block right here
+      bool rollbackOK = patchRuleAssembly->earlyEnd(llvmcpu, basicBlock);
+
+      // if fail to rollback or no Patch has been generated : fail
+      if ((not rollbackOK) or (basicBlock.size() == 0)) {
+        if (unsupportedReason != nullptr) {
+          QBDI_ABORT(
+              "Not PatchRule found for address 0x{:x} (CPUMode {}) : {} ({})",
+              address, curCPUMode, llvmcpu.showInst(inst, address).c_str(),
+              unsupportedReason);
+        } else {
+          QBDI_ABORT("Not PatchRule found for address 0x{:x} (CPUMode {}) : {}",
+                     address, curCPUMode,
+                     llvmcpu.showInst(inst, address).c_str());
+        }
+      }
+      break;
+    }
+
+    endLoop = (patchResult == PatchRuleResult::VALID);
     address += instSize;
   } while (endLoop);
 

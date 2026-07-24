@@ -610,6 +610,7 @@ void fixLLVMUsedGPR(const llvm::MCInst &inst, const LLVMCPU &llvmcpu,
                     std::map<RegLLVM, RegisterUsage> &m) {
   switch (inst.getOpcode()) {
     case llvm::ARM::BX_pred:
+    case llvm::ARM::BXJ:
       arr[REG_PC] |= RegisterSet;
       break;
     case llvm::ARM::BX_RET:

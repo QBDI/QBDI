@@ -34,14 +34,18 @@ class PatchRuleAssembly final : public PatchRuleAssemblyBase {
   void reset();
 
   // ARM
-  bool generateARM(const llvm::MCInst &inst, rword address, uint32_t instSize,
-                   const LLVMCPU &llvmcpu, std::vector<Patch> &patchList);
+  PatchRuleResult generateARM(const llvm::MCInst &inst, rword address,
+                              uint32_t instSize, const LLVMCPU &llvmcpu,
+                              std::vector<Patch> &patchList,
+                              const char *&unsupportedReason);
 
   void patchSTLDMARM(Patch &patch, const LLVMCPU &llvmcpu);
 
   // Thumb
-  bool generateThumb(const llvm::MCInst &inst, rword address, uint32_t instSize,
-                     const LLVMCPU &llvmcpu, std::vector<Patch> &patchList);
+  PatchRuleResult generateThumb(const llvm::MCInst &inst, rword address,
+                                uint32_t instSize, const LLVMCPU &llvmcpu,
+                                std::vector<Patch> &patchList,
+                                const char *&unsupportedReason);
 
 public:
   PatchRuleAssembly(Options opts);
@@ -50,8 +54,10 @@ public:
 
   bool changeOptions(Options opts) override;
 
-  bool generate(const llvm::MCInst &inst, rword address, uint32_t instSize,
-                const LLVMCPU &llvmcpu, std::vector<Patch> &patchList) override;
+  PatchRuleResult generate(const llvm::MCInst &inst, rword address,
+                           uint32_t instSize, const LLVMCPU &llvmcpu,
+                           std::vector<Patch> &patchList,
+                           const char *&unsupportedReason) override;
 
   bool earlyEnd(const LLVMCPU &llvmcpu, std::vector<Patch> &patchList) override;
 };

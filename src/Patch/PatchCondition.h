@@ -81,6 +81,40 @@ public:
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
 };
 
+template <unsigned int... Ops>
+class OpIsIn : public AutoClone<PatchCondition, OpIsIn<Ops...>> {
+public:
+  constexpr OpIsIn() = default;
+
+  /*! Return true if the instruction opcode is in the list.
+   *
+   * @param[in] op LLVM instruction opcode ID.
+   */
+  bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override {
+    unsigned int opcode = patch.metadata.inst.getOpcode();
+    return ((opcode == Ops) || ...);
+  }
+};
+
+namespace detail {
+template <typename... Groups>
+struct OpIsInUnionImpl;
+
+template <unsigned int... Ops>
+struct OpIsInUnionImpl<OpIsIn<Ops...>> {
+  using type = OpIsIn<Ops...>;
+};
+
+template <unsigned int... Ops1, unsigned int... Ops2, typename... Rest>
+struct OpIsInUnionImpl<OpIsIn<Ops1...>, OpIsIn<Ops2...>, Rest...> {
+  using type =
+      typename OpIsInUnionImpl<OpIsIn<Ops1..., Ops2...>, Rest...>::type;
+};
+} // namespace detail
+
+template <typename... Groups>
+using OpIsInUnion = typename detail::OpIsInUnionImpl<Groups...>::type;
+
 class UseReg : public AutoClone<PatchCondition, UseReg> {
   Reg reg;
 

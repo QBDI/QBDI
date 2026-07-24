@@ -57,20 +57,12 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
    * instrument".
    */
   rules.emplace_back(
-      Or::unique(conv_unique<PatchCondition>(
-          OpIs::unique(llvm::X86::LOCK_PREFIX),
-          OpIs::unique(llvm::X86::REX64_PREFIX),
-          OpIs::unique(llvm::X86::REP_PREFIX),
-          OpIs::unique(llvm::X86::REPNE_PREFIX),
-          OpIs::unique(llvm::X86::DATA16_PREFIX),
-          OpIs::unique(llvm::X86::CS_PREFIX),
-          OpIs::unique(llvm::X86::SS_PREFIX),
-          OpIs::unique(llvm::X86::DS_PREFIX),
-          OpIs::unique(llvm::X86::ES_PREFIX),
-          OpIs::unique(llvm::X86::FS_PREFIX),
-          OpIs::unique(llvm::X86::GS_PREFIX),
-          OpIs::unique(llvm::X86::XACQUIRE_PREFIX),
-          OpIs::unique(llvm::X86::XRELEASE_PREFIX))),
+      OpIsIn<llvm::X86::LOCK_PREFIX, llvm::X86::REX64_PREFIX,
+             llvm::X86::REP_PREFIX, llvm::X86::REPNE_PREFIX,
+             llvm::X86::DATA16_PREFIX, llvm::X86::CS_PREFIX,
+             llvm::X86::SS_PREFIX, llvm::X86::DS_PREFIX, llvm::X86::ES_PREFIX,
+             llvm::X86::FS_PREFIX, llvm::X86::GS_PREFIX,
+             llvm::X86::XACQUIRE_PREFIX, llvm::X86::XRELEASE_PREFIX>::unique(),
       conv_unique<PatchGenerator>(
           PatchGenFlags::unique(PatchGeneratorFlagsX86_64::MergeFlag),
           ModifyInstruction::unique(InstTransform::UniquePtrVec())));
@@ -126,15 +118,13 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
    * Patch:   JMP *MEM --> MOV Temp(0), MEM
    *          DataBlock[Offset(RIP)] := Temp(0)
    */
-  rules.emplace_back(
-      Or::unique(conv_unique<PatchCondition>(OpIs::unique(llvm::X86::JMP32m),
-                                             OpIs::unique(llvm::X86::JMP64m))),
-      conv_unique<PatchGenerator>(
-          ModifyInstruction::unique(conv_unique<InstTransform>(
-              SetOpcode::unique(is_x86 ? llvm::X86::MOV32rm
-                                       : llvm::X86::MOV64rm),
-              AddOperand::unique(Operand(0), Temp(0)))),
-          WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))));
+  rules.emplace_back(OpIsIn<llvm::X86::JMP32m, llvm::X86::JMP64m>::unique(),
+                     conv_unique<PatchGenerator>(
+                         ModifyInstruction::unique(conv_unique<InstTransform>(
+                             SetOpcode::unique(is_x86 ? llvm::X86::MOV32rm
+                                                      : llvm::X86::MOV64rm),
+                             AddOperand::unique(Operand(0), Temp(0)))),
+                         WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))));
 
   /* Rule #5: Simulate JMP to 16-bit memory value.
    * Target:   JMP16m
@@ -154,15 +144,13 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
    * Patch:   CALL MEM --> MOV Temp(0), MEM
    *          SimulateCall(Temp(1))
    */
-  rules.emplace_back(
-      Or::unique(conv_unique<PatchCondition>(OpIs::unique(llvm::X86::CALL32m),
-                                             OpIs::unique(llvm::X86::CALL64m))),
-      conv_unique<PatchGenerator>(
-          ModifyInstruction::unique(conv_unique<InstTransform>(
-              SetOpcode::unique(is_x86 ? llvm::X86::MOV32rm
-                                       : llvm::X86::MOV64rm),
-              AddOperand::unique(Operand(0), Temp(0)))),
-          SimulateCall::unique(Temp(0))));
+  rules.emplace_back(OpIsIn<llvm::X86::CALL32m, llvm::X86::CALL64m>::unique(),
+                     conv_unique<PatchGenerator>(
+                         ModifyInstruction::unique(conv_unique<InstTransform>(
+                             SetOpcode::unique(is_x86 ? llvm::X86::MOV32rm
+                                                      : llvm::X86::MOV64rm),
+                             AddOperand::unique(Operand(0), Temp(0)))),
+                         SimulateCall::unique(Temp(0))));
 
   /* Rule #7: Simulate CALL to 16-bit memory value.
    * Target:   CALL16m
@@ -183,9 +171,7 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
    *          DataBlock[Offset(RIP)] := Temp(0)
    */
   rules.emplace_back(
-      Or::unique(conv_unique<PatchCondition>(OpIs::unique(llvm::X86::JMP_1),
-                                             OpIs::unique(llvm::X86::JMP_2),
-                                             OpIs::unique(llvm::X86::JMP_4))),
+      OpIsIn<llvm::X86::JMP_1, llvm::X86::JMP_2, llvm::X86::JMP_4>::unique(),
       conv_unique<PatchGenerator>(
           GetPCOffset::unique(Temp(0), Operand(0)),
           WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))));
@@ -195,12 +181,10 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
    * Patch:   Temp(0) := Operand(0)
    *          DataBlock[Offset(RIP)] := Temp(0)
    */
-  rules.emplace_back(
-      Or::unique(conv_unique<PatchCondition>(OpIs::unique(llvm::X86::JMP32r),
-                                             OpIs::unique(llvm::X86::JMP64r))),
-      conv_unique<PatchGenerator>(
-          GetOperand::unique(Temp(0), Operand(0)),
-          WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))));
+  rules.emplace_back(OpIsIn<llvm::X86::JMP32r, llvm::X86::JMP64r>::unique(),
+                     conv_unique<PatchGenerator>(
+                         GetOperand::unique(Temp(0), Operand(0)),
+                         WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))));
 
   /* Rule #10: Simulate JMP to 16-bit register value.
    * Target:   JMP16r
@@ -221,8 +205,7 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
    *          SimulateCall(Temp(0))
    */
   rules.emplace_back(
-      Or::unique(conv_unique<PatchCondition>(OpIs::unique(llvm::X86::CALL32r),
-                                             OpIs::unique(llvm::X86::CALL64r))),
+      OpIsIn<llvm::X86::CALL32r, llvm::X86::CALL64r>::unique(),
       conv_unique<PatchGenerator>(GetOperand::unique(Temp(0), Operand(0)),
                                   SimulateCall::unique(Temp(0))));
 
@@ -247,11 +230,9 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
    *         -->END: DataBlock[Offset(RIP)] := Temp(0)
    */
   rules.emplace_back(
-      Or::unique(conv_unique<PatchCondition>(
-          OpIs::unique(llvm::X86::JCC_1), OpIs::unique(llvm::X86::LOOP),
-          OpIs::unique(llvm::X86::LOOPE), OpIs::unique(llvm::X86::LOOPNE),
-          OpIs::unique(llvm::X86::JRCXZ), OpIs::unique(llvm::X86::JECXZ),
-          OpIs::unique(llvm::X86::JCXZ))),
+      OpIsIn<llvm::X86::JCC_1, llvm::X86::LOOP, llvm::X86::LOOPE,
+             llvm::X86::LOOPNE, llvm::X86::JRCXZ, llvm::X86::JECXZ,
+             llvm::X86::JCXZ>::unique(),
       conv_unique<PatchGenerator>(
           GetPCOffset::unique(Temp(0), Operand(0)),
           ModifyInstruction::unique(
@@ -300,10 +281,8 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
    *           SimulateCall(Temp(0))
    */
   rules.emplace_back(
-      Or::unique(
-          conv_unique<PatchCondition>(OpIs::unique(llvm::X86::CALL64pcrel32),
-                                      OpIs::unique(llvm::X86::CALLpcrel16),
-                                      OpIs::unique(llvm::X86::CALLpcrel32))),
+      OpIsIn<llvm::X86::CALL64pcrel32, llvm::X86::CALLpcrel16,
+             llvm::X86::CALLpcrel32>::unique(),
       conv_unique<PatchGenerator>(GetPCOffset::unique(Temp(0), Operand(0)),
                                   SimulateCall::unique(Temp(0))));
 
@@ -312,10 +291,8 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
    * Patch:    SimulateRet(Temp(0))
    */
   rules.emplace_back(
-      Or::unique(conv_unique<PatchCondition>(
-          OpIs::unique(llvm::X86::RET32), OpIs::unique(llvm::X86::RET64),
-          OpIs::unique(llvm::X86::RET16), OpIs::unique(llvm::X86::RETI32),
-          OpIs::unique(llvm::X86::RETI64), OpIs::unique(llvm::X86::RETI16))),
+      OpIsIn<llvm::X86::RET32, llvm::X86::RET64, llvm::X86::RET16,
+             llvm::X86::RETI32, llvm::X86::RETI64, llvm::X86::RETI16>::unique(),
       conv_unique<PatchGenerator>(SimulateRet::unique(Temp(0))));
 
   /* Rule #18: Simulate far return.
@@ -323,10 +300,9 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
    * Patch:    SimulateLret(Temp(0))
    */
   rules.emplace_back(
-      Or::unique(conv_unique<PatchCondition>(
-          OpIs::unique(llvm::X86::LRET32), OpIs::unique(llvm::X86::LRET64),
-          OpIs::unique(llvm::X86::LRET16), OpIs::unique(llvm::X86::LRETI32),
-          OpIs::unique(llvm::X86::LRETI64), OpIs::unique(llvm::X86::LRETI16))),
+      OpIsIn<llvm::X86::LRET32, llvm::X86::LRET64, llvm::X86::LRET16,
+             llvm::X86::LRETI32, llvm::X86::LRETI64,
+             llvm::X86::LRETI16>::unique(),
       conv_unique<PatchGenerator>(SimulateLret::unique(Temp(0))));
 
   /* Rule #19: Default rule for every other instructions.
@@ -338,6 +314,76 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
                          InstTransform::UniquePtrVec())));
 
   return rules;
+}
+
+bool isSupportedInstruction(const Patch &patch, const char *&reason) {
+  [[maybe_unused]] const LLVMCPU &llvmcpu = *patch.llvmcpu;
+  const llvm::MCInst &inst = patch.metadata.inst;
+  switch (inst.getOpcode()) {
+    case llvm::X86::XBEGIN_2:
+    case llvm::X86::XBEGIN_4:
+      reason = "XBEGIN (Intel TSX) is not supported by QBDI";
+      return false;
+    case llvm::X86::FARCALL16m:
+    case llvm::X86::FARCALL32m:
+    case llvm::X86::FARCALL64m:
+    case llvm::X86::FARJMP16m:
+    case llvm::X86::FARJMP32m:
+    case llvm::X86::FARJMP64m:
+      reason =
+          "Far call/jump reading a segment:offset target from memory "
+          "is not supported by QBDI";
+      return false;
+    case llvm::X86::FARCALL32i:
+    case llvm::X86::FARJMP32i:
+      reason =
+          "Far call/jump with an immediate segment:offset target is "
+          "not supported by QBDI";
+      return false;
+    case llvm::X86::IRET16:
+    case llvm::X86::IRET32:
+    case llvm::X86::IRET64:
+      reason =
+          "IRET pops CS/EIP/EFLAGS from the stack and is not "
+          "supported by QBDI";
+      return false;
+    case llvm::X86::CALL16m_NT:
+    case llvm::X86::CALL16r_NT:
+    case llvm::X86::CALL32m_NT:
+    case llvm::X86::CALL32r_NT:
+    case llvm::X86::CALL64m_NT:
+    case llvm::X86::CALL64r_NT:
+    case llvm::X86::JMP16m_NT:
+    case llvm::X86::JMP16r_NT:
+    case llvm::X86::JMP32m_NT:
+    case llvm::X86::JMP32r_NT:
+    case llvm::X86::JMP64m_NT:
+    case llvm::X86::JMP64r_NT:
+      reason =
+          "CET no-track (notrack-prefixed) indirect call/jump is not "
+          "supported by QBDI";
+      return false;
+    case llvm::X86::JMP64m_REX:
+    case llvm::X86::JMP64r_REX:
+      reason =
+          "This tail-call-lowering REX-prefixed jump variant is not "
+          "supported by QBDI";
+      return false;
+    case llvm::X86::RET:
+    case llvm::X86::IRET:
+      reason =
+          "RET/IRET without an explicit operand-size suffix is not "
+          "supported by QBDI";
+      return false;
+    case llvm::X86::FARCALL16i:
+    case llvm::X86::FARJMP16i:
+      reason =
+          "Far call/jump with a 16-bit real-mode segment:offset "
+          "target is not supported by QBDI";
+      return false;
+    default:
+      return true;
+  }
 }
 
 } // namespace
@@ -401,12 +447,18 @@ static void setRegisterSaved(Patch &patch) {
   return;
 }
 
-bool PatchRuleAssembly::generate(const llvm::MCInst &inst, rword address,
-                                 uint32_t instSize, const LLVMCPU &llvmcpu,
-                                 std::vector<Patch> &patchList) {
+PatchRuleResult PatchRuleAssembly::generate(const llvm::MCInst &inst,
+                                            rword address, uint32_t instSize,
+                                            const LLVMCPU &llvmcpu,
+                                            std::vector<Patch> &patchList,
+                                            const char *&unsupportedReason) {
 
   Patch instPatch{inst, address, instSize, llvmcpu};
   setRegisterSaved(instPatch);
+
+  if (not isSupportedInstruction(instPatch, unsupportedReason)) {
+    return PatchRuleResult::UNSUPPORTED;
+  }
 
   for (uint32_t j = 0; j < patchRules.size(); j++) {
     if (patchRules[j].canBeApplied(instPatch, llvmcpu)) {
@@ -455,16 +507,16 @@ bool PatchRuleAssembly::generate(const llvm::MCInst &inst, rword address,
       }
 
       if (mergePending) {
-        return false;
+        return PatchRuleResult::VALID;
       } else if (patch.metadata.modifyPC) {
         reset();
-        return true;
+        return PatchRuleResult::VALID_END_BB;
       } else {
-        return false;
+        return PatchRuleResult::VALID;
       }
     }
   }
-  QBDI_ABORT("Not PatchRule found for: {}", instPatch);
+  return PatchRuleResult::UNSUPPORTED;
 }
 
 bool PatchRuleAssembly::earlyEnd(const LLVMCPU &llvmcpu,
