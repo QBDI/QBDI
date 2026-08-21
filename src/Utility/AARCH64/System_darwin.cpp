@@ -70,6 +70,10 @@ static const std::string _getHostCPUName() {
   // ARM64 kernel
   else if (hostInfo.cpu_type == CPU_TYPE_ARM64) {
 #if defined(QBDI_ARCH_AARCH64)
+    const std::string cpuname = llvm::sys::getHostCPUName().str();
+    if (!cpuname.empty() && cpuname != "generic") {
+      return cpuname;
+    }
     switch (hostInfo.cpu_subtype) {
       case CPU_SUBTYPE_ARM64_ALL:
       case CPU_SUBTYPE_ARM64_V8:
@@ -100,24 +104,6 @@ const std::vector<std::string> getHostCPUFeatures() {
   std::vector<std::string> mattrs = {};
   llvm::StringMap<bool> features = llvm::sys::getHostCPUFeatures();
 
-  bool ret = !features.empty();
-
-  if (!ret) {
-    features.clear();
-    const std::string cpuname = getHostCPUName();
-    if (cpuname == "apple-a12" or cpuname == "cyclone") {
-      features["fp-armv8"] = true;
-      features["fullfp16"] = true;
-      features["neon"] = true;
-      if (cpuname == "apple-a12") {
-        features["v8.3a"] = true;
-        features["pauth"] = true;
-      }
-    } else {
-      QBDI_WARN("Fail to detect CPUHostFeatures");
-    }
-  }
-
   const char *fixupFeatures = getenv("QBDI_FIXUP_FEATURES");
   if (fixupFeatures != nullptr) {
     llvm::SubtargetFeatures addFeatures(fixupFeatures);
@@ -131,15 +117,12 @@ const std::vector<std::string> getHostCPUFeatures() {
     }
   }
 
-  if (ret || fixupFeatures != nullptr) {
-
-    for (const auto &feat : features) {
-      QBDI_DEBUG("Feature {}: {}", feat.getKeyData(), feat.getValue());
-      if (!feat.getValue()) {
-        continue;
-      }
-      mattrs.push_back(feat.getKey().str());
+  for (const auto &feat : features) {
+    QBDI_DEBUG("Feature {}: {}", feat.getKeyData(), feat.getValue());
+    if (!feat.getValue()) {
+      continue;
     }
+    mattrs.push_back(feat.getKey().str());
   }
 
   if constexpr (is_arm)
