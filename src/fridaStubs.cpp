@@ -23,6 +23,8 @@
 namespace QBDI {
 extern "C" {
 
+QBDI_EXPORT void qbdi_free(void *ptr) { free(ptr); }
+
 QBDI_EXPORT rword qbdi_getGPR(GPRState *state, uint32_t rid) {
   return QBDI_GPR_GET(state, rid);
 }
