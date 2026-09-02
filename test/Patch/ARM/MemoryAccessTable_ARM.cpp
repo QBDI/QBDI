@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -376,7 +376,13 @@ const std::set<unsigned> unsupportedInst{
 // instruction that reads memory but without mayLoad
 const std::set<unsigned> fixupRead{
     // clang-format off
+    FLDMXDB_UPD,
+    FLDMXIA,
+    FLDMXIA_UPD,
     t2LDRBT,
+    t2LDRHT,
+    t2LDRSBT,
+    t2LDRSHT,
     t2LDRT,
     t2TBB,
     t2TBH,
@@ -386,11 +392,9 @@ const std::set<unsigned> fixupRead{
 // instruction that writes memory but without mayStore
 const std::set<unsigned> fixupWrite{
     // clang-format off
-    STRBT_POST_IMM,
-    STRBT_POST_REG,
-    STRH_PRE,
-    t2STRBT,
-    t2STRT,
+    FSTMXDB_UPD,
+    FSTMXIA,
+    FSTMXIA_UPD,
     // clang-format on
 };
 
@@ -519,7 +523,6 @@ const std::set<unsigned> fixupNoWrite{
     USAX,
     USUB16,
     USUB8,
-    VMRS,
     VMSR,
     t2CLREX,
     t2DBG,

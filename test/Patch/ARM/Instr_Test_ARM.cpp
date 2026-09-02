@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 #include "Patch/Instr_Test.h"
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-STLDMIA") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -39,7 +39,7 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-STLDMIA") {
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-STLDMIB") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -59,7 +59,7 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-STLDMIB") {
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-STLDMDA") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -79,7 +79,7 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-STLDMDA") {
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-STLDMDB") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -99,7 +99,7 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-STLDMDB") {
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-STMDB_LDMIA_post") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -119,7 +119,7 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-STMDB_LDMIA_post") {
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-STMDA_LDMIB_post") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -139,7 +139,7 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-STMDA_LDMIB_post") {
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-STMIB_LDMDA_post") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -159,7 +159,7 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-STMIB_LDMDA_post") {
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-STMIA_LDMDB_post") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -179,7 +179,7 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-STMIA_LDMDB_post") {
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-LDREXTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
   uint8_t buffer[4096] = {0};

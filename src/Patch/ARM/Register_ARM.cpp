@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -610,6 +610,7 @@ void fixLLVMUsedGPR(const llvm::MCInst &inst, const LLVMCPU &llvmcpu,
                     std::map<RegLLVM, RegisterUsage> &m) {
   switch (inst.getOpcode()) {
     case llvm::ARM::BX_pred:
+    case llvm::ARM::BXJ:
       arr[REG_PC] |= RegisterSet;
       break;
     case llvm::ARM::BX_RET:
@@ -632,7 +633,8 @@ void fixLLVMUsedGPR(const llvm::MCInst &inst, const LLVMCPU &llvmcpu,
 
     for (unsigned int opn = 0; opn < desc.getNumOperands(); opn++) {
       const llvm::MCOperandInfo &opInfo = desc.operands()[opn];
-      if (opInfo.RegClass == llvm::ARM::CCRRegClassID) {
+      if (opInfo.RegClass == llvm::ARM::CCRRegClassID and
+          not opInfo.isPredicate()) {
         // found the position of CSPR set operand
         const llvm::MCOperand &op = inst.getOperand(opn);
         QBDI_REQUIRE_ABORT(op.isReg(), "Unexpected operand type");

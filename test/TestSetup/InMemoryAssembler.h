@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,24 +18,34 @@
 #ifndef INMEMORYASSEMBLER_H
 #define INMEMORYASSEMBLER_H
 
+#include <functional>
 #include <string>
 #include <vector>
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/Support/Memory.h"
 
-namespace llvm::object {
+namespace llvm {
+class MCInst;
+namespace object {
 class ObjectFile;
 }
+} // namespace llvm
 
 namespace QBDI {
+class LLVMCPU;
 class LLVMCPUs;
-}
+} // namespace QBDI
 
 class InMemoryObject {
 private:
   void perform_reloc(llvm::object::ObjectFile *obj,
                      const QBDI::LLVMCPUs &llvmcpus);
+
+  static void
+  patchInstructionOperand(const QBDI::LLVMCPU &llvmcpu, uint8_t *instAddr,
+                          size_t instLen,
+                          const std::function<void(llvm::MCInst &)> &patch);
 
 protected:
   using PF = llvm::sys::Memory::ProtectionFlags;

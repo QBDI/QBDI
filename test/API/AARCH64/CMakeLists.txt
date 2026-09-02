@@ -10,3 +10,7 @@ if(NOT (QBDI_PLATFORM_MACOS OR QBDI_PLATFORM_IOS))
   target_sources(QBDITest
                  PRIVATE "${CMAKE_CURRENT_LIST_DIR}/VMTest_AARCH64_LDRL.cpp")
 endif()
+
+if(QBDI_TEST_INSTRUCTION_EXTENDED)
+  include("${CMAKE_CURRENT_LIST_DIR}/InstructionExtended/CMakeLists.txt")
+endif()

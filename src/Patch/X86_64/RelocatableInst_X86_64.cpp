@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -201,7 +201,7 @@ int InstId::getSize(const LLVMCPU &llvmcpu) const {
 // ============
 
 llvm::MCInst EpilogueJump::reloc(ExecBlock *execBlock, CPUMode cpumode) const {
-  return jmp(execBlock->getEpilogueOffset() - 1);
+  return jmp(execBlock->getEpilogueOffset() - 5);
 }
 
 int EpilogueJump::getSize(const LLVMCPU &llvmcpu) const { return 5; }

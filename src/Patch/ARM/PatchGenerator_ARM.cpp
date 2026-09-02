@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -220,6 +220,8 @@ WritePC::generate(const Patch &patch, TempManager &temp_manager) const {
     case llvm::ARM::BX:
     case llvm::ARM::BX_RET:
     case llvm::ARM::BX_pred:
+    case llvm::ARM::BXJ:
+    case llvm::ARM::t2BXJ:
     case llvm::ARM::tBLXr:
       // register operand, depend on the value of the register
       // do nothings
@@ -389,7 +391,9 @@ SetExchange::generate(const Patch &patch, TempManager &temp_manager) const {
     case llvm::ARM::BX:
     case llvm::ARM::BX_RET:
     case llvm::ARM::BX_pred:
+    case llvm::ARM::BXJ:
     case llvm::ARM::t2BXAUT:
+    case llvm::ARM::t2BXJ:
     case llvm::ARM::tBLXi:
     case llvm::ARM::tBLXr:
     case llvm::ARM::tBX:
@@ -689,22 +693,36 @@ WriteOperandCC::generate(const Patch &patch, TempManager &temp_manager) const {
 
   QBDI_REQUIRE_ABORT(op < inst.getNumOperands(), "Invalid operand {} {}", op,
                      patch);
-  if (inst.getOperand(op).isReg()) {
-    if (patch.metadata.archMetadata.cond != llvm::ARMCC::AL and
-        cpumode == CPUMode::Thumb) {
+  if (not inst.getOperand(op).isReg()) {
+    QBDI_ERROR("Invalid operand type for WriteOperandCC()");
+    return {};
+  }
+
+  RegLLVM reg = inst.getOperand(op).getReg();
+
+  if (patch.metadata.archMetadata.cond != llvm::ARMCC::AL and
+      cpumode == CPUMode::Thumb) {
+    if (type == OffsetType) {
       return conv_unique<RelocatableInst>(
           T2it(cpumode, patch.metadata.archMetadata.cond,
                (unsigned)llvm::ARM::PredBlockMask::T),
-          StoreDataBlockCC::unique(inst.getOperand(op).getReg(), offset,
+          StoreDataBlockCC::unique(reg, offset,
                                    patch.metadata.archMetadata.cond));
     } else {
       return conv_unique<RelocatableInst>(
-          StoreDataBlockCC::unique(inst.getOperand(op).getReg(), offset,
-                                   patch.metadata.archMetadata.cond));
+          T2it(cpumode, patch.metadata.archMetadata.cond,
+               (unsigned)llvm::ARM::PredBlockMask::T),
+          StoreShadowCC::unique(reg, shadow, true,
+                                patch.metadata.archMetadata.cond));
     }
   } else {
-    QBDI_ERROR("Invalid operand type for WriteOperand()");
-    return {};
+    if (type == OffsetType) {
+      return conv_unique<RelocatableInst>(StoreDataBlockCC::unique(
+          reg, offset, patch.metadata.archMetadata.cond));
+    } else {
+      return conv_unique<RelocatableInst>(StoreShadowCC::unique(
+          reg, shadow, true, patch.metadata.archMetadata.cond));
+    }
   }
 }
 
@@ -1239,16 +1257,16 @@ GetReadValue::generate(const Patch &patch, TempManager &temp_manager) const {
                          patch);
       if (isARM) {
         return conv_unique<RelocatableInst>(
-            NoReloc::unique(ldrb(tmpRegister, addrRegister, 0)),
+            NoReloc::unique(ldrh(tmpRegister, addrRegister, 0)),
             NoReloc::unique(ldrb(addrRegister, addrRegister, 2)),
             NoReloc::unique(
-                orrshift(tmpRegister, tmpRegister, addrRegister, 2)));
+                orrshift(tmpRegister, tmpRegister, addrRegister, 16)));
       } else {
         return conv_unique<RelocatableInst>(
-            NoReloc::unique(t2ldrb(tmpRegister, addrRegister, 0)),
+            NoReloc::unique(t2ldrh(tmpRegister, addrRegister, 0)),
             NoReloc::unique(t2ldrb(addrRegister, addrRegister, 2)),
             NoReloc::unique(
-                t2orrshift(tmpRegister, tmpRegister, addrRegister, 2)));
+                t2orrshift(tmpRegister, tmpRegister, addrRegister, 16)));
       }
     }
     case 4:
@@ -1358,16 +1376,16 @@ GetWrittenValue::generate(const Patch &patch, TempManager &temp_manager) const {
                          patch);
       if (isARM) {
         return conv_unique<RelocatableInst>(
-            NoReloc::unique(ldrb(tmpRegister, addrRegister, 0)),
+            NoReloc::unique(ldrh(tmpRegister, addrRegister, 0)),
             NoReloc::unique(ldrb(addrRegister, addrRegister, 2)),
             NoReloc::unique(
-                orrshift(tmpRegister, tmpRegister, addrRegister, 2)));
+                orrshift(tmpRegister, tmpRegister, addrRegister, 16)));
       } else {
         return conv_unique<RelocatableInst>(
-            NoReloc::unique(t2ldrb(tmpRegister, addrRegister, 0)),
+            NoReloc::unique(t2ldrh(tmpRegister, addrRegister, 0)),
             NoReloc::unique(t2ldrb(addrRegister, addrRegister, 2)),
             NoReloc::unique(
-                t2orrshift(tmpRegister, tmpRegister, addrRegister, 2)));
+                t2orrshift(tmpRegister, tmpRegister, addrRegister, 16)));
       }
     }
     case 4:
@@ -1467,150 +1485,136 @@ CondExclusifLoad::generate(const Patch &patch,
                            TempManager &temp_manager) const {
   CPUMode cpumode = patch.llvmcpu->getCPUMode();
 
+  sword expectedSize;
+  switch (patch.metadata.inst.getOpcode()) {
+    case llvm::ARM::STREXB:
+    case llvm::ARM::t2STREXB:
+    case llvm::ARM::STLEXB:
+    case llvm::ARM::t2STLEXB:
+      expectedSize = 1;
+      break;
+    case llvm::ARM::STREXH:
+    case llvm::ARM::t2STREXH:
+    case llvm::ARM::STLEXH:
+    case llvm::ARM::t2STLEXH:
+      expectedSize = 2;
+      break;
+    case llvm::ARM::STREX:
+    case llvm::ARM::t2STREX:
+    case llvm::ARM::STLEX:
+    case llvm::ARM::t2STLEX:
+      expectedSize = 4;
+      break;
+    case llvm::ARM::STREXD:
+    case llvm::ARM::t2STREXD:
+    case llvm::ARM::STLEXD:
+    case llvm::ARM::t2STLEXD:
+      expectedSize = 8;
+      break;
+    default:
+      QBDI_ABORT("Unexpected opcode {} {}", patch.metadata.inst.getOpcode(),
+                 patch);
+  }
+
   if (cpumode == CPUMode::ARM) {
     allocateConsecutiveTempRegister(temp_manager, temp, temp2);
   }
 
   Reg tmpReg = temp_manager.getRegForTemp(temp);
-  Reg cpyFlags = temp_manager.getRegForTemp(temp2);
-  bool hasCond = (patch.metadata.archMetadata.cond != llvm::ARMCC::AL);
+  Reg addrReg = temp_manager.getRegForTemp(temp2);
+  Reg cpyFlags = temp_manager.getRegForTemp(temp3);
 
-  // ==== generate the load code ====
-  RelocatableInst::UniquePtrVec loadPatch;
-
-  // default case : restore flags and continue
-  loadPatch.push_back(Msr(cpumode, cpyFlags));
-
-  // case 8 (LDREXD)
-  RelocatableInst::UniquePtrVec tmpPatch8_block;
-
-  tmpPatch8_block.push_back(Msr(cpumode, cpyFlags));
-  tmpPatch8_block.push_back(LoadDataBlock::unique(
-      tmpReg, offsetof(Context, gprState.localMonitor.addr)));
-  if (cpumode == CPUMode::Thumb) {
-    if (hasCond) {
-      tmpPatch8_block.push_back(T2it(cpumode, patch.metadata.archMetadata.cond,
-                                     (unsigned)llvm::ARM::PredBlockMask::T));
+  auto buildCaseEQ = [&](sword size) {
+    RelocatableInst::UniquePtrVec block;
+    if (cpumode == CPUMode::Thumb) {
+      block.push_back(T2it(cpumode, llvm::ARMCC::EQ,
+                           (unsigned)llvm::ARM::PredBlockMask::T));
+      switch (size) {
+        case 1:
+          block.push_back(
+              NoReloc::unique(t2ldrexb(tmpReg, addrReg, llvm::ARMCC::EQ)));
+          break;
+        case 2:
+          block.push_back(
+              NoReloc::unique(t2ldrexh(tmpReg, addrReg, llvm::ARMCC::EQ)));
+          break;
+        case 4:
+          block.push_back(
+              NoReloc::unique(t2ldrex(tmpReg, addrReg, llvm::ARMCC::EQ)));
+          break;
+        default:
+          block.push_back(NoReloc::unique(
+              t2ldrexd(tmpReg, addrReg, addrReg, llvm::ARMCC::EQ)));
+          break;
+      }
+    } else {
+      switch (size) {
+        case 1:
+          block.push_back(
+              NoReloc::unique(ldrexb(tmpReg, addrReg, llvm::ARMCC::EQ)));
+          break;
+        case 2:
+          block.push_back(
+              NoReloc::unique(ldrexh(tmpReg, addrReg, llvm::ARMCC::EQ)));
+          break;
+        case 4:
+          block.push_back(
+              NoReloc::unique(ldrex(tmpReg, addrReg, llvm::ARMCC::EQ)));
+          break;
+        default:
+          block.push_back(NoReloc::unique(
+              ldrexd(tmpReg, addrReg, addrReg, llvm::ARMCC::EQ)));
+          break;
+      }
     }
-    tmpPatch8_block.push_back(NoReloc::unique(
-        t2ldrexd(tmpReg, cpyFlags, tmpReg, patch.metadata.archMetadata.cond)));
-  } else {
-    tmpPatch8_block.push_back(NoReloc::unique(
-        ldrexd(tmpReg, cpyFlags, tmpReg, patch.metadata.archMetadata.cond)));
-  }
-  tmpPatch8_block.push_back(
-      Branch(cpumode, getUniquePtrVecSize(loadPatch, *patch.llvmcpu),
-             /* addBranchLen */ true));
+    return block;
+  };
 
-  RelocatableInst::UniquePtrVec tmpPatch8_cond;
-
-  tmpPatch8_cond.push_back(Cmp(cpumode, tmpReg, 8));
-  tmpPatch8_cond.push_back(
-      BranchCC(cpumode, getUniquePtrVecSize(tmpPatch8_block, *patch.llvmcpu),
-               llvm::ARMCC::CondCodes::NE,
-               /* withinITBlock */ false, /* addBranchLen */ true));
-
-  prepend(tmpPatch8_block, std::move(tmpPatch8_cond));
-  prepend(loadPatch, std::move(tmpPatch8_block));
-
-  // case 4 (LDREX)
-  RelocatableInst::UniquePtrVec tmpPatch4_block;
-
-  tmpPatch4_block.push_back(Msr(cpumode, cpyFlags));
-  tmpPatch4_block.push_back(LoadDataBlock::unique(
-      tmpReg, offsetof(Context, gprState.localMonitor.addr)));
-  if (cpumode == CPUMode::Thumb) {
-    if (hasCond) {
-      tmpPatch4_block.push_back(T2it(cpumode, patch.metadata.archMetadata.cond,
-                                     (unsigned)llvm::ARM::PredBlockMask::T));
+  std::vector<sword> sizes;
+  for (sword size : {8, 4, 2, 1}) {
+    if (size == expectedSize) {
+      continue;
     }
-    tmpPatch4_block.push_back(NoReloc::unique(
-        t2ldrex(tmpReg, tmpReg, patch.metadata.archMetadata.cond)));
-  } else {
-    tmpPatch4_block.push_back(NoReloc::unique(
-        ldrex(tmpReg, tmpReg, patch.metadata.archMetadata.cond)));
+    sizes.push_back(size);
   }
-  tmpPatch4_block.push_back(
-      Branch(cpumode, getUniquePtrVecSize(loadPatch, *patch.llvmcpu),
-             /* addBranchLen */ true));
+  sizes.push_back(expectedSize);
 
-  RelocatableInst::UniquePtrVec tmpPatch4_cond;
-
-  tmpPatch4_cond.push_back(Cmp(cpumode, tmpReg, 4));
-  tmpPatch4_cond.push_back(
-      BranchCC(cpumode, getUniquePtrVecSize(tmpPatch4_block, *patch.llvmcpu),
-               llvm::ARMCC::CondCodes::NE,
-               /* withinITBlock */ false, /* addBranchLen */ true));
-
-  prepend(tmpPatch4_block, std::move(tmpPatch4_cond));
-  prepend(loadPatch, std::move(tmpPatch4_block));
-
-  // case 2 (LDREXH)
-  RelocatableInst::UniquePtrVec tmpPatch2_block;
-
-  tmpPatch2_block.push_back(Msr(cpumode, cpyFlags));
-  tmpPatch2_block.push_back(LoadDataBlock::unique(
-      tmpReg, offsetof(Context, gprState.localMonitor.addr)));
-  if (cpumode == CPUMode::Thumb) {
-    if (hasCond) {
-      tmpPatch2_block.push_back(T2it(cpumode, patch.metadata.archMetadata.cond,
-                                     (unsigned)llvm::ARM::PredBlockMask::T));
+  RelocatableInst::UniquePtrVec caseChain;
+  bool isLast = true;
+  for (sword size : sizes) {
+    RelocatableInst::UniquePtrVec block;
+    block.push_back(Cmp(cpumode, tmpReg, size));
+    append(block, buildCaseEQ(size));
+    if (not isLast) {
+      block.push_back(BranchCC(cpumode,
+                               getUniquePtrVecSize(caseChain, *patch.llvmcpu),
+                               llvm::ARMCC::EQ, /* withinITBlock */ false,
+                               /* addBranchLen */ true));
     }
-    tmpPatch2_block.push_back(NoReloc::unique(
-        t2ldrexh(tmpReg, tmpReg, patch.metadata.archMetadata.cond)));
-  } else {
-    tmpPatch2_block.push_back(NoReloc::unique(
-        ldrexh(tmpReg, tmpReg, patch.metadata.archMetadata.cond)));
+    isLast = false;
+    prepend(caseChain, std::move(block));
   }
-  tmpPatch2_block.push_back(
-      Branch(cpumode, getUniquePtrVecSize(loadPatch, *patch.llvmcpu),
-             /* addBranchLen */ true));
 
-  RelocatableInst::UniquePtrVec tmpPatch2_cond;
+  RelocatableInst::UniquePtrVec blob;
+  blob.push_back(Mrs(cpumode, cpyFlags));
+  blob.push_back(LoadDataBlock::unique(
+      tmpReg, offsetof(Context, gprState.localMonitor.enable)));
+  blob.push_back(LoadDataBlock::unique(
+      addrReg, offsetof(Context, gprState.localMonitor.addr)));
+  append(blob, std::move(caseChain));
+  blob.push_back(Msr(cpumode, cpyFlags));
 
-  tmpPatch2_cond.push_back(Cmp(cpumode, tmpReg, 2));
-  tmpPatch2_cond.push_back(
-      BranchCC(cpumode, getUniquePtrVecSize(tmpPatch2_block, *patch.llvmcpu),
-               llvm::ARMCC::CondCodes::NE,
-               /* withinITBlock */ false, /* addBranchLen */ true));
-
-  prepend(tmpPatch2_block, std::move(tmpPatch2_cond));
-  prepend(loadPatch, std::move(tmpPatch2_block));
-
-  // case 1 (LDREXB)
-  RelocatableInst::UniquePtrVec tmpPatch1_block;
-
-  tmpPatch1_block.push_back(Msr(cpumode, cpyFlags));
-  tmpPatch1_block.push_back(LoadDataBlock::unique(
-      tmpReg, offsetof(Context, gprState.localMonitor.addr)));
-  if (cpumode == CPUMode::Thumb) {
-    if (hasCond) {
-      tmpPatch1_block.push_back(T2it(cpumode, patch.metadata.archMetadata.cond,
-                                     (unsigned)llvm::ARM::PredBlockMask::T));
-    }
-    tmpPatch1_block.push_back(NoReloc::unique(
-        t2ldrexb(tmpReg, tmpReg, patch.metadata.archMetadata.cond)));
-  } else {
-    tmpPatch1_block.push_back(NoReloc::unique(
-        ldrexb(tmpReg, tmpReg, patch.metadata.archMetadata.cond)));
+  if (patch.metadata.archMetadata.cond == llvm::ARMCC::AL) {
+    return blob;
   }
-  tmpPatch1_block.push_back(
-      Branch(cpumode, getUniquePtrVecSize(loadPatch, *patch.llvmcpu),
-             /* addBranchLen */ true));
 
   RelocatableInst::UniquePtrVec finalPatch;
-
-  finalPatch.push_back(Mrs(cpumode, cpyFlags));
-  finalPatch.push_back(LoadDataBlock::unique(
-      tmpReg, offsetof(Context, gprState.localMonitor.enable)));
-  finalPatch.push_back(Cmp(cpumode, tmpReg, 1));
   finalPatch.push_back(
-      BranchCC(cpumode, getUniquePtrVecSize(tmpPatch1_block, *patch.llvmcpu),
-               llvm::ARMCC::CondCodes::NE,
+      BranchCC(cpumode, getUniquePtrVecSize(blob, *patch.llvmcpu),
+               llvm::ARMCC::getOppositeCondition(
+                   (llvm::ARMCC::CondCodes)patch.metadata.archMetadata.cond),
                /* withinITBlock */ false, /* addBranchLen */ true));
-
-  append(finalPatch, std::move(tmpPatch1_block));
-  append(finalPatch, std::move(loadPatch));
+  append(finalPatch, std::move(blob));
   return finalPatch;
 }
 

@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,24 +18,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 
 #include <QBDI/Config.h>
 #include <QBDI/Logs.h>
 
 #include <catch2/catch_session.hpp>
 
-#ifdef QBDI_PLATFORM_WINDOWS
-#include <Windows.h>
-
-static int getpid() { return GetCurrentProcessId(); }
-#else
-#include <unistd.h>
-#endif
-
 int main(int argc, char **argv) {
-
-  srand(time(nullptr) | getpid());
 
   if (getenv("TEST_DEBUG") != nullptr) {
     QBDI::setLogPriority(QBDI::LogPriority::DEBUG);

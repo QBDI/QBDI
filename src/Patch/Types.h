@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,10 @@
 
 #include "QBDI/State.h"
 
+namespace llvm {
+class MCRegister;
+}
+
 namespace QBDI {
 
 /*! Structure representing a register in LLVM.
@@ -45,6 +49,16 @@ public:
    *  @param[in] id The llvm id of the register to represent.
    */
   inline RegLLVM(unsigned int id = 0) : id(id) {};
+
+  /*! Create a new register variable from a typed LLVM MCRegister.
+   *
+   *  MCOperand::getReg() returns llvm::MCRegister rather than a raw
+   *  unsigned since LLVM 22, which as a distinct class type doesn't
+   *  implicitly chain into the unsigned-taking constructor above.
+   *
+   *  @param[in] reg The llvm register to represent.
+   */
+  RegLLVM(llvm::MCRegister reg);
 
   /*! Get the llvm value of the register
    *

@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -139,9 +139,20 @@ typedef struct QBDI_ALIGNED(8) {
    */
   struct {
     rword addr;
-    rword enable; /* 0=>disable, 1=>exclusive state, use a rword to not break
-                     align */
+    rword enable; /* 0=>disable,
+                   * 1=>enable by ldxrb/ldaxrb,
+                   * 2=>enable by ldxrh/ldaxrh,
+                   * 4=>enable by ldxr (w)/ldaxr (w),
+                   * 8=>enable by ldxr (x)/ldaxr (x),
+                   * 0x800=>enable by ldxp/ldaxp (w),
+                   * 16=>enable by ldxp/ldaxp (x)
+                   */
   } localMonitor;
+
+  /* Set to 1 after a PACM instruction if followed by an instruction that
+   * may change behavior when preceded by a PACM instruction.
+   */
+  rword pacm;
 
 } GPRState;
 // SPHINX_AARCH64_GPRSTATE_END

@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,6 +78,7 @@ constexpr unsigned READ_8[] = {
     llvm::ARM::t2LDRBpci,
     llvm::ARM::t2LDRBs,
     llvm::ARM::t2LDREXB,
+    llvm::ARM::t2LDRSBT,
     llvm::ARM::t2LDRSB_POST,
     llvm::ARM::t2LDRSB_PRE,
     llvm::ARM::t2LDRSBi12,
@@ -128,12 +129,14 @@ constexpr unsigned READ_16[] = {
     llvm::ARM::t2LDAEXH,
     llvm::ARM::t2LDAH,
     llvm::ARM::t2LDREXH,
+    llvm::ARM::t2LDRHT,
     llvm::ARM::t2LDRH_POST,
     llvm::ARM::t2LDRH_PRE,
     llvm::ARM::t2LDRHi12,
     llvm::ARM::t2LDRHi8,
     llvm::ARM::t2LDRHpci,
     llvm::ARM::t2LDRHs,
+    llvm::ARM::t2LDRSHT,
     llvm::ARM::t2LDRSH_POST,
     llvm::ARM::t2LDRSH_PRE,
     llvm::ARM::t2LDRSHi12,
@@ -459,6 +462,9 @@ constexpr size_t READ_32_DYN_SIZE = sizeof(READ_32_DYN) / sizeof(unsigned);
 
 constexpr unsigned READ_64_DYN[] = {
     // clang-format off
+    llvm::ARM::FLDMXDB_UPD,
+    llvm::ARM::FLDMXIA,
+    llvm::ARM::FLDMXIA_UPD,
     llvm::ARM::VLDMDDB_UPD,
     llvm::ARM::VLDMDIA,
     llvm::ARM::VLDMDIA_UPD,
@@ -470,9 +476,21 @@ constexpr size_t READ_64_DYN_SIZE = sizeof(READ_64_DYN) / sizeof(unsigned);
 constexpr unsigned UNSUPPORTED_READ[] = {
     // clang-format off
     llvm::ARM::LDC2L_OFFSET,
+    llvm::ARM::LDC2L_OPTION,
+    llvm::ARM::LDC2L_POST,
+    llvm::ARM::LDC2L_PRE,
     llvm::ARM::LDC2_OFFSET,
+    llvm::ARM::LDC2_OPTION,
+    llvm::ARM::LDC2_POST,
+    llvm::ARM::LDC2_PRE,
     llvm::ARM::LDCL_OFFSET,
+    llvm::ARM::LDCL_OPTION,
+    llvm::ARM::LDCL_POST,
+    llvm::ARM::LDCL_PRE,
     llvm::ARM::LDC_OFFSET,
+    llvm::ARM::LDC_OPTION,
+    llvm::ARM::LDC_POST,
+    llvm::ARM::LDC_PRE,
     llvm::ARM::MVE_VLD20_16,
     llvm::ARM::MVE_VLD20_16_wb,
     llvm::ARM::MVE_VLD20_32,
@@ -556,9 +574,21 @@ constexpr unsigned UNSUPPORTED_READ[] = {
     llvm::ARM::MVE_VLDRWU32_rq,
     llvm::ARM::MVE_VLDRWU32_rq_u,
     llvm::ARM::t2LDC2L_OFFSET,
+    llvm::ARM::t2LDC2L_OPTION,
+    llvm::ARM::t2LDC2L_POST,
+    llvm::ARM::t2LDC2L_PRE,
     llvm::ARM::t2LDC2_OFFSET,
+    llvm::ARM::t2LDC2_OPTION,
+    llvm::ARM::t2LDC2_POST,
+    llvm::ARM::t2LDC2_PRE,
     llvm::ARM::t2LDCL_OFFSET,
+    llvm::ARM::t2LDCL_OPTION,
+    llvm::ARM::t2LDCL_POST,
+    llvm::ARM::t2LDCL_PRE,
     llvm::ARM::t2LDC_OFFSET,
+    llvm::ARM::t2LDC_OPTION,
+    llvm::ARM::t2LDC_POST,
+    llvm::ARM::t2LDC_PRE,
     // clang-format on
 };
 
@@ -608,6 +638,8 @@ constexpr unsigned WRITE_16[] = {
     llvm::ARM::STRH,
     llvm::ARM::STRH_POST,
     llvm::ARM::STRH_PRE,
+    llvm::ARM::STRHTi,
+    llvm::ARM::STRHTr,
     llvm::ARM::VST1LNd16,
     llvm::ARM::VST1LNd16_UPD,
     llvm::ARM::VST2LNd8,
@@ -618,6 +650,7 @@ constexpr unsigned WRITE_16[] = {
     llvm::ARM::t2STLH,
     llvm::ARM::t2STLH,
     llvm::ARM::t2STREXH,
+    llvm::ARM::t2STRHT,
     llvm::ARM::t2STRH_POST,
     llvm::ARM::t2STRH_PRE,
     llvm::ARM::t2STRHi12,
@@ -896,6 +929,9 @@ constexpr size_t WRITE_32_DYN_SIZE = sizeof(WRITE_32_DYN) / sizeof(unsigned);
 
 constexpr unsigned WRITE_64_DYN[] = {
     // clang-format off
+    llvm::ARM::FSTMXDB_UPD,
+    llvm::ARM::FSTMXIA,
+    llvm::ARM::FSTMXIA_UPD,
     llvm::ARM::VSTMDDB_UPD,
     llvm::ARM::VSTMDIA,
     llvm::ARM::VSTMDIA_UPD,
@@ -976,13 +1012,37 @@ constexpr unsigned UNSUPPORTED_WRITE[] = {
     llvm::ARM::MVE_VSTRWU32_post,
     llvm::ARM::MVE_VSTRWU32_pre,
     llvm::ARM::STC2L_OFFSET,
+    llvm::ARM::STC2L_OPTION,
+    llvm::ARM::STC2L_POST,
+    llvm::ARM::STC2L_PRE,
     llvm::ARM::STC2_OFFSET,
+    llvm::ARM::STC2_OPTION,
+    llvm::ARM::STC2_POST,
+    llvm::ARM::STC2_PRE,
     llvm::ARM::STCL_OFFSET,
+    llvm::ARM::STCL_OPTION,
+    llvm::ARM::STCL_POST,
+    llvm::ARM::STCL_PRE,
     llvm::ARM::STC_OFFSET,
+    llvm::ARM::STC_OPTION,
+    llvm::ARM::STC_POST,
+    llvm::ARM::STC_PRE,
     llvm::ARM::t2STC2L_OFFSET,
+    llvm::ARM::t2STC2L_OPTION,
+    llvm::ARM::t2STC2L_POST,
+    llvm::ARM::t2STC2L_PRE,
     llvm::ARM::t2STC2_OFFSET,
+    llvm::ARM::t2STC2_OPTION,
+    llvm::ARM::t2STC2_POST,
+    llvm::ARM::t2STC2_PRE,
     llvm::ARM::t2STCL_OFFSET,
+    llvm::ARM::t2STCL_OPTION,
+    llvm::ARM::t2STCL_POST,
+    llvm::ARM::t2STCL_PRE,
     llvm::ARM::t2STC_OFFSET,
+    llvm::ARM::t2STC_OPTION,
+    llvm::ARM::t2STC_POST,
+    llvm::ARM::t2STC_PRE,
     // clang-format on
 };
 
@@ -1295,6 +1355,9 @@ unsigned getReadSize(const llvm::MCInst &inst, const LLVMCPU &llvmcpu) {
       case llvm::ARM::LDMIA_UPD:
       case llvm::ARM::LDMIB:
       case llvm::ARM::LDMIB_UPD:
+      case llvm::ARM::FLDMXDB_UPD:
+      case llvm::ARM::FLDMXIA:
+      case llvm::ARM::FLDMXIA_UPD:
       case llvm::ARM::VLDMDDB_UPD:
       case llvm::ARM::VLDMDIA:
       case llvm::ARM::VLDMDIA_UPD:
@@ -1335,6 +1398,9 @@ unsigned getWriteSize(const llvm::MCInst &inst, const LLVMCPU &llvmcpu) {
       case llvm::ARM::STMIA_UPD:
       case llvm::ARM::STMIB:
       case llvm::ARM::STMIB_UPD:
+      case llvm::ARM::FSTMXDB_UPD:
+      case llvm::ARM::FSTMXIA:
+      case llvm::ARM::FSTMXIA_UPD:
       case llvm::ARM::VSTMDDB_UPD:
       case llvm::ARM::VSTMDIA:
       case llvm::ARM::VSTMDIA_UPD:
@@ -1451,6 +1517,9 @@ bool variadicOpsIsWrite(const llvm::MCInst &inst) {
     case llvm::ARM::LDMIA_UPD:
     case llvm::ARM::LDMIB:
     case llvm::ARM::LDMIB_UPD:
+    case llvm::ARM::FLDMXDB_UPD:
+    case llvm::ARM::FLDMXIA:
+    case llvm::ARM::FLDMXIA_UPD:
     case llvm::ARM::VLDMDDB_UPD:
     case llvm::ARM::VLDMDIA:
     case llvm::ARM::VLDMDIA_UPD:

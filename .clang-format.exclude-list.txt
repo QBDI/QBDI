@@ -1,2 +1,3 @@
 cmake/llvm/.*\.patch\.txt
 cmake/config/ios.toolchain.cmake
+test/Patch/X86/MemoryAccessTable_X86.cpp

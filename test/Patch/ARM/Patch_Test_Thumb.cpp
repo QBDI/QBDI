@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tGPRSave") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -27,7 +27,7 @@ TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tGPRSave") {
 }
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tGPRShuffle") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -35,7 +35,7 @@ TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tGPRShuffle") {
 }
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tRelativeAddressing") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -43,7 +43,7 @@ TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tRelativeAddressing") {
 }
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tFibonacciRecursion") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -52,7 +52,7 @@ TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tFibonacciRecursion") {
 }
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tBranchCondTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -60,7 +60,7 @@ TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tBranchCondTest") {
 }
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tBranchLinkCondTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -68,7 +68,7 @@ TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tBranchLinkCondTest") {
 }
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tBranchRegisterCondTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -80,7 +80,7 @@ TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tBranchRegisterCondTest") {
 }
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tPushPopTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -88,7 +88,7 @@ TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tPushPopTest") {
 }
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tLdmiaStmdbWbackTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -96,7 +96,7 @@ TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tLdmiaStmdbWbackTest") {
 }
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tLdmdbStmiaWbackTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -104,7 +104,7 @@ TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tLdmdbStmiaWbackTest") {
 }
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tLdmiaStmdbTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -112,7 +112,7 @@ TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tLdmiaStmdbTest") {
 }
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tLdmdbStmiaTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -120,7 +120,7 @@ TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tLdmdbStmiaTest") {
 }
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tLdrPCTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -128,7 +128,7 @@ TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tLdrPCTest") {
 }
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tLdrbPCTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -136,7 +136,7 @@ TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tLdrbPCTest") {
 }
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tLdrdPCTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -144,7 +144,7 @@ TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tLdrdPCTest") {
 }
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tLdrhPCTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -152,7 +152,7 @@ TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tLdrhPCTest") {
 }
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tLdrsbPCTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -160,7 +160,7 @@ TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tLdrsbPCTest") {
 }
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tLdrshPCTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -168,7 +168,7 @@ TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tLdrshPCTest") {
 }
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tMovPCTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -176,7 +176,7 @@ TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tMovPCTest") {
 }
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tTBBTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -184,7 +184,7 @@ TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tTBBTest") {
 }
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tTBHTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -192,7 +192,7 @@ TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tTBHTest") {
 }
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tITCondTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);
@@ -200,7 +200,7 @@ TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tITCondTest") {
 }
 
 TEST_CASE_METHOD(Patch_Test_Thumb, "Patch_Test-tldrexTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
   uint8_t buffer[4096] = {0};
 

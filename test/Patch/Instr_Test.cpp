@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ QBDI::VMAction increment(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-GPRSave_IC") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -45,7 +45,7 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-GPRSave_IC") {
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-GPRShuffle_IC") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -65,7 +65,7 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-GPRShuffle_IC") {
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-RelativeAddressing_IC") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -85,7 +85,7 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-RelativeAddressing_IC") {
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-ConditionalBranching_IC") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -105,7 +105,7 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-ConditionalBranching_IC") {
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-FibonacciRecursion_IC") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -126,7 +126,7 @@ TEST_CASE_METHOD(Instr_Test, "Instr_Test-FibonacciRecursion_IC") {
 }
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-StackTricks_IC") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 

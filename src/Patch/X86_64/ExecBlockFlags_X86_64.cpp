@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,8 @@ struct ExecBlockFlagsArray {
       } else if ((llvm::X86::XMM0 <= i && i <= llvm::X86::XMM15) ||
                  (llvm::X86::ST0 <= i && i <= llvm::X86::ST7) ||
                  (llvm::X86::MM0 <= i && i <= llvm::X86::MM7) ||
-                 llvm::X86::FPSW == i || llvm::X86::FPCW == i) {
+                 llvm::X86::FPSW == i || llvm::X86::FPCW == i ||
+                 llvm::X86::MXCSR == i) {
         arr[i] = ExecBlockFlags::needFPU;
       } else if (i == llvm::X86::FS || i == llvm::X86::GS) {
         arr[i] = ExecBlockFlags::needFSGS;
@@ -80,7 +81,7 @@ uint8_t getExecBlockFlags(const llvm::MCInst &inst,
   for (size_t i = 0; i < inst.getNumOperands(); i++) {
     const llvm::MCOperand &op = inst.getOperand(i);
     if (op.isReg()) {
-      flags |= cache.get(op.getReg());
+      flags |= cache.get(op.getReg().id());
     }
   }
 

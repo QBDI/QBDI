@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 #include "X86InstrInfo.h"
 #include "llvm/MC/MCInst.h"
 
+#include "Patch/Register.h"
 #include "Patch/RelocatableInst.h"
 #include "Patch/X86_64/Layer2_X86_64.h"
 #include "Patch/X86_64/RelocatableInst_X86_64.h"
@@ -296,7 +297,7 @@ llvm::MCInst vextractf128(RegLLVM base, rword offset, RegLLVM src,
                           uint8_t regoffset) {
   llvm::MCInst inst;
 
-  inst.setOpcode(llvm::X86::VEXTRACTF128mr);
+  inst.setOpcode(llvm::X86::VEXTRACTF128mri);
   inst.addOperand(llvm::MCOperand::createReg(base.getValue()));
   inst.addOperand(llvm::MCOperand::createImm(1));
   inst.addOperand(llvm::MCOperand::createReg(0));
@@ -312,7 +313,7 @@ llvm::MCInst vinsertf128(RegLLVM dst, RegLLVM base, rword offset,
                          uint8_t regoffset) {
   llvm::MCInst inst;
 
-  inst.setOpcode(llvm::X86::VINSERTF128rm);
+  inst.setOpcode(llvm::X86::VINSERTF128rmi);
   inst.addOperand(llvm::MCOperand::createReg(dst.getValue()));
   inst.addOperand(llvm::MCOperand::createReg(dst.getValue()));
   inst.addOperand(llvm::MCOperand::createReg(base.getValue()));
@@ -343,6 +344,15 @@ llvm::MCInst push64r(RegLLVM reg) {
   return inst;
 }
 
+llvm::MCInst push16r(RegLLVM reg) {
+  llvm::MCInst inst;
+
+  inst.setOpcode(llvm::X86::PUSH16r);
+  inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
+
+  return inst;
+}
+
 llvm::MCInst pop32r(RegLLVM reg) {
   llvm::MCInst inst;
 
@@ -356,6 +366,15 @@ llvm::MCInst pop64r(RegLLVM reg) {
   llvm::MCInst inst;
 
   inst.setOpcode(llvm::X86::POP64r);
+  inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
+
+  return inst;
+}
+
+llvm::MCInst pop16r(RegLLVM reg) {
+  llvm::MCInst inst;
+
+  inst.setOpcode(llvm::X86::POP16r);
   inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
 
   return inst;
@@ -523,6 +542,14 @@ llvm::MCInst xor64rr(RegLLVM dst, RegLLVM src) {
     case llvm::X86::R13:
     case llvm::X86::R14:
     case llvm::X86::R15:
+    case llvm::X86::R8W:
+    case llvm::X86::R9W:
+    case llvm::X86::R10W:
+    case llvm::X86::R11W:
+    case llvm::X86::R12W:
+    case llvm::X86::R13W:
+    case llvm::X86::R14W:
+    case llvm::X86::R15W:
       return true;
   }
 }
@@ -534,12 +561,21 @@ static unsigned lenInstLEAtype(RegLLVM base, RegLLVM scale, Constant cst,
 
   if (segment != 0) {
     return lenInstLEAtype(base, scale, cst, 0) + 1;
-  } else if (base == 0 and scale == 0) {
-    return (is_x86_64) ? 8 : 6;
+  }
+
+  unsigned addrSizePrefix = 0;
+  if constexpr (is_x86_64) {
+    if (getRegisterSize(base) == 4 or getRegisterSize(scale) == 4) {
+      addrSizePrefix = 1;
+    }
+  }
+
+  if (base == 0 and scale == 0) {
+    return addrSizePrefix + ((is_x86_64) ? 8 : 6);
   } else if (base == llvm::X86::RIP) {
     return 7;
   } else if (base == 0) {
-    return (is_x86_64) ? 8 : 7;
+    return addrSizePrefix + ((is_x86_64) ? 8 : 7);
   } else {
     unsigned len = (is_x86_64) ? 2 : 1;
     if (scale != 0 or base == llvm::X86::ESP or base == llvm::X86::RSP or
@@ -554,7 +590,7 @@ static unsigned lenInstLEAtype(RegLLVM base, RegLLVM scale, Constant cst,
     } else {
       len++;
     }
-    return len;
+    return addrSizePrefix + len;
   }
 }
 
@@ -607,11 +643,19 @@ RelocatableInst::UniquePtr Pushr(Reg reg) {
     return NoRelocSized::unique(push32r(reg), 1);
 }
 
+RelocatableInst::UniquePtr Push16r(RegLLVM reg) {
+  return NoRelocSized::unique(push16r(reg), isr8_15Reg(reg) ? 3 : 2);
+}
+
 RelocatableInst::UniquePtr Popr(Reg reg) {
   if constexpr (is_x86_64)
     return NoRelocSized::unique(pop64r(reg), isr8_15Reg(reg) ? 2 : 1);
   else
     return NoRelocSized::unique(pop32r(reg), 1);
+}
+
+RelocatableInst::UniquePtr Pop16r(RegLLVM reg) {
+  return NoRelocSized::unique(pop16r(reg), isr8_15Reg(reg) ? 3 : 2);
 }
 
 RelocatableInst::UniquePtr Add(Reg dest, Reg src, Constant cst) {

@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,6 +63,7 @@ llvm::MCInst br(RegLLVM reg);
 llvm::MCInst blr(RegLLVM reg);
 llvm::MCInst branch(rword offset);
 llvm::MCInst cbz(RegLLVM reg, sword offset);
+llvm::MCInst tbz(RegLLVM reg, unsigned bit, sword offset);
 llvm::MCInst ret(RegLLVM reg);
 llvm::MCInst adr(RegLLVM reg, sword offset);
 llvm::MCInst adrp(RegLLVM reg, sword offset = 0);
@@ -79,6 +80,11 @@ llvm::MCInst ldrhi(RegLLVM dest, RegLLVM base, sword offset);
 llvm::MCInst ldrhui(RegLLVM dest, RegLLVM base, rword offset);
 llvm::MCInst ldrb(RegLLVM dest, RegLLVM base, rword offset);
 llvm::MCInst ldxrb(RegLLVM dest, RegLLVM addr);
+llvm::MCInst ldxrh(RegLLVM dest, RegLLVM addr);
+llvm::MCInst ldxrw(RegLLVM dest, RegLLVM addr);
+llvm::MCInst ldxr(RegLLVM dest, RegLLVM addr);
+llvm::MCInst ldxpw(RegLLVM dest1, RegLLVM dest2, RegLLVM addr);
+llvm::MCInst ldxp(RegLLVM dest1, RegLLVM dest2, RegLLVM addr);
 llvm::MCInst ldp(RegLLVM dest1, RegLLVM dest2, RegLLVM base, sword offset);
 llvm::MCInst ldr_post_inc(RegLLVM dest, RegLLVM base, sword imm);
 llvm::MCInst ldp_post_inc(RegLLVM dest1, RegLLVM dest2, RegLLVM base,
@@ -111,6 +117,20 @@ llvm::MCInst autib(RegLLVM reg, RegLLVM ctx);
 llvm::MCInst autiza(RegLLVM reg);
 llvm::MCInst autizb(RegLLVM reg);
 
+llvm::MCInst autiasppcr(RegLLVM reg);
+llvm::MCInst autibsppcr(RegLLVM reg);
+
+llvm::MCInst autiasp();
+llvm::MCInst autibsp();
+
+llvm::MCInst pacm();
+
+llvm::MCInst pacia1716();
+llvm::MCInst pacib1716();
+
+llvm::MCInst pacia171615();
+llvm::MCInst pacib171615();
+
 // high level layer 2
 
 std::unique_ptr<RelocatableInst> Ld1PostInc(RegLLVM regs, RegLLVM base);
@@ -127,6 +147,9 @@ std::unique_ptr<RelocatableInst> Addr(RegLLVM dst, RegLLVM src1, RegLLVM src2,
 std::unique_ptr<RelocatableInst> Br(RegLLVM reg);
 std::unique_ptr<RelocatableInst> Blr(RegLLVM reg);
 std::unique_ptr<RelocatableInst> Cbz(RegLLVM reg, Constant offset);
+std::unique_ptr<RelocatableInst> Tbz(RegLLVM reg, unsigned bit,
+                                     Constant offset);
+std::unique_ptr<RelocatableInst> Branch(Constant offset);
 std::unique_ptr<RelocatableInst> Ret();
 std::unique_ptr<RelocatableInst> Adr(RegLLVM reg, rword offset);
 std::unique_ptr<RelocatableInst> Adrp(RegLLVM reg, rword offset);
@@ -138,6 +161,13 @@ std::unique_ptr<RelocatableInst> Ldrh(RegLLVM reg, RegLLVM base, rword offset);
 std::unique_ptr<RelocatableInst> Ldrb(RegLLVM reg, RegLLVM base, rword offset);
 std::unique_ptr<RelocatableInst> Ldr(RegLLVM reg, Offset offset);
 std::unique_ptr<RelocatableInst> Ldxrb(RegLLVM dest, RegLLVM addr);
+std::unique_ptr<RelocatableInst> Ldxrh(RegLLVM dest, RegLLVM addr);
+std::unique_ptr<RelocatableInst> Ldxrw(RegLLVM dest, RegLLVM addr);
+std::unique_ptr<RelocatableInst> Ldxr(RegLLVM dest, RegLLVM addr);
+std::unique_ptr<RelocatableInst> Ldxpw(RegLLVM dest1, RegLLVM dest2,
+                                       RegLLVM addr);
+std::unique_ptr<RelocatableInst> Ldxp(RegLLVM dest1, RegLLVM dest2,
+                                      RegLLVM addr);
 std::unique_ptr<RelocatableInst> LdrPost(RegLLVM dest, RegLLVM base,
                                          Constant imm);
 std::unique_ptr<RelocatableInst> Ldp(RegLLVM dest1, RegLLVM dest2, RegLLVM base,
@@ -184,6 +214,20 @@ std::unique_ptr<RelocatableInst> Autia(RegLLVM reg, RegLLVM ctx);
 std::unique_ptr<RelocatableInst> Autib(RegLLVM reg, RegLLVM ctx);
 std::unique_ptr<RelocatableInst> Autiza(RegLLVM reg);
 std::unique_ptr<RelocatableInst> Autizb(RegLLVM reg);
+
+std::unique_ptr<RelocatableInst> AutiaSPPCr(RegLLVM reg);
+std::unique_ptr<RelocatableInst> AutibSPPCr(RegLLVM reg);
+
+std::unique_ptr<RelocatableInst> Autiasp();
+std::unique_ptr<RelocatableInst> Autibsp();
+
+std::unique_ptr<RelocatableInst> Pacm();
+
+std::unique_ptr<RelocatableInst> Pacia1716();
+std::unique_ptr<RelocatableInst> Pacib1716();
+
+std::unique_ptr<RelocatableInst> Pacia171615();
+std::unique_ptr<RelocatableInst> Pacib171615();
 
 } // namespace QBDI
 

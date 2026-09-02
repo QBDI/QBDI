@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,6 +81,40 @@ public:
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
 };
 
+template <unsigned int... Ops>
+class OpIsIn : public AutoClone<PatchCondition, OpIsIn<Ops...>> {
+public:
+  constexpr OpIsIn() = default;
+
+  /*! Return true if the instruction opcode is in the list.
+   *
+   * @param[in] op LLVM instruction opcode ID.
+   */
+  bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override {
+    unsigned int opcode = patch.metadata.inst.getOpcode();
+    return ((opcode == Ops) || ...);
+  }
+};
+
+namespace detail {
+template <typename... Groups>
+struct OpIsInUnionImpl;
+
+template <unsigned int... Ops>
+struct OpIsInUnionImpl<OpIsIn<Ops...>> {
+  using type = OpIsIn<Ops...>;
+};
+
+template <unsigned int... Ops1, unsigned int... Ops2, typename... Rest>
+struct OpIsInUnionImpl<OpIsIn<Ops1...>, OpIsIn<Ops2...>, Rest...> {
+  using type =
+      typename OpIsInUnionImpl<OpIsIn<Ops1..., Ops2...>, Rest...>::type;
+};
+} // namespace detail
+
+template <typename... Groups>
+using OpIsInUnion = typename detail::OpIsInUnionImpl<Groups...>::type;
+
 class UseReg : public AutoClone<PatchCondition, UseReg> {
   Reg reg;
 
@@ -90,6 +124,27 @@ public:
    * @param[in] reg The register to compare with.
    */
   UseReg(Reg reg) : reg(reg) {}
+
+  bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
+};
+
+class OperandIs : public AutoClone<PatchCondition, OperandIs> {
+  unsigned int position;
+  RegLLVM reg;
+  Constant imm;
+
+  enum { RegType, ImmType } type;
+
+public:
+  /*! Return true if the operand is the expected register
+   */
+  OperandIs(unsigned int position, RegLLVM reg)
+      : position(position), reg(reg), imm(0), type(RegType) {};
+
+  /*! Return true if the operand is the expected immediate
+   */
+  OperandIs(unsigned int position, Constant imm)
+      : position(position), reg(0), imm(imm), type(ImmType) {};
 
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
 };

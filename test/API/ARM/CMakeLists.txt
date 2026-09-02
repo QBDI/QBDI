@@ -7,3 +7,7 @@ target_sources(
           "${CMAKE_CURRENT_LIST_DIR}/MemoryAccessTest_Thumb.cpp"
           "${CMAKE_CURRENT_LIST_DIR}/MemoryAccessTest_Thumb_LDM_STM.cpp"
           "${CMAKE_CURRENT_LIST_DIR}/VMTest_ARM.cpp")
+
+if(QBDI_TEST_INSTRUCTION_EXTENDED)
+  include("${CMAKE_CURRENT_LIST_DIR}/InstructionExtended/CMakeLists.txt")
+endif()

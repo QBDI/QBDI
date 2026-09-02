@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -210,10 +210,18 @@ bool Engine::isPreInst() const {
     return false;
   }
   uint16_t instID = curExecBlock->getCurrentInstID();
+  rword instAddress = curExecBlock->getInstAddress(instID);
+#if defined(QBDI_ARCH_ARM)
+  // The PREINST/POSTINST PC value set for a breakToHost follows the ARM
+  // interworking convention (bit 0 set for Thumb, see InstrRule::instrument),
+  // while getInstAddress() always returns the plain instruction address.
+  if (curExecBlock->getLLVMCPUByInst(instID).getCPUMode() == CPUMode::Thumb) {
+    instAddress |= 1;
+  }
+#endif
   // By internal convention, PREINST => PC == Current instruction address
   // (not matter of architecture)
-  return curExecBlock->getInstAddress(instID) ==
-         QBDI_GPR_GET(getGPRState(), REG_PC);
+  return instAddress == QBDI_GPR_GET(getGPRState(), REG_PC);
 }
 
 void Engine::addInstrumentedRange(rword start, rword end) {
@@ -279,17 +287,21 @@ std::vector<Patch> Engine::patch(rword start) {
 
     // handle disassembly error
     if (not dstatus) {
-      QBDI_DEBUG("Bump into invalid instruction at address {:x}", address);
+      size_t sizeDump = start + sizeCode - address;
+      if (sizeDump > 16) {
+        sizeDump = 16;
+      }
+      QBDI_DEBUG(
+          "Bump into invalid instruction at address {:x} (CPUMode {}) ({:n})",
+          address, curCPUMode,
+          spdlog::to_hex(reinterpret_cast<uint8_t *>(address),
+                         reinterpret_cast<uint8_t *>(address + sizeDump)));
 
       // Current instruction is invalid, stop the basic block right here
       bool rollbackOK = patchRuleAssembly->earlyEnd(llvmcpu, basicBlock);
 
       // if fail to rollback or no Patch has been generated : fail
       if ((not rollbackOK) or (basicBlock.size() == 0)) {
-        size_t sizeDump = start + sizeCode - address;
-        if (sizeDump > 16) {
-          sizeDump = 16;
-        }
         QBDI_ABORT(
             "Disassembly error : fail to parse address 0x{:x} (CPUMode {}) "
             "({:n})",
@@ -311,8 +323,35 @@ std::vector<Patch> Engine::patch(rword start) {
       std::string disass = llvmcpu.showInst(inst, address);
       QBDI_DEBUG("Patching 0x{:x} {}", address, disass.c_str());
     });
-    endLoop = not patchRuleAssembly->generate(inst, address, instSize, llvmcpu,
-                                              basicBlock);
+    const char *unsupportedReason = nullptr;
+    PatchRuleResult patchResult = patchRuleAssembly->generate(
+        inst, address, instSize, llvmcpu, basicBlock, unsupportedReason);
+
+    if (patchResult == PatchRuleResult::UNSUPPORTED) {
+      QBDI_DEBUG(
+          "Bump into unsupported instruction at address {:x} (CPUMode {}) : {}",
+          address, curCPUMode, llvmcpu.showInst(inst, address).c_str());
+
+      // Current instruction is unsupported, stop the basic block right here
+      bool rollbackOK = patchRuleAssembly->earlyEnd(llvmcpu, basicBlock);
+
+      // if fail to rollback or no Patch has been generated : fail
+      if ((not rollbackOK) or (basicBlock.size() == 0)) {
+        if (unsupportedReason != nullptr) {
+          QBDI_ABORT(
+              "Not PatchRule found for address 0x{:x} (CPUMode {}) : {} ({})",
+              address, curCPUMode, llvmcpu.showInst(inst, address).c_str(),
+              unsupportedReason);
+        } else {
+          QBDI_ABORT("Not PatchRule found for address 0x{:x} (CPUMode {}) : {}",
+                     address, curCPUMode,
+                     llvmcpu.showInst(inst, address).c_str());
+        }
+      }
+      break;
+    }
+
+    endLoop = (patchResult == PatchRuleResult::VALID);
     address += instSize;
   } while (endLoop);
 

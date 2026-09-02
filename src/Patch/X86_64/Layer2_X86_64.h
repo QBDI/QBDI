@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,9 +92,13 @@ llvm::MCInst push32r(RegLLVM reg);
 
 llvm::MCInst push64r(RegLLVM reg);
 
+llvm::MCInst push16r(RegLLVM reg);
+
 llvm::MCInst pop32r(RegLLVM reg);
 
 llvm::MCInst pop64r(RegLLVM reg);
+
+llvm::MCInst pop16r(RegLLVM reg);
 
 llvm::MCInst addr32i(RegLLVM dst, RegLLVM src, rword imm);
 
@@ -146,7 +150,11 @@ std::unique_ptr<RelocatableInst> Vinsertf128(RegLLVM dst, Offset offset,
 
 std::unique_ptr<RelocatableInst> Pushr(Reg reg);
 
+std::unique_ptr<RelocatableInst> Push16r(RegLLVM reg);
+
 std::unique_ptr<RelocatableInst> Popr(Reg reg);
+
+std::unique_ptr<RelocatableInst> Pop16r(RegLLVM reg);
 
 std::unique_ptr<RelocatableInst> Add(Reg dest, Reg src, Constant cst);
 

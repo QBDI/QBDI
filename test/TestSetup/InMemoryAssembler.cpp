@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,14 @@
 #include "Utility/LogSys.h"
 #include "Utility/System.h"
 
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/MC/MCAsmBackend.h"
 #include "llvm/MC/MCAsmInfo.h"
 #include "llvm/MC/MCCodeEmitter.h"
 #include "llvm/MC/MCContext.h"
+#include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstrInfo.h"
 #include "llvm/MC/MCObjectFileInfo.h"
 #include "llvm/MC/MCObjectWriter.h"
@@ -49,8 +51,29 @@
 #include "llvm/TargetParser/SubtargetFeature.h"
 #include "llvm/TargetParser/Triple.h"
 
-void writeResult(const char *source,
-                 const llvm::SmallVector<char, 1024> &objectVector) {
+void InMemoryObject::patchInstructionOperand(
+    const QBDI::LLVMCPU &llvmcpu, uint8_t *instAddr, size_t instLen,
+    const std::function<void(llvm::MCInst &)> &patch) {
+  llvm::MCInst inst;
+  uint64_t instSize;
+  bool dstatus = llvmcpu.getInstruction(
+      inst, instSize, llvm::ArrayRef<uint8_t>(instAddr, instLen),
+      reinterpret_cast<uint64_t>(instAddr));
+  QBDI_REQUIRE_ABORT(dstatus, "Failed to decode instruction for relocation");
+
+  patch(inst);
+
+  llvm::SmallVector<char, 4> stream;
+  llvmcpu.writeInstruction(inst, stream, reinterpret_cast<uint64_t>(instAddr));
+  QBDI_REQUIRE_ABORT(stream.size() == instLen,
+                     "Unexpected instruction length after relocation patch: "
+                     "expected {}, got {}",
+                     instLen, stream.size());
+  memcpy(instAddr, stream.data(), stream.size());
+}
+
+static void writeResult(const char *source,
+                        const llvm::SmallVector<char, 1024> &objectVector) {
 
   if (getenv("DUMP_TEST_ASM") != nullptr) {
     std::string filename_source(getenv("DUMP_TEST_ASM"));
@@ -103,14 +126,15 @@ InMemoryObject::InMemoryObject(const char *source, const char *cpu,
       llvm::TargetRegistry::lookupTarget(arch, processTriple, error);
 
   llvm::MCTargetOptions options;
+  llvm::Triple mcTriple(tripleName);
   // Allocate all LLVM classes
   MRI = std::unique_ptr<llvm::MCRegisterInfo>(
-      processTarget->createMCRegInfo(tripleName));
+      processTarget->createMCRegInfo(mcTriple));
   MAI = std::unique_ptr<llvm::MCAsmInfo>(
-      processTarget->createMCAsmInfo(*MRI, tripleName, options));
+      processTarget->createMCAsmInfo(*MRI, mcTriple, options));
   MCII = std::unique_ptr<llvm::MCInstrInfo>(processTarget->createMCInstrInfo());
   MSTI = std::unique_ptr<llvm::MCSubtargetInfo>(
-      processTarget->createMCSubtargetInfo(tripleName, cpu, featuresStr));
+      processTarget->createMCSubtargetInfo(mcTriple, cpu, featuresStr));
   MCTX = std::make_unique<llvm::MCContext>(processTriple, MAI.get(), MRI.get(),
                                            MSTI.get(), &SrcMgr);
   MOFI = std::unique_ptr<llvm::MCObjectFileInfo>(

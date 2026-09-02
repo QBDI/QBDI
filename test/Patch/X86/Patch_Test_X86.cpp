@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 #include "Patch/Patch_Test.h"
 
 TEST_CASE_METHOD(Patch_Test, "Patch_Test-LoopCode") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   QBDI::Context inputState;
 
   initContext(inputState);

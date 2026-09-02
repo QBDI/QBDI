@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 #include "Patch/Instr_Test.h"
 
 TEST_CASE_METHOD(Instr_Test, "Instr_Test-LoopCode_IC") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 

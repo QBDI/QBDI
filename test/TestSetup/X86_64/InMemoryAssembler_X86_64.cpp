@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,9 +50,9 @@ void InMemoryObject::perform_reloc(llvm::object::ObjectFile *object,
       continue;
     }
 
-    // uint8_t* relocatedSectionPtr = static_cast<uint8_t*>(objectBlock.base())
-    // +
-    //   llvm::object::ELFSectionRef(*relocatedSection).getOffset();
+    uint8_t *relocatedSectionPtr =
+        static_cast<uint8_t *>(objectBlock.base()) +
+        llvm::object::ELFSectionRef(*relocatedSection).getOffset();
 
     for (auto relocIt = sit->relocation_begin();
          relocIt != sit->relocation_end(); ++relocIt) {
@@ -78,15 +78,29 @@ void InMemoryObject::perform_reloc(llvm::object::ObjectFile *object,
            llvm::object::BasicSymbolRef::Flags::SF_Undefined) == 0,
           "Relocation to the undefined symbol {}", sym->getName()->str());
 
-      // int64_t address = *sym->getAddress();
+      int64_t address = *sym->getAddress();
 
-      // if (auto AddendOrErr =
-      // llvm::object::ELFRelocationRef(*relocIt).getAddend())
-      //   address += *AddendOrErr;
-      // else
-      //   llvm::consumeError(AddendOrErr.takeError());
+      if (auto AddendOrErr =
+              llvm::object::ELFRelocationRef(*relocIt).getAddend())
+        address += *AddendOrErr;
+      else
+        llvm::consumeError(AddendOrErr.takeError());
+
+      uint32_t offset = relocIt->getOffset() - relocatedSection->getAddress();
 
       switch (relocIt->getType()) {
+        case llvm::ELF::R_X86_64_64: {
+          QBDI_REQUIRE_ABORT(offset + 8 <= relocatedSection->getSize(),
+                             "Symbol data out of the target section");
+          QBDI_REQUIRE_ABORT(relocatedSectionPtr == code.data(),
+                             "Wrong buffer pointer");
+          uint64_t *dataAddr =
+              reinterpret_cast<uint64_t *>(relocatedSectionPtr + offset);
+          *dataAddr = reinterpret_cast<uint64_t>(code.data()) + address;
+
+          QBDI_DEBUG("Relocated value 0x{:x} : 0x{:x}", offset, *dataAddr);
+          break;
+        }
         default: {
           llvm::SmallVector<char> relocName;
           relocIt->getTypeName(relocName);

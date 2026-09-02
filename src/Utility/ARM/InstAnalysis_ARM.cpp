@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,7 +82,8 @@ void analyseCondition(InstAnalysis *instAnalysis, const llvm::MCInst &inst,
 
   for (unsigned int opn = 0; opn < desc.getNumOperands(); opn++) {
     const llvm::MCOperandInfo &opInfo = desc.operands()[opn];
-    if (opInfo.RegClass == llvm::ARM::CCRRegClassID) {
+    if (opInfo.RegClass == llvm::ARM::CCRRegClassID and
+        not opInfo.isPredicate()) {
       const llvm::MCOperand &op = inst.getOperand(opn);
       if (op.isReg() and op.getReg() == llvm::ARM::CPSR) {
         instAnalysis->flagsAccess |= REGISTER_WRITE;

@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ RelocatableInst::UniquePtrVec getExecBlockPrologue(const LLVMCPU &llvmcpu) {
              LoadReg(Reg(0), Offset(offsetof(Context, hostState.executeFlags)))
                  .genReloc(llvmcpu));
       prologue.push_back(Test(Reg(0), ExecBlockFlags::needFPU));
-      prologue.push_back(Je(7 + 4));
+      prologue.push_back(Je(7));
     }
     prologue.push_back(Fxrstor(Offset(offsetof(Context, fprState))));
     // target je needFPU
@@ -61,9 +61,9 @@ RelocatableInst::UniquePtrVec getExecBlockPrologue(const LLVMCPU &llvmcpu) {
       if (not llvmcpu.hasOptions(Options::OPT_DISABLE_OPTIONAL_FPR)) {
         prologue.push_back(Test(Reg(0), ExecBlockFlags::needAVX));
         if constexpr (is_x86_64)
-          prologue.push_back(Je(16 * 10 + 4));
+          prologue.push_back(Je(16 * 10));
         else
-          prologue.push_back(Je(8 * 10 + 4));
+          prologue.push_back(Je(8 * 10));
       }
       prologue.push_back(Vinsertf128(
           llvm::X86::YMM0,
@@ -128,7 +128,7 @@ RelocatableInst::UniquePtrVec getExecBlockPrologue(const LLVMCPU &llvmcpu) {
            LoadReg(Reg(0), Offset(offsetof(Context, hostState.executeFlags)))
                .genReloc(llvmcpu));
     prologue.push_back(Test(Reg(0), ExecBlockFlags::needFSGS));
-    prologue.push_back(Je(5 * 4 + 7 * 4 + 4));
+    prologue.push_back(Je(5 * 4 + 7 * 4));
 
     append(prologue, LoadReg(Reg(3), Offset(offsetof(Context, gprState.fs)))
                          .genReloc(llvmcpu));
@@ -182,7 +182,7 @@ RelocatableInst::UniquePtrVec getExecBlockEpilogue(const LLVMCPU &llvmcpu) {
            LoadReg(Reg(0), Offset(offsetof(Context, hostState.executeFlags)))
                .genReloc(llvmcpu));
     epilogue.push_back(Test(Reg(0), ExecBlockFlags::needFSGS));
-    epilogue.push_back(Je(5 * 4 + 7 * 4 + 4));
+    epilogue.push_back(Je(5 * 4 + 7 * 4));
 
     append(epilogue, LoadReg(Reg(3), Offset(offsetof(Context, hostState.fs)))
                          .genReloc(llvmcpu));
@@ -205,7 +205,7 @@ RelocatableInst::UniquePtrVec getExecBlockEpilogue(const LLVMCPU &llvmcpu) {
              LoadReg(Reg(0), Offset(offsetof(Context, hostState.executeFlags)))
                  .genReloc(llvmcpu));
       epilogue.push_back(Test(Reg(0), ExecBlockFlags::needFPU));
-      epilogue.push_back(Je(7 + 4));
+      epilogue.push_back(Je(7));
     }
     epilogue.push_back(Fxsave(Offset(offsetof(Context, fprState))));
     // target je needFPU
@@ -215,9 +215,9 @@ RelocatableInst::UniquePtrVec getExecBlockEpilogue(const LLVMCPU &llvmcpu) {
       if (not llvmcpu.hasOptions(Options::OPT_DISABLE_OPTIONAL_FPR)) {
         epilogue.push_back(Test(Reg(0), ExecBlockFlags::needAVX));
         if constexpr (is_x86_64)
-          epilogue.push_back(Je(16 * 10 + 4));
+          epilogue.push_back(Je(16 * 10));
         else
-          epilogue.push_back(Je(8 * 10 + 4));
+          epilogue.push_back(Je(8 * 10));
       }
       epilogue.push_back(Vextractf128(
           Offset(offsetof(Context, fprState) + offsetof(FPRState, ymm0)),

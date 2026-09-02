@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,23 +29,6 @@ namespace QBDI {
 
 bool HasCond::test(const Patch &patch, const LLVMCPU &llvmcpu) const {
   return patch.metadata.archMetadata.cond != llvm::ARMCC::AL;
-}
-
-bool OperandIs::test(const Patch &patch, const LLVMCPU &llvmcpu) const {
-  if (position >= patch.metadata.inst.getNumOperands()) {
-    return false;
-  }
-  const llvm::MCOperand &op = patch.metadata.inst.getOperand(position);
-  if (type == RegType and op.isReg()) {
-    return reg == op.getReg();
-  } else if (type == ImmType and op.isImm()) {
-    return imm == op.getImm();
-  } else {
-    // OperandIs can be used before the check of the opcode
-    // If the operand doesn't have the good type, return false to skip the
-    // current Patchrules.
-    return false;
-  }
 }
 
 bool InITBlock::test(const Patch &patch, const LLVMCPU &llvmcpu) const {

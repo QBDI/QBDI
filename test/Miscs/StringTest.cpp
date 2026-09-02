@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,4 +49,15 @@ TEST_CASE("startsWithTest-Prefix") {
   CHECK(QBDI::String::startsWith("B*", "B64"));
   CHECK_FALSE(QBDI::String::startsWith("B", "BIQ"));
   CHECK(QBDI::String::startsWith("B*", "BIQ"));
+}
+
+TEST_CASE("startsWithTest-AArch64Prefix") {
+  CHECK_FALSE(QBDI::String::startsWith("BL", "B"));
+  CHECK_FALSE(QBDI::String::startsWith("BLR", "B"));
+  CHECK_FALSE(QBDI::String::startsWith("BLX", "B"));
+  CHECK_FALSE(QBDI::String::startsWith("BLR", "BL"));
+  CHECK_FALSE(QBDI::String::startsWith("RETX", "RET"));
+  CHECK(QBDI::String::startsWith("BL", "BL"));
+  CHECK(QBDI::String::startsWith("BL", "BL2"));
+  CHECK(QBDI::String::startsWith("BL", "BL_pseudo"));
 }

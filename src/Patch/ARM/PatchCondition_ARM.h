@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,27 +29,6 @@ public:
    * depending of the flags
    */
   HasCond() {};
-
-  bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
-};
-
-class OperandIs : public AutoClone<PatchCondition, OperandIs> {
-  unsigned int position;
-  RegLLVM reg;
-  Constant imm;
-
-  enum { RegType, ImmType } type;
-
-public:
-  /*! Return true if the operand is the expected register
-   */
-  OperandIs(unsigned int position, RegLLVM reg)
-      : position(position), reg(reg), imm(0), type(RegType) {};
-
-  /*! Return true if the operand is the expected immediate
-   */
-  OperandIs(unsigned int position, Constant imm)
-      : position(position), reg(0), imm(imm), type(ImmType) {};
 
   bool test(const Patch &patch, const LLVMCPU &llvmcpu) const override;
 };

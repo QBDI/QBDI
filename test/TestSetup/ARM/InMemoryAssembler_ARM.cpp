@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,9 +90,8 @@ void InMemoryObject::perform_reloc(llvm::object::ObjectFile *object,
 
       switch (relocIt->getType()) {
         case llvm::ELF::R_ARM_CALL: {
-          QBDI_REQUIRE_ABORT(*sym->getFlags() &
-                                 llvm::object::BasicSymbolRef::Flags::SF_Thumb,
-                             "The target symbol isn't a thumb method");
+          const bool targetIsThumb =
+              *sym->getFlags() & llvm::object::BasicSymbolRef::Flags::SF_Thumb;
           const QBDI::LLVMCPU &llvmcpu = llvmcpus.getCPU(QBDI::CPUMode::ARM);
 
           uint32_t offset =
@@ -102,30 +101,59 @@ void InMemoryObject::perform_reloc(llvm::object::ObjectFile *object,
           QBDI_REQUIRE_ABORT(relocatedSectionPtr == code.data(),
                              "Wrong buffer pointer");
           uint8_t *instAddr = relocatedSectionPtr + offset;
+          int64_t relocOffset = relocIt->getOffset();
 
-          llvm::MCInst inst;
-          uint64_t instSize;
-          bool dstatus = llvmcpu.getInstruction(
-              inst, instSize, llvm::ArrayRef<uint8_t>(instAddr, 4),
-              reinterpret_cast<uint64_t>(instAddr));
-          QBDI_REQUIRE_ABORT(dstatus, "Fail parse the instruction");
+          patchInstructionOperand(
+              llvmcpu, instAddr, 4, [&](llvm::MCInst &inst) {
+                unsigned expectedOpcode =
+                    targetIsThumb ? llvm::ARM::BLXi : llvm::ARM::BL;
+                QBDI_REQUIRE_ABORT(inst.getOpcode() == expectedOpcode,
+                                   "Unexpected opcode {} (expected {})",
+                                   inst.getOpcode(), expectedOpcode);
+                QBDI_REQUIRE_ABORT(inst.getNumOperands() >= 1,
+                                   "Unexpected operand number");
+                QBDI_REQUIRE_ABORT(inst.getOperand(0).isImm(),
+                                   "Unexpected operand type");
 
-          QBDI_REQUIRE_ABORT(inst.getOpcode() == llvm::ARM::BLXi,
-                             "Unexpected OPcode");
-          QBDI_REQUIRE_ABORT(inst.getNumOperands() == 1,
-                             "Unexpected operand number");
-          QBDI_REQUIRE_ABORT(inst.getOperand(0).isImm(),
-                             "Unexpected operand type");
+                inst.getOperand(0).setImm(inst.getOperand(0).getImm() +
+                                          address - relocOffset);
+              });
 
-          inst.getOperand(0).setImm(inst.getOperand(0).getImm() + address -
-                                    relocIt->getOffset());
+          QBDI_DEBUG("Relocated instruction 0x{:x} : 0x{:x}", offset,
+                     *reinterpret_cast<uint32_t *>(instAddr));
+          break;
+        }
+        case llvm::ELF::R_ARM_JUMP24: {
+          QBDI_REQUIRE_ABORT((*sym->getFlags() &
+                              llvm::object::BasicSymbolRef::Flags::SF_Thumb) ==
+                                 0,
+                             "The target symbol isn't an arm method");
+          const QBDI::LLVMCPU &llvmcpu = llvmcpus.getCPU(QBDI::CPUMode::ARM);
 
-          llvm::SmallVector<char, 4> stream;
-          llvmcpu.writeInstruction(inst, stream,
-                                   reinterpret_cast<uint64_t>(instAddr));
-          QBDI_REQUIRE_ABORT(stream.size() == 4,
-                             "Unexpected instruction length");
-          memcpy(instAddr, stream.data(), 4);
+          uint32_t offset =
+              relocIt->getOffset() - relocatedSection->getAddress();
+          QBDI_REQUIRE_ABORT(offset + 4 <= relocatedSection->getSize(),
+                             "Symbol instruction out of the target section");
+          QBDI_REQUIRE_ABORT(relocatedSectionPtr == code.data(),
+                             "Wrong buffer pointer");
+          uint8_t *instAddr = relocatedSectionPtr + offset;
+          int64_t relocOffset = relocIt->getOffset();
+
+          patchInstructionOperand(
+              llvmcpu, instAddr, 4, [&](llvm::MCInst &inst) {
+                QBDI_REQUIRE_ABORT(inst.getOpcode() == llvm::ARM::BL_pred ||
+                                       inst.getOpcode() == llvm::ARM::Bcc,
+                                   "Unexpected opcode {} (expected BL_pred "
+                                   "or Bcc)",
+                                   inst.getOpcode());
+                QBDI_REQUIRE_ABORT(inst.getNumOperands() >= 1,
+                                   "Unexpected operand number");
+                QBDI_REQUIRE_ABORT(inst.getOperand(0).isImm(),
+                                   "Unexpected operand type");
+
+                inst.getOperand(0).setImm(inst.getOperand(0).getImm() +
+                                          address - relocOffset);
+              });
 
           QBDI_DEBUG("Relocated instruction 0x{:x} : 0x{:x}", offset,
                      *reinterpret_cast<uint32_t *>(instAddr));
@@ -145,41 +173,33 @@ void InMemoryObject::perform_reloc(llvm::object::ObjectFile *object,
           QBDI_REQUIRE_ABORT(relocatedSectionPtr == code.data(),
                              "Wrong buffer pointer");
           uint8_t *instAddr = relocatedSectionPtr + offset;
+          int64_t relocOffset = relocIt->getOffset();
 
-          llvm::MCInst inst;
-          uint64_t instSize;
-          bool dstatus = llvmcpu.getInstruction(
-              inst, instSize, llvm::ArrayRef<uint8_t>(instAddr, 4),
-              reinterpret_cast<uint64_t>(instAddr));
-          QBDI_REQUIRE_ABORT(dstatus, "Fail parse the instruction");
+          patchInstructionOperand(
+              llvmcpu, instAddr, 4, [&](llvm::MCInst &inst) {
+                QBDI_REQUIRE_ABORT(inst.getOpcode() == llvm::ARM::tBLXi,
+                                   "Unexpected OPcode");
+                QBDI_REQUIRE_ABORT(inst.getNumOperands() >= 3,
+                                   "Unexpected operand number");
+                QBDI_REQUIRE_ABORT(inst.getOperand(2).isImm(),
+                                   "Unexpected operand type");
 
-          QBDI_REQUIRE_ABORT(inst.getOpcode() == llvm::ARM::tBLXi,
-                             "Unexpected OPcode");
-          QBDI_REQUIRE_ABORT(inst.getNumOperands() >= 3,
-                             "Unexpected operand number");
-          QBDI_REQUIRE_ABORT(inst.getOperand(2).isImm(),
-                             "Unexpected operand type");
+                if (inst.getNumOperands() == 4 && inst.getOperand(3).isReg() &&
+                    inst.getOperand(3).getReg() == llvm::ARM::CPSR &&
+                    llvmcpu.getMCII().get(llvm::ARM::tBLXi).getNumOperands() ==
+                        3) {
+                  inst.erase(inst.begin() + 3);
+                }
 
-          if (inst.getNumOperands() == 4 && inst.getOperand(3).isReg() &&
-              inst.getOperand(3).getReg() == llvm::ARM::CPSR &&
-              llvmcpu.getMCII().get(llvm::ARM::tBLXi).getNumOperands() == 3) {
-            inst.erase(inst.begin() + 3);
-          }
-
-          uint32_t value =
-              inst.getOperand(2).getImm() + address - relocIt->getOffset();
-          if (value % 4 != 0) {
-            value += 2;
-          }
-          QBDI_REQUIRE_ABORT((value & 1) == 0, "Invalid Address 0x{:x}", value);
-          inst.getOperand(2).setImm(value);
-
-          llvm::SmallVector<char, 4> stream;
-          llvmcpu.writeInstruction(inst, stream,
-                                   reinterpret_cast<uint64_t>(instAddr));
-          QBDI_REQUIRE_ABORT(stream.size() == 4,
-                             "Unexpected instruction length");
-          memcpy(instAddr, stream.data(), 4);
+                uint32_t value =
+                    inst.getOperand(2).getImm() + address - relocOffset;
+                if (value % 4 != 0) {
+                  value += 2;
+                }
+                QBDI_REQUIRE_ABORT((value & 1) == 0, "Invalid Address 0x{:x}",
+                                   value);
+                inst.getOperand(2).setImm(value);
+              });
 
           QBDI_DEBUG("Relocated instruction 0x{:x} : 0x{:x}", offset,
                      *reinterpret_cast<uint32_t *>(instAddr));

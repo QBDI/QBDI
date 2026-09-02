@@ -6,40 +6,68 @@ set(__add_qbdi_llvm ON)
 include(FetchContent)
 
 # configure FetchContent
-set(QBDI_LLVM_MAJOR_VERSION 19)
-set(QBDI_LLVM_VERSION 19.1.5)
-
-# download and include llvm cmake module
-option(QBDI_INCLUDE_LLVM_CMAKE_MODUKE "Include llvm cmake module" ON)
-if(QBDI_INCLUDE_LLVM_CMAKE_MODUKE)
-  FetchContent_Populate(
-    llvm_cmake
-    URL "https://github.com/llvm/llvm-project/releases/download/llvmorg-${QBDI_LLVM_VERSION}/cmake-${QBDI_LLVM_VERSION}.src.tar.xz"
-    URL_HASH
-      "SHA256=a08ae477571fd5e929c27d3d0d28c6168d58dd00b6354c2de3266ae0d86ad44f"
-    DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/llvm-cmake-download"
-    SOURCE_DIR "${FETCHCONTENT_BASE_DIR}/qbdi_llvm/cmake"
-    BINARY_DIR "${FETCHCONTENT_BASE_DIR}/llvm_cmake-build"
-    SUBBUILD_DIR "${FETCHCONTENT_BASE_DIR}/llvm_cmake-subbuild"
-    QUIET)
-endif()
+set(QBDI_LLVM_MAJOR_VERSION 22)
+set(QBDI_LLVM_VERSION 22.1.8)
 
 # Variable also use in QBDI_llvm_tblgen
 set(QBDI_LLVM_URL
-    "https://github.com/llvm/llvm-project/releases/download/llvmorg-${QBDI_LLVM_VERSION}/llvm-${QBDI_LLVM_VERSION}.src.tar.xz"
+    "https://github.com/llvm/llvm-project/releases/download/llvmorg-${QBDI_LLVM_VERSION}/llvm-project-${QBDI_LLVM_VERSION}.src.tar.xz"
 )
 set(QBDI_LLVM_URL_HASH
-    "SHA256=7d71635948e4da1814ce8e15ec45399e4094a5442e86d352c96ded0f2b3171b6")
+    "SHA256=922f1817a0df7b1489272d18134ee0087a8b068828f87ac63b9861b1a9965888")
 
 FetchContent_Populate(
   llvm
   URL "${QBDI_LLVM_URL}"
   URL_HASH "${QBDI_LLVM_URL_HASH}"
   DOWNLOAD_DIR "${QBDI_THIRD_PARTY_DIRECTORY}/llvm-download"
-  SOURCE_DIR "${FETCHCONTENT_BASE_DIR}/qbdi_llvm/llvm"
+  SOURCE_DIR "${FETCHCONTENT_BASE_DIR}/qbdi_llvm"
   BINARY_DIR "${FETCHCONTENT_BASE_DIR}/llvm-build"
   SUBBUILD_DIR "${FETCHCONTENT_BASE_DIR}/llvm-subbuild"
   QUIET)
+
+# Apply QBDI-specific patches to the fetched LLVM source
+# ========================================================
+# Patches are grouped in per-architecture subdirectories of
+# ${CMAKE_CURRENT_LIST_DIR}/patches/ and only applied when building for the
+# matching target architecture. Each patch file gets its own stamp (named
+# after the patch), so patches are tracked and applied independently of
+# each other rather than as one all-or-nothing batch.
+set(QBDI_LLVM_PATCH_DIRS)
+if(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
+  list(APPEND QBDI_LLVM_PATCH_DIRS "${CMAKE_CURRENT_LIST_DIR}/patches/X86")
+endif()
+if(QBDI_ARCH_ARM)
+  list(APPEND QBDI_LLVM_PATCH_DIRS "${CMAKE_CURRENT_LIST_DIR}/patches/ARM")
+endif()
+if(QBDI_ARCH_AARCH64)
+  list(APPEND QBDI_LLVM_PATCH_DIRS "${CMAKE_CURRENT_LIST_DIR}/patches/AARCH64")
+endif()
+
+set(QBDI_LLVM_PATCH_STAMP_DIR "${llvm_SOURCE_DIR}/.qbdi_patches_applied")
+foreach(patch_dir ${QBDI_LLVM_PATCH_DIRS})
+  file(GLOB QBDI_LLVM_PATCH_FILES "${patch_dir}/*.patch")
+  list(SORT QBDI_LLVM_PATCH_FILES)
+  foreach(patch_file ${QBDI_LLVM_PATCH_FILES})
+    get_filename_component(QBDI_LLVM_PATCH_NAME "${patch_file}" NAME)
+    set(QBDI_LLVM_PATCH_STAMP
+        "${QBDI_LLVM_PATCH_STAMP_DIR}/${QBDI_LLVM_PATCH_NAME}")
+    if(NOT EXISTS "${QBDI_LLVM_PATCH_STAMP}")
+      find_package(Patch REQUIRED)
+      message(STATUS "Applying LLVM patch: ${patch_file}")
+      execute_process(
+        COMMAND "${Patch_EXECUTABLE}" -p1 --binary --input=${patch_file}
+        WORKING_DIRECTORY "${llvm_SOURCE_DIR}"
+        RESULT_VARIABLE QBDI_LLVM_PATCH_RESULT)
+      if(NOT QBDI_LLVM_PATCH_RESULT EQUAL 0)
+        message(FATAL_ERROR "Failed to apply LLVM patch: ${patch_file}")
+      endif()
+      file(WRITE "${QBDI_LLVM_PATCH_STAMP}" "")
+    endif()
+  endforeach()
+endforeach()
+
+set(llvm_SOURCE_DIR "${llvm_SOURCE_DIR}/llvm")
 
 set(CMAKE_CXX_STANDARD
     17

@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@
 #include "llvm/MC/MCObjectFileInfo.h"
 #include "llvm/MC/MCObjectWriter.h"
 #include "llvm/MC/MCRegisterInfo.h"
+#include "llvm/MC/MCSection.h"
 #include "llvm/MC/MCSubtargetInfo.h"
 #include "llvm/MC/MCTargetOptions.h"
 #include "llvm/MC/MCValue.h"
@@ -127,12 +128,12 @@ LLVMCPU::LLVMCPU(const std::string &_cpu, const std::string &_arch,
   // Allocate all LLVM classes
   llvm::MCTargetOptions MCOptions;
   MRI = std::unique_ptr<llvm::MCRegisterInfo>(
-      target->createMCRegInfo(tripleName));
+      target->createMCRegInfo(processTriple));
   MAI = std::unique_ptr<llvm::MCAsmInfo>(
-      target->createMCAsmInfo(*MRI, tripleName, MCOptions));
+      target->createMCAsmInfo(*MRI, processTriple, MCOptions));
   MCII = std::unique_ptr<llvm::MCInstrInfo>(target->createMCInstrInfo());
   MSTI = std::unique_ptr<llvm::MCSubtargetInfo>(
-      target->createMCSubtargetInfo(tripleName, cpu, featuresStr));
+      target->createMCSubtargetInfo(processTriple, cpu, featuresStr));
   MCTX = std::make_unique<llvm::MCContext>(processTriple, MAI.get(), MRI.get(),
                                            MSTI.get(), nullptr, &MCOptions);
   MOFI = std::unique_ptr<llvm::MCObjectFileInfo>(
@@ -188,7 +189,7 @@ bool LLVMCPU::getInstruction(llvm::MCInst &instr, uint64_t &size,
   return status != llvm::MCDisassembler::Fail;
 }
 
-void LLVMCPU::writeInstruction(const llvm::MCInst inst,
+void LLVMCPU::writeInstruction(const llvm::MCInst &inst,
                                llvm::SmallVectorImpl<char> &CB,
                                rword address) const {
   // MCCodeEmitter needs a fixups array
@@ -225,8 +226,11 @@ void LLVMCPU::writeInstruction(const llvm::MCInst inst,
     llvm::MCFixup fixup = fixups.pop_back_val();
     int64_t value;
     if (fixup.getValue()->evaluateAsAbsolute(value)) {
-      assembler->getBackend().applyFixup(*assembler, fixup, target, buffRef,
-                                         (uint64_t)value, true, MSTI.get());
+      llvm::MCFragment dummyFragment;
+      assembler->getBackend().applyFixup(
+          dummyFragment, fixup, target,
+          reinterpret_cast<uint8_t *>(buffRef.data()) + fixup.getOffset(),
+          (uint64_t)value, true);
     } else {
       QBDI_WARN("Could not evalutate fixup, might crash!");
     }

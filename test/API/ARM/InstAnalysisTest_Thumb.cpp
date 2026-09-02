@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -361,7 +361,7 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_Thumb-ital") {
            QBDI::CONDITION_ALWAYS, 4, 0, -1, nullptr, QBDI::REGISTER_UNUSED},
           {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_UNDEFINED_EFFECT, 8, 4, 0, -1,
            nullptr, QBDI::REGISTER_UNUSED},
-          {QBDI::OPERAND_SEG, QBDI::OPERANDFLAG_IMPLICIT, 12, 1, 0, -1,
+          {QBDI::OPERAND_SEG, QBDI::OPERANDFLAG_IMPLICIT, 13, 1, 0, -1,
            "ITSTATE", QBDI::REGISTER_WRITE},
       },
       QBDI::REGISTER_UNUSED);
@@ -387,7 +387,7 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_Thumb-iteq") {
            QBDI::CONDITION_EQUALS, 4, 0, -1, nullptr, QBDI::REGISTER_UNUSED},
           {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_UNDEFINED_EFFECT, 8, 4, 0, -1,
            nullptr, QBDI::REGISTER_UNUSED},
-          {QBDI::OPERAND_SEG, QBDI::OPERANDFLAG_IMPLICIT, 12, 1, 0, -1,
+          {QBDI::OPERAND_SEG, QBDI::OPERANDFLAG_IMPLICIT, 13, 1, 0, -1,
            "ITSTATE", QBDI::REGISTER_WRITE},
       },
       QBDI::REGISTER_UNUSED);

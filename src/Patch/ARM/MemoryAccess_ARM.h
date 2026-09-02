@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,19 @@
 namespace QBDI {
 class RelocatableInst;
 class LLVMCPU;
+
+enum MemoryTag : uint16_t {
+  MEN_COND_REACH_TAG = MEMORY_TAG_BEGIN + 0,
+
+  MEM_READ_ADDRESS_TAG = MEMORY_TAG_BEGIN + 1,
+  MEM_WRITE_ADDRESS_TAG = MEMORY_TAG_BEGIN + 2,
+
+  MEM_READ_VALUE_TAG = MEMORY_TAG_BEGIN + 3,
+  MEM_WRITE_VALUE_TAG = MEMORY_TAG_BEGIN + 4,
+  MEM_VALUE_EXTENDED_TAG = MEMORY_TAG_BEGIN + 5,
+
+  MEM_EXCLUSIVE_STATUS_TAG = MEMORY_TAG_BEGIN + 6,
+};
 
 /* Generate the patch to retrive the address of the access from an instruction
  *

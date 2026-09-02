@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -153,6 +153,44 @@ GetPCOffset::generate(const Patch &patch, TempManager &temp_manager) const {
           case llvm::AArch64::LDRXl:
           case llvm::AArch64::LDRWl:
           case llvm::AArch64::LDRSWl:
+          case llvm::AArch64::CBGTWrr:
+          case llvm::AArch64::CBGTXrr:
+          case llvm::AArch64::CBGEWrr:
+          case llvm::AArch64::CBGEXrr:
+          case llvm::AArch64::CBHIWrr:
+          case llvm::AArch64::CBHIXrr:
+          case llvm::AArch64::CBHSWrr:
+          case llvm::AArch64::CBHSXrr:
+          case llvm::AArch64::CBEQWrr:
+          case llvm::AArch64::CBEQXrr:
+          case llvm::AArch64::CBNEWrr:
+          case llvm::AArch64::CBNEXrr:
+          case llvm::AArch64::CBGTWri:
+          case llvm::AArch64::CBGTXri:
+          case llvm::AArch64::CBLTWri:
+          case llvm::AArch64::CBLTXri:
+          case llvm::AArch64::CBHIWri:
+          case llvm::AArch64::CBHIXri:
+          case llvm::AArch64::CBLOWri:
+          case llvm::AArch64::CBLOXri:
+          case llvm::AArch64::CBEQWri:
+          case llvm::AArch64::CBEQXri:
+          case llvm::AArch64::CBNEWri:
+          case llvm::AArch64::CBNEXri:
+          case llvm::AArch64::CBHGTWrr:
+          case llvm::AArch64::CBHGEWrr:
+          case llvm::AArch64::CBHHIWrr:
+          case llvm::AArch64::CBHHSWrr:
+          case llvm::AArch64::CBHEQWrr:
+          case llvm::AArch64::CBHNEWrr:
+          case llvm::AArch64::CBBGTWrr:
+          case llvm::AArch64::CBBGEWrr:
+          case llvm::AArch64::CBBHIWrr:
+          case llvm::AArch64::CBBHSWrr:
+          case llvm::AArch64::CBBEQWrr:
+          case llvm::AArch64::CBBNEWrr:
+          case llvm::AArch64::AUTIASPPCi:
+          case llvm::AArch64::AUTIBSPPCi:
             imm = imm * 4;
             break;
           default:
@@ -203,24 +241,104 @@ RelocatableInst::UniquePtrVec
 CondExclusifLoad::generate(const Patch &patch,
                            TempManager &temp_manager) const {
 
-  static constexpr int JUMP_OFFSET = 12;
+  Reg tmpReg = temp_manager.getRegForTemp(temp);
+  Reg tmp2Reg = temp_manager.getRegForTemp(temp2);
+
+  sword expectedSize;
+  switch (patch.metadata.inst.getOpcode()) {
+    case llvm::AArch64::STXRB:
+    case llvm::AArch64::STLXRB:
+      expectedSize = 1;
+      break;
+    case llvm::AArch64::STXRH:
+    case llvm::AArch64::STLXRH:
+      expectedSize = 2;
+      break;
+    case llvm::AArch64::STXRW:
+    case llvm::AArch64::STLXRW:
+      expectedSize = 4;
+      break;
+    case llvm::AArch64::STXRX:
+    case llvm::AArch64::STLXRX:
+      expectedSize = 8;
+      break;
+    case llvm::AArch64::STXPW:
+    case llvm::AArch64::STLXPW:
+      expectedSize = 0x800;
+      break;
+    case llvm::AArch64::STXPX:
+    case llvm::AArch64::STLXPX:
+      expectedSize = 16;
+      break;
+    default:
+      QBDI_ABORT("Unexpected opcode {} {}", patch.metadata.inst.getOpcode(),
+                 patch);
+  }
+
+  RelocatableInst::UniquePtrVec loadPatch;
+
+  auto bitForSize = [](sword size) -> unsigned {
+    switch (size) {
+      case 1:
+        return 0;
+      case 2:
+        return 1;
+      case 4:
+        return 2;
+      case 8:
+        return 3;
+      case 16:
+        return 4;
+      default:
+        return 11;
+    }
+  };
+
+  auto addCase = [&](sword size, RelocatableInst::UniquePtrVec block) {
+    int remaining = getUniquePtrVecSize(loadPatch, *patch.llvmcpu);
+    if (remaining > 0) {
+      block.push_back(Branch(4 + remaining));
+    }
+
+    RelocatableInst::UniquePtrVec cond;
+    cond.push_back(Tbz(tmpReg, bitForSize(size),
+                       4 + getUniquePtrVecSize(block, *patch.llvmcpu)));
+
+    prepend(block, std::move(cond));
+    prepend(loadPatch, std::move(block));
+  };
+
+  auto blockFor = [&](sword size) {
+    switch (size) {
+      case 16:
+        return conv_unique<RelocatableInst>(Ldxp(tmpReg, tmp2Reg, tmp2Reg));
+      case 0x800:
+        return conv_unique<RelocatableInst>(Ldxpw(tmpReg, tmp2Reg, tmp2Reg));
+      case 8:
+        return conv_unique<RelocatableInst>(Ldxr(tmpReg, tmp2Reg));
+      case 4:
+        return conv_unique<RelocatableInst>(Ldxrw(tmpReg, tmp2Reg));
+      case 2:
+        return conv_unique<RelocatableInst>(Ldxrh(tmpReg, tmp2Reg));
+      default:
+        return conv_unique<RelocatableInst>(Ldxrb(tmpReg, tmp2Reg));
+    }
+  };
+
+  for (sword size : {16, 0x800, 8, 4, 2, 1}) {
+    if (size == expectedSize) {
+      continue;
+    }
+    addCase(size, blockFor(size));
+  }
+  addCase(expectedSize, blockFor(expectedSize));
 
   RelocatableInst::UniquePtrVec p;
-  Reg tmpReg = temp_manager.getRegForTemp(tmp);
-
-  // load enable flag
   p.push_back(
       Ldr(tmpReg, Offset(offsetof(Context, gprState.localMonitor.enable))));
-
-  // if monitor in exclusive mode (if cond == 0 => jump)
-  p.push_back(Cbz(tmpReg, Constant(JUMP_OFFSET)));
-
-  // {
-  //  do a exclusive load. reuse the tmp register to store the result
   p.push_back(
-      Ldr(tmpReg, Offset(offsetof(Context, gprState.localMonitor.addr))));
-  p.push_back(Ldxrb(tmpReg, tmpReg));
-  // }
+      Ldr(tmp2Reg, Offset(offsetof(Context, gprState.localMonitor.addr))));
+  append(p, std::move(loadPatch));
 
   return p;
 }
@@ -328,7 +446,7 @@ GetWrittenValue::generate(const Patch &patch, TempManager &temp_manager) const {
     case 3: {
       Reg orRegister = temp_manager.getRegForTemp(Temp(0xffff));
       return conv_unique<RelocatableInst>(
-          Ldrh(tmpRegister, addrRegister, 0), Ldrb(orRegister, addrRegister, 2),
+          Ldrb(orRegister, addrRegister, 2), Ldrh(tmpRegister, addrRegister, 0),
           Orrs(tmpRegister, tmpRegister, orRegister, 16));
     }
     case 4:
@@ -336,7 +454,7 @@ GetWrittenValue::generate(const Patch &patch, TempManager &temp_manager) const {
     case 6: {
       Reg orRegister = temp_manager.getRegForTemp(Temp(0xffff));
       return conv_unique<RelocatableInst>(
-          Ldrw(tmpRegister, addrRegister, 0), Ldrh(orRegister, addrRegister, 4),
+          Ldrh(orRegister, addrRegister, 4), Ldrw(tmpRegister, addrRegister, 0),
           Orrs(tmpRegister, tmpRegister, orRegister, 32));
     }
     case 8:
@@ -572,11 +690,14 @@ GetAddrAuth::generate(const Patch &patch, TempManager &temp_manager) const {
       }
       case llvm::AArch64::RETAA:
       case llvm::AArch64::RETAB:
-        if (dst != Reg(30))
-          return conv_unique<RelocatableInst>(MovReg::unique(dst, Reg(30)),
-                                              Xpaci(dst));
-        else
-          return conv_unique<RelocatableInst>(Xpaci(dst));
+      case llvm::AArch64::RETAASPPCi:
+      case llvm::AArch64::RETABSPPCi:
+      case llvm::AArch64::RETAASPPCr:
+      case llvm::AArch64::RETABSPPCr:
+        QBDI_REQUIRE_ABORT(dst != Reg(30),
+                           "Temp register must not be LR for {}", patch);
+        return conv_unique<RelocatableInst>(MovReg::unique(dst, Reg(30)),
+                                            Xpaci(dst));
       default:
         QBDI_ABORT("Unexpected opcode {} {}", inst.getOpcode(), patch);
     }
@@ -641,22 +762,172 @@ GetAddrAuth::generate(const Patch &patch, TempManager &temp_manager) const {
           return conv_unique<RelocatableInst>(Autizb(dst));
       }
       case llvm::AArch64::RETAA:
-        if (dst != Reg(30))
-          return conv_unique<RelocatableInst>(MovReg::unique(dst, Reg(30)),
-                                              Autia(dst, Reg(31)));
-        else
-          return conv_unique<RelocatableInst>(Autia(dst, Reg(31)));
-      case llvm::AArch64::RETAB:
-        if (dst != Reg(30))
-          return conv_unique<RelocatableInst>(MovReg::unique(dst, Reg(30)),
-                                              Autib(dst, Reg(31)));
-        else
-          return conv_unique<RelocatableInst>(Autib(dst, Reg(31)));
+      case llvm::AArch64::RETAB: {
+        QBDI_REQUIRE_ABORT(dst != Reg(30),
+                           "Temp register must not be LR for {}", patch);
+        RegLLVM savedLR = temp_manager.getRegForTemp(0xffff);
+        RelocatableInst::UniquePtr authInst =
+            (inst.getOpcode() == llvm::AArch64::RETAA) ? Autiasp() : Autibsp();
+
+        RelocatableInst::UniquePtrVec insts;
+        insts.push_back(MovReg::unique(savedLR, Reg(30)));
+        insts.push_back(Ldr(dst, Offset(offsetof(Context, gprState.pacm))));
+        insts.push_back(Cbz(dst, Constant(16)));
+        insts.push_back(Mov(dst, Constant(0)));
+        insts.push_back(Str(dst, Offset(offsetof(Context, gprState.pacm))));
+        insts.push_back(Pacm());
+        insts.push_back(std::move(authInst));
+        insts.push_back(MovReg::unique(dst, Reg(30)));
+        insts.push_back(MovReg::unique(Reg(30), savedLR));
+        return insts;
+      }
+
+      case llvm::AArch64::RETAASPPCi:
+      case llvm::AArch64::RETABSPPCi:
+      case llvm::AArch64::RETAASPPCr:
+      case llvm::AArch64::RETABSPPCr: {
+        QBDI_REQUIRE_ABORT(dst != Reg(30),
+                           "Temp register must not be LR for {}", patch);
+        QBDI_REQUIRE_ABORT(0 < inst.getNumOperands(), "Invalid operand {}",
+                           patch);
+
+        RegLLVM savedLR = temp_manager.getRegForTemp(0xffff);
+        RegLLVM addrReg;
+        RelocatableInst::UniquePtr addrLoad;
+        bool useKeyA;
+
+        switch (inst.getOpcode()) {
+          case llvm::AArch64::RETAASPPCi:
+          case llvm::AArch64::RETABSPPCi: {
+            QBDI_REQUIRE_ABORT(inst.getOperand(0).isImm(),
+                               "Unexpected operand type {}", patch);
+            sword imm = inst.getOperand(0).getImm() * 4;
+            addrReg = dst;
+            addrLoad = Mov(addrReg, Constant(patch.metadata.address + imm));
+            useKeyA = (inst.getOpcode() == llvm::AArch64::RETAASPPCi);
+            break;
+          }
+          case llvm::AArch64::RETAASPPCr:
+          case llvm::AArch64::RETABSPPCr: {
+            QBDI_REQUIRE_ABORT(inst.getOperand(0).isReg(),
+                               "Unexpected operand type {}", patch);
+            addrReg = inst.getOperand(0).getReg();
+            useKeyA = (inst.getOpcode() == llvm::AArch64::RETAASPPCr);
+            break;
+          }
+          default:
+            QBDI_ABORT("Unexpected opcode {} {}", inst.getOpcode(), patch);
+        }
+
+        RelocatableInst::UniquePtrVec insts;
+        insts.push_back(MovReg::unique(savedLR, Reg(30)));
+        if (addrLoad) {
+          insts.push_back(std::move(addrLoad));
+        }
+        insts.push_back(useKeyA ? AutiaSPPCr(addrReg) : AutibSPPCr(addrReg));
+        insts.push_back(MovReg::unique(dst, Reg(30)));
+        insts.push_back(MovReg::unique(Reg(30), savedLR));
+        return insts;
+      }
 
       default:
         QBDI_ABORT("Unexpected opcode {} {}", inst.getOpcode(), patch);
     }
   }
+}
+
+// SignLRSPPC
+// ==========
+
+RelocatableInst::UniquePtrVec
+SignLRSPPC::generate(const Patch &patch, TempManager &temp_manager) const {
+
+  const llvm::MCInst &inst = patch.metadata.inst;
+
+  temp_manager.associatedReg(tempX17, Reg(17));
+  temp_manager.associatedReg(tempX16, Reg(16));
+  temp_manager.associatedReg(tempX15, Reg(15));
+
+  RegLLVM x17 = temp_manager.getRegForTemp(tempX17);
+  RegLLVM x16 = temp_manager.getRegForTemp(tempX16);
+  RegLLVM x15 = temp_manager.getRegForTemp(tempX15);
+
+  RelocatableInst::UniquePtr signInst;
+  switch (inst.getOpcode()) {
+    case llvm::AArch64::PACIASPPC:
+      signInst = Pacia171615();
+      break;
+    case llvm::AArch64::PACIBSPPC:
+      signInst = Pacib171615();
+      break;
+    default:
+      QBDI_ABORT("Unexpected opcode {} {}", inst.getOpcode(), patch);
+  }
+
+  return conv_unique<RelocatableInst>(
+      Mov(x17, Reg(30)), Mov(x16, Reg(31)),
+      Mov(x15, Constant(patch.metadata.address)), std::move(signInst),
+      Mov(Reg(30), x17));
+}
+
+// SignLRSP
+// ========
+
+RelocatableInst::UniquePtrVec
+SignLRSP::generate(const Patch &patch, TempManager &temp_manager) const {
+
+  const llvm::MCInst &inst = patch.metadata.inst;
+
+  temp_manager.associatedReg(tempX17, Reg(17));
+  temp_manager.associatedReg(tempX16, Reg(16));
+  temp_manager.associatedReg(tempX15, Reg(15));
+
+  RegLLVM x17 = temp_manager.getRegForTemp(tempX17);
+  RegLLVM x16 = temp_manager.getRegForTemp(tempX16);
+  RegLLVM x15 = temp_manager.getRegForTemp(tempX15);
+
+  RelocatableInst::UniquePtr signInst;
+  switch (inst.getOpcode()) {
+    case llvm::AArch64::PACIASP:
+      signInst = Pacia1716();
+      break;
+    case llvm::AArch64::PACIBSP:
+      signInst = Pacib1716();
+      break;
+    default:
+      QBDI_ABORT("Unexpected opcode {} {}", inst.getOpcode(), patch);
+  }
+
+  RelocatableInst::UniquePtrVec insts;
+  insts.push_back(Ldr(x17, Offset(offsetof(Context, gprState.pacm))));
+  insts.push_back(Cbz(x17, Constant(40)));
+  insts.push_back(Mov(x17, Constant(0)));
+  insts.push_back(Str(x17, Offset(offsetof(Context, gprState.pacm))));
+  insts.push_back(Mov(x17, Reg(30)));
+  insts.push_back(Mov(x16, Reg(31)));
+  insts.push_back(Mov(x15, Constant(patch.metadata.address)));
+  insts.push_back(Pacm());
+  insts.push_back(std::move(signInst));
+  insts.push_back(Mov(Reg(30), x17));
+  insts.push_back(Branch(Constant(8)));
+  insts.push_back(NoReloc::unique(llvm::MCInst(inst)));
+  return insts;
+}
+
+// GenCbz
+// ======
+
+RelocatableInst::UniquePtrVec
+GenCbz::generate(const Patch &patch, TempManager &temp_manager) const {
+  RegLLVM reg = temp_manager.getRegForTemp(temp);
+  return conv_unique<RelocatableInst>(Cbz(reg, offset));
+}
+
+// GenPACM
+// =======
+
+RelocatableInst::UniquePtrVec GenPACM::genReloc(const LLVMCPU &llvmcpu) const {
+  return conv_unique<RelocatableInst>(Pacm());
 }
 
 // GenBTI

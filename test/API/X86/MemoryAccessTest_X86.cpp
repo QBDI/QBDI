@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@
 
 static bool checkFeature(const char *f) {
   if (!QBDI::isHostCPUFeaturePresent(f)) {
-    WARN("Host doesn't support " << f << " feature: SKIP");
+    // WARN("Host doesn't support " << f << " feature: SKIP");
     return false;
   }
   return true;
@@ -74,17 +74,16 @@ static QBDI::VMAction checkAccess(QBDI::VMInstanceRef vm,
                   [](ExpectedMemoryAccess &a) { return a.see; }))
     return QBDI::VMAction::CONTINUE;
 
-  CHECKED_IF(memaccesses.size() == info->accesses.size()) {
-    for (size_t i = 0; i < info->accesses.size(); i++) {
-      auto &memaccess = memaccesses[i];
-      auto &expect = info->accesses[i];
-      CHECKED_IF(memaccess.accessAddress == expect.address)
-      CHECKED_IF((memaccess.value == expect.value || expect.value == 0))
-      CHECKED_IF(memaccess.size == expect.size)
-      CHECKED_IF(memaccess.type == expect.type)
-      CHECKED_IF(memaccess.flags == expect.flags)
-      expect.see = true;
-    }
+  REQUIRE(memaccesses.size() == info->accesses.size());
+  for (size_t i = 0; i < info->accesses.size(); i++) {
+    auto &memaccess = memaccesses[i];
+    auto &expect = info->accesses[i];
+    CHECK(memaccess.accessAddress == expect.address);
+    CHECK((memaccess.value == expect.value || expect.value == 0));
+    CHECK(memaccess.size == expect.size);
+    CHECK(memaccess.type == expect.type);
+    CHECK(memaccess.flags == expect.flags);
+    expect.see = true;
   }
   return QBDI::VMAction::CONTINUE;
 }
@@ -1562,19 +1561,19 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-movdir64b") {
 
   const char source[] = "movdir64b (%eax), %ecx\n";
 
-  uint8_t v[512] = {0};
-  uint8_t buff[512] = {0};
+  alignas(64) uint8_t v[512] = {0};
+  alignas(64) uint8_t buff[512] = {0};
 
   for (size_t i = 0; i < sizeof(v); i++) {
     v[i] = (i % 256);
   }
 
   ExpectedMemoryAccesses expectedPre = {{
-      {(QBDI::rword)&v, 0, 512, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+      {(QBDI::rword)&v, 0, 64, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
   }};
   ExpectedMemoryAccesses expectedPost = {{
-      {(QBDI::rword)&v, 0, 512, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
-      {(QBDI::rword)&buff, 0, 512, QBDI::MEMORY_WRITE,
+      {(QBDI::rword)&v, 0, 64, QBDI::MEMORY_READ, QBDI::MEMORY_UNKNOWN_VALUE},
+      {(QBDI::rword)&buff, 0, 64, QBDI::MEMORY_WRITE,
        QBDI::MEMORY_UNKNOWN_VALUE},
   }};
 
@@ -1591,8 +1590,10 @@ TEST_CASE_METHOD(APITest, "MemoryAccessTest_X86-movdir64b") {
   bool ran = runOnASM(&retval, source);
 
   CHECK(ran);
-  for (size_t i = 0; i < sizeof(v); i++)
+  for (size_t i = 0; i < 64; i++)
     CHECK(buff[i] == (i % 256));
+  for (size_t i = 64; i < sizeof(buff); i++)
+    CHECK(buff[i] == 0);
   for (auto &e : expectedPre.accesses)
     CHECK(e.see);
   for (auto &e : expectedPost.accesses)

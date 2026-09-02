@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,10 +122,11 @@ public:
 };
 
 class CondExclusifLoad : public AutoClone<PatchGenerator, CondExclusifLoad> {
-  Temp tmp;
+  Temp temp;
+  Temp temp2;
 
 public:
-  CondExclusifLoad(Temp tmp) : tmp(tmp) {}
+  CondExclusifLoad(Temp temp, Temp temp2) : temp(temp), temp2(temp2) {}
 
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const Patch &patch, TempManager &temp_manager) const override;
@@ -363,6 +364,78 @@ public:
    */
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const Patch &patch, TempManager &temp_manager) const override;
+};
+
+class SignLRSPPC : public AutoClone<PatchGenerator, SignLRSPPC> {
+
+  Temp tempX17;
+  Temp tempX16;
+  Temp tempX15;
+
+public:
+  /*! Generate a Patch to sign LR for PACIASPPC/PACIBSPPC using
+   * PACIA171615/PACIB171615. tempX17/tempX16/tempX15 are forced to
+   * X17/X16/X15 respectively.
+   *
+   * @param[in] tempX17  Temp forced to X17 (LR copy, then signed result)
+   * @param[in] tempX16  Temp forced to X16 (SP copy)
+   * @param[in] tempX15  Temp forced to X15 (this instruction's own address)
+   */
+  SignLRSPPC(Temp tempX17, Temp tempX16, Temp tempX15)
+      : tempX17(tempX17), tempX16(tempX16), tempX15(tempX15) {}
+
+  std::vector<std::unique_ptr<RelocatableInst>>
+  generate(const Patch &patch, TempManager &temp_manager) const override;
+};
+
+class SignLRSP : public AutoClone<PatchGenerator, SignLRSP> {
+
+  Temp tempX17;
+  Temp tempX16;
+  Temp tempX15;
+
+public:
+  /*! Generate a Patch to conditionally sign LR for PACIASP/PACIBSP.
+   * If Context.gprState.pacm is set, sign LR with PACIA1716/PACIB1716
+   * after setting X15 to instruction address, else used PACIASP/PACIBSP.
+   *
+   * @param[in] tempX17  Temp forced to X17 (LR copy, then signed result)
+   * @param[in] tempX16  Temp forced to X16 (SP copy)
+   * @param[in] tempX15  Temp forced to X15 (this instruction's own address)
+   */
+  SignLRSP(Temp tempX17, Temp tempX16, Temp tempX15)
+      : tempX17(tempX17), tempX16(tempX16), tempX15(tempX15) {}
+
+  std::vector<std::unique_ptr<RelocatableInst>>
+  generate(const Patch &patch, TempManager &temp_manager) const override;
+};
+
+class GenCbz : public AutoClone<PatchGenerator, GenCbz> {
+
+  Temp temp;
+  Constant offset;
+
+public:
+  /*! Generate a CBZ instruction testing a Temp, branching offset bytes
+   * forward (from the CBZ itself) if that Temp is zero.
+   *
+   * @param[in] temp    Temp holding the value to test.
+   * @param[in] offset  Branch offset in bytes if the Temp is zero.
+   */
+  GenCbz(Temp temp, Constant offset) : temp(temp), offset(offset) {}
+
+  std::vector<std::unique_ptr<RelocatableInst>>
+  generate(const Patch &patch, TempManager &temp_manager) const override;
+};
+
+class GenPACM : public PureEval<AutoClone<PatchGenerator, GenPACM>> {
+public:
+  /*! Generate a real PACM instruction
+   */
+  GenPACM() {}
+
+  std::vector<std::unique_ptr<RelocatableInst>>
+  genReloc(const LLVMCPU &llvmcpu) const override;
 };
 
 class GenBTI : public PureEval<AutoClone<PatchGenerator, GenBTI>> {

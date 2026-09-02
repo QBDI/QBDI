@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ QBDI::VMAction incrementThumbPost(QBDI::VMInstanceRef vm,
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tGPRSave") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -66,7 +66,7 @@ TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tGPRSave") {
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tGPRShuffle") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -86,7 +86,7 @@ TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tGPRShuffle") {
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tFibonacciRecursion") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -107,7 +107,7 @@ TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tFibonacciRecursion") {
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tRelativeAddressing") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -127,7 +127,7 @@ TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tRelativeAddressing") {
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tBranchCondTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -147,7 +147,7 @@ TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tBranchCondTest") {
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tBranchLinkCondTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -167,7 +167,7 @@ TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tBranchLinkCondTest") {
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tBranchRegisterCondTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -191,7 +191,7 @@ TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tBranchRegisterCondTest") {
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tPushPopTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -211,7 +211,7 @@ TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tPushPopTest") {
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tLdmiaStmdbWbackTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -231,7 +231,7 @@ TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tLdmiaStmdbWbackTest") {
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tLdmdbStmiaWbackTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -251,7 +251,7 @@ TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tLdmdbStmiaWbackTest") {
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tLdmiaStmdbTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -271,7 +271,7 @@ TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tLdmiaStmdbTest") {
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tLdmdbStmiaTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -291,7 +291,7 @@ TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tLdmdbStmiaTest") {
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tLdrPCTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -311,7 +311,7 @@ TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tLdrPCTest") {
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tLdrbPCTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -331,7 +331,7 @@ TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tLdrbPCTest") {
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tLdrdPCTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -351,7 +351,7 @@ TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tLdrdPCTest") {
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tLdrhPCTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -371,7 +371,7 @@ TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tLdrhPCTest") {
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tLdrsbPCTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -391,7 +391,7 @@ TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tLdrsbPCTest") {
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tLdrshPCTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -411,7 +411,7 @@ TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tLdrshPCTest") {
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tMovPCTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -431,7 +431,7 @@ TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tMovPCTest") {
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tTBBTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -451,7 +451,7 @@ TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tTBBTest") {
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tTBHTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -471,7 +471,7 @@ TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tTBHTest") {
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tITCondTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
 
@@ -491,7 +491,7 @@ TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tITCondTest") {
 }
 
 TEST_CASE_METHOD(Instr_Test_Thumb, "Instr_Test-tldrexTest") {
-  INFO("TEST_SEED=" << seed_random());
+  seed_random();
   uint64_t count1 = 0;
   uint64_t count2 = 0;
   uint8_t buffer[4096] = {0};

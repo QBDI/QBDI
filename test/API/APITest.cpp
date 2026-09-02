@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@
 #include "QBDI/Platform.h"
 #include "QBDI/Range.h"
 
-#define STACK_SIZE 4096
+#define STACK_SIZE 32768
 
 static void dummyFn() {}
 
@@ -45,6 +45,7 @@ APITest::APITest() : vm() {
   // of the execution
   bool ret = QBDI::allocateVirtualStack(state, STACK_SIZE, &fakestack);
   REQUIRE(ret == true);
+  memset(fakestack, 0, STACK_SIZE);
 }
 
 APITest::~APITest() {

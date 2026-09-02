@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -926,7 +926,7 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_X86-movdir64b") {
           /* instSize */ 6, /* affectControlFlow */ false, /* isBranch */ false,
           /* isCall */ false, /* isReturn */ false, /* isCompare */ false,
           /* isPredicable */ false, /* mayLoad */ true, /* mayStore */ true,
-          /* loadSize */ 512, /* storeSize */ 512,
+          /* loadSize */ 64, /* storeSize */ 64,
           /* condition */ QBDI::CONDITION_NONE});
   checkOperand(vm.getCachedInstAnalysis(addr, QBDI::ANALYSIS_OPERANDS),
                {

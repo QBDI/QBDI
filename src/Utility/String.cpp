@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ bool startsWith(const char *prefix, const char *str) {
     // matches a character in the str
     if (*prefix == '*') {
       if (toupper(*(prefix + 1)) == toupper(*str++)) {
-        prefix++;
+        prefix += 2;
       }
       continue;
     }
@@ -42,7 +42,10 @@ bool startsWith(const char *prefix, const char *str) {
     }
   }
   // check pending character after wildcard
-  if (*prefix && *(prefix + 1)) {
+  if (*prefix == '*' && *(prefix + 1) == '\0') {
+    return true;
+  }
+  if (*prefix) {
     return false;
   }
   // prefix checking, if next char is not either \0, "_" or [0-9] then do not

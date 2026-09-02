@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,20 +57,12 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
    * instrument".
    */
   rules.emplace_back(
-      Or::unique(conv_unique<PatchCondition>(
-          OpIs::unique(llvm::X86::LOCK_PREFIX),
-          OpIs::unique(llvm::X86::REX64_PREFIX),
-          OpIs::unique(llvm::X86::REP_PREFIX),
-          OpIs::unique(llvm::X86::REPNE_PREFIX),
-          OpIs::unique(llvm::X86::DATA16_PREFIX),
-          OpIs::unique(llvm::X86::CS_PREFIX),
-          OpIs::unique(llvm::X86::SS_PREFIX),
-          OpIs::unique(llvm::X86::DS_PREFIX),
-          OpIs::unique(llvm::X86::ES_PREFIX),
-          OpIs::unique(llvm::X86::FS_PREFIX),
-          OpIs::unique(llvm::X86::GS_PREFIX),
-          OpIs::unique(llvm::X86::XACQUIRE_PREFIX),
-          OpIs::unique(llvm::X86::XRELEASE_PREFIX))),
+      OpIsIn<llvm::X86::LOCK_PREFIX, llvm::X86::REX64_PREFIX,
+             llvm::X86::REP_PREFIX, llvm::X86::REPNE_PREFIX,
+             llvm::X86::DATA16_PREFIX, llvm::X86::CS_PREFIX,
+             llvm::X86::SS_PREFIX, llvm::X86::DS_PREFIX, llvm::X86::ES_PREFIX,
+             llvm::X86::FS_PREFIX, llvm::X86::GS_PREFIX,
+             llvm::X86::XACQUIRE_PREFIX, llvm::X86::XRELEASE_PREFIX>::unique(),
       conv_unique<PatchGenerator>(
           PatchGenFlags::unique(PatchGeneratorFlagsX86_64::MergeFlag),
           ModifyInstruction::unique(InstTransform::UniquePtrVec())));
@@ -126,68 +118,111 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
    * Patch:   JMP *MEM --> MOV Temp(0), MEM
    *          DataBlock[Offset(RIP)] := Temp(0)
    */
-  rules.emplace_back(
-      Or::unique(conv_unique<PatchCondition>(OpIs::unique(llvm::X86::JMP32m),
-                                             OpIs::unique(llvm::X86::JMP64m))),
-      conv_unique<PatchGenerator>(
-          ModifyInstruction::unique(conv_unique<InstTransform>(
-              SetOpcode::unique(is_x86 ? llvm::X86::MOV32rm
-                                       : llvm::X86::MOV64rm),
-              AddOperand::unique(Operand(0), Temp(0)))),
-          WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))));
+  rules.emplace_back(OpIsIn<llvm::X86::JMP32m, llvm::X86::JMP64m>::unique(),
+                     conv_unique<PatchGenerator>(
+                         ModifyInstruction::unique(conv_unique<InstTransform>(
+                             SetOpcode::unique(is_x86 ? llvm::X86::MOV32rm
+                                                      : llvm::X86::MOV64rm),
+                             AddOperand::unique(Operand(0), Temp(0)))),
+                         WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))));
 
-  /* Rule #5: Simulate CALL to memory value.
+  /* Rule #5: Simulate JMP to 16-bit memory value.
+   * Target:   JMP16m
+   * Patch:    JMP16m MEM --> MOVZX Temp(0), MEM16
+   *           DataBlock[Offset(RIP)] := Temp(0)
+   */
+  rules.emplace_back(OpIs::unique(llvm::X86::JMP16m),
+                     conv_unique<PatchGenerator>(
+                         ModifyInstruction::unique(conv_unique<InstTransform>(
+                             SetOpcode::unique(is_x86 ? llvm::X86::MOVZX32rm16
+                                                      : llvm::X86::MOVZX64rm16),
+                             AddOperand::unique(Operand(0), Temp(0)))),
+                         WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))));
+
+  /* Rule #6: Simulate CALL to memory value.
    * Target:  CALL MEM
    * Patch:   CALL MEM --> MOV Temp(0), MEM
    *          SimulateCall(Temp(1))
    */
-  rules.emplace_back(
-      Or::unique(conv_unique<PatchCondition>(OpIs::unique(llvm::X86::CALL32m),
-                                             OpIs::unique(llvm::X86::CALL64m))),
-      conv_unique<PatchGenerator>(
-          ModifyInstruction::unique(conv_unique<InstTransform>(
-              SetOpcode::unique(is_x86 ? llvm::X86::MOV32rm
-                                       : llvm::X86::MOV64rm),
-              AddOperand::unique(Operand(0), Temp(0)))),
-          SimulateCall::unique(Temp(0))));
+  rules.emplace_back(OpIsIn<llvm::X86::CALL32m, llvm::X86::CALL64m>::unique(),
+                     conv_unique<PatchGenerator>(
+                         ModifyInstruction::unique(conv_unique<InstTransform>(
+                             SetOpcode::unique(is_x86 ? llvm::X86::MOV32rm
+                                                      : llvm::X86::MOV64rm),
+                             AddOperand::unique(Operand(0), Temp(0)))),
+                         SimulateCall::unique(Temp(0))));
 
-  /* Rule #6: Simulate JMP to constant value.
+  /* Rule #7: Simulate CALL to 16-bit memory value.
+   * Target:   CALL16m
+   * Patch:    CALL16m MEM --> MOVZX Temp(0), MEM16
+   *           SimulateCall(Temp(0))
+   */
+  rules.emplace_back(OpIs::unique(llvm::X86::CALL16m),
+                     conv_unique<PatchGenerator>(
+                         ModifyInstruction::unique(conv_unique<InstTransform>(
+                             SetOpcode::unique(is_x86 ? llvm::X86::MOVZX32rm16
+                                                      : llvm::X86::MOVZX64rm16),
+                             AddOperand::unique(Operand(0), Temp(0)))),
+                         SimulateCall::unique(Temp(0))));
+
+  /* Rule #8: Simulate JMP to constant value.
    * Target:  JMP IMM
    * Patch:   Temp(0) := RIP + Operand(0)
    *          DataBlock[Offset(RIP)] := Temp(0)
    */
   rules.emplace_back(
-      Or::unique(conv_unique<PatchCondition>(OpIs::unique(llvm::X86::JMP_1),
-                                             OpIs::unique(llvm::X86::JMP_2),
-                                             OpIs::unique(llvm::X86::JMP_4))),
+      OpIsIn<llvm::X86::JMP_1, llvm::X86::JMP_2, llvm::X86::JMP_4>::unique(),
       conv_unique<PatchGenerator>(
           GetPCOffset::unique(Temp(0), Operand(0)),
           WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))));
 
-  /* Rule #7: Simulate JMP to register value.
+  /* Rule #9: Simulate JMP to register value.
    * Target:  JMP REG
    * Patch:   Temp(0) := Operand(0)
    *          DataBlock[Offset(RIP)] := Temp(0)
    */
-  rules.emplace_back(
-      Or::unique(conv_unique<PatchCondition>(OpIs::unique(llvm::X86::JMP32r),
-                                             OpIs::unique(llvm::X86::JMP64r))),
-      conv_unique<PatchGenerator>(
-          GetOperand::unique(Temp(0), Operand(0)),
-          WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))));
+  rules.emplace_back(OpIsIn<llvm::X86::JMP32r, llvm::X86::JMP64r>::unique(),
+                     conv_unique<PatchGenerator>(
+                         GetOperand::unique(Temp(0), Operand(0)),
+                         WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))));
 
-  /* Rule #8: Simulate CALL to register value.
+  /* Rule #10: Simulate JMP to 16-bit register value.
+   * Target:   JMP16r
+   * Patch:    JMP16r REG16 --> MOVZX Temp(0), REG16
+   *           DataBlock[Offset(RIP)] := Temp(0)
+   */
+  rules.emplace_back(OpIs::unique(llvm::X86::JMP16r),
+                     conv_unique<PatchGenerator>(
+                         ModifyInstruction::unique(conv_unique<InstTransform>(
+                             SetOpcode::unique(is_x86 ? llvm::X86::MOVZX32rr16
+                                                      : llvm::X86::MOVZX64rr16),
+                             AddOperand::unique(Operand(0), Temp(0)))),
+                         WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))));
+
+  /* Rule #11: Simulate CALL to register value.
    * Target:  CALL REG
    * Patch:   Temp(0) := Operand(0)
    *          SimulateCall(Temp(0))
    */
   rules.emplace_back(
-      Or::unique(conv_unique<PatchCondition>(OpIs::unique(llvm::X86::CALL32r),
-                                             OpIs::unique(llvm::X86::CALL64r))),
+      OpIsIn<llvm::X86::CALL32r, llvm::X86::CALL64r>::unique(),
       conv_unique<PatchGenerator>(GetOperand::unique(Temp(0), Operand(0)),
                                   SimulateCall::unique(Temp(0))));
 
-  /* Rule #9: Simulate Jcc IMM8.
+  /* Rule #12: Simulate CALL to 16-bit register value.
+   * Target:   CALL16r
+   * Patch:    CALL16r REG16 --> MOVZX Temp(0), REG16
+   *           SimulateCall(Temp(0))
+   */
+  rules.emplace_back(OpIs::unique(llvm::X86::CALL16r),
+                     conv_unique<PatchGenerator>(
+                         ModifyInstruction::unique(conv_unique<InstTransform>(
+                             SetOpcode::unique(is_x86 ? llvm::X86::MOVZX32rr16
+                                                      : llvm::X86::MOVZX64rr16),
+                             AddOperand::unique(Operand(0), Temp(0)))),
+                         SimulateCall::unique(Temp(0))));
+
+  /* Rule #13: Simulate Jcc IMM8.
    * Target:  Jcc IMM8
    * Patch:     Temp(0) := RIP + Operand(0)
    *         ---Jcc IMM8 --> Jcc END
@@ -195,22 +230,20 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
    *         -->END: DataBlock[Offset(RIP)] := Temp(0)
    */
   rules.emplace_back(
-      Or::unique(conv_unique<PatchCondition>(
-          OpIs::unique(llvm::X86::JCC_1), OpIs::unique(llvm::X86::LOOP),
-          OpIs::unique(llvm::X86::LOOPE), OpIs::unique(llvm::X86::LOOPNE),
-          OpIs::unique(llvm::X86::JRCXZ), OpIs::unique(llvm::X86::JECXZ),
-          OpIs::unique(llvm::X86::JCXZ))),
+      OpIsIn<llvm::X86::JCC_1, llvm::X86::LOOP, llvm::X86::LOOPE,
+             llvm::X86::LOOPNE, llvm::X86::JRCXZ, llvm::X86::JECXZ,
+             llvm::X86::JCXZ>::unique(),
       conv_unique<PatchGenerator>(
           GetPCOffset::unique(Temp(0), Operand(0)),
           ModifyInstruction::unique(
               conv_unique<InstTransform>(SetOperand::unique(
                   Operand(0),
-                  Constant(is_x86 ? 6 : 11)) // Offset to jump the next load.
+                  Constant(is_x86 ? 5 : 10)) // Offset to jump the next load.
                                          )),
           GetPCOffset::unique(Temp(0), Constant(0)),
           WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))));
 
-  /* Rule #10: Simulate Jcc IMM16.
+  /* Rule #14: Simulate Jcc IMM16.
    * Target:  Jcc IMM16
    * Patch:     Temp(0) := RIP + Operand(0)
    *         ---Jcc IMM16 --> Jcc END
@@ -222,11 +255,11 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
       conv_unique<PatchGenerator>(
           GetPCOffset::unique(Temp(0), Operand(0)),
           ModifyInstruction::unique(conv_unique<InstTransform>(
-              SetOperand::unique(Operand(0), Constant(is_x86 ? 7 : 12)))),
+              SetOperand::unique(Operand(0), Constant(is_x86 ? 5 : 10)))),
           GetPCOffset::unique(Temp(0), Constant(0)),
           WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))));
 
-  /* Rule #11: Simulate Jcc IMM32.
+  /* Rule #15: Simulate Jcc IMM32.
    * Target:  Jcc IMM32
    * Patch:     Temp(0) := RIP + Operand(0)
    *         ---Jcc IMM32 --> Jcc END
@@ -238,35 +271,41 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
       conv_unique<PatchGenerator>(
           GetPCOffset::unique(Temp(0), Operand(0)),
           ModifyInstruction::unique(conv_unique<InstTransform>(
-              SetOperand::unique(Operand(0), Constant(is_x86 ? 9 : 14)))),
+              SetOperand::unique(Operand(0), Constant(is_x86 ? 5 : 10)))),
           GetPCOffset::unique(Temp(0), Constant(0)),
           WriteTemp::unique(Temp(0), Offset(Reg(REG_PC)))));
 
-  /* Rule #12: Simulate CALL to constant offset.
+  /* Rule #16: Simulate CALL to constant offset.
    * Target:   CALL IMM
    * Patch:    Temp(0) := RIP + Operand(0)
    *           SimulateCall(Temp(0))
    */
   rules.emplace_back(
-      Or::unique(
-          conv_unique<PatchCondition>(OpIs::unique(llvm::X86::CALL64pcrel32),
-                                      OpIs::unique(llvm::X86::CALLpcrel16),
-                                      OpIs::unique(llvm::X86::CALLpcrel32))),
+      OpIsIn<llvm::X86::CALL64pcrel32, llvm::X86::CALLpcrel16,
+             llvm::X86::CALLpcrel32>::unique(),
       conv_unique<PatchGenerator>(GetPCOffset::unique(Temp(0), Operand(0)),
                                   SimulateCall::unique(Temp(0))));
 
-  /* Rule #13: Simulate return.
+  /* Rule #17: Simulate return.
    * Target:   RET
    * Patch:    SimulateRet(Temp(0))
    */
   rules.emplace_back(
-      Or::unique(conv_unique<PatchCondition>(
-          OpIs::unique(llvm::X86::RET32), OpIs::unique(llvm::X86::RET64),
-          OpIs::unique(llvm::X86::RET16), OpIs::unique(llvm::X86::RETI32),
-          OpIs::unique(llvm::X86::RETI64), OpIs::unique(llvm::X86::RETI16))),
+      OpIsIn<llvm::X86::RET32, llvm::X86::RET64, llvm::X86::RET16,
+             llvm::X86::RETI32, llvm::X86::RETI64, llvm::X86::RETI16>::unique(),
       conv_unique<PatchGenerator>(SimulateRet::unique(Temp(0))));
 
-  /* Rule #14: Default rule for every other instructions.
+  /* Rule #18: Simulate far return.
+   * Target:   LRET
+   * Patch:    SimulateLret(Temp(0))
+   */
+  rules.emplace_back(
+      OpIsIn<llvm::X86::LRET32, llvm::X86::LRET64, llvm::X86::LRET16,
+             llvm::X86::LRETI32, llvm::X86::LRETI64,
+             llvm::X86::LRETI16>::unique(),
+      conv_unique<PatchGenerator>(SimulateLret::unique(Temp(0))));
+
+  /* Rule #19: Default rule for every other instructions.
    * Target:   *
    * Patch:    Output original unmodified instructions.
    */
@@ -275,6 +314,76 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
                          InstTransform::UniquePtrVec())));
 
   return rules;
+}
+
+bool isSupportedInstruction(const Patch &patch, const char *&reason) {
+  [[maybe_unused]] const LLVMCPU &llvmcpu = *patch.llvmcpu;
+  const llvm::MCInst &inst = patch.metadata.inst;
+  switch (inst.getOpcode()) {
+    case llvm::X86::XBEGIN_2:
+    case llvm::X86::XBEGIN_4:
+      reason = "XBEGIN (Intel TSX) is not supported by QBDI";
+      return false;
+    case llvm::X86::FARCALL16m:
+    case llvm::X86::FARCALL32m:
+    case llvm::X86::FARCALL64m:
+    case llvm::X86::FARJMP16m:
+    case llvm::X86::FARJMP32m:
+    case llvm::X86::FARJMP64m:
+      reason =
+          "Far call/jump reading a segment:offset target from memory "
+          "is not supported by QBDI";
+      return false;
+    case llvm::X86::FARCALL32i:
+    case llvm::X86::FARJMP32i:
+      reason =
+          "Far call/jump with an immediate segment:offset target is "
+          "not supported by QBDI";
+      return false;
+    case llvm::X86::IRET16:
+    case llvm::X86::IRET32:
+    case llvm::X86::IRET64:
+      reason =
+          "IRET pops CS/EIP/EFLAGS from the stack and is not "
+          "supported by QBDI";
+      return false;
+    case llvm::X86::CALL16m_NT:
+    case llvm::X86::CALL16r_NT:
+    case llvm::X86::CALL32m_NT:
+    case llvm::X86::CALL32r_NT:
+    case llvm::X86::CALL64m_NT:
+    case llvm::X86::CALL64r_NT:
+    case llvm::X86::JMP16m_NT:
+    case llvm::X86::JMP16r_NT:
+    case llvm::X86::JMP32m_NT:
+    case llvm::X86::JMP32r_NT:
+    case llvm::X86::JMP64m_NT:
+    case llvm::X86::JMP64r_NT:
+      reason =
+          "CET no-track (notrack-prefixed) indirect call/jump is not "
+          "supported by QBDI";
+      return false;
+    case llvm::X86::JMP64m_REX:
+    case llvm::X86::JMP64r_REX:
+      reason =
+          "This tail-call-lowering REX-prefixed jump variant is not "
+          "supported by QBDI";
+      return false;
+    case llvm::X86::RET:
+    case llvm::X86::IRET:
+      reason =
+          "RET/IRET without an explicit operand-size suffix is not "
+          "supported by QBDI";
+      return false;
+    case llvm::X86::FARCALL16i:
+    case llvm::X86::FARJMP16i:
+      reason =
+          "Far call/jump with a 16-bit real-mode segment:offset "
+          "target is not supported by QBDI";
+      return false;
+    default:
+      return true;
+  }
 }
 
 } // namespace
@@ -320,6 +429,16 @@ static void setRegisterSaved(Patch &patch) {
           patch.regUsage[i] |= RegisterUsage::RegisterSaved;
         }
         break;
+      case llvm::X86::CMPXCHG8B:
+        patch.regUsage[getGPRPosition(llvm::X86::EAX)] |=
+            RegisterUsage::RegisterSaved;
+        patch.regUsage[getGPRPosition(llvm::X86::EBX)] |=
+            RegisterUsage::RegisterSaved;
+        patch.regUsage[getGPRPosition(llvm::X86::ECX)] |=
+            RegisterUsage::RegisterSaved;
+        patch.regUsage[getGPRPosition(llvm::X86::EDX)] |=
+            RegisterUsage::RegisterSaved;
+        break;
       default:
         break;
     }
@@ -328,12 +447,18 @@ static void setRegisterSaved(Patch &patch) {
   return;
 }
 
-bool PatchRuleAssembly::generate(const llvm::MCInst &inst, rword address,
-                                 uint32_t instSize, const LLVMCPU &llvmcpu,
-                                 std::vector<Patch> &patchList) {
+PatchRuleResult PatchRuleAssembly::generate(const llvm::MCInst &inst,
+                                            rword address, uint32_t instSize,
+                                            const LLVMCPU &llvmcpu,
+                                            std::vector<Patch> &patchList,
+                                            const char *&unsupportedReason) {
 
   Patch instPatch{inst, address, instSize, llvmcpu};
   setRegisterSaved(instPatch);
+
+  if (not isSupportedInstruction(instPatch, unsupportedReason)) {
+    return PatchRuleResult::UNSUPPORTED;
+  }
 
   for (uint32_t j = 0; j < patchRules.size(); j++) {
     if (patchRules[j].canBeApplied(instPatch, llvmcpu)) {
@@ -382,16 +507,16 @@ bool PatchRuleAssembly::generate(const llvm::MCInst &inst, rword address,
       }
 
       if (mergePending) {
-        return false;
+        return PatchRuleResult::VALID;
       } else if (patch.metadata.modifyPC) {
         reset();
-        return true;
+        return PatchRuleResult::VALID_END_BB;
       } else {
-        return false;
+        return PatchRuleResult::VALID;
       }
     }
   }
-  QBDI_ABORT("Not PatchRule found for: {}", instPatch);
+  return PatchRuleResult::UNSUPPORTED;
 }
 
 bool PatchRuleAssembly::earlyEnd(const LLVMCPU &llvmcpu,

@@ -33,10 +33,20 @@ if(NOT QBDI_PLATFORM_ANDROID)
   # test
   option(QBDI_TEST "Compile tests" ON)
 
+  # extended instruction coverage tests (large number of test cases)
+  # Those test has been generated with AI and are not entierly review.
+  # Some instruction can be tested only when CPU support them, but
+  # the feature guard may be misimplemented and executed on CPU
+  # without the needed feature. Due to this, those tests are disabled
+  # by default.
+  option(QBDI_TEST_INSTRUCTION_EXTENDED
+         "Compile the extended instruction coverage tests" OFF)
+
   # benchmark
   option(QBDI_BENCHMARK "Compile benchmark" OFF)
 else()
   set(QBDI_TEST OFF)
+  set(QBDI_TEST_INSTRUCTION_EXTENDED OFF)
   set(QBDI_BENCHMARK OFF)
 endif()
 
@@ -83,6 +93,11 @@ endif()
 option(QBDI_TOOLS_FRIDAQBDI "Install frida-qbdi" ON)
 
 # verify options
+if(QBDI_TEST_INSTRUCTION_EXTENDED AND NOT QBDI_TEST)
+  message(
+    FATAL_ERROR "Need QBDI_TEST to compile QBDI_TEST_INSTRUCTION_EXTENDED")
+endif()
+
 if(NOT QBDI_STATIC_LIBRARY)
   if(QBDI_TEST)
     message(FATAL_ERROR "Need QBDI_STATIC_LIBRARY to compile QBDI_TEST")
@@ -134,6 +149,8 @@ endif()
 message(STATUS "QBDI_STATIC_LIBRARY:   ${QBDI_STATIC_LIBRARY}")
 message(STATUS "QBDI_SHARED_LIBRARY:   ${QBDI_SHARED_LIBRARY}")
 message(STATUS "QBDI_TEST:             ${QBDI_TEST}")
+message(
+  STATUS "QBDI_TEST_INSTRUCTION_EXTENDED: ${QBDI_TEST_INSTRUCTION_EXTENDED}")
 message(STATUS "QBDI_BENCHMARK:        ${QBDI_BENCHMARK}")
 message(STATUS "QBDI_EXAMPLES:         ${QBDI_EXAMPLES}")
 message(STATUS "QBDI_TOOLS_QBDIPRELOAD: ${QBDI_TOOLS_QBDIPRELOAD}")

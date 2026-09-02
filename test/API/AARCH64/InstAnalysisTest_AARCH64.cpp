@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -442,8 +442,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_AARCH64-ldp") {
                     QBDI::REGISTER_WRITE},
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 2, "X2",
                     QBDI::REGISTER_READ},
-                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_UNDEFINED_EFFECT, 1, 8,
-                    0, -1, nullptr, QBDI::REGISTER_UNUSED},
+                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_NONE, 1, 2, 0, -1,
+                    nullptr, QBDI::REGISTER_UNUSED},
                },
                QBDI::REGISTER_UNUSED);
 }
@@ -469,8 +469,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_AARCH64-ldp_pre") {
                     QBDI::REGISTER_WRITE},
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 2, "X2",
                     QBDI::REGISTER_READ_WRITE},
-                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_UNDEFINED_EFFECT, 1, 8,
-                    0, -1, nullptr, QBDI::REGISTER_UNUSED},
+                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_NONE, 1, 2, 0, -1,
+                    nullptr, QBDI::REGISTER_UNUSED},
                },
                QBDI::REGISTER_UNUSED);
 }
@@ -496,8 +496,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_AARCH64-ldp_post") {
                     QBDI::REGISTER_WRITE},
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 2, "X2",
                     QBDI::REGISTER_READ_WRITE},
-                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_UNDEFINED_EFFECT, 1, 8,
-                    0, -1, nullptr, QBDI::REGISTER_UNUSED},
+                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_NONE, 1, 2, 0, -1,
+                    nullptr, QBDI::REGISTER_UNUSED},
                },
                QBDI::REGISTER_UNUSED);
 }
@@ -554,8 +554,8 @@ TEST_CASE_METHOD(APITest, "InstAnalysisTest_AARCH64-ld4") {
                     "Q2", QBDI::REGISTER_READ_WRITE},
                    {QBDI::OPERAND_FPR, QBDI::OPERANDFLAG_NONE, 0, 16, 0, 48,
                     "Q3", QBDI::REGISTER_READ_WRITE},
-                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_UNDEFINED_EFFECT, 3, 8,
-                    0, -1, nullptr, QBDI::REGISTER_UNUSED},
+                   {QBDI::OPERAND_IMM, QBDI::OPERANDFLAG_NONE, 3, 2, 0, -1,
+                    nullptr, QBDI::REGISTER_UNUSED},
                    {QBDI::OPERAND_GPR, QBDI::OPERANDFLAG_NONE, 0, 8, 0, 0, "X0",
                     QBDI::REGISTER_READ_WRITE},
                    {QBDI::OPERAND_SEG, QBDI::OPERANDFLAG_NONE, 0, 8, 0, -1,

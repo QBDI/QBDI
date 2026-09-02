@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -854,6 +854,27 @@ RegLLVM getPackedRegister(RegLLVM reg, size_t pos) {
 
 void fixLLVMUsedGPR(const llvm::MCInst &inst, const LLVMCPU &llvmcpu,
                     std::array<RegisterUsage, NUM_GPR> &arr,
-                    std::map<RegLLVM, RegisterUsage> &m) {}
+                    std::map<RegLLVM, RegisterUsage> &m) {
+  switch (inst.getOpcode()) {
+    // Preventive fix: when FEAT_PAuth_LR is implemented and PSTATE.PACM ==
+    // 1, these opcodes read an extra modifier register (X16 or X15) that
+    // LLVM's tablegen Uses list doesn't declare, since that use is
+    // conditional on runtime PACM state and not unconditional.
+    case llvm::AArch64::AUTIASP:
+    case llvm::AArch64::AUTIBSP:
+    case llvm::AArch64::RETAA:
+    case llvm::AArch64::RETAB:
+      arr[16] |= RegisterUsed;
+      break;
+    case llvm::AArch64::PACIA1716:
+    case llvm::AArch64::PACIB1716:
+    case llvm::AArch64::AUTIA1716:
+    case llvm::AArch64::AUTIB1716:
+      arr[15] |= RegisterUsed;
+      break;
+    default:
+      break;
+  }
+}
 
 } // namespace QBDI

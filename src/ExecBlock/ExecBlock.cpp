@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -624,7 +624,7 @@ const InstAnalysis *ExecBlock::getInstAnalysis(uint16_t instID,
   if ((type & ANALYSIS_JIT) != 0 and (ana->analysisType & ANALYSIS_JIT) == 0) {
     ana->analysisType |= ANALYSIS_JIT;
     ana->patchAddress = getBaseCodeBlock() + instRegistry[instID].offset;
-    if (instRegistry.size() == instID + 1) {
+    if (instRegistry.size() == static_cast<size_t>(instID) + 1) {
       ana->patchSize = codeBlockPosition - instRegistry[instID].offset;
     } else {
       ana->patchSize =

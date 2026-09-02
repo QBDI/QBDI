@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -242,8 +242,8 @@ QBDI::VMAction evilMnemCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
     info[0]++; // CMP count
     info[1]++;
     // validate address
-    CHECKED_IF(ana->address >= (QBDI::rword)&satanicFun)
-    CHECKED_IF(ana->address < (((QBDI::rword)&satanicFun) + 0x100))
+    CHECK(ana->address >= (QBDI::rword)&satanicFun);
+    CHECK(ana->address < (((QBDI::rword)&satanicFun) + 0x100));
     info[1]++;
     // validate inst size
     const struct TestInst &currentInst = TestInsts[info[0] - 1];
@@ -257,10 +257,10 @@ QBDI::VMAction evilMnemCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
     // validate instruction type (kinda...)
     if (currentInst.isCompare) {
       // CHECKED_IF doesn't support && operator
-      CHECKED_IF(!ana->isBranch)
-      CHECKED_IF(!ana->isCall)
-      CHECKED_IF(!ana->isReturn)
-      CHECKED_IF(ana->isCompare)
+      CHECK(!ana->isBranch);
+      CHECK(!ana->isCall);
+      CHECK(!ana->isReturn);
+      CHECK(ana->isCompare);
       info[1]++;
     }
     CHECKED_IF(ana->flagsAccess == currentInst.flagsAccess) { info[1]++; }
@@ -281,9 +281,9 @@ QBDI::VMAction evilMnemCbk(QBDI::VMInstanceRef vm, QBDI::GPRState *gprState,
         if (op.regName == nullptr && cmpOp.regName == nullptr) {
           info[1]++;
         } else {
-          CHECKED_IF(op.regName != nullptr)
-          CHECKED_IF(cmpOp.regName != nullptr)
-          CHECKED_IF(std::string(op.regName) == std::string(cmpOp.regName))
+          CHECK(op.regName != nullptr);
+          CHECK(cmpOp.regName != nullptr);
+          CHECK(std::string(op.regName) == std::string(cmpOp.regName));
           info[1]++;
         }
         CHECKED_IF(op.size == cmpOp.size) { info[1]++; }
@@ -1675,6 +1675,11 @@ TEST_CASE_METHOD(APITest, "VMTest-InstCbLambda-InstrRuleDataCBK") {
   SUCCEED();
 }
 
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfree-nonheap-object"
+#endif
+
 TEST_CASE_METHOD(APITest, "VMTest-InvalidInstruction") {
   auto tc = TestCode["VMTest-InvalidInstruction"];
   auto code = tc.code;
@@ -1687,6 +1692,7 @@ TEST_CASE_METHOD(APITest, "VMTest-InvalidInstruction") {
   QBDI::simulateCall(state, FAKE_RET_ADDR);
 
   // Instrument the whole code but only execute what is valid
+  vm.removeAllInstrumentedRanges();
   vm.addInstrumentedRange(start, stop);
   bool ran = vm.run(start, start + tc.size);
   REQUIRE(ran);
@@ -1703,6 +1709,7 @@ TEST_CASE_METHOD(APITest, "VMTest-BreakingInstruction") {
   auto start = (QBDI::rword)code.data();
 
   // Instrument only a part of the code
+  vm.removeAllInstrumentedRanges();
   vm.addInstrumentedRange(start, start + tc.size);
 
   // set the current sequence
@@ -1733,6 +1740,7 @@ TEST_CASE_METHOD(APITest, "VMTest-SelfModifyingCode1") {
 
   QBDI::simulateCall(state, FAKE_RET_ADDR);
 
+  vm.removeAllInstrumentedRanges();
   vm.addInstrumentedRange(start, stop);
   bool ran = vm.run(start, FAKE_RET_ADDR);
   REQUIRE(ran);
@@ -1758,6 +1766,7 @@ TEST_CASE_METHOD(APITest, "VMTest-SelfModifyingCode2") {
 
   QBDI::simulateCall(state, FAKE_RET_ADDR);
 
+  vm.removeAllInstrumentedRanges();
   vm.addInstrumentedRange(start, stop);
 
   QBDI::RangeSet<QBDI::rword> instrumentedRange{};
@@ -1811,6 +1820,10 @@ TEST_CASE_METHOD(APITest, "VMTest-SelfModifyingCode2") {
 
   SUCCEED();
 }
+
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 struct CheckReduceSizeData {
   size_t lastCount;

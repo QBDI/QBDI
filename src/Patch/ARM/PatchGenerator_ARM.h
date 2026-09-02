@@ -1,7 +1,7 @@
 /*
  * This file is part of QBDI.
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -306,6 +306,8 @@ public:
 class WriteOperandCC : public AutoClone<PatchGenerator, WriteOperandCC> {
   Operand op;
   Offset offset;
+  Shadow shadow;
+  enum { OffsetType, ShadowType } type;
 
 public:
   /*! Obtain the value of the operand op and copy it's value to the Datablock
@@ -316,7 +318,19 @@ public:
    * @param[in] offset  The offset in the data block where the operand
    *                    will be written.
    */
-  WriteOperandCC(Operand op, Offset offset) : op(op), offset(offset) {}
+  WriteOperandCC(Operand op, Offset offset)
+      : op(op), offset(offset), shadow(0), type(OffsetType) {}
+
+  /*! Obtain the value of the operand op and copy it's value to a shadow.
+   * The value is only written if the condition of the instruction is
+   * reached.
+   *
+   * @param[in] op      The operand index (relative to the instruction
+   *                    LLVM MCInst representation) to be copied.
+   * @param[in] shadow  The shadow where the operand value will be written.
+   */
+  WriteOperandCC(Operand op, Shadow shadow)
+      : op(op), offset(0), shadow(shadow), type(ShadowType) {}
 
   /*!
    * Output:
@@ -563,9 +577,11 @@ public:
 class CondExclusifLoad : public AutoClone<PatchGenerator, CondExclusifLoad> {
   Temp temp;
   Temp temp2;
+  Temp temp3;
 
 public:
-  CondExclusifLoad(Temp temp, Temp temp2) : temp(temp), temp2(temp2) {}
+  CondExclusifLoad(Temp temp, Temp temp2, Temp temp3)
+      : temp(temp), temp2(temp2), temp3(temp3) {}
 
   std::vector<std::unique_ptr<RelocatableInst>>
   generate(const Patch &patch, TempManager &temp_manager) const override;

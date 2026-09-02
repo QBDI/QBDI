@@ -1,7 +1,7 @@
 /*
  * This file is part of pyQBDI (python binding for QBDI).
  *
- * Copyright 2017 - 2025 Quarkslab
+ * Copyright 2017 - 2026 Quarkslab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -485,11 +485,10 @@ void init_binding_State(py::module_ &m) {
           "localMonitor : exclusive base address")
       .def_property(
           "localMonitor_enable",
-          [](const GPRState &t) {
-            return py::bool_(t.localMonitor.enable != 0);
-          },
-          [](GPRState &t, py::bool_ v) { t.localMonitor.enable = v ? 1 : 0; },
+          [](const GPRState &t) { return py::int_(t.localMonitor.enable); },
+          [](GPRState &t, py::int_ v) { t.localMonitor.enable = v; },
           "localMonitor : exclusive state")
+      .def_readwrite("pacm", &GPRState::pacm, "PACM state")
       // cross architecture access
       .def_readwrite("REG_RETURN", &GPRState::x0, "shadow of x0")
       .def_readwrite("AVAILABLE_GPR", &GPRState::x28, "shadow of x28")
