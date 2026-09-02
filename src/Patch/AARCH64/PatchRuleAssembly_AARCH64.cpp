@@ -27,8 +27,8 @@
 #include "Patch/PatchRule.h"
 #include "Patch/PatchRuleAssembly.h"
 
+#include "Utility/AARCH64/AssemblyProbe.h"
 #include "Utility/LogSys.h"
-#include "Utility/System.h"
 
 #include "QBDI/Options.h"
 
@@ -39,6 +39,7 @@ namespace {
 std::vector<PatchRule> getDefaultPatchRules(Options opts) {
   std::vector<PatchRule> rules;
   bool bypassPauth = ((opts & Options::OPT_BYPASS_PAUTH) != 0);
+  bool hostHasPauth = hostSupportsPAuthProbe();
 
   /* Rule #0: Restore all register for SVC and BRK
    *
@@ -336,30 +337,34 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
      * Target:  AUTIA1716
      * Patch:   XPAID X17
      */
-    rules.emplace_back(
-        OpIsIn<llvm::AArch64::AUTIA1716, llvm::AArch64::AUTIB1716,
-               llvm::AArch64::AUTIA171615,
-               llvm::AArch64::AUTIB171615>::unique(),
-        conv_unique<PatchGenerator>(
-            ModifyInstruction::unique(conv_unique<InstTransform>(
-                SetOpcode::unique(llvm::AArch64::XPACI),
-                AddOperand::unique(Operand(0), Reg(17)),
-                AddOperand::unique(Operand(1), Reg(17)))),
-            SaveX28IfSet::unique()));
+    if (hostHasPauth) {
+      rules.emplace_back(
+          OpIsIn<llvm::AArch64::AUTIA1716, llvm::AArch64::AUTIB1716,
+                 llvm::AArch64::AUTIA171615,
+                 llvm::AArch64::AUTIB171615>::unique(),
+          conv_unique<PatchGenerator>(
+              ModifyInstruction::unique(conv_unique<InstTransform>(
+                  SetOpcode::unique(llvm::AArch64::XPACI),
+                  AddOperand::unique(Operand(0), Reg(17)),
+                  AddOperand::unique(Operand(1), Reg(17)))),
+              SaveX28IfSet::unique()));
+    }
 
     /* Rule #20: Replace AUTIASP, AUTIAZ, AUTIBSP, AUTIBZ
      * Target:  AUTIASP
      * Patch:   XPAID X30
      */
-    rules.emplace_back(
-        OpIsIn<llvm::AArch64::AUTIASP, llvm::AArch64::AUTIAZ,
-               llvm::AArch64::AUTIBSP, llvm::AArch64::AUTIBZ>::unique(),
-        conv_unique<PatchGenerator>(
-            ModifyInstruction::unique(conv_unique<InstTransform>(
-                SetOpcode::unique(llvm::AArch64::XPACI),
-                AddOperand::unique(Operand(0), Reg(30)),
-                AddOperand::unique(Operand(1), Reg(30)))),
-            SaveX28IfSet::unique()));
+    if (hostHasPauth) {
+      rules.emplace_back(
+          OpIsIn<llvm::AArch64::AUTIASP, llvm::AArch64::AUTIAZ,
+                 llvm::AArch64::AUTIBSP, llvm::AArch64::AUTIBZ>::unique(),
+          conv_unique<PatchGenerator>(
+              ModifyInstruction::unique(conv_unique<InstTransform>(
+                  SetOpcode::unique(llvm::AArch64::XPACI),
+                  AddOperand::unique(Operand(0), Reg(30)),
+                  AddOperand::unique(Operand(1), Reg(30)))),
+              SaveX28IfSet::unique()));
+    }
 
     /* Rule #21: Replace AUTIASPPCi, AUTIBSPPCi, AUTIASPPCr, AUTIBSPPCr
      * Target:  AUTIASPPCi label / AUTIASPPCr Xm
